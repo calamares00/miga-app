@@ -14,8 +14,8 @@ android {
         minSdk = 26
         targetSdk = 34
         // El patch de versionName se incrementa en cada commit (1.0.1, 1.0.2...); versionCode sube en paralelo.
-        versionCode = 9
-        versionName = "1.0.8"
+        versionCode = 10
+        versionName = "1.0.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -97,10 +97,6 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-}
-
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
