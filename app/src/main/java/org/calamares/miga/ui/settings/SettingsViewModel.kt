@@ -15,6 +15,7 @@ import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.model.UpdateChannel
+import org.calamares.miga.data.remote.UpdateCheckResult
 import org.calamares.miga.data.remote.UpdateChecker
 import org.calamares.miga.data.remote.UpdateInfo
 import org.calamares.miga.data.repository.RecipeRepository
@@ -29,6 +30,7 @@ sealed interface UpdateCheckState {
     data object Checking : UpdateCheckState
     data object UpToDate : UpdateCheckState
     data class Available(val info: UpdateInfo) : UpdateCheckState
+    data class Error(val reason: String) : UpdateCheckState
 }
 
 class SettingsViewModel(
@@ -70,8 +72,11 @@ class SettingsViewModel(
     fun checkForUpdatesNow() {
         viewModelScope.launch {
             _updateCheckState.value = UpdateCheckState.Checking
-            val info = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, updateChannel.value)
-            _updateCheckState.value = if (info != null) UpdateCheckState.Available(info) else UpdateCheckState.UpToDate
+            _updateCheckState.value = when (val result = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, updateChannel.value)) {
+                is UpdateCheckResult.UpdateFound -> UpdateCheckState.Available(result.info)
+                is UpdateCheckResult.UpToDate -> UpdateCheckState.UpToDate
+                is UpdateCheckResult.Error -> UpdateCheckState.Error(result.reason)
+            }
         }
     }
 

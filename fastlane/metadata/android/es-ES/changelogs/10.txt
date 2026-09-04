@@ -1,9 +1,4 @@
-* Corregido: importar una receta JSON podía fallar porque el selector de
-  archivos no aceptaba el tipo exacto que reportaba el sistema.
-* Nuevo: la importación ahora versiona el esquema y migra automáticamente
-  archivos exportados con versiones antiguas de la app.
-* Nuevo: modos de visualización de la lista de recetas (Compacta, Normal,
-  Cuadrícula).
-* Nuevo: importar receta directamente desde el menú del libro.
-* Nuevo: selección múltiple en la lista para borrar o exportar varias
-  recetas a la vez.
+* Corregido: el build release fallaba en CI ("Empty schema file") por
+  una condición de carrera entre kspDebugKotlin y kspReleaseKotlin al
+  escribir el JSON de esquema de Room. Se desactiva la exportación de
+  esquema (no se usa: la app no escribe migraciones reales).
