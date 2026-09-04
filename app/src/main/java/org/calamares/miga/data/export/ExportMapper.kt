@@ -8,6 +8,7 @@ import org.calamares.miga.data.model.RecipeDraft
 import org.calamares.miga.data.model.StepGroup
 
 fun Recipe.toExportDto() = RecipeExportDto(
+    version = CURRENT_RECIPE_SCHEMA_VERSION,
     name = name,
     recipeBookName = recipeBookName,
     categoryName = categoryName,
