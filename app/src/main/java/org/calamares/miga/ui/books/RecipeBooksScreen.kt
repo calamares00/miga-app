@@ -87,7 +87,7 @@ fun RecipeBooksScreen(
                     info = info,
                     onDismiss = { viewModel.dismissUpdateBanner() },
                     onOpen = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(info.releaseUrl))
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(info.apkDownloadUrl ?: info.releaseUrl))
                         runCatching { context.startActivity(intent) }
                     }
                 )
@@ -138,7 +138,7 @@ private fun UpdateBanner(info: UpdateInfo, onDismiss: () -> Unit, onOpen: () -> 
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
-            TextButton(onClick = onOpen) { Text("Ver") }
+            TextButton(onClick = onOpen) { Text("Descargar") }
             IconButton(onClick = onDismiss) {
                 Icon(Icons.Filled.Close, contentDescription = "Descartar", tint = MaterialTheme.colorScheme.onPrimaryContainer)
             }
