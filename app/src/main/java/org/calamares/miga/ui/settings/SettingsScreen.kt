@@ -6,16 +6,19 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Fingerprint
@@ -26,11 +29,9 @@ import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenu
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -218,23 +219,26 @@ fun SettingsScreen(
                 )
 
                 val isCustomModel = geminiModel !in GEMINI_MODELS
-                ExposedDropdownMenuBox(
-                    expanded = modelMenuExpanded,
-                    onExpandedChange = { modelMenuExpanded = it }
-                ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = if (isCustomModel) "Personalizado" else geminiModel,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Modelo de Gemini") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelMenuExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    ExposedDropdownMenu(
+                    // Capa transparente encima del campo para abrir el menú al tocar, sin que el
+                    // propio TextField (de solo lectura) capture el toque y muestre el cursor.
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { modelMenuExpanded = true }
+                    )
+                    DropdownMenu(
                         expanded = modelMenuExpanded,
-                        onDismissRequest = { modelMenuExpanded = false }
+                        onDismissRequest = { modelMenuExpanded = false },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         GEMINI_MODELS.forEach { modelId ->
                             DropdownMenuItem(

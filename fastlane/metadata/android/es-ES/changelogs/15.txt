@@ -1,0 +1,1 @@
+Corrige el build: el desplegable de modelo de Gemini usaba una API de Material3 no disponible en esta versión de Compose; ahora usa un menú desplegable estándar.
