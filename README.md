@@ -1,0 +1,77 @@
+# Miga
+
+**Tus recetas. Tus libros. Tu cocina.**
+
+Miga es una app de recetas para Android, minimalista y 100% offline: sin
+cuentas, sin anuncios y sin enviar ningún dato fuera del teléfono.
+
+## Funciones
+
+- **Libros de recetas**: organiza tus recetas en libros independientes (por
+  ejemplo, uno por cada miembro de la familia), cada uno con su propia
+  portada.
+- **Recetas completas**: ingredientes con cantidad y unidad, pasos
+  numerados, foto, utensilios, dificultad, etiquetas y grupos de
+  subreceta (salsas, guarniciones...).
+- **Categorías, búsqueda y filtros** totalmente personalizables.
+- **Modo cocina**: pantalla ampliada paso a paso.
+- **Autocompletado de ingredientes** a partir de lo ya escrito.
+- **Exportación/importación**: receta o libro entero como texto, PDF o
+  JSON, y copia de seguridad completa de la biblioteca.
+- **Bloqueo biométrico** opcional (huella, rostro o PIN del dispositivo).
+- **Tema** claro, oscuro o según el sistema.
+- **Comprobación de actualizaciones** opcional contra las Releases de
+  este repositorio.
+
+## Stack técnico
+
+- Kotlin + [Jetpack Compose](https://developer.android.com/jetpack/compose) (Material 3)
+- [Room](https://developer.android.com/training/data-storage/room) para persistencia local
+- [DataStore Preferences](https://developer.android.com/topic/libraries/architecture/datastore) para ajustes
+- [Navigation Compose](https://developer.android.com/jetpack/compose/navigation)
+- [Coil](https://coil-kt.github.io/coil/) para carga de imágenes
+- `kotlinx.serialization` para exportación/importación en JSON
+- `androidx.biometric` para el bloqueo por huella/rostro
+
+## Compilar en local
+
+```bash
+./gradlew :app:assembleDebug
+```
+
+El APK debug se firma con el keystore `debug.keystore` (versionado a
+propósito en este repo — es el mismo tipo de clave que genera Android
+Studio por defecto, sin datos sensibles) para que las instalaciones se
+puedan actualizar sin desinstalar antes.
+
+## CI/CD
+
+El workflow `.github/workflows/android-build.yml`:
+
+| Evento | Qué hace |
+|---|---|
+| Push a cualquier rama que no sea `main` | Compila un APK **debug** (para probar el cambio) |
+| Pull request hacia `main` | Lint + compilación de comprobación (sin publicar nada) |
+| Push a `main` (tras un merge) | Compila APK **debug** + **release** por arquitectura (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`, universal) + AAB para Play Store, y publica una [Release](../../releases) en GitHub con todo adjunto |
+
+### Firma del build release
+
+El build release se firma con un keystore que **no** vive en el
+repositorio (a diferencia del de debug), sino en 4 secretos de GitHub
+Actions (*Settings → Secrets and variables → Actions*):
+
+- `RELEASE_KEYSTORE_BASE64`
+- `RELEASE_KEYSTORE_PASSWORD`
+- `RELEASE_KEY_ALIAS`
+- `RELEASE_KEY_PASSWORD`
+
+Mientras no existan, el build release sale sin firmar y la Release de
+GitHub se marca como *pre-release*.
+
+## Distribución
+
+- `fastlane/metadata/android/es-ES/` contiene título, descripciones y
+  changelog listos para dar de alta la app en Play Store o F-Droid.
+- Cada Release de GitHub incluye APKs listos para instalar directamente
+  o a través de [Obtainium](https://github.com/ImranR98/Obtainium), y
+  un `.aab` para subir a Play Console.
