@@ -1,0 +1,1 @@
+El aviso de error de "Importar con foto" ahora se puede pulsar para ver el mensaje completo y copiarlo al portapapeles.
