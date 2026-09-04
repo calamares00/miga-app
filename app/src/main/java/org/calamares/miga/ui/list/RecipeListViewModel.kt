@@ -89,12 +89,13 @@ class RecipeListViewModel(
         }
     }
 
-    fun exportSelectedAsJson(context: Context) {
+    fun exportSelected(context: Context) {
         viewModelScope.launch {
             val ids = _selectedIds.value
+            val book = repository.getRecipeBookOnce(bookId)
             val recipes = repository.getRecipesForBookOnce(bookId).filter { it.id in ids }
             if (recipes.isNotEmpty()) {
-                RecipeExporter.shareRecipesAsJson(context, "recetas_seleccionadas", recipes)
+                RecipeExporter.shareRecipes(context, "recetas_seleccionadas", book, recipes)
             }
             _selectedIds.value = emptySet()
         }
@@ -104,7 +105,7 @@ class RecipeListViewModel(
         viewModelScope.launch {
             when (val result = RecipeExporter.importRecipe(context, uri)) {
                 is RecipeImportResult.Success -> {
-                    repository.saveRecipe(result.recipe.toDraft(bookId))
+                    repository.saveRecipe(result.recipe.toDraft(bookId, result.photos))
                     onMessage("Receta importada")
                 }
                 is RecipeImportResult.Error -> onMessage("No se pudo importar: ${result.reason}")
@@ -152,11 +153,11 @@ class RecipeListViewModel(
         viewModelScope.launch { repository.deleteRecipe(id) }
     }
 
-    fun exportBookAsJson(context: Context) {
+    fun exportBook(context: Context) {
         viewModelScope.launch {
             val book = repository.getRecipeBookOnce(bookId) ?: return@launch
             val recipes = repository.getRecipesForBookOnce(bookId)
-            RecipeExporter.shareBookAsJson(context, book, recipes)
+            RecipeExporter.shareBook(context, book, recipes)
         }
     }
 

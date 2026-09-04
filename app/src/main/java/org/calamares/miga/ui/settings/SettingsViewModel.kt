@@ -12,6 +12,7 @@ import org.calamares.miga.data.export.RecipeImportResult
 import org.calamares.miga.data.export.toDraft
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.RecipeBookSummary
+import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.model.UpdateChannel
 import org.calamares.miga.data.remote.UpdateChecker
@@ -76,8 +77,9 @@ class SettingsViewModel(
 
     fun exportLibrary(context: Context, destination: Uri) {
         viewModelScope.launch {
+            val allBooks = repository.getAllRecipeBooksOnce()
             val recipes = repository.getAllRecipesOnce()
-            RecipeExporter.exportLibrary(context, destination, recipes)
+            RecipeExporter.exportLibrary(context, destination, allBooks, recipes)
         }
     }
 
@@ -96,9 +98,9 @@ class SettingsViewModel(
     suspend fun parseRecipeJson(context: Context, source: Uri): RecipeImportResult =
         RecipeExporter.importRecipe(context, source)
 
-    fun importRecipeIntoBook(dto: RecipeExportDto, bookId: Long, onFinished: () -> Unit) {
+    fun importRecipeIntoBook(dto: RecipeExportDto, photos: List<RecipePhoto>, bookId: Long, onFinished: () -> Unit) {
         viewModelScope.launch {
-            repository.saveRecipe(dto.toDraft(bookId))
+            repository.saveRecipe(dto.toDraft(bookId, photos))
             onFinished()
         }
     }

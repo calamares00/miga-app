@@ -2,6 +2,7 @@ package org.calamares.miga.data.model
 
 data class Recipe(
     val id: Long = 0L,
+    val uid: String,
     val recipeBookId: Long,
     val recipeBookName: String,
     val name: String,
