@@ -1,10 +1,10 @@
 package com.bmo00.miga.data.remote
 
+import com.bmo00.miga.data.model.UpdateChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.net.HttpURLConnection
 import java.net.URL
@@ -13,7 +13,7 @@ import java.net.URL
 private data class GithubReleaseDto(
     @SerialName("tag_name") val tagName: String,
     @SerialName("html_url") val htmlUrl: String,
-    val draft: Boolean = false
+    val name: String? = null
 )
 
 data class UpdateInfo(
@@ -21,40 +21,48 @@ data class UpdateInfo(
     val releaseUrl: String
 )
 
-// Se pide la lista de releases (no /releases/latest) porque las releases automáticas de cada
-// commit se publican como pre-release hasta que exista una build "release" firmada de verdad;
-// /releases/latest de GitHub ignora las pre-release, así que dejaría de encontrar nada.
-private const val RELEASES_URL = "https://api.github.com/repos/bmo00/app-miga/releases?per_page=1"
+// Canal estable: la Release más reciente que NO es pre-release (softprops/action-gh-release solo
+// marca así los builds release firmados, tras fusionar a main). Canal beta: una única Release de
+// tag fijo "beta-latest" que el workflow sobrescribe en cada push a una rama de desarrollo.
+private const val STABLE_RELEASE_URL = "https://api.github.com/repos/bmo00/app-miga/releases/latest"
+private const val BETA_RELEASE_URL = "https://api.github.com/repos/bmo00/app-miga/releases/tags/beta-latest"
 private const val TIMEOUT_MILLIS = 8000
 
-/** Comprueba en la GitHub Release más reciente del repositorio si hay una versión más nueva que la actual. */
+// El tag de la beta es fijo ("beta-latest", sin versión), así que la versión real se lee del
+// campo "name" de la Release (que el workflow rellena como "Miga vX.Y.Z (beta · rama · sha)")
+// en vez del tag_name.
+private val VERSION_IN_NAME_REGEX = Regex("""v(\d+(?:\.\d+)+)""")
+
+/** Comprueba en GitHub Releases, en el canal indicado, si hay una versión más nueva que la actual. */
 object UpdateChecker {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun checkForUpdate(currentVersion: String): UpdateInfo? = withContext(Dispatchers.IO) {
-        runCatching {
-            val connection = URL(RELEASES_URL).openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("Accept", "application/vnd.github+json")
-            connection.connectTimeout = TIMEOUT_MILLIS
-            connection.readTimeout = TIMEOUT_MILLIS
-            try {
-                if (connection.responseCode != HttpURLConnection.HTTP_OK) return@runCatching null
-                val body = connection.inputStream.bufferedReader().use { it.readText() }
-                val releases = json.decodeFromString(ListSerializer(GithubReleaseDto.serializer()), body)
-                val release = releases.firstOrNull { !it.draft } ?: return@runCatching null
-                val latestVersion = release.tagName.removePrefix("v")
-                if (isNewerVersion(current = currentVersion, latest = latestVersion)) {
-                    UpdateInfo(latestVersion, release.htmlUrl)
-                } else {
-                    null
+    suspend fun checkForUpdate(currentVersion: String, channel: UpdateChannel): UpdateInfo? =
+        withContext(Dispatchers.IO) {
+            val url = if (channel == UpdateChannel.BETA) BETA_RELEASE_URL else STABLE_RELEASE_URL
+            runCatching {
+                val connection = URL(url).openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.setRequestProperty("Accept", "application/vnd.github+json")
+                connection.connectTimeout = TIMEOUT_MILLIS
+                connection.readTimeout = TIMEOUT_MILLIS
+                try {
+                    if (connection.responseCode != HttpURLConnection.HTTP_OK) return@runCatching null
+                    val body = connection.inputStream.bufferedReader().use { it.readText() }
+                    val release = json.decodeFromString(GithubReleaseDto.serializer(), body)
+                    val latestVersion = VERSION_IN_NAME_REGEX.find(release.name.orEmpty())?.groupValues?.get(1)
+                        ?: release.tagName.removePrefix("v")
+                    if (isNewerVersion(current = currentVersion, latest = latestVersion)) {
+                        UpdateInfo(latestVersion, release.htmlUrl)
+                    } else {
+                        null
+                    }
+                } finally {
+                    connection.disconnect()
                 }
-            } finally {
-                connection.disconnect()
-            }
-        }.getOrNull()
-    }
+            }.getOrNull()
+        }
 
     private fun isNewerVersion(current: String, latest: String): Boolean {
         val currentParts = current.split(".").map { it.toIntOrNull() ?: 0 }

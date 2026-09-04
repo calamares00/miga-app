@@ -41,6 +41,7 @@ jobs:
           # Los nombres de artefacto de GitHub Actions no admiten "/", que sí es válido en un
           # nombre de rama (ej. "setup/initial-import"); se sustituye por "-".
           echo "safe_ref=$(echo '${{ github.ref_name }}' | tr '/' '-')" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -88,6 +89,40 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      # Además del artefacto de la propia ejecución, se publica/actualiza una única Release
+      # "beta-latest" (canal beta del selector de actualizaciones dentro de la app) con el APK
+      # debug más reciente de cualquier rama de desarrollo, para poder probarlo sin entrar a
+      # Actions. El tag es fijo a propósito: cada push la sobrescribe, no se acumulan releases.
+      - name: Normalize debug APK names (canal beta)
+        if: steps.mode.outputs.mode == 'dev_debug'
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p dist
+          for f in app/build/outputs/apk/debug/*.apk; do
+            [ -e "$f" ] || continue
+            base=$(basename "$f")
+            abi="${base#app-}"
+            abi="${abi%-debug.apk}"
+            cp "$f" "dist/miga-v${VERSION}-${abi}-debug.apk"
+          done
+          echo "Ficheros generados:"
+          ls -la dist
+
+      - name: Publish beta-latest Release
+        if: steps.mode.outputs.mode == 'dev_debug'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: beta-latest
+          name: "Miga v${{ steps.version.outputs.version }} (beta · ${{ github.ref_name }} · ${{ steps.mode.outputs.short_sha }})"
+          body: |
+            Build de desarrollo automático, generado desde la rama `${{ github.ref_name }}`
+            (commit ${{ github.sha }}). No es una versión estable: se sobrescribe en cada push
+            a una rama que no es `main`.
+          prerelease: true
+          make_latest: false
+          files: dist/*
 
       # --- push a main: build completo (debug + release por ABI + AAB) y Release en GitHub ---
       # El keystore de release nunca vive en el repo (a diferencia de debug.keystore): se lee de
