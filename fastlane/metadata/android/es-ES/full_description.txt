@@ -1,0 +1,25 @@
+Miga es un cuaderno de recetas digital, minimalista y
+100% offline: no necesita internet, no tiene anuncios y no envía ningún
+dato fuera del teléfono.
+
+Funciones principales:
+
+* Libros de recetas: organiza tus recetas en libros independientes (por
+  ejemplo, uno por cada miembro de la familia), cada uno con su propia
+  portada.
+* Recetas completas: ingredientes con cantidad y unidad, pasos numerados,
+  foto, utensilios, dificultad, etiquetas y grupos de subreceta (para
+  salsas, guarniciones...).
+* Categorías: organiza y filtra las recetas por categoría, totalmente
+  personalizables.
+* Búsqueda y filtros por categoría, etiqueta, utensilio o dificultad.
+* Modo cocina: pantalla ampliada paso a paso, pensada para seguir mientras
+  cocinas.
+* Autocompletado de ingredientes a partir de lo que ya has escrito antes.
+* Exportación e importación: comparte una receta o un libro entero como
+  texto, PDF o JSON, y haz copias de seguridad completas de tu biblioteca.
+* Bloqueo biométrico opcional (huella, rostro o PIN del dispositivo).
+* Tema claro, oscuro o según el sistema.
+
+Sin cuentas, sin publicidad, sin conexión a internet salvo, opcionalmente,
+para comprobar si hay una versión nueva de la propia app.

@@ -1,0 +1,21 @@
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
+/build
+/app/build
+/app/release
+/app/schemas
+.cxx/
+captures/
+.externalNativeBuild/
+*.apk
+*.aab
+/dist
+
+# Keystores de release nunca se suben al repo (a diferencia de debug.keystore, que sí es fijo
+# y público a propósito). Ver README para cómo se firma el build release en CI.
+*.jks
+release.keystore
+!debug.keystore
