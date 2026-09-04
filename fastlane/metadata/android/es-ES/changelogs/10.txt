@@ -1,0 +1,4 @@
+* Corregido: el build release fallaba en CI ("Empty schema file") por
+  una condición de carrera entre kspDebugKotlin y kspReleaseKotlin al
+  escribir el JSON de esquema de Room. Se desactiva la exportación de
+  esquema (no se usa: la app no escribe migraciones reales).
