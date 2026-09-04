@@ -8,6 +8,7 @@ import org.calamares.miga.BuildConfig
 import org.calamares.miga.data.export.RecipeExporter
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.ThemeMode
+import org.calamares.miga.data.model.UpdateChannel
 import org.calamares.miga.data.remote.UpdateChecker
 import org.calamares.miga.data.remote.UpdateInfo
 import org.calamares.miga.data.repository.RecipeRepository
@@ -50,13 +51,20 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setAutoCheckUpdatesEnabled(enabled) }
     }
 
+    val updateChannel: StateFlow<UpdateChannel> = settingsRepository.observeUpdateChannel()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UpdateChannel.STABLE)
+
+    fun setUpdateChannel(channel: UpdateChannel) {
+        viewModelScope.launch { settingsRepository.setUpdateChannel(channel) }
+    }
+
     private val _updateCheckState = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
     val updateCheckState: StateFlow<UpdateCheckState> = _updateCheckState
 
     fun checkForUpdatesNow() {
         viewModelScope.launch {
             _updateCheckState.value = UpdateCheckState.Checking
-            val info = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME)
+            val info = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, updateChannel.value)
             _updateCheckState.value = if (info != null) UpdateCheckState.Available(info) else UpdateCheckState.UpToDate
         }
     }
