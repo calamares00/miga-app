@@ -17,8 +17,10 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -26,6 +28,8 @@ import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.filled.ViewAgenda
@@ -61,6 +65,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.bmo00.miga.data.local.PhotoStorage
 import com.bmo00.miga.data.model.RecipeListViewMode
 import com.bmo00.miga.data.model.RecipeSummary
 import com.bmo00.miga.ui.common.BACKUP_MIME_TYPES
@@ -76,7 +81,8 @@ fun RecipeListScreen(
     onBack: () -> Unit,
     onRecipeClick: (Long) -> Unit,
     onEditRecipeClick: (Long) -> Unit,
-    onAddRecipeClick: () -> Unit
+    onAddRecipeClick: () -> Unit,
+    onAddRecipeFromPhoto: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
@@ -88,7 +94,10 @@ fun RecipeListScreen(
     var showViewModeMenu by remember { mutableStateOf(false) }
     var recipeToDelete by remember { mutableStateOf<RecipeSummary?>(null) }
     var showDeleteSelectedConfirm by remember { mutableStateOf(false) }
+    var showPhotoSourceSheet by remember { mutableStateOf(false) }
+    var pendingCameraPath by remember { mutableStateOf<String?>(null) }
     val sheetState = rememberModalBottomSheetState()
+    val photoSheetState = rememberModalBottomSheetState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -99,6 +108,13 @@ fun RecipeListScreen(
                 scope.launch { snackbarHostState.showSnackbar(message) }
             }
         }
+    }
+    val cameraCaptureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) pendingCameraPath?.let { onAddRecipeFromPhoto(it) }
+        pendingCameraPath = null
+    }
+    val galleryPickerForPhotoImport = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) onAddRecipeFromPhoto(uri.toString())
     }
 
     Scaffold(
@@ -148,6 +164,11 @@ fun RecipeListScreen(
                                 text = { Text("Importar receta") },
                                 leadingIcon = { Icon(Icons.Filled.UploadFile, null) },
                                 onClick = { showMenu = false; importRecipeLauncher.launch(BACKUP_MIME_TYPES) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Añadir con foto") },
+                                leadingIcon = { Icon(Icons.Filled.AddAPhoto, null) },
+                                onClick = { showMenu = false; showPhotoSourceSheet = true }
                             )
                             DropdownMenuItem(
                                 text = { Text("Exportar este libro") },
@@ -281,6 +302,46 @@ fun RecipeListScreen(
                     showFilters = false
                 }
             )
+        }
+    }
+
+    if (showPhotoSourceSheet) {
+        ModalBottomSheet(onDismissRequest = { showPhotoSourceSheet = false }, sheetState = photoSheetState) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text(
+                    "Añadir receta con foto",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            showPhotoSourceSheet = false
+                            val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
+                            pendingCameraPath = filePath
+                            cameraCaptureLauncher.launch(contentUri)
+                        }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.PhotoCamera, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Hacer foto", modifier = Modifier.padding(start = 16.dp))
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            showPhotoSourceSheet = false
+                            galleryPickerForPhotoImport.launch("image/*")
+                        }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.PhotoLibrary, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Elegir de galería", modifier = Modifier.padding(start = 16.dp))
+                }
+            }
         }
     }
 

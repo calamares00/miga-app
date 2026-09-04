@@ -93,7 +93,8 @@ fun RecetarioNavHost() {
                 onBack = { navController.popBackStack() },
                 onRecipeClick = { navController.navigate(Destinations.detail(it)) },
                 onEditRecipeClick = { navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = it)) },
-                onAddRecipeClick = { navController.navigate(Destinations.editor(bookId = bookId)) }
+                onAddRecipeClick = { navController.navigate(Destinations.editor(bookId = bookId)) },
+                onAddRecipeFromPhoto = { photoUri -> navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUri = photoUri)) }
             )
         }
 
@@ -123,17 +124,24 @@ fun RecetarioNavHost() {
                 navArgument(Destinations.ARG_BOOK_ID) {
                     type = NavType.LongType
                     defaultValue = Destinations.NEW_BOOK_ID
+                },
+                navArgument(Destinations.ARG_SOURCE_PHOTO_URI) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
             val recipeId = backStackEntry.arguments?.getLong(Destinations.ARG_RECIPE_ID) ?: Destinations.NEW_RECIPE_ID
             val bookId = backStackEntry.arguments?.getLong(Destinations.ARG_BOOK_ID) ?: Destinations.NEW_BOOK_ID
+            val sourcePhotoUri = backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_PHOTO_URI)
             val viewModel: RecipeEditorViewModel = viewModel(
                 key = "editor_${recipeId}_$bookId",
-                factory = viewModelFactory { initializer { RecipeEditorViewModel(repository, recipeId, bookId) } }
+                factory = viewModelFactory { initializer { RecipeEditorViewModel(repository, settingsRepository, recipeId, bookId) } }
             )
             RecipeEditorScreen(
                 viewModel = viewModel,
+                sourcePhotoUri = sourcePhotoUri,
                 onSaved = { savedId ->
                     navController.popBackStack()
                     if (recipeId == Destinations.NEW_RECIPE_ID) {

@@ -50,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.bmo00.miga.BuildConfig
@@ -79,6 +80,7 @@ fun SettingsScreen(
     val updateChannel by viewModel.updateChannel.collectAsState()
     val updateCheckState by viewModel.updateCheckState.collectAsState()
     val books by viewModel.books.collectAsState()
+    val geminiApiKey by viewModel.geminiApiKey.collectAsState()
     val context = LocalContext.current
     val activity = context as? FragmentActivity
     val scope = rememberCoroutineScope()
@@ -185,6 +187,27 @@ fun SettingsScreen(
                 OutlinedButton(onClick = { importRecipeLauncher.launch(BACKUP_MIME_TYPES) }, modifier = Modifier.fillMaxWidth()) {
                     Text("Importar receta")
                 }
+            }
+
+            HorizontalDivider()
+
+            SettingsSection(title = "Importar con IA (beta)") {
+                Text(
+                    "Reconoce el texto de una foto de una receta (libro, revista, escrita a mano) " +
+                        "usando Google Gemini. La foto se envía a Google para procesarla; no se " +
+                        "guarda ninguna copia salvo la que decidas añadir tú a la receta.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = geminiApiKey,
+                    onValueChange = { viewModel.setGeminiApiKey(it) },
+                    label = { Text("API key de Gemini") },
+                    placeholder = { Text("Consíguela gratis en aistudio.google.com") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             HorizontalDivider()

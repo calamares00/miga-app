@@ -8,6 +8,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.bmo00.miga.data.model.RecipeListViewMode
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
+import com.bmo00.miga.data.vision.VisionProviderType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -20,6 +21,8 @@ class SettingsRepository(private val context: Context) {
     private val autoCheckUpdatesKey = booleanPreferencesKey("auto_check_updates_enabled")
     private val updateChannelKey = stringPreferencesKey("update_channel")
     private val recipeListViewModeKey = stringPreferencesKey("recipe_list_view_mode")
+    private val visionProviderKey = stringPreferencesKey("vision_provider")
+    private val geminiApiKeyKey = stringPreferencesKey("gemini_api_key")
 
     fun observeThemeMode(): Flow<ThemeMode> =
         context.settingsDataStore.data.map { prefs ->
@@ -68,5 +71,25 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setRecipeListViewMode(mode: RecipeListViewMode) {
         context.settingsDataStore.edit { prefs -> prefs[recipeListViewModeKey] = mode.name }
+    }
+
+    /** Proveedor de LLM usado para reconocer recetas a partir de una foto (ver `data/vision`). */
+    fun observeVisionProvider(): Flow<VisionProviderType> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[visionProviderKey]?.let { stored ->
+                runCatching { VisionProviderType.valueOf(stored) }.getOrDefault(VisionProviderType.GEMINI)
+            } ?: VisionProviderType.GEMINI
+        }
+
+    suspend fun setVisionProvider(provider: VisionProviderType) {
+        context.settingsDataStore.edit { prefs -> prefs[visionProviderKey] = provider.name }
+    }
+
+    /** API key de Gemini introducida por el propio usuario (BYOK); vacía si no se ha configurado. */
+    fun observeGeminiApiKey(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[geminiApiKeyKey].orEmpty() }
+
+    suspend fun setGeminiApiKey(apiKey: String) {
+        context.settingsDataStore.edit { prefs -> prefs[geminiApiKeyKey] = apiKey.trim() }
     }
 }

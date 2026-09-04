@@ -3,6 +3,16 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Necesario en Android 11+ (restricciones de visibilidad de paquetes) para que el intent
+         implícito de ActivityResultContracts.TakePicture() encuentre la app de cámara del
+         sistema al añadir una receta con foto. No se declara el permiso CAMERA: la propia app
+         de cámara es la que accede al hardware, esta app solo recibe el archivo resultante. -->
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+    </queries>
+
     <application
         android:name=".RecetarioApp"
         android:allowBackup="true"

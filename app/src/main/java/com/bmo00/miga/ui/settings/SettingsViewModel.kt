@@ -100,6 +100,13 @@ class SettingsViewModel(
     val books: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val geminiApiKey: StateFlow<String> = settingsRepository.observeGeminiApiKey()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    fun setGeminiApiKey(apiKey: String) {
+        viewModelScope.launch { settingsRepository.setGeminiApiKey(apiKey) }
+    }
+
     suspend fun parseRecipeJson(context: Context, source: Uri): RecipeImportResult =
         RecipeExporter.importRecipe(context, source)
 

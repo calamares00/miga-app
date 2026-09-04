@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.editor
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -41,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +62,7 @@ import com.bmo00.miga.data.model.Difficulty
 @Composable
 fun RecipeEditorScreen(
     viewModel: RecipeEditorViewModel,
+    sourcePhotoUri: String? = null,
     onSaved: (Long) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -67,6 +70,12 @@ fun RecipeEditorScreen(
     val availableCategories by viewModel.availableCategories.collectAsState()
     val availableTags by viewModel.availableTags.collectAsState()
     val availableUtensils by viewModel.availableUtensils.collectAsState()
+    val visionState by viewModel.visionState.collectAsState()
+    var visionErrorDismissed by remember { mutableStateOf(false) }
+
+    LaunchedEffect(sourcePhotoUri) {
+        sourcePhotoUri?.let { viewModel.startVisionExtraction(context, Uri.parse(it)) }
+    }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -98,14 +107,28 @@ fun RecipeEditorScreen(
             return@Scaffold
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+            if (visionState is VisionState.Error && !visionErrorDismissed) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "No se pudo leer la foto con IA: ${(visionState as VisionState.Error).reason}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = { visionErrorDismissed = true }) {
+                        Icon(Icons.Filled.Close, contentDescription = "Cerrar aviso")
+                    }
+                }
+            }
+
             PhotosRow(viewModel = viewModel, onAddPhoto = { photoPicker.launch("image/*") })
 
             OutlinedTextField(
@@ -200,6 +223,26 @@ fun RecipeEditorScreen(
             }
 
             Spacer(modifier = Modifier.height(60.dp))
+        }
+
+        if (visionState is VisionState.Loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Text(
+                        "Leyendo la foto con IA...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(top = 12.dp)
+                    )
+                }
+            }
+        }
         }
     }
 }
