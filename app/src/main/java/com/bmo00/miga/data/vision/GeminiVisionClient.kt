@@ -10,11 +10,11 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Base64
 
-// Modelo rápido con visión del nivel gratuito de Gemini. Los nombres de modelo de Google cambian
-// con el tiempo; si esta llamada empieza a fallar con 404, comprobar el modelo vigente en
-// https://ai.google.dev/gemini-api/docs/models y actualizar esta constante.
-private const val GEMINI_MODEL = "gemini-2.0-flash"
-private const val GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/$GEMINI_MODEL:generateContent"
+// El modelo ya no es fijo: lo elige el usuario en Ajustes (ver GeminiModels.kt) porque Google
+// renueva este catálogo con el tiempo y un id fijo en el código se queda obsoleto (como le pasó
+// a "gemini-2.0-flash"). Si una llamada empieza a fallar con 404, es que el modelo elegido ya
+// no existe; comprobar el vigente en https://ai.google.dev/gemini-api/docs/models.
+private const val GEMINI_ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 private const val TIMEOUT_MILLIS = 30000
 
 private const val EXTRACTION_PROMPT = """
@@ -45,7 +45,7 @@ object GeminiVisionClient : RecipeVisionClient {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    override suspend fun extractRecipe(imageBytes: ByteArray, mimeType: String, apiKey: String): RecipeVisionResult =
+    override suspend fun extractRecipe(imageBytes: ByteArray, mimeType: String, apiKey: String, model: String): RecipeVisionResult =
         withContext(Dispatchers.IO) {
             try {
                 val requestBody = json.encodeToString(
@@ -62,7 +62,8 @@ object GeminiVisionClient : RecipeVisionClient {
                         generationConfig = GeminiGenerationConfig()
                     )
                 )
-                val connection = URL("$GEMINI_ENDPOINT?key=$apiKey").openConnection() as HttpURLConnection
+                val endpoint = "$GEMINI_ENDPOINT_BASE/$model:generateContent"
+                val connection = URL("$endpoint?key=$apiKey").openConnection() as HttpURLConnection
                 connection.requestMethod = "POST"
                 connection.doOutput = true
                 connection.setRequestProperty("Content-Type", "application/json")

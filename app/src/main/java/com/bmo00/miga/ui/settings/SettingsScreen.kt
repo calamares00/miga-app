@@ -26,7 +26,11 @@ import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,6 +64,7 @@ import com.bmo00.miga.data.export.RecipeImportResult
 import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
+import com.bmo00.miga.data.vision.GEMINI_MODELS
 import com.bmo00.miga.ui.common.BACKUP_MIME_TYPES
 import com.bmo00.miga.ui.security.BiometricAuthenticator
 import kotlinx.coroutines.launch
@@ -82,6 +87,8 @@ fun SettingsScreen(
     val updateCheckState by viewModel.updateCheckState.collectAsState()
     val books by viewModel.books.collectAsState()
     val geminiApiKey by viewModel.geminiApiKey.collectAsState()
+    val geminiModel by viewModel.geminiModel.collectAsState()
+    var modelMenuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val activity = context as? FragmentActivity
     val scope = rememberCoroutineScope()
@@ -209,6 +216,54 @@ fun SettingsScreen(
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                val isCustomModel = geminiModel !in GEMINI_MODELS
+                ExposedDropdownMenuBox(
+                    expanded = modelMenuExpanded,
+                    onExpandedChange = { modelMenuExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = if (isCustomModel) "Personalizado" else geminiModel,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Modelo de Gemini") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelMenuExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = modelMenuExpanded,
+                        onDismissRequest = { modelMenuExpanded = false }
+                    ) {
+                        GEMINI_MODELS.forEach { modelId ->
+                            DropdownMenuItem(
+                                text = { Text(modelId) },
+                                onClick = {
+                                    viewModel.setGeminiModel(modelId)
+                                    modelMenuExpanded = false
+                                }
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text("Personalizado…") },
+                            onClick = {
+                                viewModel.setGeminiModel("")
+                                modelMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+                if (isCustomModel) {
+                    OutlinedTextField(
+                        value = geminiModel,
+                        onValueChange = { viewModel.setGeminiModel(it) },
+                        label = { Text("Id del modelo") },
+                        placeholder = { Text("p. ej. gemini-3.6-flash") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             HorizontalDivider()
