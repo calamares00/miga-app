@@ -1,0 +1,3 @@
+* Nuevo: selector de canal de actualizaciones en Ajustes (Estable/Beta),
+  para poder probar builds de desarrollo antes de que lleguen a la
+  versión estable.
