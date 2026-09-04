@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Libro abierto: dos páginas geométricas que se encuentran en un lomo central -->
+    <path
+        android:fillColor="@color/launcher_icon_foreground"
+        android:pathData="M53,34 L20,42 L20,76 L53,82 Z" />
+    <path
+        android:fillColor="@color/launcher_icon_foreground"
+        android:pathData="M55,34 L88,42 L88,76 L55,82 Z" />
+    <!-- Marcapáginas -->
+    <path
+        android:fillColor="@color/launcher_icon_accent"
+        android:pathData="M50,20 L58,20 L58,38 L54,33 L50,38 Z" />
+</vector>

@@ -1,0 +1,3 @@
+* Corregido: el AAB de Play Store ya no se nombraba como firmado
+  cuando en realidad no lo estaba (afectaba solo al nombre del
+  fichero, no a las APK).

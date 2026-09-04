@@ -1,0 +1,9 @@
+* Nuevo: comprobación de actualizaciones (interruptor + botón "Buscar
+  actualizaciones" en Ajustes, con aviso al abrir la app si hay una
+  versión nueva).
+* Preparados builds "release" firmados y APK por arquitectura
+  (arm64-v8a, armeabi-v7a, x86, x86_64) además del universal, listos
+  para Play Store y distribución directa (F-Droid, Obtainium...).
+* Corregido: los APK debug ahora se firman siempre con la misma clave,
+  así que las actualizaciones ya no piden desinstalar la versión
+  anterior.
