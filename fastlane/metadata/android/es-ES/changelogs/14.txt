@@ -1,0 +1,1 @@
+Corrige "Importar con foto": el modelo de Gemini usado ya no existía. Ahora puedes elegir el modelo desde Ajustes en un desplegable (o escribir uno personalizado) para que un futuro cambio de catálogo no vuelva a romper la función.

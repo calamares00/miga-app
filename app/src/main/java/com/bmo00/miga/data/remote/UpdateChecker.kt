@@ -1,5 +1,7 @@
 package com.bmo00.miga.data.remote
 
+import android.os.Build
+import com.bmo00.miga.BuildConfig
 import com.bmo00.miga.data.model.UpdateChannel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -11,15 +13,24 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 @Serializable
+private data class GithubAssetDto(
+    val name: String,
+    @SerialName("browser_download_url") val browserDownloadUrl: String
+)
+
+@Serializable
 private data class GithubReleaseDto(
     @SerialName("tag_name") val tagName: String,
     @SerialName("html_url") val htmlUrl: String,
-    val name: String? = null
+    val name: String? = null,
+    val assets: List<GithubAssetDto> = emptyList()
 )
 
 data class UpdateInfo(
     val latestVersion: String,
-    val releaseUrl: String
+    val releaseUrl: String,
+    /** Descarga directa del APK para esta arquitectura/tipo de build; null si no hay uno que encaje. */
+    val apkDownloadUrl: String? = null
 )
 
 sealed interface UpdateCheckResult {
@@ -66,7 +77,8 @@ object UpdateChecker {
                     val latestVersion = VERSION_IN_NAME_REGEX.find(release.name.orEmpty())?.groupValues?.get(1)
                         ?: release.tagName.removePrefix("v")
                     if (isNewerVersion(current = currentVersion, latest = latestVersion)) {
-                        UpdateCheckResult.UpdateFound(UpdateInfo(latestVersion, release.htmlUrl))
+                        val apkDownloadUrl = findApkDownloadUrl(release.assets, latestVersion)
+                        UpdateCheckResult.UpdateFound(UpdateInfo(latestVersion, release.htmlUrl, apkDownloadUrl))
                     } else {
                         UpdateCheckResult.UpToDate
                     }
@@ -79,6 +91,29 @@ object UpdateChecker {
                 UpdateCheckResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
             }
         }
+
+    // El workflow sube un asset por ABI con el patrón "<slug>-v<version>-<abi>-<buildType>.apk"
+    // (y "-universal-<buildType>.apk"); los assets sin firmar añaden un sufijo "-unsigned" que
+    // este endsWith ya excluye. Ver .github/workflows/android-build.yml (función rename_apks).
+    //
+    // El tag "beta-latest" es una única Release que el workflow sobrescribe en cada push, pero
+    // softprops/action-gh-release NO borra los assets de versiones anteriores cuyo nombre difiere
+    // del actual (el nombre incluye la versión, así que cambia en cada push) — se van acumulando
+    // APKs de versiones viejas en esa misma Release. Por eso hace falta filtrar también por
+    // "-v$version-" y no solo por ABI/tipo de build, o se puede acabar cogiendo con firstOrNull()
+    // el asset más antiguo que matchee el sufijo en vez del de la versión que se acaba de detectar.
+    private fun findApkDownloadUrl(assets: List<GithubAssetDto>, version: String): String? {
+        val buildType = if (BuildConfig.DEBUG) "debug" else "release"
+        val abi = Build.SUPPORTED_ABIS.firstOrNull()
+        val versionMarker = "-v$version-"
+        val exactMatch = abi?.let { a ->
+            assets.firstOrNull { it.name.contains(versionMarker) && it.name.endsWith("-$a-$buildType.apk") }
+        }
+        val universalMatch = assets.firstOrNull {
+            it.name.contains(versionMarker) && it.name.endsWith("-universal-$buildType.apk")
+        }
+        return (exactMatch ?: universalMatch)?.browserDownloadUrl
+    }
 
     private fun isNewerVersion(current: String, latest: String): Boolean {
         val currentParts = current.split(".").map { it.toIntOrNull() ?: 0 }

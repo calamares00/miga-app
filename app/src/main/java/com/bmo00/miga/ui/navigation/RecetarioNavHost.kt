@@ -22,6 +22,7 @@ import com.bmo00.miga.ui.editor.RecipeEditorScreen
 import com.bmo00.miga.ui.editor.RecipeEditorViewModel
 import com.bmo00.miga.ui.list.RecipeListScreen
 import com.bmo00.miga.ui.list.RecipeListViewModel
+import com.bmo00.miga.ui.settings.AboutScreen
 import com.bmo00.miga.ui.settings.HelpScreen
 import com.bmo00.miga.ui.settings.ManageCategoriesScreen
 import com.bmo00.miga.ui.settings.ManageCategoriesViewModel
@@ -93,7 +94,8 @@ fun RecetarioNavHost() {
                 onBack = { navController.popBackStack() },
                 onRecipeClick = { navController.navigate(Destinations.detail(it)) },
                 onEditRecipeClick = { navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = it)) },
-                onAddRecipeClick = { navController.navigate(Destinations.editor(bookId = bookId)) }
+                onAddRecipeClick = { navController.navigate(Destinations.editor(bookId = bookId)) },
+                onAddRecipeFromPhoto = { photoUri -> navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUri = photoUri)) }
             )
         }
 
@@ -123,17 +125,24 @@ fun RecetarioNavHost() {
                 navArgument(Destinations.ARG_BOOK_ID) {
                     type = NavType.LongType
                     defaultValue = Destinations.NEW_BOOK_ID
+                },
+                navArgument(Destinations.ARG_SOURCE_PHOTO_URI) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
             val recipeId = backStackEntry.arguments?.getLong(Destinations.ARG_RECIPE_ID) ?: Destinations.NEW_RECIPE_ID
             val bookId = backStackEntry.arguments?.getLong(Destinations.ARG_BOOK_ID) ?: Destinations.NEW_BOOK_ID
+            val sourcePhotoUri = backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_PHOTO_URI)
             val viewModel: RecipeEditorViewModel = viewModel(
                 key = "editor_${recipeId}_$bookId",
-                factory = viewModelFactory { initializer { RecipeEditorViewModel(repository, recipeId, bookId) } }
+                factory = viewModelFactory { initializer { RecipeEditorViewModel(repository, settingsRepository, recipeId, bookId) } }
             )
             RecipeEditorScreen(
                 viewModel = viewModel,
+                sourcePhotoUri = sourcePhotoUri,
                 onSaved = { savedId ->
                     navController.popBackStack()
                     if (recipeId == Destinations.NEW_RECIPE_ID) {
@@ -157,12 +166,17 @@ fun RecetarioNavHost() {
                 onManageUtensils = { navController.navigate(Destinations.MANAGE_UTENSILS_ROUTE) },
                 onManageIngredients = { navController.navigate(Destinations.MANAGE_INGREDIENTS_ROUTE) },
                 onManageIngredientCategories = { navController.navigate(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) },
-                onHelp = { navController.navigate(Destinations.HELP_ROUTE) }
+                onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
+                onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) }
             )
         }
 
         composable(Destinations.HELP_ROUTE) {
             HelpScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Destinations.ABOUT_ROUTE) {
+            AboutScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Destinations.MANAGE_CATEGORIES_ROUTE) {

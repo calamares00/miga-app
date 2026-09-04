@@ -84,6 +84,13 @@ fun HelpScreen(onBack: () -> Unit) {
                     "exportarlo entero. Y desde Ajustes puedes hacer o restaurar una copia de seguridad completa."
             )
             HelpSection(
+                title = "Añadir receta con foto (beta)",
+                body = "Desde el menú de un libro, \"Añadir con foto\" reconoce el texto de una foto (cámara o " +
+                    "galería) con Google Gemini y precarga el editor para que solo tengas que revisarlo antes de " +
+                    "guardar. Necesita conexión a internet y tu propia API key gratuita de Gemini, configurable " +
+                    "en Ajustes → Importar con IA; sin ella no se envía ninguna foto a ningún sitio."
+            )
+            HelpSection(
                 title = "Bloqueo biométrico",
                 body = "Actívalo en Ajustes → Seguridad para que la app pida tu huella, rostro o PIN cada vez " +
                     "que la abras."

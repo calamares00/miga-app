@@ -2,6 +2,7 @@ package com.bmo00.miga.data.local
 
 import android.content.Context
 import android.net.Uri
+import androidx.core.content.FileProvider
 import java.io.File
 import java.util.UUID
 
@@ -31,5 +32,17 @@ object PhotoStorage {
         } catch (e: Exception) {
             null
         }
+    }
+
+    /**
+     * Crea un fichero vacío en el almacenamiento interno para que la app de cámara del sistema
+     * escriba la foto ahí. Devuelve el `content://` (vía FileProvider, necesario para pasárselo a
+     * la cámara) y el `file://` con el que luego se referencia la foto igual que cualquier otra.
+     */
+    fun createCaptureTarget(context: Context): Pair<Uri, String> {
+        val dir = File(context.filesDir, "photos").apply { mkdirs() }
+        val destination = File(dir, "${UUID.randomUUID()}.jpg")
+        val contentUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", destination)
+        return contentUri to "file://${destination.absolutePath}"
     }
 }

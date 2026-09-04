@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.editor
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -14,12 +15,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -27,6 +30,8 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,7 +56,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.local.PhotoStorage
@@ -60,6 +69,7 @@ import com.bmo00.miga.data.model.Difficulty
 @Composable
 fun RecipeEditorScreen(
     viewModel: RecipeEditorViewModel,
+    sourcePhotoUri: String? = null,
     onSaved: (Long) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -67,6 +77,14 @@ fun RecipeEditorScreen(
     val availableCategories by viewModel.availableCategories.collectAsState()
     val availableTags by viewModel.availableTags.collectAsState()
     val availableUtensils by viewModel.availableUtensils.collectAsState()
+    val visionState by viewModel.visionState.collectAsState()
+    var visionErrorDismissed by remember { mutableStateOf(false) }
+    var showVisionErrorDialog by remember { mutableStateOf(false) }
+    val clipboardManager = LocalClipboardManager.current
+
+    LaunchedEffect(sourcePhotoUri) {
+        sourcePhotoUri?.let { viewModel.startVisionExtraction(context, Uri.parse(it)) }
+    }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -98,14 +116,32 @@ fun RecipeEditorScreen(
             return@Scaffold
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+            if (visionState is VisionState.Error && !visionErrorDismissed) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "No se pudo leer la foto con IA: ${(visionState as VisionState.Error).reason}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { showVisionErrorDialog = true }
+                    )
+                    IconButton(onClick = { visionErrorDismissed = true }) {
+                        Icon(Icons.Filled.Close, contentDescription = "Cerrar aviso")
+                    }
+                }
+            }
+
             PhotosRow(viewModel = viewModel, onAddPhoto = { photoPicker.launch("image/*") })
 
             OutlinedTextField(
@@ -201,6 +237,63 @@ fun RecipeEditorScreen(
 
             Spacer(modifier = Modifier.height(60.dp))
         }
+
+        if (visionState is VisionState.Loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(32.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp),
+                            strokeWidth = 4.dp
+                        )
+                        Text(
+                            "Leyendo la foto con IA...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(top = 16.dp)
+                        )
+                    }
+                }
+            }
+        }
+        }
+    }
+
+    if (showVisionErrorDialog && visionState is VisionState.Error) {
+        val reason = (visionState as VisionState.Error).reason
+        AlertDialog(
+            onDismissRequest = { showVisionErrorDialog = false },
+            title = { Text("Detalle del error") },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 480.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    SelectionContainer {
+                        Text(reason, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { clipboardManager.setText(AnnotatedString(reason)) }) { Text("Copiar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showVisionErrorDialog = false }) { Text("Cerrar") }
+            }
+        )
     }
 }
 

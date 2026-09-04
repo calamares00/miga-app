@@ -19,6 +19,7 @@ import com.bmo00.miga.data.remote.UpdateCheckResult
 import com.bmo00.miga.data.remote.UpdateChecker
 import com.bmo00.miga.data.remote.UpdateInfo
 import com.bmo00.miga.data.repository.RecipeRepository
+import com.bmo00.miga.data.vision.DEFAULT_GEMINI_MODEL
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -99,6 +100,20 @@ class SettingsViewModel(
 
     val books: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val geminiApiKey: StateFlow<String> = settingsRepository.observeGeminiApiKey()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    fun setGeminiApiKey(apiKey: String) {
+        viewModelScope.launch { settingsRepository.setGeminiApiKey(apiKey) }
+    }
+
+    val geminiModel: StateFlow<String> = settingsRepository.observeGeminiModel()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_GEMINI_MODEL)
+
+    fun setGeminiModel(model: String) {
+        viewModelScope.launch { settingsRepository.setGeminiModel(model) }
+    }
 
     suspend fun parseRecipeJson(context: Context, source: Uri): RecipeImportResult =
         RecipeExporter.importRecipe(context, source)

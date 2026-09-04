@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,22 +17,27 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -50,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.bmo00.miga.BuildConfig
@@ -58,6 +65,7 @@ import com.bmo00.miga.data.export.RecipeImportResult
 import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
+import com.bmo00.miga.data.vision.GEMINI_MODELS
 import com.bmo00.miga.ui.common.BACKUP_MIME_TYPES
 import com.bmo00.miga.ui.security.BiometricAuthenticator
 import kotlinx.coroutines.launch
@@ -71,7 +79,8 @@ fun SettingsScreen(
     onManageUtensils: () -> Unit,
     onManageIngredients: () -> Unit,
     onManageIngredientCategories: () -> Unit,
-    onHelp: () -> Unit
+    onHelp: () -> Unit,
+    onAbout: () -> Unit
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
@@ -79,6 +88,9 @@ fun SettingsScreen(
     val updateChannel by viewModel.updateChannel.collectAsState()
     val updateCheckState by viewModel.updateCheckState.collectAsState()
     val books by viewModel.books.collectAsState()
+    val geminiApiKey by viewModel.geminiApiKey.collectAsState()
+    val geminiModel by viewModel.geminiModel.collectAsState()
+    var modelMenuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val activity = context as? FragmentActivity
     val scope = rememberCoroutineScope()
@@ -189,6 +201,78 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
+            SettingsSection(title = "Importar con IA (beta)") {
+                Text(
+                    "Reconoce el texto de una foto de una receta (libro, revista, escrita a mano) " +
+                        "usando Google Gemini. La foto se envía a Google para procesarla; no se " +
+                        "guarda ninguna copia salvo la que decidas añadir tú a la receta.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = geminiApiKey,
+                    onValueChange = { viewModel.setGeminiApiKey(it) },
+                    label = { Text("API key de Gemini") },
+                    placeholder = { Text("Consíguela gratis en aistudio.google.com") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                val isCustomModel = geminiModel !in GEMINI_MODELS
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = if (isCustomModel) "Personalizado" else geminiModel,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Modelo de Gemini") },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    // Capa transparente encima del campo para abrir el menú al tocar, sin que el
+                    // propio TextField (de solo lectura) capture el toque y muestre el cursor.
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { modelMenuExpanded = true }
+                    )
+                    DropdownMenu(
+                        expanded = modelMenuExpanded,
+                        onDismissRequest = { modelMenuExpanded = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        GEMINI_MODELS.forEach { modelId ->
+                            DropdownMenuItem(
+                                text = { Text(modelId) },
+                                onClick = {
+                                    viewModel.setGeminiModel(modelId)
+                                    modelMenuExpanded = false
+                                }
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text("Personalizado…") },
+                            onClick = {
+                                viewModel.setGeminiModel("")
+                                modelMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+                if (isCustomModel) {
+                    OutlinedTextField(
+                        value = geminiModel,
+                        onValueChange = { viewModel.setGeminiModel(it) },
+                        label = { Text("Id del modelo") },
+                        placeholder = { Text("p. ej. gemini-3.6-flash") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            HorizontalDivider()
+
             SettingsSection(title = "Actualizaciones") {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.SystemUpdate, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -251,7 +335,7 @@ fun SettingsScreen(
                                 modifier = Modifier.weight(1f)
                             )
                             TextButton(onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(state.info.releaseUrl))
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(state.info.apkDownloadUrl ?: state.info.releaseUrl))
                                 runCatching { context.startActivity(intent) }
                             }) { Text("Descargar") }
                         }
@@ -280,6 +364,7 @@ fun SettingsScreen(
 
             SettingsSection(title = "Ayuda") {
                 ManageRow(icon = Icons.Filled.HelpOutline, label = "Ayuda y soporte", onClick = onHelp)
+                ManageRow(icon = Icons.Filled.Info, label = "Acerca de", onClick = onAbout)
             }
         }
     }

@@ -1,0 +1,1 @@
+Corrige el diálogo de detalle del error de "Importar con foto": no se podía hacer scroll para ver el mensaje completo porque el selector de texto capturaba el gesto.

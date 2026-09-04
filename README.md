@@ -2,8 +2,10 @@
 
 **Tus recetas. Tus libros. Tu cocina.**
 
-Miga es una app de recetas para Android, minimalista y 100% offline: sin
-cuentas, sin anuncios y sin enviar ningún dato fuera del teléfono.
+Miga es una app de recetas para Android, minimalista, sin cuentas y sin
+anuncios. Funciona sin conexión: no necesita internet ni envía nada fuera
+del teléfono, salvo si activas voluntariamente alguna función opcional que
+sí la requiere (comprobar actualizaciones, añadir receta con foto vía IA).
 
 ## Funciones
 
@@ -17,7 +19,11 @@ cuentas, sin anuncios y sin enviar ningún dato fuera del teléfono.
 - **Modo cocina**: pantalla ampliada paso a paso.
 - **Autocompletado de ingredientes** a partir de lo ya escrito.
 - **Exportación/importación**: receta o libro entero como texto, PDF o
-  JSON, y copia de seguridad completa de la biblioteca.
+  JSON/ZIP (con fotos), y copia de seguridad completa de la biblioteca.
+- **Añadir receta con foto** (beta, opcional): reconoce el texto de una
+  foto (cámara o galería) con Google Gemini y precarga el editor para
+  revisarlo. Requiere configurar tu propia API key de Gemini en Ajustes;
+  sin ella, esta función no hace ninguna llamada de red.
 - **Bloqueo biométrico** opcional (huella, rostro o PIN del dispositivo).
 - **Tema** claro, oscuro o según el sistema.
 - **Comprobación de actualizaciones** opcional contra las Releases de

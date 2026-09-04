@@ -8,6 +8,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.bmo00.miga.data.model.RecipeListViewMode
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
+import com.bmo00.miga.data.vision.DEFAULT_GEMINI_MODEL
+import com.bmo00.miga.data.vision.VisionProviderType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -20,6 +22,10 @@ class SettingsRepository(private val context: Context) {
     private val autoCheckUpdatesKey = booleanPreferencesKey("auto_check_updates_enabled")
     private val updateChannelKey = stringPreferencesKey("update_channel")
     private val recipeListViewModeKey = stringPreferencesKey("recipe_list_view_mode")
+    private val recipeBookListViewModeKey = stringPreferencesKey("recipe_book_list_view_mode")
+    private val visionProviderKey = stringPreferencesKey("vision_provider")
+    private val geminiApiKeyKey = stringPreferencesKey("gemini_api_key")
+    private val geminiModelKey = stringPreferencesKey("gemini_model")
 
     fun observeThemeMode(): Flow<ThemeMode> =
         context.settingsDataStore.data.map { prefs ->
@@ -68,5 +74,45 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setRecipeListViewMode(mode: RecipeListViewMode) {
         context.settingsDataStore.edit { prefs -> prefs[recipeListViewModeKey] = mode.name }
+    }
+
+    /** Vista de la lista de libros; guardada aparte de la de recetas (misma escala COMPACT/NORMAL/GRID). */
+    fun observeRecipeBookListViewMode(): Flow<RecipeListViewMode> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[recipeBookListViewModeKey]?.let { stored ->
+                runCatching { RecipeListViewMode.valueOf(stored) }.getOrDefault(RecipeListViewMode.GRID)
+            } ?: RecipeListViewMode.GRID
+        }
+
+    suspend fun setRecipeBookListViewMode(mode: RecipeListViewMode) {
+        context.settingsDataStore.edit { prefs -> prefs[recipeBookListViewModeKey] = mode.name }
+    }
+
+    /** Proveedor de LLM usado para reconocer recetas a partir de una foto (ver `data/vision`). */
+    fun observeVisionProvider(): Flow<VisionProviderType> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[visionProviderKey]?.let { stored ->
+                runCatching { VisionProviderType.valueOf(stored) }.getOrDefault(VisionProviderType.GEMINI)
+            } ?: VisionProviderType.GEMINI
+        }
+
+    suspend fun setVisionProvider(provider: VisionProviderType) {
+        context.settingsDataStore.edit { prefs -> prefs[visionProviderKey] = provider.name }
+    }
+
+    /** API key de Gemini introducida por el propio usuario (BYOK); vacía si no se ha configurado. */
+    fun observeGeminiApiKey(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[geminiApiKeyKey].orEmpty() }
+
+    suspend fun setGeminiApiKey(apiKey: String) {
+        context.settingsDataStore.edit { prefs -> prefs[geminiApiKeyKey] = apiKey.trim() }
+    }
+
+    /** Id del modelo de Gemini a usar (ver `data/vision/GeminiModels.kt`); uno de la lista o uno escrito a mano. */
+    fun observeGeminiModel(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[geminiModelKey] ?: DEFAULT_GEMINI_MODEL }
+
+    suspend fun setGeminiModel(model: String) {
+        context.settingsDataStore.edit { prefs -> prefs[geminiModelKey] = model.trim() }
     }
 }
