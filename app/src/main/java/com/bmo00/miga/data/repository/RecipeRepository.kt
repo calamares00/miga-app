@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.bmo00.miga.data.local.AppDatabase
 import com.bmo00.miga.data.local.entity.CategoryEntity
 import com.bmo00.miga.data.local.entity.IngredientCatalogEntity
+import com.bmo00.miga.data.local.entity.IngredientCategoryEntity
 import com.bmo00.miga.data.local.entity.IngredientEntity
 import com.bmo00.miga.data.local.entity.RecipeBookEntity
 import com.bmo00.miga.data.local.entity.RecipeEntity
@@ -16,6 +17,7 @@ import com.bmo00.miga.data.local.entity.TagEntity
 import com.bmo00.miga.data.local.entity.UtensilEntity
 import com.bmo00.miga.data.model.Difficulty
 import com.bmo00.miga.data.model.Ingredient
+import com.bmo00.miga.data.model.IngredientCatalogItem
 import com.bmo00.miga.data.model.IngredientGroup
 import com.bmo00.miga.data.model.Recipe
 import com.bmo00.miga.data.model.RecipeBook
@@ -25,6 +27,7 @@ import com.bmo00.miga.data.model.RecipeDraft
 import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.StepGroup
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 /** Se lanza al intentar borrar un libro de recetas que todavía tiene recetas dentro. */
@@ -38,6 +41,7 @@ class RecipeRepository(private val db: AppDatabase) {
     private val utensilDao = db.utensilDao()
     private val recipeBookDao = db.recipeBookDao()
     private val ingredientCatalogDao = db.ingredientCatalogDao()
+    private val ingredientCategoryDao = db.ingredientCategoryDao()
 
     fun observeRecipesForBook(bookId: Long): Flow<List<Recipe>> =
         recipeDao.observeAllWithDetailsForBook(bookId).map { list -> list.map { it.toDomain() } }
@@ -265,11 +269,73 @@ class RecipeRepository(private val db: AppDatabase) {
     suspend fun renameIngredientName(id: Long, newName: String) {
         val trimmed = newName.trim()
         if (trimmed.isEmpty()) return
-        ingredientCatalogDao.update(IngredientCatalogEntity(id = id, name = trimmed))
+        val existing = ingredientCatalogDao.getOnce(id) ?: return
+        ingredientCatalogDao.update(existing.copy(name = trimmed))
     }
 
     suspend fun deleteIngredientName(id: Long) {
         ingredientCatalogDao.delete(IngredientCatalogEntity(id = id, name = ""))
+    }
+
+    /** Fila del catálogo de ingredientes con el nombre de su categoría ya resuelto para la UI. */
+    fun observeIngredientCatalogWithCategory(): Flow<List<IngredientCatalogItem>> =
+        combine(ingredientCatalogDao.observeAll(), ingredientCategoryDao.observeAll()) { ingredients, categories ->
+            val namesById = categories.associateBy({ it.id }, { it.name })
+            ingredients.map { entity ->
+                IngredientCatalogItem(
+                    id = entity.id,
+                    name = entity.name,
+                    categoryId = entity.categoryId,
+                    categoryName = entity.categoryId?.let { namesById[it] }
+                )
+            }
+        }
+
+    suspend fun changeIngredientCategory(id: Long, categoryId: Long?) {
+        ingredientCatalogDao.updateCategory(id, categoryId)
+    }
+
+    // --- Categorías de ingredientes (distintas de las categorías de receta) ---
+
+    fun observeIngredientCategories(): Flow<List<IngredientCategoryEntity>> = ingredientCategoryDao.observeAll()
+
+    suspend fun addIngredientCategory(name: String) {
+        val trimmed = name.trim()
+        if (trimmed.isNotEmpty()) ingredientCategoryDao.insert(IngredientCategoryEntity(name = trimmed))
+    }
+
+    suspend fun renameIngredientCategory(id: Long, newName: String) {
+        val category = ingredientCategoryDao.getOnce(id) ?: return
+        ingredientCategoryDao.update(category.copy(name = newName.trim()))
+    }
+
+    suspend fun deleteIngredientCategory(id: Long) {
+        val category = ingredientCategoryDao.getOnce(id) ?: return
+        ingredientCategoryDao.delete(category)
+    }
+
+    suspend fun countIngredientsUsingCategory(id: Long): Int = ingredientCategoryDao.countIngredientsUsing(id)
+
+    /**
+     * Añade el catálogo base de ingredientes con categoría (ver IngredientCatalogSeed). Los
+     * ingredientes que el usuario ya tuviera creados NO se tocan ni se recategorizan: solo se
+     * insertan los nombres que todavía no existan, así que se puede llamar en cada arranque.
+     */
+    suspend fun seedIngredientCatalogDefaults() {
+        IngredientCatalogSeed.DEFAULT_INGREDIENTS.forEach { (categoryName, names) ->
+            val categoryId = resolveIngredientCategoryId(categoryName)
+            names.forEach { ingredientName ->
+                if (ingredientCatalogDao.findByName(ingredientName) == null) {
+                    ingredientCatalogDao.insert(IngredientCatalogEntity(name = ingredientName, categoryId = categoryId))
+                }
+            }
+        }
+    }
+
+    private suspend fun resolveIngredientCategoryId(name: String): Long {
+        ingredientCategoryDao.findByName(name)?.let { return it.id }
+        ingredientCategoryDao.insert(IngredientCategoryEntity(name = name))
+        return ingredientCategoryDao.findByName(name)!!.id
     }
 
     // --- Libros de recetas ---

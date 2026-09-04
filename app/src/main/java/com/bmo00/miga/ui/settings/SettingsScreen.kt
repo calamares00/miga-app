@@ -22,7 +22,9 @@ import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.RestaurantMenu
+import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -41,14 +43,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.bmo00.miga.BuildConfig
+import com.bmo00.miga.data.export.RecipeExportDto
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
 import com.bmo00.miga.ui.security.BiometricAuthenticator
@@ -62,6 +67,7 @@ fun SettingsScreen(
     onManageCategories: () -> Unit,
     onManageUtensils: () -> Unit,
     onManageIngredients: () -> Unit,
+    onManageIngredientCategories: () -> Unit,
     onHelp: () -> Unit
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
@@ -69,10 +75,13 @@ fun SettingsScreen(
     val autoCheckUpdatesEnabled by viewModel.autoCheckUpdatesEnabled.collectAsState()
     val updateChannel by viewModel.updateChannel.collectAsState()
     val updateCheckState by viewModel.updateCheckState.collectAsState()
+    val books by viewModel.books.collectAsState()
     val context = LocalContext.current
     val activity = context as? FragmentActivity
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    var pendingRecipeImport by remember { mutableStateOf<RecipeExportDto?>(null) }
+    var selectedBookId by remember { mutableStateOf<Long?>(null) }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) {
@@ -84,6 +93,21 @@ fun SettingsScreen(
         if (uri != null) {
             viewModel.importLibrary(context, uri) { count ->
                 scope.launch { snackbarHostState.showSnackbar("Se importaron $count recetas") }
+            }
+        }
+    }
+    val importRecipeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val dto = viewModel.parseRecipeJson(context, uri)
+                when {
+                    dto == null -> snackbarHostState.showSnackbar("No se pudo leer el archivo de receta")
+                    books.isEmpty() -> snackbarHostState.showSnackbar("No tienes ningún libro. Crea uno primero.")
+                    else -> {
+                        selectedBookId = books.first().id
+                        pendingRecipeImport = dto
+                    }
+                }
             }
         }
     }
@@ -153,6 +177,9 @@ fun SettingsScreen(
                 }
                 OutlinedButton(onClick = { importLauncher.launch(arrayOf("application/json")) }, modifier = Modifier.fillMaxWidth()) {
                     Text("Importar copia de seguridad")
+                }
+                OutlinedButton(onClick = { importRecipeLauncher.launch(arrayOf("application/json")) }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Importar receta")
                 }
             }
 
@@ -235,6 +262,7 @@ fun SettingsScreen(
                 ManageRow(icon = Icons.Filled.Category, label = "Categorías", onClick = onManageCategories)
                 ManageRow(icon = Icons.Filled.Kitchen, label = "Utensilios", onClick = onManageUtensils)
                 ManageRow(icon = Icons.Filled.RestaurantMenu, label = "Ingredientes", onClick = onManageIngredients)
+                ManageRow(icon = Icons.Filled.Sell, label = "Categorías de ingredientes", onClick = onManageIngredientCategories)
             }
 
             HorizontalDivider()
@@ -243,6 +271,45 @@ fun SettingsScreen(
                 ManageRow(icon = Icons.Filled.HelpOutline, label = "Ayuda y soporte", onClick = onHelp)
             }
         }
+    }
+
+    pendingRecipeImport?.let { dto ->
+        AlertDialog(
+            onDismissRequest = { pendingRecipeImport = null },
+            title = { Text("Importar \"${dto.name}\"") },
+            text = {
+                Column {
+                    Text("¿A qué libro quieres añadir esta receta?", modifier = Modifier.padding(bottom = 8.dp))
+                    books.forEach { book ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedBookId = book.id }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = selectedBookId == book.id, onClick = { selectedBookId = book.id })
+                            Text(book.name, modifier = Modifier.padding(start = 8.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val bookId = selectedBookId
+                        if (bookId != null) {
+                            viewModel.importRecipeIntoBook(dto, bookId) {
+                                scope.launch { snackbarHostState.showSnackbar("Receta importada") }
+                            }
+                        }
+                        pendingRecipeImport = null
+                    },
+                    enabled = selectedBookId != null
+                ) { Text("Importar") }
+            },
+            dismissButton = { TextButton(onClick = { pendingRecipeImport = null }) { Text("Cancelar") } }
+        )
     }
 }
 

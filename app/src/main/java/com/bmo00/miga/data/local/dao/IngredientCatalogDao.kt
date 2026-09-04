@@ -20,8 +20,14 @@ interface IngredientCatalogDao {
     @Query("SELECT * FROM ingredient_catalog WHERE name = :name LIMIT 1")
     suspend fun findByName(name: String): IngredientCatalogEntity?
 
+    @Query("SELECT * FROM ingredient_catalog WHERE id = :id")
+    suspend fun getOnce(id: Long): IngredientCatalogEntity?
+
     @Update
     suspend fun update(entity: IngredientCatalogEntity)
+
+    @Query("UPDATE ingredient_catalog SET categoryId = :categoryId WHERE id = :id")
+    suspend fun updateCategory(id: Long, categoryId: Long?)
 
     @Delete
     suspend fun delete(entity: IngredientCatalogEntity)
