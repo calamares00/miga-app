@@ -1,0 +1,1 @@
+Corrige el build: import inválido de matchParentSize (es un miembro de BoxScope, no una función de nivel superior; se resuelve solo dentro del Box).

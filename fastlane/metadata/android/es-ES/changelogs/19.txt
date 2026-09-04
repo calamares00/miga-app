@@ -1,0 +1,1 @@
+Nueva pantalla "Acerca de" en Ajustes (versión, si es beta, arquitectura). El botón de descargar actualización ahora baja directamente el APK de tu procesador en vez de abrir la web de GitHub.

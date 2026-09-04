@@ -1,0 +1,5 @@
+* Nuevo (beta): añadir una receta a partir de una foto (cámara o galería).
+  El texto se reconoce y estructura con Google Gemini, y el resultado
+  precarga el formulario de edición para revisarlo antes de guardar.
+  Requiere configurar tu propia API key gratuita de Gemini en
+  Ajustes → Importar con IA.

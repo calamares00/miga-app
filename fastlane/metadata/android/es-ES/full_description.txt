@@ -1,6 +1,6 @@
-Miga es un cuaderno de recetas digital, minimalista y
-100% offline: no necesita internet, no tiene anuncios y no envía ningún
-dato fuera del teléfono.
+Miga es un cuaderno de recetas digital, minimalista, sin anuncios y pensado
+para funcionar sin conexión: guardar, organizar y editar tus recetas no
+necesita internet ni envía nada fuera del teléfono.
 
 Funciones principales:
 
@@ -17,9 +17,16 @@ Funciones principales:
   cocinas.
 * Autocompletado de ingredientes a partir de lo que ya has escrito antes.
 * Exportación e importación: comparte una receta o un libro entero como
-  texto, PDF o JSON, y haz copias de seguridad completas de tu biblioteca.
+  texto, PDF o JSON/ZIP (con fotos), y haz copias de seguridad completas de
+  tu biblioteca.
+* Añadir receta con foto (beta): haz una foto a una receta y su texto se
+  reconoce y organiza automáticamente en el editor para que solo tengas que
+  revisarlo. Requiere conexión y tu propia API key de Gemini; es opcional,
+  no se activa si no la configuras.
 * Bloqueo biométrico opcional (huella, rostro o PIN del dispositivo).
 * Tema claro, oscuro o según el sistema.
 
-Sin cuentas, sin publicidad, sin conexión a internet salvo, opcionalmente,
-para comprobar si hay una versión nueva de la propia app.
+Sin cuentas, sin publicidad. La app no usa conexión a internet salvo, de
+forma opcional, para comprobar si hay una versión nueva y para la función
+beta de añadir receta con foto (que solo se activa si configuras tu propia
+API key de Gemini).

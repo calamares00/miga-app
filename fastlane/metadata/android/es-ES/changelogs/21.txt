@@ -1,0 +1,1 @@
+Corrige "Importar con foto": el JSON de Gemini fallaba al parsear cuando algún campo opcional (p.ej. el origen de la receta) venía como null. Además, el aviso de "leyendo la foto" ahora se ve como una tarjeta flotante clara, con un círculo de carga más grande.

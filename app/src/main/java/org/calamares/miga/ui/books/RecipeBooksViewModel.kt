@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import org.calamares.miga.BuildConfig
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.RecipeBookSummary
+import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.data.remote.UpdateCheckResult
 import org.calamares.miga.data.remote.UpdateChecker
 import org.calamares.miga.data.remote.UpdateInfo
@@ -22,6 +23,13 @@ class RecipeBooksViewModel(
 ) : ViewModel() {
     val books: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val viewMode: StateFlow<RecipeListViewMode> = settingsRepository.observeRecipeBookListViewMode()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecipeListViewMode.GRID)
+
+    fun setViewMode(mode: RecipeListViewMode) {
+        viewModelScope.launch { settingsRepository.setRecipeBookListViewMode(mode) }
+    }
 
     private val _updateAvailable = MutableStateFlow<UpdateInfo?>(null)
     val updateAvailable: StateFlow<UpdateInfo?> = _updateAvailable
