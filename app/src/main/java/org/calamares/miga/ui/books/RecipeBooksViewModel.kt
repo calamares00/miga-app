@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import org.calamares.miga.BuildConfig
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.RecipeBookSummary
+import org.calamares.miga.data.remote.UpdateCheckResult
 import org.calamares.miga.data.remote.UpdateChecker
 import org.calamares.miga.data.remote.UpdateInfo
 import org.calamares.miga.data.repository.RecipeRepository
@@ -29,7 +30,8 @@ class RecipeBooksViewModel(
         viewModelScope.launch {
             if (settingsRepository.observeAutoCheckUpdatesEnabled().first()) {
                 val channel = settingsRepository.observeUpdateChannel().first()
-                _updateAvailable.value = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, channel)
+                val result = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, channel)
+                _updateAvailable.value = (result as? UpdateCheckResult.UpdateFound)?.info
             }
         }
     }
