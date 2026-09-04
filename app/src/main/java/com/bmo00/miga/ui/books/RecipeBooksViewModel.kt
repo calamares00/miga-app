@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.bmo00.miga.BuildConfig
 import com.bmo00.miga.data.local.SettingsRepository
 import com.bmo00.miga.data.model.RecipeBookSummary
+import com.bmo00.miga.data.remote.UpdateCheckResult
 import com.bmo00.miga.data.remote.UpdateChecker
 import com.bmo00.miga.data.remote.UpdateInfo
 import com.bmo00.miga.data.repository.RecipeRepository
@@ -29,7 +30,8 @@ class RecipeBooksViewModel(
         viewModelScope.launch {
             if (settingsRepository.observeAutoCheckUpdatesEnabled().first()) {
                 val channel = settingsRepository.observeUpdateChannel().first()
-                _updateAvailable.value = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, channel)
+                val result = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, channel)
+                _updateAvailable.value = (result as? UpdateCheckResult.UpdateFound)?.info
             }
         }
     }
