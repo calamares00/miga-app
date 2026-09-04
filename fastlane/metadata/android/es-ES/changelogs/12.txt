@@ -7,3 +7,8 @@
 * Nuevo: importar receta directamente desde el menú del libro.
 * Nuevo: selección múltiple en la lista para borrar o exportar varias
   recetas a la vez.
+* Nuevo: las recetas y los libros llevan ahora un identificador estable
+  propio, independiente del que usa la base de datos.
+* Nuevo: exportar una receta, un libro o toda la app incluye ahora las
+  fotos (en un .zip); si no hay fotos de por medio se sigue exportando el
+  .json de siempre. La importación acepta ambos formatos.
