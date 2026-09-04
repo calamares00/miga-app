@@ -4,6 +4,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import org.calamares.miga.data.export.IngredientGroupDto
+import org.calamares.miga.data.export.StepGroupDto
 import org.calamares.miga.data.model.Ingredient
 import org.calamares.miga.data.model.IngredientGroup
 import org.calamares.miga.data.model.RecipePhoto
@@ -40,6 +42,15 @@ fun IngredientGroup.toUi() = IngredientGroupUi(
 )
 
 fun StepGroup.toUi() = StepGroupUi(name = name, steps = instructions.map { StepRowUi(it) })
+
+/** Igual que [IngredientGroup.toUi] pero a partir del DTO que devuelve el reconocimiento por foto. */
+fun IngredientGroupDto.toUi() = IngredientGroupUi(
+    name = name,
+    ingredients = ingredients.map { IngredientRowUi(it.name, it.quantity?.let { q -> formatEditorQuantity(q) } ?: "", it.unit.orEmpty()) }
+)
+
+/** Igual que [StepGroup.toUi] pero a partir del DTO que devuelve el reconocimiento por foto. */
+fun StepGroupDto.toUi() = StepGroupUi(name = name, steps = instructions.map { StepRowUi(it) })
 
 fun IngredientGroupUi.toDomain(): IngredientGroup = IngredientGroup(
     name = name,
