@@ -1,6 +1,7 @@
 package com.bmo00.miga.data.remote
 
 import com.bmo00.miga.data.model.UpdateChannel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -21,6 +22,12 @@ data class UpdateInfo(
     val releaseUrl: String
 )
 
+sealed interface UpdateCheckResult {
+    data class UpdateFound(val info: UpdateInfo) : UpdateCheckResult
+    data object UpToDate : UpdateCheckResult
+    data class Error(val reason: String) : UpdateCheckResult
+}
+
 // Canal estable: la Release más reciente que NO es pre-release (softprops/action-gh-release solo
 // marca así los builds release firmados, tras fusionar a main). Canal beta: una única Release de
 // tag fijo "beta-latest" que el workflow sobrescribe en cada push a una rama de desarrollo.
@@ -38,30 +45,39 @@ object UpdateChecker {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun checkForUpdate(currentVersion: String, channel: UpdateChannel): UpdateInfo? =
+    suspend fun checkForUpdate(currentVersion: String, channel: UpdateChannel): UpdateCheckResult =
         withContext(Dispatchers.IO) {
             val url = if (channel == UpdateChannel.BETA) BETA_RELEASE_URL else STABLE_RELEASE_URL
-            runCatching {
+            try {
                 val connection = URL(url).openConnection() as HttpURLConnection
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Accept", "application/vnd.github+json")
                 connection.connectTimeout = TIMEOUT_MILLIS
                 connection.readTimeout = TIMEOUT_MILLIS
                 try {
-                    if (connection.responseCode != HttpURLConnection.HTTP_OK) return@runCatching null
+                    val responseCode = connection.responseCode
+                    if (responseCode != HttpURLConnection.HTTP_OK) {
+                        // GitHub limita las peticiones sin autenticación a 60/hora por IP; en una
+                        // red compartida (móvil, wifi pública) es fácil agotarlo y recibir 403.
+                        return@withContext UpdateCheckResult.Error("GitHub respondió con el código $responseCode")
+                    }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val release = json.decodeFromString(GithubReleaseDto.serializer(), body)
                     val latestVersion = VERSION_IN_NAME_REGEX.find(release.name.orEmpty())?.groupValues?.get(1)
                         ?: release.tagName.removePrefix("v")
                     if (isNewerVersion(current = currentVersion, latest = latestVersion)) {
-                        UpdateInfo(latestVersion, release.htmlUrl)
+                        UpdateCheckResult.UpdateFound(UpdateInfo(latestVersion, release.htmlUrl))
                     } else {
-                        null
+                        UpdateCheckResult.UpToDate
                     }
                 } finally {
                     connection.disconnect()
                 }
-            }.getOrNull()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                UpdateCheckResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+            }
         }
 
     private fun isNewerVersion(current: String, latest: String): Boolean {

@@ -256,6 +256,13 @@ fun SettingsScreen(
                             }) { Text("Descargar") }
                         }
                     }
+                    is UpdateCheckState.Error -> {
+                        Text(
+                            "No se pudo comprobar: ${state.reason}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                     is UpdateCheckState.Idle -> Unit
                 }
             }

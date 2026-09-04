@@ -37,12 +37,11 @@ import com.bmo00.miga.data.local.entity.UtensilEntity
         IngredientCatalogEntity::class,
         IngredientCategoryEntity::class
     ],
+    // La app no escribe migraciones reales (usa fallbackToDestructiveMigration), así que el
+    // JSON de esquema de Room no aporta nada, y compilar debug+release a la vez (como hace CI)
+    // provoca que kspDebugKotlin y kspReleaseKotlin escriban al mismo fichero en paralelo,
+    // dando el error intermitente "Empty schema file". Se desactiva la exportación.
     version = 4,
-    // Room/KSP escriben el schema exportado de cada variante (debug/release) en el mismo
-    // fichero cuando ambas compilan en la misma invocación de Gradle (build de release en CI),
-    // lo que provoca una condición de carrera ("Empty schema file"). Como la app nunca escribe
-    // migraciones reales (ver fallbackToDestructiveMigration en RecetarioApp), desactivarlo no
-    // pierde nada.
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
