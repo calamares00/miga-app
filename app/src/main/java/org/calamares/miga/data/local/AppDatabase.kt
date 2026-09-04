@@ -4,12 +4,14 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import org.calamares.miga.data.local.dao.CategoryDao
 import org.calamares.miga.data.local.dao.IngredientCatalogDao
+import org.calamares.miga.data.local.dao.IngredientCategoryDao
 import org.calamares.miga.data.local.dao.RecipeBookDao
 import org.calamares.miga.data.local.dao.RecipeDao
 import org.calamares.miga.data.local.dao.TagDao
 import org.calamares.miga.data.local.dao.UtensilDao
 import org.calamares.miga.data.local.entity.CategoryEntity
 import org.calamares.miga.data.local.entity.IngredientCatalogEntity
+import org.calamares.miga.data.local.entity.IngredientCategoryEntity
 import org.calamares.miga.data.local.entity.IngredientEntity
 import org.calamares.miga.data.local.entity.RecipeBookEntity
 import org.calamares.miga.data.local.entity.RecipeEntity
@@ -32,9 +34,10 @@ import org.calamares.miga.data.local.entity.UtensilEntity
         RecipeTagCrossRef::class,
         RecipeUtensilCrossRef::class,
         RecipeBookEntity::class,
-        IngredientCatalogEntity::class
+        IngredientCatalogEntity::class,
+        IngredientCategoryEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -44,6 +47,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun utensilDao(): UtensilDao
     abstract fun recipeBookDao(): RecipeBookDao
     abstract fun ingredientCatalogDao(): IngredientCatalogDao
+    abstract fun ingredientCategoryDao(): IngredientCategoryDao
 
     companion object {
         const val DATABASE_NAME = "recetario.db"

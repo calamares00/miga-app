@@ -28,6 +28,7 @@ class RecetarioApp : Application() {
         applicationScope.launch {
             repository.seedDefaultUtensilsIfEmpty()
             repository.seedDefaultCategoriesIfEmpty()
+            repository.seedIngredientCatalogDefaults()
         }
     }
 }

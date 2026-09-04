@@ -69,6 +69,13 @@ object RecipeExporter {
         }
     }
 
+    /** Importa una receta individual exportada como JSON (ver [shareAsJson]). Null si no se pudo leer/parsear. */
+    suspend fun importRecipe(context: Context, source: Uri): RecipeExportDto? = withContext(Dispatchers.IO) {
+        val content = context.contentResolver.openInputStream(source)?.bufferedReader()?.use { it.readText() }
+            ?: return@withContext null
+        runCatching { json.decodeFromString(RecipeExportDto.serializer(), content) }.getOrNull()
+    }
+
     /** Importa una copia de seguridad JSON. Devuelve el número de recetas importadas. */
     suspend fun importLibrary(context: Context, source: Uri, repository: RecipeRepository): Int = withContext(Dispatchers.IO) {
         val content = context.contentResolver.openInputStream(source)?.bufferedReader()?.use { it.readText() }
