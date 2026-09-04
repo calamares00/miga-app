@@ -22,6 +22,7 @@ import com.bmo00.miga.ui.editor.RecipeEditorScreen
 import com.bmo00.miga.ui.editor.RecipeEditorViewModel
 import com.bmo00.miga.ui.list.RecipeListScreen
 import com.bmo00.miga.ui.list.RecipeListViewModel
+import com.bmo00.miga.ui.settings.AboutScreen
 import com.bmo00.miga.ui.settings.HelpScreen
 import com.bmo00.miga.ui.settings.ManageCategoriesScreen
 import com.bmo00.miga.ui.settings.ManageCategoriesViewModel
@@ -165,12 +166,17 @@ fun RecetarioNavHost() {
                 onManageUtensils = { navController.navigate(Destinations.MANAGE_UTENSILS_ROUTE) },
                 onManageIngredients = { navController.navigate(Destinations.MANAGE_INGREDIENTS_ROUTE) },
                 onManageIngredientCategories = { navController.navigate(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) },
-                onHelp = { navController.navigate(Destinations.HELP_ROUTE) }
+                onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
+                onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) }
             )
         }
 
         composable(Destinations.HELP_ROUTE) {
             HelpScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Destinations.ABOUT_ROUTE) {
+            AboutScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Destinations.MANAGE_CATEGORIES_ROUTE) {

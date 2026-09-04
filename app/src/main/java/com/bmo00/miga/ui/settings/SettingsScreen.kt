@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Sell
@@ -78,7 +79,8 @@ fun SettingsScreen(
     onManageUtensils: () -> Unit,
     onManageIngredients: () -> Unit,
     onManageIngredientCategories: () -> Unit,
-    onHelp: () -> Unit
+    onHelp: () -> Unit,
+    onAbout: () -> Unit
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
@@ -333,7 +335,7 @@ fun SettingsScreen(
                                 modifier = Modifier.weight(1f)
                             )
                             TextButton(onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(state.info.releaseUrl))
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(state.info.apkDownloadUrl ?: state.info.releaseUrl))
                                 runCatching { context.startActivity(intent) }
                             }) { Text("Descargar") }
                         }
@@ -362,6 +364,7 @@ fun SettingsScreen(
 
             SettingsSection(title = "Ayuda") {
                 ManageRow(icon = Icons.Filled.HelpOutline, label = "Ayuda y soporte", onClick = onHelp)
+                ManageRow(icon = Icons.Filled.Info, label = "Acerca de", onClick = onAbout)
             }
         }
     }
