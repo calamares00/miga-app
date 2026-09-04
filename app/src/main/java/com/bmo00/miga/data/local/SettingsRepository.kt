@@ -22,6 +22,7 @@ class SettingsRepository(private val context: Context) {
     private val autoCheckUpdatesKey = booleanPreferencesKey("auto_check_updates_enabled")
     private val updateChannelKey = stringPreferencesKey("update_channel")
     private val recipeListViewModeKey = stringPreferencesKey("recipe_list_view_mode")
+    private val recipeBookListViewModeKey = stringPreferencesKey("recipe_book_list_view_mode")
     private val visionProviderKey = stringPreferencesKey("vision_provider")
     private val geminiApiKeyKey = stringPreferencesKey("gemini_api_key")
     private val geminiModelKey = stringPreferencesKey("gemini_model")
@@ -73,6 +74,18 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setRecipeListViewMode(mode: RecipeListViewMode) {
         context.settingsDataStore.edit { prefs -> prefs[recipeListViewModeKey] = mode.name }
+    }
+
+    /** Vista de la lista de libros; guardada aparte de la de recetas (misma escala COMPACT/NORMAL/GRID). */
+    fun observeRecipeBookListViewMode(): Flow<RecipeListViewMode> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[recipeBookListViewModeKey]?.let { stored ->
+                runCatching { RecipeListViewMode.valueOf(stored) }.getOrDefault(RecipeListViewMode.GRID)
+            } ?: RecipeListViewMode.GRID
+        }
+
+    suspend fun setRecipeBookListViewMode(mode: RecipeListViewMode) {
+        context.settingsDataStore.edit { prefs -> prefs[recipeBookListViewModeKey] = mode.name }
     }
 
     /** Proveedor de LLM usado para reconocer recetas a partir de una foto (ver `data/vision`). */

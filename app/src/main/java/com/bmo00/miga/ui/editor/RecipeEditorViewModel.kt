@@ -114,8 +114,12 @@ class RecipeEditorViewModel(
     }
 
     private fun applyVisionResult(recipe: RecipeVisionResultDto) {
+        // Algunos libros titulan la sección con varias categorías juntas separadas por coma
+        // (p.ej. "Arroz, legumbres, patatas y pasta"); solo la primera se usa como categoría de
+        // la receta (el modelo de datos admite una sola) y el resto se añaden como etiquetas.
+        val categoryParts = recipe.categoryName?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
         name = recipe.name
-        categoryName = recipe.categoryName
+        categoryName = categoryParts.firstOrNull()
         difficulty = runCatching { Difficulty.valueOf(recipe.difficulty) }.getOrDefault(Difficulty.MEDIA)
         prepTimeMinutesText = recipe.prepTimeMinutes?.toString().orEmpty()
         cookTimeMinutesText = recipe.cookTimeMinutes?.toString().orEmpty()
@@ -124,7 +128,7 @@ class RecipeEditorViewModel(
         source = recipe.source
         ingredientGroups.clear(); ingredientGroups.addAll(recipe.ingredientGroups.map { it.toUi() }.ifEmpty { listOf(IngredientGroupUi()) })
         stepGroups.clear(); stepGroups.addAll(recipe.stepGroups.map { it.toUi() }.ifEmpty { listOf(StepGroupUi()) })
-        selectedTags.clear(); selectedTags.addAll(recipe.tags)
+        selectedTags.clear(); selectedTags.addAll((recipe.tags + categoryParts.drop(1)).distinct())
         selectedUtensils.clear(); selectedUtensils.addAll(recipe.utensils)
     }
 
