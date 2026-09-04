@@ -19,6 +19,7 @@ import org.calamares.miga.data.remote.UpdateCheckResult
 import org.calamares.miga.data.remote.UpdateChecker
 import org.calamares.miga.data.remote.UpdateInfo
 import org.calamares.miga.data.repository.RecipeRepository
+import org.calamares.miga.data.vision.DEFAULT_GEMINI_MODEL
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -105,6 +106,13 @@ class SettingsViewModel(
 
     fun setGeminiApiKey(apiKey: String) {
         viewModelScope.launch { settingsRepository.setGeminiApiKey(apiKey) }
+    }
+
+    val geminiModel: StateFlow<String> = settingsRepository.observeGeminiModel()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_GEMINI_MODEL)
+
+    fun setGeminiModel(model: String) {
+        viewModelScope.launch { settingsRepository.setGeminiModel(model) }
     }
 
     suspend fun parseRecipeJson(context: Context, source: Uri): RecipeImportResult =

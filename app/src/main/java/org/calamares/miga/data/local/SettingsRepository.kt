@@ -8,6 +8,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.model.UpdateChannel
+import org.calamares.miga.data.vision.DEFAULT_GEMINI_MODEL
 import org.calamares.miga.data.vision.VisionProviderType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -23,6 +24,7 @@ class SettingsRepository(private val context: Context) {
     private val recipeListViewModeKey = stringPreferencesKey("recipe_list_view_mode")
     private val visionProviderKey = stringPreferencesKey("vision_provider")
     private val geminiApiKeyKey = stringPreferencesKey("gemini_api_key")
+    private val geminiModelKey = stringPreferencesKey("gemini_model")
 
     fun observeThemeMode(): Flow<ThemeMode> =
         context.settingsDataStore.data.map { prefs ->
@@ -91,5 +93,13 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setGeminiApiKey(apiKey: String) {
         context.settingsDataStore.edit { prefs -> prefs[geminiApiKeyKey] = apiKey.trim() }
+    }
+
+    /** Id del modelo de Gemini a usar (ver `data/vision/GeminiModels.kt`); uno de la lista o uno escrito a mano. */
+    fun observeGeminiModel(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[geminiModelKey] ?: DEFAULT_GEMINI_MODEL }
+
+    suspend fun setGeminiModel(model: String) {
+        context.settingsDataStore.edit { prefs -> prefs[geminiModelKey] = model.trim() }
     }
 }

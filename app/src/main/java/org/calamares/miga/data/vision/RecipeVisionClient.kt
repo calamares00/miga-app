@@ -34,7 +34,7 @@ sealed interface RecipeVisionResult {
 
 /** Reconoce y estructura el texto de la foto de una receta usando un LLM con visión. */
 interface RecipeVisionClient {
-    suspend fun extractRecipe(imageBytes: ByteArray, mimeType: String, apiKey: String): RecipeVisionResult
+    suspend fun extractRecipe(imageBytes: ByteArray, mimeType: String, apiKey: String, model: String): RecipeVisionResult
 }
 
 /** Único proveedor implementado por ahora; añadir uno nuevo es solo un caso más aquí. */

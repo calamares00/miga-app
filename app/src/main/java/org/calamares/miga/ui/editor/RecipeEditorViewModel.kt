@@ -101,7 +101,8 @@ class RecipeEditorViewModel(
             }
             val mimeType = context.contentResolver.getType(photoUri) ?: "image/jpeg"
             val provider = settingsRepository.observeVisionProvider().first()
-            when (val result = visionClientFor(provider).extractRecipe(bytes, mimeType, apiKey)) {
+            val model = settingsRepository.observeGeminiModel().first()
+            when (val result = visionClientFor(provider).extractRecipe(bytes, mimeType, apiKey, model)) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
                     PhotoStorage.copyBytesToInternalStorage(context, bytes)?.let { addPhoto(it) }
