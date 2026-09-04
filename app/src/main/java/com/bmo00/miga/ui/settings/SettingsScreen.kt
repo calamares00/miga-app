@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.bmo00.miga.BuildConfig
 import com.bmo00.miga.data.model.ThemeMode
+import com.bmo00.miga.data.model.UpdateChannel
 import com.bmo00.miga.ui.security.BiometricAuthenticator
 import kotlinx.coroutines.launch
 
@@ -66,6 +67,7 @@ fun SettingsScreen(
     val themeMode by viewModel.themeMode.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
     val autoCheckUpdatesEnabled by viewModel.autoCheckUpdatesEnabled.collectAsState()
+    val updateChannel by viewModel.updateChannel.collectAsState()
     val updateCheckState by viewModel.updateCheckState.collectAsState()
     val context = LocalContext.current
     val activity = context as? FragmentActivity
@@ -161,6 +163,25 @@ fun SettingsScreen(
                     Icon(Icons.Filled.SystemUpdate, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Notificar si hay una versión nueva", modifier = Modifier.padding(start = 16.dp).weight(1f))
                     Switch(checked = autoCheckUpdatesEnabled, onCheckedChange = { viewModel.setAutoCheckUpdatesEnabled(it) })
+                }
+
+                Text(
+                    "Canal",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+                UpdateChannel.entries.forEach { channel ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.setUpdateChannel(channel) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = updateChannel == channel, onClick = { viewModel.setUpdateChannel(channel) })
+                        Text(channel.label, modifier = Modifier.padding(start = 8.dp))
+                    }
                 }
 
                 OutlinedButton(

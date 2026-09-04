@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.bmo00.miga.data.model.ThemeMode
+import com.bmo00.miga.data.model.UpdateChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -16,6 +17,7 @@ class SettingsRepository(private val context: Context) {
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val biometricLockKey = booleanPreferencesKey("biometric_lock_enabled")
     private val autoCheckUpdatesKey = booleanPreferencesKey("auto_check_updates_enabled")
+    private val updateChannelKey = stringPreferencesKey("update_channel")
 
     fun observeThemeMode(): Flow<ThemeMode> =
         context.settingsDataStore.data.map { prefs ->
@@ -41,5 +43,16 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setAutoCheckUpdatesEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[autoCheckUpdatesKey] = enabled }
+    }
+
+    fun observeUpdateChannel(): Flow<UpdateChannel> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[updateChannelKey]?.let { stored ->
+                runCatching { UpdateChannel.valueOf(stored) }.getOrDefault(UpdateChannel.STABLE)
+            } ?: UpdateChannel.STABLE
+        }
+
+    suspend fun setUpdateChannel(channel: UpdateChannel) {
+        context.settingsDataStore.edit { prefs -> prefs[updateChannelKey] = channel.name }
     }
 }

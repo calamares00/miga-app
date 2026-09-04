@@ -28,7 +28,8 @@ class RecipeBooksViewModel(
     init {
         viewModelScope.launch {
             if (settingsRepository.observeAutoCheckUpdatesEnabled().first()) {
-                _updateAvailable.value = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME)
+                val channel = settingsRepository.observeUpdateChannel().first()
+                _updateAvailable.value = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, channel)
             }
         }
     }
