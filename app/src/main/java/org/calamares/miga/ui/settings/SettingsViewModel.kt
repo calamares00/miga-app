@@ -5,11 +5,14 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.calamares.miga.BuildConfig
+import org.calamares.miga.data.export.LibraryImportResult
 import org.calamares.miga.data.export.RecipeExportDto
 import org.calamares.miga.data.export.RecipeExporter
+import org.calamares.miga.data.export.RecipeImportResult
 import org.calamares.miga.data.export.toDraft
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.RecipeBookSummary
+import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.model.UpdateChannel
 import org.calamares.miga.data.remote.UpdateCheckResult
@@ -79,27 +82,30 @@ class SettingsViewModel(
 
     fun exportLibrary(context: Context, destination: Uri) {
         viewModelScope.launch {
+            val allBooks = repository.getAllRecipeBooksOnce()
             val recipes = repository.getAllRecipesOnce()
-            RecipeExporter.exportLibrary(context, destination, recipes)
+            RecipeExporter.exportLibrary(context, destination, allBooks, recipes)
         }
     }
 
-    fun importLibrary(context: Context, source: Uri, onFinished: (Int) -> Unit) {
+    fun importLibrary(context: Context, source: Uri, onMessage: (String) -> Unit) {
         viewModelScope.launch {
-            val count = RecipeExporter.importLibrary(context, source, repository)
-            onFinished(count)
+            when (val result = RecipeExporter.importLibrary(context, source, repository)) {
+                is LibraryImportResult.Success -> onMessage("Se importaron ${result.count} recetas")
+                is LibraryImportResult.Error -> onMessage("No se pudo importar: ${result.reason}")
+            }
         }
     }
 
     val books: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    suspend fun parseRecipeJson(context: Context, source: Uri): RecipeExportDto? =
+    suspend fun parseRecipeJson(context: Context, source: Uri): RecipeImportResult =
         RecipeExporter.importRecipe(context, source)
 
-    fun importRecipeIntoBook(dto: RecipeExportDto, bookId: Long, onFinished: () -> Unit) {
+    fun importRecipeIntoBook(dto: RecipeExportDto, photos: List<RecipePhoto>, bookId: Long, onFinished: () -> Unit) {
         viewModelScope.launch {
-            repository.saveRecipe(dto.toDraft(bookId))
+            repository.saveRecipe(dto.toDraft(bookId, photos))
             onFinished()
         }
     }

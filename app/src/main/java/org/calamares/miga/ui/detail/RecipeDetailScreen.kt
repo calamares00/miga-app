@@ -119,11 +119,11 @@ fun RecipeDetailScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Exportar como JSON") },
+                            text = { Text("Exportar copia de seguridad") },
                             leadingIcon = { Icon(Icons.Filled.Share, null) },
                             onClick = {
                                 showMenu = false
-                                recipe?.let { RecipeExporter.shareAsJson(context, it) }
+                                recipe?.let { RecipeExporter.shareRecipe(context, it) }
                             }
                         )
                         DropdownMenuItem(
