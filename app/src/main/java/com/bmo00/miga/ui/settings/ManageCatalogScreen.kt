@@ -44,7 +44,8 @@ fun ManageCatalogScreen(
     onBack: () -> Unit,
     onAdd: (String) -> Unit,
     onRename: (CatalogItem, String) -> Unit,
-    onDelete: (CatalogItem) -> Unit
+    onDelete: (CatalogItem) -> Unit,
+    usageLabel: (Int) -> String = { count -> if (count == 1) "1 receta" else "$count recetas" }
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var itemToRename by remember { mutableStateOf<CatalogItem?>(null) }
@@ -76,7 +77,7 @@ fun ManageCatalogScreen(
                             Text(item.name, style = MaterialTheme.typography.bodyLarge)
                             if (item.usageCount != null) {
                                 Text(
-                                    text = if (item.usageCount == 1) "1 receta" else "${item.usageCount} recetas",
+                                    text = usageLabel(item.usageCount),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

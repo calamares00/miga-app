@@ -1,44 +1,209 @@
 package com.bmo00.miga.ui.settings
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bmo00.miga.data.local.entity.IngredientCategoryEntity
+import com.bmo00.miga.data.model.IngredientCatalogItem
 import com.bmo00.miga.data.repository.RecipeRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class ManageIngredientsViewModel(private val repository: RecipeRepository) : ViewModel() {
-    val items: StateFlow<List<CatalogItem>> = repository.observeIngredientCatalog()
-        .map { list -> list.map { CatalogItem(it.id, it.name) } }
+    val items: StateFlow<List<IngredientCatalogItem>> = repository.observeIngredientCatalogWithCategory()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val categories: StateFlow<List<IngredientCategoryEntity>> = repository.observeIngredientCategories()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun add(name: String) {
         viewModelScope.launch { repository.addIngredientName(name) }
     }
 
-    fun rename(item: CatalogItem, newName: String) {
+    fun rename(item: IngredientCatalogItem, newName: String) {
         viewModelScope.launch { repository.renameIngredientName(item.id, newName) }
     }
 
-    fun delete(item: CatalogItem) {
+    fun delete(item: IngredientCatalogItem) {
         viewModelScope.launch { repository.deleteIngredientName(item.id) }
+    }
+
+    fun changeCategory(item: IngredientCatalogItem, categoryId: Long?) {
+        viewModelScope.launch { repository.changeIngredientCategory(item.id, categoryId) }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ManageIngredientsScreen(viewModel: ManageIngredientsViewModel, onBack: () -> Unit) {
+    val items by viewModel.items.collectAsState()
+    val categories by viewModel.categories.collectAsState()
+
+    var showAddDialog by remember { mutableStateOf(false) }
+    var itemToRename by remember { mutableStateOf<IngredientCatalogItem?>(null) }
+    var itemToDelete by remember { mutableStateOf<IngredientCatalogItem?>(null) }
+    var itemForCategory by remember { mutableStateOf<IngredientCatalogItem?>(null) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Ingredientes") },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") } }
+            )
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(onClick = { showAddDialog = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("Añadir") })
+        }
+    ) { padding ->
+        if (items.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Text("Todavía no hay ingredientes.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        } else {
+            LazyColumn(contentPadding = PaddingValues(vertical = 8.dp), modifier = Modifier.padding(padding)) {
+                items(items, key = { it.id }) { item ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(item.name, style = MaterialTheme.typography.bodyLarge)
+                            AssistChip(
+                                onClick = { itemForCategory = item },
+                                label = { Text(item.categoryName ?: "Sin categoría") },
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                        IconButton(onClick = { itemToRename = item }) { Icon(Icons.Filled.Edit, contentDescription = "Renombrar") }
+                        IconButton(onClick = { itemToDelete = item }) { Icon(Icons.Filled.Delete, contentDescription = "Borrar") }
+                    }
+                    HorizontalDivider()
+                }
+            }
+        }
+    }
+
+    if (showAddDialog) {
+        IngredientNameDialog(
+            title = "Añadir ingrediente",
+            initialValue = "",
+            onConfirm = { viewModel.add(it); showAddDialog = false },
+            onDismiss = { showAddDialog = false }
+        )
+    }
+
+    itemToRename?.let { item ->
+        IngredientNameDialog(
+            title = "Renombrar",
+            initialValue = item.name,
+            onConfirm = { viewModel.rename(item, it); itemToRename = null },
+            onDismiss = { itemToRename = null }
+        )
+    }
+
+    itemToDelete?.let { item ->
+        AlertDialog(
+            onDismissRequest = { itemToDelete = null },
+            title = { Text("Borrar \"${item.name}\"") },
+            text = { Text("¿Seguro que quieres borrarlo? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.delete(item); itemToDelete = null }) {
+                    Text("Borrar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { itemToDelete = null }) { Text("Cancelar") } }
+        )
+    }
+
+    itemForCategory?.let { item ->
+        AlertDialog(
+            onDismissRequest = { itemForCategory = null },
+            title = { Text("Categoría de \"${item.name}\"") },
+            text = {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.changeCategory(item, null); itemForCategory = null }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = item.categoryId == null, onClick = { viewModel.changeCategory(item, null); itemForCategory = null })
+                        Text("Sin categoría", modifier = Modifier.padding(start = 8.dp))
+                    }
+                    categories.forEach { category ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.changeCategory(item, category.id); itemForCategory = null }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = item.categoryId == category.id,
+                                onClick = { viewModel.changeCategory(item, category.id); itemForCategory = null }
+                            )
+                            Text(category.name, modifier = Modifier.padding(start = 8.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { itemForCategory = null }) { Text("Cerrar") } }
+        )
     }
 }
 
 @Composable
-fun ManageIngredientsScreen(viewModel: ManageIngredientsViewModel, onBack: () -> Unit) {
-    val items by viewModel.items.collectAsState()
-    ManageCatalogScreen(
-        title = "Ingredientes",
-        items = items,
-        onBack = onBack,
-        onAdd = viewModel::add,
-        onRename = viewModel::rename,
-        onDelete = viewModel::delete
+private fun IngredientNameDialog(title: String, initialValue: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+    var value by remember { mutableStateOf(initialValue) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            OutlinedTextField(value = value, onValueChange = { value = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        },
+        confirmButton = {
+            TextButton(onClick = { if (value.isNotBlank()) onConfirm(value) }) { Text("Guardar") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
 }

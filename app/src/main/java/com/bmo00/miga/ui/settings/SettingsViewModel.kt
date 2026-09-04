@@ -5,8 +5,11 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bmo00.miga.BuildConfig
+import com.bmo00.miga.data.export.RecipeExportDto
 import com.bmo00.miga.data.export.RecipeExporter
+import com.bmo00.miga.data.export.toDraft
 import com.bmo00.miga.data.local.SettingsRepository
+import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
 import com.bmo00.miga.data.remote.UpdateChecker
@@ -80,6 +83,19 @@ class SettingsViewModel(
         viewModelScope.launch {
             val count = RecipeExporter.importLibrary(context, source, repository)
             onFinished(count)
+        }
+    }
+
+    val books: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    suspend fun parseRecipeJson(context: Context, source: Uri): RecipeExportDto? =
+        RecipeExporter.importRecipe(context, source)
+
+    fun importRecipeIntoBook(dto: RecipeExportDto, bookId: Long, onFinished: () -> Unit) {
+        viewModelScope.launch {
+            repository.saveRecipe(dto.toDraft(bookId))
+            onFinished()
         }
     }
 }

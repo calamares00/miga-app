@@ -25,6 +25,8 @@ import com.bmo00.miga.ui.list.RecipeListViewModel
 import com.bmo00.miga.ui.settings.HelpScreen
 import com.bmo00.miga.ui.settings.ManageCategoriesScreen
 import com.bmo00.miga.ui.settings.ManageCategoriesViewModel
+import com.bmo00.miga.ui.settings.ManageIngredientCategoriesScreen
+import com.bmo00.miga.ui.settings.ManageIngredientCategoriesViewModel
 import com.bmo00.miga.ui.settings.ManageIngredientsScreen
 import com.bmo00.miga.ui.settings.ManageIngredientsViewModel
 import com.bmo00.miga.ui.settings.ManageUtensilsScreen
@@ -154,6 +156,7 @@ fun RecetarioNavHost() {
                 onManageCategories = { navController.navigate(Destinations.MANAGE_CATEGORIES_ROUTE) },
                 onManageUtensils = { navController.navigate(Destinations.MANAGE_UTENSILS_ROUTE) },
                 onManageIngredients = { navController.navigate(Destinations.MANAGE_INGREDIENTS_ROUTE) },
+                onManageIngredientCategories = { navController.navigate(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) },
                 onHelp = { navController.navigate(Destinations.HELP_ROUTE) }
             )
         }
@@ -181,6 +184,13 @@ fun RecetarioNavHost() {
                 factory = viewModelFactory { initializer { ManageIngredientsViewModel(repository) } }
             )
             ManageIngredientsScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+        }
+
+        composable(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) {
+            val viewModel: ManageIngredientCategoriesViewModel = viewModel(
+                factory = viewModelFactory { initializer { ManageIngredientCategoriesViewModel(repository) } }
+            )
+            ManageIngredientCategoriesScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
         }
     }
 }

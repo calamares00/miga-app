@@ -1,0 +1,6 @@
+* Nuevo: importar una receta individual desde un archivo JSON,
+  eligiendo a qué libro añadirla.
+* Nuevo: categorías de ingredientes (Frutas, Verduras, Carnes...),
+  distintas de las categorías de receta, con gestión propia y catálogo
+  base de más de 400 ingredientes. Los ingredientes que ya tenías
+  creados aparecen como "Sin categoría" hasta que se la asignes.
