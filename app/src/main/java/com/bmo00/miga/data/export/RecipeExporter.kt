@@ -7,17 +7,59 @@ import androidx.core.content.FileProvider
 import com.bmo00.miga.data.model.Recipe
 import com.bmo00.miga.data.model.RecipeBook
 import com.bmo00.miga.data.repository.RecipeRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
 import java.io.File
+
+sealed interface RecipeImportResult {
+    data class Success(val recipe: RecipeExportDto) : RecipeImportResult
+    data class Error(val reason: String) : RecipeImportResult
+}
+
+sealed interface LibraryImportResult {
+    data class Success(val count: Int) : LibraryImportResult
+    data class Error(val reason: String) : LibraryImportResult
+}
 
 object RecipeExporter {
 
     private val json = Json {
         prettyPrint = true
         ignoreUnknownKeys = true
+    }
+
+    /**
+     * Migraciones del JSON de una receta individual, indexadas por versión de origen: el
+     * elemento en la posición N transforma un JSON en versión N a versión N+1. Un archivo sin
+     * clave "version" (todo lo exportado antes de que existiera este mecanismo) se trata como
+     * versión 0. Hoy la única migración es un no-op (0 -> 1 no cambió ningún campo), pero deja
+     * el mecanismo listo para cuando el esquema cambie de verdad.
+     */
+    private val recipeMigrations: List<(JsonObject) -> JsonObject> = listOf(
+        { obj -> obj } // v0 -> v1
+    )
+
+    /** Igual que [recipeMigrations] pero para la copia de seguridad completa ([LibraryExportDto]). */
+    private val libraryMigrations: List<(JsonObject) -> JsonObject> = listOf(
+        { obj -> obj } // v0 -> v1
+    )
+
+    private fun migrateJson(rawJson: String, migrations: List<(JsonObject) -> JsonObject>, currentVersion: Int): JsonObject {
+        var obj = json.parseToJsonElement(rawJson).jsonObject
+        var version = (obj["version"] as? JsonPrimitive)?.intOrNull ?: 0
+        while (version < currentVersion) {
+            obj = migrations.getOrElse(version) { { o: JsonObject -> o } }(obj)
+            version++
+        }
+        return JsonObject(obj + ("version" to JsonPrimitive(version)))
     }
 
     fun shareAsText(context: Context, recipe: Recipe) {
@@ -69,26 +111,49 @@ object RecipeExporter {
         }
     }
 
-    /** Importa una receta individual exportada como JSON (ver [shareAsJson]). Null si no se pudo leer/parsear. */
-    suspend fun importRecipe(context: Context, source: Uri): RecipeExportDto? = withContext(Dispatchers.IO) {
-        val content = context.contentResolver.openInputStream(source)?.bufferedReader()?.use { it.readText() }
-            ?: return@withContext null
-        runCatching { json.decodeFromString(RecipeExportDto.serializer(), content) }.getOrNull()
+    /** Importa una receta individual exportada como JSON (ver [shareAsJson]), migrando esquemas antiguos. */
+    suspend fun importRecipe(context: Context, source: Uri): RecipeImportResult = withContext(Dispatchers.IO) {
+        try {
+            val content = context.contentResolver.openInputStream(source)?.bufferedReader()?.use { it.readText() }
+                ?: return@withContext RecipeImportResult.Error("No se pudo abrir el archivo")
+            val migrated = migrateJson(content, recipeMigrations, CURRENT_RECIPE_SCHEMA_VERSION)
+            val dto = json.decodeFromJsonElement(RecipeExportDto.serializer(), migrated)
+            RecipeImportResult.Success(dto)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            RecipeImportResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+        }
     }
 
-    /** Importa una copia de seguridad JSON. Devuelve el número de recetas importadas. */
-    suspend fun importLibrary(context: Context, source: Uri, repository: RecipeRepository): Int = withContext(Dispatchers.IO) {
-        val content = context.contentResolver.openInputStream(source)?.bufferedReader()?.use { it.readText() }
-            ?: return@withContext 0
-        val dto = json.decodeFromString(LibraryExportDto.serializer(), content)
-        val bookIdsByName = mutableMapOf<String, Long>()
-        dto.recipes.forEach { recipeDto ->
-            val bookId = bookIdsByName.getOrPut(recipeDto.recipeBookName) {
-                repository.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName)
+    /** Importa una copia de seguridad JSON, migrando esquemas antiguos. */
+    suspend fun importLibrary(context: Context, source: Uri, repository: RecipeRepository): LibraryImportResult = withContext(Dispatchers.IO) {
+        try {
+            val content = context.contentResolver.openInputStream(source)?.bufferedReader()?.use { it.readText() }
+                ?: return@withContext LibraryImportResult.Error("No se pudo abrir el archivo")
+            val migrated = migrateJson(content, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
+            val dto = json.decodeFromJsonElement(LibraryExportDto.serializer(), migrated)
+            val bookIdsByName = mutableMapOf<String, Long>()
+            dto.recipes.forEach { recipeDto ->
+                val bookId = bookIdsByName.getOrPut(recipeDto.recipeBookName) {
+                    repository.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName)
+                }
+                repository.saveRecipe(recipeDto.toDraft(bookId))
             }
-            repository.saveRecipe(recipeDto.toDraft(bookId))
+            LibraryImportResult.Success(dto.recipes.size)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            LibraryImportResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
         }
-        dto.recipes.size
+    }
+
+    /** Comparte un subconjunto arbitrario de recetas como una copia de seguridad JSON (selección múltiple). */
+    fun shareRecipesAsJson(context: Context, fileName: String, recipes: List<Recipe>) {
+        val dto = LibraryExportDto(exportedAt = System.currentTimeMillis(), recipes = recipes.map { it.toExportDto() })
+        val content = json.encodeToString(dto)
+        val file = writeExportFile(context, sanitizeFileName(fileName) + ".json", content)
+        shareFile(context, file, "application/json")
     }
 
     private fun exportsDir(context: Context): File = File(context.cacheDir, "exports").apply { mkdirs() }

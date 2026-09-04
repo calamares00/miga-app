@@ -54,8 +54,10 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.bmo00.miga.BuildConfig
 import com.bmo00.miga.data.export.RecipeExportDto
+import com.bmo00.miga.data.export.RecipeImportResult
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
+import com.bmo00.miga.ui.common.JSON_MIME_TYPES
 import com.bmo00.miga.ui.security.BiometricAuthenticator
 import kotlinx.coroutines.launch
 
@@ -91,21 +93,22 @@ fun SettingsScreen(
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            viewModel.importLibrary(context, uri) { count ->
-                scope.launch { snackbarHostState.showSnackbar("Se importaron $count recetas") }
+            viewModel.importLibrary(context, uri) { message ->
+                scope.launch { snackbarHostState.showSnackbar(message) }
             }
         }
     }
     val importRecipeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             scope.launch {
-                val dto = viewModel.parseRecipeJson(context, uri)
-                when {
-                    dto == null -> snackbarHostState.showSnackbar("No se pudo leer el archivo de receta")
-                    books.isEmpty() -> snackbarHostState.showSnackbar("No tienes ningún libro. Crea uno primero.")
-                    else -> {
-                        selectedBookId = books.first().id
-                        pendingRecipeImport = dto
+                when (val result = viewModel.parseRecipeJson(context, uri)) {
+                    is RecipeImportResult.Error -> snackbarHostState.showSnackbar("No se pudo importar: ${result.reason}")
+                    is RecipeImportResult.Success -> when {
+                        books.isEmpty() -> snackbarHostState.showSnackbar("No tienes ningún libro. Crea uno primero.")
+                        else -> {
+                            selectedBookId = books.first().id
+                            pendingRecipeImport = result.recipe
+                        }
                     }
                 }
             }
@@ -175,10 +178,10 @@ fun SettingsScreen(
                 OutlinedButton(onClick = { exportLauncher.launch("recetarios_backup.json") }, modifier = Modifier.fillMaxWidth()) {
                     Text("Exportar toda la app (JSON)")
                 }
-                OutlinedButton(onClick = { importLauncher.launch(arrayOf("application/json")) }, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { importLauncher.launch(JSON_MIME_TYPES) }, modifier = Modifier.fillMaxWidth()) {
                     Text("Importar copia de seguridad")
                 }
-                OutlinedButton(onClick = { importRecipeLauncher.launch(arrayOf("application/json")) }, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { importRecipeLauncher.launch(JSON_MIME_TYPES) }, modifier = Modifier.fillMaxWidth()) {
                     Text("Importar receta")
                 }
             }

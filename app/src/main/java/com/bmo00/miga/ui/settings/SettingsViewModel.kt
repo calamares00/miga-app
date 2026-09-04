@@ -5,8 +5,10 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bmo00.miga.BuildConfig
+import com.bmo00.miga.data.export.LibraryImportResult
 import com.bmo00.miga.data.export.RecipeExportDto
 import com.bmo00.miga.data.export.RecipeExporter
+import com.bmo00.miga.data.export.RecipeImportResult
 import com.bmo00.miga.data.export.toDraft
 import com.bmo00.miga.data.local.SettingsRepository
 import com.bmo00.miga.data.model.RecipeBookSummary
@@ -79,17 +81,19 @@ class SettingsViewModel(
         }
     }
 
-    fun importLibrary(context: Context, source: Uri, onFinished: (Int) -> Unit) {
+    fun importLibrary(context: Context, source: Uri, onMessage: (String) -> Unit) {
         viewModelScope.launch {
-            val count = RecipeExporter.importLibrary(context, source, repository)
-            onFinished(count)
+            when (val result = RecipeExporter.importLibrary(context, source, repository)) {
+                is LibraryImportResult.Success -> onMessage("Se importaron ${result.count} recetas")
+                is LibraryImportResult.Error -> onMessage("No se pudo importar: ${result.reason}")
+            }
         }
     }
 
     val books: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    suspend fun parseRecipeJson(context: Context, source: Uri): RecipeExportDto? =
+    suspend fun parseRecipeJson(context: Context, source: Uri): RecipeImportResult =
         RecipeExporter.importRecipe(context, source)
 
     fun importRecipeIntoBook(dto: RecipeExportDto, bookId: Long, onFinished: () -> Unit) {
