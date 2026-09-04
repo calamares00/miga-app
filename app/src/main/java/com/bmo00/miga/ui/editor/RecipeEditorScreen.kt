@@ -15,12 +15,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -52,7 +54,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.local.PhotoStorage
@@ -72,6 +77,8 @@ fun RecipeEditorScreen(
     val availableUtensils by viewModel.availableUtensils.collectAsState()
     val visionState by viewModel.visionState.collectAsState()
     var visionErrorDismissed by remember { mutableStateOf(false) }
+    var showVisionErrorDialog by remember { mutableStateOf(false) }
+    val clipboardManager = LocalClipboardManager.current
 
     LaunchedEffect(sourcePhotoUri) {
         sourcePhotoUri?.let { viewModel.startVisionExtraction(context, Uri.parse(it)) }
@@ -121,7 +128,11 @@ fun RecipeEditorScreen(
                         "No se pudo leer la foto con IA: ${(visionState as VisionState.Error).reason}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.weight(1f)
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { showVisionErrorDialog = true }
                     )
                     IconButton(onClick = { visionErrorDismissed = true }) {
                         Icon(Icons.Filled.Close, contentDescription = "Cerrar aviso")
@@ -244,6 +255,27 @@ fun RecipeEditorScreen(
             }
         }
         }
+    }
+
+    if (showVisionErrorDialog && visionState is VisionState.Error) {
+        val reason = (visionState as VisionState.Error).reason
+        AlertDialog(
+            onDismissRequest = { showVisionErrorDialog = false },
+            title = { Text("Detalle del error") },
+            text = {
+                SelectionContainer {
+                    Column(modifier = Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
+                        Text(reason, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { clipboardManager.setText(AnnotatedString(reason)) }) { Text("Copiar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showVisionErrorDialog = false }) { Text("Cerrar") }
+            }
+        )
     }
 }
 
