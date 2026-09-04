@@ -1,0 +1,5 @@
+Corrige la descarga automática de actualizaciones: se quedaba siempre en una versión antigua porque el canal beta acumula APKs de versiones pasadas y no se filtraba por versión al elegir cuál descargar.
+
+Añade los 3 modos de vista (compacto, normal, cuadrícula) también a la lista de libros, igual que ya tenía la lista de recetas.
+
+Al importar una receta con foto, si la categoría detectada trae varios nombres separados por coma (p.ej. "Arroz, legumbres, patatas y pasta"), ahora solo el primero se usa como categoría y el resto se añaden como etiquetas.

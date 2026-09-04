@@ -77,7 +77,7 @@ object UpdateChecker {
                     val latestVersion = VERSION_IN_NAME_REGEX.find(release.name.orEmpty())?.groupValues?.get(1)
                         ?: release.tagName.removePrefix("v")
                     if (isNewerVersion(current = currentVersion, latest = latestVersion)) {
-                        val apkDownloadUrl = findApkDownloadUrl(release.assets)
+                        val apkDownloadUrl = findApkDownloadUrl(release.assets, latestVersion)
                         UpdateCheckResult.UpdateFound(UpdateInfo(latestVersion, release.htmlUrl, apkDownloadUrl))
                     } else {
                         UpdateCheckResult.UpToDate
@@ -95,11 +95,23 @@ object UpdateChecker {
     // El workflow sube un asset por ABI con el patrón "<slug>-v<version>-<abi>-<buildType>.apk"
     // (y "-universal-<buildType>.apk"); los assets sin firmar añaden un sufijo "-unsigned" que
     // este endsWith ya excluye. Ver .github/workflows/android-build.yml (función rename_apks).
-    private fun findApkDownloadUrl(assets: List<GithubAssetDto>): String? {
+    //
+    // El tag "beta-latest" es una única Release que el workflow sobrescribe en cada push, pero
+    // softprops/action-gh-release NO borra los assets de versiones anteriores cuyo nombre difiere
+    // del actual (el nombre incluye la versión, así que cambia en cada push) — se van acumulando
+    // APKs de versiones viejas en esa misma Release. Por eso hace falta filtrar también por
+    // "-v$version-" y no solo por ABI/tipo de build, o se puede acabar cogiendo con firstOrNull()
+    // el asset más antiguo que matchee el sufijo en vez del de la versión que se acaba de detectar.
+    private fun findApkDownloadUrl(assets: List<GithubAssetDto>, version: String): String? {
         val buildType = if (BuildConfig.DEBUG) "debug" else "release"
         val abi = Build.SUPPORTED_ABIS.firstOrNull()
-        val exactMatch = abi?.let { a -> assets.firstOrNull { it.name.endsWith("-$a-$buildType.apk") } }
-        val universalMatch = assets.firstOrNull { it.name.endsWith("-universal-$buildType.apk") }
+        val versionMarker = "-v$version-"
+        val exactMatch = abi?.let { a ->
+            assets.firstOrNull { it.name.contains(versionMarker) && it.name.endsWith("-$a-$buildType.apk") }
+        }
+        val universalMatch = assets.firstOrNull {
+            it.name.contains(versionMarker) && it.name.endsWith("-universal-$buildType.apk")
+        }
         return (exactMatch ?: universalMatch)?.browserDownloadUrl
     }
 
