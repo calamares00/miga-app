@@ -1,0 +1,1 @@
+Corrige de raíz el error truncado de "Importar con foto": ya no se recortaba en la UI, sino dentro del propio mensaje de error de kotlinx.serialization. Ahora además se limpian los fences de markdown que a veces envuelven la respuesta de Gemini, así que en el caso típico el error ni siquiera llega a aparecer.

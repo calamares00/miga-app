@@ -83,7 +83,15 @@ object GeminiVisionClient : RecipeVisionClient {
                     val response = json.decodeFromString(GeminiResponse.serializer(), body)
                     val text = response.candidates.firstOrNull()?.content?.parts?.firstOrNull { it.text != null }?.text
                         ?: return@withContext RecipeVisionResult.Error("Gemini no devolvió ningún resultado")
-                    val recipe = json.decodeFromString(RecipeVisionResultDto.serializer(), text)
+                    val recipe = try {
+                        json.decodeFromString(RecipeVisionResultDto.serializer(), stripMarkdownFences(text))
+                    } catch (e: Exception) {
+                        // kotlinx.serialization recorta el fragmento de JSON de su propio mensaje a un
+                        // puñado de caracteres (ver JsonExceptionsKt.minify); nos quedamos solo con la
+                        // parte descriptiva y adjuntamos el texto completo de Gemini aparte, sin recortar.
+                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: "no se pudo interpretar el JSON"
+                        return@withContext RecipeVisionResult.Error("$shortReason\n\nRespuesta completa del modelo:\n$text")
+                    }
                     if (recipe.name.isBlank()) {
                         RecipeVisionResult.Error("No se ha reconocido ninguna receta en la foto")
                     } else {
@@ -98,6 +106,18 @@ object GeminiVisionClient : RecipeVisionClient {
                 RecipeVisionResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
             }
         }
+
+    // A veces Gemini envuelve el JSON en un bloque de markdown pese a pedirle
+    // responseMimeType = "application/json"; se lo quitamos antes de parsear.
+    private fun stripMarkdownFences(raw: String): String {
+        val trimmed = raw.trim()
+        if (!trimmed.startsWith("```")) return trimmed
+        return trimmed
+            .removePrefix("```json")
+            .removePrefix("```")
+            .removeSuffix("```")
+            .trim()
+    }
 }
 
 @Serializable
