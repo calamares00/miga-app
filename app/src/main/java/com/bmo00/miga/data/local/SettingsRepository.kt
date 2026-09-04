@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.bmo00.miga.data.model.RecipeListViewMode
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
 import kotlinx.coroutines.flow.Flow
@@ -18,6 +19,7 @@ class SettingsRepository(private val context: Context) {
     private val biometricLockKey = booleanPreferencesKey("biometric_lock_enabled")
     private val autoCheckUpdatesKey = booleanPreferencesKey("auto_check_updates_enabled")
     private val updateChannelKey = stringPreferencesKey("update_channel")
+    private val recipeListViewModeKey = stringPreferencesKey("recipe_list_view_mode")
 
     fun observeThemeMode(): Flow<ThemeMode> =
         context.settingsDataStore.data.map { prefs ->
@@ -54,5 +56,17 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setUpdateChannel(channel: UpdateChannel) {
         context.settingsDataStore.edit { prefs -> prefs[updateChannelKey] = channel.name }
+    }
+
+    /** Vista de la lista de recetas: se guarda de forma global (no por libro), como el tema. */
+    fun observeRecipeListViewMode(): Flow<RecipeListViewMode> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[recipeListViewModeKey]?.let { stored ->
+                runCatching { RecipeListViewMode.valueOf(stored) }.getOrDefault(RecipeListViewMode.NORMAL)
+            } ?: RecipeListViewMode.NORMAL
+        }
+
+    suspend fun setRecipeListViewMode(mode: RecipeListViewMode) {
+        context.settingsDataStore.edit { prefs -> prefs[recipeListViewModeKey] = mode.name }
     }
 }

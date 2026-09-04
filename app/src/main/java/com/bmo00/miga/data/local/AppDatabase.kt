@@ -41,7 +41,7 @@ import com.bmo00.miga.data.local.entity.UtensilEntity
     // JSON de esquema de Room no aporta nada, y compilar debug+release a la vez (como hace CI)
     // provoca que kspDebugKotlin y kspReleaseKotlin escriban al mismo fichero en paralelo,
     // dando el error intermitente "Empty schema file". Se desactiva la exportación.
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

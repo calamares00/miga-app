@@ -28,7 +28,9 @@ import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.StepGroup
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.util.UUID
 
 /** Se lanza al intentar borrar un libro de recetas que todavía tiene recetas dentro. */
 class RecipeBookNotEmptyException(val recipeCount: Int) : Exception()
@@ -85,6 +87,7 @@ class RecipeRepository(private val db: AppDatabase) {
         val recipeId = if (draft.id == 0L) {
             recipeDao.insertRecipe(
                 RecipeEntity(
+                    uid = draft.uid ?: UUID.randomUUID().toString(),
                     name = draft.name.trim(),
                     categoryId = categoryId,
                     recipeBookId = draft.recipeBookId,
@@ -105,6 +108,7 @@ class RecipeRepository(private val db: AppDatabase) {
             recipeDao.updateRecipe(
                 RecipeEntity(
                     id = draft.id,
+                    uid = existing?.uid ?: draft.uid ?: UUID.randomUUID().toString(),
                     name = draft.name.trim(),
                     categoryId = categoryId,
                     recipeBookId = existing?.recipeBookId ?: draft.recipeBookId,
@@ -346,15 +350,20 @@ class RecipeRepository(private val db: AppDatabase) {
         }
 
     fun observeRecipeBook(id: Long): Flow<RecipeBook?> =
-        recipeBookDao.observeOne(id).map { it?.let { entity -> RecipeBook(entity.id, entity.name, entity.coverPhotoUri) } }
+        recipeBookDao.observeOne(id).map { it?.let { entity -> RecipeBook(entity.id, entity.uid, entity.name, entity.coverPhotoUri) } }
 
     suspend fun getRecipeBookOnce(id: Long): RecipeBook? =
-        recipeBookDao.getOnce(id)?.let { RecipeBook(it.id, it.name, it.coverPhotoUri) }
+        recipeBookDao.getOnce(id)?.let { RecipeBook(it.id, it.uid, it.name, it.coverPhotoUri) }
+
+    /** Todos los libros, usados al exportar toda la app (para incluir sus portadas en el ZIP). */
+    suspend fun getAllRecipeBooksOnce(): List<RecipeBook> =
+        recipeBookDao.observeAllWithCounts().first().map { RecipeBook(it.book.id, it.book.uid, it.book.name, it.book.coverPhotoUri) }
 
     suspend fun saveRecipeBook(draft: RecipeBookDraft): Long {
         return if (draft.id == 0L) {
             recipeBookDao.insert(
                 RecipeBookEntity(
+                    uid = draft.uid ?: UUID.randomUUID().toString(),
                     name = draft.name.trim(),
                     coverPhotoUri = draft.coverPhotoUri,
                     createdAt = System.currentTimeMillis()
@@ -365,6 +374,7 @@ class RecipeRepository(private val db: AppDatabase) {
             recipeBookDao.update(
                 RecipeBookEntity(
                     id = draft.id,
+                    uid = existing?.uid ?: draft.uid ?: UUID.randomUUID().toString(),
                     name = draft.name.trim(),
                     coverPhotoUri = draft.coverPhotoUri,
                     createdAt = existing?.createdAt ?: System.currentTimeMillis()
@@ -381,11 +391,22 @@ class RecipeRepository(private val db: AppDatabase) {
         recipeBookDao.delete(id)
     }
 
-    /** Usado al importar una copia de seguridad: busca un libro por nombre o lo crea si no existe. */
-    suspend fun getOrCreateRecipeBookIdByName(name: String): Long {
+    /**
+     * Usado al importar una copia de seguridad: busca un libro por nombre o lo crea si no existe.
+     * [uid]/[coverPhotoUri] solo se usan al crear un libro nuevo; si ya existe uno con ese nombre
+     * se reutiliza tal cual, sin tocar su portada (igual que con la recategorización de ingredientes).
+     */
+    suspend fun getOrCreateRecipeBookIdByName(name: String, uid: String? = null, coverPhotoUri: String? = null): Long {
         val trimmed = name.trim().ifBlank { "Sin nombre" }
         recipeBookDao.findByName(trimmed)?.let { return it.id }
-        return recipeBookDao.insert(RecipeBookEntity(name = trimmed, coverPhotoUri = null, createdAt = System.currentTimeMillis()))
+        return recipeBookDao.insert(
+            RecipeBookEntity(
+                uid = uid ?: UUID.randomUUID().toString(),
+                name = trimmed,
+                coverPhotoUri = coverPhotoUri,
+                createdAt = System.currentTimeMillis()
+            )
+        )
     }
 
     private suspend fun resolveCategoryId(name: String): Long {
@@ -426,6 +447,7 @@ fun RecipeWithDetails.toDomain(): Recipe {
 
     return Recipe(
         id = recipe.id,
+        uid = recipe.uid,
         recipeBookId = recipe.recipeBookId,
         recipeBookName = recipeBook?.name.orEmpty(),
         name = recipe.name,

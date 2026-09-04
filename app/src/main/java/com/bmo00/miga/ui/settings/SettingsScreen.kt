@@ -54,8 +54,11 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.bmo00.miga.BuildConfig
 import com.bmo00.miga.data.export.RecipeExportDto
+import com.bmo00.miga.data.export.RecipeImportResult
+import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
+import com.bmo00.miga.ui.common.BACKUP_MIME_TYPES
 import com.bmo00.miga.ui.security.BiometricAuthenticator
 import kotlinx.coroutines.launch
 
@@ -80,10 +83,10 @@ fun SettingsScreen(
     val activity = context as? FragmentActivity
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    var pendingRecipeImport by remember { mutableStateOf<RecipeExportDto?>(null) }
+    var pendingRecipeImport by remember { mutableStateOf<Pair<RecipeExportDto, List<RecipePhoto>>?>(null) }
     var selectedBookId by remember { mutableStateOf<Long?>(null) }
 
-    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         if (uri != null) {
             viewModel.exportLibrary(context, uri)
             scope.launch { snackbarHostState.showSnackbar("Copia de seguridad exportada") }
@@ -91,21 +94,22 @@ fun SettingsScreen(
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            viewModel.importLibrary(context, uri) { count ->
-                scope.launch { snackbarHostState.showSnackbar("Se importaron $count recetas") }
+            viewModel.importLibrary(context, uri) { message ->
+                scope.launch { snackbarHostState.showSnackbar(message) }
             }
         }
     }
     val importRecipeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             scope.launch {
-                val dto = viewModel.parseRecipeJson(context, uri)
-                when {
-                    dto == null -> snackbarHostState.showSnackbar("No se pudo leer el archivo de receta")
-                    books.isEmpty() -> snackbarHostState.showSnackbar("No tienes ningún libro. Crea uno primero.")
-                    else -> {
-                        selectedBookId = books.first().id
-                        pendingRecipeImport = dto
+                when (val result = viewModel.parseRecipeJson(context, uri)) {
+                    is RecipeImportResult.Error -> snackbarHostState.showSnackbar("No se pudo importar: ${result.reason}")
+                    is RecipeImportResult.Success -> when {
+                        books.isEmpty() -> snackbarHostState.showSnackbar("No tienes ningún libro. Crea uno primero.")
+                        else -> {
+                            selectedBookId = books.first().id
+                            pendingRecipeImport = result.recipe to result.photos
+                        }
                     }
                 }
             }
@@ -172,13 +176,13 @@ fun SettingsScreen(
             HorizontalDivider()
 
             SettingsSection(title = "Copia de seguridad") {
-                OutlinedButton(onClick = { exportLauncher.launch("recetarios_backup.json") }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Exportar toda la app (JSON)")
+                OutlinedButton(onClick = { exportLauncher.launch("recetarios_backup.zip") }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Exportar toda la app")
                 }
-                OutlinedButton(onClick = { importLauncher.launch(arrayOf("application/json")) }, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { importLauncher.launch(BACKUP_MIME_TYPES) }, modifier = Modifier.fillMaxWidth()) {
                     Text("Importar copia de seguridad")
                 }
-                OutlinedButton(onClick = { importRecipeLauncher.launch(arrayOf("application/json")) }, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { importRecipeLauncher.launch(BACKUP_MIME_TYPES) }, modifier = Modifier.fillMaxWidth()) {
                     Text("Importar receta")
                 }
             }
@@ -280,7 +284,7 @@ fun SettingsScreen(
         }
     }
 
-    pendingRecipeImport?.let { dto ->
+    pendingRecipeImport?.let { (dto, photos) ->
         AlertDialog(
             onDismissRequest = { pendingRecipeImport = null },
             title = { Text("Importar \"${dto.name}\"") },
@@ -306,7 +310,7 @@ fun SettingsScreen(
                     onClick = {
                         val bookId = selectedBookId
                         if (bookId != null) {
-                            viewModel.importRecipeIntoBook(dto, bookId) {
+                            viewModel.importRecipeIntoBook(dto, photos, bookId) {
                                 scope.launch { snackbarHostState.showSnackbar("Receta importada") }
                             }
                         }

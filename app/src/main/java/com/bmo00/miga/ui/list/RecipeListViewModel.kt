@@ -1,14 +1,19 @@
 package com.bmo00.miga.ui.list
 
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bmo00.miga.data.export.RecipeExporter
+import com.bmo00.miga.data.export.RecipeImportResult
+import com.bmo00.miga.data.export.toDraft
+import com.bmo00.miga.data.local.SettingsRepository
 import com.bmo00.miga.data.local.entity.CategoryEntity
 import com.bmo00.miga.data.local.entity.TagEntity
 import com.bmo00.miga.data.local.entity.UtensilEntity
 import com.bmo00.miga.data.model.Recipe
 import com.bmo00.miga.data.model.RecipeFilter
+import com.bmo00.miga.data.model.RecipeListViewMode
 import com.bmo00.miga.data.model.RecipeSummary
 import com.bmo00.miga.data.model.SortOption
 import com.bmo00.miga.data.model.toSummary
@@ -46,10 +51,67 @@ private data class RecipeListBase(
 
 private const val UNCATEGORIZED = "Sin categoría"
 
-class RecipeListViewModel(private val repository: RecipeRepository, private val bookId: Long) : ViewModel() {
+class RecipeListViewModel(
+    private val repository: RecipeRepository,
+    private val bookId: Long,
+    private val settingsRepository: SettingsRepository
+) : ViewModel() {
 
     private val _filter = MutableStateFlow(RecipeFilter())
     val filter: StateFlow<RecipeFilter> = _filter
+
+    val viewMode: StateFlow<RecipeListViewMode> = settingsRepository.observeRecipeListViewMode()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecipeListViewMode.NORMAL)
+
+    fun setViewMode(mode: RecipeListViewMode) {
+        viewModelScope.launch { settingsRepository.setRecipeListViewMode(mode) }
+    }
+
+    private val _selectedIds = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedIds: StateFlow<Set<Long>> = _selectedIds
+
+    fun toggleSelection(id: Long) {
+        _selectedIds.update { current -> if (id in current) current - id else current + id }
+    }
+
+    fun startSelection(id: Long) {
+        _selectedIds.value = setOf(id)
+    }
+
+    fun clearSelection() {
+        _selectedIds.value = emptySet()
+    }
+
+    fun deleteSelected() {
+        viewModelScope.launch {
+            _selectedIds.value.forEach { repository.deleteRecipe(it) }
+            _selectedIds.value = emptySet()
+        }
+    }
+
+    fun exportSelected(context: Context) {
+        viewModelScope.launch {
+            val ids = _selectedIds.value
+            val book = repository.getRecipeBookOnce(bookId)
+            val recipes = repository.getRecipesForBookOnce(bookId).filter { it.id in ids }
+            if (recipes.isNotEmpty()) {
+                RecipeExporter.shareRecipes(context, "recetas_seleccionadas", book, recipes)
+            }
+            _selectedIds.value = emptySet()
+        }
+    }
+
+    fun importRecipeFile(context: Context, uri: Uri, onMessage: (String) -> Unit) {
+        viewModelScope.launch {
+            when (val result = RecipeExporter.importRecipe(context, uri)) {
+                is RecipeImportResult.Success -> {
+                    repository.saveRecipe(result.recipe.toDraft(bookId, result.photos))
+                    onMessage("Receta importada")
+                }
+                is RecipeImportResult.Error -> onMessage("No se pudo importar: ${result.reason}")
+            }
+        }
+    }
 
     private val base = combine(
         repository.observeRecipesForBook(bookId),
@@ -91,11 +153,11 @@ class RecipeListViewModel(private val repository: RecipeRepository, private val 
         viewModelScope.launch { repository.deleteRecipe(id) }
     }
 
-    fun exportBookAsJson(context: Context) {
+    fun exportBook(context: Context) {
         viewModelScope.launch {
             val book = repository.getRecipeBookOnce(bookId) ?: return@launch
             val recipes = repository.getRecipesForBookOnce(bookId)
-            RecipeExporter.shareBookAsJson(context, book, recipes)
+            RecipeExporter.shareBook(context, book, recipes)
         }
     }
 

@@ -25,6 +25,8 @@ import androidx.room.PrimaryKey
 )
 data class RecipeEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** Identificador estable (UUID) independiente del id local, usado en export/import. */
+    val uid: String,
     val name: String,
     val categoryId: Long?,
     val recipeBookId: Long,

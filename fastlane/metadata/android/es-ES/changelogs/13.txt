@@ -1,0 +1,6 @@
+* Nuevo: las recetas y los libros llevan ahora un identificador estable
+  propio, independiente del que usa la base de datos.
+* Nuevo: exportar una receta, un libro o toda la app incluye ahora las
+  fotos (en un .zip); si no hay fotos de por medio se sigue exportando el
+  .json de siempre.
+* La importación acepta tanto el .json plano como el .zip con fotos.
