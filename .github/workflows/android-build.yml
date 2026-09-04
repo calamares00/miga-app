@@ -38,6 +38,9 @@ jobs:
           else
             echo "mode=dev_debug" >> "$GITHUB_OUTPUT"
           fi
+          # Los nombres de artefacto de GitHub Actions no admiten "/", que sí es válido en un
+          # nombre de rama (ej. "setup/initial-import"); se sustituye por "-".
+          echo "safe_ref=$(echo '${{ github.ref_name }}' | tr '/' '-')" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -81,7 +84,7 @@ jobs:
         if: steps.mode.outputs.mode == 'dev_debug'
         uses: actions/upload-artifact@v4
         with:
-          name: miga-debug-${{ github.ref_name }}
+          name: miga-debug-${{ steps.mode.outputs.safe_ref }}
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
