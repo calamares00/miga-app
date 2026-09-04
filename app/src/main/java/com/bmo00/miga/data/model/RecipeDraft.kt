@@ -3,6 +3,8 @@ package com.bmo00.miga.data.model
 /** Modelo editable usado por la pantalla de alta/edición de recetas. */
 data class RecipeDraft(
     val id: Long = 0L,
+    /** Solo se rellena al importar, para conservar el uid de la receta exportada; null = generar uno nuevo. */
+    val uid: String? = null,
     val recipeBookId: Long,
     val name: String,
     val categoryName: String?,
@@ -22,6 +24,7 @@ data class RecipeDraft(
 
 fun Recipe.toDraft() = RecipeDraft(
     id = id,
+    uid = uid,
     recipeBookId = recipeBookId,
     name = name,
     categoryName = categoryName,

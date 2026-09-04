@@ -20,4 +20,16 @@ object PhotoStorage {
             null
         }
     }
+
+    /** Igual que [copyToInternalStorage] pero a partir de bytes ya en memoria (foto extraída de un ZIP importado). */
+    fun copyBytesToInternalStorage(context: Context, bytes: ByteArray): String? {
+        return try {
+            val dir = File(context.filesDir, "photos").apply { mkdirs() }
+            val destination = File(dir, "${UUID.randomUUID()}.jpg")
+            destination.writeBytes(bytes)
+            "file://${destination.absolutePath}"
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

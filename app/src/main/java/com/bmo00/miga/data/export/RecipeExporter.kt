@@ -4,23 +4,32 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.bmo00.miga.data.local.PhotoStorage
 import com.bmo00.miga.data.model.Recipe
 import com.bmo00.miga.data.model.RecipeBook
+import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.repository.RecipeRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.OutputStream
+import java.util.UUID
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 
 sealed interface RecipeImportResult {
-    data class Success(val recipe: RecipeExportDto) : RecipeImportResult
+    data class Success(val recipe: RecipeExportDto, val photos: List<RecipePhoto> = emptyList()) : RecipeImportResult
     data class Error(val reason: String) : RecipeImportResult
 }
 
@@ -34,23 +43,35 @@ object RecipeExporter {
     private val json = Json {
         prettyPrint = true
         ignoreUnknownKeys = true
+        // Sin esto, un campo cuyo valor coincide con su default (p.ej. "version" recién creado)
+        // no se escribiría en el JSON de salida, y el importador lo trataría como si faltase.
+        encodeDefaults = true
     }
 
     /**
      * Migraciones del JSON de una receta individual, indexadas por versión de origen: el
      * elemento en la posición N transforma un JSON en versión N a versión N+1. Un archivo sin
      * clave "version" (todo lo exportado antes de que existiera este mecanismo) se trata como
-     * versión 0. Hoy la única migración es un no-op (0 -> 1 no cambió ningún campo), pero deja
-     * el mecanismo listo para cuando el esquema cambie de verdad.
+     * versión 0.
      */
     private val recipeMigrations: List<(JsonObject) -> JsonObject> = listOf(
-        { obj -> obj } // v0 -> v1
+        { obj -> obj }, // v0 -> v1: el "esquema v0" ya tenía los mismos campos, no-op.
+        { obj -> addUidIfMissing(obj) } // v1 -> v2: añade "uid" (las fotos ya tienen valor por defecto).
     )
 
     /** Igual que [recipeMigrations] pero para la copia de seguridad completa ([LibraryExportDto]). */
     private val libraryMigrations: List<(JsonObject) -> JsonObject> = listOf(
-        { obj -> obj } // v0 -> v1
+        { obj -> obj }, // v0 -> v1
+        { obj ->
+            // v1 -> v2: cada receta anidada en "recipes" también necesita su propio "uid".
+            val recipesArray = obj["recipes"] as? JsonArray ?: JsonArray(emptyList())
+            val migratedRecipes = JsonArray(recipesArray.map { addUidIfMissing(it.jsonObject) })
+            JsonObject(obj + ("recipes" to migratedRecipes))
+        }
     )
+
+    private fun addUidIfMissing(obj: JsonObject): JsonObject =
+        if (obj.containsKey("uid")) obj else JsonObject(obj + ("uid" to JsonPrimitive(UUID.randomUUID().toString())))
 
     private fun migrateJson(rawJson: String, migrations: List<(JsonObject) -> JsonObject>, currentVersion: Int): JsonObject {
         var obj = json.parseToJsonElement(rawJson).jsonObject
@@ -71,10 +92,17 @@ object RecipeExporter {
         context.startActivity(Intent.createChooser(intent, "Compartir receta"))
     }
 
-    fun shareAsJson(context: Context, recipe: Recipe) {
+    /** Exporta una receta: ZIP con sus fotos si tiene alguna, si no un .json plano como hasta ahora. */
+    fun shareRecipe(context: Context, recipe: Recipe) {
         val content = json.encodeToString(recipe.toExportDto())
-        val file = writeExportFile(context, sanitizeFileName(recipe.name) + ".json", content)
-        shareFile(context, file, "application/json")
+        if (recipe.photos.isEmpty()) {
+            val file = writeExportFile(context, sanitizeFileName(recipe.name) + ".json", content)
+            shareFile(context, file, "application/json")
+        } else {
+            val photoSources = recipe.photos.mapIndexed { index, photo -> "recipes/${recipe.uid}/$index.jpg" to photo.uri }
+            val file = writeZipFile(context, sanitizeFileName(recipe.name) + ".zip", content, photoSources)
+            shareFile(context, file, "application/zip")
+        }
     }
 
     fun shareAsPdf(context: Context, recipe: Recipe) {
@@ -85,11 +113,9 @@ object RecipeExporter {
         shareFile(context, file, "application/pdf")
     }
 
-    fun shareBookAsJson(context: Context, book: RecipeBook, recipes: List<Recipe>) {
-        val dto = LibraryExportDto(exportedAt = System.currentTimeMillis(), recipes = recipes.map { it.toExportDto() })
-        val content = json.encodeToString(dto)
-        val file = writeExportFile(context, sanitizeFileName(book.name) + ".json", content)
-        shareFile(context, file, "application/json")
+    /** Exporta un libro completo: ZIP si el libro o alguna receta tienen foto, si no un .json plano. */
+    fun shareBook(context: Context, book: RecipeBook, recipes: List<Recipe>) {
+        shareRecipes(context, book.name, book, recipes)
     }
 
     fun shareBookAsPdf(context: Context, book: RecipeBook, recipes: List<Recipe>) {
@@ -100,25 +126,58 @@ object RecipeExporter {
         shareFile(context, file, "application/pdf")
     }
 
-    suspend fun exportLibrary(context: Context, destination: Uri, recipes: List<Recipe>) = withContext(Dispatchers.IO) {
+    /** Comparte un subconjunto arbitrario de recetas (selección múltiple), con la portada de [book] si se indica. */
+    fun shareRecipes(context: Context, fileName: String, book: RecipeBook?, recipes: List<Recipe>) {
         val dto = LibraryExportDto(
             exportedAt = System.currentTimeMillis(),
+            books = listOfNotNull(book?.let { bookExportDto(it) }),
             recipes = recipes.map { it.toExportDto() }
         )
         val content = json.encodeToString(dto)
-        context.contentResolver.openOutputStream(destination)?.use { output ->
-            output.write(content.toByteArray())
+        val hasPhotos = (book?.coverPhotoUri != null) || recipes.any { it.photos.isNotEmpty() }
+        if (!hasPhotos) {
+            val file = writeExportFile(context, sanitizeFileName(fileName) + ".json", content)
+            shareFile(context, file, "application/json")
+        } else {
+            val photoSources = photoSourcesFor(book, recipes)
+            val file = writeZipFile(context, sanitizeFileName(fileName) + ".zip", content, photoSources)
+            shareFile(context, file, "application/zip")
         }
     }
 
-    /** Importa una receta individual exportada como JSON (ver [shareAsJson]), migrando esquemas antiguos. */
+    /** Copia de seguridad de toda la app: siempre en ZIP (con o sin fotos) para no tener que decidir el formato al elegir dónde guardarla. */
+    suspend fun exportLibrary(context: Context, destination: Uri, books: List<RecipeBook>, recipes: List<Recipe>) = withContext(Dispatchers.IO) {
+        val dto = LibraryExportDto(
+            exportedAt = System.currentTimeMillis(),
+            books = books.map { bookExportDto(it) },
+            recipes = recipes.map { it.toExportDto() }
+        )
+        val content = json.encodeToString(dto)
+        val photoSources = books.flatMap { book ->
+            book.coverPhotoUri?.let { listOf("books/${book.uid}/cover.jpg" to it) } ?: emptyList()
+        } + recipes.flatMap { recipe -> recipe.photos.mapIndexed { index, photo -> "recipes/${recipe.uid}/$index.jpg" to photo.uri } }
+        context.contentResolver.openOutputStream(destination)?.use { output ->
+            writeZipToStream(context, output, content, photoSources)
+        }
+    }
+
+    /** Importa una receta individual exportada (ver [shareRecipe]): .json plano o .zip con fotos, migrando esquemas antiguos. */
     suspend fun importRecipe(context: Context, source: Uri): RecipeImportResult = withContext(Dispatchers.IO) {
         try {
-            val content = context.contentResolver.openInputStream(source)?.bufferedReader()?.use { it.readText() }
+            val bytes = context.contentResolver.openInputStream(source)?.use { it.readBytes() }
                 ?: return@withContext RecipeImportResult.Error("No se pudo abrir el archivo")
-            val migrated = migrateJson(content, recipeMigrations, CURRENT_RECIPE_SCHEMA_VERSION)
+            val isZip = isZip(bytes)
+            val entries = if (isZip) readZipEntries(bytes) else emptyMap<String, ByteArray>()
+            val manifestText = if (isZip) {
+                entries["manifest.json"]?.toString(Charsets.UTF_8)
+                    ?: return@withContext RecipeImportResult.Error("El archivo ZIP no contiene manifest.json")
+            } else {
+                bytes.toString(Charsets.UTF_8)
+            }
+            val migrated = migrateJson(manifestText, recipeMigrations, CURRENT_RECIPE_SCHEMA_VERSION)
             val dto = json.decodeFromJsonElement(RecipeExportDto.serializer(), migrated)
-            RecipeImportResult.Success(dto)
+            val photos = resolvePhotos(context, dto.uid, dto.photos, entries)
+            RecipeImportResult.Success(dto, photos)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -126,19 +185,32 @@ object RecipeExporter {
         }
     }
 
-    /** Importa una copia de seguridad JSON, migrando esquemas antiguos. */
+    /** Importa una copia de seguridad (.json plano o .zip con fotos), migrando esquemas antiguos. */
     suspend fun importLibrary(context: Context, source: Uri, repository: RecipeRepository): LibraryImportResult = withContext(Dispatchers.IO) {
         try {
-            val content = context.contentResolver.openInputStream(source)?.bufferedReader()?.use { it.readText() }
+            val bytes = context.contentResolver.openInputStream(source)?.use { it.readBytes() }
                 ?: return@withContext LibraryImportResult.Error("No se pudo abrir el archivo")
-            val migrated = migrateJson(content, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
+            val isZip = isZip(bytes)
+            val entries = if (isZip) readZipEntries(bytes) else emptyMap<String, ByteArray>()
+            val manifestText = if (isZip) {
+                entries["manifest.json"]?.toString(Charsets.UTF_8)
+                    ?: return@withContext LibraryImportResult.Error("El archivo ZIP no contiene manifest.json")
+            } else {
+                bytes.toString(Charsets.UTF_8)
+            }
+            val migrated = migrateJson(manifestText, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
             val dto = json.decodeFromJsonElement(LibraryExportDto.serializer(), migrated)
             val bookIdsByName = mutableMapOf<String, Long>()
             dto.recipes.forEach { recipeDto ->
                 val bookId = bookIdsByName.getOrPut(recipeDto.recipeBookName) {
-                    repository.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName)
+                    val bookMeta = dto.books.find { it.name == recipeDto.recipeBookName }
+                    val coverUri = bookMeta?.coverPhotoFileName?.let { fileName ->
+                        entries["books/${bookMeta.uid}/$fileName"]?.let { PhotoStorage.copyBytesToInternalStorage(context, it) }
+                    }
+                    repository.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName, bookMeta?.uid, coverUri)
                 }
-                repository.saveRecipe(recipeDto.toDraft(bookId))
+                val photos = resolvePhotos(context, recipeDto.uid, recipeDto.photos, entries)
+                repository.saveRecipe(recipeDto.toDraft(bookId, photos))
             }
             LibraryImportResult.Success(dto.recipes.size)
         } catch (e: CancellationException) {
@@ -148,12 +220,60 @@ object RecipeExporter {
         }
     }
 
-    /** Comparte un subconjunto arbitrario de recetas como una copia de seguridad JSON (selección múltiple). */
-    fun shareRecipesAsJson(context: Context, fileName: String, recipes: List<Recipe>) {
-        val dto = LibraryExportDto(exportedAt = System.currentTimeMillis(), recipes = recipes.map { it.toExportDto() })
-        val content = json.encodeToString(dto)
-        val file = writeExportFile(context, sanitizeFileName(fileName) + ".json", content)
-        shareFile(context, file, "application/json")
+    private fun bookExportDto(book: RecipeBook) = BookExportDto(
+        uid = book.uid,
+        name = book.name,
+        coverPhotoFileName = if (book.coverPhotoUri != null) "cover.jpg" else null
+    )
+
+    private fun photoSourcesFor(book: RecipeBook?, recipes: List<Recipe>): List<Pair<String, String>> {
+        val bookCover = book?.coverPhotoUri?.let { listOf("books/${book.uid}/cover.jpg" to it) } ?: emptyList()
+        val recipePhotos = recipes.flatMap { recipe -> recipe.photos.mapIndexed { index, photo -> "recipes/${recipe.uid}/$index.jpg" to photo.uri } }
+        return bookCover + recipePhotos
+    }
+
+    private fun resolvePhotos(context: Context, recipeUid: String, photoDtos: List<PhotoExportDto>, entries: Map<String, ByteArray>): List<RecipePhoto> =
+        photoDtos.mapNotNull { photoDto ->
+            val bytes = entries["recipes/$recipeUid/${photoDto.fileName}"] ?: return@mapNotNull null
+            val uri = PhotoStorage.copyBytesToInternalStorage(context, bytes) ?: return@mapNotNull null
+            RecipePhoto(uri = uri, isCover = photoDto.isCover)
+        }
+
+    private fun isZip(bytes: ByteArray): Boolean =
+        bytes.size >= 2 && bytes[0] == 0x50.toByte() && bytes[1] == 0x4B.toByte()
+
+    private fun readZipEntries(bytes: ByteArray): Map<String, ByteArray> {
+        val entries = mutableMapOf<String, ByteArray>()
+        ZipInputStream(ByteArrayInputStream(bytes)).use { zip ->
+            var entry = zip.nextEntry
+            while (entry != null) {
+                if (!entry.isDirectory) entries[entry.name] = zip.readBytes()
+                zip.closeEntry()
+                entry = zip.nextEntry
+            }
+        }
+        return entries
+    }
+
+    private fun writeZipToStream(context: Context, output: OutputStream, manifestJson: String, photoSources: List<Pair<String, String>>) {
+        ZipOutputStream(output).use { zip ->
+            zip.putNextEntry(ZipEntry("manifest.json"))
+            zip.write(manifestJson.toByteArray())
+            zip.closeEntry()
+            photoSources.forEach { (path, sourceUri) ->
+                context.contentResolver.openInputStream(Uri.parse(sourceUri))?.use { input ->
+                    zip.putNextEntry(ZipEntry(path))
+                    input.copyTo(zip)
+                    zip.closeEntry()
+                }
+            }
+        }
+    }
+
+    private fun writeZipFile(context: Context, fileName: String, manifestJson: String, photoSources: List<Pair<String, String>>): File {
+        val file = File(exportsDir(context), fileName)
+        file.outputStream().use { output -> writeZipToStream(context, output, manifestJson, photoSources) }
+        return file
     }
 
     private fun exportsDir(context: Context): File = File(context.cacheDir, "exports").apply { mkdirs() }

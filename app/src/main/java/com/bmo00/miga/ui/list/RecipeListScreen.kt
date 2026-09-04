@@ -63,7 +63,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.bmo00.miga.data.model.RecipeListViewMode
 import com.bmo00.miga.data.model.RecipeSummary
-import com.bmo00.miga.ui.common.JSON_MIME_TYPES
+import com.bmo00.miga.ui.common.BACKUP_MIME_TYPES
 import com.bmo00.miga.ui.components.FilterSheetContent
 import com.bmo00.miga.ui.components.RecipeCard
 import com.bmo00.miga.ui.components.RecipeGridCard
@@ -113,8 +113,8 @@ fun RecipeListScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { viewModel.exportSelectedAsJson(context) }) {
-                            Icon(Icons.Filled.FileDownload, contentDescription = "Exportar seleccionadas (JSON)")
+                        IconButton(onClick = { viewModel.exportSelected(context) }) {
+                            Icon(Icons.Filled.FileDownload, contentDescription = "Exportar seleccionadas")
                         }
                         IconButton(onClick = { showDeleteSelectedConfirm = true }) {
                             Icon(Icons.Filled.Delete, contentDescription = "Borrar seleccionadas")
@@ -147,11 +147,11 @@ fun RecipeListScreen(
                             DropdownMenuItem(
                                 text = { Text("Importar receta") },
                                 leadingIcon = { Icon(Icons.Filled.UploadFile, null) },
-                                onClick = { showMenu = false; importRecipeLauncher.launch(JSON_MIME_TYPES) }
+                                onClick = { showMenu = false; importRecipeLauncher.launch(BACKUP_MIME_TYPES) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Exportar este libro (JSON)") },
-                                onClick = { showMenu = false; viewModel.exportBookAsJson(context) }
+                                text = { Text("Exportar este libro") },
+                                onClick = { showMenu = false; viewModel.exportBook(context) }
                             )
                             DropdownMenuItem(
                                 text = { Text("Exportar este libro (PDF)") },

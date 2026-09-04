@@ -37,8 +37,13 @@ import com.bmo00.miga.data.local.entity.UtensilEntity
         IngredientCatalogEntity::class,
         IngredientCategoryEntity::class
     ],
-    version = 3,
-    exportSchema = true
+    version = 4,
+    // Room/KSP escriben el schema exportado de cada variante (debug/release) en el mismo
+    // fichero cuando ambas compilan en la misma invocación de Gradle (build de release en CI),
+    // lo que provoca una condición de carrera ("Empty schema file"). Como la app nunca escribe
+    // migraciones reales (ver fallbackToDestructiveMigration en RecetarioApp), desactivarlo no
+    // pierde nada.
+    exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun recipeDao(): RecipeDao
