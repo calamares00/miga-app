@@ -263,8 +263,13 @@ fun RecipeEditorScreen(
             onDismissRequest = { showVisionErrorDialog = false },
             title = { Text("Detalle del error") },
             text = {
-                SelectionContainer {
-                    Column(modifier = Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 480.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    SelectionContainer {
                         Text(reason, style = MaterialTheme.typography.bodySmall)
                     }
                 }
