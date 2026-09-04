@@ -43,7 +43,9 @@ lista vacía) en vez de inventarlo. Si no reconoces ninguna receta en la imagen,
 /** Implementación de [RecipeVisionClient] contra la API REST de Google Gemini (generateContent). */
 object GeminiVisionClient : RecipeVisionClient {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    // coerceInputValues: Gemini a veces pone null en campos de texto opcionales (p.ej. "source")
+    // que en el DTO son String no nulo con valor por defecto; sin esto el parseo falla entero.
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
     override suspend fun extractRecipe(imageBytes: ByteArray, mimeType: String, apiKey: String, model: String): RecipeVisionResult =
         withContext(Dispatchers.IO) {
