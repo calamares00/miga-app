@@ -1,0 +1,1 @@
+Modo cocina: antes de los pasos se muestran todos los ingredientes de la receta (y de cada sub-receta por separado). Además, cada paso tiene un botón para escucharlo en voz alta; la voz se puede elegir en Ajustes → Modo cocina.

@@ -106,7 +106,7 @@ fun RecetarioNavHost() {
             val recipeId = backStackEntry.arguments?.getLong(Destinations.ARG_RECIPE_ID) ?: return@composable
             val viewModel: RecipeDetailViewModel = viewModel(
                 key = "detail_$recipeId",
-                factory = viewModelFactory { initializer { RecipeDetailViewModel(repository, recipeId) } }
+                factory = viewModelFactory { initializer { RecipeDetailViewModel(repository, recipeId, settingsRepository) } }
             )
             RecipeDetailScreen(
                 viewModel = viewModel,
