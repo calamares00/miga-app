@@ -3,8 +3,6 @@ package com.bmo00.miga.data.vision
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.net.HttpURLConnection
 import java.net.URL
@@ -121,36 +119,3 @@ object GeminiVisionClient : RecipeVisionClient {
             .trim()
     }
 }
-
-@Serializable
-private data class GeminiRequest(val contents: List<GeminiContent>, val generationConfig: GeminiGenerationConfig)
-
-@Serializable
-private data class GeminiContent(val parts: List<GeminiPart>)
-
-@Serializable
-private data class GeminiPart(
-    @SerialName("inline_data") val inlineData: GeminiInlineData? = null,
-    val text: String? = null
-)
-
-@Serializable
-private data class GeminiInlineData(
-    @SerialName("mime_type") val mimeType: String,
-    val data: String
-)
-
-@Serializable
-private data class GeminiGenerationConfig(val responseMimeType: String = "application/json")
-
-@Serializable
-private data class GeminiResponse(val candidates: List<GeminiCandidate> = emptyList())
-
-@Serializable
-private data class GeminiCandidate(val content: GeminiContent? = null)
-
-@Serializable
-private data class GeminiErrorEnvelope(val error: GeminiErrorDetail? = null)
-
-@Serializable
-private data class GeminiErrorDetail(val message: String? = null)

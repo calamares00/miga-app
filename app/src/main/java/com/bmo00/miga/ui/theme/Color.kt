@@ -18,3 +18,14 @@ val NightSurface = Color(0xFF262019)
 val NightOnSurface = Color(0xFFEFE6DB)
 val NightOnSurfaceSoft = Color(0xFFB8AC9D)
 val NightDivider = Color(0xFF3A3226)
+
+// Colores fijos (no ligados al tema claro/oscuro) para la valoración de salud de una receta:
+// deben leerse como un espectro verde -> rojo reconocible de un vistazo, cosa que los roles del
+// colorScheme no garantizan (tertiary/secondaryContainer se autogeneran de otra semilla y no
+// tienen por qué salir verdes o amarillos).
+val HealthGreenContainer = Color(0xFFD7ECC8)
+val HealthGreenOn = Color(0xFF2E4A20)
+val HealthAmberContainer = Color(0xFFF6E2B0)
+val HealthAmberOn = Color(0xFF6B4A12)
+val HealthRedContainer = Color(0xFFF5D2CC)
+val HealthRedOn = Color(0xFF7A241C)

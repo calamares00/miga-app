@@ -22,6 +22,12 @@ import com.bmo00.miga.ui.editor.RecipeEditorScreen
 import com.bmo00.miga.ui.editor.RecipeEditorViewModel
 import com.bmo00.miga.ui.list.RecipeListScreen
 import com.bmo00.miga.ui.list.RecipeListViewModel
+import com.bmo00.miga.ui.packs.PackDetailScreen
+import com.bmo00.miga.ui.packs.PackDetailViewModel
+import com.bmo00.miga.ui.packs.PacksCatalogScreen
+import com.bmo00.miga.ui.packs.PacksCatalogViewModel
+import com.bmo00.miga.ui.search.GlobalSearchScreen
+import com.bmo00.miga.ui.search.GlobalSearchViewModel
 import com.bmo00.miga.ui.settings.AboutScreen
 import com.bmo00.miga.ui.settings.HelpScreen
 import com.bmo00.miga.ui.settings.ManageCategoriesScreen
@@ -55,7 +61,19 @@ fun RecetarioNavHost() {
                 onBookClick = { navController.navigate(Destinations.book(it)) },
                 onAddBookClick = { navController.navigate(Destinations.bookEditor()) },
                 onEditBookClick = { navController.navigate(Destinations.bookEditor(it)) },
+                onSearchClick = { navController.navigate(Destinations.SEARCH_ROUTE) },
                 onSettingsClick = { navController.navigate(Destinations.SETTINGS_ROUTE) }
+            )
+        }
+
+        composable(Destinations.SEARCH_ROUTE) {
+            val viewModel: GlobalSearchViewModel = viewModel(
+                factory = viewModelFactory { initializer { GlobalSearchViewModel(repository) } }
+            )
+            GlobalSearchScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onRecipeClick = { navController.navigate(Destinations.detail(it)) }
             )
         }
 
@@ -166,8 +184,39 @@ fun RecetarioNavHost() {
                 onManageUtensils = { navController.navigate(Destinations.MANAGE_UTENSILS_ROUTE) },
                 onManageIngredients = { navController.navigate(Destinations.MANAGE_INGREDIENTS_ROUTE) },
                 onManageIngredientCategories = { navController.navigate(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) },
+                onOpenPacksCatalog = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) },
                 onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
                 onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) }
+            )
+        }
+
+        composable(Destinations.PACKS_CATALOG_ROUTE) {
+            val viewModel: PacksCatalogViewModel = viewModel(
+                factory = viewModelFactory { initializer { PacksCatalogViewModel(repository, settingsRepository) } }
+            )
+            PacksCatalogScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onPackClick = { navController.navigate(Destinations.packDetail(it)) }
+            )
+        }
+
+        composable(
+            route = Destinations.PACK_DETAIL_ROUTE,
+            arguments = listOf(navArgument(Destinations.ARG_PACK_ID) { type = NavType.StringType })
+        ) { backStackEntry ->
+            val packId = backStackEntry.arguments?.getString(Destinations.ARG_PACK_ID) ?: return@composable
+            val viewModel: PackDetailViewModel = viewModel(
+                key = "packDetail_$packId",
+                factory = viewModelFactory { initializer { PackDetailViewModel(repository, settingsRepository, packId) } }
+            )
+            PackDetailScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onInstalled = { bookId ->
+                    navController.popBackStack(Destinations.PACKS_CATALOG_ROUTE, inclusive = true)
+                    navController.navigate(Destinations.book(bookId))
+                }
             )
         }
 

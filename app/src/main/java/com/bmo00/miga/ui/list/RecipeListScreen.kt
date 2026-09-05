@@ -159,16 +159,18 @@ fun RecipeListScreen(
                         }
                         IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Más opciones") }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Importar receta") },
-                                leadingIcon = { Icon(Icons.Filled.UploadFile, null) },
-                                onClick = { showMenu = false; importRecipeLauncher.launch(BACKUP_MIME_TYPES) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Añadir con foto") },
-                                leadingIcon = { Icon(Icons.Filled.AddAPhoto, null) },
-                                onClick = { showMenu = false; showPhotoSourceSheet = true }
-                            )
+                            if (!uiState.isPackBook) {
+                                DropdownMenuItem(
+                                    text = { Text("Importar receta") },
+                                    leadingIcon = { Icon(Icons.Filled.UploadFile, null) },
+                                    onClick = { showMenu = false; importRecipeLauncher.launch(BACKUP_MIME_TYPES) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Añadir con foto") },
+                                    leadingIcon = { Icon(Icons.Filled.AddAPhoto, null) },
+                                    onClick = { showMenu = false; showPhotoSourceSheet = true }
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text("Exportar este libro") },
                                 onClick = { showMenu = false; viewModel.exportBook(context) }
@@ -183,7 +185,7 @@ fun RecipeListScreen(
             }
         },
         floatingActionButton = {
-            if (!selectionMode) {
+            if (!selectionMode && !uiState.isPackBook) {
                 ExtendedFloatingActionButton(onClick = onAddRecipeClick, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("Nueva receta") })
             }
         }
@@ -243,7 +245,7 @@ fun RecipeListScreen(
                                 onClick = {
                                     if (selectionMode) viewModel.toggleSelection(recipe.id) else onRecipeClick(recipe.id)
                                 },
-                                onLongClick = { viewModel.startSelection(recipe.id) },
+                                onLongClick = { if (!uiState.isPackBook) viewModel.startSelection(recipe.id) },
                                 onToggleFavorite = { viewModel.toggleFavorite(recipe.id, recipe.isFavorite) }
                             )
                         }
@@ -269,10 +271,11 @@ fun RecipeListScreen(
                                 compact = viewMode == RecipeListViewMode.COMPACT,
                                 selectionMode = selectionMode,
                                 isSelected = recipe.id in selectedIds,
+                                readOnly = uiState.isPackBook,
                                 onClick = {
                                     if (selectionMode) viewModel.toggleSelection(recipe.id) else onRecipeClick(recipe.id)
                                 },
-                                onLongClick = { viewModel.startSelection(recipe.id) },
+                                onLongClick = { if (!uiState.isPackBook) viewModel.startSelection(recipe.id) },
                                 onToggleFavorite = { viewModel.toggleFavorite(recipe.id, recipe.isFavorite) },
                                 onEditClick = { onEditRecipeClick(recipe.id) },
                                 onDeleteClick = { recipeToDelete = recipe }
@@ -292,6 +295,7 @@ fun RecipeListScreen(
                 availableCategories = uiState.availableCategories,
                 availableTags = uiState.availableTags,
                 availableUtensils = uiState.availableUtensils,
+                availableIngredients = uiState.availableIngredients,
                 onApply = { newFilter ->
                     viewModel.applyFilter(newFilter)
                     showFilters = false

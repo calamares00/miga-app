@@ -1,6 +1,7 @@
 package com.bmo00.miga.data.repository
 
 import androidx.room.withTransaction
+import com.bmo00.miga.data.export.RecipeExportDto
 import com.bmo00.miga.data.local.AppDatabase
 import com.bmo00.miga.data.local.entity.CategoryEntity
 import com.bmo00.miga.data.local.entity.IngredientCatalogEntity
@@ -16,6 +17,9 @@ import com.bmo00.miga.data.local.entity.StepEntity
 import com.bmo00.miga.data.local.entity.TagEntity
 import com.bmo00.miga.data.local.entity.UtensilEntity
 import com.bmo00.miga.data.model.Difficulty
+import com.bmo00.miga.data.model.HealthColorLevel
+import com.bmo00.miga.data.model.HealthFingerprint
+import com.bmo00.miga.data.model.HealthRating
 import com.bmo00.miga.data.model.Ingredient
 import com.bmo00.miga.data.model.IngredientCatalogItem
 import com.bmo00.miga.data.model.IngredientGroup
@@ -48,6 +52,10 @@ class RecipeRepository(private val db: AppDatabase) {
     fun observeRecipesForBook(bookId: Long): Flow<List<Recipe>> =
         recipeDao.observeAllWithDetailsForBook(bookId).map { list -> list.map { it.toDomain() } }
 
+    /** Todas las recetas de todos los libros, usado en la búsqueda global desde la página principal. */
+    fun observeAllRecipes(): Flow<List<Recipe>> =
+        recipeDao.observeAllWithDetails().map { list -> list.map { it.toDomain() } }
+
     fun observeRecipe(id: Long): Flow<Recipe?> =
         recipeDao.observeWithDetails(id).map { it?.toDomain() }
 
@@ -72,15 +80,24 @@ class RecipeRepository(private val db: AppDatabase) {
         recipeDao.incrementTimesCooked(id)
     }
 
+    /** No-op si la receta pertenece a un libro-pack (ver [RecipeBook.isPack]): son de solo lectura. */
     suspend fun deleteRecipe(id: Long) {
+        val recipe = recipeDao.getRecipeOnce(id) ?: return
+        if (recipeBookDao.getOnce(recipe.recipeBookId)?.packId != null) return
         recipeDao.deleteRecipe(id)
     }
 
+    /** No-op si [newBookId] es un libro-pack: no se puede añadir contenido a uno (moverlo FUERA de un pack sí está permitido). */
     suspend fun moveRecipeToBook(recipeId: Long, newBookId: Long) {
+        if (recipeBookDao.getOnce(newBookId)?.packId != null) return
         recipeDao.updateRecipeBook(recipeId, newBookId)
     }
 
+    /** Defensa en profundidad equivalente a la de [saveRecipeBook]: no-op si el libro destino es un pack. */
     suspend fun saveRecipe(draft: RecipeDraft): Long = db.withTransaction {
+        val targetBookId = if (draft.id == 0L) draft.recipeBookId else recipeDao.getRecipeOnce(draft.id)?.recipeBookId ?: draft.recipeBookId
+        if (recipeBookDao.getOnce(targetBookId)?.packId != null) return@withTransaction draft.id
+
         val categoryId = draft.categoryName?.takeIf { it.isNotBlank() }?.let { resolveCategoryId(it) }
         val now = System.currentTimeMillis()
 
@@ -105,6 +122,12 @@ class RecipeRepository(private val db: AppDatabase) {
             )
         } else {
             val existing = recipeDao.getRecipeOnce(draft.id)
+            // Si los ingredientes o pasos han cambiado desde el último análisis de salud, la
+            // valoración cacheada ya no es válida para el contenido nuevo: se limpia para que se
+            // vuelva a calcular la próxima vez que se abra la receta. Si no han cambiado, se
+            // conserva tal cual (edición de notas/raciones/fotos/etc. no invalida nada).
+            val newFingerprint = computeHealthFingerprint(draft.ingredientGroups, draft.stepGroups)
+            val keepHealth = existing != null && existing.healthFingerprint == newFingerprint
             recipeDao.updateRecipe(
                 RecipeEntity(
                     id = draft.id,
@@ -121,7 +144,11 @@ class RecipeRepository(private val db: AppDatabase) {
                     isFavorite = draft.isFavorite,
                     timesCooked = existing?.timesCooked ?: 0,
                     createdAt = existing?.createdAt ?: now,
-                    updatedAt = now
+                    updatedAt = now,
+                    healthColor = if (keepHealth) existing?.healthColor else null,
+                    healthDescription = if (keepHealth) existing?.healthDescription else null,
+                    healthFingerprint = if (keepHealth) existing?.healthFingerprint else null,
+                    healthAnalyzedAt = if (keepHealth) existing?.healthAnalyzedAt else null
                 )
             )
             draft.id
@@ -195,6 +222,18 @@ class RecipeRepository(private val db: AppDatabase) {
 
         recipeId
     }
+
+    suspend fun saveHealthRating(recipeId: Long, color: HealthColorLevel, description: String, fingerprint: String, analyzedAt: Long) {
+        recipeDao.updateHealthRating(recipeId, color.name, description, fingerprint, analyzedAt)
+    }
+
+    /**
+     * Huella de [ingredientGroups]+[stepGroups]: si cambia respecto a la guardada junto a una
+     * valoración de salud, esa valoración ya no es válida para el contenido actual de la receta.
+     * Delegado a [HealthFingerprint] (función pura, con sus propios tests unitarios).
+     */
+    fun computeHealthFingerprint(ingredientGroups: List<IngredientGroup>, stepGroups: List<StepGroup>): String =
+        HealthFingerprint.compute(ingredientGroups, stepGroups)
 
     // --- Categorías ---
 
@@ -346,20 +385,29 @@ class RecipeRepository(private val db: AppDatabase) {
 
     fun observeRecipeBooks(): Flow<List<RecipeBookSummary>> =
         recipeBookDao.observeAllWithCounts().map { list ->
-            list.map { RecipeBookSummary(it.book.id, it.book.name, it.book.coverPhotoUri, it.recipeCount) }
+            list.map { RecipeBookSummary(it.book.id, it.book.name, it.book.coverPhotoUri, it.recipeCount, it.book.packId, it.book.packVersion) }
         }
 
     fun observeRecipeBook(id: Long): Flow<RecipeBook?> =
-        recipeBookDao.observeOne(id).map { it?.let { entity -> RecipeBook(entity.id, entity.uid, entity.name, entity.coverPhotoUri) } }
+        recipeBookDao.observeOne(id).map { it?.toDomain() }
 
     suspend fun getRecipeBookOnce(id: Long): RecipeBook? =
-        recipeBookDao.getOnce(id)?.let { RecipeBook(it.id, it.uid, it.name, it.coverPhotoUri) }
+        recipeBookDao.getOnce(id)?.toDomain()
 
     /** Todos los libros, usados al exportar toda la app (para incluir sus portadas en el ZIP). */
     suspend fun getAllRecipeBooksOnce(): List<RecipeBook> =
-        recipeBookDao.observeAllWithCounts().first().map { RecipeBook(it.book.id, it.book.uid, it.book.name, it.book.coverPhotoUri) }
+        recipeBookDao.observeAllWithCounts().first().map { it.book.toDomain() }
 
+    suspend fun findRecipeBookByPackId(packId: String): RecipeBook? =
+        recipeBookDao.findByPackId(packId)?.toDomain()
+
+    /**
+     * Defensa en profundidad: un libro-pack es de solo lectura (ver [RecipeBook.isPack]); la UI ya
+     * bloquea su edición, pero si algo la saltase esto evita que se sobrescriba sin querer en vez
+     * de fallar de forma confusa. No-op silencioso, igual que pide el plan de la feature.
+     */
     suspend fun saveRecipeBook(draft: RecipeBookDraft): Long {
+        if (draft.id != 0L && recipeBookDao.getOnce(draft.id)?.packId != null) return draft.id
         return if (draft.id == 0L) {
             recipeBookDao.insert(
                 RecipeBookEntity(
@@ -409,6 +457,150 @@ class RecipeRepository(private val db: AppDatabase) {
         )
     }
 
+    // --- Packs de recetas descargables ---
+
+    /**
+     * Instala o actualiza un pack: busca el libro por [packId] (nunca por nombre, para no chocar
+     * con un libro propio homónimo); crea o actualiza sus recetas por [RecipeExportDto.uid]
+     * (conservando isFavorite/timesCooked/createdAt si ya existían) y borra las que ya no estén
+     * en esta versión. A diferencia de [saveRecipe]/[saveRecipeBook] no pasa por sus guardas de
+     * solo-lectura: esta es la única vía legítima de escribir en un libro-pack.
+     */
+    suspend fun installOrUpdatePack(
+        packId: String,
+        packVersion: Int,
+        bookName: String,
+        bookUid: String,
+        bookCoverUri: String?,
+        recipes: List<RecipeExportDto>,
+        photosByUid: Map<String, List<RecipePhoto>>
+    ): Long = db.withTransaction {
+        val now = System.currentTimeMillis()
+        val existingBook = recipeBookDao.findByPackId(packId)
+        val bookId = if (existingBook == null) {
+            recipeBookDao.insert(
+                RecipeBookEntity(
+                    uid = bookUid,
+                    name = bookName,
+                    coverPhotoUri = bookCoverUri,
+                    createdAt = now,
+                    packId = packId,
+                    packVersion = packVersion
+                )
+            )
+        } else {
+            recipeBookDao.update(
+                existingBook.copy(
+                    name = bookName,
+                    coverPhotoUri = bookCoverUri ?: existingBook.coverPhotoUri,
+                    packVersion = packVersion
+                )
+            )
+            existingBook.id
+        }
+
+        recipes.forEach { dto ->
+            val categoryId = dto.categoryName?.takeIf { it.isNotBlank() }?.let { resolveCategoryId(it) }
+            // Solo cuenta como "ya existía" si sigue en este mismo libro: si el usuario la movió a
+            // otro libro (acción permitida en una receta de pack), la próxima actualización crea
+            // una copia nueva en el pack en vez de tocar la que el usuario movió.
+            val existingRecipe = recipeDao.findByUid(dto.uid)?.takeIf { it.recipeBookId == bookId }
+            val recipeId = if (existingRecipe == null) {
+                recipeDao.insertRecipe(
+                    RecipeEntity(
+                        uid = dto.uid,
+                        name = dto.name.trim(),
+                        categoryId = categoryId,
+                        recipeBookId = bookId,
+                        difficulty = dto.difficulty,
+                        prepTimeMinutes = dto.prepTimeMinutes,
+                        cookTimeMinutes = dto.cookTimeMinutes,
+                        servings = dto.servings,
+                        notes = dto.notes,
+                        source = dto.source,
+                        isFavorite = false,
+                        timesCooked = 0,
+                        createdAt = now,
+                        updatedAt = now
+                    )
+                )
+            } else {
+                recipeDao.updateRecipe(
+                    existingRecipe.copy(
+                        name = dto.name.trim(),
+                        categoryId = categoryId,
+                        difficulty = dto.difficulty,
+                        prepTimeMinutes = dto.prepTimeMinutes,
+                        cookTimeMinutes = dto.cookTimeMinutes,
+                        servings = dto.servings,
+                        notes = dto.notes,
+                        source = dto.source,
+                        updatedAt = now
+                    )
+                )
+                existingRecipe.id
+            }
+
+            recipeDao.deleteIngredients(recipeId)
+            var ingredientPosition = 0
+            val ingredientEntities = dto.ingredientGroups.flatMap { group ->
+                group.ingredients.map { ingredient ->
+                    IngredientEntity(
+                        recipeId = recipeId,
+                        groupName = group.name,
+                        position = ingredientPosition++,
+                        name = ingredient.name.trim(),
+                        quantity = ingredient.quantity,
+                        unit = ingredient.unit?.trim()?.takeIf { it.isNotBlank() }
+                    )
+                }
+            }
+            if (ingredientEntities.isNotEmpty()) recipeDao.insertIngredients(ingredientEntities)
+
+            recipeDao.deleteSteps(recipeId)
+            var stepPosition = 0
+            val stepEntities = dto.stepGroups.flatMap { group ->
+                group.instructions.map { instruction ->
+                    StepEntity(recipeId = recipeId, groupName = group.name, position = stepPosition++, instruction = instruction.trim())
+                }
+            }
+            if (stepEntities.isNotEmpty()) recipeDao.insertSteps(stepEntities)
+
+            recipeDao.deletePhotos(recipeId)
+            val photos = photosByUid[dto.uid].orEmpty()
+            if (photos.isNotEmpty()) {
+                recipeDao.insertPhotos(
+                    photos.mapIndexed { index, photo -> RecipePhotoEntity(recipeId = recipeId, uri = photo.uri, position = index, isCover = photo.isCover) }
+                )
+            }
+
+            recipeDao.deleteTagCrossRefs(recipeId)
+            val tagIds = dto.tags.filter { it.isNotBlank() }.map { resolveTagId(it) }
+            if (tagIds.isNotEmpty()) recipeDao.insertTagCrossRefs(tagIds.map { RecipeTagCrossRef(recipeId, it) })
+
+            recipeDao.deleteUtensilCrossRefs(recipeId)
+            val utensilIds = dto.utensils.filter { it.isNotBlank() }.map { resolveUtensilId(it) }
+            if (utensilIds.isNotEmpty()) recipeDao.insertUtensilCrossRefs(utensilIds.map { RecipeUtensilCrossRef(recipeId, it) })
+
+            if (dto.health != null) {
+                val colorLevel = runCatching { HealthColorLevel.valueOf(dto.health.colorLevel) }.getOrDefault(HealthColorLevel.YELLOW)
+                recipeDao.updateHealthRating(recipeId, colorLevel.name, dto.health.description, dto.health.fingerprint, dto.health.analyzedAt)
+            }
+        }
+
+        // El pack manda en su propio contenido: una receta que ya no está en esta versión se borra.
+        val currentUids = recipes.map { it.uid }
+        if (currentUids.isEmpty()) recipeDao.deleteAllForBook(bookId) else recipeDao.deleteRecipesNotInUidSet(bookId, currentUids)
+
+        bookId
+    }
+
+    /** Desinstala un pack: borra sus recetas y el libro sin pasar por el guard de [deleteRecipeBook] (que bloquearía siempre un libro no vacío). */
+    suspend fun uninstallPack(bookId: Long) = db.withTransaction {
+        recipeDao.deleteAllForBook(bookId)
+        recipeBookDao.delete(bookId)
+    }
+
     private suspend fun resolveCategoryId(name: String): Long {
         val trimmed = name.trim()
         categoryDao.findByName(trimmed)?.let { return it.id }
@@ -430,6 +622,8 @@ class RecipeRepository(private val db: AppDatabase) {
         return utensilDao.findByName(trimmed)!!.id
     }
 }
+
+fun RecipeBookEntity.toDomain() = RecipeBook(id, uid, name, coverPhotoUri, packId, packVersion)
 
 fun RecipeWithDetails.toDomain(): Recipe {
     val sortedIngredients = ingredients.sortedBy { it.position }
@@ -467,7 +661,15 @@ fun RecipeWithDetails.toDomain(): Recipe {
         ingredientGroups = orderGroupsMainFirst(ingredientGroups).map { (name, items) -> IngredientGroup(name, items) },
         stepGroups = orderGroupsMainFirst(stepGroups).map { (name, items) -> StepGroup(name, items) },
         tags = tags.map { it.name }.sorted(),
-        utensils = utensils.map { it.name }.sorted()
+        utensils = utensils.map { it.name }.sorted(),
+        healthRating = recipe.healthColor?.let { colorName ->
+            HealthRating(
+                color = runCatching { HealthColorLevel.valueOf(colorName) }.getOrDefault(HealthColorLevel.YELLOW),
+                description = recipe.healthDescription.orEmpty(),
+                fingerprint = recipe.healthFingerprint.orEmpty(),
+                analyzedAt = recipe.healthAnalyzedAt ?: 0L
+            )
+        }
     )
 }
 

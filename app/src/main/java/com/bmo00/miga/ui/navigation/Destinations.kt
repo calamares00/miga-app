@@ -8,6 +8,9 @@ object Destinations {
     const val BOOK_EDITOR_ROUTE = "bookEditor?bookId={bookId}"
     const val DETAIL_ROUTE = "recipes/{recipeId}"
     const val EDITOR_ROUTE = "editor?recipeId={recipeId}&bookId={bookId}&sourcePhotoUri={sourcePhotoUri}"
+    const val SEARCH_ROUTE = "search"
+    const val PACKS_CATALOG_ROUTE = "packs"
+    const val PACK_DETAIL_ROUTE = "packs/{packId}"
     const val SETTINGS_ROUTE = "settings"
     const val MANAGE_CATEGORIES_ROUTE = "settings/categories"
     const val MANAGE_UTENSILS_ROUTE = "settings/utensils"
@@ -19,10 +22,12 @@ object Destinations {
     const val ARG_RECIPE_ID = "recipeId"
     const val ARG_BOOK_ID = "bookId"
     const val ARG_SOURCE_PHOTO_URI = "sourcePhotoUri"
+    const val ARG_PACK_ID = "packId"
     const val NEW_RECIPE_ID = -1L
     const val NEW_BOOK_ID = -1L
 
     fun book(bookId: Long) = "books/$bookId"
+    fun packDetail(packId: String) = "packs/${Uri.encode(packId)}"
     fun bookEditor(bookId: Long = NEW_BOOK_ID) = "bookEditor?bookId=$bookId"
     fun detail(recipeId: Long) = "recipes/$recipeId"
     fun editor(bookId: Long, recipeId: Long = NEW_RECIPE_ID, sourcePhotoUri: String? = null): String {

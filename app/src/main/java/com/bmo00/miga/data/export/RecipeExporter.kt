@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
 import com.bmo00.miga.data.local.PhotoStorage
+import com.bmo00.miga.data.model.HealthColorLevel
 import com.bmo00.miga.data.model.Recipe
 import com.bmo00.miga.data.model.RecipeBook
 import com.bmo00.miga.data.model.RecipePhoto
@@ -38,6 +39,11 @@ sealed interface LibraryImportResult {
     data class Error(val reason: String) : LibraryImportResult
 }
 
+sealed interface PackImportResult {
+    data class Success(val bookId: Long) : PackImportResult
+    data class Error(val reason: String) : PackImportResult
+}
+
 object RecipeExporter {
 
     private val json = Json {
@@ -56,7 +62,8 @@ object RecipeExporter {
      */
     private val recipeMigrations: List<(JsonObject) -> JsonObject> = listOf(
         { obj -> obj }, // v0 -> v1: el "esquema v0" ya tenía los mismos campos, no-op.
-        { obj -> addUidIfMissing(obj) } // v1 -> v2: añade "uid" (las fotos ya tienen valor por defecto).
+        { obj -> addUidIfMissing(obj) }, // v1 -> v2: añade "uid" (las fotos ya tienen valor por defecto).
+        { obj -> obj } // v2 -> v3: "health" es opcional con default null, no hace falta generar nada.
     )
 
     /** Igual que [recipeMigrations] pero para la copia de seguridad completa ([LibraryExportDto]). */
@@ -67,7 +74,8 @@ object RecipeExporter {
             val recipesArray = obj["recipes"] as? JsonArray ?: JsonArray(emptyList())
             val migratedRecipes = JsonArray(recipesArray.map { addUidIfMissing(it.jsonObject) })
             JsonObject(obj + ("recipes" to migratedRecipes))
-        }
+        },
+        { obj -> obj } // v2 -> v3: "health" es opcional con default null, no hace falta generar nada.
     )
 
     private fun addUidIfMissing(obj: JsonObject): JsonObject =
@@ -210,13 +218,60 @@ object RecipeExporter {
                     repository.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName, bookMeta?.uid, coverUri)
                 }
                 val photos = resolvePhotos(context, recipeDto.uid, recipeDto.photos, entries)
-                repository.saveRecipe(recipeDto.toDraft(bookId, photos))
+                val recipeId = repository.saveRecipe(recipeDto.toDraft(bookId, photos))
+                applyHealthFromImport(repository, recipeId, recipeDto.health)
             }
             LibraryImportResult.Success(dto.recipes.size)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             LibraryImportResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+        }
+    }
+
+    /**
+     * Instala o actualiza un pack descargado del catálogo (ver PacksCatalogClient): mismo formato
+     * ZIP que genera [shareBook] (manifest.json + books/<uid>/ + recipes/<uid>/), pero en vez de
+     * resolver el libro por nombre y siempre insertar (como [importLibrary]) usa
+     * [RecipeRepository.installOrUpdatePack], que identifica el libro por [packId] y actualiza
+     * en el sitio si ya estaba instalado.
+     */
+    suspend fun importPackFromBytes(
+        context: Context,
+        zipBytes: ByteArray,
+        repository: RecipeRepository,
+        packId: String,
+        packVersion: Int
+    ): PackImportResult = withContext(Dispatchers.IO) {
+        try {
+            if (!isZip(zipBytes)) return@withContext PackImportResult.Error("El archivo descargado no es un ZIP válido")
+            val entries = readZipEntries(zipBytes)
+            val manifestText = entries["manifest.json"]?.toString(Charsets.UTF_8)
+                ?: return@withContext PackImportResult.Error("El pack no contiene manifest.json")
+            val migrated = migrateJson(manifestText, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
+            val dto = json.decodeFromJsonElement(LibraryExportDto.serializer(), migrated)
+            val bookMeta = dto.books.firstOrNull()
+                ?: return@withContext PackImportResult.Error("El pack no incluye los metadatos del libro")
+            val bookCoverUri = bookMeta.coverPhotoFileName?.let { fileName ->
+                entries["books/${bookMeta.uid}/$fileName"]?.let { PhotoStorage.copyBytesToInternalStorage(context, it) }
+            }
+            val photosByUid = dto.recipes.associate { recipeDto ->
+                recipeDto.uid to resolvePhotos(context, recipeDto.uid, recipeDto.photos, entries)
+            }
+            val bookId = repository.installOrUpdatePack(
+                packId = packId,
+                packVersion = packVersion,
+                bookName = bookMeta.name,
+                bookUid = bookMeta.uid,
+                bookCoverUri = bookCoverUri,
+                recipes = dto.recipes,
+                photosByUid = photosByUid
+            )
+            PackImportResult.Success(bookId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            PackImportResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
         }
     }
 
@@ -238,6 +293,13 @@ object RecipeExporter {
             val uri = PhotoStorage.copyBytesToInternalStorage(context, bytes) ?: return@mapNotNull null
             RecipePhoto(uri = uri, isCover = photoDto.isCover)
         }
+
+    /** Aplica la valoración de salud embebida en una receta importada, si tenía alguna. */
+    suspend fun applyHealthFromImport(repository: RecipeRepository, recipeId: Long, health: RecipeHealthDto?) {
+        if (health == null) return
+        val colorLevel = runCatching { HealthColorLevel.valueOf(health.colorLevel) }.getOrDefault(HealthColorLevel.YELLOW)
+        repository.saveHealthRating(recipeId, colorLevel, health.description, health.fingerprint, health.analyzedAt)
+    }
 
     private fun isZip(bytes: ByteArray): Boolean =
         bytes.size >= 2 && bytes[0] == 0x50.toByte() && bytes[1] == 0x4B.toByte()

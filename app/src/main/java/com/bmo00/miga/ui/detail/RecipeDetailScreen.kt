@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
@@ -32,7 +34,9 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +52,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -60,11 +65,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.export.RecipeExporter
+import com.bmo00.miga.data.model.HealthColorLevel
 import com.bmo00.miga.data.model.Recipe
+import com.bmo00.miga.ui.theme.HealthAmberContainer
+import com.bmo00.miga.ui.theme.HealthAmberOn
+import com.bmo00.miga.ui.theme.HealthGreenContainer
+import com.bmo00.miga.ui.theme.HealthGreenOn
+import com.bmo00.miga.ui.theme.HealthRedContainer
+import com.bmo00.miga.ui.theme.HealthRedOn
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -76,11 +89,14 @@ fun RecipeDetailScreen(
     val recipe by viewModel.recipe.collectAsState()
     val recipeBooks by viewModel.recipeBooks.collectAsState()
     val ttsVoiceName by viewModel.ttsVoiceName.collectAsState()
+    val healthState by viewModel.healthState.collectAsState()
     val context = LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showCookMode by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) { viewModel.fetchHealthinessIfNeeded() }
 
     Scaffold(
         topBar = {
@@ -98,9 +114,12 @@ fun RecipeDetailScreen(
                             tint = if (current?.isFavorite == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
+                    val currentBookIsPack = recipeBooks.firstOrNull { it.id == current?.recipeBookId }?.isPack == true
                     IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Más opciones") }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                        DropdownMenuItem(text = { Text("Editar") }, leadingIcon = { Icon(Icons.Filled.Edit, null) }, onClick = { showMenu = false; onEdit() })
+                        if (!currentBookIsPack) {
+                            DropdownMenuItem(text = { Text("Editar") }, leadingIcon = { Icon(Icons.Filled.Edit, null) }, onClick = { showMenu = false; onEdit() })
+                        }
                         DropdownMenuItem(
                             text = { Text("Compartir como texto") },
                             leadingIcon = { Icon(Icons.Filled.Share, null) },
@@ -130,11 +149,13 @@ fun RecipeDetailScreen(
                             leadingIcon = { Icon(Icons.Filled.SwapHoriz, null) },
                             onClick = { showMenu = false; showMoveDialog = true }
                         )
-                        DropdownMenuItem(
-                            text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
-                            leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
-                            onClick = { showMenu = false; showDeleteConfirm = true }
-                        )
+                        if (!currentBookIsPack) {
+                            DropdownMenuItem(
+                                text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
+                                leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
+                                onClick = { showMenu = false; showDeleteConfirm = true }
+                            )
+                        }
                     }
                 }
             )
@@ -155,7 +176,12 @@ fun RecipeDetailScreen(
                 Text("Cargando...")
             }
         } else {
-            RecipeDetailContent(recipe = current, modifier = Modifier.padding(padding))
+            RecipeDetailContent(
+                recipe = current,
+                healthState = healthState,
+                onRetryHealth = { viewModel.retryHealthCheck() },
+                modifier = Modifier.padding(padding)
+            )
         }
     }
 
@@ -183,7 +209,7 @@ fun RecipeDetailScreen(
 
     val recipeForMove = recipe
     if (showMoveDialog && recipeForMove != null) {
-        val otherBooks = recipeBooks.filter { it.id != recipeForMove.recipeBookId }
+        val otherBooks = recipeBooks.filter { it.id != recipeForMove.recipeBookId && !it.isPack }
         AlertDialog(
             onDismissRequest = { showMoveDialog = false },
             title = { Text("Mover a otro libro") },
@@ -219,7 +245,12 @@ fun RecipeDetailScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun RecipeDetailContent(recipe: Recipe, modifier: Modifier = Modifier) {
+private fun RecipeDetailContent(
+    recipe: Recipe,
+    healthState: HealthState,
+    onRetryHealth: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     var servings by remember(recipe.id) { mutableIntStateOf(recipe.servings) }
     val checkedIngredients = remember(recipe.id) { mutableStateMapOf<String, Boolean>() }
     val scale = if (recipe.servings > 0) servings.toDouble() / recipe.servings else 1.0
@@ -263,6 +294,47 @@ private fun RecipeDetailContent(recipe: Recipe, modifier: Modifier = Modifier) {
                 }
             }
 
+            if (healthState != HealthState.Idle) {
+                Section(title = "Salud") {
+                    when (healthState) {
+                        HealthState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            Text(
+                                "Analizando con IA...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 12.dp)
+                            )
+                        }
+                        HealthState.NotConfigured -> Text(
+                            "Configura una API key de Gemini en Ajustes para ver esto.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        is HealthState.Error -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(healthState.reason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            TextButton(onClick = onRetryHealth) { Text("Reintentar") }
+                        }
+                        HealthState.Loaded -> recipe.healthRating?.let { rating ->
+                            val (containerColor, contentColor, label) = when (rating.color) {
+                                HealthColorLevel.GREEN -> Triple(HealthGreenContainer, HealthGreenOn, "Saludable")
+                                HealthColorLevel.YELLOW -> Triple(HealthAmberContainer, HealthAmberOn, "Moderada")
+                                HealthColorLevel.RED -> Triple(HealthRedContainer, HealthRedOn, "Poco saludable")
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                AssistChip(
+                                    onClick = {},
+                                    label = { Text(label) },
+                                    colors = AssistChipDefaults.assistChipColors(containerColor = containerColor, labelColor = contentColor)
+                                )
+                                Text(rating.description, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                        HealthState.Idle -> Unit
+                    }
+                }
+            }
+
             HorizontalDivider()
 
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -287,11 +359,17 @@ private fun RecipeDetailContent(recipe: Recipe, modifier: Modifier = Modifier) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { checkedIngredients[key] = !checked }
-                                    .padding(vertical = 6.dp),
+                                    .clickable(role = Role.Checkbox) { checkedIngredients[key] = !checked }
+                                    .padding(vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Checkbox(checked = checked, onCheckedChange = { checkedIngredients[key] = it })
+                                Icon(
+                                    imageVector = if (checked) Icons.Filled.CheckBox else Icons.Filled.CheckBoxOutlineBlank,
+                                    contentDescription = null,
+                                    tint = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
                                 Text(
                                     text = formatIngredient(ingredient, scale),
                                     style = MaterialTheme.typography.bodyLarge,

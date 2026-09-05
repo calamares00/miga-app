@@ -10,6 +10,7 @@ import java.io.IOException
 import com.bmo00.miga.data.model.RecipeListViewMode
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
+import com.bmo00.miga.data.remote.DEFAULT_PACKS_CATALOG_REPO
 import com.bmo00.miga.data.vision.DEFAULT_GEMINI_MODEL
 import com.bmo00.miga.data.vision.VisionProviderType
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +31,7 @@ class SettingsRepository(private val context: Context) {
     private val geminiModelKey = stringPreferencesKey("gemini_model")
     private val ttsVoiceNameKey = stringPreferencesKey("tts_voice_name")
     private val lastSeenVersionCodeKey = intPreferencesKey("last_seen_version_code")
+    private val packsCatalogRepoKey = stringPreferencesKey("packs_catalog_repo")
 
     fun observeThemeMode(): Flow<ThemeMode> =
         context.settingsDataStore.data.map { prefs ->
@@ -136,6 +138,14 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setLastSeenVersionCode(versionCode: Int) {
         context.settingsDataStore.edit { prefs -> prefs[lastSeenVersionCodeKey] = versionCode }
+    }
+
+    /** Repositorio de GitHub ("owner/repo") del catálogo de packs de recetas; editable en Ajustes. */
+    fun observePacksCatalogRepo(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[packsCatalogRepoKey]?.takeIf { it.isNotBlank() } ?: DEFAULT_PACKS_CATALOG_REPO }
+
+    suspend fun setPacksCatalogRepo(repo: String) {
+        context.settingsDataStore.edit { prefs -> prefs[packsCatalogRepoKey] = repo.trim() }
     }
 
     /** Texto breve de novedades de [versionCode] embebido en `assets/changelogs/`, o null si no existe. */

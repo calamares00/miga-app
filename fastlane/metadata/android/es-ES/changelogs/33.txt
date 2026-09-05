@@ -1,0 +1,1 @@
+Los colores de la valoración de salud de una receta ahora forman un espectro claro de verde (saludable) a rojo (poco saludable), en vez de tonos del tema que podían salir morados o verdosos por igual.

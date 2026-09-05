@@ -87,4 +87,19 @@ interface RecipeDao {
 
     @Query("SELECT * FROM recipes WHERE id = :id")
     suspend fun getRecipeOnce(id: Long): RecipeEntity?
+
+    @Query("SELECT * FROM recipes WHERE uid = :uid LIMIT 1")
+    suspend fun findByUid(uid: String): RecipeEntity?
+
+    @Query("DELETE FROM recipes WHERE recipeBookId = :bookId AND uid NOT IN (:keepUids)")
+    suspend fun deleteRecipesNotInUidSet(bookId: Long, keepUids: List<String>)
+
+    @Query("DELETE FROM recipes WHERE recipeBookId = :bookId")
+    suspend fun deleteAllForBook(bookId: Long)
+
+    @Query(
+        "UPDATE recipes SET healthColor = :color, healthDescription = :description, " +
+            "healthFingerprint = :fingerprint, healthAnalyzedAt = :analyzedAt WHERE id = :id"
+    )
+    suspend fun updateHealthRating(id: Long, color: String?, description: String?, fingerprint: String?, analyzedAt: Long?)
 }

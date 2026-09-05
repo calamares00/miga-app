@@ -34,6 +34,9 @@ interface RecipeBookDao {
     @Query("SELECT * FROM recipe_books WHERE name = :name LIMIT 1")
     suspend fun findByName(name: String): RecipeBookEntity?
 
+    @Query("SELECT * FROM recipe_books WHERE packId = :packId LIMIT 1")
+    suspend fun findByPackId(packId: String): RecipeBookEntity?
+
     @Query("SELECT COUNT(*) FROM recipes WHERE recipeBookId = :bookId")
     suspend fun countRecipes(bookId: Long): Int
 
