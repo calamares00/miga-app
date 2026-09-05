@@ -22,6 +22,8 @@ import org.calamares.miga.ui.editor.RecipeEditorScreen
 import org.calamares.miga.ui.editor.RecipeEditorViewModel
 import org.calamares.miga.ui.list.RecipeListScreen
 import org.calamares.miga.ui.list.RecipeListViewModel
+import org.calamares.miga.ui.search.GlobalSearchScreen
+import org.calamares.miga.ui.search.GlobalSearchViewModel
 import org.calamares.miga.ui.settings.AboutScreen
 import org.calamares.miga.ui.settings.HelpScreen
 import org.calamares.miga.ui.settings.ManageCategoriesScreen
@@ -55,7 +57,19 @@ fun RecetarioNavHost() {
                 onBookClick = { navController.navigate(Destinations.book(it)) },
                 onAddBookClick = { navController.navigate(Destinations.bookEditor()) },
                 onEditBookClick = { navController.navigate(Destinations.bookEditor(it)) },
+                onSearchClick = { navController.navigate(Destinations.SEARCH_ROUTE) },
                 onSettingsClick = { navController.navigate(Destinations.SETTINGS_ROUTE) }
+            )
+        }
+
+        composable(Destinations.SEARCH_ROUTE) {
+            val viewModel: GlobalSearchViewModel = viewModel(
+                factory = viewModelFactory { initializer { GlobalSearchViewModel(repository) } }
+            )
+            GlobalSearchScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onRecipeClick = { navController.navigate(Destinations.detail(it)) }
             )
         }
 

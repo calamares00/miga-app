@@ -8,6 +8,7 @@ object Destinations {
     const val BOOK_EDITOR_ROUTE = "bookEditor?bookId={bookId}"
     const val DETAIL_ROUTE = "recipes/{recipeId}"
     const val EDITOR_ROUTE = "editor?recipeId={recipeId}&bookId={bookId}&sourcePhotoUri={sourcePhotoUri}"
+    const val SEARCH_ROUTE = "search"
     const val SETTINGS_ROUTE = "settings"
     const val MANAGE_CATEGORIES_ROUTE = "settings/categories"
     const val MANAGE_UTENSILS_ROUTE = "settings/utensils"

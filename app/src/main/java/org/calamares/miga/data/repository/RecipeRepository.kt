@@ -48,6 +48,10 @@ class RecipeRepository(private val db: AppDatabase) {
     fun observeRecipesForBook(bookId: Long): Flow<List<Recipe>> =
         recipeDao.observeAllWithDetailsForBook(bookId).map { list -> list.map { it.toDomain() } }
 
+    /** Todas las recetas de todos los libros, usado en la búsqueda global desde la página principal. */
+    fun observeAllRecipes(): Flow<List<Recipe>> =
+        recipeDao.observeAllWithDetails().map { list -> list.map { it.toDomain() } }
+
     fun observeRecipe(id: Long): Flow<Recipe?> =
         recipeDao.observeWithDetails(id).map { it?.toDomain() }
 

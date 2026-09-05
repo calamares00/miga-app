@@ -292,6 +292,7 @@ fun RecipeListScreen(
                 availableCategories = uiState.availableCategories,
                 availableTags = uiState.availableTags,
                 availableUtensils = uiState.availableUtensils,
+                availableIngredients = uiState.availableIngredients,
                 onApply = { newFilter ->
                     viewModel.applyFilter(newFilter)
                     showFilters = false
