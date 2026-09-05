@@ -2,6 +2,7 @@ package org.calamares.miga
 
 import android.app.Application
 import androidx.room.Room
+import org.calamares.miga.crash.CrashReporter
 import org.calamares.miga.data.local.AppDatabase
 import org.calamares.miga.data.local.MIGRATION_4_5
 import org.calamares.miga.data.local.MIGRATION_5_6
@@ -30,6 +31,8 @@ class RecetarioApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Lo antes posible, para que un fallo durante el resto del arranque también quede recogido.
+        CrashReporter.install(this)
         applicationScope.launch {
             repository.seedDefaultUtensilsIfEmpty()
             repository.seedDefaultCategoriesIfEmpty()
