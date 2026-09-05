@@ -1,0 +1,2 @@
+Recorte de fotos con ancho y alto libres, arrastrando las esquinas del marco.
+Aviso de novedades al abrir la app por primera vez tras actualizar.
