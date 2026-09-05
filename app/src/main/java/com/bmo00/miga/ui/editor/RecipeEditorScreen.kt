@@ -362,7 +362,7 @@ private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit, 
                 Box(modifier = Modifier.size(88.dp)) {
                     AsyncImage(
                         model = photo.uri,
-                        contentDescription = null,
+                        contentDescription = "Editar foto",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxSize()

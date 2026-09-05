@@ -69,6 +69,18 @@ correspondiente esté activada.
 Ninguna de estas conexiones pasa por un servidor propio de Miga: no existe
 tal servidor.
 
+## Informe de fallos
+
+Si la app se cierra de forma inesperada, se guarda un informe de texto
+(versión de la app, modelo del dispositivo, versión de Android y la traza
+del error) **solo en el almacenamiento interno de tu dispositivo**. Al
+volver a abrir la app, se te ofrece verlo, copiarlo o compartirlo tú
+mismo (por ejemplo, adjuntándolo a un email o un issue de GitHub) si
+quieres reportarlo, o simplemente descartarlo. No se usa ningún servicio
+de terceros (tipo Crashlytics o Sentry) ni se envía nada de forma
+automática: la app no se entera de que has tenido un fallo salvo que tú
+decidas contárselo a alguien.
+
 ## Exportar y compartir
 
 Las funciones de exportar (JSON, ZIP, PDF), compartir una receta o hacer una

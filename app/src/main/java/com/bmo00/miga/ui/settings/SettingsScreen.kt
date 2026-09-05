@@ -266,7 +266,7 @@ fun SettingsScreen(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Modelo de Gemini") },
-                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = "Abrir selector de modelo") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     // Capa transparente encima del campo para abrir el menú al tocar, sin que el
@@ -344,7 +344,7 @@ fun SettingsScreen(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Voz") },
-                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = "Abrir selector de voz") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Box(

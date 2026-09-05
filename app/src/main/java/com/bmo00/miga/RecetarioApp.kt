@@ -2,6 +2,7 @@ package com.bmo00.miga
 
 import android.app.Application
 import androidx.room.Room
+import com.bmo00.miga.crash.CrashReporter
 import com.bmo00.miga.data.local.AppDatabase
 import com.bmo00.miga.data.local.MIGRATION_4_5
 import com.bmo00.miga.data.local.MIGRATION_5_6
@@ -30,6 +31,8 @@ class RecetarioApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Lo antes posible, para que un fallo durante el resto del arranque también quede recogido.
+        CrashReporter.install(this)
         applicationScope.launch {
             repository.seedDefaultUtensilsIfEmpty()
             repository.seedDefaultCategoriesIfEmpty()

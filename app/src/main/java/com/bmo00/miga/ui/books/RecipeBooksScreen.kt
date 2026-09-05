@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,7 +61,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.model.RecipeBookSummary
@@ -80,9 +83,11 @@ fun RecipeBooksScreen(
     val books by viewModel.books.collectAsState()
     val updateAvailable by viewModel.updateAvailable.collectAsState()
     val changelogAnnouncement by viewModel.changelogAnnouncement.collectAsState()
+    val crashReport by viewModel.crashReport.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
     var showViewModeMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
 
     Scaffold(
         topBar = {
@@ -193,6 +198,47 @@ fun RecipeBooksScreen(
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.dismissChangelogAnnouncement() }) { Text("Entendido") }
+            }
+        )
+    }
+
+    crashReport?.let { report ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissCrashReport() },
+            title = { Text("La app se cerró de forma inesperada") },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        "Esto es lo que se guardó del último fallo, solo en este dispositivo. " +
+                            "Puedes copiarlo o compartirlo para reportarlo, o simplemente descartarlo.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    SelectionContainer {
+                        Text(report, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, "Informe de fallo - Miga")
+                        putExtra(Intent.EXTRA_TEXT, report)
+                    }
+                    runCatching { context.startActivity(Intent.createChooser(intent, "Compartir informe")) }
+                }) { Text("Compartir") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { clipboardManager.setText(AnnotatedString(report)) }) { Text("Copiar") }
+                    TextButton(onClick = { viewModel.dismissCrashReport() }) { Text("Descartar") }
+                }
             }
         )
     }

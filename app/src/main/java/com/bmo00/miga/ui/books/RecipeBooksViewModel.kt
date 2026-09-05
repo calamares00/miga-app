@@ -3,6 +3,7 @@ package com.bmo00.miga.ui.books
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bmo00.miga.BuildConfig
+import com.bmo00.miga.crash.CrashReporter
 import com.bmo00.miga.data.local.SettingsRepository
 import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.model.RecipeListViewMode
@@ -38,6 +39,15 @@ class RecipeBooksViewModel(
 
     private val _changelogAnnouncement = MutableStateFlow<ChangelogAnnouncement?>(null)
     val changelogAnnouncement: StateFlow<ChangelogAnnouncement?> = _changelogAnnouncement
+
+    /** Informe del último fallo no capturado (ver CrashReporter), si lo hay; solo local, nada se envía. */
+    private val _crashReport = MutableStateFlow(CrashReporter.pendingReport())
+    val crashReport: StateFlow<String?> = _crashReport
+
+    fun dismissCrashReport() {
+        CrashReporter.dismiss()
+        _crashReport.value = null
+    }
 
     init {
         viewModelScope.launch {

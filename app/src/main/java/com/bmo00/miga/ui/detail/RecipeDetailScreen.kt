@@ -3,6 +3,7 @@ package com.bmo00.miga.ui.detail
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -359,7 +360,11 @@ private fun RecipeDetailContent(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable(role = Role.Checkbox) { checkedIngredients[key] = !checked }
+                                    .toggleable(
+                                        value = checked,
+                                        role = Role.Checkbox,
+                                        onValueChange = { checkedIngredients[key] = it }
+                                    )
                                     .padding(vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
