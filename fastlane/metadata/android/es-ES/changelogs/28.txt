@@ -1,0 +1,1 @@
+Corrige el editor de foto: el recorte (arrastrar la foto dentro del marco) no se veía por un fallo de tamaño en la pantalla. Ahora la zona de recorte tiene un marco visible sobre fondo oscuro, igual que el de rotar.

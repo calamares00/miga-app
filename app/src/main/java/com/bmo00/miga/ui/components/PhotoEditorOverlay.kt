@@ -3,6 +3,8 @@ package com.bmo00.miga.ui.components
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -106,7 +109,13 @@ fun PhotoEditorOverlay(sourceUri: Uri, aspectRatio: Float, onSave: (String) -> U
                     ) { Icon(Icons.Filled.Check, contentDescription = "Guardar") }
                 }
 
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .background(Color.Black),
+                    contentAlignment = Alignment.Center
+                ) {
                     val bmp = bitmap
                     when {
                         loadFailed -> Text(
@@ -119,6 +128,7 @@ fun PhotoEditorOverlay(sourceUri: Uri, aspectRatio: Float, onSave: (String) -> U
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(aspectRatio)
+                                .border(2.dp, Color.White)
                                 .onSizeChanged { frameSize = it }
                                 .pointerInput(bmp) {
                                     detectDragGestures { change, dragAmount ->
