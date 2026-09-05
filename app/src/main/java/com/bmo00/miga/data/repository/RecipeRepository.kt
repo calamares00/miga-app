@@ -18,6 +18,7 @@ import com.bmo00.miga.data.local.entity.TagEntity
 import com.bmo00.miga.data.local.entity.UtensilEntity
 import com.bmo00.miga.data.model.Difficulty
 import com.bmo00.miga.data.model.HealthColorLevel
+import com.bmo00.miga.data.model.HealthFingerprint
 import com.bmo00.miga.data.model.HealthRating
 import com.bmo00.miga.data.model.Ingredient
 import com.bmo00.miga.data.model.IngredientCatalogItem
@@ -33,7 +34,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import java.security.MessageDigest
 import java.util.UUID
 
 /** Se lanza al intentar borrar un libro de recetas que todavía tiene recetas dentro. */
@@ -230,24 +230,10 @@ class RecipeRepository(private val db: AppDatabase) {
     /**
      * Huella de [ingredientGroups]+[stepGroups]: si cambia respecto a la guardada junto a una
      * valoración de salud, esa valoración ya no es válida para el contenido actual de la receta.
+     * Delegado a [HealthFingerprint] (función pura, con sus propios tests unitarios).
      */
-    fun computeHealthFingerprint(ingredientGroups: List<IngredientGroup>, stepGroups: List<StepGroup>): String {
-        val canonical = buildString {
-            ingredientGroups.forEach { group ->
-                append(group.name.orEmpty()).append('|')
-                group.ingredients.forEach { ingredient ->
-                    append(ingredient.name).append(',').append(ingredient.quantity).append(',').append(ingredient.unit.orEmpty()).append(';')
-                }
-            }
-            append("##")
-            stepGroups.forEach { group ->
-                append(group.name.orEmpty()).append('|')
-                group.instructions.forEach { append(it).append(';') }
-            }
-        }
-        val digest = MessageDigest.getInstance("SHA-256").digest(canonical.toByteArray())
-        return digest.joinToString("") { "%02x".format(it) }
-    }
+    fun computeHealthFingerprint(ingredientGroups: List<IngredientGroup>, stepGroups: List<StepGroup>): String =
+        HealthFingerprint.compute(ingredientGroups, stepGroups)
 
     // --- Categorías ---
 

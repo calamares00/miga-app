@@ -58,6 +58,28 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
+      # Tests unitarios: se ejecutan siempre (cualquier push, PR o modo manual), no solo en
+      # pull requests, para que un test roto bloquee el build igual que un fallo de compilación.
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Upload unit test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: miga-unit-test-report-${{ steps.mode.outputs.safe_ref }}-${{ steps.mode.outputs.short_sha }}
+          path: app/build/reports/tests/testDebugUnitTest
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # El build "release" (mode == 'release') solo se dispara al hacer push a main; en cualquier
+      # otro caso se valida aquí que assembleRelease sigue compilando con isMinifyEnabled=true,
+      # para que una regla de ProGuard/R8 rota se detecte en esta misma rama y no solo al fusionar.
+      # Sale sin firmar (no hay secretos de keystore en este paso) y no se publica en ningún sitio.
+      - name: Build release APK (validar minificación con R8)
+        if: steps.mode.outputs.mode != 'release'
+        run: ./gradlew :app:assembleRelease --stacktrace
+
       # --- pull request hacia main: lint + compilación de comprobación ---
       - name: Lint (pull request)
         if: steps.mode.outputs.mode == 'pr_check'
