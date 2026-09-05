@@ -2,6 +2,8 @@ package com.bmo00.miga.ui.settings
 
 import android.content.Intent
 import android.net.Uri
+import android.speech.tts.TextToSpeech
+import android.speech.tts.Voice
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -47,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,6 +72,7 @@ import com.bmo00.miga.data.vision.GEMINI_MODELS
 import com.bmo00.miga.ui.common.BACKUP_MIME_TYPES
 import com.bmo00.miga.ui.security.BiometricAuthenticator
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,7 +95,25 @@ fun SettingsScreen(
     val geminiApiKey by viewModel.geminiApiKey.collectAsState()
     val geminiModel by viewModel.geminiModel.collectAsState()
     var modelMenuExpanded by remember { mutableStateOf(false) }
+    val ttsVoiceName by viewModel.ttsVoiceName.collectAsState()
+    var voiceMenuExpanded by remember { mutableStateOf(false) }
+    var tts by remember { mutableStateOf<TextToSpeech?>(null) }
+    var availableVoices by remember { mutableStateOf<List<Voice>>(emptyList()) }
     val context = LocalContext.current
+
+    DisposableEffect(Unit) {
+        var engine: TextToSpeech? = null
+        engine = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                availableVoices = engine?.voices
+                    ?.filter { it.locale.language == "es" }
+                    ?.sortedBy { "${it.locale} ${it.name}" }
+                    .orEmpty()
+            }
+        }
+        tts = engine
+        onDispose { engine?.stop(); engine?.shutdown() }
+    }
     val activity = context as? FragmentActivity
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -268,6 +290,61 @@ fun SettingsScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+            }
+
+            HorizontalDivider()
+
+            SettingsSection(title = "Modo cocina") {
+                Text(
+                    "Voz usada para leer los pasos en voz alta en el modo cocina.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                val selectedVoiceLabel = availableVoices.firstOrNull { it.name == ttsVoiceName }
+                    ?.let { "${it.locale.displayName} (${it.name})" }
+                    ?: "Predeterminada del sistema"
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = selectedVoiceLabel,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Voz") },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { voiceMenuExpanded = true }
+                    )
+                    DropdownMenu(
+                        expanded = voiceMenuExpanded,
+                        onDismissRequest = { voiceMenuExpanded = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Predeterminada del sistema") },
+                            onClick = { viewModel.setTtsVoiceName(null); voiceMenuExpanded = false }
+                        )
+                        availableVoices.forEach { voice ->
+                            DropdownMenuItem(
+                                text = { Text("${voice.locale.displayName} (${voice.name})") },
+                                onClick = { viewModel.setTtsVoiceName(voice.name); voiceMenuExpanded = false }
+                            )
+                        }
+                    }
+                }
+                OutlinedButton(
+                    onClick = {
+                        val engine = tts ?: return@OutlinedButton
+                        availableVoices.firstOrNull { it.name == ttsVoiceName }?.let { engine.setVoice(it) }
+                        engine.setLanguage(Locale("es", "ES"))
+                        engine.speak("Añade dos cucharadas de aceite de oliva.", TextToSpeech.QUEUE_FLUSH, null, "voice_preview")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Probar voz")
                 }
             }
 
