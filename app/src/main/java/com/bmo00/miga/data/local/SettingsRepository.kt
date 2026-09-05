@@ -3,8 +3,10 @@ package com.bmo00.miga.data.local
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import java.io.IOException
 import com.bmo00.miga.data.model.RecipeListViewMode
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
@@ -27,6 +29,7 @@ class SettingsRepository(private val context: Context) {
     private val geminiApiKeyKey = stringPreferencesKey("gemini_api_key")
     private val geminiModelKey = stringPreferencesKey("gemini_model")
     private val ttsVoiceNameKey = stringPreferencesKey("tts_voice_name")
+    private val lastSeenVersionCodeKey = intPreferencesKey("last_seen_version_code")
 
     fun observeThemeMode(): Flow<ThemeMode> =
         context.settingsDataStore.data.map { prefs ->
@@ -125,5 +128,22 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs ->
             if (name.isNullOrBlank()) prefs.remove(ttsVoiceNameKey) else prefs[ttsVoiceNameKey] = name
         }
+    }
+
+    /** Último versionCode instalado del que ya se mostró el changelog; 0 si aún no se ha registrado ninguno. */
+    fun observeLastSeenVersionCode(): Flow<Int> =
+        context.settingsDataStore.data.map { prefs -> prefs[lastSeenVersionCodeKey] ?: 0 }
+
+    suspend fun setLastSeenVersionCode(versionCode: Int) {
+        context.settingsDataStore.edit { prefs -> prefs[lastSeenVersionCodeKey] = versionCode }
+    }
+
+    /** Texto breve de novedades de [versionCode] embebido en `assets/changelogs/`, o null si no existe. */
+    fun readChangelog(versionCode: Int): String? = try {
+        context.assets.open("changelogs/$versionCode.txt").bufferedReader().use { it.readText() }
+            .trim()
+            .ifBlank { null }
+    } catch (e: IOException) {
+        null
     }
 }

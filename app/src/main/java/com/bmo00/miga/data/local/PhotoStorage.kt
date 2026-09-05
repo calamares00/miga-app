@@ -102,25 +102,6 @@ object PhotoStorage {
         return Bitmap.createScaledBitmap(bitmap, width, height, true)
     }
 
-    /**
-     * Recorta [bitmap] a la ventana que quedaba visible dentro de un marco de
-     * [frameWidthPx] x [frameHeightPx] (relleno "cover", como ContentScale.Crop) desplazado
-     * [panOffsetX]/[panOffsetY] píxeles desde el centro. Ver PhotoEditorOverlay para el arrastre.
-     */
-    fun cropToFrame(bitmap: Bitmap, frameWidthPx: Float, frameHeightPx: Float, panOffsetX: Float, panOffsetY: Float): Bitmap {
-        if (frameWidthPx <= 0f || frameHeightPx <= 0f) return bitmap
-        val scale = maxOf(frameWidthPx / bitmap.width, frameHeightPx / bitmap.height)
-        val cropWidth = (frameWidthPx / scale).coerceIn(1f, bitmap.width.toFloat())
-        val cropHeight = (frameHeightPx / scale).coerceIn(1f, bitmap.height.toFloat())
-        val left = (bitmap.width / 2f - cropWidth / 2f - panOffsetX / scale).coerceIn(0f, bitmap.width - cropWidth)
-        val top = (bitmap.height / 2f - cropHeight / 2f - panOffsetY / scale).coerceIn(0f, bitmap.height - cropHeight)
-        val leftPx = left.roundToInt()
-        val topPx = top.roundToInt()
-        val widthPx = cropWidth.roundToInt().coerceIn(1, bitmap.width - leftPx)
-        val heightPx = cropHeight.roundToInt().coerceIn(1, bitmap.height - topPx)
-        return Bitmap.createBitmap(bitmap, leftPx, topPx, widthPx, heightPx)
-    }
-
     /** Guarda [bitmap] como JPEG en el almacenamiento interno, reduciéndolo si hiciera falta. */
     fun saveNormalized(context: Context, bitmap: Bitmap): String {
         val normalized = downscaleIfNeeded(bitmap)
