@@ -86,13 +86,17 @@ fun RecipeBookEditorScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(if (viewModel.isEditing) "Editar libro" else "Nuevo libro") },
+                title = { Text(if (viewModel.isPack) "Pack instalado" else if (viewModel.isEditing) "Editar libro" else "Nuevo libro") },
                 navigationIcon = {
                     IconButton(onClick = onCancel) { Icon(Icons.Filled.Close, contentDescription = "Cancelar") }
                 },
                 actions = {
                     if (viewModel.isSaving || viewModel.isDeleting) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp).padding(end = 16.dp))
+                    } else if (viewModel.isPack) {
+                        IconButton(onClick = { showDeleteConfirm = true }) {
+                            Icon(Icons.Filled.Delete, contentDescription = "Desinstalar pack", tint = MaterialTheme.colorScheme.error)
+                        }
                     } else {
                         if (viewModel.isEditing) {
                             IconButton(onClick = { showDeleteConfirm = true }) {
@@ -122,11 +126,13 @@ fun RecipeBookEditorScreen(
                     .aspectRatio(0.72f)
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable {
-                        if (viewModel.coverPhotoUri != null) {
-                            editingExistingCover = true
-                        } else {
-                            showPhotoSourceSheet = true
+                    .let { base ->
+                        if (viewModel.isPack) base else base.clickable {
+                            if (viewModel.coverPhotoUri != null) {
+                                editingExistingCover = true
+                            } else {
+                                showPhotoSourceSheet = true
+                            }
                         }
                     }
             ) {
@@ -138,18 +144,20 @@ fun RecipeBookEditorScreen(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
-                    IconButton(
-                        onClick = { showPhotoSourceSheet = true },
-                        modifier = Modifier.size(28.dp).align(Alignment.BottomEnd).padding(4.dp)
-                    ) {
-                        Icon(
-                            Icons.Filled.AddAPhoto,
-                            contentDescription = "Cambiar portada",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier
-                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
-                                .padding(4.dp)
-                        )
+                    if (!viewModel.isPack) {
+                        IconButton(
+                            onClick = { showPhotoSourceSheet = true },
+                            modifier = Modifier.size(28.dp).align(Alignment.BottomEnd).padding(4.dp)
+                        ) {
+                            Icon(
+                                Icons.Filled.AddAPhoto,
+                                contentDescription = "Cambiar portada",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier
+                                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
+                                    .padding(4.dp)
+                            )
+                        }
                     }
                 } else {
                     Icon(
@@ -167,21 +175,39 @@ fun RecipeBookEditorScreen(
                 placeholder = { Text("Ej. Josi, Helen...") },
                 isError = viewModel.nameError,
                 supportingText = { if (viewModel.nameError) Text("El nombre es obligatorio") },
+                readOnly = viewModel.isPack,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            if (viewModel.isPack) {
+                Text(
+                    "Este libro es un pack instalado: es de solo lectura. Puedes ver y cocinar sus " +
+                        "recetas, pero no cambiar su nombre, portada ni contenido. Solo puedes desinstalarlo.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Eliminar libro") },
-            text = { Text("¿Seguro que quieres eliminar \"${viewModel.name}\"? Esta acción no se puede deshacer.") },
+            title = { Text(if (viewModel.isPack) "Desinstalar pack" else "Eliminar libro") },
+            text = {
+                Text(
+                    if (viewModel.isPack) {
+                        "¿Seguro que quieres desinstalar \"${viewModel.name}\"? Se borrarán todas sus recetas de este dispositivo."
+                    } else {
+                        "¿Seguro que quieres eliminar \"${viewModel.name}\"? Esta acción no se puede deshacer."
+                    }
+                )
+            },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
                     viewModel.delete(onDeleted = onSaved)
-                }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
+                }) { Text(if (viewModel.isPack) "Desinstalar" else "Eliminar", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancelar") }

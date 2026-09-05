@@ -16,3 +16,14 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         db.execSQL("ALTER TABLE recipes ADD COLUMN healthAnalyzedAt INTEGER DEFAULT NULL")
     }
 }
+
+/**
+ * v5 -> v6: añade las columnas de packs de recetas descargables (ver RecipeBook.isPack). Ambas
+ * nullable con NULL por defecto; NULL = libro propio del usuario, no un pack instalado.
+ */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE recipe_books ADD COLUMN packId TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE recipe_books ADD COLUMN packVersion INTEGER DEFAULT NULL")
+    }
+}

@@ -22,6 +22,10 @@ import org.calamares.miga.ui.editor.RecipeEditorScreen
 import org.calamares.miga.ui.editor.RecipeEditorViewModel
 import org.calamares.miga.ui.list.RecipeListScreen
 import org.calamares.miga.ui.list.RecipeListViewModel
+import org.calamares.miga.ui.packs.PackDetailScreen
+import org.calamares.miga.ui.packs.PackDetailViewModel
+import org.calamares.miga.ui.packs.PacksCatalogScreen
+import org.calamares.miga.ui.packs.PacksCatalogViewModel
 import org.calamares.miga.ui.search.GlobalSearchScreen
 import org.calamares.miga.ui.search.GlobalSearchViewModel
 import org.calamares.miga.ui.settings.AboutScreen
@@ -180,8 +184,39 @@ fun RecetarioNavHost() {
                 onManageUtensils = { navController.navigate(Destinations.MANAGE_UTENSILS_ROUTE) },
                 onManageIngredients = { navController.navigate(Destinations.MANAGE_INGREDIENTS_ROUTE) },
                 onManageIngredientCategories = { navController.navigate(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) },
+                onOpenPacksCatalog = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) },
                 onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
                 onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) }
+            )
+        }
+
+        composable(Destinations.PACKS_CATALOG_ROUTE) {
+            val viewModel: PacksCatalogViewModel = viewModel(
+                factory = viewModelFactory { initializer { PacksCatalogViewModel(repository, settingsRepository) } }
+            )
+            PacksCatalogScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onPackClick = { navController.navigate(Destinations.packDetail(it)) }
+            )
+        }
+
+        composable(
+            route = Destinations.PACK_DETAIL_ROUTE,
+            arguments = listOf(navArgument(Destinations.ARG_PACK_ID) { type = NavType.StringType })
+        ) { backStackEntry ->
+            val packId = backStackEntry.arguments?.getString(Destinations.ARG_PACK_ID) ?: return@composable
+            val viewModel: PackDetailViewModel = viewModel(
+                key = "packDetail_$packId",
+                factory = viewModelFactory { initializer { PackDetailViewModel(repository, settingsRepository, packId) } }
+            )
+            PackDetailScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onInstalled = { bookId ->
+                    navController.popBackStack(Destinations.PACKS_CATALOG_ROUTE, inclusive = true)
+                    navController.navigate(Destinations.book(bookId))
+                }
             )
         }
 

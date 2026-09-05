@@ -39,6 +39,11 @@ sealed interface LibraryImportResult {
     data class Error(val reason: String) : LibraryImportResult
 }
 
+sealed interface PackImportResult {
+    data class Success(val bookId: Long) : PackImportResult
+    data class Error(val reason: String) : PackImportResult
+}
+
 object RecipeExporter {
 
     private val json = Json {
@@ -221,6 +226,52 @@ object RecipeExporter {
             throw e
         } catch (e: Exception) {
             LibraryImportResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+        }
+    }
+
+    /**
+     * Instala o actualiza un pack descargado del catálogo (ver PacksCatalogClient): mismo formato
+     * ZIP que genera [shareBook] (manifest.json + books/<uid>/ + recipes/<uid>/), pero en vez de
+     * resolver el libro por nombre y siempre insertar (como [importLibrary]) usa
+     * [RecipeRepository.installOrUpdatePack], que identifica el libro por [packId] y actualiza
+     * en el sitio si ya estaba instalado.
+     */
+    suspend fun importPackFromBytes(
+        context: Context,
+        zipBytes: ByteArray,
+        repository: RecipeRepository,
+        packId: String,
+        packVersion: Int
+    ): PackImportResult = withContext(Dispatchers.IO) {
+        try {
+            if (!isZip(zipBytes)) return@withContext PackImportResult.Error("El archivo descargado no es un ZIP válido")
+            val entries = readZipEntries(zipBytes)
+            val manifestText = entries["manifest.json"]?.toString(Charsets.UTF_8)
+                ?: return@withContext PackImportResult.Error("El pack no contiene manifest.json")
+            val migrated = migrateJson(manifestText, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
+            val dto = json.decodeFromJsonElement(LibraryExportDto.serializer(), migrated)
+            val bookMeta = dto.books.firstOrNull()
+                ?: return@withContext PackImportResult.Error("El pack no incluye los metadatos del libro")
+            val bookCoverUri = bookMeta.coverPhotoFileName?.let { fileName ->
+                entries["books/${bookMeta.uid}/$fileName"]?.let { PhotoStorage.copyBytesToInternalStorage(context, it) }
+            }
+            val photosByUid = dto.recipes.associate { recipeDto ->
+                recipeDto.uid to resolvePhotos(context, recipeDto.uid, recipeDto.photos, entries)
+            }
+            val bookId = repository.installOrUpdatePack(
+                packId = packId,
+                packVersion = packVersion,
+                bookName = bookMeta.name,
+                bookUid = bookMeta.uid,
+                bookCoverUri = bookCoverUri,
+                recipes = dto.recipes,
+                photosByUid = photosByUid
+            )
+            PackImportResult.Success(bookId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            PackImportResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
         }
     }
 

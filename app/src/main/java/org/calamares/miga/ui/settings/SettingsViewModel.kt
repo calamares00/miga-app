@@ -15,6 +15,7 @@ import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.model.UpdateChannel
+import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG_REPO
 import org.calamares.miga.data.remote.UpdateCheckResult
 import org.calamares.miga.data.remote.UpdateChecker
 import org.calamares.miga.data.remote.UpdateInfo
@@ -113,6 +114,13 @@ class SettingsViewModel(
 
     fun setGeminiModel(model: String) {
         viewModelScope.launch { settingsRepository.setGeminiModel(model) }
+    }
+
+    val packsCatalogRepo: StateFlow<String> = settingsRepository.observePacksCatalogRepo()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_PACKS_CATALOG_REPO)
+
+    fun setPacksCatalogRepo(repo: String) {
+        viewModelScope.launch { settingsRepository.setPacksCatalogRepo(repo) }
     }
 
     val ttsVoiceName: StateFlow<String?> = settingsRepository.observeTtsVoiceName()

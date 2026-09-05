@@ -40,7 +40,9 @@ data class RecipeListUiState(
     val availableCategories: List<String> = emptyList(),
     val availableTags: List<String> = emptyList(),
     val availableUtensils: List<String> = emptyList(),
-    val availableIngredients: List<String> = emptyList()
+    val availableIngredients: List<String> = emptyList(),
+    /** Libro instalado desde un pack (ver RecipeBook.isPack): solo lectura, sin añadir/editar/borrar recetas. */
+    val isPackBook: Boolean = false
 )
 
 private data class FilterOptions(
@@ -141,7 +143,8 @@ class RecipeListViewModel(
             availableCategories = data.options.categories.map { it.name },
             availableTags = data.options.tags.map { it.name },
             availableUtensils = data.options.utensils.map { it.name },
-            availableIngredients = data.options.ingredientNames
+            availableIngredients = data.options.ingredientNames,
+            isPackBook = book?.isPack == true
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecipeListUiState())
 

@@ -30,6 +30,9 @@ class RecipeBookEditorViewModel(
     var isDeleting by mutableStateOf(false)
         private set
     var deleteError by mutableStateOf<String?>(null)
+    /** Libro instalado desde un pack (ver RecipeBook.isPack): de solo lectura, sin Guardar, solo desinstalar. */
+    var isPack by mutableStateOf(false)
+        private set
 
     init {
         if (isEditing) {
@@ -37,6 +40,7 @@ class RecipeBookEditorViewModel(
                 repository.observeRecipeBook(bookId).first()?.let { book ->
                     name = book.name
                     coverPhotoUri = book.coverPhotoUri
+                    isPack = book.isPack
                 }
                 isLoading = false
             }
@@ -44,6 +48,7 @@ class RecipeBookEditorViewModel(
     }
 
     fun save(onSaved: () -> Unit) {
+        if (isPack) return
         if (name.isBlank()) {
             nameError = true
             return
@@ -62,6 +67,12 @@ class RecipeBookEditorViewModel(
         if (!isEditing) return
         viewModelScope.launch {
             isDeleting = true
+            if (isPack) {
+                repository.uninstallPack(bookId)
+                isDeleting = false
+                onDeleted()
+                return@launch
+            }
             try {
                 repository.deleteRecipeBook(bookId)
                 onDeleted()
