@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.books
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -23,6 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -30,6 +32,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +47,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.local.PhotoStorage
+import com.bmo00.miga.ui.components.PhotoEditorOverlay
+import com.bmo00.miga.ui.components.PhotoSourceSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,10 +60,19 @@ fun RecipeBookEditorScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showPhotoSourceSheet by remember { mutableStateOf(false) }
+    var pendingCameraPath by remember { mutableStateOf<String?>(null) }
+    var pendingEditUri by remember { mutableStateOf<Uri?>(null) }
+    var editingExistingCover by remember { mutableStateOf(false) }
+    val photoSheetState = rememberModalBottomSheetState()
     val coverPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
-            PhotoStorage.copyToInternalStorage(context, uri)?.let { viewModel.coverPhotoUri = it }
+            pendingEditUri = uri
         }
+    }
+    val cameraCaptureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) pendingCameraPath?.let { pendingEditUri = Uri.parse(it) }
+        pendingCameraPath = null
     }
 
     LaunchedEffect(viewModel.deleteError) {
@@ -108,7 +122,13 @@ fun RecipeBookEditorScreen(
                     .aspectRatio(0.72f)
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable { coverPicker.launch("image/*") }
+                    .clickable {
+                        if (viewModel.coverPhotoUri != null) {
+                            editingExistingCover = true
+                        } else {
+                            showPhotoSourceSheet = true
+                        }
+                    }
             ) {
                 val cover = viewModel.coverPhotoUri
                 if (cover != null) {
@@ -118,6 +138,19 @@ fun RecipeBookEditorScreen(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
+                    IconButton(
+                        onClick = { showPhotoSourceSheet = true },
+                        modifier = Modifier.size(28.dp).align(Alignment.BottomEnd).padding(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.AddAPhoto,
+                            contentDescription = "Cambiar portada",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
+                                .padding(4.dp)
+                        )
+                    }
                 } else {
                     Icon(
                         imageVector = Icons.Filled.AddAPhoto,
@@ -152,6 +185,41 @@ fun RecipeBookEditorScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    if (showPhotoSourceSheet) {
+        ModalBottomSheet(onDismissRequest = { showPhotoSourceSheet = false }, sheetState = photoSheetState) {
+            PhotoSourceSheet(
+                title = "Añadir portada",
+                onCameraClick = {
+                    showPhotoSourceSheet = false
+                    val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
+                    pendingCameraPath = filePath
+                    cameraCaptureLauncher.launch(contentUri)
+                },
+                onGalleryClick = {
+                    showPhotoSourceSheet = false
+                    coverPicker.launch("image/*")
+                }
+            )
+        }
+    }
+
+    val editSourceUri = pendingEditUri
+        ?: (if (editingExistingCover) viewModel.coverPhotoUri?.let { Uri.parse(it) } else null)
+    if (editSourceUri != null) {
+        PhotoEditorOverlay(
+            sourceUri = editSourceUri,
+            onSave = { path ->
+                viewModel.coverPhotoUri = path
+                pendingEditUri = null
+                editingExistingCover = false
+            },
+            onCancel = {
+                pendingEditUri = null
+                editingExistingCover = false
             }
         )
     }

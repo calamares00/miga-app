@@ -28,8 +28,6 @@ import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.filled.ViewAgenda
@@ -70,6 +68,7 @@ import com.bmo00.miga.data.model.RecipeListViewMode
 import com.bmo00.miga.data.model.RecipeSummary
 import com.bmo00.miga.ui.common.BACKUP_MIME_TYPES
 import com.bmo00.miga.ui.components.FilterSheetContent
+import com.bmo00.miga.ui.components.PhotoSourceSheet
 import com.bmo00.miga.ui.components.RecipeCard
 import com.bmo00.miga.ui.components.RecipeGridCard
 import kotlinx.coroutines.launch
@@ -307,41 +306,19 @@ fun RecipeListScreen(
 
     if (showPhotoSourceSheet) {
         ModalBottomSheet(onDismissRequest = { showPhotoSourceSheet = false }, sheetState = photoSheetState) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Text(
-                    "Añadir receta con foto",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            showPhotoSourceSheet = false
-                            val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
-                            pendingCameraPath = filePath
-                            cameraCaptureLauncher.launch(contentUri)
-                        }
-                        .padding(vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Filled.PhotoCamera, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Hacer foto", modifier = Modifier.padding(start = 16.dp))
+            PhotoSourceSheet(
+                title = "Añadir receta con foto",
+                onCameraClick = {
+                    showPhotoSourceSheet = false
+                    val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
+                    pendingCameraPath = filePath
+                    cameraCaptureLauncher.launch(contentUri)
+                },
+                onGalleryClick = {
+                    showPhotoSourceSheet = false
+                    galleryPickerForPhotoImport.launch("image/*")
                 }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            showPhotoSourceSheet = false
-                            galleryPickerForPhotoImport.launch("image/*")
-                        }
-                        .padding(vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Filled.PhotoLibrary, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Elegir de galería", modifier = Modifier.padding(start = 16.dp))
-                }
-            }
+            )
         }
     }
 

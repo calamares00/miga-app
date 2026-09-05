@@ -2,6 +2,7 @@ package com.bmo00.miga.ui.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bmo00.miga.data.local.SettingsRepository
 import com.bmo00.miga.data.model.Recipe
 import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.repository.RecipeRepository
@@ -12,10 +13,14 @@ import kotlinx.coroutines.launch
 
 class RecipeDetailViewModel(
     private val repository: RecipeRepository,
-    private val recipeId: Long
+    private val recipeId: Long,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     val recipe: StateFlow<Recipe?> = repository.observeRecipe(recipeId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val ttsVoiceName: StateFlow<String?> = settingsRepository.observeTtsVoiceName()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val recipeBooks: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()

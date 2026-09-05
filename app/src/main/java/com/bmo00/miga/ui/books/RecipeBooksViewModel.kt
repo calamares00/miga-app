@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+data class ChangelogAnnouncement(val versionName: String, val entries: List<String>)
+
 class RecipeBooksViewModel(
     repository: RecipeRepository,
     private val settingsRepository: SettingsRepository
@@ -34,6 +36,9 @@ class RecipeBooksViewModel(
     private val _updateAvailable = MutableStateFlow<UpdateInfo?>(null)
     val updateAvailable: StateFlow<UpdateInfo?> = _updateAvailable
 
+    private val _changelogAnnouncement = MutableStateFlow<ChangelogAnnouncement?>(null)
+    val changelogAnnouncement: StateFlow<ChangelogAnnouncement?> = _changelogAnnouncement
+
     init {
         viewModelScope.launch {
             if (settingsRepository.observeAutoCheckUpdatesEnabled().first()) {
@@ -42,9 +47,35 @@ class RecipeBooksViewModel(
                 _updateAvailable.value = (result as? UpdateCheckResult.UpdateFound)?.info
             }
         }
+        viewModelScope.launch {
+            val lastSeen = settingsRepository.observeLastSeenVersionCode().first()
+            val current = BuildConfig.VERSION_CODE
+            if (lastSeen == 0) {
+                // Primera vez que corre esta lógica (instalación nueva, o actualización desde una
+                // versión anterior a que existiera el changelog en la app): no hay nada que
+                // mostrar todavía, solo se empieza a registrar la versión vista a partir de ahora.
+                settingsRepository.setLastSeenVersionCode(current)
+            } else if (lastSeen < current) {
+                val entries = (lastSeen + 1..current).flatMap { code ->
+                    settingsRepository.readChangelog(code)
+                        ?.lines()
+                        ?.map { it.trim() }
+                        ?.filter { it.isNotBlank() }
+                        .orEmpty()
+                }
+                if (entries.isNotEmpty()) {
+                    _changelogAnnouncement.value = ChangelogAnnouncement(BuildConfig.VERSION_NAME, entries)
+                }
+                settingsRepository.setLastSeenVersionCode(current)
+            }
+        }
     }
 
     fun dismissUpdateBanner() {
         _updateAvailable.value = null
+    }
+
+    fun dismissChangelogAnnouncement() {
+        _changelogAnnouncement.value = null
     }
 }

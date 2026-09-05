@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,7 +20,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -30,6 +33,7 @@ import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewHeadline
 import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -72,6 +76,7 @@ fun RecipeBooksScreen(
 ) {
     val books by viewModel.books.collectAsState()
     val updateAvailable by viewModel.updateAvailable.collectAsState()
+    val changelogAnnouncement by viewModel.changelogAnnouncement.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
     var showViewModeMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -158,6 +163,32 @@ fun RecipeBooksScreen(
                 }
             }
         }
+    }
+
+    changelogAnnouncement?.let { announcement ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissChangelogAnnouncement() },
+            title = { Text("Novedades de la versión ${announcement.versionName}") },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    announcement.entries.forEach { entry ->
+                        Text(
+                            "• $entry",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.dismissChangelogAnnouncement() }) { Text("Entendido") }
+            }
+        )
     }
 }
 
