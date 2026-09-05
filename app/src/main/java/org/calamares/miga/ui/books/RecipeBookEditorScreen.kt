@@ -212,7 +212,6 @@ fun RecipeBookEditorScreen(
     if (editSourceUri != null) {
         PhotoEditorOverlay(
             sourceUri = editSourceUri,
-            aspectRatio = 0.72f,
             onSave = { path ->
                 viewModel.coverPhotoUri = path
                 pendingEditUri = null

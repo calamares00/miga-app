@@ -337,7 +337,6 @@ fun RecipeEditorScreen(
     if (editSourceUri != null) {
         PhotoEditorOverlay(
             sourceUri = editSourceUri,
-            aspectRatio = 1f,
             onSave = { path ->
                 if (editingExistingPhoto != null) {
                     viewModel.updatePhotoUri(editingExistingPhoto, path)
