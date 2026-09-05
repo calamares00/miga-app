@@ -6,6 +6,7 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.Voice
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,20 +17,29 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Kitchen
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -58,8 +68,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.bmo00.miga.BuildConfig
@@ -167,9 +180,9 @@ fun SettingsScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SettingsSection(title = "Tema") {
+            SettingsCard(icon = Icons.Filled.Palette, title = "Apariencia") {
                 ThemeMode.entries.forEach { mode ->
                     Row(
                         modifier = Modifier
@@ -184,12 +197,9 @@ fun SettingsScreen(
                 }
             }
 
-            HorizontalDivider()
-
-            SettingsSection(title = "Seguridad") {
+            SettingsCard(icon = Icons.Filled.Fingerprint, title = "Seguridad") {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Fingerprint, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Bloqueo biométrico", modifier = Modifier.padding(start = 16.dp).weight(1f))
+                    Text("Bloqueo biométrico", modifier = Modifier.weight(1f))
                     Switch(
                         checked = biometricLockEnabled,
                         onCheckedChange = { checked ->
@@ -207,9 +217,17 @@ fun SettingsScreen(
                 }
             }
 
-            HorizontalDivider()
+            SettingsCard(icon = Icons.Filled.Tune, title = "Gestionar contenido", contentSpacing = 0.dp) {
+                ManageRow(icon = Icons.Filled.Category, label = "Categorías", onClick = onManageCategories)
+                HorizontalDivider()
+                ManageRow(icon = Icons.Filled.Kitchen, label = "Utensilios", onClick = onManageUtensils)
+                HorizontalDivider()
+                ManageRow(icon = Icons.Filled.RestaurantMenu, label = "Ingredientes", onClick = onManageIngredients)
+                HorizontalDivider()
+                ManageRow(icon = Icons.Filled.Sell, label = "Categorías de ingredientes", onClick = onManageIngredientCategories)
+            }
 
-            SettingsSection(title = "Copia de seguridad") {
+            SettingsCard(icon = Icons.Filled.Backup, title = "Copia de seguridad") {
                 OutlinedButton(onClick = { exportLauncher.launch("recetarios_backup.zip") }, modifier = Modifier.fillMaxWidth()) {
                     Text("Exportar toda la app")
                 }
@@ -221,16 +239,13 @@ fun SettingsScreen(
                 }
             }
 
-            HorizontalDivider()
-
-            SettingsSection(title = "Importar con IA (beta)") {
-                Text(
-                    "Reconoce el texto de una foto de una receta (libro, revista, escrita a mano) " +
-                        "usando Google Gemini. La foto se envía a Google para procesarla; no se " +
-                        "guarda ninguna copia salvo la que decidas añadir tú a la receta.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            SettingsCard(
+                icon = Icons.Filled.AutoAwesome,
+                title = "Importar con IA (beta)",
+                description = "Reconoce el texto de una foto de una receta (libro, revista, escrita a mano) " +
+                    "usando Google Gemini. La foto se envía a Google para procesarla; no se " +
+                    "guarda ninguna copia salvo la que decidas añadir tú a la receta."
+            ) {
                 OutlinedTextField(
                     value = geminiApiKey,
                     onValueChange = { viewModel.setGeminiApiKey(it) },
@@ -293,14 +308,11 @@ fun SettingsScreen(
                 }
             }
 
-            HorizontalDivider()
-
-            SettingsSection(title = "Modo cocina") {
-                Text(
-                    "Voz usada para leer los pasos en voz alta en el modo cocina.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            SettingsCard(
+                icon = Icons.Filled.RecordVoiceOver,
+                title = "Modo cocina",
+                description = "Voz usada para leer los pasos en voz alta en el modo cocina."
+            ) {
                 val selectedVoiceLabel = availableVoices.firstOrNull { it.name == ttsVoiceName }
                     ?.let { "${it.locale.displayName} (${it.name})" }
                     ?: "Predeterminada del sistema"
@@ -348,12 +360,9 @@ fun SettingsScreen(
                 }
             }
 
-            HorizontalDivider()
-
-            SettingsSection(title = "Actualizaciones") {
+            SettingsCard(icon = Icons.Filled.SystemUpdate, title = "Actualizaciones") {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.SystemUpdate, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Notificar si hay una versión nueva", modifier = Modifier.padding(start = 16.dp).weight(1f))
+                    Text("Notificar si hay una versión nueva", modifier = Modifier.weight(1f))
                     Switch(checked = autoCheckUpdatesEnabled, onCheckedChange = { viewModel.setAutoCheckUpdatesEnabled(it) })
                 }
 
@@ -428,19 +437,9 @@ fun SettingsScreen(
                 }
             }
 
-            HorizontalDivider()
-
-            SettingsSection(title = "Gestionar") {
-                ManageRow(icon = Icons.Filled.Category, label = "Categorías", onClick = onManageCategories)
-                ManageRow(icon = Icons.Filled.Kitchen, label = "Utensilios", onClick = onManageUtensils)
-                ManageRow(icon = Icons.Filled.RestaurantMenu, label = "Ingredientes", onClick = onManageIngredients)
-                ManageRow(icon = Icons.Filled.Sell, label = "Categorías de ingredientes", onClick = onManageIngredientCategories)
-            }
-
-            HorizontalDivider()
-
-            SettingsSection(title = "Ayuda") {
+            SettingsCard(icon = Icons.Filled.HelpOutline, title = "Ayuda", contentSpacing = 0.dp) {
                 ManageRow(icon = Icons.Filled.HelpOutline, label = "Ayuda y soporte", onClick = onHelp)
+                HorizontalDivider()
                 ManageRow(icon = Icons.Filled.Info, label = "Acerca de", onClick = onAbout)
             }
         }
@@ -487,15 +486,54 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsSection(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        content()
+private fun SettingsCard(
+    icon: ImageVector,
+    title: String,
+    description: String? = null,
+    contentSpacing: Dp = 14.dp,
+    content: @Composable () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    if (description != null) {
+                        Text(
+                            description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(contentSpacing)) {
+                content()
+            }
+        }
     }
 }
 
 @Composable
-private fun ManageRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+private fun ManageRow(icon: ImageVector, label: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
