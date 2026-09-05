@@ -1,0 +1,1 @@
+Al importar una receta con foto e IA, la foto usada para reconocerla ya no se añade automáticamente como foto de la receta.
