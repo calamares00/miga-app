@@ -40,11 +40,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -64,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.local.PhotoStorage
 import com.bmo00.miga.data.model.Difficulty
+import com.bmo00.miga.ui.components.PhotoSourceSheet
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -80,6 +83,9 @@ fun RecipeEditorScreen(
     val visionState by viewModel.visionState.collectAsState()
     var visionErrorDismissed by remember { mutableStateOf(false) }
     var showVisionErrorDialog by remember { mutableStateOf(false) }
+    var showPhotoSourceSheet by remember { mutableStateOf(false) }
+    var pendingCameraPath by remember { mutableStateOf<String?>(null) }
+    val photoSheetState = rememberModalBottomSheetState()
     val clipboardManager = LocalClipboardManager.current
 
     LaunchedEffect(sourcePhotoUri) {
@@ -90,6 +96,10 @@ fun RecipeEditorScreen(
         if (uri != null) {
             PhotoStorage.copyToInternalStorage(context, uri)?.let { viewModel.addPhoto(it) }
         }
+    }
+    val cameraCaptureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) pendingCameraPath?.let { viewModel.addPhoto(it) }
+        pendingCameraPath = null
     }
 
     Scaffold(
@@ -142,7 +152,7 @@ fun RecipeEditorScreen(
                 }
             }
 
-            PhotosRow(viewModel = viewModel, onAddPhoto = { photoPicker.launch("image/*") })
+            PhotosRow(viewModel = viewModel, onAddPhoto = { showPhotoSourceSheet = true })
 
             OutlinedTextField(
                 value = viewModel.name,
@@ -294,6 +304,24 @@ fun RecipeEditorScreen(
                 TextButton(onClick = { showVisionErrorDialog = false }) { Text("Cerrar") }
             }
         )
+    }
+
+    if (showPhotoSourceSheet) {
+        ModalBottomSheet(onDismissRequest = { showPhotoSourceSheet = false }, sheetState = photoSheetState) {
+            PhotoSourceSheet(
+                title = "Añadir foto",
+                onCameraClick = {
+                    showPhotoSourceSheet = false
+                    val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
+                    pendingCameraPath = filePath
+                    cameraCaptureLauncher.launch(contentUri)
+                },
+                onGalleryClick = {
+                    showPhotoSourceSheet = false
+                    photoPicker.launch("image/*")
+                }
+            )
+        }
     }
 }
 

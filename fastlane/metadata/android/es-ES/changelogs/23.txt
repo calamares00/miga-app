@@ -1,0 +1,1 @@
+Al añadir una foto a una receta o la portada de un libro, ahora se puede elegir entre hacer una foto con la cámara o escogerla de la galería, igual que al añadir una receta a partir de una foto.
