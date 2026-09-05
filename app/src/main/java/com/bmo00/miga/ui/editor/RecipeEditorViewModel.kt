@@ -9,7 +9,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.bmo00.miga.data.local.PhotoStorage
 import com.bmo00.miga.data.local.SettingsRepository
 import com.bmo00.miga.data.model.Difficulty
 import com.bmo00.miga.data.model.RecipeDraft
@@ -105,7 +104,6 @@ class RecipeEditorViewModel(
             when (val result = visionClientFor(provider).extractRecipe(bytes, mimeType, apiKey, model)) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
-                    PhotoStorage.copyBytesToInternalStorage(context, bytes)?.let { addPhoto(it) }
                     _visionState.value = VisionState.Loaded
                 }
                 is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(result.reason)
