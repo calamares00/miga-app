@@ -87,4 +87,10 @@ interface RecipeDao {
 
     @Query("SELECT * FROM recipes WHERE id = :id")
     suspend fun getRecipeOnce(id: Long): RecipeEntity?
+
+    @Query(
+        "UPDATE recipes SET healthColor = :color, healthDescription = :description, " +
+            "healthFingerprint = :fingerprint, healthAnalyzedAt = :analyzedAt WHERE id = :id"
+    )
+    suspend fun updateHealthRating(id: Long, color: String?, description: String?, fingerprint: String?, analyzedAt: Long?)
 }

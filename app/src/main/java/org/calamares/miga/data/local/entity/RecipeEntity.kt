@@ -39,5 +39,11 @@ data class RecipeEntity(
     val isFavorite: Boolean,
     val timesCooked: Int,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    /** Valoración de salud cacheada (ver HealthRating en data/model); null = nunca analizada. */
+    val healthColor: String? = null,
+    val healthDescription: String? = null,
+    /** Huella de ingredientes+pasos analizados; si no coincide con el estado actual, está obsoleta. */
+    val healthFingerprint: String? = null,
+    val healthAnalyzedAt: Long? = null
 )

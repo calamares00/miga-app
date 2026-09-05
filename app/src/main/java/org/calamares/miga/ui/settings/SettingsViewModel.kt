@@ -127,7 +127,8 @@ class SettingsViewModel(
 
     fun importRecipeIntoBook(dto: RecipeExportDto, photos: List<RecipePhoto>, bookId: Long, onFinished: () -> Unit) {
         viewModelScope.launch {
-            repository.saveRecipe(dto.toDraft(bookId, photos))
+            val recipeId = repository.saveRecipe(dto.toDraft(bookId, photos))
+            RecipeExporter.applyHealthFromImport(repository, recipeId, dto.health)
             onFinished()
         }
     }
