@@ -1,0 +1,1 @@
+Ahora puedes tocar una foto ya añadida a una receta o la portada de un libro para editarla (rotar/recortar), en vez de solo poder eliminarla. Marcar una foto como portada de la receta pasa a hacerse con la estrella.

@@ -203,6 +203,10 @@ class RecipeEditorViewModel(
         photos.forEach { it.isCover = it === photo }
     }
 
+    fun updatePhotoUri(photo: PhotoUi, newUri: String) {
+        photo.uri = newUri
+    }
+
     // --- Tags / utensilios ---
     fun toggleTag(name: String) {
         if (selectedTags.contains(name)) selectedTags.remove(name) else selectedTags.add(name)
