@@ -63,6 +63,7 @@ fun RecipeBookEditorScreen(
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
     var pendingCameraPath by remember { mutableStateOf<String?>(null) }
     var pendingEditUri by remember { mutableStateOf<Uri?>(null) }
+    var editingExistingCover by remember { mutableStateOf(false) }
     val photoSheetState = rememberModalBottomSheetState()
     val coverPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -121,7 +122,13 @@ fun RecipeBookEditorScreen(
                     .aspectRatio(0.72f)
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable { showPhotoSourceSheet = true }
+                    .clickable {
+                        if (viewModel.coverPhotoUri != null) {
+                            editingExistingCover = true
+                        } else {
+                            showPhotoSourceSheet = true
+                        }
+                    }
             ) {
                 val cover = viewModel.coverPhotoUri
                 if (cover != null) {
@@ -131,6 +138,19 @@ fun RecipeBookEditorScreen(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
+                    IconButton(
+                        onClick = { showPhotoSourceSheet = true },
+                        modifier = Modifier.size(28.dp).align(Alignment.BottomEnd).padding(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.AddAPhoto,
+                            contentDescription = "Cambiar portada",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
+                                .padding(4.dp)
+                        )
+                    }
                 } else {
                     Icon(
                         imageVector = Icons.Filled.AddAPhoto,
@@ -187,15 +207,21 @@ fun RecipeBookEditorScreen(
         }
     }
 
-    pendingEditUri?.let { uri ->
+    val editSourceUri = pendingEditUri
+        ?: (if (editingExistingCover) viewModel.coverPhotoUri?.let { Uri.parse(it) } else null)
+    if (editSourceUri != null) {
         PhotoEditorOverlay(
-            sourceUri = uri,
+            sourceUri = editSourceUri,
             aspectRatio = 0.72f,
             onSave = { path ->
                 viewModel.coverPhotoUri = path
                 pendingEditUri = null
+                editingExistingCover = false
             },
-            onCancel = { pendingEditUri = null }
+            onCancel = {
+                pendingEditUri = null
+                editingExistingCover = false
+            }
         )
     }
 }

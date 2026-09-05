@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -87,6 +88,7 @@ fun RecipeEditorScreen(
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
     var pendingCameraPath by remember { mutableStateOf<String?>(null) }
     var pendingEditUri by remember { mutableStateOf<Uri?>(null) }
+    var editingPhoto by remember { mutableStateOf<PhotoUi?>(null) }
     val photoSheetState = rememberModalBottomSheetState()
     val clipboardManager = LocalClipboardManager.current
 
@@ -154,7 +156,11 @@ fun RecipeEditorScreen(
                 }
             }
 
-            PhotosRow(viewModel = viewModel, onAddPhoto = { showPhotoSourceSheet = true })
+            PhotosRow(
+                viewModel = viewModel,
+                onAddPhoto = { showPhotoSourceSheet = true },
+                onEditPhoto = { editingPhoto = it }
+            )
 
             OutlinedTextField(
                 value = viewModel.name,
@@ -326,21 +332,31 @@ fun RecipeEditorScreen(
         }
     }
 
-    pendingEditUri?.let { uri ->
+    val editingExistingPhoto = editingPhoto
+    val editSourceUri = pendingEditUri ?: editingExistingPhoto?.let { Uri.parse(it.uri) }
+    if (editSourceUri != null) {
         PhotoEditorOverlay(
-            sourceUri = uri,
+            sourceUri = editSourceUri,
             aspectRatio = 1f,
             onSave = { path ->
-                viewModel.addPhoto(path)
-                pendingEditUri = null
+                if (editingExistingPhoto != null) {
+                    viewModel.updatePhotoUri(editingExistingPhoto, path)
+                    editingPhoto = null
+                } else {
+                    viewModel.addPhoto(path)
+                    pendingEditUri = null
+                }
             },
-            onCancel = { pendingEditUri = null }
+            onCancel = {
+                pendingEditUri = null
+                editingPhoto = null
+            }
         )
     }
 }
 
 @Composable
-private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit) {
+private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit, onEditPhoto: (PhotoUi) -> Unit) {
     Section(title = "Fotos") {
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(viewModel.photos, key = { it.uri }) { photo ->
@@ -352,7 +368,7 @@ private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit) 
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(RoundedCornerShape(12.dp))
-                            .clickable { viewModel.setCoverPhoto(photo) }
+                            .clickable { onEditPhoto(photo) }
                     )
                     IconButton(
                         onClick = { viewModel.removePhoto(photo) },
@@ -366,12 +382,16 @@ private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit) 
                                 .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
                         )
                     }
-                    if (photo.isCover) {
+                    IconButton(
+                        onClick = { viewModel.setCoverPhoto(photo) },
+                        modifier = Modifier.size(24.dp).align(Alignment.BottomStart)
+                    ) {
                         Icon(
-                            Icons.Filled.Star,
-                            contentDescription = "Foto de portada",
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.align(Alignment.BottomStart).size(18.dp)
+                            if (photo.isCover) Icons.Filled.Star else Icons.Filled.StarBorder,
+                            contentDescription = if (photo.isCover) "Foto de portada" else "Marcar como portada",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
                         )
                     }
                 }
