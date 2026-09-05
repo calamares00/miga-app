@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.books
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -46,6 +47,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.local.PhotoStorage
+import com.bmo00.miga.ui.components.PhotoEditorOverlay
 import com.bmo00.miga.ui.components.PhotoSourceSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,14 +62,15 @@ fun RecipeBookEditorScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
     var pendingCameraPath by remember { mutableStateOf<String?>(null) }
+    var pendingEditUri by remember { mutableStateOf<Uri?>(null) }
     val photoSheetState = rememberModalBottomSheetState()
     val coverPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
-            PhotoStorage.copyToInternalStorage(context, uri)?.let { viewModel.coverPhotoUri = it }
+            pendingEditUri = uri
         }
     }
     val cameraCaptureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) pendingCameraPath?.let { viewModel.coverPhotoUri = it }
+        if (success) pendingCameraPath?.let { pendingEditUri = Uri.parse(it) }
         pendingCameraPath = null
     }
 
@@ -182,5 +185,17 @@ fun RecipeBookEditorScreen(
                 }
             )
         }
+    }
+
+    pendingEditUri?.let { uri ->
+        PhotoEditorOverlay(
+            sourceUri = uri,
+            aspectRatio = 0.72f,
+            onSave = { path ->
+                viewModel.coverPhotoUri = path
+                pendingEditUri = null
+            },
+            onCancel = { pendingEditUri = null }
+        )
     }
 }

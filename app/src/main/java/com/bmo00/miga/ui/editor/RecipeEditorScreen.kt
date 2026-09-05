@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.local.PhotoStorage
 import com.bmo00.miga.data.model.Difficulty
+import com.bmo00.miga.ui.components.PhotoEditorOverlay
 import com.bmo00.miga.ui.components.PhotoSourceSheet
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -85,6 +86,7 @@ fun RecipeEditorScreen(
     var showVisionErrorDialog by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
     var pendingCameraPath by remember { mutableStateOf<String?>(null) }
+    var pendingEditUri by remember { mutableStateOf<Uri?>(null) }
     val photoSheetState = rememberModalBottomSheetState()
     val clipboardManager = LocalClipboardManager.current
 
@@ -94,11 +96,11 @@ fun RecipeEditorScreen(
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
-            PhotoStorage.copyToInternalStorage(context, uri)?.let { viewModel.addPhoto(it) }
+            pendingEditUri = uri
         }
     }
     val cameraCaptureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) pendingCameraPath?.let { viewModel.addPhoto(it) }
+        if (success) pendingCameraPath?.let { pendingEditUri = Uri.parse(it) }
         pendingCameraPath = null
     }
 
@@ -322,6 +324,18 @@ fun RecipeEditorScreen(
                 }
             )
         }
+    }
+
+    pendingEditUri?.let { uri ->
+        PhotoEditorOverlay(
+            sourceUri = uri,
+            aspectRatio = 1f,
+            onSave = { path ->
+                viewModel.addPhoto(path)
+                pendingEditUri = null
+            },
+            onCancel = { pendingEditUri = null }
+        )
     }
 }
 

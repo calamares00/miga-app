@@ -1,0 +1,1 @@
+Las fotos que se suben a una receta o a la portada de un libro ahora se normalizan (se reducen de tamaño y se comprimen) para ocupar menos espacio. Además, se puede rotar y recortar la foto antes de guardarla.
