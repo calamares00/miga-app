@@ -1,0 +1,1 @@
+Cambios internos para hacer la app más robusta: primeros tests automáticos (se ejecutan en cada build), el APK/AAB de release ahora sale minificado con R8, y se añade una política de privacidad (enlazada desde Ajustes → Acerca de).

@@ -63,6 +63,7 @@ fun RecipeCard(
     onToggleFavorite: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    readOnly: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -154,25 +155,27 @@ fun RecipeCard(
                     )
                 }
 
-                Box {
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.MoreVert,
-                            contentDescription = "Más opciones",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                        DropdownMenuItem(
-                            text = { Text("Editar") },
-                            leadingIcon = { Icon(Icons.Filled.Edit, null) },
-                            onClick = { showMenu = false; onEditClick() }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Borrar", color = MaterialTheme.colorScheme.error) },
-                            leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
-                            onClick = { showMenu = false; onDeleteClick() }
-                        )
+                if (!readOnly) {
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "Más opciones",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Editar") },
+                                leadingIcon = { Icon(Icons.Filled.Edit, null) },
+                                onClick = { showMenu = false; onEditClick() }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Borrar", color = MaterialTheme.colorScheme.error) },
+                                leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
+                                onClick = { showMenu = false; onDeleteClick() }
+                            )
+                        }
                     }
                 }
             }

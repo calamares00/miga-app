@@ -1,0 +1,1 @@
+Nuevo: packs de recetas descargables. Desde Ajustes puedes explorar un catálogo de libros publicados por otros usuarios e instalarlos; son de solo lectura (no se pueden editar) y se actualizan cuando el autor publica una versión nueva. El repositorio del catálogo se puede cambiar en Ajustes.

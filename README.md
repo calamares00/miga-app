@@ -39,11 +39,28 @@ sí la requiere (comprobar actualizaciones, añadir receta con foto vía IA).
 - `kotlinx.serialization` para exportación/importación en JSON
 - `androidx.biometric` para el bloqueo por huella/rostro
 
+## Privacidad
+
+Miga no tiene cuentas, servidor propio, analítica ni publicidad. Ver
+[PRIVACY.md](PRIVACY.md) para el detalle de qué datos maneja la app y las
+pocas conexiones de red que hace (todas opcionales o de solo lectura).
+
 ## Compilar en local
 
 ```bash
 ./gradlew :app:assembleDebug
 ```
+
+### Tests
+
+```bash
+./gradlew :app:testDebugUnitTest
+```
+
+Tests unitarios (JVM, sin emulador) de la lógica de dominio: filtrado y
+orden de recetas, huella de invalidación de la valoración de salud,
+comparación de versiones del comprobador de actualizaciones, construcción
+de la URL del catálogo de packs, y la regla de solo-lectura de un pack.
 
 El APK debug se firma con el keystore `debug.keystore` (versionado a
 propósito en este repo — es el mismo tipo de clave que genera Android
@@ -52,13 +69,17 @@ puedan actualizar sin desinstalar antes.
 
 ## CI/CD
 
-El workflow `.github/workflows/android-build.yml`:
+El workflow `.github/workflows/android-build.yml` corre siempre, en cualquier
+evento, los tests unitarios y una compilación `assembleRelease` de
+comprobación (para detectar una regla de ProGuard/R8 rota antes de fusionar,
+no solo al llegar a `main`); si algo de eso falla, el resto de pasos no se
+ejecuta. Después, según el evento:
 
-| Evento | Qué hace |
+| Evento | Qué hace además |
 |---|---|
 | Push a cualquier rama que no sea `main` | Compila un APK **debug** (para probar el cambio) |
 | Pull request hacia `main` | Lint + compilación de comprobación (sin publicar nada) |
-| Push a `main` (tras un merge) | Compila APK **debug** + **release** por arquitectura (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`, universal) + AAB para Play Store, y publica una [Release](../../releases) en GitHub con todo adjunto |
+| Push a `main` (tras un merge) | Compila APK **debug** + **release** (minificado con R8) por arquitectura (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`, universal) + AAB para Play Store, y publica una [Release](../../releases) en GitHub con todo adjunto |
 
 ### Firma del build release
 

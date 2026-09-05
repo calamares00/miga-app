@@ -1,0 +1,2 @@
+Valoración de salud con IA en la receta: si tienes Gemini configurado, analiza ingredientes y preparación y muestra un color y una descripción de lo saludable que es. Se guarda en la receta (no se repite la consulta) y viaja con el export.
+Las actualizaciones de la app ya no borran tus recetas ni libros: se han añadido migraciones reales de la base de datos.

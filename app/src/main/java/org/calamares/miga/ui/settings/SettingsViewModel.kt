@@ -15,6 +15,7 @@ import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.model.UpdateChannel
+import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG_REPO
 import org.calamares.miga.data.remote.UpdateCheckResult
 import org.calamares.miga.data.remote.UpdateChecker
 import org.calamares.miga.data.remote.UpdateInfo
@@ -115,6 +116,13 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setGeminiModel(model) }
     }
 
+    val packsCatalogRepo: StateFlow<String> = settingsRepository.observePacksCatalogRepo()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_PACKS_CATALOG_REPO)
+
+    fun setPacksCatalogRepo(repo: String) {
+        viewModelScope.launch { settingsRepository.setPacksCatalogRepo(repo) }
+    }
+
     val ttsVoiceName: StateFlow<String?> = settingsRepository.observeTtsVoiceName()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
@@ -127,7 +135,8 @@ class SettingsViewModel(
 
     fun importRecipeIntoBook(dto: RecipeExportDto, photos: List<RecipePhoto>, bookId: Long, onFinished: () -> Unit) {
         viewModelScope.launch {
-            repository.saveRecipe(dto.toDraft(bookId, photos))
+            val recipeId = repository.saveRecipe(dto.toDraft(bookId, photos))
+            RecipeExporter.applyHealthFromImport(repository, recipeId, dto.health)
             onFinished()
         }
     }

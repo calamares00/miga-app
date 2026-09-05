@@ -25,9 +25,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.ViewAgenda
@@ -72,6 +74,7 @@ fun RecipeBooksScreen(
     onBookClick: (Long) -> Unit,
     onAddBookClick: () -> Unit,
     onEditBookClick: (Long) -> Unit,
+    onSearchClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     val books by viewModel.books.collectAsState()
@@ -99,6 +102,9 @@ fun RecipeBooksScreen(
                                 )
                             }
                         }
+                    }
+                    IconButton(onClick = onSearchClick) {
+                        Icon(Icons.Filled.Search, contentDescription = "Buscar recetas")
                     }
                     IconButton(onClick = onSettingsClick) {
                         Icon(Icons.Filled.Settings, contentDescription = "Ajustes")
@@ -245,12 +251,28 @@ private fun RecipeBookCard(book: RecipeBookSummary, onClick: () -> Unit, onEditC
                     modifier = Modifier.size(48.dp).align(Alignment.Center)
                 )
             }
-            Card(
-                onClick = onEditClick,
-                modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(32.dp)
-            ) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.Edit, contentDescription = "Editar libro", modifier = Modifier.size(16.dp))
+            if (book.isPack) {
+                Card(
+                    modifier = Modifier.align(Alignment.TopStart).padding(6.dp).size(32.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Filled.CloudDone,
+                            contentDescription = "Pack instalado",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            } else {
+                Card(
+                    onClick = onEditClick,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(32.dp)
+                ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Editar libro", modifier = Modifier.size(16.dp))
+                    }
                 }
             }
         }
@@ -313,7 +335,17 @@ private fun RecipeBookRow(book: RecipeBookSummary, compact: Boolean, onClick: ()
             }
 
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(text = book.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (book.isPack) {
+                        Icon(
+                            Icons.Filled.CloudDone,
+                            contentDescription = "Pack instalado",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    Text(text = book.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                }
                 Text(
                     text = "${book.recipeCount} ${if (book.recipeCount == 1) "receta" else "recetas"}",
                     style = MaterialTheme.typography.bodyMedium,
@@ -321,8 +353,10 @@ private fun RecipeBookRow(book: RecipeBookSummary, compact: Boolean, onClick: ()
                 )
             }
 
-            IconButton(onClick = onEditClick) {
-                Icon(Icons.Filled.Edit, contentDescription = "Editar libro", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (!book.isPack) {
+                IconButton(onClick = onEditClick) {
+                    Icon(Icons.Filled.Edit, contentDescription = "Editar libro", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }

@@ -27,7 +27,8 @@ fun Recipe.toExportDto() = RecipeExportDto(
     stepGroups = stepGroups.map { group -> StepGroupDto(group.name, group.instructions) },
     tags = tags,
     utensils = utensils,
-    photos = photos.mapIndexed { index, photo -> PhotoExportDto(fileName = "$index.jpg", isCover = photo.isCover) }
+    photos = photos.mapIndexed { index, photo -> PhotoExportDto(fileName = "$index.jpg", isCover = photo.isCover) },
+    health = healthRating?.let { RecipeHealthDto(it.color.name, it.description, it.fingerprint, it.analyzedAt) }
 )
 
 /**

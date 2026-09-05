@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Sell
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
@@ -96,6 +97,7 @@ fun SettingsScreen(
     onManageUtensils: () -> Unit,
     onManageIngredients: () -> Unit,
     onManageIngredientCategories: () -> Unit,
+    onOpenPacksCatalog: () -> Unit,
     onHelp: () -> Unit,
     onAbout: () -> Unit
 ) {
@@ -106,6 +108,7 @@ fun SettingsScreen(
     val updateCheckState by viewModel.updateCheckState.collectAsState()
     val books by viewModel.books.collectAsState()
     val geminiApiKey by viewModel.geminiApiKey.collectAsState()
+    val packsCatalogRepo by viewModel.packsCatalogRepo.collectAsState()
     val geminiModel by viewModel.geminiModel.collectAsState()
     var modelMenuExpanded by remember { mutableStateOf(false) }
     val ttsVoiceName by viewModel.ttsVoiceName.collectAsState()
@@ -305,6 +308,25 @@ fun SettingsScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+            }
+
+            SettingsCard(
+                icon = Icons.Filled.Storefront,
+                title = "Packs de recetas",
+                description = "Instala libros de recetas publicados por otros usuarios. Son de solo " +
+                    "lectura: no se pueden editar, solo consultar, cocinar y desinstalar."
+            ) {
+                OutlinedTextField(
+                    value = packsCatalogRepo,
+                    onValueChange = { viewModel.setPacksCatalogRepo(it) },
+                    label = { Text("Repositorio del catálogo") },
+                    placeholder = { Text("usuario/repositorio") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedButton(onClick = onOpenPacksCatalog, modifier = Modifier.fillMaxWidth()) {
+                    Text("Explorar catálogo")
                 }
             }
 

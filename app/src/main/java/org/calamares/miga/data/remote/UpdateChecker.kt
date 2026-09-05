@@ -115,7 +115,8 @@ object UpdateChecker {
         return (exactMatch ?: universalMatch)?.browserDownloadUrl
     }
 
-    private fun isNewerVersion(current: String, latest: String): Boolean {
+    /** internal (no private) para poder probarla con un test unitario sin pasar por la red. */
+    internal fun isNewerVersion(current: String, latest: String): Boolean {
         val currentParts = current.split(".").map { it.toIntOrNull() ?: 0 }
         val latestParts = latest.split(".").map { it.toIntOrNull() ?: 0 }
         for (i in 0 until maxOf(currentParts.size, latestParts.size)) {
