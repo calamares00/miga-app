@@ -115,6 +115,13 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setGeminiModel(model) }
     }
 
+    val ttsVoiceName: StateFlow<String?> = settingsRepository.observeTtsVoiceName()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun setTtsVoiceName(name: String?) {
+        viewModelScope.launch { settingsRepository.setTtsVoiceName(name) }
+    }
+
     suspend fun parseRecipeJson(context: Context, source: Uri): RecipeImportResult =
         RecipeExporter.importRecipe(context, source)
 

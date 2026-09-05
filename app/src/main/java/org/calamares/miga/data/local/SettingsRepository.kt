@@ -26,6 +26,7 @@ class SettingsRepository(private val context: Context) {
     private val visionProviderKey = stringPreferencesKey("vision_provider")
     private val geminiApiKeyKey = stringPreferencesKey("gemini_api_key")
     private val geminiModelKey = stringPreferencesKey("gemini_model")
+    private val ttsVoiceNameKey = stringPreferencesKey("tts_voice_name")
 
     fun observeThemeMode(): Flow<ThemeMode> =
         context.settingsDataStore.data.map { prefs ->
@@ -114,5 +115,15 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setGeminiModel(model: String) {
         context.settingsDataStore.edit { prefs -> prefs[geminiModelKey] = model.trim() }
+    }
+
+    /** Nombre interno de la voz de Android TTS elegida para el modo cocina; null = voz por defecto del sistema. */
+    fun observeTtsVoiceName(): Flow<String?> =
+        context.settingsDataStore.data.map { prefs -> prefs[ttsVoiceNameKey] }
+
+    suspend fun setTtsVoiceName(name: String?) {
+        context.settingsDataStore.edit { prefs ->
+            if (name.isNullOrBlank()) prefs.remove(ttsVoiceNameKey) else prefs[ttsVoiceNameKey] = name
+        }
     }
 }
