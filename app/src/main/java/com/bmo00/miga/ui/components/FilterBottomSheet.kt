@@ -35,6 +35,7 @@ fun FilterSheetContent(
     availableCategories: List<String>,
     availableTags: List<String>,
     availableUtensils: List<String>,
+    availableIngredients: List<String> = emptyList(),
     onApply: (RecipeFilter) -> Unit,
     onClear: () -> Unit,
     modifier: Modifier = Modifier
@@ -43,6 +44,7 @@ fun FilterSheetContent(
     var difficulties by remember(filter) { mutableStateOf(filter.difficulties) }
     var utensils by remember(filter) { mutableStateOf(filter.utensils) }
     var tags by remember(filter) { mutableStateOf(filter.tags) }
+    var ingredients by remember(filter) { mutableStateOf(filter.ingredients) }
     var onlyFavorites by remember(filter) { mutableStateOf(filter.onlyFavorites) }
     var sortOption by remember(filter) { mutableStateOf(filter.sortOption) }
 
@@ -111,6 +113,20 @@ fun FilterSheetContent(
             }
         }
 
+        if (availableIngredients.isNotEmpty()) {
+            FilterSection(title = "Ingredientes") {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    availableIngredients.forEach { ingredient ->
+                        FilterChip(
+                            selected = ingredient in ingredients,
+                            onClick = { ingredients = if (ingredient in ingredients) ingredients - ingredient else ingredients + ingredient },
+                            label = { Text(ingredient) }
+                        )
+                    }
+                }
+            }
+        }
+
         FilterSection(title = "Ordenar por") {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SortOption.entries.forEach { option ->
@@ -134,7 +150,7 @@ fun FilterSheetContent(
             TextButton(
                 onClick = {
                     categoryNames = emptySet(); difficulties = emptySet()
-                    utensils = emptySet(); tags = emptySet(); onlyFavorites = false
+                    utensils = emptySet(); tags = emptySet(); ingredients = emptySet(); onlyFavorites = false
                     onClear()
                 },
                 modifier = Modifier.weight(1f)
@@ -148,6 +164,7 @@ fun FilterSheetContent(
                             difficulties = difficulties,
                             utensils = utensils,
                             tags = tags,
+                            ingredients = ingredients,
                             onlyFavorites = onlyFavorites,
                             sortOption = sortOption
                         )

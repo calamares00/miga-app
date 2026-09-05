@@ -15,7 +15,8 @@ import com.bmo00.miga.data.model.Recipe
 import com.bmo00.miga.data.model.RecipeFilter
 import com.bmo00.miga.data.model.RecipeListViewMode
 import com.bmo00.miga.data.model.RecipeSummary
-import com.bmo00.miga.data.model.SortOption
+import com.bmo00.miga.data.model.UNCATEGORIZED_CATEGORY_LABEL
+import com.bmo00.miga.data.model.applyFilter
 import com.bmo00.miga.data.model.toSummary
 import com.bmo00.miga.data.repository.RecipeRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,18 +39,22 @@ data class RecipeListUiState(
     val totalCount: Int = 0,
     val availableCategories: List<String> = emptyList(),
     val availableTags: List<String> = emptyList(),
-    val availableUtensils: List<String> = emptyList()
+    val availableUtensils: List<String> = emptyList(),
+    val availableIngredients: List<String> = emptyList()
+)
+
+private data class FilterOptions(
+    val categories: List<CategoryEntity>,
+    val tags: List<TagEntity>,
+    val utensils: List<UtensilEntity>,
+    val ingredientNames: List<String>
 )
 
 private data class RecipeListBase(
     val recipes: List<Recipe>,
     val filter: RecipeFilter,
-    val categories: List<CategoryEntity>,
-    val tags: List<TagEntity>,
-    val utensils: List<UtensilEntity>
+    val options: FilterOptions
 )
-
-private const val UNCATEGORIZED = "Sin categoría"
 
 class RecipeListViewModel(
     private val repository: RecipeRepository,
@@ -113,13 +118,18 @@ class RecipeListViewModel(
         }
     }
 
+    private val filterOptions = combine(
+        repository.observeCategories(),
+        repository.observeTags(),
+        repository.observeUtensils(),
+        repository.observeIngredientNames()
+    ) { categories, tags, utensils, ingredientNames -> FilterOptions(categories, tags, utensils, ingredientNames) }
+
     private val base = combine(
         repository.observeRecipesForBook(bookId),
         _filter,
-        repository.observeCategories(),
-        repository.observeTags(),
-        repository.observeUtensils()
-    ) { recipes, filter, categories, tags, utensils -> RecipeListBase(recipes, filter, categories, tags, utensils) }
+        filterOptions
+    ) { recipes, filter, options -> RecipeListBase(recipes, filter, options) }
 
     val uiState: StateFlow<RecipeListUiState> = combine(base, repository.observeRecipeBook(bookId)) { data, book ->
         RecipeListUiState(
@@ -127,9 +137,10 @@ class RecipeListViewModel(
             bookName = book?.name.orEmpty(),
             groups = buildGroups(data.recipes, data.filter),
             totalCount = data.recipes.size,
-            availableCategories = data.categories.map { it.name },
-            availableTags = data.tags.map { it.name },
-            availableUtensils = data.utensils.map { it.name }
+            availableCategories = data.options.categories.map { it.name },
+            availableTags = data.options.tags.map { it.name },
+            availableUtensils = data.options.utensils.map { it.name },
+            availableIngredients = data.options.ingredientNames
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecipeListUiState())
 
@@ -142,7 +153,16 @@ class RecipeListViewModel(
     }
 
     fun clearFilters() {
-        _filter.update { it.copy(categoryNames = emptySet(), difficulties = emptySet(), utensils = emptySet(), tags = emptySet(), onlyFavorites = false) }
+        _filter.update {
+            it.copy(
+                categoryNames = emptySet(),
+                difficulties = emptySet(),
+                utensils = emptySet(),
+                tags = emptySet(),
+                ingredients = emptySet(),
+                onlyFavorites = false
+            )
+        }
     }
 
     fun toggleFavorite(id: Long, current: Boolean) {
@@ -170,34 +190,9 @@ class RecipeListViewModel(
     }
 
     private fun buildGroups(recipes: List<Recipe>, filter: RecipeFilter): List<RecipeGroup> {
-        val query = filter.query.trim().lowercase()
-
-        val filtered = recipes.filter { recipe ->
-            val matchesQuery = query.isEmpty() ||
-                recipe.name.lowercase().contains(query) ||
-                recipe.tags.any { it.lowercase().contains(query) } ||
-                recipe.ingredientGroups.any { group -> group.ingredients.any { it.name.lowercase().contains(query) } }
-
-            val matchesCategory = filter.categoryNames.isEmpty() ||
-                filter.categoryNames.contains(recipe.categoryName ?: UNCATEGORIZED)
-            val matchesDifficulty = filter.difficulties.isEmpty() || filter.difficulties.contains(recipe.difficulty)
-            val matchesUtensils = filter.utensils.isEmpty() || filter.utensils.all { it in recipe.utensils }
-            val matchesTags = filter.tags.isEmpty() || filter.tags.all { it in recipe.tags }
-            val matchesFavorite = !filter.onlyFavorites || recipe.isFavorite
-
-            matchesQuery && matchesCategory && matchesDifficulty && matchesUtensils && matchesTags && matchesFavorite
-        }
-
-        val sorted = when (filter.sortOption) {
-            SortOption.NAME_ASC -> filtered.sortedBy { it.name.lowercase() }
-            SortOption.RECENT -> filtered.sortedByDescending { it.createdAt }
-            SortOption.MOST_COOKED -> filtered.sortedByDescending { it.timesCooked }
-            SortOption.PREP_TIME -> filtered.sortedBy { it.prepTimeMinutes ?: Int.MAX_VALUE }
-        }
-
-        return sorted
-            .groupBy { it.categoryName ?: UNCATEGORIZED }
-            .toSortedMap(compareBy { if (it == UNCATEGORIZED) "￿" else it.lowercase() })
+        return recipes.applyFilter(filter)
+            .groupBy { it.categoryName ?: UNCATEGORIZED_CATEGORY_LABEL }
+            .toSortedMap(compareBy { if (it == UNCATEGORIZED_CATEGORY_LABEL) "￿" else it.lowercase() })
             .map { (category, recipesInGroup) -> RecipeGroup(category, recipesInGroup.map { it.toSummary() }) }
     }
 }

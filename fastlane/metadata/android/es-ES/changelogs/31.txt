@@ -1,0 +1,2 @@
+Ingredientes más compactos en la pantalla de la receta.
+Búsqueda global de recetas desde la página principal, con filtros por categoría, dificultad, utensilios, etiquetas e ingredientes.
