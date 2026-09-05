@@ -22,7 +22,8 @@ data class Recipe(
     val ingredientGroups: List<IngredientGroup>,
     val stepGroups: List<StepGroup>,
     val tags: List<String>,
-    val utensils: List<String>
+    val utensils: List<String>,
+    val healthRating: HealthRating? = null
 ) {
     val totalTimeMinutes: Int?
         get() = if (prepTimeMinutes == null && cookTimeMinutes == null) {

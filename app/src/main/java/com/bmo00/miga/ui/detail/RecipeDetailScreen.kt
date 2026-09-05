@@ -34,6 +34,9 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,6 +52,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -66,6 +70,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.export.RecipeExporter
+import com.bmo00.miga.data.model.HealthColorLevel
 import com.bmo00.miga.data.model.Recipe
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -78,11 +83,14 @@ fun RecipeDetailScreen(
     val recipe by viewModel.recipe.collectAsState()
     val recipeBooks by viewModel.recipeBooks.collectAsState()
     val ttsVoiceName by viewModel.ttsVoiceName.collectAsState()
+    val healthState by viewModel.healthState.collectAsState()
     val context = LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showCookMode by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) { viewModel.fetchHealthinessIfNeeded() }
 
     Scaffold(
         topBar = {
@@ -157,7 +165,12 @@ fun RecipeDetailScreen(
                 Text("Cargando...")
             }
         } else {
-            RecipeDetailContent(recipe = current, modifier = Modifier.padding(padding))
+            RecipeDetailContent(
+                recipe = current,
+                healthState = healthState,
+                onRetryHealth = { viewModel.retryHealthCheck() },
+                modifier = Modifier.padding(padding)
+            )
         }
     }
 
@@ -221,7 +234,12 @@ fun RecipeDetailScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun RecipeDetailContent(recipe: Recipe, modifier: Modifier = Modifier) {
+private fun RecipeDetailContent(
+    recipe: Recipe,
+    healthState: HealthState,
+    onRetryHealth: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     var servings by remember(recipe.id) { mutableIntStateOf(recipe.servings) }
     val checkedIngredients = remember(recipe.id) { mutableStateMapOf<String, Boolean>() }
     val scale = if (recipe.servings > 0) servings.toDouble() / recipe.servings else 1.0
@@ -261,6 +279,59 @@ private fun RecipeDetailContent(recipe: Recipe, modifier: Modifier = Modifier) {
                 Section(title = "Etiquetas") {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         recipe.tags.forEach { SuggestionChip(onClick = {}, label = { Text("#$it") }) }
+                    }
+                }
+            }
+
+            if (healthState != HealthState.Idle) {
+                Section(title = "Salud") {
+                    when (healthState) {
+                        HealthState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            Text(
+                                "Analizando con IA...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 12.dp)
+                            )
+                        }
+                        HealthState.NotConfigured -> Text(
+                            "Configura una API key de Gemini en Ajustes para ver esto.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        is HealthState.Error -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(healthState.reason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            TextButton(onClick = onRetryHealth) { Text("Reintentar") }
+                        }
+                        HealthState.Loaded -> recipe.healthRating?.let { rating ->
+                            val (containerColor, contentColor, label) = when (rating.color) {
+                                HealthColorLevel.GREEN -> Triple(
+                                    MaterialTheme.colorScheme.tertiaryContainer,
+                                    MaterialTheme.colorScheme.onTertiaryContainer,
+                                    "Saludable"
+                                )
+                                HealthColorLevel.YELLOW -> Triple(
+                                    MaterialTheme.colorScheme.secondaryContainer,
+                                    MaterialTheme.colorScheme.onSecondaryContainer,
+                                    "Moderada"
+                                )
+                                HealthColorLevel.RED -> Triple(
+                                    MaterialTheme.colorScheme.errorContainer,
+                                    MaterialTheme.colorScheme.onErrorContainer,
+                                    "Poco saludable"
+                                )
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                AssistChip(
+                                    onClick = {},
+                                    label = { Text(label) },
+                                    colors = AssistChipDefaults.assistChipColors(containerColor = containerColor, labelColor = contentColor)
+                                )
+                                Text(rating.description, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                        HealthState.Idle -> Unit
                     }
                 }
             }

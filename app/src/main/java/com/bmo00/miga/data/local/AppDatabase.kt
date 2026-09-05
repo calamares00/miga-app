@@ -37,11 +37,12 @@ import com.bmo00.miga.data.local.entity.UtensilEntity
         IngredientCatalogEntity::class,
         IngredientCategoryEntity::class
     ],
-    // La app no escribe migraciones reales (usa fallbackToDestructiveMigration), así que el
-    // JSON de esquema de Room no aporta nada, y compilar debug+release a la vez (como hace CI)
-    // provoca que kspDebugKotlin y kspReleaseKotlin escriban al mismo fichero en paralelo,
-    // dando el error intermitente "Empty schema file". Se desactiva la exportación.
-    version = 4,
+    // El JSON de esquema de Room solo sirve para MigrationTestHelper (pruebas automáticas de
+    // migración); las migraciones manuales de Migrations.kt funcionan igual sin él. Se mantiene
+    // desactivado porque compilar debug+release a la vez (como hace CI) provoca que
+    // kspDebugKotlin y kspReleaseKotlin escriban al mismo fichero en paralelo, dando el error
+    // intermitente "Empty schema file".
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

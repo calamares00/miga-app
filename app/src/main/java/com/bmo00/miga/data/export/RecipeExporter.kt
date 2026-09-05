@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
 import com.bmo00.miga.data.local.PhotoStorage
+import com.bmo00.miga.data.model.HealthColorLevel
 import com.bmo00.miga.data.model.Recipe
 import com.bmo00.miga.data.model.RecipeBook
 import com.bmo00.miga.data.model.RecipePhoto
@@ -56,7 +57,8 @@ object RecipeExporter {
      */
     private val recipeMigrations: List<(JsonObject) -> JsonObject> = listOf(
         { obj -> obj }, // v0 -> v1: el "esquema v0" ya tenía los mismos campos, no-op.
-        { obj -> addUidIfMissing(obj) } // v1 -> v2: añade "uid" (las fotos ya tienen valor por defecto).
+        { obj -> addUidIfMissing(obj) }, // v1 -> v2: añade "uid" (las fotos ya tienen valor por defecto).
+        { obj -> obj } // v2 -> v3: "health" es opcional con default null, no hace falta generar nada.
     )
 
     /** Igual que [recipeMigrations] pero para la copia de seguridad completa ([LibraryExportDto]). */
@@ -67,7 +69,8 @@ object RecipeExporter {
             val recipesArray = obj["recipes"] as? JsonArray ?: JsonArray(emptyList())
             val migratedRecipes = JsonArray(recipesArray.map { addUidIfMissing(it.jsonObject) })
             JsonObject(obj + ("recipes" to migratedRecipes))
-        }
+        },
+        { obj -> obj } // v2 -> v3: "health" es opcional con default null, no hace falta generar nada.
     )
 
     private fun addUidIfMissing(obj: JsonObject): JsonObject =
@@ -210,7 +213,8 @@ object RecipeExporter {
                     repository.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName, bookMeta?.uid, coverUri)
                 }
                 val photos = resolvePhotos(context, recipeDto.uid, recipeDto.photos, entries)
-                repository.saveRecipe(recipeDto.toDraft(bookId, photos))
+                val recipeId = repository.saveRecipe(recipeDto.toDraft(bookId, photos))
+                applyHealthFromImport(repository, recipeId, recipeDto.health)
             }
             LibraryImportResult.Success(dto.recipes.size)
         } catch (e: CancellationException) {
@@ -238,6 +242,13 @@ object RecipeExporter {
             val uri = PhotoStorage.copyBytesToInternalStorage(context, bytes) ?: return@mapNotNull null
             RecipePhoto(uri = uri, isCover = photoDto.isCover)
         }
+
+    /** Aplica la valoración de salud embebida en una receta importada, si tenía alguna. */
+    suspend fun applyHealthFromImport(repository: RecipeRepository, recipeId: Long, health: RecipeHealthDto?) {
+        if (health == null) return
+        val colorLevel = runCatching { HealthColorLevel.valueOf(health.colorLevel) }.getOrDefault(HealthColorLevel.YELLOW)
+        repository.saveHealthRating(recipeId, colorLevel, health.description, health.fingerprint, health.analyzedAt)
+    }
 
     private fun isZip(bytes: ByteArray): Boolean =
         bytes.size >= 2 && bytes[0] == 0x50.toByte() && bytes[1] == 0x4B.toByte()

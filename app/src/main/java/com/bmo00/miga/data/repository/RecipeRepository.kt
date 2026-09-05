@@ -16,6 +16,8 @@ import com.bmo00.miga.data.local.entity.StepEntity
 import com.bmo00.miga.data.local.entity.TagEntity
 import com.bmo00.miga.data.local.entity.UtensilEntity
 import com.bmo00.miga.data.model.Difficulty
+import com.bmo00.miga.data.model.HealthColorLevel
+import com.bmo00.miga.data.model.HealthRating
 import com.bmo00.miga.data.model.Ingredient
 import com.bmo00.miga.data.model.IngredientCatalogItem
 import com.bmo00.miga.data.model.IngredientGroup
@@ -30,6 +32,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.security.MessageDigest
 import java.util.UUID
 
 /** Se lanza al intentar borrar un libro de recetas que todavía tiene recetas dentro. */
@@ -109,6 +112,12 @@ class RecipeRepository(private val db: AppDatabase) {
             )
         } else {
             val existing = recipeDao.getRecipeOnce(draft.id)
+            // Si los ingredientes o pasos han cambiado desde el último análisis de salud, la
+            // valoración cacheada ya no es válida para el contenido nuevo: se limpia para que se
+            // vuelva a calcular la próxima vez que se abra la receta. Si no han cambiado, se
+            // conserva tal cual (edición de notas/raciones/fotos/etc. no invalida nada).
+            val newFingerprint = computeHealthFingerprint(draft.ingredientGroups, draft.stepGroups)
+            val keepHealth = existing != null && existing.healthFingerprint == newFingerprint
             recipeDao.updateRecipe(
                 RecipeEntity(
                     id = draft.id,
@@ -125,7 +134,11 @@ class RecipeRepository(private val db: AppDatabase) {
                     isFavorite = draft.isFavorite,
                     timesCooked = existing?.timesCooked ?: 0,
                     createdAt = existing?.createdAt ?: now,
-                    updatedAt = now
+                    updatedAt = now,
+                    healthColor = if (keepHealth) existing?.healthColor else null,
+                    healthDescription = if (keepHealth) existing?.healthDescription else null,
+                    healthFingerprint = if (keepHealth) existing?.healthFingerprint else null,
+                    healthAnalyzedAt = if (keepHealth) existing?.healthAnalyzedAt else null
                 )
             )
             draft.id
@@ -198,6 +211,32 @@ class RecipeRepository(private val db: AppDatabase) {
         }
 
         recipeId
+    }
+
+    suspend fun saveHealthRating(recipeId: Long, color: HealthColorLevel, description: String, fingerprint: String, analyzedAt: Long) {
+        recipeDao.updateHealthRating(recipeId, color.name, description, fingerprint, analyzedAt)
+    }
+
+    /**
+     * Huella de [ingredientGroups]+[stepGroups]: si cambia respecto a la guardada junto a una
+     * valoración de salud, esa valoración ya no es válida para el contenido actual de la receta.
+     */
+    fun computeHealthFingerprint(ingredientGroups: List<IngredientGroup>, stepGroups: List<StepGroup>): String {
+        val canonical = buildString {
+            ingredientGroups.forEach { group ->
+                append(group.name.orEmpty()).append('|')
+                group.ingredients.forEach { ingredient ->
+                    append(ingredient.name).append(',').append(ingredient.quantity).append(',').append(ingredient.unit.orEmpty()).append(';')
+                }
+            }
+            append("##")
+            stepGroups.forEach { group ->
+                append(group.name.orEmpty()).append('|')
+                group.instructions.forEach { append(it).append(';') }
+            }
+        }
+        val digest = MessageDigest.getInstance("SHA-256").digest(canonical.toByteArray())
+        return digest.joinToString("") { "%02x".format(it) }
     }
 
     // --- Categorías ---
@@ -471,7 +510,15 @@ fun RecipeWithDetails.toDomain(): Recipe {
         ingredientGroups = orderGroupsMainFirst(ingredientGroups).map { (name, items) -> IngredientGroup(name, items) },
         stepGroups = orderGroupsMainFirst(stepGroups).map { (name, items) -> StepGroup(name, items) },
         tags = tags.map { it.name }.sorted(),
-        utensils = utensils.map { it.name }.sorted()
+        utensils = utensils.map { it.name }.sorted(),
+        healthRating = recipe.healthColor?.let { colorName ->
+            HealthRating(
+                color = runCatching { HealthColorLevel.valueOf(colorName) }.getOrDefault(HealthColorLevel.YELLOW),
+                description = recipe.healthDescription.orEmpty(),
+                fingerprint = recipe.healthFingerprint.orEmpty(),
+                analyzedAt = recipe.healthAnalyzedAt ?: 0L
+            )
+        }
     )
 }
 
