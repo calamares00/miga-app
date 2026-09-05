@@ -64,9 +64,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.export.RecipeExporter
-import com.bmo00.miga.data.model.Ingredient
 import com.bmo00.miga.data.model.Recipe
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -77,6 +75,7 @@ fun RecipeDetailScreen(
 ) {
     val recipe by viewModel.recipe.collectAsState()
     val recipeBooks by viewModel.recipeBooks.collectAsState()
+    val ttsVoiceName by viewModel.ttsVoiceName.collectAsState()
     val context = LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -162,7 +161,7 @@ fun RecipeDetailScreen(
 
     val recipeForCookMode = recipe
     if (showCookMode && recipeForCookMode != null) {
-        CookModeOverlay(recipe = recipeForCookMode, onClose = { showCookMode = false })
+        CookModeOverlay(recipe = recipeForCookMode, ttsVoiceName = ttsVoiceName, onClose = { showCookMode = false })
     }
 
     if (showDeleteConfirm) {
@@ -384,26 +383,5 @@ private fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(title, style = MaterialTheme.typography.titleMedium)
         content()
-    }
-}
-
-private fun formatIngredient(ingredient: Ingredient, scale: Double): String {
-    val quantityPart = ingredient.quantity?.let { formatQuantity(it * scale) }
-    return buildString {
-        if (quantityPart != null) {
-            append(quantityPart)
-            if (!ingredient.unit.isNullOrBlank()) append(" ${ingredient.unit}")
-            append(" de ")
-        }
-        append(ingredient.name)
-    }
-}
-
-private fun formatQuantity(value: Double): String {
-    val rounded = (value * 100).roundToInt() / 100.0
-    return if (rounded == rounded.toLong().toDouble()) {
-        rounded.toLong().toString()
-    } else {
-        rounded.toString().trimEnd('0').trimEnd('.')
     }
 }
