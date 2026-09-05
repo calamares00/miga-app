@@ -72,6 +72,12 @@ import coil.compose.AsyncImage
 import com.bmo00.miga.data.export.RecipeExporter
 import com.bmo00.miga.data.model.HealthColorLevel
 import com.bmo00.miga.data.model.Recipe
+import com.bmo00.miga.ui.theme.HealthAmberContainer
+import com.bmo00.miga.ui.theme.HealthAmberOn
+import com.bmo00.miga.ui.theme.HealthGreenContainer
+import com.bmo00.miga.ui.theme.HealthGreenOn
+import com.bmo00.miga.ui.theme.HealthRedContainer
+import com.bmo00.miga.ui.theme.HealthRedOn
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -306,21 +312,9 @@ private fun RecipeDetailContent(
                         }
                         HealthState.Loaded -> recipe.healthRating?.let { rating ->
                             val (containerColor, contentColor, label) = when (rating.color) {
-                                HealthColorLevel.GREEN -> Triple(
-                                    MaterialTheme.colorScheme.tertiaryContainer,
-                                    MaterialTheme.colorScheme.onTertiaryContainer,
-                                    "Saludable"
-                                )
-                                HealthColorLevel.YELLOW -> Triple(
-                                    MaterialTheme.colorScheme.secondaryContainer,
-                                    MaterialTheme.colorScheme.onSecondaryContainer,
-                                    "Moderada"
-                                )
-                                HealthColorLevel.RED -> Triple(
-                                    MaterialTheme.colorScheme.errorContainer,
-                                    MaterialTheme.colorScheme.onErrorContainer,
-                                    "Poco saludable"
-                                )
+                                HealthColorLevel.GREEN -> Triple(HealthGreenContainer, HealthGreenOn, "Saludable")
+                                HealthColorLevel.YELLOW -> Triple(HealthAmberContainer, HealthAmberOn, "Moderada")
+                                HealthColorLevel.RED -> Triple(HealthRedContainer, HealthRedOn, "Poco saludable")
                             }
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 AssistChip(
