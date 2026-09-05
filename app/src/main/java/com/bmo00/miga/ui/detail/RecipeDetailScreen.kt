@@ -114,9 +114,12 @@ fun RecipeDetailScreen(
                             tint = if (current?.isFavorite == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
+                    val currentBookIsPack = recipeBooks.firstOrNull { it.id == current?.recipeBookId }?.isPack == true
                     IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Más opciones") }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                        DropdownMenuItem(text = { Text("Editar") }, leadingIcon = { Icon(Icons.Filled.Edit, null) }, onClick = { showMenu = false; onEdit() })
+                        if (!currentBookIsPack) {
+                            DropdownMenuItem(text = { Text("Editar") }, leadingIcon = { Icon(Icons.Filled.Edit, null) }, onClick = { showMenu = false; onEdit() })
+                        }
                         DropdownMenuItem(
                             text = { Text("Compartir como texto") },
                             leadingIcon = { Icon(Icons.Filled.Share, null) },
@@ -146,11 +149,13 @@ fun RecipeDetailScreen(
                             leadingIcon = { Icon(Icons.Filled.SwapHoriz, null) },
                             onClick = { showMenu = false; showMoveDialog = true }
                         )
-                        DropdownMenuItem(
-                            text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
-                            leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
-                            onClick = { showMenu = false; showDeleteConfirm = true }
-                        )
+                        if (!currentBookIsPack) {
+                            DropdownMenuItem(
+                                text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
+                                leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
+                                onClick = { showMenu = false; showDeleteConfirm = true }
+                            )
+                        }
                     }
                 }
             )
@@ -204,7 +209,7 @@ fun RecipeDetailScreen(
 
     val recipeForMove = recipe
     if (showMoveDialog && recipeForMove != null) {
-        val otherBooks = recipeBooks.filter { it.id != recipeForMove.recipeBookId }
+        val otherBooks = recipeBooks.filter { it.id != recipeForMove.recipeBookId && !it.isPack }
         AlertDialog(
             onDismissRequest = { showMoveDialog = false },
             title = { Text("Mover a otro libro") },

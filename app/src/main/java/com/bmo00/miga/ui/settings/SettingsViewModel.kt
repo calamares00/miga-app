@@ -15,6 +15,7 @@ import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
+import com.bmo00.miga.data.remote.DEFAULT_PACKS_CATALOG_REPO
 import com.bmo00.miga.data.remote.UpdateCheckResult
 import com.bmo00.miga.data.remote.UpdateChecker
 import com.bmo00.miga.data.remote.UpdateInfo
@@ -113,6 +114,13 @@ class SettingsViewModel(
 
     fun setGeminiModel(model: String) {
         viewModelScope.launch { settingsRepository.setGeminiModel(model) }
+    }
+
+    val packsCatalogRepo: StateFlow<String> = settingsRepository.observePacksCatalogRepo()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_PACKS_CATALOG_REPO)
+
+    fun setPacksCatalogRepo(repo: String) {
+        viewModelScope.launch { settingsRepository.setPacksCatalogRepo(repo) }
     }
 
     val ttsVoiceName: StateFlow<String?> = settingsRepository.observeTtsVoiceName()

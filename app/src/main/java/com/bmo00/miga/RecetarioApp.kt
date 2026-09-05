@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.room.Room
 import com.bmo00.miga.data.local.AppDatabase
 import com.bmo00.miga.data.local.MIGRATION_4_5
+import com.bmo00.miga.data.local.MIGRATION_5_6
 import com.bmo00.miga.data.local.SettingsRepository
 import com.bmo00.miga.data.repository.RecipeRepository
 import kotlinx.coroutines.CoroutineScope
@@ -17,7 +18,7 @@ class RecetarioApp : Application() {
 
     val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
-            .addMigrations(MIGRATION_4_5)
+            .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
             // Red de seguridad final: si algún día hay un salto de versión sin migración
             // explícita (o un estado corrupto), no crashea, borra y empieza de cero.
             .fallbackToDestructiveMigration()
