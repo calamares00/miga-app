@@ -5,6 +5,10 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -71,6 +75,7 @@ fun GlobalSearchScreen(
     val sheetState = rememberModalBottomSheetState()
 
     Scaffold(
+        contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
         topBar = {
             if (selectionMode) {
                 TopAppBar(
@@ -161,10 +166,7 @@ fun GlobalSearchScreen(
                 availableTags = uiState.availableTags,
                 availableUtensils = uiState.availableUtensils,
                 availableIngredients = uiState.availableIngredients,
-                onApply = { newFilter ->
-                    viewModel.applyFilter(newFilter)
-                    showFilters = false
-                },
+                onApply = { newFilter -> viewModel.applyFilter(newFilter) },
                 onClear = { viewModel.clearFilters() }
             )
         }

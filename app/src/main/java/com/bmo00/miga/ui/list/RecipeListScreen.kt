@@ -288,14 +288,8 @@ fun RecipeListScreen(
                 availableTags = uiState.availableTags,
                 availableUtensils = uiState.availableUtensils,
                 availableIngredients = uiState.availableIngredients,
-                onApply = { newFilter ->
-                    viewModel.applyFilter(newFilter)
-                    showFilters = false
-                },
-                onClear = {
-                    viewModel.clearFilters()
-                    showFilters = false
-                }
+                onApply = { newFilter -> viewModel.applyFilter(newFilter) },
+                onClear = { viewModel.clearFilters() }
             )
         }
     }

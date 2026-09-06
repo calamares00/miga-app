@@ -300,14 +300,6 @@ private fun RecipeDetailContent(
                 }
             }
 
-            if (recipe.tags.isNotEmpty()) {
-                Section(title = "Etiquetas") {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        recipe.tags.forEach { SuggestionChip(onClick = {}, label = { Text("#$it") }) }
-                    }
-                }
-            }
-
             if (healthState != HealthState.Idle) {
                 Section(title = "Salud") {
                     when (healthState) {
@@ -434,6 +426,14 @@ private fun RecipeDetailContent(
             }
             if (recipe.source.isNotBlank()) {
                 Section(title = "Origen") { Text(recipe.source, style = MaterialTheme.typography.bodyMedium) }
+            }
+
+            if (recipe.tags.isNotEmpty()) {
+                Section(title = "Etiquetas") {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        recipe.tags.forEach { SuggestionChip(onClick = {}, label = { Text("#$it") }) }
+                    }
+                }
             }
         }
     }
