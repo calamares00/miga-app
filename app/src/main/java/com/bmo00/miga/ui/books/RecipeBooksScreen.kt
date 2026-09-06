@@ -4,6 +4,11 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,8 +34,6 @@ import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewHeadline
@@ -49,6 +52,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -60,7 +64,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.model.RecipeBookSummary
@@ -73,20 +79,22 @@ fun RecipeBooksScreen(
     viewModel: RecipeBooksViewModel,
     onBookClick: (Long) -> Unit,
     onAddBookClick: () -> Unit,
-    onEditBookClick: (Long) -> Unit,
-    onSearchClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onEditBookClick: (Long) -> Unit
 ) {
     val books by viewModel.books.collectAsState()
     val updateAvailable by viewModel.updateAvailable.collectAsState()
     val changelogAnnouncement by viewModel.changelogAnnouncement.collectAsState()
+    val crashReport by viewModel.crashReport.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
     var showViewModeMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
 
     Scaffold(
+        contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text("Miga") },
                 actions = {
                     Box {
@@ -102,12 +110,6 @@ fun RecipeBooksScreen(
                                 )
                             }
                         }
-                    }
-                    IconButton(onClick = onSearchClick) {
-                        Icon(Icons.Filled.Search, contentDescription = "Buscar recetas")
-                    }
-                    IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Ajustes")
                     }
                 }
             )
@@ -193,6 +195,47 @@ fun RecipeBooksScreen(
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.dismissChangelogAnnouncement() }) { Text("Entendido") }
+            }
+        )
+    }
+
+    crashReport?.let { report ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissCrashReport() },
+            title = { Text("La app se cerró de forma inesperada") },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        "Esto es lo que se guardó del último fallo, solo en este dispositivo. " +
+                            "Puedes copiarlo o compartirlo para reportarlo, o simplemente descartarlo.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    SelectionContainer {
+                        Text(report, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, "Informe de fallo - Miga")
+                        putExtra(Intent.EXTRA_TEXT, report)
+                    }
+                    runCatching { context.startActivity(Intent.createChooser(intent, "Compartir informe")) }
+                }) { Text("Compartir") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { clipboardManager.setText(AnnotatedString(report)) }) { Text("Copiar") }
+                    TextButton(onClick = { viewModel.dismissCrashReport() }) { Text("Descartar") }
+                }
             }
         )
     }

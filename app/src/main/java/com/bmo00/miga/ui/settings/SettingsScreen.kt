@@ -8,6 +8,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +25,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Backup
@@ -59,6 +62,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -92,7 +96,6 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    onBack: () -> Unit,
     onManageCategories: () -> Unit,
     onManageUtensils: () -> Unit,
     onManageIngredients: () -> Unit,
@@ -167,13 +170,12 @@ fun SettingsScreen(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Ajustes") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
-                }
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                title = { Text("Ajustes") }
             )
         }
     ) { padding ->
@@ -266,7 +268,7 @@ fun SettingsScreen(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Modelo de Gemini") },
-                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = "Abrir selector de modelo") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     // Capa transparente encima del campo para abrir el menú al tocar, sin que el
@@ -344,7 +346,7 @@ fun SettingsScreen(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Voz") },
-                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = "Abrir selector de voz") },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Box(

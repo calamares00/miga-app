@@ -47,6 +47,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -109,6 +110,7 @@ fun RecipeEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(if (viewModel.isEditing) "Editar receta" else "Nueva receta") },
                 navigationIcon = {
                     IconButton(onClick = onCancel) { Icon(Icons.Filled.Close, contentDescription = "Cancelar") }
@@ -362,7 +364,7 @@ private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit, 
                 Box(modifier = Modifier.size(88.dp)) {
                     AsyncImage(
                         model = photo.uri,
-                        contentDescription = null,
+                        contentDescription = "Editar foto",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxSize()

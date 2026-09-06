@@ -1,7 +1,14 @@
 package com.bmo00.miga.ui.search
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,10 +22,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -34,6 +44,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -54,22 +65,39 @@ import com.bmo00.miga.ui.components.FilterSheetContent
 @Composable
 fun GlobalSearchScreen(
     viewModel: GlobalSearchViewModel,
-    onBack: () -> Unit,
     onRecipeClick: (Long) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
+    val selectedIds by viewModel.selectedIds.collectAsState()
+    val selectionMode = selectedIds.isNotEmpty()
     var showFilters by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
     Scaffold(
+        contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
         topBar = {
-            TopAppBar(
-                title = { Text("Buscar recetas") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
-                }
-            )
+            if (selectionMode) {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                    title = { Text("${selectedIds.size} seleccionadas") },
+                    navigationIcon = {
+                        IconButton(onClick = viewModel::clearSelection) {
+                            Icon(Icons.Filled.Close, contentDescription = "Cancelar selección")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.addSelectedToShoppingList() }) {
+                            Icon(Icons.Filled.ShoppingCart, contentDescription = "Añadir a la lista de la compra")
+                        }
+                    }
+                )
+            } else {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                    title = { Text("Buscar recetas") }
+                )
+            }
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -115,7 +143,15 @@ fun GlobalSearchScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(uiState.results, key = { it.recipeId }) { result ->
-                        SearchResultCard(result = result, onClick = { onRecipeClick(result.recipeId) })
+                        SearchResultCard(
+                            result = result,
+                            selectionMode = selectionMode,
+                            isSelected = result.recipeId in selectedIds,
+                            onClick = {
+                                if (selectionMode) viewModel.toggleSelection(result.recipeId) else onRecipeClick(result.recipeId)
+                            },
+                            onLongClick = { viewModel.startSelection(result.recipeId) }
+                        )
                     }
                 }
             }
@@ -130,20 +166,31 @@ fun GlobalSearchScreen(
                 availableTags = uiState.availableTags,
                 availableUtensils = uiState.availableUtensils,
                 availableIngredients = uiState.availableIngredients,
-                onApply = { newFilter ->
-                    viewModel.applyFilter(newFilter)
-                    showFilters = false
-                },
+                onApply = { newFilter -> viewModel.applyFilter(newFilter) },
                 onClear = { viewModel.clearFilters() }
             )
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SearchResultCard(result: SearchResult, onClick: () -> Unit) {
+private fun SearchResultCard(
+    result: SearchResult,
+    selectionMode: Boolean,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = LocalIndication.current,
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
@@ -152,26 +199,34 @@ private fun SearchResultCard(result: SearchResult, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                if (result.photoUri != null) {
-                    AsyncImage(
-                        model = result.photoUri,
-                        contentDescription = result.recipeName,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Outlined.Restaurant,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.fillMaxSize().padding(16.dp)
-                    )
+            if (selectionMode) {
+                Icon(
+                    imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
+                    contentDescription = if (isSelected) "Seleccionada" else "No seleccionada",
+                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    if (result.photoUri != null) {
+                        AsyncImage(
+                            model = result.photoUri,
+                            contentDescription = result.recipeName,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Outlined.Restaurant,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.fillMaxSize().padding(16.dp)
+                        )
+                    }
                 }
             }
 

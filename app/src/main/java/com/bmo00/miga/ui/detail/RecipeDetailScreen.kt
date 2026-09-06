@@ -1,8 +1,10 @@
 package com.bmo00.miga.ui.detail
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Restaurant
@@ -51,6 +54,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -101,6 +105,7 @@ fun RecipeDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(recipe?.name.orEmpty(), maxLines = 1) },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
@@ -148,6 +153,15 @@ fun RecipeDetailScreen(
                             text = { Text("Mover a otro libro") },
                             leadingIcon = { Icon(Icons.Filled.SwapHoriz, null) },
                             onClick = { showMenu = false; showMoveDialog = true }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Añadir a la lista de la compra") },
+                            leadingIcon = { Icon(Icons.Filled.ShoppingCart, null) },
+                            onClick = {
+                                showMenu = false
+                                viewModel.addIngredientsToShoppingList()
+                                Toast.makeText(context, "Añadido a la lista de la compra", Toast.LENGTH_SHORT).show()
+                            }
                         )
                         if (!currentBookIsPack) {
                             DropdownMenuItem(
@@ -286,14 +300,6 @@ private fun RecipeDetailContent(
                 }
             }
 
-            if (recipe.tags.isNotEmpty()) {
-                Section(title = "Etiquetas") {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        recipe.tags.forEach { SuggestionChip(onClick = {}, label = { Text("#$it") }) }
-                    }
-                }
-            }
-
             if (healthState != HealthState.Idle) {
                 Section(title = "Salud") {
                     when (healthState) {
@@ -359,7 +365,11 @@ private fun RecipeDetailContent(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable(role = Role.Checkbox) { checkedIngredients[key] = !checked }
+                                    .toggleable(
+                                        value = checked,
+                                        role = Role.Checkbox,
+                                        onValueChange = { checkedIngredients[key] = it }
+                                    )
                                     .padding(vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -416,6 +426,14 @@ private fun RecipeDetailContent(
             }
             if (recipe.source.isNotBlank()) {
                 Section(title = "Origen") { Text(recipe.source, style = MaterialTheme.typography.bodyMedium) }
+            }
+
+            if (recipe.tags.isNotEmpty()) {
+                Section(title = "Etiquetas") {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        recipe.tags.forEach { SuggestionChip(onClick = {}, label = { Text("#$it") }) }
+                    }
+                }
             }
         }
     }

@@ -98,6 +98,11 @@ class RecipeDetailViewModel(
         viewModelScope.launch { repository.moveRecipeToBook(recipeId, newBookId) }
     }
 
+    fun addIngredientsToShoppingList() {
+        val current = recipe.value ?: return
+        viewModelScope.launch { repository.addIngredientsToShoppingList(current.ingredientGroups.flatMap { it.ingredients }) }
+    }
+
     fun deleteRecipe(onDeleted: () -> Unit) {
         viewModelScope.launch {
             repository.deleteRecipe(recipeId)

@@ -88,7 +88,7 @@ fun RecipeCard(
             if (selectionMode) {
                 Icon(
                     imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                    contentDescription = null,
+                    contentDescription = if (isSelected) "Seleccionada" else "No seleccionada",
                     tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else if (!compact) {
@@ -235,7 +235,7 @@ fun RecipeGridCard(
                 if (selectionMode) {
                     Icon(
                         imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                        contentDescription = null,
+                        contentDescription = if (isSelected) "Seleccionada" else "No seleccionada",
                         tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
                         modifier = Modifier
                             .align(Alignment.TopStart)

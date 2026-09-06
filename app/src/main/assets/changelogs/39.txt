@@ -1,0 +1,1 @@
+Corrige una franja blanca que aparecía en la parte superior de todas las pantallas (la barra superior usaba un blanco distinto al fondo crema de la app).

@@ -9,6 +9,8 @@ import com.bmo00.miga.data.model.HealthColorLevel
 import com.bmo00.miga.data.model.Recipe
 import com.bmo00.miga.data.model.RecipeBook
 import com.bmo00.miga.data.model.RecipePhoto
+import com.bmo00.miga.data.model.ShoppingListGroup
+import com.bmo00.miga.data.model.formatQuantity
 import com.bmo00.miga.data.repository.RecipeRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -98,6 +100,15 @@ object RecipeExporter {
             putExtra(Intent.EXTRA_TEXT, formatRecipeAsText(recipe))
         }
         context.startActivity(Intent.createChooser(intent, "Compartir receta"))
+    }
+
+    fun shareShoppingListAsText(context: Context, groups: List<ShoppingListGroup>) {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "Lista de la compra")
+            putExtra(Intent.EXTRA_TEXT, formatShoppingListAsText(groups))
+        }
+        context.startActivity(Intent.createChooser(intent, "Compartir lista"))
     }
 
     /** Exporta una receta: ZIP con sus fotos si tiene alguna, si no un .json plano como hasta ahora. */
@@ -359,6 +370,19 @@ object RecipeExporter {
     private fun sanitizeFileName(name: String): String =
         name.trim().ifBlank { "receta" }.replace(Regex("[^A-Za-z0-9-_ ]"), "").replace(" ", "_").take(60)
 
+    private fun formatShoppingListAsText(groups: List<ShoppingListGroup>): String = buildString {
+        appendLine("LISTA DE LA COMPRA")
+        groups.forEach { group ->
+            appendLine()
+            appendLine(group.categoryName.uppercase())
+            group.items.forEach { item ->
+                val prefix = if (item.checked) "[x] " else "[ ] "
+                append(prefix)
+                appendLine(listOfNotNull(item.quantity?.let { formatQuantity(it) }, item.unit, item.name).joinToString(" "))
+            }
+        }
+    }
+
     private fun formatRecipeAsText(recipe: Recipe): String = buildString {
         appendLine(recipe.name)
         appendLine("—".repeat(recipe.name.length.coerceAtMost(40)))
@@ -373,7 +397,7 @@ object RecipeExporter {
             if (group.ingredients.isNotEmpty()) {
                 if (group.name != null) appendLine(group.name.uppercase())
                 group.ingredients.forEach { ingredient ->
-                    val qty = ingredient.quantity?.let { q -> if (q == q.toLong().toDouble()) q.toLong().toString() else q.toString() }
+                    val qty = ingredient.quantity?.let { formatQuantity(it) }
                     appendLine("- " + listOfNotNull(qty, ingredient.unit, ingredient.name).joinToString(" "))
                 }
             }

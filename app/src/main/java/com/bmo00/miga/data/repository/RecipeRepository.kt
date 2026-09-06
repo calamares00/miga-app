@@ -13,6 +13,7 @@ import com.bmo00.miga.data.local.entity.RecipePhotoEntity
 import com.bmo00.miga.data.local.entity.RecipeTagCrossRef
 import com.bmo00.miga.data.local.entity.RecipeUtensilCrossRef
 import com.bmo00.miga.data.local.entity.RecipeWithDetails
+import com.bmo00.miga.data.local.entity.ShoppingListItemEntity
 import com.bmo00.miga.data.local.entity.StepEntity
 import com.bmo00.miga.data.local.entity.TagEntity
 import com.bmo00.miga.data.local.entity.UtensilEntity
@@ -29,7 +30,10 @@ import com.bmo00.miga.data.model.RecipeBookDraft
 import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.model.RecipeDraft
 import com.bmo00.miga.data.model.RecipePhoto
+import com.bmo00.miga.data.model.ShoppingListGroup
+import com.bmo00.miga.data.model.ShoppingListItem
 import com.bmo00.miga.data.model.StepGroup
+import com.bmo00.miga.data.model.UNCATEGORIZED_INGREDIENT_LABEL
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -48,6 +52,7 @@ class RecipeRepository(private val db: AppDatabase) {
     private val recipeBookDao = db.recipeBookDao()
     private val ingredientCatalogDao = db.ingredientCatalogDao()
     private val ingredientCategoryDao = db.ingredientCategoryDao()
+    private val shoppingListDao = db.shoppingListDao()
 
     fun observeRecipesForBook(bookId: Long): Flow<List<Recipe>> =
         recipeDao.observeAllWithDetailsForBook(bookId).map { list -> list.map { it.toDomain() } }
@@ -379,6 +384,66 @@ class RecipeRepository(private val db: AppDatabase) {
         ingredientCategoryDao.findByName(name)?.let { return it.id }
         ingredientCategoryDao.insert(IngredientCategoryEntity(name = name))
         return ingredientCategoryDao.findByName(name)!!.id
+    }
+
+    // --- Lista de la compra ---
+
+    /** Lista persistente agrupada por categoría de ingrediente (ver ingredient_categories); sin categoría al final. */
+    fun observeShoppingList(): Flow<List<ShoppingListGroup>> =
+        combine(shoppingListDao.observeAll(), ingredientCatalogDao.observeAll(), ingredientCategoryDao.observeAll()) { items, catalog, categories ->
+            val categoryNameById = categories.associateBy({ it.id }, { it.name })
+            val categoryIdByIngredientName = catalog.associate { it.name.trim().lowercase() to it.categoryId }
+            items.map { entity ->
+                val categoryId = categoryIdByIngredientName[entity.normalizedName]
+                val categoryName = categoryId?.let { categoryNameById[it] } ?: UNCATEGORIZED_INGREDIENT_LABEL
+                ShoppingListItem(entity.id, entity.name, entity.quantity, entity.unit, entity.checked, categoryName)
+            }
+                .groupBy { it.categoryName }
+                .toSortedMap(compareBy { if (it == UNCATEGORIZED_INGREDIENT_LABEL) "￿" else it.lowercase() })
+                .map { (category, groupItems) -> ShoppingListGroup(category, groupItems.sortedBy { it.name.lowercase() }) }
+        }
+
+    /**
+     * Añade ingredientes (de una receta, o de varias) a la lista, fusionando por nombre
+     * normalizado + unidad cuando ambos lados tienen cantidad; si no, inserta una fila nueva.
+     */
+    suspend fun addIngredientsToShoppingList(ingredients: List<Ingredient>) = db.withTransaction {
+        val now = System.currentTimeMillis()
+        ingredients.forEach { ingredient ->
+            val trimmedName = ingredient.name.trim()
+            if (trimmedName.isEmpty()) return@forEach
+            val normalized = trimmedName.lowercase()
+            val trimmedUnit = ingredient.unit?.trim()?.takeIf { it.isNotBlank() }
+            val existing = if (ingredient.quantity != null) shoppingListDao.findMergeable(normalized, trimmedUnit) else null
+            if (existing != null) {
+                shoppingListDao.update(existing.copy(quantity = existing.quantity!! + ingredient.quantity!!))
+            } else {
+                shoppingListDao.insert(
+                    ShoppingListItemEntity(name = trimmedName, normalizedName = normalized, quantity = ingredient.quantity, unit = trimmedUnit, createdAt = now)
+                )
+            }
+        }
+    }
+
+    /** Artículo manual sin receta de origen (p.ej. "papel de aluminio"); pasa por la misma fusión que los de receta. */
+    suspend fun addManualShoppingListItem(name: String, quantity: Double?, unit: String?) {
+        addIngredientsToShoppingList(listOf(Ingredient(name, quantity, unit)))
+    }
+
+    suspend fun setShoppingListItemChecked(id: Long, checked: Boolean) {
+        shoppingListDao.setChecked(id, checked)
+    }
+
+    suspend fun deleteShoppingListItem(id: Long) {
+        shoppingListDao.delete(id)
+    }
+
+    suspend fun clearShoppingList() {
+        shoppingListDao.clearAll()
+    }
+
+    suspend fun clearCheckedShoppingListItems() {
+        shoppingListDao.clearChecked()
     }
 
     // --- Libros de recetas ---
