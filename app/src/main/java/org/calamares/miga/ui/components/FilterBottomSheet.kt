@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +16,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +47,17 @@ fun FilterSheetContent(
     var ingredients by remember(filter) { mutableStateOf(filter.ingredients) }
     var onlyFavorites by remember(filter) { mutableStateOf(filter.onlyFavorites) }
     var sortOption by remember(filter) { mutableStateOf(filter.sortOption) }
+
+    val currentFilter = filter.copy(
+        categoryNames = categoryNames,
+        difficulties = difficulties,
+        utensils = utensils,
+        tags = tags,
+        ingredients = ingredients,
+        onlyFavorites = onlyFavorites,
+        sortOption = sortOption
+    )
+    LaunchedEffect(currentFilter) { onApply(currentFilter) }
 
     Column(
         modifier = modifier
@@ -146,33 +157,15 @@ fun FilterSheetContent(
             Switch(checked = onlyFavorites, onCheckedChange = { onlyFavorites = it })
         }
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TextButton(
-                onClick = {
-                    categoryNames = emptySet(); difficulties = emptySet()
-                    utensils = emptySet(); tags = emptySet(); ingredients = emptySet(); onlyFavorites = false
-                    onClear()
-                },
-                modifier = Modifier.weight(1f)
-            ) { Text("Limpiar") }
-
-            Button(
-                onClick = {
-                    onApply(
-                        filter.copy(
-                            categoryNames = categoryNames,
-                            difficulties = difficulties,
-                            utensils = utensils,
-                            tags = tags,
-                            ingredients = ingredients,
-                            onlyFavorites = onlyFavorites,
-                            sortOption = sortOption
-                        )
-                    )
-                },
-                modifier = Modifier.weight(1f)
-            ) { Text("Aplicar") }
-        }
+        TextButton(
+            onClick = {
+                categoryNames = emptySet(); difficulties = emptySet()
+                utensils = emptySet(); tags = emptySet(); ingredients = emptySet(); onlyFavorites = false
+                sortOption = SortOption.NAME_ASC
+                onClear()
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Limpiar") }
     }
 }
 

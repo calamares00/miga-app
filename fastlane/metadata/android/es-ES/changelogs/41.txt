@@ -1,0 +1,1 @@
+Corrige el hueco vacío que quedaba justo encima de la barra de pestañas. Mueve las etiquetas al final de la receta. Los filtros y el orden en el buscador se aplican ahora al instante, sin pulsar "Aplicar".
