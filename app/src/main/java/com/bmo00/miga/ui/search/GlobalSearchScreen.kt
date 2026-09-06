@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
@@ -62,7 +61,6 @@ import com.bmo00.miga.ui.components.FilterSheetContent
 @Composable
 fun GlobalSearchScreen(
     viewModel: GlobalSearchViewModel,
-    onBack: () -> Unit,
     onRecipeClick: (Long) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -92,10 +90,7 @@ fun GlobalSearchScreen(
             } else {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                    title = { Text("Buscar recetas") },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
-                    }
+                    title = { Text("Buscar recetas") }
                 )
             }
         }

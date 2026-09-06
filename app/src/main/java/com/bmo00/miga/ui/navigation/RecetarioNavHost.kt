@@ -1,13 +1,30 @@
 package com.bmo00.miga.ui.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.bmo00.miga.RecetarioApp
@@ -46,224 +63,257 @@ import com.bmo00.miga.ui.settings.SettingsViewModel
 private fun repositoryOf(context: android.content.Context): RecipeRepository =
     (context.applicationContext as RecetarioApp).repository
 
+private data class BottomTab(val route: String, val label: String, val icon: ImageVector)
+
+private val BOTTOM_TABS = listOf(
+    BottomTab(Destinations.BOOKS_ROUTE, "Libros", Icons.Outlined.MenuBook),
+    BottomTab(Destinations.SHOPPING_LIST_ROUTE, "Compra", Icons.Filled.ShoppingCart),
+    BottomTab(Destinations.SEARCH_ROUTE, "Buscar", Icons.Filled.Search),
+    BottomTab(Destinations.SETTINGS_ROUTE, "Ajustes", Icons.Filled.Settings)
+)
+
 @Composable
 fun RecetarioNavHost() {
     val navController = rememberNavController()
     val context = LocalContext.current
     val repository = repositoryOf(context)
     val settingsRepository = (context.applicationContext as RecetarioApp).settingsRepository
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
-    NavHost(navController = navController, startDestination = Destinations.BOOKS_ROUTE) {
-        composable(Destinations.BOOKS_ROUTE) {
-            val viewModel: RecipeBooksViewModel = viewModel(
-                factory = viewModelFactory { initializer { RecipeBooksViewModel(repository, settingsRepository) } }
-            )
-            RecipeBooksScreen(
-                viewModel = viewModel,
-                onBookClick = { navController.navigate(Destinations.book(it)) },
-                onAddBookClick = { navController.navigate(Destinations.bookEditor()) },
-                onEditBookClick = { navController.navigate(Destinations.bookEditor(it)) },
-                onSearchClick = { navController.navigate(Destinations.SEARCH_ROUTE) },
-                onShoppingListClick = { navController.navigate(Destinations.SHOPPING_LIST_ROUTE) },
-                onSettingsClick = { navController.navigate(Destinations.SETTINGS_ROUTE) }
-            )
-        }
-
-        composable(Destinations.SEARCH_ROUTE) {
-            val viewModel: GlobalSearchViewModel = viewModel(
-                factory = viewModelFactory { initializer { GlobalSearchViewModel(repository) } }
-            )
-            GlobalSearchScreen(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() },
-                onRecipeClick = { navController.navigate(Destinations.detail(it)) }
-            )
-        }
-
-        composable(Destinations.SHOPPING_LIST_ROUTE) {
-            val viewModel: ShoppingListViewModel = viewModel(
-                factory = viewModelFactory { initializer { ShoppingListViewModel(repository) } }
-            )
-            ShoppingListScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
-        }
-
-        composable(
-            route = Destinations.BOOK_EDITOR_ROUTE,
-            arguments = listOf(
-                navArgument(Destinations.ARG_BOOK_ID) {
-                    type = NavType.LongType
-                    defaultValue = Destinations.NEW_BOOK_ID
-                }
-            )
-        ) { backStackEntry ->
-            val bookId = backStackEntry.arguments?.getLong(Destinations.ARG_BOOK_ID) ?: Destinations.NEW_BOOK_ID
-            val viewModel: RecipeBookEditorViewModel = viewModel(
-                key = "bookEditor_$bookId",
-                factory = viewModelFactory { initializer { RecipeBookEditorViewModel(repository, bookId) } }
-            )
-            RecipeBookEditorScreen(
-                viewModel = viewModel,
-                onSaved = { navController.popBackStack() },
-                onCancel = { navController.popBackStack() }
-            )
-        }
-
-        composable(
-            route = Destinations.BOOK_ROUTE,
-            arguments = listOf(navArgument(Destinations.ARG_BOOK_ID) { type = NavType.LongType })
-        ) { backStackEntry ->
-            val bookId = backStackEntry.arguments?.getLong(Destinations.ARG_BOOK_ID) ?: return@composable
-            val viewModel: RecipeListViewModel = viewModel(
-                key = "book_$bookId",
-                factory = viewModelFactory { initializer { RecipeListViewModel(repository, bookId, settingsRepository) } }
-            )
-            RecipeListScreen(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() },
-                onRecipeClick = { navController.navigate(Destinations.detail(it)) },
-                onEditRecipeClick = { navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = it)) },
-                onAddRecipeClick = { navController.navigate(Destinations.editor(bookId = bookId)) },
-                onAddRecipeFromPhoto = { photoUri -> navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUri = photoUri)) }
-            )
-        }
-
-        composable(
-            route = Destinations.DETAIL_ROUTE,
-            arguments = listOf(navArgument(Destinations.ARG_RECIPE_ID) { type = NavType.LongType })
-        ) { backStackEntry ->
-            val recipeId = backStackEntry.arguments?.getLong(Destinations.ARG_RECIPE_ID) ?: return@composable
-            val viewModel: RecipeDetailViewModel = viewModel(
-                key = "detail_$recipeId",
-                factory = viewModelFactory { initializer { RecipeDetailViewModel(repository, recipeId, settingsRepository) } }
-            )
-            RecipeDetailScreen(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() },
-                onEdit = { navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = recipeId)) }
-            )
-        }
-
-        composable(
-            route = Destinations.EDITOR_ROUTE,
-            arguments = listOf(
-                navArgument(Destinations.ARG_RECIPE_ID) {
-                    type = NavType.LongType
-                    defaultValue = Destinations.NEW_RECIPE_ID
-                },
-                navArgument(Destinations.ARG_BOOK_ID) {
-                    type = NavType.LongType
-                    defaultValue = Destinations.NEW_BOOK_ID
-                },
-                navArgument(Destinations.ARG_SOURCE_PHOTO_URI) {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
-        ) { backStackEntry ->
-            val recipeId = backStackEntry.arguments?.getLong(Destinations.ARG_RECIPE_ID) ?: Destinations.NEW_RECIPE_ID
-            val bookId = backStackEntry.arguments?.getLong(Destinations.ARG_BOOK_ID) ?: Destinations.NEW_BOOK_ID
-            val sourcePhotoUri = backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_PHOTO_URI)
-            val viewModel: RecipeEditorViewModel = viewModel(
-                key = "editor_${recipeId}_$bookId",
-                factory = viewModelFactory { initializer { RecipeEditorViewModel(repository, settingsRepository, recipeId, bookId) } }
-            )
-            RecipeEditorScreen(
-                viewModel = viewModel,
-                sourcePhotoUri = sourcePhotoUri,
-                onSaved = { savedId ->
-                    navController.popBackStack()
-                    if (recipeId == Destinations.NEW_RECIPE_ID) {
-                        navController.navigate(Destinations.detail(savedId)) {
-                            popUpTo(Destinations.BOOKS_ROUTE)
-                        }
+    Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
+        bottomBar = {
+            if (BOTTOM_TABS.any { it.route == currentRoute }) {
+                NavigationBar {
+                    BOTTOM_TABS.forEach { tab ->
+                        NavigationBarItem(
+                            selected = currentRoute == tab.route,
+                            onClick = {
+                                navController.navigate(tab.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(tab.icon, contentDescription = tab.label) },
+                            label = { Text(tab.label) }
+                        )
                     }
-                },
-                onCancel = { navController.popBackStack() }
-            )
-        }
-
-        composable(Destinations.SETTINGS_ROUTE) {
-            val viewModel: SettingsViewModel = viewModel(
-                factory = viewModelFactory { initializer { SettingsViewModel(repository, settingsRepository) } }
-            )
-            SettingsScreen(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() },
-                onManageCategories = { navController.navigate(Destinations.MANAGE_CATEGORIES_ROUTE) },
-                onManageUtensils = { navController.navigate(Destinations.MANAGE_UTENSILS_ROUTE) },
-                onManageIngredients = { navController.navigate(Destinations.MANAGE_INGREDIENTS_ROUTE) },
-                onManageIngredientCategories = { navController.navigate(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) },
-                onOpenPacksCatalog = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) },
-                onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
-                onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) }
-            )
-        }
-
-        composable(Destinations.PACKS_CATALOG_ROUTE) {
-            val viewModel: PacksCatalogViewModel = viewModel(
-                factory = viewModelFactory { initializer { PacksCatalogViewModel(repository, settingsRepository) } }
-            )
-            PacksCatalogScreen(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() },
-                onPackClick = { navController.navigate(Destinations.packDetail(it)) }
-            )
-        }
-
-        composable(
-            route = Destinations.PACK_DETAIL_ROUTE,
-            arguments = listOf(navArgument(Destinations.ARG_PACK_ID) { type = NavType.StringType })
-        ) { backStackEntry ->
-            val packId = backStackEntry.arguments?.getString(Destinations.ARG_PACK_ID) ?: return@composable
-            val viewModel: PackDetailViewModel = viewModel(
-                key = "packDetail_$packId",
-                factory = viewModelFactory { initializer { PackDetailViewModel(repository, settingsRepository, packId) } }
-            )
-            PackDetailScreen(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() },
-                onInstalled = { bookId ->
-                    navController.popBackStack(Destinations.PACKS_CATALOG_ROUTE, inclusive = true)
-                    navController.navigate(Destinations.book(bookId))
                 }
-            )
+            }
         }
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = Destinations.BOOKS_ROUTE,
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable(Destinations.BOOKS_ROUTE) {
+                val viewModel: RecipeBooksViewModel = viewModel(
+                    factory = viewModelFactory { initializer { RecipeBooksViewModel(repository, settingsRepository) } }
+                )
+                RecipeBooksScreen(
+                    viewModel = viewModel,
+                    onBookClick = { navController.navigate(Destinations.book(it)) },
+                    onAddBookClick = { navController.navigate(Destinations.bookEditor()) },
+                    onEditBookClick = { navController.navigate(Destinations.bookEditor(it)) }
+                )
+            }
 
-        composable(Destinations.HELP_ROUTE) {
-            HelpScreen(onBack = { navController.popBackStack() })
-        }
+            composable(Destinations.SEARCH_ROUTE) {
+                val viewModel: GlobalSearchViewModel = viewModel(
+                    factory = viewModelFactory { initializer { GlobalSearchViewModel(repository) } }
+                )
+                GlobalSearchScreen(
+                    viewModel = viewModel,
+                    onRecipeClick = { navController.navigate(Destinations.detail(it)) }
+                )
+            }
 
-        composable(Destinations.ABOUT_ROUTE) {
-            AboutScreen(onBack = { navController.popBackStack() })
-        }
+            composable(Destinations.SHOPPING_LIST_ROUTE) {
+                val viewModel: ShoppingListViewModel = viewModel(
+                    factory = viewModelFactory { initializer { ShoppingListViewModel(repository) } }
+                )
+                ShoppingListScreen(viewModel = viewModel)
+            }
 
-        composable(Destinations.MANAGE_CATEGORIES_ROUTE) {
-            val viewModel: ManageCategoriesViewModel = viewModel(
-                factory = viewModelFactory { initializer { ManageCategoriesViewModel(repository) } }
-            )
-            ManageCategoriesScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
-        }
+            composable(
+                route = Destinations.BOOK_EDITOR_ROUTE,
+                arguments = listOf(
+                    navArgument(Destinations.ARG_BOOK_ID) {
+                        type = NavType.LongType
+                        defaultValue = Destinations.NEW_BOOK_ID
+                    }
+                )
+            ) { backStackEntry ->
+                val bookId = backStackEntry.arguments?.getLong(Destinations.ARG_BOOK_ID) ?: Destinations.NEW_BOOK_ID
+                val viewModel: RecipeBookEditorViewModel = viewModel(
+                    key = "bookEditor_$bookId",
+                    factory = viewModelFactory { initializer { RecipeBookEditorViewModel(repository, bookId) } }
+                )
+                RecipeBookEditorScreen(
+                    viewModel = viewModel,
+                    onSaved = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() }
+                )
+            }
 
-        composable(Destinations.MANAGE_UTENSILS_ROUTE) {
-            val viewModel: ManageUtensilsViewModel = viewModel(
-                factory = viewModelFactory { initializer { ManageUtensilsViewModel(repository) } }
-            )
-            ManageUtensilsScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
-        }
+            composable(
+                route = Destinations.BOOK_ROUTE,
+                arguments = listOf(navArgument(Destinations.ARG_BOOK_ID) { type = NavType.LongType })
+            ) { backStackEntry ->
+                val bookId = backStackEntry.arguments?.getLong(Destinations.ARG_BOOK_ID) ?: return@composable
+                val viewModel: RecipeListViewModel = viewModel(
+                    key = "book_$bookId",
+                    factory = viewModelFactory { initializer { RecipeListViewModel(repository, bookId, settingsRepository) } }
+                )
+                RecipeListScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onRecipeClick = { navController.navigate(Destinations.detail(it)) },
+                    onEditRecipeClick = { navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = it)) },
+                    onAddRecipeClick = { navController.navigate(Destinations.editor(bookId = bookId)) },
+                    onAddRecipeFromPhoto = { photoUri -> navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUri = photoUri)) }
+                )
+            }
 
-        composable(Destinations.MANAGE_INGREDIENTS_ROUTE) {
-            val viewModel: ManageIngredientsViewModel = viewModel(
-                factory = viewModelFactory { initializer { ManageIngredientsViewModel(repository) } }
-            )
-            ManageIngredientsScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
-        }
+            composable(
+                route = Destinations.DETAIL_ROUTE,
+                arguments = listOf(navArgument(Destinations.ARG_RECIPE_ID) { type = NavType.LongType })
+            ) { backStackEntry ->
+                val recipeId = backStackEntry.arguments?.getLong(Destinations.ARG_RECIPE_ID) ?: return@composable
+                val viewModel: RecipeDetailViewModel = viewModel(
+                    key = "detail_$recipeId",
+                    factory = viewModelFactory { initializer { RecipeDetailViewModel(repository, recipeId, settingsRepository) } }
+                )
+                RecipeDetailScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onEdit = { navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = recipeId)) }
+                )
+            }
 
-        composable(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) {
-            val viewModel: ManageIngredientCategoriesViewModel = viewModel(
-                factory = viewModelFactory { initializer { ManageIngredientCategoriesViewModel(repository) } }
-            )
-            ManageIngredientCategoriesScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            composable(
+                route = Destinations.EDITOR_ROUTE,
+                arguments = listOf(
+                    navArgument(Destinations.ARG_RECIPE_ID) {
+                        type = NavType.LongType
+                        defaultValue = Destinations.NEW_RECIPE_ID
+                    },
+                    navArgument(Destinations.ARG_BOOK_ID) {
+                        type = NavType.LongType
+                        defaultValue = Destinations.NEW_BOOK_ID
+                    },
+                    navArgument(Destinations.ARG_SOURCE_PHOTO_URI) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val recipeId = backStackEntry.arguments?.getLong(Destinations.ARG_RECIPE_ID) ?: Destinations.NEW_RECIPE_ID
+                val bookId = backStackEntry.arguments?.getLong(Destinations.ARG_BOOK_ID) ?: Destinations.NEW_BOOK_ID
+                val sourcePhotoUri = backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_PHOTO_URI)
+                val viewModel: RecipeEditorViewModel = viewModel(
+                    key = "editor_${recipeId}_$bookId",
+                    factory = viewModelFactory { initializer { RecipeEditorViewModel(repository, settingsRepository, recipeId, bookId) } }
+                )
+                RecipeEditorScreen(
+                    viewModel = viewModel,
+                    sourcePhotoUri = sourcePhotoUri,
+                    onSaved = { savedId ->
+                        navController.popBackStack()
+                        if (recipeId == Destinations.NEW_RECIPE_ID) {
+                            navController.navigate(Destinations.detail(savedId)) {
+                                popUpTo(Destinations.BOOKS_ROUTE)
+                            }
+                        }
+                    },
+                    onCancel = { navController.popBackStack() }
+                )
+            }
+
+            composable(Destinations.SETTINGS_ROUTE) {
+                val viewModel: SettingsViewModel = viewModel(
+                    factory = viewModelFactory { initializer { SettingsViewModel(repository, settingsRepository) } }
+                )
+                SettingsScreen(
+                    viewModel = viewModel,
+                    onManageCategories = { navController.navigate(Destinations.MANAGE_CATEGORIES_ROUTE) },
+                    onManageUtensils = { navController.navigate(Destinations.MANAGE_UTENSILS_ROUTE) },
+                    onManageIngredients = { navController.navigate(Destinations.MANAGE_INGREDIENTS_ROUTE) },
+                    onManageIngredientCategories = { navController.navigate(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) },
+                    onOpenPacksCatalog = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) },
+                    onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
+                    onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) }
+                )
+            }
+
+            composable(Destinations.PACKS_CATALOG_ROUTE) {
+                val viewModel: PacksCatalogViewModel = viewModel(
+                    factory = viewModelFactory { initializer { PacksCatalogViewModel(repository, settingsRepository) } }
+                )
+                PacksCatalogScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onPackClick = { navController.navigate(Destinations.packDetail(it)) }
+                )
+            }
+
+            composable(
+                route = Destinations.PACK_DETAIL_ROUTE,
+                arguments = listOf(navArgument(Destinations.ARG_PACK_ID) { type = NavType.StringType })
+            ) { backStackEntry ->
+                val packId = backStackEntry.arguments?.getString(Destinations.ARG_PACK_ID) ?: return@composable
+                val viewModel: PackDetailViewModel = viewModel(
+                    key = "packDetail_$packId",
+                    factory = viewModelFactory { initializer { PackDetailViewModel(repository, settingsRepository, packId) } }
+                )
+                PackDetailScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onInstalled = { bookId ->
+                        navController.popBackStack(Destinations.PACKS_CATALOG_ROUTE, inclusive = true)
+                        navController.navigate(Destinations.book(bookId))
+                    }
+                )
+            }
+
+            composable(Destinations.HELP_ROUTE) {
+                HelpScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Destinations.ABOUT_ROUTE) {
+                AboutScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Destinations.MANAGE_CATEGORIES_ROUTE) {
+                val viewModel: ManageCategoriesViewModel = viewModel(
+                    factory = viewModelFactory { initializer { ManageCategoriesViewModel(repository) } }
+                )
+                ManageCategoriesScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            }
+
+            composable(Destinations.MANAGE_UTENSILS_ROUTE) {
+                val viewModel: ManageUtensilsViewModel = viewModel(
+                    factory = viewModelFactory { initializer { ManageUtensilsViewModel(repository) } }
+                )
+                ManageUtensilsScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            }
+
+            composable(Destinations.MANAGE_INGREDIENTS_ROUTE) {
+                val viewModel: ManageIngredientsViewModel = viewModel(
+                    factory = viewModelFactory { initializer { ManageIngredientsViewModel(repository) } }
+                )
+                ManageIngredientsScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            }
+
+            composable(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) {
+                val viewModel: ManageIngredientCategoriesViewModel = viewModel(
+                    factory = viewModelFactory { initializer { ManageIngredientCategoriesViewModel(repository) } }
+                )
+                ManageIngredientCategoriesScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            }
         }
     }
 }
