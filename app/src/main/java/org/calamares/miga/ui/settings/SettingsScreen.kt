@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Backup
@@ -93,7 +92,6 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    onBack: () -> Unit,
     onManageCategories: () -> Unit,
     onManageUtensils: () -> Unit,
     onManageIngredients: () -> Unit,
@@ -172,10 +170,7 @@ fun SettingsScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text("Ajustes") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
-                }
+                title = { Text("Ajustes") }
             )
         }
     ) { padding ->
