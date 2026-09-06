@@ -20,7 +20,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -29,7 +28,6 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewHeadline
 import androidx.compose.material3.AlertDialog
@@ -68,6 +66,7 @@ import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.data.model.RecipeSummary
 import org.calamares.miga.ui.common.BACKUP_MIME_TYPES
 import org.calamares.miga.ui.components.FilterSheetContent
+import org.calamares.miga.ui.components.NewRecipeSourceSheet
 import org.calamares.miga.ui.components.PhotoSourceSheet
 import org.calamares.miga.ui.components.RecipeCard
 import org.calamares.miga.ui.components.RecipeGridCard
@@ -94,9 +93,11 @@ fun RecipeListScreen(
     var recipeToDelete by remember { mutableStateOf<RecipeSummary?>(null) }
     var showDeleteSelectedConfirm by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
+    var showNewRecipeSheet by remember { mutableStateOf(false) }
     var pendingCameraPath by remember { mutableStateOf<String?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val photoSheetState = rememberModalBottomSheetState()
+    val newRecipeSheetState = rememberModalBottomSheetState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -159,18 +160,6 @@ fun RecipeListScreen(
                         }
                         IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Más opciones") }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            if (!uiState.isPackBook) {
-                                DropdownMenuItem(
-                                    text = { Text("Importar receta") },
-                                    leadingIcon = { Icon(Icons.Filled.UploadFile, null) },
-                                    onClick = { showMenu = false; importRecipeLauncher.launch(BACKUP_MIME_TYPES) }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Añadir con foto") },
-                                    leadingIcon = { Icon(Icons.Filled.AddAPhoto, null) },
-                                    onClick = { showMenu = false; showPhotoSourceSheet = true }
-                                )
-                            }
                             DropdownMenuItem(
                                 text = { Text("Exportar este libro") },
                                 onClick = { showMenu = false; viewModel.exportBook(context) }
@@ -186,7 +175,7 @@ fun RecipeListScreen(
         },
         floatingActionButton = {
             if (!selectionMode && !uiState.isPackBook) {
-                ExtendedFloatingActionButton(onClick = onAddRecipeClick, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("Nueva receta") })
+                ExtendedFloatingActionButton(onClick = { showNewRecipeSheet = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("Nueva receta") })
             }
         }
     ) { padding ->
@@ -304,6 +293,16 @@ fun RecipeListScreen(
                     viewModel.clearFilters()
                     showFilters = false
                 }
+            )
+        }
+    }
+
+    if (showNewRecipeSheet) {
+        ModalBottomSheet(onDismissRequest = { showNewRecipeSheet = false }, sheetState = newRecipeSheetState) {
+            NewRecipeSourceSheet(
+                onManualClick = { showNewRecipeSheet = false; onAddRecipeClick() },
+                onFileClick = { showNewRecipeSheet = false; importRecipeLauncher.launch(BACKUP_MIME_TYPES) },
+                onPhotoClick = { showNewRecipeSheet = false; showPhotoSourceSheet = true }
             )
         }
     }

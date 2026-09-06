@@ -1,0 +1,1 @@
+El botón "Nueva receta" ahora abre un menú para elegir cómo darla de alta: a mano, desde un archivo ya exportado (JSON/ZIP) o a partir de una foto. Sustituye a las antiguas opciones "Importar receta" y "Añadir con foto" del menú del libro.
