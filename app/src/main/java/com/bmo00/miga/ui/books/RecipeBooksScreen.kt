@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewHeadline
@@ -78,6 +79,7 @@ fun RecipeBooksScreen(
     onAddBookClick: () -> Unit,
     onEditBookClick: (Long) -> Unit,
     onSearchClick: () -> Unit,
+    onShoppingListClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     val books by viewModel.books.collectAsState()
@@ -110,6 +112,9 @@ fun RecipeBooksScreen(
                     }
                     IconButton(onClick = onSearchClick) {
                         Icon(Icons.Filled.Search, contentDescription = "Buscar recetas")
+                    }
+                    IconButton(onClick = onShoppingListClick) {
+                        Icon(Icons.Filled.ShoppingCart, contentDescription = "Lista de la compra")
                     }
                     IconButton(onClick = onSettingsClick) {
                         Icon(Icons.Filled.Settings, contentDescription = "Ajustes")

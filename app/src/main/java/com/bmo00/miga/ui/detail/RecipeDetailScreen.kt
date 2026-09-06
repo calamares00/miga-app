@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.detail
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Restaurant
@@ -149,6 +151,15 @@ fun RecipeDetailScreen(
                             text = { Text("Mover a otro libro") },
                             leadingIcon = { Icon(Icons.Filled.SwapHoriz, null) },
                             onClick = { showMenu = false; showMoveDialog = true }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Añadir a la lista de la compra") },
+                            leadingIcon = { Icon(Icons.Filled.ShoppingCart, null) },
+                            onClick = {
+                                showMenu = false
+                                viewModel.addIngredientsToShoppingList()
+                                Toast.makeText(context, "Añadido a la lista de la compra", Toast.LENGTH_SHORT).show()
+                            }
                         )
                         if (!currentBookIsPack) {
                             DropdownMenuItem(

@@ -1,0 +1,1 @@
+Nuevo: lista de la compra. Añade recetas (una o varias, desde el buscador) o artículos sueltos, agrupados por categoría, con checkboxes que se guardan aunque cierres la app. Accesible desde el icono del carrito en la pantalla principal o desde el menú de una receta.

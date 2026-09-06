@@ -28,6 +28,8 @@ import com.bmo00.miga.ui.packs.PacksCatalogScreen
 import com.bmo00.miga.ui.packs.PacksCatalogViewModel
 import com.bmo00.miga.ui.search.GlobalSearchScreen
 import com.bmo00.miga.ui.search.GlobalSearchViewModel
+import com.bmo00.miga.ui.shoppinglist.ShoppingListScreen
+import com.bmo00.miga.ui.shoppinglist.ShoppingListViewModel
 import com.bmo00.miga.ui.settings.AboutScreen
 import com.bmo00.miga.ui.settings.HelpScreen
 import com.bmo00.miga.ui.settings.ManageCategoriesScreen
@@ -62,6 +64,7 @@ fun RecetarioNavHost() {
                 onAddBookClick = { navController.navigate(Destinations.bookEditor()) },
                 onEditBookClick = { navController.navigate(Destinations.bookEditor(it)) },
                 onSearchClick = { navController.navigate(Destinations.SEARCH_ROUTE) },
+                onShoppingListClick = { navController.navigate(Destinations.SHOPPING_LIST_ROUTE) },
                 onSettingsClick = { navController.navigate(Destinations.SETTINGS_ROUTE) }
             )
         }
@@ -75,6 +78,13 @@ fun RecetarioNavHost() {
                 onBack = { navController.popBackStack() },
                 onRecipeClick = { navController.navigate(Destinations.detail(it)) }
             )
+        }
+
+        composable(Destinations.SHOPPING_LIST_ROUTE) {
+            val viewModel: ShoppingListViewModel = viewModel(
+                factory = viewModelFactory { initializer { ShoppingListViewModel(repository) } }
+            )
+            ShoppingListScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
         }
 
         composable(

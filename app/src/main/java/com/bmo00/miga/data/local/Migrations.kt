@@ -27,3 +27,26 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         db.execSQL("ALTER TABLE recipe_books ADD COLUMN packVersion INTEGER DEFAULT NULL")
     }
 }
+
+/**
+ * v6 -> v7: añade la tabla de la lista de la compra persistente (ver ShoppingListItemEntity).
+ * Tabla nueva, no toca ninguna existente.
+ */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS shopping_list_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                name TEXT NOT NULL,
+                normalizedName TEXT NOT NULL,
+                quantity REAL,
+                unit TEXT,
+                checked INTEGER NOT NULL DEFAULT 0,
+                createdAt INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_shopping_list_items_normalizedName ON shopping_list_items(normalizedName)")
+    }
+}

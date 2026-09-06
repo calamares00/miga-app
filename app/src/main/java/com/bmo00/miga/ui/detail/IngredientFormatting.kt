@@ -1,26 +1,13 @@
 package com.bmo00.miga.ui.detail
 
 import com.bmo00.miga.data.model.Ingredient
-import kotlin.math.roundToInt
+import com.bmo00.miga.data.model.formatIngredientText
 
-/** Compartido entre RecipeDetailScreen (con reescalado por raciones) y CookModeOverlay (sin reescalar). */
-internal fun formatIngredient(ingredient: Ingredient, scale: Double): String {
-    val quantityPart = ingredient.quantity?.let { formatQuantity(it * scale) }
-    return buildString {
-        if (quantityPart != null) {
-            append(quantityPart)
-            if (!ingredient.unit.isNullOrBlank()) append(" ${ingredient.unit}")
-            append(" de ")
-        }
-        append(ingredient.name)
-    }
-}
-
-internal fun formatQuantity(value: Double): String {
-    val rounded = (value * 100).roundToInt() / 100.0
-    return if (rounded == rounded.toLong().toDouble()) {
-        rounded.toLong().toString()
-    } else {
-        rounded.toString().trimEnd('0').trimEnd('.')
-    }
-}
+/**
+ * Compartido entre RecipeDetailScreen (con reescalado por raciones) y CookModeOverlay (sin
+ * reescalar). Wrapper fino sobre data/model/QuantityFormatting.kt (formato compartido con
+ * RecipeExporter y la lista de la compra), que se mantiene aquí solo para no tocar la firma
+ * `formatIngredient(ingredient, scale)` en sus sitios de uso.
+ */
+internal fun formatIngredient(ingredient: Ingredient, scale: Double): String =
+    formatIngredientText(ingredient.name, ingredient.quantity, ingredient.unit, scale)
