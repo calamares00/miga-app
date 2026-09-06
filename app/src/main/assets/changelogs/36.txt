@@ -1,0 +1,1 @@
+Informe de fallos totalmente local (sin servicios de terceros): si la app se cierra de forma inesperada, al reabrirla puedes ver, copiar o compartir el informe tú mismo, o descartarlo. Además, mejoras de accesibilidad: los iconos que faltaban un texto descriptivo para lectores de pantalla ya lo tienen, y las casillas de ingredientes anuncian correctamente si están marcadas.

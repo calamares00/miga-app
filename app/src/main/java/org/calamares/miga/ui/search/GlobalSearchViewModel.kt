@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class SearchResult(
     val recipeId: Long,
@@ -85,6 +86,32 @@ class GlobalSearchViewModel(private val repository: RecipeRepository) : ViewMode
                 ingredients = emptySet(),
                 onlyFavorites = false
             )
+        }
+    }
+
+    private val _selectedIds = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedIds: StateFlow<Set<Long>> = _selectedIds
+
+    fun toggleSelection(id: Long) {
+        _selectedIds.update { current -> if (id in current) current - id else current + id }
+    }
+
+    fun startSelection(id: Long) {
+        _selectedIds.value = setOf(id)
+    }
+
+    fun clearSelection() {
+        _selectedIds.value = emptySet()
+    }
+
+    /** Añade los ingredientes de todas las recetas seleccionadas a la lista de la compra y sale de selección. */
+    fun addSelectedToShoppingList() {
+        viewModelScope.launch {
+            val ids = _selectedIds.value
+            val recipes = repository.getAllRecipesOnce().filter { it.id in ids }
+            val allIngredients = recipes.flatMap { recipe -> recipe.ingredientGroups.flatMap { it.ingredients } }
+            repository.addIngredientsToShoppingList(allIngredients)
+            _selectedIds.value = emptySet()
         }
     }
 }
