@@ -13,7 +13,7 @@ import kotlinx.serialization.Serializable
 internal data class GeminiRequest(val contents: List<GeminiContent>, val generationConfig: GeminiGenerationConfig)
 
 @Serializable
-internal data class GeminiContent(val parts: List<GeminiPart>)
+internal data class GeminiContent(val parts: List<GeminiPart> = emptyList())
 
 @Serializable
 internal data class GeminiPart(
@@ -31,13 +31,32 @@ internal data class GeminiInlineData(
 internal data class GeminiGenerationConfig(val responseMimeType: String = "application/json")
 
 @Serializable
-internal data class GeminiResponse(val candidates: List<GeminiCandidate> = emptyList())
+internal data class GeminiResponse(
+    val candidates: List<GeminiCandidate> = emptyList(),
+    val promptFeedback: GeminiPromptFeedback? = null
+)
 
 @Serializable
-internal data class GeminiCandidate(val content: GeminiContent? = null)
+internal data class GeminiCandidate(val content: GeminiContent? = null, val finishReason: String? = null)
+
+@Serializable
+internal data class GeminiPromptFeedback(val blockReason: String? = null)
 
 @Serializable
 internal data class GeminiErrorEnvelope(val error: GeminiErrorDetail? = null)
 
 @Serializable
 internal data class GeminiErrorDetail(val message: String? = null)
+
+// Mensaje legible cuando Gemini no ha devuelto texto: o bien la generación se cortó antes de
+// terminar (candidate.finishReason) o bien toda la respuesta se bloqueó de entrada
+// (promptFeedback.blockReason) — sin esto, el llamante solo podría mostrar un "no hay resultado"
+// genérico sin explicar por qué. Compartida entre GeminiVisionClient y GeminiHealthClient.
+internal fun describeGeminiIncompleteResponse(finishReason: String?, blockReason: String?): String = when {
+    blockReason != null -> "Gemini bloqueó la respuesta por su política de contenido ($blockReason)."
+    finishReason == "MAX_TOKENS" -> "Gemini cortó la respuesta antes de terminar (demasiado larga). Prueba con menos fotos a la vez o una foto más sencilla."
+    finishReason == "SAFETY" -> "Gemini bloqueó la respuesta por su política de contenido."
+    finishReason == "RECITATION" -> "Gemini bloqueó la respuesta por posible contenido protegido."
+    finishReason != null -> "Gemini no completó la respuesta (motivo: $finishReason)."
+    else -> "Gemini no devolvió ningún resultado."
+}

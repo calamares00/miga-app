@@ -7,6 +7,7 @@ import com.bmo00.miga.data.vision.GeminiGenerationConfig
 import com.bmo00.miga.data.vision.GeminiPart
 import com.bmo00.miga.data.vision.GeminiRequest
 import com.bmo00.miga.data.vision.GeminiResponse
+import com.bmo00.miga.data.vision.describeGeminiIncompleteResponse
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -53,8 +54,11 @@ object GeminiHealthClient : RecipeHealthClient {
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(GeminiResponse.serializer(), body)
-                    val text = response.candidates.firstOrNull()?.content?.parts?.firstOrNull { it.text != null }?.text
-                        ?: return@withContext RecipeHealthResult.Error("Gemini no devolvió ningún resultado")
+                    val candidate = response.candidates.firstOrNull()
+                    val text = candidate?.content?.parts?.firstOrNull { it.text != null }?.text
+                        ?: return@withContext RecipeHealthResult.Error(
+                            describeGeminiIncompleteResponse(candidate?.finishReason, response.promptFeedback?.blockReason)
+                        )
                     val resultDto = try {
                         json.decodeFromString(RecipeHealthResultDto.serializer(), stripMarkdownFences(text))
                     } catch (e: Exception) {

@@ -1,0 +1,1 @@
+Corrige un fallo al reconocer una receta por foto o valorar lo saludable que es cuando Gemini cortaba la respuesta antes de terminar: ahora se muestra un motivo claro en vez de un error técnico.
