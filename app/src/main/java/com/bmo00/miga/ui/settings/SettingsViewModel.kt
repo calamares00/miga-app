@@ -20,7 +20,9 @@ import com.bmo00.miga.data.remote.UpdateCheckResult
 import com.bmo00.miga.data.remote.UpdateChecker
 import com.bmo00.miga.data.remote.UpdateInfo
 import com.bmo00.miga.data.repository.RecipeRepository
+import com.bmo00.miga.data.vision.DEFAULT_ANTHROPIC_MODEL
 import com.bmo00.miga.data.vision.DEFAULT_GEMINI_MODEL
+import com.bmo00.miga.data.vision.VisionProviderType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -114,6 +116,27 @@ class SettingsViewModel(
 
     fun setGeminiModel(model: String) {
         viewModelScope.launch { settingsRepository.setGeminiModel(model) }
+    }
+
+    val visionProvider: StateFlow<VisionProviderType> = settingsRepository.observeVisionProvider()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), VisionProviderType.GEMINI)
+
+    fun setVisionProvider(provider: VisionProviderType) {
+        viewModelScope.launch { settingsRepository.setVisionProvider(provider) }
+    }
+
+    val anthropicApiKey: StateFlow<String> = settingsRepository.observeAnthropicApiKey()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    fun setAnthropicApiKey(apiKey: String) {
+        viewModelScope.launch { settingsRepository.setAnthropicApiKey(apiKey) }
+    }
+
+    val anthropicModel: StateFlow<String> = settingsRepository.observeAnthropicModel()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_ANTHROPIC_MODEL)
+
+    fun setAnthropicModel(model: String) {
+        viewModelScope.launch { settingsRepository.setAnthropicModel(model) }
     }
 
     val packsCatalogRepo: StateFlow<String> = settingsRepository.observePacksCatalogRepo()

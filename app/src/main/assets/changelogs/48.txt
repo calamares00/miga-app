@@ -1,0 +1,1 @@
+Ahora puedes usar Anthropic Claude, además de Gemini, para reconocer recetas por foto y valorar lo saludable que son. Elige el proveedor y tu propia API key en Ajustes → Importar con IA.

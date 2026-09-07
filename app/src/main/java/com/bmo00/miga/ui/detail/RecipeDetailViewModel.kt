@@ -49,7 +49,8 @@ class RecipeDetailViewModel(
         healthCheckStarted = true
         viewModelScope.launch {
             val current = recipe.filterNotNull().first()
-            val apiKey = settingsRepository.observeGeminiApiKey().first()
+            val provider = settingsRepository.observeVisionProvider().first()
+            val apiKey = settingsRepository.apiKeyFor(provider)
             if (apiKey.isBlank()) {
                 _healthState.value = HealthState.NotConfigured
                 return@launch
@@ -59,8 +60,7 @@ class RecipeDetailViewModel(
                 return@launch
             }
             _healthState.value = HealthState.Loading
-            val provider = settingsRepository.observeVisionProvider().first()
-            val model = settingsRepository.observeGeminiModel().first()
+            val model = settingsRepository.modelFor(provider)
             val ingredientsText = current.ingredientGroups.joinToString("\n") { group ->
                 val header = group.name?.let { "$it:\n" }.orEmpty()
                 header + group.ingredients.joinToString("\n") { "- ${formatIngredient(it, 1.0)}" }

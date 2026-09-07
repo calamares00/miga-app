@@ -11,9 +11,11 @@ import com.bmo00.miga.data.model.RecipeListViewMode
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
 import com.bmo00.miga.data.remote.DEFAULT_PACKS_CATALOG_REPO
+import com.bmo00.miga.data.vision.DEFAULT_ANTHROPIC_MODEL
 import com.bmo00.miga.data.vision.DEFAULT_GEMINI_MODEL
 import com.bmo00.miga.data.vision.VisionProviderType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.settingsDataStore by preferencesDataStore(name = "settings")
@@ -29,6 +31,8 @@ class SettingsRepository(private val context: Context) {
     private val visionProviderKey = stringPreferencesKey("vision_provider")
     private val geminiApiKeyKey = stringPreferencesKey("gemini_api_key")
     private val geminiModelKey = stringPreferencesKey("gemini_model")
+    private val anthropicApiKeyKey = stringPreferencesKey("anthropic_api_key")
+    private val anthropicModelKey = stringPreferencesKey("anthropic_model")
     private val ttsVoiceNameKey = stringPreferencesKey("tts_voice_name")
     private val lastSeenVersionCodeKey = intPreferencesKey("last_seen_version_code")
     private val packsCatalogRepoKey = stringPreferencesKey("packs_catalog_repo")
@@ -120,6 +124,34 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setGeminiModel(model: String) {
         context.settingsDataStore.edit { prefs -> prefs[geminiModelKey] = model.trim() }
+    }
+
+    /** API key de Anthropic (Claude) introducida por el propio usuario (BYOK); vacía si no se ha configurado. */
+    fun observeAnthropicApiKey(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[anthropicApiKeyKey].orEmpty() }
+
+    suspend fun setAnthropicApiKey(apiKey: String) {
+        context.settingsDataStore.edit { prefs -> prefs[anthropicApiKeyKey] = apiKey.trim() }
+    }
+
+    /** Id del modelo de Claude a usar (ver `data/vision/AnthropicModels.kt`); uno de la lista o uno escrito a mano. */
+    fun observeAnthropicModel(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[anthropicModelKey] ?: DEFAULT_ANTHROPIC_MODEL }
+
+    suspend fun setAnthropicModel(model: String) {
+        context.settingsDataStore.edit { prefs -> prefs[anthropicModelKey] = model.trim() }
+    }
+
+    /** Resuelve la API key configurada para [provider] (una por proveedor, BYOK). */
+    suspend fun apiKeyFor(provider: VisionProviderType): String = when (provider) {
+        VisionProviderType.GEMINI -> observeGeminiApiKey().first()
+        VisionProviderType.ANTHROPIC -> observeAnthropicApiKey().first()
+    }
+
+    /** Resuelve el modelo configurado para [provider]. */
+    suspend fun modelFor(provider: VisionProviderType): String = when (provider) {
+        VisionProviderType.GEMINI -> observeGeminiModel().first()
+        VisionProviderType.ANTHROPIC -> observeAnthropicModel().first()
     }
 
     /** Nombre interno de la voz de Android TTS elegida para el modo cocina; null = voz por defecto del sistema. */

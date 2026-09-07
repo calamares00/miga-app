@@ -44,13 +44,13 @@ class BulkImportViewModel(
         if (started) return
         started = true
         viewModelScope.launch {
-            val apiKey = settingsRepository.observeGeminiApiKey().first()
+            val provider = settingsRepository.observeVisionProvider().first()
+            val apiKey = settingsRepository.apiKeyFor(provider)
             if (apiKey.isBlank()) {
-                _rows.update { rows -> rows.map { it.copy(state = BulkImportRowState.Failed("Configura una API key de Gemini en Ajustes")) } }
+                _rows.update { rows -> rows.map { it.copy(state = BulkImportRowState.Failed("Configura una API key de ${provider.label} en Ajustes")) } }
                 return@launch
             }
-            val provider = settingsRepository.observeVisionProvider().first()
-            val model = settingsRepository.observeGeminiModel().first()
+            val model = settingsRepository.modelFor(provider)
             photoUris.indices.forEach { index -> processOne(context, index, apiKey, provider, model) }
         }
     }
@@ -58,13 +58,13 @@ class BulkImportViewModel(
     /** Reintenta una única foto que falló, sin tocar las demás filas. */
     fun retry(context: Context, index: Int) {
         viewModelScope.launch {
-            val apiKey = settingsRepository.observeGeminiApiKey().first()
+            val provider = settingsRepository.observeVisionProvider().first()
+            val apiKey = settingsRepository.apiKeyFor(provider)
             if (apiKey.isBlank()) {
-                updateRow(index) { it.copy(state = BulkImportRowState.Failed("Configura una API key de Gemini en Ajustes")) }
+                updateRow(index) { it.copy(state = BulkImportRowState.Failed("Configura una API key de ${provider.label} en Ajustes")) }
                 return@launch
             }
-            val provider = settingsRepository.observeVisionProvider().first()
-            val model = settingsRepository.observeGeminiModel().first()
+            val model = settingsRepository.modelFor(provider)
             processOne(context, index, apiKey, provider, model)
         }
     }

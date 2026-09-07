@@ -86,7 +86,9 @@ import com.bmo00.miga.data.export.RecipeImportResult
 import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
+import com.bmo00.miga.data.vision.ANTHROPIC_MODELS
 import com.bmo00.miga.data.vision.GEMINI_MODELS
+import com.bmo00.miga.data.vision.VisionProviderType
 import com.bmo00.miga.ui.common.BACKUP_MIME_TYPES
 import com.bmo00.miga.ui.security.BiometricAuthenticator
 import kotlinx.coroutines.launch
@@ -114,6 +116,10 @@ fun SettingsScreen(
     val packsCatalogRepo by viewModel.packsCatalogRepo.collectAsState()
     val geminiModel by viewModel.geminiModel.collectAsState()
     var modelMenuExpanded by remember { mutableStateOf(false) }
+    val visionProvider by viewModel.visionProvider.collectAsState()
+    val anthropicApiKey by viewModel.anthropicApiKey.collectAsState()
+    val anthropicModel by viewModel.anthropicModel.collectAsState()
+    var anthropicModelMenuExpanded by remember { mutableStateOf(false) }
     val ttsVoiceName by viewModel.ttsVoiceName.collectAsState()
     var voiceMenuExpanded by remember { mutableStateOf(false) }
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
@@ -248,68 +254,143 @@ fun SettingsScreen(
                 icon = Icons.Filled.AutoAwesome,
                 title = "Importar con IA (beta)",
                 description = "Reconoce el texto de una foto de una receta (libro, revista, escrita a mano) " +
-                    "usando Google Gemini. La foto se envía a Google para procesarla; no se " +
-                    "guarda ninguna copia salvo la que decidas añadir tú a la receta."
+                    "y valora lo saludable que es, usando el proveedor de IA que elijas. La foto o el " +
+                    "texto se envían a ese proveedor para procesarlos; no se guarda ninguna copia salvo " +
+                    "la que decidas añadir tú a la receta."
             ) {
-                OutlinedTextField(
-                    value = geminiApiKey,
-                    onValueChange = { viewModel.setGeminiApiKey(it) },
-                    label = { Text("API key de Gemini") },
-                    placeholder = { Text("Consíguela gratis en aistudio.google.com") },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                val isCustomModel = geminiModel !in GEMINI_MODELS
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        value = if (isCustomModel) "Personalizado" else geminiModel,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Modelo de Gemini") },
-                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = "Abrir selector de modelo") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    // Capa transparente encima del campo para abrir el menú al tocar, sin que el
-                    // propio TextField (de solo lectura) capture el toque y muestre el cursor.
-                    Box(
+                VisionProviderType.entries.forEach { provider ->
+                    Row(
                         modifier = Modifier
-                            .matchParentSize()
-                            .clickable { modelMenuExpanded = true }
-                    )
-                    DropdownMenu(
-                        expanded = modelMenuExpanded,
-                        onDismissRequest = { modelMenuExpanded = false },
-                        modifier = Modifier.fillMaxWidth()
+                            .fillMaxWidth()
+                            .clickable { viewModel.setVisionProvider(provider) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        GEMINI_MODELS.forEach { modelId ->
+                        RadioButton(selected = visionProvider == provider, onClick = { viewModel.setVisionProvider(provider) })
+                        Text(provider.label, modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+
+                if (visionProvider == VisionProviderType.GEMINI) {
+                    OutlinedTextField(
+                        value = geminiApiKey,
+                        onValueChange = { viewModel.setGeminiApiKey(it) },
+                        label = { Text("API key de Gemini") },
+                        placeholder = { Text("Consíguela gratis en aistudio.google.com") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    val isCustomModel = geminiModel !in GEMINI_MODELS
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = if (isCustomModel) "Personalizado" else geminiModel,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Modelo de Gemini") },
+                            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = "Abrir selector de modelo") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        // Capa transparente encima del campo para abrir el menú al tocar, sin que el
+                        // propio TextField (de solo lectura) capture el toque y muestre el cursor.
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable { modelMenuExpanded = true }
+                        )
+                        DropdownMenu(
+                            expanded = modelMenuExpanded,
+                            onDismissRequest = { modelMenuExpanded = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            GEMINI_MODELS.forEach { modelId ->
+                                DropdownMenuItem(
+                                    text = { Text(modelId) },
+                                    onClick = {
+                                        viewModel.setGeminiModel(modelId)
+                                        modelMenuExpanded = false
+                                    }
+                                )
+                            }
                             DropdownMenuItem(
-                                text = { Text(modelId) },
+                                text = { Text("Personalizado…") },
                                 onClick = {
-                                    viewModel.setGeminiModel(modelId)
+                                    viewModel.setGeminiModel("")
                                     modelMenuExpanded = false
                                 }
                             )
                         }
-                        DropdownMenuItem(
-                            text = { Text("Personalizado…") },
-                            onClick = {
-                                viewModel.setGeminiModel("")
-                                modelMenuExpanded = false
-                            }
+                    }
+                    if (isCustomModel) {
+                        OutlinedTextField(
+                            value = geminiModel,
+                            onValueChange = { viewModel.setGeminiModel(it) },
+                            label = { Text("Id del modelo") },
+                            placeholder = { Text("p. ej. gemini-3.6-flash") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
-                }
-                if (isCustomModel) {
+                } else {
                     OutlinedTextField(
-                        value = geminiModel,
-                        onValueChange = { viewModel.setGeminiModel(it) },
-                        label = { Text("Id del modelo") },
-                        placeholder = { Text("p. ej. gemini-3.6-flash") },
+                        value = anthropicApiKey,
+                        onValueChange = { viewModel.setAnthropicApiKey(it) },
+                        label = { Text("API key de Anthropic") },
+                        placeholder = { Text("Consíguela en console.anthropic.com") },
                         singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    val isCustomAnthropicModel = anthropicModel !in ANTHROPIC_MODELS
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = if (isCustomAnthropicModel) "Personalizado" else anthropicModel,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Modelo de Claude") },
+                            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = "Abrir selector de modelo") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable { anthropicModelMenuExpanded = true }
+                        )
+                        DropdownMenu(
+                            expanded = anthropicModelMenuExpanded,
+                            onDismissRequest = { anthropicModelMenuExpanded = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            ANTHROPIC_MODELS.forEach { modelId ->
+                                DropdownMenuItem(
+                                    text = { Text(modelId) },
+                                    onClick = {
+                                        viewModel.setAnthropicModel(modelId)
+                                        anthropicModelMenuExpanded = false
+                                    }
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text("Personalizado…") },
+                                onClick = {
+                                    viewModel.setAnthropicModel("")
+                                    anthropicModelMenuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                    if (isCustomAnthropicModel) {
+                        OutlinedTextField(
+                            value = anthropicModel,
+                            onValueChange = { viewModel.setAnthropicModel(it) },
+                            label = { Text("Id del modelo") },
+                            placeholder = { Text("p. ej. claude-haiku-4-5") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
 
