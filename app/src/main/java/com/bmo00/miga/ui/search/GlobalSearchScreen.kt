@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -65,7 +66,9 @@ import com.bmo00.miga.ui.components.FilterSheetContent
 @Composable
 fun GlobalSearchScreen(
     viewModel: GlobalSearchViewModel,
-    onRecipeClick: (Long) -> Unit
+    onRecipeClick: (Long) -> Unit,
+    title: String = "Buscar recetas",
+    showQueryField: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
@@ -95,7 +98,7 @@ fun GlobalSearchScreen(
             } else {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                    title = { Text("Buscar recetas") }
+                    title = { Text(title) }
                 )
             }
         }
@@ -105,14 +108,18 @@ fun GlobalSearchScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
-                    value = filter.query,
-                    onValueChange = viewModel::updateQuery,
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Nombre, ingrediente, etiqueta...") },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    singleLine = true
-                )
+                if (showQueryField) {
+                    OutlinedTextField(
+                        value = filter.query,
+                        onValueChange = viewModel::updateQuery,
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Nombre, ingrediente, etiqueta...") },
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        singleLine = true
+                    )
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
                 IconButton(onClick = { showFilters = true }) {
                     BadgedBox(badge = { if (filter.isActive) Badge() }) {
                         Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
@@ -126,10 +133,10 @@ fun GlobalSearchScreen(
                 }
                 uiState.results.isEmpty() -> Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
                     Text(
-                        text = if (filter.query.isBlank() && !filter.isActive) {
-                            "Busca por nombre, ingrediente, etiqueta, utensilio o dificultad."
-                        } else {
-                            "No se encontraron recetas."
+                        text = when {
+                            !showQueryField -> "Aún no tienes recetas favoritas.\nToca el corazón de una receta para añadirla aquí."
+                            filter.query.isBlank() && !filter.isActive -> "Busca por nombre, ingrediente, etiqueta, utensilio o dificultad."
+                            else -> "No se encontraron recetas."
                         },
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

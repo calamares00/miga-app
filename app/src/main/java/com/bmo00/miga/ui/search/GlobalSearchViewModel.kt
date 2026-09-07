@@ -41,9 +41,12 @@ private data class FilterOptions(
     val ingredientNames: List<String>
 )
 
-class GlobalSearchViewModel(private val repository: RecipeRepository) : ViewModel() {
+class GlobalSearchViewModel(
+    private val repository: RecipeRepository,
+    initialOnlyFavorites: Boolean = false
+) : ViewModel() {
 
-    private val _filter = MutableStateFlow(RecipeFilter())
+    private val _filter = MutableStateFlow(RecipeFilter(onlyFavorites = initialOnlyFavorites))
     val filter: StateFlow<RecipeFilter> = _filter
 
     private val filterOptions = combine(

@@ -3,6 +3,7 @@ package com.bmo00.miga.ui.navigation
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -67,6 +68,7 @@ private data class BottomTab(val route: String, val label: String, val icon: Ima
 
 private val BOTTOM_TABS = listOf(
     BottomTab(Destinations.BOOKS_ROUTE, "Libros", Icons.Outlined.MenuBook),
+    BottomTab(Destinations.FAVORITES_ROUTE, "Favoritos", Icons.Filled.Favorite),
     BottomTab(Destinations.SHOPPING_LIST_ROUTE, "Compra", Icons.Filled.ShoppingCart),
     BottomTab(Destinations.SEARCH_ROUTE, "Buscar", Icons.Filled.Search),
     BottomTab(Destinations.SETTINGS_ROUTE, "Ajustes", Icons.Filled.Settings)
@@ -127,6 +129,18 @@ fun RecetarioNavHost() {
                 GlobalSearchScreen(
                     viewModel = viewModel,
                     onRecipeClick = { navController.navigate(Destinations.detail(it)) }
+                )
+            }
+
+            composable(Destinations.FAVORITES_ROUTE) {
+                val viewModel: GlobalSearchViewModel = viewModel(
+                    factory = viewModelFactory { initializer { GlobalSearchViewModel(repository, initialOnlyFavorites = true) } }
+                )
+                GlobalSearchScreen(
+                    viewModel = viewModel,
+                    onRecipeClick = { navController.navigate(Destinations.detail(it)) },
+                    title = "Favoritas",
+                    showQueryField = false
                 )
             }
 
