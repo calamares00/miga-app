@@ -313,7 +313,7 @@ private fun RecipeDetailContent(
                             )
                         }
                         HealthState.NotConfigured -> Text(
-                            "Configura una API key de Gemini en Ajustes para ver esto.",
+                            "Configura un proveedor de IA en Ajustes para ver esto.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

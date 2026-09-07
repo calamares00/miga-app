@@ -8,10 +8,10 @@ import org.calamares.miga.data.vision.GeminiPart
 import org.calamares.miga.data.vision.GeminiRequest
 import org.calamares.miga.data.vision.GeminiResponse
 import org.calamares.miga.data.vision.describeGeminiIncompleteResponse
+import org.calamares.miga.data.vision.stripMarkdownFences
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.net.HttpURLConnection
 import java.net.URL
@@ -27,7 +27,7 @@ object GeminiHealthClient : RecipeHealthClient {
     override suspend fun analyzeHealthiness(ingredientsText: String, stepsText: String, apiKey: String, model: String): RecipeHealthResult =
         withContext(Dispatchers.IO) {
             try {
-                val prompt = buildPrompt(ingredientsText, stepsText)
+                val prompt = buildHealthPrompt(ingredientsText, stepsText)
                 val requestBody = json.encodeToString(
                     GeminiRequest.serializer(),
                     GeminiRequest(
@@ -76,37 +76,4 @@ object GeminiHealthClient : RecipeHealthClient {
                 RecipeHealthResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
             }
         }
-
-    private fun buildPrompt(ingredientsText: String, stepsText: String): String = """
-Eres un asistente que evalúa lo saludable que es una receta a partir de sus ingredientes y su
-forma de cocinado.
-
-Ingredientes:
-$ingredientsText
-
-Preparación:
-$stepsText
-
-Devuelve ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto adicional:
-{ "colorLevel": "GREEN" | "YELLOW" | "RED", "description": "string, 2-4 frases explicando por qué" }
-GREEN = receta equilibrada y saludable. YELLOW = moderada (algún exceso de grasa, azúcar o sal,
-procesados, fritos ocasionales). RED = poco saludable (frituras, mucho azúcar o grasa saturada,
-ultraprocesados, sin verdura ni proteína magra). Basa el análisis solo en lo indicado, sin inventar
-datos nutricionales exactos.
-""".trimIndent()
-
-    // A veces Gemini envuelve el JSON en un bloque de markdown pese a pedirle
-    // responseMimeType = "application/json"; se lo quitamos antes de parsear.
-    private fun stripMarkdownFences(raw: String): String {
-        val trimmed = raw.trim()
-        if (!trimmed.startsWith("```")) return trimmed
-        return trimmed
-            .removePrefix("```json")
-            .removePrefix("```")
-            .removeSuffix("```")
-            .trim()
-    }
 }
-
-@Serializable
-private data class RecipeHealthResultDto(val colorLevel: String = "YELLOW", val description: String = "")

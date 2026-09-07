@@ -15,32 +15,6 @@ import java.util.Base64
 private const val GEMINI_ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 private const val TIMEOUT_MILLIS = 30000
 
-private const val EXTRACTION_PROMPT = """
-Eres un asistente que transcribe recetas de cocina a partir de una foto (de un libro, revista o
-receta manuscrita, normalmente en español, a veces con el texto girado o en columnas). Devuelve
-ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto adicional:
-{
-  "name": "string",
-  "categoryName": "string o null",
-  "difficulty": "FACIL" | "MEDIA" | "DIFICIL",
-  "prepTimeMinutes": number o null,
-  "cookTimeMinutes": number o null,
-  "servings": number,
-  "notes": "string",
-  "source": "string",
-  "ingredientGroups": [ { "name": "string o null", "ingredients": [ { "name": "string", "quantity": number o null, "unit": "string o null" } ] } ],
-  "stepGroups": [ { "name": "string o null", "instructions": ["string", ...] } ],
-  "tags": ["string", ...],
-  "utensils": ["string", ...]
-}
-Separa cada paso de la elaboración como una instrucción independiente del array "instructions", en
-el mismo orden en que aparecen en el texto. Si no puedes determinar algún dato, usa null (o una
-lista vacía) en vez de inventarlo. Si no reconoces ninguna receta en la imagen, deja "name" vacío.
-Si se incluyen varias imágenes en esta petición, todas son páginas o fragmentos de la MISMA
-receta (por ejemplo, fotos consecutivas de un libro de cocina); combina la información de todas
-ellas en un único resultado, en el orden en que aparecen las imágenes.
-"""
-
 /** Implementación de [RecipeVisionClient] contra la API REST de Google Gemini (generateContent). */
 object GeminiVisionClient : RecipeVisionClient {
 
@@ -58,7 +32,7 @@ object GeminiVisionClient : RecipeVisionClient {
                         contents = listOf(
                             GeminiContent(
                                 parts = images.map { GeminiPart(inlineData = GeminiInlineData(it.mimeType, Base64.getEncoder().encodeToString(it.bytes))) } +
-                                    GeminiPart(text = EXTRACTION_PROMPT)
+                                    GeminiPart(text = RECIPE_EXTRACTION_PROMPT)
                             )
                         ),
                         generationConfig = GeminiGenerationConfig()
@@ -111,16 +85,4 @@ object GeminiVisionClient : RecipeVisionClient {
                 RecipeVisionResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
             }
         }
-
-    // A veces Gemini envuelve el JSON en un bloque de markdown pese a pedirle
-    // responseMimeType = "application/json"; se lo quitamos antes de parsear.
-    private fun stripMarkdownFences(raw: String): String {
-        val trimmed = raw.trim()
-        if (!trimmed.startsWith("```")) return trimmed
-        return trimmed
-            .removePrefix("```json")
-            .removePrefix("```")
-            .removeSuffix("```")
-            .trim()
-    }
 }

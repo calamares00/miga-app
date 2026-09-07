@@ -113,9 +113,10 @@ class RecipeEditorViewModel(
         visionStarted = true
         viewModelScope.launch {
             _visionState.value = VisionState.Loading
-            val apiKey = settingsRepository.observeGeminiApiKey().first()
+            val provider = settingsRepository.observeVisionProvider().first()
+            val apiKey = settingsRepository.apiKeyFor(provider)
             if (apiKey.isBlank()) {
-                _visionState.value = VisionState.Error("Configura una API key de Gemini en Ajustes")
+                _visionState.value = VisionState.Error("Configura una API key de ${provider.label} en Ajustes")
                 return@launch
             }
             // Si alguna página falla al leerse pero otras sí, seguimos con las que se pudieron
@@ -127,8 +128,7 @@ class RecipeEditorViewModel(
                 _visionState.value = VisionState.Error("No se pudo leer ninguna de las fotos")
                 return@launch
             }
-            val provider = settingsRepository.observeVisionProvider().first()
-            val model = settingsRepository.observeGeminiModel().first()
+            val model = settingsRepository.modelFor(provider)
             when (val result = visionClientFor(provider).extractRecipe(images, apiKey, model)) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
