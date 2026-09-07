@@ -1,0 +1,1 @@
+Al editar una receta o un libro, si intentas salir sin guardar (con atrás o el aspa) se te avisa antes de perder los cambios.
