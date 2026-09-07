@@ -36,6 +36,8 @@ class RecipeBookEditorViewModel(
     var isPack by mutableStateOf(false)
         private set
 
+    private var initialSnapshot: BookSnapshot? = null
+
     init {
         if (isEditing) {
             viewModelScope.launch {
@@ -51,8 +53,6 @@ class RecipeBookEditorViewModel(
             initialSnapshot = BookSnapshot(name, coverPhotoUri)
         }
     }
-
-    private var initialSnapshot: BookSnapshot? = null
 
     /** Se comprueba al intentar salir del editor (botón atrás o icono de cancelar) para avisar antes de perder cambios. */
     fun hasUnsavedChanges(): Boolean = initialSnapshot?.let { it != BookSnapshot(name, coverPhotoUri) } ?: false
