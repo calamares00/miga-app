@@ -7,6 +7,7 @@ import org.calamares.miga.data.vision.GeminiGenerationConfig
 import org.calamares.miga.data.vision.GeminiPart
 import org.calamares.miga.data.vision.GeminiRequest
 import org.calamares.miga.data.vision.GeminiResponse
+import org.calamares.miga.data.vision.describeGeminiIncompleteResponse
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -53,8 +54,11 @@ object GeminiHealthClient : RecipeHealthClient {
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(GeminiResponse.serializer(), body)
-                    val text = response.candidates.firstOrNull()?.content?.parts?.firstOrNull { it.text != null }?.text
-                        ?: return@withContext RecipeHealthResult.Error("Gemini no devolvió ningún resultado")
+                    val candidate = response.candidates.firstOrNull()
+                    val text = candidate?.content?.parts?.firstOrNull { it.text != null }?.text
+                        ?: return@withContext RecipeHealthResult.Error(
+                            describeGeminiIncompleteResponse(candidate?.finishReason, response.promptFeedback?.blockReason)
+                        )
                     val resultDto = try {
                         json.decodeFromString(RecipeHealthResultDto.serializer(), stripMarkdownFences(text))
                     } catch (e: Exception) {

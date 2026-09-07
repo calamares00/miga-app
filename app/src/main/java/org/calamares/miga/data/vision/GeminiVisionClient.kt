@@ -83,8 +83,11 @@ object GeminiVisionClient : RecipeVisionClient {
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(GeminiResponse.serializer(), body)
-                    val text = response.candidates.firstOrNull()?.content?.parts?.firstOrNull { it.text != null }?.text
-                        ?: return@withContext RecipeVisionResult.Error("Gemini no devolvió ningún resultado")
+                    val candidate = response.candidates.firstOrNull()
+                    val text = candidate?.content?.parts?.firstOrNull { it.text != null }?.text
+                        ?: return@withContext RecipeVisionResult.Error(
+                            describeGeminiIncompleteResponse(candidate?.finishReason, response.promptFeedback?.blockReason)
+                        )
                     val recipe = try {
                         json.decodeFromString(RecipeVisionResultDto.serializer(), stripMarkdownFences(text))
                     } catch (e: Exception) {
