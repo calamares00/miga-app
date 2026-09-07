@@ -1,0 +1,1 @@
+Nueva pestaña "Favoritos" en la barra de navegación: muestra solo tus recetas favoritas, con los mismos filtros y orden que el buscador.
