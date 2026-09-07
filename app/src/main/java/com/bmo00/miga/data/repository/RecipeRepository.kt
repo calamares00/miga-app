@@ -3,6 +3,7 @@ package com.bmo00.miga.data.repository
 import androidx.room.withTransaction
 import com.bmo00.miga.data.export.RecipeExportDto
 import com.bmo00.miga.data.local.AppDatabase
+import com.bmo00.miga.data.local.PhotoStorage
 import com.bmo00.miga.data.local.entity.CategoryEntity
 import com.bmo00.miga.data.local.entity.IngredientCatalogEntity
 import com.bmo00.miga.data.local.entity.IngredientCategoryEntity
@@ -42,6 +43,9 @@ import java.util.UUID
 
 /** Se lanza al intentar borrar un libro de recetas que todavía tiene recetas dentro. */
 class RecipeBookNotEmptyException(val recipeCount: Int) : Exception()
+
+/** Resultado de [RecipeRepository.wipeUserRecipesAndBooks]. */
+data class WipeResult(val bookCount: Int, val recipeCount: Int)
 
 class RecipeRepository(private val db: AppDatabase) {
 
@@ -502,6 +506,27 @@ class RecipeRepository(private val db: AppDatabase) {
         val count = recipeBookDao.countRecipes(id)
         if (count > 0) throw RecipeBookNotEmptyException(count)
         recipeBookDao.delete(id)
+    }
+
+    /**
+     * Borra todos los libros propios del usuario (no los packs instalados, de solo lectura) junto
+     * con sus recetas y las fotos asociadas (portadas de libro + fotos de receta). Pensado para
+     * dejar la app en estado limpio justo antes de importar una copia de seguridad completa.
+     */
+    suspend fun wipeUserRecipesAndBooks(): WipeResult {
+        val ownBooks = getAllRecipeBooksOnce().filter { !it.isPack }
+        val ownBookIds = ownBooks.map { it.id }.toSet()
+        val ownRecipes = getAllRecipesOnce().filter { it.recipeBookId in ownBookIds }
+        val photoUris = ownRecipes.flatMap { recipe -> recipe.photos.map { it.uri } } + ownBooks.mapNotNull { it.coverPhotoUri }
+
+        db.withTransaction {
+            ownBookIds.forEach { bookId ->
+                recipeDao.deleteAllForBook(bookId)
+                recipeBookDao.delete(bookId)
+            }
+        }
+        photoUris.forEach { PhotoStorage.deleteFile(it) }
+        return WipeResult(bookCount = ownBooks.size, recipeCount = ownRecipes.size)
     }
 
     /**

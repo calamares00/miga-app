@@ -41,6 +41,11 @@ sealed interface LibraryImportResult {
     data class Error(val reason: String) : LibraryImportResult
 }
 
+sealed interface LibraryImportParseResult {
+    data class Success(val dto: LibraryExportDto, val entries: Map<String, ByteArray>) : LibraryImportParseResult
+    data class Error(val reason: String) : LibraryImportParseResult
+}
+
 sealed interface PackImportResult {
     data class Success(val bookId: Long) : PackImportResult
     data class Error(val reason: String) : PackImportResult
@@ -204,21 +209,32 @@ object RecipeExporter {
         }
     }
 
-    /** Importa una copia de seguridad (.json plano o .zip con fotos), migrando esquemas antiguos. */
-    suspend fun importLibrary(context: Context, source: Uri, repository: RecipeRepository): LibraryImportResult = withContext(Dispatchers.IO) {
+    /** Lee y valida un backup (.json plano o .zip con fotos) sin escribir nada en la base de datos. */
+    suspend fun parseLibraryImport(context: Context, source: Uri): LibraryImportParseResult = withContext(Dispatchers.IO) {
         try {
             val bytes = context.contentResolver.openInputStream(source)?.use { it.readBytes() }
-                ?: return@withContext LibraryImportResult.Error("No se pudo abrir el archivo")
+                ?: return@withContext LibraryImportParseResult.Error("No se pudo abrir el archivo")
             val isZip = isZip(bytes)
             val entries = if (isZip) readZipEntries(bytes) else emptyMap<String, ByteArray>()
             val manifestText = if (isZip) {
                 entries["manifest.json"]?.toString(Charsets.UTF_8)
-                    ?: return@withContext LibraryImportResult.Error("El archivo ZIP no contiene manifest.json")
+                    ?: return@withContext LibraryImportParseResult.Error("El archivo ZIP no contiene manifest.json")
             } else {
                 bytes.toString(Charsets.UTF_8)
             }
             val migrated = migrateJson(manifestText, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
             val dto = json.decodeFromJsonElement(LibraryExportDto.serializer(), migrated)
+            LibraryImportParseResult.Success(dto, entries)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            LibraryImportParseResult.Error(e.message ?: e::class.simpleName ?: "El archivo no es una copia de seguridad válida")
+        }
+    }
+
+    /** Escribe en la base de datos un backup ya parseado y validado por [parseLibraryImport]. */
+    suspend fun importParsedLibrary(context: Context, dto: LibraryExportDto, entries: Map<String, ByteArray>, repository: RecipeRepository): LibraryImportResult = withContext(Dispatchers.IO) {
+        try {
             val bookIdsByName = mutableMapOf<String, Long>()
             dto.recipes.forEach { recipeDto ->
                 val bookId = bookIdsByName.getOrPut(recipeDto.recipeBookName) {

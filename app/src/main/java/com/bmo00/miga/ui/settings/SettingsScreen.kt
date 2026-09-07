@@ -81,6 +81,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.bmo00.miga.BuildConfig
+import com.bmo00.miga.data.export.LibraryImportParseResult
 import com.bmo00.miga.data.export.RecipeExportDto
 import com.bmo00.miga.data.export.RecipeImportResult
 import com.bmo00.miga.data.model.RecipePhoto
@@ -151,10 +152,14 @@ fun SettingsScreen(
             scope.launch { snackbarHostState.showSnackbar("Copia de seguridad exportada") }
         }
     }
+    var pendingLibraryImport by remember { mutableStateOf<LibraryImportParseResult.Success?>(null) }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            viewModel.importLibrary(context, uri) { message ->
-                scope.launch { snackbarHostState.showSnackbar(message) }
+            scope.launch {
+                when (val result = viewModel.validateLibraryImport(context, uri)) {
+                    is LibraryImportParseResult.Error -> snackbarHostState.showSnackbar("No se pudo importar: ${result.reason}")
+                    is LibraryImportParseResult.Success -> pendingLibraryImport = result
+                }
             }
         }
     }
@@ -586,6 +591,41 @@ fun SettingsScreen(
                 ) { Text("Importar") }
             },
             dismissButton = { TextButton(onClick = { pendingRecipeImport = null }) { Text("Cancelar") } }
+        )
+    }
+
+    pendingLibraryImport?.let { parsed ->
+        AlertDialog(
+            onDismissRequest = { pendingLibraryImport = null },
+            title = { Text("Importar copia de seguridad") },
+            text = {
+                Text(
+                    "Se van a importar ${parsed.dto.recipes.size} receta(s). ¿Quieres borrar antes tus " +
+                        "libros y recetas actuales (con sus fotos) para dejarlo limpio, o añadir el " +
+                        "contenido importado a lo que ya tienes? Los packs instalados no se ven afectados."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val toImport = parsed
+                    pendingLibraryImport = null
+                    viewModel.confirmLibraryImport(context, toImport, wipeFirst = true) { message ->
+                        scope.launch { snackbarHostState.showSnackbar(message) }
+                    }
+                }) { Text("Borrar todo e importar", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { pendingLibraryImport = null }) { Text("Cancelar") }
+                    TextButton(onClick = {
+                        val toImport = parsed
+                        pendingLibraryImport = null
+                        viewModel.confirmLibraryImport(context, toImport, wipeFirst = false) { message ->
+                            scope.launch { snackbarHostState.showSnackbar(message) }
+                        }
+                    }) { Text("Añadir sin borrar") }
+                }
+            }
         )
     }
 }

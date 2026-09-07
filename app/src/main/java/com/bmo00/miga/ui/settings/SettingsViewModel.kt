@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bmo00.miga.BuildConfig
+import com.bmo00.miga.data.export.LibraryImportParseResult
 import com.bmo00.miga.data.export.LibraryImportResult
 import com.bmo00.miga.data.export.RecipeExportDto
 import com.bmo00.miga.data.export.RecipeExporter
@@ -92,10 +93,19 @@ class SettingsViewModel(
         }
     }
 
-    fun importLibrary(context: Context, source: Uri, onMessage: (String) -> Unit) {
+    /** Lee y valida el archivo elegido sin escribir nada; el resultado decide si se muestra el
+     *  diálogo de "borrar antes de importar" o un error, sin haber tocado la base de datos. */
+    suspend fun validateLibraryImport(context: Context, source: Uri): LibraryImportParseResult =
+        RecipeExporter.parseLibraryImport(context, source)
+
+    fun confirmLibraryImport(context: Context, parsed: LibraryImportParseResult.Success, wipeFirst: Boolean, onMessage: (String) -> Unit) {
         viewModelScope.launch {
-            when (val result = RecipeExporter.importLibrary(context, source, repository)) {
-                is LibraryImportResult.Success -> onMessage("Se importaron ${result.count} recetas")
+            val wipeMessage = if (wipeFirst) {
+                val result = repository.wipeUserRecipesAndBooks()
+                "Se borraron ${result.bookCount} libro(s) y ${result.recipeCount} receta(s). "
+            } else ""
+            when (val result = RecipeExporter.importParsedLibrary(context, parsed.dto, parsed.entries, repository)) {
+                is LibraryImportResult.Success -> onMessage("$wipeMessage" + "Se importaron ${result.count} recetas")
                 is LibraryImportResult.Error -> onMessage("No se pudo importar: ${result.reason}")
             }
         }

@@ -1,0 +1,1 @@
+Al importar una copia de seguridad, ahora se valida el archivo antes de tocar nada y se pregunta si quieres borrar tus libros y recetas actuales (con sus fotos) para dejarlo limpio, o añadir el contenido a lo que ya tienes.

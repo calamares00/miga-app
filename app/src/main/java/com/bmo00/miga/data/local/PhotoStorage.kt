@@ -137,4 +137,10 @@ object PhotoStorage {
         FileOutputStream(destination).use { out -> normalized.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out) }
         return "file://${destination.absolutePath}"
     }
+
+    /** Borra el fichero físico referenciado por una uri "file://..." ya guardada por esta app (foto
+     *  de receta o portada de libro). No falla si el fichero ya no existe. */
+    fun deleteFile(uri: String) {
+        runCatching { File(Uri.parse(uri).path ?: return@runCatching).delete() }
+    }
 }
