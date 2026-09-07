@@ -1,0 +1,1 @@
+Los títulos largos de recetas y libros ya no se cortan en una sola línea: ahora se ven hasta dos líneas completas en cualquier vista (normal, compacta o cuadrícula).

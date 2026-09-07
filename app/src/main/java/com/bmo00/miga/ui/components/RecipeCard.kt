@@ -42,14 +42,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.model.RecipeSummary
 
 /**
  * Tarjeta de receta para las vistas en lista (Normal y Compacta). [compact] oculta la foto para
- * que el título quepa entero y el listado sea más denso; en modo selección múltiple se sustituye
- * el hueco de la foto/icono por una casilla y se ocultan las acciones rápidas.
+ * que el título tenga más ancho y el listado sea más denso; en modo selección múltiple se
+ * sustituye el hueco de la foto/icono por una casilla y se ocultan las acciones rápidas.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -120,7 +121,8 @@ fun RecipeCard(
                 Text(
                     text = recipe.name,
                     style = MaterialTheme.typography.titleMedium,
-                    maxLines = if (compact) Int.MAX_VALUE else 1
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -253,7 +255,12 @@ fun RecipeGridCard(
             }
 
             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(text = recipe.name, style = MaterialTheme.typography.titleSmall, maxLines = 2)
+                Text(
+                    text = recipe.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = recipe.difficulty.label,

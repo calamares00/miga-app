@@ -64,6 +64,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -322,7 +323,8 @@ private fun RecipeBookCard(book: RecipeBookSummary, onClick: () -> Unit, onEditC
         Text(
             text = book.name,
             style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 8.dp)
         )
         Text(
@@ -387,7 +389,12 @@ private fun RecipeBookRow(book: RecipeBookSummary, compact: Boolean, onClick: ()
                             modifier = Modifier.size(16.dp)
                         )
                     }
-                    Text(text = book.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                    Text(
+                        text = book.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
                 Text(
                     text = "${book.recipeCount} ${if (book.recipeCount == 1) "receta" else "recetas"}",
