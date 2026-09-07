@@ -3,11 +3,7 @@ package com.bmo00.miga.data.local
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
-import android.graphics.Paint
 import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
@@ -26,11 +22,10 @@ private const val JPEG_QUALITY = 85
 
 // Límite de resolución y calidad específico para las fotos que se envían a un LLM de visión (no
 // las que se guardan para verse en la app): el coste en tokens de la API de Gemini depende del
-// número de "tiles" en los que se divide la imagen según su resolución, así que no interesa
-// enviarla a más tamaño del necesario para leer el texto. 1280px de lado mayor es de sobra para
-// reconocer letra impresa o manuscrita de una foto de libro de cocina tomada con un móvil normal,
-// aunque el original sea 4K o más. Además se convierte a escala de grises: reduce bastante el peso
-// del JPEG (menos bytes que subir) y quita ruido de color que no aporta nada para leer texto.
+// número de "tiles" en los que se divide la imagen según su resolución (no del color), así que no
+// interesa enviarla a más tamaño del necesario para leer el texto. 1280px de lado mayor es de
+// sobra para reconocer letra impresa o manuscrita de una foto de libro de cocina tomada con un
+// móvil normal, aunque el original sea 4K o más.
 private const val MAX_VISION_DIMENSION = 1280
 private const val VISION_JPEG_QUALITY = 80
 
@@ -122,21 +117,14 @@ object PhotoStorage {
         return Bitmap.createScaledBitmap(bitmap, width, height, true)
     }
 
-    private fun toGrayscale(bitmap: Bitmap): Bitmap {
-        val grayscale = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
-        val paint = Paint().apply { colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) }) }
-        Canvas(grayscale).drawBitmap(bitmap, 0f, 0f, paint)
-        return grayscale
-    }
-
-    /** Lee una foto, la endereza, la reduce y la convierte a escala de grises, y devuelve sus
-     *  bytes JPEG listos para enviar a un LLM de visión, sin escribirla a disco. Optimizada para
-     *  minimizar tokens/peso de subida (ver [MAX_VISION_DIMENSION]), no para verse bien en la app. */
+    /** Lee una foto, la endereza y la reduce, y devuelve sus bytes JPEG listos para enviar a un
+     *  LLM de visión, sin escribirla a disco. Optimizada para minimizar tokens/peso de subida
+     *  (ver [MAX_VISION_DIMENSION]), no para verse bien en la app. */
     fun readResizedJpegBytes(context: Context, uri: Uri): ByteArray? {
         val upright = decodeUpright(context, uri) ?: return null
-        val optimized = toGrayscale(downscaleIfNeeded(upright, MAX_VISION_DIMENSION))
+        val resized = downscaleIfNeeded(upright, MAX_VISION_DIMENSION)
         return ByteArrayOutputStream().use { out ->
-            optimized.compress(Bitmap.CompressFormat.JPEG, VISION_JPEG_QUALITY, out)
+            resized.compress(Bitmap.CompressFormat.JPEG, VISION_JPEG_QUALITY, out)
             out.toByteArray()
         }
     }
