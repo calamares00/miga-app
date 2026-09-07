@@ -1,0 +1,1 @@
+Ahora puedes añadir varias recetas a la vez desde varias fotos ("Varias recetas desde imágenes"), y "Desde imagen" admite varias fotos para una sola receta que ocupa más de una página.

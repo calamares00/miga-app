@@ -36,6 +36,9 @@ receta manuscrita, normalmente en español, a veces con el texto girado o en col
 Separa cada paso de la elaboración como una instrucción independiente del array "instructions", en
 el mismo orden en que aparecen en el texto. Si no puedes determinar algún dato, usa null (o una
 lista vacía) en vez de inventarlo. Si no reconoces ninguna receta en la imagen, deja "name" vacío.
+Si se incluyen varias imágenes en esta petición, todas son páginas o fragmentos de la MISMA
+receta (por ejemplo, fotos consecutivas de un libro de cocina); combina la información de todas
+ellas en un único resultado, en el orden en que aparecen las imágenes.
 """
 
 /** Implementación de [RecipeVisionClient] contra la API REST de Google Gemini (generateContent). */
@@ -45,18 +48,17 @@ object GeminiVisionClient : RecipeVisionClient {
     // que en el DTO son String no nulo con valor por defecto; sin esto el parseo falla entero.
     private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
-    override suspend fun extractRecipe(imageBytes: ByteArray, mimeType: String, apiKey: String, model: String): RecipeVisionResult =
+    override suspend fun extractRecipe(images: List<VisionImageInput>, apiKey: String, model: String): RecipeVisionResult =
         withContext(Dispatchers.IO) {
+            if (images.isEmpty()) return@withContext RecipeVisionResult.Error("No hay ninguna foto que procesar")
             try {
                 val requestBody = json.encodeToString(
                     GeminiRequest.serializer(),
                     GeminiRequest(
                         contents = listOf(
                             GeminiContent(
-                                parts = listOf(
-                                    GeminiPart(inlineData = GeminiInlineData(mimeType, Base64.getEncoder().encodeToString(imageBytes))),
+                                parts = images.map { GeminiPart(inlineData = GeminiInlineData(it.mimeType, Base64.getEncoder().encodeToString(it.bytes))) } +
                                     GeminiPart(text = EXTRACTION_PROMPT)
-                                )
                             )
                         ),
                         generationConfig = GeminiGenerationConfig()

@@ -76,7 +76,7 @@ import com.bmo00.miga.ui.components.PhotoSourceSheet
 @Composable
 fun RecipeEditorScreen(
     viewModel: RecipeEditorViewModel,
-    sourcePhotoUri: String? = null,
+    sourcePhotoUris: List<String> = emptyList(),
     onSaved: (Long) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -98,8 +98,8 @@ fun RecipeEditorScreen(
 
     BackHandler(onBack = attemptExit)
 
-    LaunchedEffect(sourcePhotoUri) {
-        sourcePhotoUri?.let { viewModel.startVisionExtraction(context, Uri.parse(it)) }
+    LaunchedEffect(sourcePhotoUris) {
+        if (sourcePhotoUris.isNotEmpty()) viewModel.startVisionExtraction(context, sourcePhotoUris.map { Uri.parse(it) })
     }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->

@@ -1,6 +1,7 @@
 package com.bmo00.miga.ui.list
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,6 +54,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -81,7 +83,8 @@ fun RecipeListScreen(
     onRecipeClick: (Long) -> Unit,
     onEditRecipeClick: (Long) -> Unit,
     onAddRecipeClick: () -> Unit,
-    onAddRecipeFromPhoto: (String) -> Unit
+    onAddRecipeFromPhoto: (List<String>) -> Unit,
+    onAddRecipesBulk: (List<String>) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
@@ -96,6 +99,8 @@ fun RecipeListScreen(
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
     var showNewRecipeSheet by remember { mutableStateOf(false) }
     var pendingCameraPath by remember { mutableStateOf<String?>(null) }
+    val capturedPageUris = remember { mutableStateListOf<String>() }
+    var showAddAnotherPageDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     val photoSheetState = rememberModalBottomSheetState()
     val newRecipeSheetState = rememberModalBottomSheetState()
@@ -111,12 +116,15 @@ fun RecipeListScreen(
         }
     }
     val cameraCaptureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) pendingCameraPath?.let { onAddRecipeFromPhoto(it) }
+        if (success) pendingCameraPath?.let { capturedPageUris.add(it); showAddAnotherPageDialog = true }
         pendingCameraPath = null
     }
-    val galleryPickerForPhotoImport = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) onAddRecipeFromPhoto(uri.toString())
-    }
+    val galleryPickerForPhotoImport = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(maxItems = 5)
+    ) { uris -> if (uris.isNotEmpty()) onAddRecipeFromPhoto(uris.map { it.toString() }) }
+    val bulkGalleryPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(maxItems = 20)
+    ) { uris -> if (uris.isNotEmpty()) onAddRecipesBulk(uris.map { it.toString() }) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -299,7 +307,11 @@ fun RecipeListScreen(
             NewRecipeSourceSheet(
                 onManualClick = { showNewRecipeSheet = false; onAddRecipeClick() },
                 onFileClick = { showNewRecipeSheet = false; importRecipeLauncher.launch(BACKUP_MIME_TYPES) },
-                onPhotoClick = { showNewRecipeSheet = false; showPhotoSourceSheet = true }
+                onPhotoClick = { showNewRecipeSheet = false; showPhotoSourceSheet = true },
+                onBulkPhotoClick = {
+                    showNewRecipeSheet = false
+                    bulkGalleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }
             )
         }
     }
@@ -316,10 +328,39 @@ fun RecipeListScreen(
                 },
                 onGalleryClick = {
                     showPhotoSourceSheet = false
-                    galleryPickerForPhotoImport.launch("image/*")
+                    galleryPickerForPhotoImport.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 }
             )
         }
+    }
+
+    if (showAddAnotherPageDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddAnotherPageDialog = false },
+            title = { Text("¿Otra página?") },
+            text = { Text("¿La receta continúa en otra foto? Puedes seguir añadiendo páginas o continuar con las que ya tienes.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAddAnotherPageDialog = false
+                    val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
+                    pendingCameraPath = filePath
+                    cameraCaptureLauncher.launch(contentUri)
+                }) { Text("Añadir otra página") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        showAddAnotherPageDialog = false
+                        capturedPageUris.clear()
+                    }) { Text("Cancelar") }
+                    TextButton(onClick = {
+                        showAddAnotherPageDialog = false
+                        onAddRecipeFromPhoto(capturedPageUris.toList())
+                        capturedPageUris.clear()
+                    }) { Text("Continuar") }
+                }
+            }
+        )
     }
 
     recipeToDelete?.let { recipe ->

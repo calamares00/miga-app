@@ -32,9 +32,13 @@ sealed interface RecipeVisionResult {
     data class Error(val reason: String) : RecipeVisionResult
 }
 
-/** Reconoce y estructura el texto de la foto de una receta usando un LLM con visión. */
+/** Una imagen (bytes ya en memoria + su mime type) para enviar a un cliente de visión. */
+data class VisionImageInput(val bytes: ByteArray, val mimeType: String)
+
+/** Reconoce y estructura el texto de una o varias fotos de una receta usando un LLM con visión.
+ *  Cuando se pasa más de una imagen, se asume que todas son páginas/fragmentos de la misma receta. */
 interface RecipeVisionClient {
-    suspend fun extractRecipe(imageBytes: ByteArray, mimeType: String, apiKey: String, model: String): RecipeVisionResult
+    suspend fun extractRecipe(images: List<VisionImageInput>, apiKey: String, model: String): RecipeVisionResult
 }
 
 /** Único proveedor implementado por ahora; añadir uno nuevo es solo un caso más aquí. */

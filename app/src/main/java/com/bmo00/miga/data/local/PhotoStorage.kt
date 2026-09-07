@@ -8,6 +8,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -100,6 +101,16 @@ object PhotoStorage {
         val width = (bitmap.width * scale).roundToInt().coerceAtLeast(1)
         val height = (bitmap.height * scale).roundToInt().coerceAtLeast(1)
         return Bitmap.createScaledBitmap(bitmap, width, height, true)
+    }
+
+    /** Lee una foto, la endereza y reduce igual que [saveNormalized], y devuelve sus bytes JPEG
+     *  listos para enviar a un LLM de visión, sin escribirla a disco. */
+    fun readResizedJpegBytes(context: Context, uri: Uri): ByteArray? {
+        val bitmap = loadBitmap(context, uri) ?: return null
+        return ByteArrayOutputStream().use { out ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)
+            out.toByteArray()
+        }
     }
 
     /** Guarda [bitmap] como JPEG en el almacenamiento interno, reduciéndolo si hiciera falta. */

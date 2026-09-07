@@ -30,6 +30,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.bmo00.miga.RecetarioApp
 import com.bmo00.miga.data.repository.RecipeRepository
+import com.bmo00.miga.ui.bulkimport.BulkImportScreen
+import com.bmo00.miga.ui.bulkimport.BulkImportViewModel
 import com.bmo00.miga.ui.books.RecipeBookEditorScreen
 import com.bmo00.miga.ui.books.RecipeBookEditorViewModel
 import com.bmo00.miga.ui.books.RecipeBooksScreen
@@ -187,7 +189,35 @@ fun RecetarioNavHost() {
                     onRecipeClick = { navController.navigate(Destinations.detail(it)) },
                     onEditRecipeClick = { navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = it)) },
                     onAddRecipeClick = { navController.navigate(Destinations.editor(bookId = bookId)) },
-                    onAddRecipeFromPhoto = { photoUri -> navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUri = photoUri)) }
+                    onAddRecipeFromPhoto = { photoUris -> navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUris = photoUris)) },
+                    onAddRecipesBulk = { photoUris -> navController.navigate(Destinations.bulkImport(bookId = bookId, photoUris = photoUris)) }
+                )
+            }
+
+            composable(
+                route = Destinations.BULK_IMPORT_ROUTE,
+                arguments = listOf(
+                    navArgument(Destinations.ARG_BOOK_ID) {
+                        type = NavType.LongType
+                        defaultValue = Destinations.NEW_BOOK_ID
+                    },
+                    navArgument(Destinations.ARG_PHOTO_URIS) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val bookId = backStackEntry.arguments?.getLong(Destinations.ARG_BOOK_ID) ?: Destinations.NEW_BOOK_ID
+                val photoUris = Destinations.decodeUriList(backStackEntry.arguments?.getString(Destinations.ARG_PHOTO_URIS))
+                val viewModel: BulkImportViewModel = viewModel(
+                    key = "bulkImport_${photoUris.hashCode()}_$bookId",
+                    factory = viewModelFactory { initializer { BulkImportViewModel(repository, settingsRepository, bookId, photoUris) } }
+                )
+                BulkImportScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onOpenRecipe = { recipeId -> navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = recipeId)) }
                 )
             }
 
@@ -218,7 +248,7 @@ fun RecetarioNavHost() {
                         type = NavType.LongType
                         defaultValue = Destinations.NEW_BOOK_ID
                     },
-                    navArgument(Destinations.ARG_SOURCE_PHOTO_URI) {
+                    navArgument(Destinations.ARG_SOURCE_PHOTO_URIS) {
                         type = NavType.StringType
                         nullable = true
                         defaultValue = null
@@ -227,14 +257,14 @@ fun RecetarioNavHost() {
             ) { backStackEntry ->
                 val recipeId = backStackEntry.arguments?.getLong(Destinations.ARG_RECIPE_ID) ?: Destinations.NEW_RECIPE_ID
                 val bookId = backStackEntry.arguments?.getLong(Destinations.ARG_BOOK_ID) ?: Destinations.NEW_BOOK_ID
-                val sourcePhotoUri = backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_PHOTO_URI)
+                val sourcePhotoUris = Destinations.decodeUriList(backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_PHOTO_URIS))
                 val viewModel: RecipeEditorViewModel = viewModel(
                     key = "editor_${recipeId}_$bookId",
                     factory = viewModelFactory { initializer { RecipeEditorViewModel(repository, settingsRepository, recipeId, bookId) } }
                 )
                 RecipeEditorScreen(
                     viewModel = viewModel,
-                    sourcePhotoUri = sourcePhotoUri,
+                    sourcePhotoUris = sourcePhotoUris,
                     onSaved = { savedId ->
                         navController.popBackStack()
                         if (recipeId == Destinations.NEW_RECIPE_ID) {

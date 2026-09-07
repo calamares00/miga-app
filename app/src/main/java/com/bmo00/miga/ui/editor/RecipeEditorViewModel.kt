@@ -9,12 +9,14 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.bmo00.miga.data.local.PhotoStorage
 import com.bmo00.miga.data.local.SettingsRepository
 import com.bmo00.miga.data.model.Difficulty
 import com.bmo00.miga.data.model.RecipeDraft
 import com.bmo00.miga.data.repository.RecipeRepository
 import com.bmo00.miga.data.vision.RecipeVisionResult
 import com.bmo00.miga.data.vision.RecipeVisionResultDto
+import com.bmo00.miga.data.vision.VisionImageInput
 import com.bmo00.miga.data.vision.visionClientFor
 import com.bmo00.miga.ui.navigation.Destinations
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -104,9 +106,10 @@ class RecipeEditorViewModel(
     val visionState: StateFlow<VisionState> = _visionState
     private var visionStarted = false
 
-    /** Reconoce una receta a partir de una foto (cámara o galería) y precarga este formulario con el resultado. */
-    fun startVisionExtraction(context: Context, photoUri: Uri) {
-        if (isEditing || visionStarted) return
+    /** Reconoce una receta a partir de una o varias fotos (páginas de la misma receta) y precarga
+     *  este formulario con el resultado combinado. */
+    fun startVisionExtraction(context: Context, photoUris: List<Uri>) {
+        if (isEditing || visionStarted || photoUris.isEmpty()) return
         visionStarted = true
         viewModelScope.launch {
             _visionState.value = VisionState.Loading
@@ -115,15 +118,18 @@ class RecipeEditorViewModel(
                 _visionState.value = VisionState.Error("Configura una API key de Gemini en Ajustes")
                 return@launch
             }
-            val bytes = context.contentResolver.openInputStream(photoUri)?.use { it.readBytes() }
-            if (bytes == null) {
-                _visionState.value = VisionState.Error("No se pudo leer la foto")
+            // Si alguna página falla al leerse pero otras sí, seguimos con las que se pudieron
+            // leer; solo es un error bloqueante si fallan todas.
+            val images = photoUris.mapNotNull { uri ->
+                PhotoStorage.readResizedJpegBytes(context, uri)?.let { VisionImageInput(it, "image/jpeg") }
+            }
+            if (images.isEmpty()) {
+                _visionState.value = VisionState.Error("No se pudo leer ninguna de las fotos")
                 return@launch
             }
-            val mimeType = context.contentResolver.getType(photoUri) ?: "image/jpeg"
             val provider = settingsRepository.observeVisionProvider().first()
             val model = settingsRepository.observeGeminiModel().first()
-            when (val result = visionClientFor(provider).extractRecipe(bytes, mimeType, apiKey, model)) {
+            when (val result = visionClientFor(provider).extractRecipe(images, apiKey, model)) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
                     _visionState.value = VisionState.Loaded

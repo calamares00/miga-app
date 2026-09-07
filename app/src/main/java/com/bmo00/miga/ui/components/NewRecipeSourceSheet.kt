@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.Icon
@@ -25,12 +26,18 @@ import androidx.compose.ui.unit.dp
  * a su vez abre PhotoSourceSheet para elegir cámara o galería).
  */
 @Composable
-fun NewRecipeSourceSheet(onManualClick: () -> Unit, onFileClick: () -> Unit, onPhotoClick: () -> Unit) {
+fun NewRecipeSourceSheet(
+    onManualClick: () -> Unit,
+    onFileClick: () -> Unit,
+    onPhotoClick: () -> Unit,
+    onBulkPhotoClick: () -> Unit
+) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text("Nueva receta", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
         NewRecipeSourceRow(icon = Icons.Filled.Edit, label = "Manual", onClick = onManualClick)
         NewRecipeSourceRow(icon = Icons.Filled.UploadFile, label = "Desde archivo (JSON/ZIP)", onClick = onFileClick)
         NewRecipeSourceRow(icon = Icons.Filled.AddAPhoto, label = "Desde imagen", onClick = onPhotoClick)
+        NewRecipeSourceRow(icon = Icons.Filled.Collections, label = "Varias recetas desde imágenes", onClick = onBulkPhotoClick)
     }
 }
 
