@@ -1,0 +1,1 @@
+Las fotos de recetas se optimizan antes de enviarse a la IA para reconocerlas: se reducen de tamaño y se convierten a blanco y negro, así consumen menos datos y menos tokens sin perder legibilidad del texto.
