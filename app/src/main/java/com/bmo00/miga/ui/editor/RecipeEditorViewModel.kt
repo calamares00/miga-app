@@ -152,6 +152,8 @@ class RecipeEditorViewModel(
         selectedUtensils.clear(); selectedUtensils.addAll(recipe.utensils)
     }
 
+    private var initialSnapshot: EditorSnapshot? = null
+
     init {
         if (isEditing) {
             viewModelScope.launch {
@@ -178,8 +180,6 @@ class RecipeEditorViewModel(
             initialSnapshot = snapshot()
         }
     }
-
-    private var initialSnapshot: EditorSnapshot? = null
 
     private fun snapshot() = EditorSnapshot(
         name = name,
