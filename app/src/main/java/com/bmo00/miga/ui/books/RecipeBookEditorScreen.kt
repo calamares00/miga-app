@@ -1,6 +1,7 @@
 package com.bmo00.miga.ui.books
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -65,7 +66,11 @@ fun RecipeBookEditorScreen(
     var pendingCameraPath by remember { mutableStateOf<String?>(null) }
     var pendingEditUri by remember { mutableStateOf<Uri?>(null) }
     var editingExistingCover by remember { mutableStateOf(false) }
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    val attemptExit = { if (viewModel.hasUnsavedChanges()) showDiscardDialog = true else onCancel() }
     val photoSheetState = rememberModalBottomSheetState()
+
+    BackHandler(onBack = attemptExit)
     val coverPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             pendingEditUri = uri
@@ -90,7 +95,7 @@ fun RecipeBookEditorScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(if (viewModel.isPack) "Pack instalado" else if (viewModel.isEditing) "Editar libro" else "Nuevo libro") },
                 navigationIcon = {
-                    IconButton(onClick = onCancel) { Icon(Icons.Filled.Close, contentDescription = "Cancelar") }
+                    IconButton(onClick = attemptExit) { Icon(Icons.Filled.Close, contentDescription = "Cancelar") }
                 },
                 actions = {
                     if (viewModel.isSaving || viewModel.isDeleting) {
@@ -248,6 +253,23 @@ fun RecipeBookEditorScreen(
             onCancel = {
                 pendingEditUri = null
                 editingExistingCover = false
+            }
+        )
+    }
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("¿Descartar cambios?") },
+            text = { Text("Se perderán los cambios que has hecho.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscardDialog = false
+                    onCancel()
+                }) { Text("Descartar", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) { Text("Seguir editando") }
             }
         )
     }

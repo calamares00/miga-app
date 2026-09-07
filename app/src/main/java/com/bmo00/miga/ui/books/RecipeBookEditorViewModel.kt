@@ -12,6 +12,8 @@ import com.bmo00.miga.ui.navigation.Destinations
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+private data class BookSnapshot(val name: String, val coverPhotoUri: String?)
+
 class RecipeBookEditorViewModel(
     private val repository: RecipeRepository,
     private val bookId: Long
@@ -43,9 +45,17 @@ class RecipeBookEditorViewModel(
                     isPack = book.isPack
                 }
                 isLoading = false
+                initialSnapshot = BookSnapshot(name, coverPhotoUri)
             }
+        } else {
+            initialSnapshot = BookSnapshot(name, coverPhotoUri)
         }
     }
+
+    private var initialSnapshot: BookSnapshot? = null
+
+    /** Se comprueba al intentar salir del editor (botón atrás o icono de cancelar) para avisar antes de perder cambios. */
+    fun hasUnsavedChanges(): Boolean = initialSnapshot?.let { it != BookSnapshot(name, coverPhotoUri) } ?: false
 
     fun save(onSaved: () -> Unit) {
         if (isPack) return

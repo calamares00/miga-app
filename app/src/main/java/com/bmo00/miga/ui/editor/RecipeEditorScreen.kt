@@ -1,6 +1,7 @@
 package com.bmo00.miga.ui.editor
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -92,6 +93,10 @@ fun RecipeEditorScreen(
     var editingPhoto by remember { mutableStateOf<PhotoUi?>(null) }
     val photoSheetState = rememberModalBottomSheetState()
     val clipboardManager = LocalClipboardManager.current
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    val attemptExit = { if (viewModel.hasUnsavedChanges()) showDiscardDialog = true else onCancel() }
+
+    BackHandler(onBack = attemptExit)
 
     LaunchedEffect(sourcePhotoUri) {
         sourcePhotoUri?.let { viewModel.startVisionExtraction(context, Uri.parse(it)) }
@@ -113,7 +118,7 @@ fun RecipeEditorScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(if (viewModel.isEditing) "Editar receta" else "Nueva receta") },
                 navigationIcon = {
-                    IconButton(onClick = onCancel) { Icon(Icons.Filled.Close, contentDescription = "Cancelar") }
+                    IconButton(onClick = attemptExit) { Icon(Icons.Filled.Close, contentDescription = "Cancelar") }
                 },
                 actions = {
                     if (viewModel.isSaving) {
@@ -351,6 +356,23 @@ fun RecipeEditorScreen(
             onCancel = {
                 pendingEditUri = null
                 editingPhoto = null
+            }
+        )
+    }
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("¿Descartar cambios?") },
+            text = { Text("Se perderán los cambios que has hecho.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscardDialog = false
+                    onCancel()
+                }) { Text("Descartar", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) { Text("Seguir editando") }
             }
         )
     }

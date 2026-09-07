@@ -32,6 +32,28 @@ sealed interface VisionState {
     data class Error(val reason: String) : VisionState
 }
 
+private data class IngredientRowSnapshot(val name: String, val quantity: String, val unit: String)
+private data class IngredientGroupSnapshot(val name: String?, val ingredients: List<IngredientRowSnapshot>)
+private data class StepGroupSnapshot(val name: String?, val steps: List<String>)
+private data class PhotoSnapshot(val uri: String, val isCover: Boolean)
+
+private data class EditorSnapshot(
+    val name: String,
+    val categoryName: String?,
+    val difficulty: Difficulty,
+    val prepTimeMinutesText: String,
+    val cookTimeMinutesText: String,
+    val servings: Int,
+    val notes: String,
+    val source: String,
+    val isFavorite: Boolean,
+    val photos: List<PhotoSnapshot>,
+    val ingredientGroups: List<IngredientGroupSnapshot>,
+    val stepGroups: List<StepGroupSnapshot>,
+    val tags: List<String>,
+    val utensils: List<String>
+)
+
 class RecipeEditorViewModel(
     private val repository: RecipeRepository,
     private val settingsRepository: SettingsRepository,
@@ -150,9 +172,36 @@ class RecipeEditorViewModel(
                     selectedUtensils.clear(); selectedUtensils.addAll(recipe.utensils)
                 }
                 isLoading = false
+                initialSnapshot = snapshot()
             }
+        } else {
+            initialSnapshot = snapshot()
         }
     }
+
+    private var initialSnapshot: EditorSnapshot? = null
+
+    private fun snapshot() = EditorSnapshot(
+        name = name,
+        categoryName = categoryName,
+        difficulty = difficulty,
+        prepTimeMinutesText = prepTimeMinutesText,
+        cookTimeMinutesText = cookTimeMinutesText,
+        servings = servings,
+        notes = notes,
+        source = source,
+        isFavorite = isFavorite,
+        photos = photos.map { PhotoSnapshot(it.uri, it.isCover) },
+        ingredientGroups = ingredientGroups.map { group ->
+            IngredientGroupSnapshot(group.name, group.ingredients.map { IngredientRowSnapshot(it.name, it.quantity, it.unit) })
+        },
+        stepGroups = stepGroups.map { group -> StepGroupSnapshot(group.name, group.steps.map { it.text }) },
+        tags = selectedTags.toList(),
+        utensils = selectedUtensils.toList()
+    )
+
+    /** Se comprueba al intentar salir del editor (botón atrás o icono de cancelar) para avisar antes de perder cambios. */
+    fun hasUnsavedChanges(): Boolean = initialSnapshot?.let { it != snapshot() } ?: false
 
     // --- Ingredientes ---
     fun addIngredientRow(groupIndex: Int) {
