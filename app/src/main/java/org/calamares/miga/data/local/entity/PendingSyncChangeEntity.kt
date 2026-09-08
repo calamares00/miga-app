@@ -26,5 +26,9 @@ data class PendingSyncChangeEntity(
     val uid: String,
     /** Guardado como [SyncChangeType.name]. */
     val changeType: String,
-    val createdAt: Long
+    val createdAt: Long,
+    /** Solo para [SyncEntityType.PHOTO]: uid de la receta a la que pertenece la foto - necesario
+     *  para poder subir un borrado aunque la fila local de la foto ya no exista (se borra junto
+     *  con el resto de fotos de la receta al guardarla). Null en el resto de casos. */
+    val parentUid: String? = null
 )

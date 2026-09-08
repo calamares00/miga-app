@@ -95,3 +95,16 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
         db.execSQL("CREATE INDEX IF NOT EXISTS index_pending_sync_changes_syncConnectionId ON pending_sync_changes(syncConnectionId)")
     }
 }
+
+/**
+ * v8 -> v9: sincronización de fotos de receta. `pending_sync_changes` gana `parentUid`: para una
+ * foto borrada, su fila local ya no existe en el momento de subir el borrado al servidor (se borró
+ * junto con la receta al guardar), así que hace falta recordar de qué receta era desde el
+ * momento en que se encola el cambio. Null para libros/recetas y para altas de foto (esas sí
+ * pueden volver a consultar la fila, que todavía existe).
+ */
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE pending_sync_changes ADD COLUMN parentUid TEXT DEFAULT NULL")
+    }
+}

@@ -1,0 +1,1 @@
+La sincronización con el servidor self-hosted ya incluye las fotos de las recetas, no solo el texto: al añadir o quitar una foto en un libro sincronizado, la subida/bajada llega también a las demás apps Miga conectadas al mismo namespace.
