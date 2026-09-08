@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Para dictar un paso de receta por voz (SpeechRecognizer). Primer permiso "peligroso" de
+         la app: cámara/galería delegan en apps del sistema y no lo necesitan, pero grabar audio
+         en el propio proceso sí requiere concesión explícita en tiempo de ejecución. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!-- Necesario en Android 11+ (restricciones de visibilidad de paquetes) para que el intent
          implícito de ActivityResultContracts.TakePicture() encuentre la app de cámara del
