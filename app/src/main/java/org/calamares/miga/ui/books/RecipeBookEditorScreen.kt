@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -37,6 +38,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -81,10 +83,20 @@ fun RecipeBookEditorScreen(
         pendingCameraPath = null
     }
 
+    var showLinkDialog by remember { mutableStateOf(false) }
+    val availableSyncConnections by viewModel.availableSyncConnections.collectAsState()
+
     LaunchedEffect(viewModel.deleteError) {
         viewModel.deleteError?.let {
             snackbarHostState.showSnackbar(it)
             viewModel.deleteError = null
+        }
+    }
+
+    LaunchedEffect(viewModel.syncNowError) {
+        viewModel.syncNowError?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.syncNowError = null
         }
     }
 
@@ -193,6 +205,38 @@ fun RecipeBookEditorScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            } else if (viewModel.isEditing) {
+                val connectionId = viewModel.syncConnectionId
+                val connectionLabel = availableSyncConnections.firstOrNull { it.id == connectionId }?.label
+                if (connectionId == null) {
+                    if (availableSyncConnections.isNotEmpty()) {
+                        OutlinedButton(onClick = { showLinkDialog = true }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Sincronizar con...")
+                        }
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            "Sincronizado con \"${connectionLabel ?: "conexión eliminada"}\"",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        OutlinedButton(
+                            onClick = { viewModel.syncNow() },
+                            enabled = !viewModel.isSyncingNow,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            if (viewModel.isSyncingNow) {
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                            } else {
+                                Text("Sincronizar ahora")
+                            }
+                        }
+                        TextButton(onClick = { viewModel.unlinkFromSyncConnection() }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Dejar de sincronizar")
+                        }
+                    }
+                }
             }
         }
     }
@@ -254,6 +298,30 @@ fun RecipeBookEditorScreen(
                 pendingEditUri = null
                 editingExistingCover = false
             }
+        )
+    }
+
+    if (showLinkDialog) {
+        AlertDialog(
+            onDismissRequest = { showLinkDialog = false },
+            title = { Text("Sincronizar con...") },
+            text = {
+                Column {
+                    availableSyncConnections.forEach { connection ->
+                        TextButton(
+                            onClick = {
+                                viewModel.linkToSyncConnection(connection.id)
+                                showLinkDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(connection.label, modifier = Modifier.fillMaxWidth())
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showLinkDialog = false }) { Text("Cancelar") } }
         )
     }
 
