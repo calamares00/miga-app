@@ -11,6 +11,8 @@ import com.bmo00.miga.data.local.MIGRATION_7_8
 import com.bmo00.miga.data.local.MIGRATION_8_9
 import com.bmo00.miga.data.local.SettingsRepository
 import com.bmo00.miga.data.repository.RecipeRepository
+import com.bmo00.miga.data.sync.SyncEngine
+import com.bmo00.miga.data.sync.SyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,8 +31,16 @@ class RecetarioApp : Application() {
             .build()
     }
 
-    val repository: RecipeRepository by lazy { RecipeRepository(database) }
+    // El callback dispara una subida en segundo plano justo al encolar un cambio (ver
+    // RecipeRepository/triggerBackgroundSync) - complementa el sync automático al abrir la app y
+    // el periódico de SyncWorker, para que los cambios propios lleguen a las demás apps Miga sin
+    // esperar a ninguno de los otros dos disparadores.
+    val repository: RecipeRepository by lazy {
+        RecipeRepository(database) { connectionId -> triggerBackgroundSync(connectionId) }
+    }
     val settingsRepository: SettingsRepository by lazy { SettingsRepository(this) }
+
+    private val syncEngine: SyncEngine by lazy { SyncEngine(repository) }
 
     override fun onCreate() {
         super.onCreate()
@@ -41,5 +51,12 @@ class RecetarioApp : Application() {
             repository.seedDefaultCategoriesIfEmpty()
             repository.seedIngredientCatalogDefaults()
         }
+        SyncWorker.enqueuePeriodic(this)
+    }
+
+    /** Best-effort: si falla (sin red, servidor caído), el outbox lo recoge en el siguiente sync
+     *  manual, automático al abrir la app, o periódico (ver SyncWorker) - no hace falta reintentar aquí. */
+    private fun triggerBackgroundSync(connectionId: Long) {
+        applicationScope.launch { syncEngine.syncConnection(this@RecetarioApp, connectionId) }
     }
 }

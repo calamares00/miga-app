@@ -1,0 +1,1 @@
+La sincronización con el servidor self-hosted es ahora más ágil: los cambios se suben en cuanto guardas algo en un libro sincronizado (sin esperar a pulsar "Sincronizar ahora"), y además hay una sincronización periódica en segundo plano para recoger los cambios de otras apps Miga aunque esta app lleve un rato cerrada.
