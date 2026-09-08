@@ -254,7 +254,7 @@ class RecipeRepository(private val db: AppDatabase) {
                 // servidor), así que hace falta encolarlo aparte, con el uid de la receta como
                 // parentUid porque la fila de la foto ya no existe para poder consultarlo después.
                 val oldUids = existingPhotos.mapNotNull { it.uid }.toSet()
-                val newUids = newPhotoEntities.map { it.uid }.toSet()
+                val newUids = newPhotoEntities.mapNotNull { it.uid }.toSet()
                 (newUids - oldUids).forEach { photoUid ->
                     enqueueSyncChange(connectionId, SyncEntityType.PHOTO, photoUid, SyncChangeType.UPSERT, parentUid = saved.uid)
                 }
