@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.books
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -134,12 +135,12 @@ class RecipeBookEditorViewModel(
         }
     }
 
-    fun syncNow() {
+    fun syncNow(context: Context) {
         val connectionId = syncConnectionId ?: return
         viewModelScope.launch {
             isSyncingNow = true
             syncNowError = null
-            when (val outcome = syncEngine.syncConnection(connectionId)) {
+            when (val outcome = syncEngine.syncConnection(context, connectionId)) {
                 is SyncOutcome.Error -> syncNowError = outcome.reason
                 is SyncOutcome.Success -> repository.observeRecipeBook(bookId).first()?.let { book ->
                     name = book.name

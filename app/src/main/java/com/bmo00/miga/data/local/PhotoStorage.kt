@@ -143,4 +143,9 @@ object PhotoStorage {
     fun deleteFile(uri: String) {
         runCatching { File(Uri.parse(uri).path ?: return@runCatching).delete() }
     }
+
+    /** Lee los bytes crudos de una foto ya guardada por esta app (uri "file://..."); usado para
+     *  subirla tal cual al servidor de sincronización, sin necesitar Context (ruta ya absoluta). */
+    fun readBytes(uri: String): ByteArray? =
+        runCatching { File(Uri.parse(uri).path ?: return null).readBytes() }.getOrNull()
 }

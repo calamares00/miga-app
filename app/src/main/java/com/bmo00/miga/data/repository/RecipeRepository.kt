@@ -44,6 +44,7 @@ import com.bmo00.miga.data.model.StepGroup
 import com.bmo00.miga.data.model.SyncConnection
 import com.bmo00.miga.data.model.UNCATEGORIZED_INGREDIENT_LABEL
 import com.bmo00.miga.data.sync.BookSyncDto
+import com.bmo00.miga.data.sync.PhotoMetaDto
 import com.bmo00.miga.data.sync.RecipeSyncDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -119,7 +120,8 @@ class RecipeRepository(private val db: AppDatabase) {
     /** Defensa en profundidad equivalente a la de [saveRecipeBook]: no-op si el libro destino es un pack. */
     suspend fun saveRecipe(draft: RecipeDraft): Long = db.withTransaction {
         val targetBookId = if (draft.id == 0L) draft.recipeBookId else recipeDao.getRecipeOnce(draft.id)?.recipeBookId ?: draft.recipeBookId
-        if (recipeBookDao.getOnce(targetBookId)?.packId != null) return@withTransaction draft.id
+        val targetBook = recipeBookDao.getOnce(targetBookId)
+        if (targetBook?.packId != null) return@withTransaction draft.id
 
         val categoryId = draft.categoryName?.takeIf { it.isNotBlank() }?.let { resolveCategoryId(it) }
         val now = System.currentTimeMillis()
@@ -216,21 +218,19 @@ class RecipeRepository(private val db: AppDatabase) {
 
         // Fotos: se reescriben por completo, pero conservando el uid de las que ya existían (por
         // uri) para que el motor de sincronización no las trate como fotos nuevas en cada guardado.
-        val existingUidByUri = recipeDao.getPhotosOnce(recipeId).associate { it.uri to it.uid }
+        val existingPhotos = recipeDao.getPhotosOnce(recipeId)
+        val existingUidByUri = existingPhotos.associate { it.uri to it.uid }
         recipeDao.deletePhotos(recipeId)
-        if (draft.photos.isNotEmpty()) {
-            recipeDao.insertPhotos(
-                draft.photos.mapIndexed { index, photo ->
-                    RecipePhotoEntity(
-                        recipeId = recipeId,
-                        uri = photo.uri,
-                        position = index,
-                        isCover = photo.isCover,
-                        uid = existingUidByUri[photo.uri] ?: UUID.randomUUID().toString()
-                    )
-                }
+        val newPhotoEntities = draft.photos.mapIndexed { index, photo ->
+            RecipePhotoEntity(
+                recipeId = recipeId,
+                uri = photo.uri,
+                position = index,
+                isCover = photo.isCover,
+                uid = existingUidByUri[photo.uri] ?: UUID.randomUUID().toString()
             )
         }
+        if (newPhotoEntities.isNotEmpty()) recipeDao.insertPhotos(newPhotoEntities)
 
         // Tags
         recipeDao.deleteTagCrossRefs(recipeId)
@@ -246,9 +246,21 @@ class RecipeRepository(private val db: AppDatabase) {
             recipeDao.insertUtensilCrossRefs(utensilIds.map { RecipeUtensilCrossRef(recipeId, it) })
         }
 
-        recipeBookDao.getOnce(targetBookId)?.syncConnectionId?.let { connectionId ->
+        targetBook?.syncConnectionId?.let { connectionId ->
             recipeDao.getRecipeOnce(recipeId)?.let { saved ->
                 enqueueSyncChange(connectionId, SyncEntityType.RECIPE, saved.uid, SyncChangeType.UPSERT)
+                // Fotos añadidas/quitadas en este guardado (no las que ya estaban, esas no cambian):
+                // el borrado de una foto suelta no pasa por deleteRecipe (que sí cascada en el
+                // servidor), así que hace falta encolarlo aparte, con el uid de la receta como
+                // parentUid porque la fila de la foto ya no existe para poder consultarlo después.
+                val oldUids = existingPhotos.mapNotNull { it.uid }.toSet()
+                val newUids = newPhotoEntities.map { it.uid }.toSet()
+                (newUids - oldUids).forEach { photoUid ->
+                    enqueueSyncChange(connectionId, SyncEntityType.PHOTO, photoUid, SyncChangeType.UPSERT, parentUid = saved.uid)
+                }
+                (oldUids - newUids).forEach { photoUid ->
+                    enqueueSyncChange(connectionId, SyncEntityType.PHOTO, photoUid, SyncChangeType.DELETE, parentUid = saved.uid)
+                }
             }
         }
 
@@ -777,14 +789,21 @@ class RecipeRepository(private val db: AppDatabase) {
 
     // --- Outbox: encolar cambios locales pendientes de subir ---
 
-    private suspend fun enqueueSyncChange(connectionId: Long, entityType: SyncEntityType, uid: String, changeType: SyncChangeType) {
+    private suspend fun enqueueSyncChange(
+        connectionId: Long,
+        entityType: SyncEntityType,
+        uid: String,
+        changeType: SyncChangeType,
+        parentUid: String? = null
+    ) {
         pendingSyncChangeDao.enqueue(
             PendingSyncChangeEntity(
                 syncConnectionId = connectionId,
                 entityType = entityType.name,
                 uid = uid,
                 changeType = changeType.name,
-                createdAt = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis(),
+                parentUid = parentUid
             )
         )
     }
@@ -836,6 +855,19 @@ class RecipeRepository(private val db: AppDatabase) {
             updatedAt = details.recipe.updatedAt
         )
     }
+
+    /** Datos necesarios para subir una foto suelta ya existente localmente (ver [SyncEngine.pushPhotoChange]). */
+    data class PhotoPushInfo(val uri: String, val recipeUid: String, val isCover: Boolean, val position: Int)
+
+    suspend fun getPhotoPushInfo(photoUid: String): PhotoPushInfo? {
+        val photo = recipeDao.findPhotoByUid(photoUid) ?: return null
+        val recipe = recipeDao.getRecipeOnce(photo.recipeId) ?: return null
+        return PhotoPushInfo(photo.uri, recipe.uid, photo.isCover, photo.position)
+    }
+
+    /** Usado antes de descargar una foto remota, para no descargarla (y guardar un fichero
+     *  huérfano) si ya existe localmente con ese uid. */
+    suspend fun hasLocalPhoto(photoUid: String): Boolean = recipeDao.findPhotoByUid(photoUid) != null
 
     // --- Aplicar cambios recibidos del servidor (usado por SyncEngine) ---
     // Los libros se procesan en dos pasadas (altas primero, bajas al final) para no chocar con la
@@ -964,6 +996,35 @@ class RecipeRepository(private val db: AppDatabase) {
         val existing = recipeDao.findByUid(dto.uid) ?: return@withTransaction
         if (existing.updatedAt > dto.deletedAt) return@withTransaction
         recipeDao.deleteRecipe(existing.id)
+    }
+
+    /**
+     * Aplica el alta/edición de una foto suelta ya descargada (ver [SyncEngine]): [localUri] es la
+     * ruta donde el motor de sincronización ya ha guardado sus bytes con [PhotoStorage]. Sin
+     * comparación de "última escritura gana" (las fotos no se editan en el sitio, solo se añaden o
+     * se quitan): si ya existe una fila local con ese uid, se deja tal cual salvo posición/portada.
+     */
+    suspend fun applyRemotePhotoUpsert(dto: PhotoMetaDto, localUri: String): Boolean {
+        if (dto.deletedAt != null) return false
+        val recipe = recipeDao.findByUid(dto.recipeUid) ?: return false
+        val existing = recipeDao.findPhotoByUid(dto.uid)
+        if (existing != null) {
+            recipeDao.updatePhotoMetaByUid(dto.uid, dto.isCover, dto.position)
+        } else {
+            recipeDao.insertPhotos(
+                listOf(RecipePhotoEntity(recipeId = recipe.id, uri = localUri, position = dto.position, isCover = dto.isCover, uid = dto.uid))
+            )
+        }
+        return true
+    }
+
+    /** Borra la fila local de una foto ya borrada en el servidor y devuelve su [RecipePhotoEntity.uri]
+     *  para que el motor de sincronización borre también el fichero físico; null si no había nada que borrar. */
+    suspend fun applyRemotePhotoDeletion(dto: PhotoMetaDto): String? {
+        if (dto.deletedAt == null) return null
+        val existing = recipeDao.findPhotoByUid(dto.uid) ?: return null
+        recipeDao.deletePhotoByUid(dto.uid)
+        return existing.uri
     }
 
     private suspend fun resolveCategoryId(name: String): Long {

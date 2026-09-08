@@ -72,6 +72,15 @@ interface RecipeDao {
     @Query("SELECT * FROM recipe_photos WHERE recipeId = :recipeId")
     suspend fun getPhotosOnce(recipeId: Long): List<RecipePhotoEntity>
 
+    @Query("SELECT * FROM recipe_photos WHERE uid = :uid LIMIT 1")
+    suspend fun findPhotoByUid(uid: String): RecipePhotoEntity?
+
+    @Query("DELETE FROM recipe_photos WHERE uid = :uid")
+    suspend fun deletePhotoByUid(uid: String)
+
+    @Query("UPDATE recipe_photos SET isCover = :isCover, position = :position WHERE uid = :uid")
+    suspend fun updatePhotoMetaByUid(uid: String, isCover: Boolean, position: Int)
+
     @Insert
     suspend fun insertTagCrossRefs(items: List<RecipeTagCrossRef>)
 

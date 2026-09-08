@@ -51,7 +51,7 @@ import com.bmo00.miga.data.local.entity.UtensilEntity
     // desactivado porque compilar debug+release a la vez (como hace CI) provoca que
     // kspDebugKotlin y kspReleaseKotlin escriban al mismo fichero en paralelo, dando el error
     // intermitente "Empty schema file".
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

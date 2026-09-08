@@ -41,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.bmo00.miga.data.model.SyncConnection
@@ -48,6 +49,7 @@ import com.bmo00.miga.data.model.SyncConnection
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Unit) {
+    val context = LocalContext.current
     val connections by viewModel.connections.collectAsState()
     val syncingConnectionIds by viewModel.syncingConnectionIds.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -101,7 +103,7 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
                         if (connection.id in syncingConnectionIds) {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp).padding(end = 8.dp))
                         } else {
-                            IconButton(onClick = { viewModel.syncNow(connection.id) }) {
+                            IconButton(onClick = { viewModel.syncNow(context, connection.id) }) {
                                 Icon(Icons.Filled.Sync, contentDescription = "Sincronizar ahora")
                             }
                         }

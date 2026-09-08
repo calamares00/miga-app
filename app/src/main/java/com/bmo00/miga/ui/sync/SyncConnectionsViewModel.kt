@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.sync
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bmo00.miga.data.model.SyncConnection
@@ -32,10 +33,10 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
 
     /** Resultado (éxito/error) ya queda reflejado en la propia conexión, vía [connections]
      *  (lastSyncedAt/lastSyncError); esto solo controla el indicador de progreso. */
-    fun syncNow(connectionId: Long) {
+    fun syncNow(context: Context, connectionId: Long) {
         viewModelScope.launch {
             _syncingConnectionIds.value = _syncingConnectionIds.value + connectionId
-            syncEngine.syncConnection(connectionId)
+            syncEngine.syncConnection(context, connectionId)
             _syncingConnectionIds.value = _syncingConnectionIds.value - connectionId
         }
     }

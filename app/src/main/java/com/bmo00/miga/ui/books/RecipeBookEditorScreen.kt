@@ -222,7 +222,7 @@ fun RecipeBookEditorScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         OutlinedButton(
-                            onClick = { viewModel.syncNow() },
+                            onClick = { viewModel.syncNow(context) },
                             enabled = !viewModel.isSyncingNow,
                             modifier = Modifier.fillMaxWidth()
                         ) {
