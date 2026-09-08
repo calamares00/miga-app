@@ -1,0 +1,1 @@
+Mejora de seguridad: el token de acceso al servidor de sincronización ya se guarda cifrado (Android Keystore) en vez de en claro, para que quede protegido incluso dentro de una copia de seguridad de Android.

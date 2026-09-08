@@ -7,6 +7,7 @@ import com.bmo00.miga.data.export.RecipeExportDto
 import com.bmo00.miga.data.export.StepGroupDto
 import com.bmo00.miga.data.local.AppDatabase
 import com.bmo00.miga.data.local.PhotoStorage
+import com.bmo00.miga.data.local.TokenCipher
 import com.bmo00.miga.data.local.entity.CategoryEntity
 import com.bmo00.miga.data.local.entity.IngredientCatalogEntity
 import com.bmo00.miga.data.local.entity.IngredientCategoryEntity
@@ -777,7 +778,7 @@ class RecipeRepository(
                 label = label.trim(),
                 serverUrl = serverUrl.trim().trimEnd('/'),
                 namespaceId = namespaceId.trim(),
-                accessToken = accessToken.trim(),
+                accessToken = TokenCipher.encrypt(accessToken.trim()),
                 createdAt = System.currentTimeMillis()
             )
         )
@@ -1096,7 +1097,12 @@ class RecipeRepository(
 
 fun RecipeBookEntity.toDomain() = RecipeBook(id, uid, name, coverPhotoUri, packId, packVersion, syncConnectionId)
 
-fun SyncConnectionEntity.toDomain() = SyncConnection(id, label, serverUrl, namespaceId, accessToken, lastSyncedRevision, lastSyncedAt, lastSyncError)
+// El fallback "?: accessToken" es a propósito: decrypt devuelve null (no lanza) si la fila es de
+// antes de cifrar el token, y en ese caso el valor en claro que ya había sigue siendo válido tal cual.
+fun SyncConnectionEntity.toDomain(): SyncConnection {
+    val decryptedToken = TokenCipher.decrypt(accessToken) ?: accessToken
+    return SyncConnection(id, label, serverUrl, namespaceId, decryptedToken, lastSyncedRevision, lastSyncedAt, lastSyncError)
+}
 
 fun RecipeWithDetails.toDomain(): Recipe {
     val sortedIngredients = ingredients.sortedBy { it.position }
