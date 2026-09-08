@@ -19,6 +19,7 @@ object Destinations {
     const val MANAGE_UTENSILS_ROUTE = "settings/utensils"
     const val MANAGE_INGREDIENTS_ROUTE = "settings/ingredients"
     const val MANAGE_INGREDIENT_CATEGORIES_ROUTE = "settings/ingredientCategories"
+    const val SYNC_CONNECTIONS_ROUTE = "settings/syncConnections"
     const val HELP_ROUTE = "help"
     const val ABOUT_ROUTE = "about"
 

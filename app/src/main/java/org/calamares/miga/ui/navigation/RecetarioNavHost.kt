@@ -62,6 +62,8 @@ import org.calamares.miga.ui.settings.ManageUtensilsScreen
 import org.calamares.miga.ui.settings.ManageUtensilsViewModel
 import org.calamares.miga.ui.settings.SettingsScreen
 import org.calamares.miga.ui.settings.SettingsViewModel
+import org.calamares.miga.ui.sync.SyncConnectionsScreen
+import org.calamares.miga.ui.sync.SyncConnectionsViewModel
 
 private fun repositoryOf(context: android.content.Context): RecipeRepository =
     (context.applicationContext as RecetarioApp).repository
@@ -288,9 +290,17 @@ fun RecetarioNavHost() {
                     onManageIngredients = { navController.navigate(Destinations.MANAGE_INGREDIENTS_ROUTE) },
                     onManageIngredientCategories = { navController.navigate(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) },
                     onOpenPacksCatalog = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) },
+                    onOpenSyncConnections = { navController.navigate(Destinations.SYNC_CONNECTIONS_ROUTE) },
                     onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
                     onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) }
                 )
+            }
+
+            composable(Destinations.SYNC_CONNECTIONS_ROUTE) {
+                val viewModel: SyncConnectionsViewModel = viewModel(
+                    factory = viewModelFactory { initializer { SyncConnectionsViewModel(repository) } }
+                )
+                SyncConnectionsScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
             }
 
             composable(Destinations.PACKS_CATALOG_ROUTE) {

@@ -7,10 +7,17 @@ data class RecipeBook(
     val coverPhotoUri: String?,
     /** Id del pack instalado (ver PacksCatalogClient); null = libro propio del usuario, editable. */
     val packId: String? = null,
-    val packVersion: Int? = null
+    val packVersion: Int? = null,
+    /** Id de la conexión de sincronización (ver SyncConnection) a la que pertenece este libro;
+     *  null = libro local, no sincronizado con ningún servidor. */
+    val syncConnectionId: Long? = null
 ) {
     /** Un libro-pack es de solo lectura: no se puede renombrar, cambiar portada ni añadir/quitar recetas. */
     val isPack: Boolean get() = packId != null
+
+    /** Un libro sincronizado es de lectura-escritura normal (a diferencia de un pack); solo se
+     *  distingue por una insignia visual y por lo que hace el motor de sincronización. */
+    val isSynced: Boolean get() = syncConnectionId != null
 }
 
 data class RecipeBookSummary(
@@ -19,9 +26,11 @@ data class RecipeBookSummary(
     val coverPhotoUri: String?,
     val recipeCount: Int,
     val packId: String? = null,
-    val packVersion: Int? = null
+    val packVersion: Int? = null,
+    val syncConnectionId: Long? = null
 ) {
     val isPack: Boolean get() = packId != null
+    val isSynced: Boolean get() = syncConnectionId != null
 }
 
 data class RecipeBookDraft(

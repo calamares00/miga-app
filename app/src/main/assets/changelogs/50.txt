@@ -1,0 +1,1 @@
+Primer paso del servidor de sincronización self-hosted: en Ajustes puedes añadir conexiones a un namespace de tu propio servidor (miga-server) y probarlas. Los libros que vincules con una conexión se sincronizarán con otras apps Miga en próximas versiones.
