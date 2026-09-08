@@ -825,6 +825,9 @@ class RecipeRepository(private val db: AppDatabase) {
         return getRecipeBookSyncDto(book.id)
     }
 
+    /** Usado para subir la portada de un libro (ver [SyncEngine.pushBookCoverIfPresent]); null si el libro no tiene. */
+    suspend fun getRecipeBookCoverUri(bookUid: String): String? = recipeBookDao.findByUid(bookUid)?.coverPhotoUri
+
     suspend fun getRecipeSyncDtoByUid(uid: String): RecipeSyncDto? {
         val entity = recipeDao.findByUid(uid) ?: return null
         return getRecipeSyncDto(entity.id)
@@ -904,6 +907,19 @@ class RecipeRepository(private val db: AppDatabase) {
         if (existing.updatedAt > dto.deletedAt) return@withTransaction
         recipeDao.deleteAllForBook(existing.id)
         recipeBookDao.delete(existing.id)
+    }
+
+    /**
+     * Aplica la portada de libro ya descargada (ver [SyncEngine]): [localUri] es la ruta donde el
+     * motor de sincronización ya ha guardado sus bytes con [PhotoStorage]. Sin comparación de
+     * "última escritura gana" propia (ya se decidió al aplicar el libro que la contiene); devuelve
+     * el uri del fichero anterior (si había uno distinto) para que el motor lo borre y no quede huérfano.
+     */
+    suspend fun applyRemoteBookCover(bookId: Long, localUri: String): String? {
+        val book = recipeBookDao.getOnce(bookId) ?: return null
+        val oldUri = book.coverPhotoUri
+        recipeBookDao.update(book.copy(coverPhotoUri = localUri))
+        return oldUri?.takeIf { it != localUri }
     }
 
     suspend fun applyRemoteRecipeUpsert(dto: RecipeSyncDto): Long? = db.withTransaction {

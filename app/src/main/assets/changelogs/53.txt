@@ -1,0 +1,1 @@
+La sincronización con el servidor self-hosted ya incluye la portada de cada libro, además de su texto y sus fotos de receta. Y ya no hace falta pulsar "Sincronizar ahora": al abrir la app se sincronizan automáticamente todas las conexiones configuradas.

@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.books
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bmo00.miga.BuildConfig
@@ -11,6 +12,7 @@ import com.bmo00.miga.data.remote.UpdateCheckResult
 import com.bmo00.miga.data.remote.UpdateChecker
 import com.bmo00.miga.data.remote.UpdateInfo
 import com.bmo00.miga.data.repository.RecipeRepository
+import com.bmo00.miga.data.sync.SyncEngine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,9 +23,12 @@ import kotlinx.coroutines.launch
 data class ChangelogAnnouncement(val versionName: String, val entries: List<String>)
 
 class RecipeBooksViewModel(
-    repository: RecipeRepository,
+    private val repository: RecipeRepository,
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
+    private val syncEngine = SyncEngine(repository)
+    private var autoSyncStarted = false
+
     val books: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -77,6 +82,22 @@ class RecipeBooksViewModel(
                     _changelogAnnouncement.value = ChangelogAnnouncement(BuildConfig.VERSION_NAME, entries)
                 }
                 settingsRepository.setLastSeenVersionCode(current)
+            }
+        }
+    }
+
+    /** Sincroniza automáticamente todas las conexiones configuradas (ver Ajustes → Servidor de
+     *  sincronización) al abrir la app, mismo sitio y espíritu que el chequeo de actualizaciones de
+     *  arriba - así los cambios de otras apps Miga conectadas al mismo namespace llegan sin que el
+     *  usuario tenga que sincronizar a mano. Solo una vez por instancia de este ViewModel (que
+     *  persiste mientras la pestaña de libros siga viva) para no repetir el sync en cada
+     *  recomposición o cambio de pestaña. */
+    fun syncAllOnOpen(context: Context) {
+        if (autoSyncStarted) return
+        autoSyncStarted = true
+        viewModelScope.launch {
+            repository.observeSyncConnections().first().forEach { connection ->
+                syncEngine.syncConnection(context, connection.id)
             }
         }
     }
