@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.bmo00.miga.data.model.SyncConnection
 import com.bmo00.miga.data.repository.RecipeRepository
 import com.bmo00.miga.data.sync.SyncClient
+import com.bmo00.miga.data.sync.SyncEngine
 import com.bmo00.miga.data.sync.SyncPingResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,8 +22,23 @@ sealed interface TestConnectionState {
 
 class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewModel() {
 
+    private val syncEngine = SyncEngine(repository)
+
     val connections: StateFlow<List<SyncConnection>> = repository.observeSyncConnections()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _syncingConnectionIds = MutableStateFlow<Set<Long>>(emptySet())
+    val syncingConnectionIds: StateFlow<Set<Long>> = _syncingConnectionIds
+
+    /** Resultado (éxito/error) ya queda reflejado en la propia conexión, vía [connections]
+     *  (lastSyncedAt/lastSyncError); esto solo controla el indicador de progreso. */
+    fun syncNow(connectionId: Long) {
+        viewModelScope.launch {
+            _syncingConnectionIds.value = _syncingConnectionIds.value + connectionId
+            syncEngine.syncConnection(connectionId)
+            _syncingConnectionIds.value = _syncingConnectionIds.value - connectionId
+        }
+    }
 
     private val _testState = MutableStateFlow<TestConnectionState>(TestConnectionState.Idle)
     val testState: StateFlow<TestConnectionState> = _testState

@@ -1,13 +1,17 @@
 package com.bmo00.miga.data.repository
 
 import androidx.room.withTransaction
+import com.bmo00.miga.data.export.IngredientDto
+import com.bmo00.miga.data.export.IngredientGroupDto
 import com.bmo00.miga.data.export.RecipeExportDto
+import com.bmo00.miga.data.export.StepGroupDto
 import com.bmo00.miga.data.local.AppDatabase
 import com.bmo00.miga.data.local.PhotoStorage
 import com.bmo00.miga.data.local.entity.CategoryEntity
 import com.bmo00.miga.data.local.entity.IngredientCatalogEntity
 import com.bmo00.miga.data.local.entity.IngredientCategoryEntity
 import com.bmo00.miga.data.local.entity.IngredientEntity
+import com.bmo00.miga.data.local.entity.PendingSyncChangeEntity
 import com.bmo00.miga.data.local.entity.RecipeBookEntity
 import com.bmo00.miga.data.local.entity.RecipeEntity
 import com.bmo00.miga.data.local.entity.RecipePhotoEntity
@@ -16,7 +20,9 @@ import com.bmo00.miga.data.local.entity.RecipeUtensilCrossRef
 import com.bmo00.miga.data.local.entity.RecipeWithDetails
 import com.bmo00.miga.data.local.entity.ShoppingListItemEntity
 import com.bmo00.miga.data.local.entity.StepEntity
+import com.bmo00.miga.data.local.entity.SyncChangeType
 import com.bmo00.miga.data.local.entity.SyncConnectionEntity
+import com.bmo00.miga.data.local.entity.SyncEntityType
 import com.bmo00.miga.data.local.entity.TagEntity
 import com.bmo00.miga.data.local.entity.UtensilEntity
 import com.bmo00.miga.data.model.Difficulty
@@ -37,6 +43,8 @@ import com.bmo00.miga.data.model.ShoppingListItem
 import com.bmo00.miga.data.model.StepGroup
 import com.bmo00.miga.data.model.SyncConnection
 import com.bmo00.miga.data.model.UNCATEGORIZED_INGREDIENT_LABEL
+import com.bmo00.miga.data.sync.BookSyncDto
+import com.bmo00.miga.data.sync.RecipeSyncDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -96,8 +104,10 @@ class RecipeRepository(private val db: AppDatabase) {
     /** No-op si la receta pertenece a un libro-pack (ver [RecipeBook.isPack]): son de solo lectura. */
     suspend fun deleteRecipe(id: Long) {
         val recipe = recipeDao.getRecipeOnce(id) ?: return
-        if (recipeBookDao.getOnce(recipe.recipeBookId)?.packId != null) return
+        val book = recipeBookDao.getOnce(recipe.recipeBookId) ?: return
+        if (book.packId != null) return
         recipeDao.deleteRecipe(id)
+        book.syncConnectionId?.let { enqueueSyncChange(it, SyncEntityType.RECIPE, recipe.uid, SyncChangeType.DELETE) }
     }
 
     /** No-op si [newBookId] es un libro-pack: no se puede añadir contenido a uno (moverlo FUERA de un pack sí está permitido). */
@@ -234,6 +244,12 @@ class RecipeRepository(private val db: AppDatabase) {
         val utensilIds = draft.utensilNames.filter { it.isNotBlank() }.map { resolveUtensilId(it) }
         if (utensilIds.isNotEmpty()) {
             recipeDao.insertUtensilCrossRefs(utensilIds.map { RecipeUtensilCrossRef(recipeId, it) })
+        }
+
+        recipeBookDao.getOnce(targetBookId)?.syncConnectionId?.let { connectionId ->
+            recipeDao.getRecipeOnce(recipeId)?.let { saved ->
+                enqueueSyncChange(connectionId, SyncEntityType.RECIPE, saved.uid, SyncChangeType.UPSERT)
+            }
         }
 
         recipeId
@@ -502,10 +518,11 @@ class RecipeRepository(private val db: AppDatabase) {
             )
         } else {
             val existing = recipeBookDao.getOnce(draft.id)
+            val uid = existing?.uid ?: draft.uid ?: UUID.randomUUID().toString()
             recipeBookDao.update(
                 RecipeBookEntity(
                     id = draft.id,
-                    uid = existing?.uid ?: draft.uid ?: UUID.randomUUID().toString(),
+                    uid = uid,
                     name = draft.name.trim(),
                     coverPhotoUri = draft.coverPhotoUri,
                     createdAt = existing?.createdAt ?: now,
@@ -513,6 +530,7 @@ class RecipeRepository(private val db: AppDatabase) {
                     syncConnectionId = existing?.syncConnectionId
                 )
             )
+            existing?.syncConnectionId?.let { enqueueSyncChange(it, SyncEntityType.BOOK, uid, SyncChangeType.UPSERT) }
             draft.id
         }
     }
@@ -521,7 +539,9 @@ class RecipeRepository(private val db: AppDatabase) {
     suspend fun deleteRecipeBook(id: Long) {
         val count = recipeBookDao.countRecipes(id)
         if (count > 0) throw RecipeBookNotEmptyException(count)
+        val book = recipeBookDao.getOnce(id)
         recipeBookDao.delete(id)
+        book?.syncConnectionId?.let { enqueueSyncChange(it, SyncEntityType.BOOK, book.uid, SyncChangeType.DELETE) }
     }
 
     /**
@@ -731,6 +751,219 @@ class RecipeRepository(private val db: AppDatabase) {
         recipeBookDao.clearSyncConnection(id)
         pendingSyncChangeDao.clearAllForConnection(id)
         syncConnectionDao.getOnce(id)?.let { syncConnectionDao.delete(it) }
+    }
+
+    suspend fun markSyncSuccess(connectionId: Long, revision: Long) =
+        syncConnectionDao.markSynced(connectionId, revision, System.currentTimeMillis())
+
+    suspend fun markSyncError(connectionId: Long, reason: String) = syncConnectionDao.markError(connectionId, reason)
+
+    /** Vincula un libro propio existente a una conexión: pasa a sincronizarse (lectura-escritura,
+     *  no de solo lectura como un pack) y se encola para subirse entero en el próximo sync. */
+    suspend fun linkBookToSyncConnection(bookId: Long, connectionId: Long) = db.withTransaction {
+        val book = recipeBookDao.getOnce(bookId) ?: return@withTransaction
+        recipeBookDao.update(book.copy(syncConnectionId = connectionId, updatedAt = System.currentTimeMillis()))
+        enqueueSyncChange(connectionId, SyncEntityType.BOOK, book.uid, SyncChangeType.UPSERT)
+        recipeDao.getAllWithDetailsForBookOnce(bookId).forEach { details ->
+            enqueueSyncChange(connectionId, SyncEntityType.RECIPE, details.recipe.uid, SyncChangeType.UPSERT)
+        }
+    }
+
+    /** Deja de sincronizar un libro: pasa a ser local, sin borrar nada de su contenido ni del servidor. */
+    suspend fun unlinkBookFromSyncConnection(bookId: Long) {
+        val book = recipeBookDao.getOnce(bookId) ?: return
+        recipeBookDao.update(book.copy(syncConnectionId = null))
+    }
+
+    // --- Outbox: encolar cambios locales pendientes de subir ---
+
+    private suspend fun enqueueSyncChange(connectionId: Long, entityType: SyncEntityType, uid: String, changeType: SyncChangeType) {
+        pendingSyncChangeDao.enqueue(
+            PendingSyncChangeEntity(
+                syncConnectionId = connectionId,
+                entityType = entityType.name,
+                uid = uid,
+                changeType = changeType.name,
+                createdAt = System.currentTimeMillis()
+            )
+        )
+    }
+
+    suspend fun getPendingSyncChanges(connectionId: Long): List<PendingSyncChangeEntity> =
+        pendingSyncChangeDao.getPendingForConnection(connectionId)
+
+    suspend fun clearPendingSyncChange(id: Long) = pendingSyncChangeDao.clear(id)
+
+    // --- Construir el DTO de sincronización de un libro/receta local (para subirlo) ---
+
+    suspend fun getRecipeBookSyncDto(bookId: Long): BookSyncDto? {
+        val book = recipeBookDao.getOnce(bookId) ?: return null
+        return BookSyncDto(uid = book.uid, name = book.name, hasCoverPhoto = book.coverPhotoUri != null, updatedAt = book.updatedAt)
+    }
+
+    suspend fun getRecipeBookSyncDtoByUid(uid: String): BookSyncDto? {
+        val book = recipeBookDao.findByUid(uid) ?: return null
+        return getRecipeBookSyncDto(book.id)
+    }
+
+    suspend fun getRecipeSyncDtoByUid(uid: String): RecipeSyncDto? {
+        val entity = recipeDao.findByUid(uid) ?: return null
+        return getRecipeSyncDto(entity.id)
+    }
+
+    suspend fun getRecipeSyncDto(recipeId: Long): RecipeSyncDto? {
+        val details = recipeDao.observeWithDetails(recipeId).first() ?: return null
+        val book = recipeBookDao.getOnce(details.recipe.recipeBookId) ?: return null
+        val recipe = details.toDomain()
+        return RecipeSyncDto(
+            uid = recipe.uid,
+            bookUid = book.uid,
+            name = recipe.name,
+            categoryName = recipe.categoryName,
+            difficulty = recipe.difficulty.name,
+            prepTimeMinutes = recipe.prepTimeMinutes,
+            cookTimeMinutes = recipe.cookTimeMinutes,
+            servings = recipe.servings,
+            notes = recipe.notes,
+            source = recipe.source,
+            isFavorite = recipe.isFavorite,
+            ingredientGroups = recipe.ingredientGroups.map { g ->
+                IngredientGroupDto(g.name, g.ingredients.map { IngredientDto(it.name, it.quantity, it.unit) })
+            },
+            stepGroups = recipe.stepGroups.map { g -> StepGroupDto(g.name, g.instructions) },
+            tags = recipe.tags,
+            utensils = recipe.utensils,
+            updatedAt = details.recipe.updatedAt
+        )
+    }
+
+    // --- Aplicar cambios recibidos del servidor (usado por SyncEngine) ---
+    // Los libros se procesan en dos pasadas (altas primero, bajas al final) para no chocar con la
+    // restricción de clave foránea RESTRICT de recipes.recipeBookId: una receta sincronizada nueva
+    // necesita que su libro ya exista localmente, y un libro no se puede borrar mientras todavía
+    // tenga recetas locales (por eso las recetas también se procesan antes que los borrados de libro).
+
+    /** Devuelve el id local del libro tras aplicar el alta/edición, o null si se ha ignorado (la
+     *  copia local era más reciente, o es un tombstone). */
+    suspend fun applyRemoteBookUpsert(connectionId: Long, dto: BookSyncDto): Long? = db.withTransaction {
+        if (dto.deletedAt != null) return@withTransaction null
+        val existing = recipeBookDao.findByUid(dto.uid)
+        if (existing != null && existing.updatedAt > dto.updatedAt) return@withTransaction null
+        if (existing == null) {
+            recipeBookDao.insert(
+                RecipeBookEntity(
+                    uid = dto.uid,
+                    name = dto.name,
+                    coverPhotoUri = null,
+                    createdAt = dto.updatedAt,
+                    updatedAt = dto.updatedAt,
+                    syncConnectionId = connectionId
+                )
+            )
+        } else {
+            recipeBookDao.update(existing.copy(name = dto.name, updatedAt = dto.updatedAt, syncConnectionId = connectionId))
+            existing.id
+        }
+    }
+
+    suspend fun applyRemoteBookDeletion(dto: BookSyncDto) = db.withTransaction {
+        if (dto.deletedAt == null) return@withTransaction
+        val existing = recipeBookDao.findByUid(dto.uid) ?: return@withTransaction
+        if (existing.updatedAt > dto.deletedAt) return@withTransaction
+        recipeDao.deleteAllForBook(existing.id)
+        recipeBookDao.delete(existing.id)
+    }
+
+    suspend fun applyRemoteRecipeUpsert(dto: RecipeSyncDto): Long? = db.withTransaction {
+        if (dto.deletedAt != null) return@withTransaction null
+        val bookId = recipeBookDao.findByUid(dto.bookUid)?.id ?: return@withTransaction null
+        val existing = recipeDao.findByUid(dto.uid)
+        if (existing != null && existing.updatedAt > dto.updatedAt) return@withTransaction null
+
+        val categoryId = dto.categoryName?.takeIf { it.isNotBlank() }?.let { resolveCategoryId(it) }
+        val domainIngredientGroups = dto.ingredientGroups.map { g -> IngredientGroup(g.name, g.ingredients.map { Ingredient(it.name, it.quantity, it.unit) }) }
+        val domainStepGroups = dto.stepGroups.map { g -> StepGroup(g.name, g.instructions) }
+        val newFingerprint = computeHealthFingerprint(domainIngredientGroups, domainStepGroups)
+        val keepHealth = existing != null && existing.healthFingerprint == newFingerprint
+
+        val recipeId = if (existing == null) {
+            recipeDao.insertRecipe(
+                RecipeEntity(
+                    uid = dto.uid,
+                    name = dto.name.trim(),
+                    categoryId = categoryId,
+                    recipeBookId = bookId,
+                    difficulty = dto.difficulty,
+                    prepTimeMinutes = dto.prepTimeMinutes,
+                    cookTimeMinutes = dto.cookTimeMinutes,
+                    servings = dto.servings,
+                    notes = dto.notes,
+                    source = dto.source,
+                    isFavorite = dto.isFavorite,
+                    timesCooked = 0,
+                    createdAt = dto.updatedAt,
+                    updatedAt = dto.updatedAt
+                )
+            )
+        } else {
+            recipeDao.updateRecipe(
+                existing.copy(
+                    name = dto.name.trim(),
+                    categoryId = categoryId,
+                    recipeBookId = bookId,
+                    difficulty = dto.difficulty,
+                    prepTimeMinutes = dto.prepTimeMinutes,
+                    cookTimeMinutes = dto.cookTimeMinutes,
+                    servings = dto.servings,
+                    notes = dto.notes,
+                    source = dto.source,
+                    isFavorite = dto.isFavorite,
+                    updatedAt = dto.updatedAt,
+                    healthColor = if (keepHealth) existing.healthColor else null,
+                    healthDescription = if (keepHealth) existing.healthDescription else null,
+                    healthFingerprint = if (keepHealth) existing.healthFingerprint else null,
+                    healthAnalyzedAt = if (keepHealth) existing.healthAnalyzedAt else null
+                )
+            )
+            existing.id
+        }
+
+        recipeDao.deleteIngredients(recipeId)
+        var ingredientPosition = 0
+        val ingredientEntities = dto.ingredientGroups.flatMap { group ->
+            group.ingredients.map { ingredient ->
+                IngredientEntity(
+                    recipeId = recipeId, groupName = group.name, position = ingredientPosition++,
+                    name = ingredient.name.trim(), quantity = ingredient.quantity,
+                    unit = ingredient.unit?.trim()?.takeIf { it.isNotBlank() }
+                )
+            }
+        }
+        if (ingredientEntities.isNotEmpty()) recipeDao.insertIngredients(ingredientEntities)
+
+        recipeDao.deleteSteps(recipeId)
+        var stepPosition = 0
+        val stepEntities = dto.stepGroups.flatMap { group ->
+            group.instructions.map { instruction -> StepEntity(recipeId = recipeId, groupName = group.name, position = stepPosition++, instruction = instruction.trim()) }
+        }
+        if (stepEntities.isNotEmpty()) recipeDao.insertSteps(stepEntities)
+
+        recipeDao.deleteTagCrossRefs(recipeId)
+        val tagIds = dto.tags.filter { it.isNotBlank() }.map { resolveTagId(it) }
+        if (tagIds.isNotEmpty()) recipeDao.insertTagCrossRefs(tagIds.map { RecipeTagCrossRef(recipeId, it) })
+
+        recipeDao.deleteUtensilCrossRefs(recipeId)
+        val utensilIds = dto.utensils.filter { it.isNotBlank() }.map { resolveUtensilId(it) }
+        if (utensilIds.isNotEmpty()) recipeDao.insertUtensilCrossRefs(utensilIds.map { RecipeUtensilCrossRef(recipeId, it) })
+
+        recipeId
+    }
+
+    suspend fun applyRemoteRecipeDeletion(dto: RecipeSyncDto) = db.withTransaction {
+        if (dto.deletedAt == null) return@withTransaction
+        val existing = recipeDao.findByUid(dto.uid) ?: return@withTransaction
+        if (existing.updatedAt > dto.deletedAt) return@withTransaction
+        recipeDao.deleteRecipe(existing.id)
     }
 
     private suspend fun resolveCategoryId(name: String): Long {

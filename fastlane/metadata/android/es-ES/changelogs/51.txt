@@ -1,0 +1,1 @@
+El servidor de sincronización ya sincroniza de verdad: desde el editor de un libro puedes elegir "Sincronizar con..." para vincularlo a una conexión, y desde ahí (o desde Ajustes) sincronizar libros y recetas con las demás apps Miga conectadas al mismo namespace. Un libro sincronizado sigue siendo totalmente editable, a diferencia de un pack.

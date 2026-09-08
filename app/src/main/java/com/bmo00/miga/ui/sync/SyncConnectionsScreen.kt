@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +49,7 @@ import com.bmo00.miga.data.model.SyncConnection
 @Composable
 fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Unit) {
     val connections by viewModel.connections.collectAsState()
+    val syncingConnectionIds by viewModel.syncingConnectionIds.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var connectionToRemove by remember { mutableStateOf<SyncConnection?>(null) }
 
@@ -95,6 +97,13 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (connection.lastSyncError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+                        if (connection.id in syncingConnectionIds) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp).padding(end = 8.dp))
+                        } else {
+                            IconButton(onClick = { viewModel.syncNow(connection.id) }) {
+                                Icon(Icons.Filled.Sync, contentDescription = "Sincronizar ahora")
+                            }
                         }
                         IconButton(onClick = { connectionToRemove = connection }) {
                             Icon(Icons.Filled.Delete, contentDescription = "Quitar conexión")
