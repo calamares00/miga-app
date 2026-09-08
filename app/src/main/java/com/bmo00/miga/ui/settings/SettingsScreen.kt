@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
@@ -104,6 +105,7 @@ fun SettingsScreen(
     onManageIngredients: () -> Unit,
     onManageIngredientCategories: () -> Unit,
     onOpenPacksCatalog: () -> Unit,
+    onOpenSyncConnections: () -> Unit,
     onHelp: () -> Unit,
     onAbout: () -> Unit
 ) {
@@ -415,6 +417,18 @@ fun SettingsScreen(
                 )
                 OutlinedButton(onClick = onOpenPacksCatalog, modifier = Modifier.fillMaxWidth()) {
                     Text("Explorar catálogo")
+                }
+            }
+
+            SettingsCard(
+                icon = Icons.Filled.Sync,
+                title = "Servidor de sincronización",
+                description = "Conecta la app a uno o varios namespaces de un servidor self-hosted " +
+                    "para compartir y sincronizar libros y recetas de lectura-escritura con otras " +
+                    "apps Miga."
+            ) {
+                OutlinedButton(onClick = onOpenSyncConnections, modifier = Modifier.fillMaxWidth()) {
+                    Text("Gestionar conexiones")
                 }
             }
 

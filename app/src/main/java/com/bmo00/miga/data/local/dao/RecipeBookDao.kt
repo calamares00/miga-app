@@ -48,4 +48,9 @@ interface RecipeBookDao {
 
     @Query("DELETE FROM recipe_books WHERE id = :id")
     suspend fun delete(id: Long)
+
+    /** Usado al quitar una conexión de sincronización: sus libros pasan a ser locales, sin borrar
+     *  nada de su contenido. */
+    @Query("UPDATE recipe_books SET syncConnectionId = NULL WHERE syncConnectionId = :syncConnectionId")
+    suspend fun clearSyncConnection(syncConnectionId: Long)
 }

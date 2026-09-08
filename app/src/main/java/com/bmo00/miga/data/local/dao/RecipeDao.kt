@@ -67,6 +67,11 @@ interface RecipeDao {
     @Query("DELETE FROM recipe_photos WHERE recipeId = :recipeId")
     suspend fun deletePhotos(recipeId: Long)
 
+    /** Usado antes de borrar+reinsertar las fotos de una receta al guardarla, para conservar el
+     *  uid de las fotos que ya existían (mismo uri) en vez de generarles uno nuevo cada vez. */
+    @Query("SELECT * FROM recipe_photos WHERE recipeId = :recipeId")
+    suspend fun getPhotosOnce(recipeId: Long): List<RecipePhotoEntity>
+
     @Insert
     suspend fun insertTagCrossRefs(items: List<RecipeTagCrossRef>)
 

@@ -16,6 +16,7 @@ import com.bmo00.miga.data.local.entity.RecipeUtensilCrossRef
 import com.bmo00.miga.data.local.entity.RecipeWithDetails
 import com.bmo00.miga.data.local.entity.ShoppingListItemEntity
 import com.bmo00.miga.data.local.entity.StepEntity
+import com.bmo00.miga.data.local.entity.SyncConnectionEntity
 import com.bmo00.miga.data.local.entity.TagEntity
 import com.bmo00.miga.data.local.entity.UtensilEntity
 import com.bmo00.miga.data.model.Difficulty
@@ -34,6 +35,7 @@ import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ShoppingListGroup
 import com.bmo00.miga.data.model.ShoppingListItem
 import com.bmo00.miga.data.model.StepGroup
+import com.bmo00.miga.data.model.SyncConnection
 import com.bmo00.miga.data.model.UNCATEGORIZED_INGREDIENT_LABEL
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -57,6 +59,8 @@ class RecipeRepository(private val db: AppDatabase) {
     private val ingredientCatalogDao = db.ingredientCatalogDao()
     private val ingredientCategoryDao = db.ingredientCategoryDao()
     private val shoppingListDao = db.shoppingListDao()
+    private val syncConnectionDao = db.syncConnectionDao()
+    private val pendingSyncChangeDao = db.pendingSyncChangeDao()
 
     fun observeRecipesForBook(bookId: Long): Flow<List<Recipe>> =
         recipeDao.observeAllWithDetailsForBook(bookId).map { list -> list.map { it.toDomain() } }
@@ -200,7 +204,9 @@ class RecipeRepository(private val db: AppDatabase) {
         }
         if (stepEntities.isNotEmpty()) recipeDao.insertSteps(stepEntities)
 
-        // Fotos
+        // Fotos: se reescriben por completo, pero conservando el uid de las que ya existían (por
+        // uri) para que el motor de sincronización no las trate como fotos nuevas en cada guardado.
+        val existingUidByUri = recipeDao.getPhotosOnce(recipeId).associate { it.uri to it.uid }
         recipeDao.deletePhotos(recipeId)
         if (draft.photos.isNotEmpty()) {
             recipeDao.insertPhotos(
@@ -209,7 +215,8 @@ class RecipeRepository(private val db: AppDatabase) {
                         recipeId = recipeId,
                         uri = photo.uri,
                         position = index,
-                        isCover = photo.isCover
+                        isCover = photo.isCover,
+                        uid = existingUidByUri[photo.uri] ?: UUID.randomUUID().toString()
                     )
                 }
             )
@@ -454,7 +461,12 @@ class RecipeRepository(private val db: AppDatabase) {
 
     fun observeRecipeBooks(): Flow<List<RecipeBookSummary>> =
         recipeBookDao.observeAllWithCounts().map { list ->
-            list.map { RecipeBookSummary(it.book.id, it.book.name, it.book.coverPhotoUri, it.recipeCount, it.book.packId, it.book.packVersion) }
+            list.map {
+                RecipeBookSummary(
+                    it.book.id, it.book.name, it.book.coverPhotoUri, it.recipeCount,
+                    it.book.packId, it.book.packVersion, it.book.syncConnectionId
+                )
+            }
         }
 
     fun observeRecipeBook(id: Long): Flow<RecipeBook?> =
@@ -477,13 +489,15 @@ class RecipeRepository(private val db: AppDatabase) {
      */
     suspend fun saveRecipeBook(draft: RecipeBookDraft): Long {
         if (draft.id != 0L && recipeBookDao.getOnce(draft.id)?.packId != null) return draft.id
+        val now = System.currentTimeMillis()
         return if (draft.id == 0L) {
             recipeBookDao.insert(
                 RecipeBookEntity(
                     uid = draft.uid ?: UUID.randomUUID().toString(),
                     name = draft.name.trim(),
                     coverPhotoUri = draft.coverPhotoUri,
-                    createdAt = System.currentTimeMillis()
+                    createdAt = now,
+                    updatedAt = now
                 )
             )
         } else {
@@ -494,7 +508,9 @@ class RecipeRepository(private val db: AppDatabase) {
                     uid = existing?.uid ?: draft.uid ?: UUID.randomUUID().toString(),
                     name = draft.name.trim(),
                     coverPhotoUri = draft.coverPhotoUri,
-                    createdAt = existing?.createdAt ?: System.currentTimeMillis()
+                    createdAt = existing?.createdAt ?: now,
+                    updatedAt = now,
+                    syncConnectionId = existing?.syncConnectionId
                 )
             )
             draft.id
@@ -691,6 +707,32 @@ class RecipeRepository(private val db: AppDatabase) {
         recipeBookDao.delete(bookId)
     }
 
+    // --- Servidor de sincronización (namespaces self-hosted) ---
+
+    fun observeSyncConnections(): Flow<List<SyncConnection>> =
+        syncConnectionDao.observeAll().map { list -> list.map { it.toDomain() } }
+
+    suspend fun getSyncConnectionOnce(id: Long): SyncConnection? = syncConnectionDao.getOnce(id)?.toDomain()
+
+    suspend fun addSyncConnection(label: String, serverUrl: String, namespaceId: String, accessToken: String): Long =
+        syncConnectionDao.insert(
+            SyncConnectionEntity(
+                label = label.trim(),
+                serverUrl = serverUrl.trim().trimEnd('/'),
+                namespaceId = namespaceId.trim(),
+                accessToken = accessToken.trim(),
+                createdAt = System.currentTimeMillis()
+            )
+        )
+
+    /** Quita la conexión: sus libros pasan a ser locales (no se borra nada de su contenido) y se
+     *  descarta cualquier cambio pendiente de subir para ella. */
+    suspend fun removeSyncConnection(id: Long) = db.withTransaction {
+        recipeBookDao.clearSyncConnection(id)
+        pendingSyncChangeDao.clearAllForConnection(id)
+        syncConnectionDao.getOnce(id)?.let { syncConnectionDao.delete(it) }
+    }
+
     private suspend fun resolveCategoryId(name: String): Long {
         val trimmed = name.trim()
         categoryDao.findByName(trimmed)?.let { return it.id }
@@ -713,7 +755,9 @@ class RecipeRepository(private val db: AppDatabase) {
     }
 }
 
-fun RecipeBookEntity.toDomain() = RecipeBook(id, uid, name, coverPhotoUri, packId, packVersion)
+fun RecipeBookEntity.toDomain() = RecipeBook(id, uid, name, coverPhotoUri, packId, packVersion, syncConnectionId)
+
+fun SyncConnectionEntity.toDomain() = SyncConnection(id, label, serverUrl, namespaceId, accessToken, lastSyncedRevision, lastSyncedAt, lastSyncError)
 
 fun RecipeWithDetails.toDomain(): Recipe {
     val sortedIngredients = ingredients.sortedBy { it.position }
