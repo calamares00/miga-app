@@ -24,6 +24,12 @@ class IngredientGroupUi(name: String? = null, ingredients: List<IngredientRowUi>
 
 class StepRowUi(text: String = "") {
     var text by mutableStateOf(text)
+    /** true mientras se graba el dictado por voz de este paso (ver StepsEditor/SpeechDictation). */
+    var isRecording by mutableStateOf(false)
+    /** true mientras el texto ya dictado se limpia con IA antes de insertarse en [text]. */
+    var isTranscribing by mutableStateOf(false)
+    /** Motivo del último fallo de dictado (ej. "No se ha entendido nada"), o null si no hay ninguno. */
+    var dictationError by mutableStateOf<String?>(null)
 }
 
 class StepGroupUi(name: String? = null, steps: List<StepRowUi> = emptyList()) {

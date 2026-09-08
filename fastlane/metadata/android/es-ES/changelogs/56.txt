@@ -1,0 +1,1 @@
+Nuevo: dicta un paso de receta por voz tocando el micrófono junto a él. La transcripción es local (sin coste de red) y el texto se limpia automáticamente con el proveedor de IA que tengas configurado en Ajustes (Gemini o Anthropic) antes de insertarse.

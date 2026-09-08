@@ -1,14 +1,23 @@
 package com.bmo00.miga.ui.editor
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.speech.SpeechRecognizer
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -17,6 +26,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,7 +34,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.bmo00.miga.data.voice.DictationResult
+import com.bmo00.miga.data.voice.SpeechDictation
 
 @Composable
 fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
@@ -131,6 +145,55 @@ private fun IngredientRow(row: IngredientRowUi, availableNames: List<String>, on
 
 @Composable
 fun StepsEditor(viewModel: RecipeEditorViewModel) {
+    val context = LocalContext.current
+    val speechAvailable = remember { SpeechDictation.isAvailable(context) }
+    // Solo puede haber una grabación activa a la vez (un único SpeechRecognizer); se destruye al
+    // terminar (éxito, error o cancelación) y también si la pantalla se abandona a mitad.
+    var activeRecognizer by remember { mutableStateOf<SpeechRecognizer?>(null) }
+    var recordingRow by remember { mutableStateOf<StepRowUi?>(null) }
+    var pendingPermissionRow by remember { mutableStateOf<StepRowUi?>(null) }
+
+    fun beginListening(row: StepRowUi) {
+        row.dictationError = null
+        row.isRecording = true
+        recordingRow = row
+        activeRecognizer = SpeechDictation.startListening(context) { result ->
+            row.isRecording = false
+            recordingRow = null
+            activeRecognizer?.destroy()
+            activeRecognizer = null
+            when (result) {
+                is DictationResult.Success -> viewModel.cleanUpDictatedText(row, result.text)
+                is DictationResult.Error -> row.dictationError = result.reason
+            }
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val row = pendingPermissionRow
+        pendingPermissionRow = null
+        if (granted && row != null) beginListening(row)
+    }
+
+    fun onMicClick(row: StepRowUi) {
+        if (row.isRecording) {
+            activeRecognizer?.stopListening()
+            return
+        }
+        if (recordingRow != null || row.isTranscribing) return
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        if (granted) {
+            beginListening(row)
+        } else {
+            pendingPermissionRow = row
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { activeRecognizer?.destroy() }
+    }
+
     Section(title = "Preparación") {
         viewModel.stepGroups.forEachIndexed { groupIndex, group ->
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -152,21 +215,43 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
                 }
 
                 group.steps.forEachIndexed { rowIndex, row ->
-                    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            "${rowIndex + 1}.",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(top = 16.dp)
-                        )
-                        OutlinedTextField(
-                            value = row.text,
-                            onValueChange = { row.text = it },
-                            label = { Text("Paso ${rowIndex + 1}") },
-                            modifier = Modifier.weight(1f),
-                            minLines = 1
-                        )
-                        IconButton(onClick = { viewModel.removeStepRow(groupIndex, rowIndex) }) {
-                            Icon(Icons.Filled.Close, contentDescription = "Quitar paso")
+                    Column {
+                        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                "${rowIndex + 1}.",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(top = 16.dp)
+                            )
+                            OutlinedTextField(
+                                value = row.text,
+                                onValueChange = { row.text = it },
+                                label = { Text("Paso ${rowIndex + 1}") },
+                                modifier = Modifier.weight(1f),
+                                minLines = 1
+                            )
+                            if (speechAvailable) {
+                                IconButton(
+                                    onClick = { onMicClick(row) },
+                                    enabled = !row.isTranscribing && (recordingRow == null || recordingRow === row)
+                                ) {
+                                    when {
+                                        row.isTranscribing -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                        row.isRecording -> Icon(Icons.Filled.Stop, contentDescription = "Detener dictado", tint = MaterialTheme.colorScheme.error)
+                                        else -> Icon(Icons.Filled.Mic, contentDescription = "Dictar paso por voz")
+                                    }
+                                }
+                            }
+                            IconButton(onClick = { viewModel.removeStepRow(groupIndex, rowIndex) }) {
+                                Icon(Icons.Filled.Close, contentDescription = "Quitar paso")
+                            }
+                        }
+                        row.dictationError?.let { reason ->
+                            Text(
+                                reason,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(start = 24.dp)
+                            )
                         }
                     }
                 }

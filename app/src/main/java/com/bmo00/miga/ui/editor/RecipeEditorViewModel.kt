@@ -9,6 +9,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.bmo00.miga.data.dictation.DictationCleanupResult
+import com.bmo00.miga.data.dictation.dictationCleanupClientFor
 import com.bmo00.miga.data.local.PhotoStorage
 import com.bmo00.miga.data.local.SettingsRepository
 import com.bmo00.miga.data.model.Difficulty
@@ -229,6 +231,29 @@ class RecipeEditorViewModel(
     // --- Pasos ---
     fun addStepRow(groupIndex: Int) {
         stepGroups.getOrNull(groupIndex)?.steps?.add(StepRowUi())
+    }
+
+    /** Limpia (quita muletillas, puntúa) el texto dictado por voz de [row] con el proveedor de IA
+     *  ya configurado en Ajustes, y lo deja en [StepRowUi.text]. Si no hay API key configurada o
+     *  falla la llamada, usa el texto dictado tal cual en vez de perderlo - la limpieza con IA es
+     *  una mejora sobre el dictado, no un requisito para poder usarlo. */
+    fun cleanUpDictatedText(row: StepRowUi, rawText: String) {
+        row.isTranscribing = true
+        viewModelScope.launch {
+            val provider = settingsRepository.observeVisionProvider().first()
+            val apiKey = settingsRepository.apiKeyFor(provider)
+            if (apiKey.isBlank()) {
+                row.text = rawText
+                row.isTranscribing = false
+                return@launch
+            }
+            val model = settingsRepository.modelFor(provider)
+            when (val result = dictationCleanupClientFor(provider).cleanUp(rawText, apiKey, model)) {
+                is DictationCleanupResult.Success -> row.text = result.text
+                is DictationCleanupResult.Error -> row.text = rawText
+            }
+            row.isTranscribing = false
+        }
     }
 
     fun removeStepRow(groupIndex: Int, rowIndex: Int) {
