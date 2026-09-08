@@ -21,12 +21,13 @@ sealed interface SyncOutcome {
  *
  * Los libros se aplican en dos pasadas (altas antes que las recetas, bajas después) para no
  * chocar con la restricción de clave foránea de `recipes.recipeBookId` - ver el comentario en
- * [RecipeRepository] junto a esas funciones. Las fotos se aplican después de las recetas (para
- * que la receta a la que pertenecen ya exista localmente) y antes de las bajas de libro.
+ * [RecipeRepository] junto a esas funciones. Las fotos (de receta y la portada de cada libro) se
+ * aplican después de las recetas (para que la receta a la que pertenecen ya exista localmente) y
+ * antes de las bajas de libro.
  *
- * Necesita un [Context] únicamente para guardar/borrar el fichero físico de una foto descargada o
- * borrada (ver [PhotoStorage]), siguiendo el mismo convenio del resto de la app de pasar el
- * Context a la función en vez de guardarlo en una clase que no es un componente Android.
+ * Necesita un [Context] únicamente para guardar/borrar el fichero físico de una foto (o portada)
+ * descargada o borrada (ver [PhotoStorage]), siguiendo el mismo convenio del resto de la app de
+ * pasar el Context a la función en vez de guardarlo en una clase que no es un componente Android.
  */
 class SyncEngine(private val repository: RecipeRepository) {
 
@@ -58,7 +59,10 @@ class SyncEngine(private val repository: RecipeRepository) {
     }
 
     private suspend fun applyChanges(context: Context, connection: SyncConnection, changes: ChangesResponseDto) {
-        changes.books.filter { it.deletedAt == null }.forEach { repository.applyRemoteBookUpsert(connection.id, it) }
+        changes.books.filter { it.deletedAt == null }.forEach { dto ->
+            val bookId = repository.applyRemoteBookUpsert(connection.id, dto)
+            if (bookId != null) applyBookCoverIfPresent(context, connection, bookId, dto)
+        }
         changes.recipes.forEach { dto ->
             if (dto.deletedAt != null) repository.applyRemoteRecipeDeletion(dto) else repository.applyRemoteRecipeUpsert(dto)
         }
@@ -80,17 +84,17 @@ class SyncEngine(private val repository: RecipeRepository) {
         val entityType = runCatching { SyncEntityType.valueOf(change.entityType) }.getOrNull() ?: return true
         val changeType = runCatching { SyncChangeType.valueOf(change.changeType) }.getOrNull() ?: return true
         return when (entityType) {
-            SyncEntityType.BOOK -> pushBookChange(connection, change.uid, changeType)
+            SyncEntityType.BOOK -> pushBookChange(context, connection, change.uid, changeType)
             SyncEntityType.RECIPE -> pushRecipeChange(connection, change.uid, changeType)
             SyncEntityType.PHOTO -> pushPhotoChange(context, connection, change, changeType)
         }
     }
 
-    private suspend fun pushBookChange(connection: SyncConnection, uid: String, changeType: SyncChangeType): Boolean =
+    private suspend fun pushBookChange(context: Context, connection: SyncConnection, uid: String, changeType: SyncChangeType): Boolean =
         when (changeType) {
             SyncChangeType.DELETE -> when (val result = SyncClient.deleteBook(connection, uid, System.currentTimeMillis())) {
                 is SyncPushResult.Applied -> true
-                is SyncPushResult.Conflict -> { applyServerBookCopy(connection.id, result.serverCopy); true }
+                is SyncPushResult.Conflict -> { applyServerBookCopy(context, connection, result.serverCopy); true }
                 is SyncPushResult.Error -> false
             }
             SyncChangeType.UPSERT -> {
@@ -99,13 +103,34 @@ class SyncEngine(private val repository: RecipeRepository) {
                     true // ya no existe localmente (se borró después de encolar la subida): nada que hacer
                 } else {
                     when (val result = SyncClient.pushBook(connection, dto)) {
-                        is SyncPushResult.Applied -> true
-                        is SyncPushResult.Conflict -> { applyServerBookCopy(connection.id, result.serverCopy); true }
+                        is SyncPushResult.Applied -> {
+                            if (dto.hasCoverPhoto) pushBookCoverIfPresent(connection, uid)
+                            true
+                        }
+                        is SyncPushResult.Conflict -> { applyServerBookCopy(context, connection, result.serverCopy); true }
                         is SyncPushResult.Error -> false
                     }
                 }
             }
         }
+
+    /** Best-effort: si falla la subida de la portada, el texto del libro ya se ha subido igualmente
+     *  y no se reintenta por separado (no hay una fila propia en el outbox solo para la portada). */
+    private suspend fun pushBookCoverIfPresent(connection: SyncConnection, bookUid: String) {
+        val coverUri = repository.getRecipeBookCoverUri(bookUid) ?: return
+        val bytes = PhotoStorage.readBytes(coverUri) ?: return
+        SyncClient.uploadBookCover(connection, bookUid, bytes)
+    }
+
+    /** Descarga y aplica la portada de un libro remoto recién dado de alta/editado, borrando el
+     *  fichero físico anterior (si había uno distinto) para no dejarlo huérfano. */
+    private suspend fun applyBookCoverIfPresent(context: Context, connection: SyncConnection, bookId: Long, dto: BookSyncDto) {
+        if (!dto.hasCoverPhoto) return
+        val bytes = SyncClient.downloadBookCover(connection, dto.uid) ?: return
+        val localUri = PhotoStorage.copyBytesToInternalStorage(context, bytes) ?: return
+        val oldUri = repository.applyRemoteBookCover(bookId, localUri)
+        oldUri?.let { PhotoStorage.deleteFile(it) }
+    }
 
     private suspend fun pushRecipeChange(connection: SyncConnection, uid: String, changeType: SyncChangeType): Boolean =
         when (changeType) {
@@ -167,8 +192,9 @@ class SyncEngine(private val repository: RecipeRepository) {
     /** [BookSyncDto.deletedAt] decide si es un alta/edición o un tombstone; las dos funciones se
      *  autoprotegen (cada una ignora el caso que no le corresponde), así que llamar a ambas es
      *  seguro y evita duplicar esa comprobación aquí. */
-    private suspend fun applyServerBookCopy(connectionId: Long, copy: BookSyncDto) {
-        repository.applyRemoteBookUpsert(connectionId, copy)
+    private suspend fun applyServerBookCopy(context: Context, connection: SyncConnection, copy: BookSyncDto) {
+        val bookId = repository.applyRemoteBookUpsert(connection.id, copy)
+        if (bookId != null) applyBookCoverIfPresent(context, connection, bookId, copy)
         repository.applyRemoteBookDeletion(copy)
     }
 
