@@ -19,6 +19,9 @@ data class BookSyncDto(
     val hasCoverPhoto: Boolean = false,
     val updatedAt: Long,
     val deletedAt: Long? = null,
+    /** true si esto es un tombstone de "desvinculado" (admin, desde /ui) y no de "borrado" real:
+     *  ver [SyncEngine.applyChanges] - solo tiene sentido cuando [deletedAt] != null. */
+    val unlinked: Boolean = false,
     val revision: Long = 0
 )
 
@@ -41,6 +44,8 @@ data class RecipeSyncDto(
     val utensils: List<String> = emptyList(),
     val updatedAt: Long,
     val deletedAt: Long? = null,
+    /** Ver [BookSyncDto.unlinked]. */
+    val unlinked: Boolean = false,
     val revision: Long = 0
 )
 
@@ -53,6 +58,8 @@ data class PhotoMetaDto(
     val contentType: String,
     val updatedAt: Long,
     val deletedAt: Long? = null,
+    /** Ver [BookSyncDto.unlinked]. */
+    val unlinked: Boolean = false,
     val revision: Long = 0
 )
 

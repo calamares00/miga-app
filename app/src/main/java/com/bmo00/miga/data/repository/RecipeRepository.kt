@@ -939,6 +939,18 @@ class RecipeRepository(
         recipeBookDao.delete(existing.id)
     }
 
+    /** Igual que [applyRemoteBookDeletion] pero para un tombstone de "desvinculado"
+     *  ([BookSyncDto.unlinked]): el libro y todas sus recetas/fotos se CONSERVAN tal cual - solo se
+     *  corta el vínculo de sincronización (pasa a ser un libro local normal, editable, ya no
+     *  gestionado por [SyncEngine]). Las recetas/fotos cascadas desde este libro no necesitan su
+     *  propia función: como no se borran, no hay nada que aplicar sobre ellas. */
+    suspend fun applyRemoteBookUnlink(dto: BookSyncDto) = db.withTransaction {
+        if (dto.deletedAt == null) return@withTransaction
+        val existing = recipeBookDao.findByUid(dto.uid) ?: return@withTransaction
+        if (existing.updatedAt > dto.deletedAt) return@withTransaction
+        recipeBookDao.update(existing.copy(syncConnectionId = null))
+    }
+
     /**
      * Aplica la portada de libro ya descargada (ver [SyncEngine]): [localUri] es la ruta donde el
      * motor de sincronización ya ha guardado sus bytes con [PhotoStorage]. Sin comparación de
