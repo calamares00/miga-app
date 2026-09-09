@@ -63,6 +63,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,6 +83,7 @@ import com.bmo00.miga.ui.theme.HealthGreenContainer
 import com.bmo00.miga.ui.theme.HealthGreenOn
 import com.bmo00.miga.ui.theme.HealthRedContainer
 import com.bmo00.miga.ui.theme.HealthRedOn
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -95,6 +97,7 @@ fun RecipeDetailScreen(
     val ttsVoiceName by viewModel.ttsVoiceName.collectAsState()
     val healthState by viewModel.healthState.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showCookMode by remember { mutableStateOf(false) }
@@ -138,7 +141,7 @@ fun RecipeDetailScreen(
                             leadingIcon = { Icon(Icons.Filled.Share, null) },
                             onClick = {
                                 showMenu = false
-                                recipe?.let { RecipeExporter.shareAsPdf(context, it) }
+                                recipe?.let { scope.launch { RecipeExporter.shareAsPdf(context, it) } }
                             }
                         )
                         DropdownMenuItem(

@@ -129,7 +129,9 @@ object RecipeExporter {
         }
     }
 
-    fun shareAsPdf(context: Context, recipe: Recipe) {
+    /** Genera y comparte el PDF de una receta. `suspend` porque, al incluir sus fotos, decodificar
+     *  bitmaps es trabajo de CPU/E-S que no debe bloquear el hilo principal. */
+    suspend fun shareAsPdf(context: Context, recipe: Recipe) = withContext(Dispatchers.IO) {
         val document = PdfRecipeRenderer.render(recipe)
         val file = File(exportsDir(context), sanitizeFileName(recipe.name) + ".pdf")
         file.outputStream().use { document.writeTo(it) }
@@ -142,8 +144,10 @@ object RecipeExporter {
         shareRecipes(context, book.name, book, recipes)
     }
 
-    fun shareBookAsPdf(context: Context, book: RecipeBook, recipes: List<Recipe>) {
-        val document = PdfRecipeRenderer.renderBook(book.name, recipes)
+    /** Genera y comparte el PDF de un libro entero (portada, índice por categoría y recetas). Ver
+     *  [shareAsPdf] sobre por qué es `suspend`. */
+    suspend fun shareBookAsPdf(context: Context, book: RecipeBook, recipes: List<Recipe>) = withContext(Dispatchers.IO) {
+        val document = PdfRecipeRenderer.renderBook(book.name, book.coverPhotoUri, recipes)
         val file = File(exportsDir(context), sanitizeFileName(book.name) + ".pdf")
         file.outputStream().use { document.writeTo(it) }
         document.close()

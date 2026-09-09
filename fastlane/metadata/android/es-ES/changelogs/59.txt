@@ -1,0 +1,1 @@
+Mejora: exportar a PDF (receta o libro) ahora incluye las fotos, tiene un diseño más cuidado, y el PDF de un libro añade portada con imagen, índice con recetas agrupadas por categoría, y cabecera/pie con el nombre y el número de página en cada hoja.
