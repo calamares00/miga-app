@@ -1,0 +1,1 @@
+Arreglo: las fotos de las recetas de un libro sincronizado a veces no llegaban a subirse al servidor (aunque la portada del libro sí). Ahora se suben también al vincular un libro existente, se autocuran en cada sincronización, y el botón "Sincronizar ahora" (del libro o de la conexión) fuerza un reenvío completo para recetas que ya se hubieran quedado sin sus fotos.

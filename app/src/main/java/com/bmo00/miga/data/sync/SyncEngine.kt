@@ -158,13 +158,31 @@ class SyncEngine(private val repository: RecipeRepository) {
                     true
                 } else {
                     when (val result = SyncClient.pushRecipe(connection, dto)) {
-                        is SyncPushResult.Applied -> true
+                        is SyncPushResult.Applied -> {
+                            pushRecipePhotosIfPresent(connection, uid)
+                            true
+                        }
                         is SyncPushResult.Conflict -> { applyServerRecipeCopy(result.serverCopy); true }
                         is SyncPushResult.Error -> false
                     }
                 }
             }
         }
+
+    /** Best-effort, mismo patrón que [pushBookCoverIfPresent]: reenvía cada foto actual de la
+     *  receta en cada subida con éxito de la receta, para autocurar fotos que quedaron sin subir
+     *  por cualquier motivo (p. ej. un libro vinculado a una conexión antes de que
+     *  [RecipeRepository.linkBookToSyncConnection] empezara a encolarlas también). Si falla la
+     *  subida de alguna foto, la receta ya se ha subido igualmente y esa foto se reintentará en el
+     *  siguiente push de la receta. */
+    private suspend fun pushRecipePhotosIfPresent(connection: SyncConnection, recipeUid: String) {
+        repository.getRecipePhotosForPush(recipeUid).forEach { (photoUid, info) ->
+            val bytes = PhotoStorage.readBytes(info.uri) ?: return@forEach
+            SyncClient.uploadPhoto(
+                connection, recipeUid, photoUid, bytes, "image/jpeg", info.isCover, info.position, System.currentTimeMillis()
+            )
+        }
+    }
 
     /** Para un borrado, [PendingSyncChangeEntity.parentUid] es la única forma de saber a qué
      *  receta pertenecía la foto: su fila local ya no existe (se borró junto con el resto de fotos

@@ -140,6 +140,7 @@ class RecipeBookEditorViewModel(
         viewModelScope.launch {
             isSyncingNow = true
             syncNowError = null
+            repository.enqueueFullBookResync(bookId, connectionId)
             when (val outcome = syncEngine.syncConnection(context, connectionId)) {
                 is SyncOutcome.Error -> syncNowError = outcome.reason
                 is SyncOutcome.Success -> repository.observeRecipeBook(bookId).first()?.let { book ->

@@ -797,18 +797,53 @@ class RecipeRepository(
     suspend fun markSyncError(connectionId: Long, reason: String) = syncConnectionDao.markError(connectionId, reason)
 
     /** Vincula un libro propio existente a una conexión: pasa a sincronizarse (lectura-escritura,
-     *  no de solo lectura como un pack) y se encola para subirse entero en el próximo sync. */
+     *  no de solo lectura como un pack) y se encola para subirse entero (con fotos) en el próximo sync. */
     suspend fun linkBookToSyncConnection(bookId: Long, connectionId: Long) {
         val linked = db.withTransaction {
             val book = recipeBookDao.getOnce(bookId) ?: return@withTransaction false
             recipeBookDao.update(book.copy(syncConnectionId = connectionId, updatedAt = System.currentTimeMillis()))
-            enqueueSyncChange(connectionId, SyncEntityType.BOOK, book.uid, SyncChangeType.UPSERT)
-            recipeDao.getAllWithDetailsForBookOnce(bookId).forEach { details ->
-                enqueueSyncChange(connectionId, SyncEntityType.RECIPE, details.recipe.uid, SyncChangeType.UPSERT)
-            }
+            enqueueBookResyncLocked(bookId, connectionId)
             true
         }
         if (linked) onSyncChangeEnqueued(connectionId)
+    }
+
+    /** Encola de nuevo el libro completo (metadato + todas sus recetas + todas sus fotos) para
+     *  subir a [connectionId]. Debe llamarse siempre dentro de una transacción ya abierta (de ahí
+     *  "Locked"): la usan tanto [linkBookToSyncConnection] (dentro de su propia transacción) como
+     *  [enqueueFullBookResync]/[enqueueFullConnectionResync] (que abren la suya). No se llama nunca
+     *  desde el sync automático/periódico: reencolar TODO el contenido en cada ciclo sería caro en
+     *  batería/red - ver en su lugar [com.bmo00.miga.data.sync.SyncEngine.pushRecipePhotosIfPresent],
+     *  que autocura fotos sin subir de forma barata en cada push de receta. */
+    private suspend fun enqueueBookResyncLocked(bookId: Long, connectionId: Long) {
+        val book = recipeBookDao.getOnce(bookId) ?: return
+        enqueueSyncChange(connectionId, SyncEntityType.BOOK, book.uid, SyncChangeType.UPSERT)
+        recipeDao.getAllWithDetailsForBookOnce(bookId).forEach { details ->
+            enqueueSyncChange(connectionId, SyncEntityType.RECIPE, details.recipe.uid, SyncChangeType.UPSERT)
+            recipeDao.getPhotosOnce(details.recipe.id).forEach { photo ->
+                photo.uid?.let {
+                    enqueueSyncChange(connectionId, SyncEntityType.PHOTO, it, SyncChangeType.UPSERT, parentUid = details.recipe.uid)
+                }
+            }
+        }
+    }
+
+    /** Fuerza un reenvío completo (libro + recetas + fotos) de un libro ya vinculado, sin esperar a
+     *  que cambie nada. Usado por el botón manual "Sincronizar ahora" del editor de un libro: repara
+     *  libros que se vincularon antes de que las fotos de sus recetas se encolaran también (ver
+     *  [enqueueBookResyncLocked]). No se usa desde el sync automático/periódico. */
+    suspend fun enqueueFullBookResync(bookId: Long, connectionId: Long) {
+        db.withTransaction { enqueueBookResyncLocked(bookId, connectionId) }
+        onSyncChangeEnqueued(connectionId)
+    }
+
+    /** Igual que [enqueueFullBookResync] pero para todos los libros vinculados a [connectionId] de
+     *  golpe. Usado por el botón manual "Sincronizar ahora" a nivel de conexión. */
+    suspend fun enqueueFullConnectionResync(connectionId: Long) {
+        val books = recipeBookDao.findBySyncConnectionId(connectionId)
+        if (books.isEmpty()) return
+        db.withTransaction { books.forEach { enqueueBookResyncLocked(it.id, connectionId) } }
+        onSyncChangeEnqueued(connectionId)
     }
 
     /** Deja de sincronizar un libro: pasa a ser local, sin borrar nada de su contenido ni del servidor. */
@@ -896,6 +931,18 @@ class RecipeRepository(
         val photo = recipeDao.findPhotoByUid(photoUid) ?: return null
         val recipe = recipeDao.getRecipeOnce(photo.recipeId) ?: return null
         return PhotoPushInfo(photo.uri, recipe.uid, photo.isCover, photo.position)
+    }
+
+    /** Todas las fotos actuales de una receta, listas para subir (ver
+     *  [SyncEngine.pushRecipePhotosIfPresent], mismo side effect que ya hace
+     *  [SyncEngine.pushBookCoverIfPresent] con la portada de un libro). Ignora las fotos sin `uid`
+     *  (dato nullable heredado de la migración, no debería darse en fotos creadas después de ella). */
+    suspend fun getRecipePhotosForPush(recipeUid: String): List<Pair<String, PhotoPushInfo>> {
+        val recipe = recipeDao.findByUid(recipeUid) ?: return emptyList()
+        return recipeDao.getPhotosOnce(recipe.id).mapNotNull { photo ->
+            val uid = photo.uid ?: return@mapNotNull null
+            uid to PhotoPushInfo(photo.uri, recipeUid, photo.isCover, photo.position)
+        }
     }
 
     /** Usado antes de descargar una foto remota, para no descargarla (y guardar un fichero

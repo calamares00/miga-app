@@ -36,6 +36,7 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
     fun syncNow(context: Context, connectionId: Long) {
         viewModelScope.launch {
             _syncingConnectionIds.value = _syncingConnectionIds.value + connectionId
+            repository.enqueueFullConnectionResync(connectionId)
             syncEngine.syncConnection(context, connectionId)
             _syncingConnectionIds.value = _syncingConnectionIds.value - connectionId
         }
