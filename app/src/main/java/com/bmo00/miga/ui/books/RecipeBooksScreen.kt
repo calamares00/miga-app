@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewHeadline
@@ -313,6 +314,21 @@ private fun RecipeBookCard(book: RecipeBookSummary, onClick: () -> Unit, onEditC
                     }
                 }
             } else {
+                if (book.isSynced) {
+                    Card(
+                        modifier = Modifier.align(Alignment.TopStart).padding(6.dp).size(32.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Filled.Sync,
+                                contentDescription = "Sincronizado con el servidor",
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
                 Card(
                     onClick = onEditClick,
                     modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(32.dp)
@@ -389,6 +405,13 @@ private fun RecipeBookRow(book: RecipeBookSummary, compact: Boolean, onClick: ()
                             Icons.Filled.CloudDone,
                             contentDescription = "Pack instalado",
                             tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    } else if (book.isSynced) {
+                        Icon(
+                            Icons.Filled.Sync,
+                            contentDescription = "Sincronizado con el servidor",
+                            tint = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.size(16.dp)
                         )
                     }

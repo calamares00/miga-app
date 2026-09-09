@@ -1,0 +1,1 @@
+Nuevo: los libros sincronizados con un servidor muestran una insignia (icono de sincronización) en la lista, igual que los packs, para distinguirlos de un vistazo de los libros locales.
