@@ -1,0 +1,1 @@
+Mejora: al desvincular un libro o receta desde la interfaz web del servidor de sincronización, la app ahora conserva tu copia local (pasa a ser contenido normal, sin más sincronización) en vez de borrarla.

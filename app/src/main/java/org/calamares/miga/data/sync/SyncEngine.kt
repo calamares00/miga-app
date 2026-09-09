@@ -63,19 +63,32 @@ class SyncEngine(private val repository: RecipeRepository) {
             val bookId = repository.applyRemoteBookUpsert(connection.id, dto)
             if (bookId != null) applyBookCoverIfPresent(context, connection, bookId, dto)
         }
+        // Un tombstone "desvinculado" (dto.unlinked, ver SyncDtos.kt) no debe borrar nada local:
+        // la fila cascada de una receta/foto bajo un libro desvinculado se ignora del todo (el
+        // libro se queda con su syncConnectionId a null más abajo, la receta/foto no necesita
+        // ningún cambio propio porque nunca tuvo vínculo de sync individual, solo el heredado de
+        // pertenecer a un libro sincronizado).
         changes.recipes.forEach { dto ->
-            if (dto.deletedAt != null) repository.applyRemoteRecipeDeletion(dto) else repository.applyRemoteRecipeUpsert(dto)
-        }
-        changes.photos.forEach { dto ->
-            if (dto.deletedAt != null) {
-                repository.applyRemotePhotoDeletion(dto)?.let { PhotoStorage.deleteFile(it) }
-            } else if (!repository.hasLocalPhoto(dto.uid)) {
-                val bytes = SyncClient.downloadPhoto(connection, dto.recipeUid, dto.uid) ?: return@forEach
-                val localUri = PhotoStorage.copyBytesToInternalStorage(context, bytes) ?: return@forEach
-                if (!repository.applyRemotePhotoUpsert(dto, localUri)) PhotoStorage.deleteFile(localUri)
+            when {
+                dto.unlinked -> Unit
+                dto.deletedAt != null -> repository.applyRemoteRecipeDeletion(dto)
+                else -> repository.applyRemoteRecipeUpsert(dto)
             }
         }
-        changes.books.filter { it.deletedAt != null }.forEach { repository.applyRemoteBookDeletion(it) }
+        changes.photos.forEach { dto ->
+            when {
+                dto.unlinked -> Unit
+                dto.deletedAt != null -> repository.applyRemotePhotoDeletion(dto)?.let { PhotoStorage.deleteFile(it) }
+                !repository.hasLocalPhoto(dto.uid) -> {
+                    val bytes = SyncClient.downloadPhoto(connection, dto.recipeUid, dto.uid) ?: return@forEach
+                    val localUri = PhotoStorage.copyBytesToInternalStorage(context, bytes) ?: return@forEach
+                    if (!repository.applyRemotePhotoUpsert(dto, localUri)) PhotoStorage.deleteFile(localUri)
+                }
+            }
+        }
+        changes.books.filter { it.deletedAt != null }.forEach { dto ->
+            if (dto.unlinked) repository.applyRemoteBookUnlink(dto) else repository.applyRemoteBookDeletion(dto)
+        }
     }
 
     /** true si se ha resuelto (subido con éxito, o se ha aplicado un conflicto) y puede quitarse
@@ -191,22 +204,25 @@ class SyncEngine(private val repository: RecipeRepository) {
 
     /** [BookSyncDto.deletedAt] decide si es un alta/edición o un tombstone; las dos funciones se
      *  autoprotegen (cada una ignora el caso que no le corresponde), así que llamar a ambas es
-     *  seguro y evita duplicar esa comprobación aquí. */
+     *  seguro y evita duplicar esa comprobación aquí. [BookSyncDto.unlinked] decide, dentro de un
+     *  tombstone, si además hay que borrar el contenido local o solo cortar el vínculo de sync. */
     private suspend fun applyServerBookCopy(context: Context, connection: SyncConnection, copy: BookSyncDto) {
         val bookId = repository.applyRemoteBookUpsert(connection.id, copy)
         if (bookId != null) applyBookCoverIfPresent(context, connection, bookId, copy)
-        repository.applyRemoteBookDeletion(copy)
+        if (copy.unlinked) repository.applyRemoteBookUnlink(copy) else repository.applyRemoteBookDeletion(copy)
     }
 
     private suspend fun applyServerRecipeCopy(copy: RecipeSyncDto) {
         repository.applyRemoteRecipeUpsert(copy)
-        repository.applyRemoteRecipeDeletion(copy)
+        if (!copy.unlinked) repository.applyRemoteRecipeDeletion(copy)
     }
 
     /** Igual que [applyServerBookCopy]/[applyServerRecipeCopy], pero una foto en conflicto necesita
      *  además descargarse (o borrarse) físicamente, no solo aplicar su metadato. */
     private suspend fun applyServerPhotoCopy(context: Context, connection: SyncConnection, copy: PhotoMetaDto) {
-        if (copy.deletedAt != null) {
+        if (copy.unlinked) {
+            return
+        } else if (copy.deletedAt != null) {
             repository.applyRemotePhotoDeletion(copy)?.let { PhotoStorage.deleteFile(it) }
         } else if (!repository.hasLocalPhoto(copy.uid)) {
             val bytes = SyncClient.downloadPhoto(connection, copy.recipeUid, copy.uid) ?: return
