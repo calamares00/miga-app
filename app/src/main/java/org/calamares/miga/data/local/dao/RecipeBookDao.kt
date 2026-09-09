@@ -56,4 +56,8 @@ interface RecipeBookDao {
      *  nada de su contenido. */
     @Query("UPDATE recipe_books SET syncConnectionId = NULL WHERE syncConnectionId = :syncConnectionId")
     suspend fun clearSyncConnection(syncConnectionId: Long)
+
+    /** Usado por el "Sincronizar ahora" a nivel de conexión, para reencolar todos sus libros. */
+    @Query("SELECT * FROM recipe_books WHERE syncConnectionId = :syncConnectionId")
+    suspend fun findBySyncConnectionId(syncConnectionId: Long): List<RecipeBookEntity>
 }
