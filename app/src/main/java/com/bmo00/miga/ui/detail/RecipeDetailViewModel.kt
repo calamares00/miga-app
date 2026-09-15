@@ -10,6 +10,9 @@ import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.nutrition.RecipeNutritionResult
 import com.bmo00.miga.data.nutrition.nutritionClientFor
 import com.bmo00.miga.data.repository.RecipeRepository
+import com.bmo00.miga.data.substitution.IngredientSubstitution
+import com.bmo00.miga.data.substitution.SubstitutionResult
+import com.bmo00.miga.data.substitution.substitutionClientFor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,6 +35,17 @@ sealed interface NutritionState {
     data object Loaded : NutritionState
     data object NotConfigured : NutritionState
     data class Error(val reason: String) : NutritionState
+}
+
+/** Estado del diálogo de "sustituir ingrediente" (ver RecipeDetailScreen). A diferencia de
+ *  [HealthState]/[NutritionState], no se cachea nada - cada [ingredientName] dispara una consulta
+ *  nueva sin guardar de un análisis anterior. */
+sealed interface SubstitutionDialogState {
+    data object Hidden : SubstitutionDialogState
+    data class Loading(val ingredientName: String) : SubstitutionDialogState
+    data class Loaded(val ingredientName: String, val substitutions: List<IngredientSubstitution>) : SubstitutionDialogState
+    data class NotConfigured(val ingredientName: String) : SubstitutionDialogState
+    data class Error(val ingredientName: String, val reason: String) : SubstitutionDialogState
 }
 
 class RecipeDetailViewModel(
@@ -145,6 +159,35 @@ class RecipeDetailViewModel(
     fun retryNutritionCheck() {
         nutritionCheckStarted = false
         fetchNutritionIfNeeded()
+    }
+
+    private val _substitutionDialogState = MutableStateFlow<SubstitutionDialogState>(SubstitutionDialogState.Hidden)
+    val substitutionDialogState: StateFlow<SubstitutionDialogState> = _substitutionDialogState
+
+    /** Consulta sustitutos con IA para [ingredientName], sin caché - cada llamada es una consulta
+     *  nueva. Abre el diálogo de resultado (ver RecipeDetailScreen). */
+    fun findSubstitutesFor(ingredientName: String) {
+        viewModelScope.launch {
+            _substitutionDialogState.value = SubstitutionDialogState.Loading(ingredientName)
+            val current = recipe.filterNotNull().first()
+            val provider = settingsRepository.observeVisionProvider().first()
+            val apiKey = settingsRepository.apiKeyFor(provider)
+            if (apiKey.isBlank()) {
+                _substitutionDialogState.value = SubstitutionDialogState.NotConfigured(ingredientName)
+                return@launch
+            }
+            val model = settingsRepository.modelFor(provider)
+            when (val result = substitutionClientFor(provider).suggestSubstitutes(ingredientName, current.name, apiKey, model)) {
+                is SubstitutionResult.Success ->
+                    _substitutionDialogState.value = SubstitutionDialogState.Loaded(ingredientName, result.substitutions)
+                is SubstitutionResult.Error ->
+                    _substitutionDialogState.value = SubstitutionDialogState.Error(ingredientName, result.reason)
+            }
+        }
+    }
+
+    fun dismissSubstitutionDialog() {
+        _substitutionDialogState.value = SubstitutionDialogState.Hidden
     }
 
     fun toggleFavorite() {

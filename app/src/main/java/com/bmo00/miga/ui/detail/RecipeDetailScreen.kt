@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Delete
@@ -98,6 +99,7 @@ fun RecipeDetailScreen(
     val ttsVoiceName by viewModel.ttsVoiceName.collectAsState()
     val healthState by viewModel.healthState.collectAsState()
     val nutritionState by viewModel.nutritionState.collectAsState()
+    val substitutionDialogState by viewModel.substitutionDialogState.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
@@ -202,6 +204,7 @@ fun RecipeDetailScreen(
                 onRetryHealth = { viewModel.retryHealthCheck() },
                 nutritionState = nutritionState,
                 onRetryNutrition = { viewModel.retryNutritionCheck() },
+                onSubstituteIngredient = { name -> viewModel.findSubstitutesFor(name) },
                 modifier = Modifier.padding(padding)
             )
         }
@@ -263,6 +266,51 @@ fun RecipeDetailScreen(
             }
         )
     }
+
+    if (substitutionDialogState != SubstitutionDialogState.Hidden) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissSubstitutionDialog() },
+            title = { Text("Sustituir \"${substitutionDialogState.ingredientNameOrNull().orEmpty()}\"") },
+            text = {
+                when (val state = substitutionDialogState) {
+                    is SubstitutionDialogState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Text(
+                            "Buscando sustitutos con IA...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(start = 12.dp)
+                        )
+                    }
+                    is SubstitutionDialogState.NotConfigured -> Text("Configura un proveedor de IA en Ajustes para usar esto.")
+                    is SubstitutionDialogState.Error -> Text(state.reason, color = MaterialTheme.colorScheme.error)
+                    is SubstitutionDialogState.Loaded -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        state.substitutions.forEach { substitution ->
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(substitution.substitute, style = MaterialTheme.typography.titleSmall)
+                                Text(
+                                    substitution.notes,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    SubstitutionDialogState.Hidden -> Unit
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.dismissSubstitutionDialog() }) { Text("Cerrar") }
+            }
+        )
+    }
+}
+
+private fun SubstitutionDialogState.ingredientNameOrNull(): String? = when (this) {
+    is SubstitutionDialogState.Loading -> ingredientName
+    is SubstitutionDialogState.Loaded -> ingredientName
+    is SubstitutionDialogState.NotConfigured -> ingredientName
+    is SubstitutionDialogState.Error -> ingredientName
+    SubstitutionDialogState.Hidden -> null
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -273,6 +321,7 @@ private fun RecipeDetailContent(
     onRetryHealth: () -> Unit,
     nutritionState: NutritionState,
     onRetryNutrition: () -> Unit,
+    onSubstituteIngredient: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var servings by remember(recipe.id) { mutableIntStateOf(recipe.servings) }
@@ -428,8 +477,17 @@ private fun RecipeDetailContent(
                                     text = formatIngredient(ingredient, scale),
                                     style = MaterialTheme.typography.bodyLarge,
                                     textDecoration = if (checked) TextDecoration.LineThrough else TextDecoration.None,
-                                    color = if (checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                                    color = if (checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f)
                                 )
+                                IconButton(onClick = { onSubstituteIngredient(ingredient.name) }, modifier = Modifier.size(32.dp)) {
+                                    Icon(
+                                        Icons.Filled.Autorenew,
+                                        contentDescription = "Sustituir \"${ingredient.name}\"",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                             }
                         }
                     }

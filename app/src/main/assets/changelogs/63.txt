@@ -1,0 +1,1 @@
+Nuevo: sustituciones de ingredientes con IA. En el detalle de una receta, toca el icono junto a cualquier ingrediente para que la IA sugiera 2-4 alternativas (con la proporción y qué cambia de sabor/textura), teniendo en cuenta la receta concreta que estás preparando.
