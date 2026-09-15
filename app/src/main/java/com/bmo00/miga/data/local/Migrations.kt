@@ -108,3 +108,19 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
         db.execSQL("ALTER TABLE pending_sync_changes ADD COLUMN parentUid TEXT DEFAULT NULL")
     }
 }
+
+/**
+ * v9 -> v10: añade las columnas de la estimación nutricional con IA (ver NutritionInfo en
+ * data/model), mismo mecanismo de caché con huella que la valoración de salud (MIGRATION_4_5).
+ * Todas nullable con NULL por defecto.
+ */
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE recipes ADD COLUMN nutritionCalories INTEGER DEFAULT NULL")
+        db.execSQL("ALTER TABLE recipes ADD COLUMN nutritionProteinGrams REAL DEFAULT NULL")
+        db.execSQL("ALTER TABLE recipes ADD COLUMN nutritionCarbsGrams REAL DEFAULT NULL")
+        db.execSQL("ALTER TABLE recipes ADD COLUMN nutritionFatGrams REAL DEFAULT NULL")
+        db.execSQL("ALTER TABLE recipes ADD COLUMN nutritionFingerprint TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE recipes ADD COLUMN nutritionAnalyzedAt INTEGER DEFAULT NULL")
+    }
+}

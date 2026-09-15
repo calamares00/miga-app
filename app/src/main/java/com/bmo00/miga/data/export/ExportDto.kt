@@ -12,9 +12,11 @@ import kotlinx.serialization.Serializable
  * v2 -> v3: se añade "health" (valoración de salud con IA), opcional con default null; un JSON
  * v2 sin esa clave ya se interpreta bien gracias a ignoreUnknownKeys/el default, no hace falta
  * generar nada en la migración.
+ * v3 -> v4: se añade "nutrition" (estimación nutricional con IA), igual de opcional que "health",
+ * mismo motivo: no hace falta generar nada en la migración.
  */
-const val CURRENT_RECIPE_SCHEMA_VERSION = 3
-const val CURRENT_LIBRARY_SCHEMA_VERSION = 3
+const val CURRENT_RECIPE_SCHEMA_VERSION = 4
+const val CURRENT_LIBRARY_SCHEMA_VERSION = 4
 
 @Serializable
 data class LibraryExportDto(
@@ -54,13 +56,25 @@ data class RecipeExportDto(
     /** Fotos de la receta; los ficheros correspondientes viven en "recipes/<uid>/" dentro del ZIP. */
     val photos: List<PhotoExportDto> = emptyList(),
     /** Valoración de salud con IA cacheada (ver HealthRating); null si nunca se ha analizado. */
-    val health: RecipeHealthDto? = null
+    val health: RecipeHealthDto? = null,
+    /** Estimación nutricional con IA cacheada (ver NutritionInfo); null si nunca se ha analizado. */
+    val nutrition: RecipeNutritionDto? = null
 )
 
 @Serializable
 data class RecipeHealthDto(
     val colorLevel: String,
     val description: String,
+    val fingerprint: String,
+    val analyzedAt: Long
+)
+
+@Serializable
+data class RecipeNutritionDto(
+    val caloriesPerServing: Int,
+    val proteinGrams: Double,
+    val carbsGrams: Double,
+    val fatGrams: Double,
     val fingerprint: String,
     val analyzedAt: Long
 )

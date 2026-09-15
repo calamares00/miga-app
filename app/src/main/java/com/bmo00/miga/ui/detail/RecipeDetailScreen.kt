@@ -77,6 +77,7 @@ import coil.compose.AsyncImage
 import com.bmo00.miga.data.export.RecipeExporter
 import com.bmo00.miga.data.model.HealthColorLevel
 import com.bmo00.miga.data.model.Recipe
+import com.bmo00.miga.data.model.formatQuantity
 import com.bmo00.miga.ui.theme.HealthAmberContainer
 import com.bmo00.miga.ui.theme.HealthAmberOn
 import com.bmo00.miga.ui.theme.HealthGreenContainer
@@ -96,6 +97,7 @@ fun RecipeDetailScreen(
     val recipeBooks by viewModel.recipeBooks.collectAsState()
     val ttsVoiceName by viewModel.ttsVoiceName.collectAsState()
     val healthState by viewModel.healthState.collectAsState()
+    val nutritionState by viewModel.nutritionState.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
@@ -104,6 +106,7 @@ fun RecipeDetailScreen(
     var showMoveDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { viewModel.fetchHealthinessIfNeeded() }
+    LaunchedEffect(Unit) { viewModel.fetchNutritionIfNeeded() }
 
     Scaffold(
         topBar = {
@@ -197,6 +200,8 @@ fun RecipeDetailScreen(
                 recipe = current,
                 healthState = healthState,
                 onRetryHealth = { viewModel.retryHealthCheck() },
+                nutritionState = nutritionState,
+                onRetryNutrition = { viewModel.retryNutritionCheck() },
                 modifier = Modifier.padding(padding)
             )
         }
@@ -266,6 +271,8 @@ private fun RecipeDetailContent(
     recipe: Recipe,
     healthState: HealthState,
     onRetryHealth: () -> Unit,
+    nutritionState: NutritionState,
+    onRetryNutrition: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var servings by remember(recipe.id) { mutableIntStateOf(recipe.servings) }
@@ -340,6 +347,40 @@ private fun RecipeDetailContent(
                             }
                         }
                         HealthState.Idle -> Unit
+                    }
+                }
+            }
+
+            if (nutritionState != NutritionState.Idle) {
+                Section(title = "Nutrición (por ración)") {
+                    when (nutritionState) {
+                        NutritionState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            Text(
+                                "Analizando con IA...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 12.dp)
+                            )
+                        }
+                        NutritionState.NotConfigured -> Text(
+                            "Configura un proveedor de IA en Ajustes para ver esto.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        is NutritionState.Error -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(nutritionState.reason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            TextButton(onClick = onRetryNutrition) { Text("Reintentar") }
+                        }
+                        NutritionState.Loaded -> recipe.nutritionInfo?.let { nutrition ->
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                NutritionStat(value = "${nutrition.caloriesPerServing}", label = "kcal")
+                                NutritionStat(value = formatQuantity(nutrition.proteinGrams), label = "Proteínas (g)")
+                                NutritionStat(value = formatQuantity(nutrition.carbsGrams), label = "Carbohidratos (g)")
+                                NutritionStat(value = formatQuantity(nutrition.fatGrams), label = "Grasas (g)")
+                            }
+                        }
+                        NutritionState.Idle -> Unit
                     }
                 }
             }
@@ -482,5 +523,13 @@ private fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(title, style = MaterialTheme.typography.titleMedium)
         content()
+    }
+}
+
+@Composable
+private fun NutritionStat(value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, style = MaterialTheme.typography.titleMedium)
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

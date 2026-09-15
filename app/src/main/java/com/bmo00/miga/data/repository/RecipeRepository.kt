@@ -33,6 +33,7 @@ import com.bmo00.miga.data.model.HealthRating
 import com.bmo00.miga.data.model.Ingredient
 import com.bmo00.miga.data.model.IngredientCatalogItem
 import com.bmo00.miga.data.model.IngredientGroup
+import com.bmo00.miga.data.model.NutritionInfo
 import com.bmo00.miga.data.model.Recipe
 import com.bmo00.miga.data.model.RecipeBook
 import com.bmo00.miga.data.model.RecipeBookDraft
@@ -189,7 +190,15 @@ class RecipeRepository(
                         healthColor = if (keepHealth) existing?.healthColor else null,
                         healthDescription = if (keepHealth) existing?.healthDescription else null,
                         healthFingerprint = if (keepHealth) existing?.healthFingerprint else null,
-                        healthAnalyzedAt = if (keepHealth) existing?.healthAnalyzedAt else null
+                        healthAnalyzedAt = if (keepHealth) existing?.healthAnalyzedAt else null,
+                        // La estimación nutricional depende del mismo contenido (ingredientes+pasos),
+                        // así que se invalida con el mismo criterio que la valoración de salud.
+                        nutritionCalories = if (keepHealth) existing?.nutritionCalories else null,
+                        nutritionProteinGrams = if (keepHealth) existing?.nutritionProteinGrams else null,
+                        nutritionCarbsGrams = if (keepHealth) existing?.nutritionCarbsGrams else null,
+                        nutritionFatGrams = if (keepHealth) existing?.nutritionFatGrams else null,
+                        nutritionFingerprint = if (keepHealth) existing?.nutritionFingerprint else null,
+                        nutritionAnalyzedAt = if (keepHealth) existing?.nutritionAnalyzedAt else null
                     )
                 )
                 draft.id
@@ -291,12 +300,29 @@ class RecipeRepository(
         recipeDao.updateHealthRating(recipeId, color.name, description, fingerprint, analyzedAt)
     }
 
+    suspend fun saveNutritionInfo(
+        recipeId: Long,
+        caloriesPerServing: Int,
+        proteinGrams: Double,
+        carbsGrams: Double,
+        fatGrams: Double,
+        fingerprint: String,
+        analyzedAt: Long
+    ) {
+        recipeDao.updateNutritionInfo(recipeId, caloriesPerServing, proteinGrams, carbsGrams, fatGrams, fingerprint, analyzedAt)
+    }
+
     /**
      * Huella de [ingredientGroups]+[stepGroups]: si cambia respecto a la guardada junto a una
      * valoración de salud, esa valoración ya no es válida para el contenido actual de la receta.
      * Delegado a [HealthFingerprint] (función pura, con sus propios tests unitarios).
      */
     fun computeHealthFingerprint(ingredientGroups: List<IngredientGroup>, stepGroups: List<StepGroup>): String =
+        HealthFingerprint.compute(ingredientGroups, stepGroups)
+
+    /** Misma huella que [computeHealthFingerprint] (depende del mismo contenido); nombre propio
+     *  para que su uso en el análisis nutricional se lea con claridad en el sitio que la llama. */
+    fun computeNutritionFingerprint(ingredientGroups: List<IngredientGroup>, stepGroups: List<StepGroup>): String =
         HealthFingerprint.compute(ingredientGroups, stepGroups)
 
     // --- Categorías ---
@@ -750,6 +776,17 @@ class RecipeRepository(
                 val colorLevel = runCatching { HealthColorLevel.valueOf(dto.health.colorLevel) }.getOrDefault(HealthColorLevel.YELLOW)
                 recipeDao.updateHealthRating(recipeId, colorLevel.name, dto.health.description, dto.health.fingerprint, dto.health.analyzedAt)
             }
+            dto.nutrition?.let { nutrition ->
+                recipeDao.updateNutritionInfo(
+                    recipeId,
+                    nutrition.caloriesPerServing,
+                    nutrition.proteinGrams,
+                    nutrition.carbsGrams,
+                    nutrition.fatGrams,
+                    nutrition.fingerprint,
+                    nutrition.analyzedAt
+                )
+            }
         }
 
         // El pack manda en su propio contenido: una receta que ya no está en esta versión se borra.
@@ -1059,7 +1096,13 @@ class RecipeRepository(
                     healthColor = if (keepHealth) existing.healthColor else null,
                     healthDescription = if (keepHealth) existing.healthDescription else null,
                     healthFingerprint = if (keepHealth) existing.healthFingerprint else null,
-                    healthAnalyzedAt = if (keepHealth) existing.healthAnalyzedAt else null
+                    healthAnalyzedAt = if (keepHealth) existing.healthAnalyzedAt else null,
+                    nutritionCalories = if (keepHealth) existing.nutritionCalories else null,
+                    nutritionProteinGrams = if (keepHealth) existing.nutritionProteinGrams else null,
+                    nutritionCarbsGrams = if (keepHealth) existing.nutritionCarbsGrams else null,
+                    nutritionFatGrams = if (keepHealth) existing.nutritionFatGrams else null,
+                    nutritionFingerprint = if (keepHealth) existing.nutritionFingerprint else null,
+                    nutritionAnalyzedAt = if (keepHealth) existing.nutritionAnalyzedAt else null
                 )
             )
             existing.id
@@ -1206,6 +1249,16 @@ fun RecipeWithDetails.toDomain(): Recipe {
                 description = recipe.healthDescription.orEmpty(),
                 fingerprint = recipe.healthFingerprint.orEmpty(),
                 analyzedAt = recipe.healthAnalyzedAt ?: 0L
+            )
+        },
+        nutritionInfo = recipe.nutritionCalories?.let { calories ->
+            NutritionInfo(
+                caloriesPerServing = calories,
+                proteinGrams = recipe.nutritionProteinGrams ?: 0.0,
+                carbsGrams = recipe.nutritionCarbsGrams ?: 0.0,
+                fatGrams = recipe.nutritionFatGrams ?: 0.0,
+                fingerprint = recipe.nutritionFingerprint.orEmpty(),
+                analyzedAt = recipe.nutritionAnalyzedAt ?: 0L
             )
         }
     )

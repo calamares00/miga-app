@@ -7,6 +7,8 @@ import com.bmo00.miga.data.health.healthClientFor
 import com.bmo00.miga.data.local.SettingsRepository
 import com.bmo00.miga.data.model.Recipe
 import com.bmo00.miga.data.model.RecipeBookSummary
+import com.bmo00.miga.data.nutrition.RecipeNutritionResult
+import com.bmo00.miga.data.nutrition.nutritionClientFor
 import com.bmo00.miga.data.repository.RecipeRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,6 +24,14 @@ sealed interface HealthState {
     data object Loaded : HealthState
     data object NotConfigured : HealthState
     data class Error(val reason: String) : HealthState
+}
+
+sealed interface NutritionState {
+    data object Idle : NutritionState
+    data object Loading : NutritionState
+    data object Loaded : NutritionState
+    data object NotConfigured : NutritionState
+    data class Error(val reason: String) : NutritionState
 }
 
 class RecipeDetailViewModel(
@@ -83,6 +93,58 @@ class RecipeDetailViewModel(
     fun retryHealthCheck() {
         healthCheckStarted = false
         fetchHealthinessIfNeeded()
+    }
+
+    private val _nutritionState = MutableStateFlow<NutritionState>(NutritionState.Idle)
+    val nutritionState: StateFlow<NutritionState> = _nutritionState
+    private var nutritionCheckStarted = false
+
+    /** Si hay un proveedor de IA configurado y no hay ya una estimación vigente, la analiza y la cachea. */
+    fun fetchNutritionIfNeeded() {
+        if (nutritionCheckStarted) return
+        nutritionCheckStarted = true
+        viewModelScope.launch {
+            val current = recipe.filterNotNull().first()
+            val provider = settingsRepository.observeVisionProvider().first()
+            val apiKey = settingsRepository.apiKeyFor(provider)
+            if (apiKey.isBlank()) {
+                _nutritionState.value = NutritionState.NotConfigured
+                return@launch
+            }
+            if (current.nutritionInfo != null) {
+                _nutritionState.value = NutritionState.Loaded
+                return@launch
+            }
+            _nutritionState.value = NutritionState.Loading
+            val model = settingsRepository.modelFor(provider)
+            val ingredientsText = current.ingredientGroups.joinToString("\n") { group ->
+                val header = group.name?.let { "$it:\n" }.orEmpty()
+                header + group.ingredients.joinToString("\n") { "- ${formatIngredient(it, 1.0)}" }
+            }
+            val stepsText = current.stepGroups.joinToString("\n") { group ->
+                val header = group.name?.let { "$it:\n" }.orEmpty()
+                header + group.instructions.joinToString("\n") { "- $it" }
+            }
+            when (
+                val result = nutritionClientFor(provider)
+                    .analyzeNutrition(ingredientsText, stepsText, current.servings, apiKey, model)
+            ) {
+                is RecipeNutritionResult.Success -> {
+                    val fingerprint = repository.computeNutritionFingerprint(current.ingredientGroups, current.stepGroups)
+                    repository.saveNutritionInfo(
+                        current.id, result.caloriesPerServing, result.proteinGrams, result.carbsGrams, result.fatGrams,
+                        fingerprint, System.currentTimeMillis()
+                    )
+                    _nutritionState.value = NutritionState.Loaded
+                }
+                is RecipeNutritionResult.Error -> _nutritionState.value = NutritionState.Error(result.reason)
+            }
+        }
+    }
+
+    fun retryNutritionCheck() {
+        nutritionCheckStarted = false
+        fetchNutritionIfNeeded()
     }
 
     fun toggleFavorite() {
