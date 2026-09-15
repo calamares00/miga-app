@@ -1,0 +1,1 @@
+Nuevo: control por voz en el modo cocina. Toca el icono del micro y di "siguiente", "anterior", "repite" o "temporizador" (o "cancela el temporizador") para manejar la receta sin tocar la pantalla mientras cocinas.
