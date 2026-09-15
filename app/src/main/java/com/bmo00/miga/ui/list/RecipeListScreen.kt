@@ -84,7 +84,8 @@ fun RecipeListScreen(
     onEditRecipeClick: (Long) -> Unit,
     onAddRecipeClick: () -> Unit,
     onAddRecipeFromPhoto: (List<String>) -> Unit,
-    onAddRecipesBulk: (List<String>) -> Unit
+    onAddRecipesBulk: (List<String>) -> Unit,
+    onSearchDishClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
@@ -311,7 +312,8 @@ fun RecipeListScreen(
                 onBulkPhotoClick = {
                     showNewRecipeSheet = false
                     bulkGalleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }
+                },
+                onSearchDishClick = { showNewRecipeSheet = false; onSearchDishClick() }
             )
         }
     }

@@ -77,6 +77,9 @@ import com.bmo00.miga.ui.components.PhotoSourceSheet
 fun RecipeEditorScreen(
     viewModel: RecipeEditorViewModel,
     sourcePhotoUris: List<String> = emptyList(),
+    sourceDishName: String? = null,
+    sourceDishDescription: String = "",
+    sourceDishOrigin: String? = null,
     onSaved: (Long) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -100,6 +103,9 @@ fun RecipeEditorScreen(
 
     LaunchedEffect(sourcePhotoUris) {
         if (sourcePhotoUris.isNotEmpty()) viewModel.startVisionExtraction(context, sourcePhotoUris.map { Uri.parse(it) })
+    }
+    LaunchedEffect(sourceDishName) {
+        if (!sourceDishName.isNullOrBlank()) viewModel.startDishGeneration(sourceDishName, sourceDishDescription, sourceDishOrigin)
     }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -148,7 +154,7 @@ fun RecipeEditorScreen(
             if (visionState is VisionState.Error && !visionErrorDismissed) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "No se pudo leer la foto con IA: ${(visionState as VisionState.Error).reason}",
+                        "No se pudo generar la receta con IA: ${(visionState as VisionState.Error).reason}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                         maxLines = 2,
@@ -283,7 +289,7 @@ fun RecipeEditorScreen(
                             strokeWidth = 4.dp
                         )
                         Text(
-                            "Leyendo la foto con IA...",
+                            "Generando la receta con IA...",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(top = 16.dp)

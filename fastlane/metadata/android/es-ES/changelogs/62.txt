@@ -1,0 +1,1 @@
+Nuevo: buscador de recetas con IA ("Nueva receta → Buscar receta con IA"). Describe una zona/país, un ingrediente o el tipo de plato que te apetece, elige una de las sugerencias, y la IA genera la receta completa (ingredientes, pasos, tiempos...) para revisarla y añadirla a un libro, igual que al importar desde una foto.

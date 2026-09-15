@@ -38,6 +38,8 @@ import com.bmo00.miga.ui.books.RecipeBooksScreen
 import com.bmo00.miga.ui.books.RecipeBooksViewModel
 import com.bmo00.miga.ui.detail.RecipeDetailScreen
 import com.bmo00.miga.ui.detail.RecipeDetailViewModel
+import com.bmo00.miga.ui.dishsearch.DishSearchScreen
+import com.bmo00.miga.ui.dishsearch.DishSearchViewModel
 import com.bmo00.miga.ui.editor.RecipeEditorScreen
 import com.bmo00.miga.ui.editor.RecipeEditorViewModel
 import com.bmo00.miga.ui.list.RecipeListScreen
@@ -192,7 +194,37 @@ fun RecetarioNavHost() {
                     onEditRecipeClick = { navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = it)) },
                     onAddRecipeClick = { navController.navigate(Destinations.editor(bookId = bookId)) },
                     onAddRecipeFromPhoto = { photoUris -> navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUris = photoUris)) },
-                    onAddRecipesBulk = { photoUris -> navController.navigate(Destinations.bulkImport(bookId = bookId, photoUris = photoUris)) }
+                    onAddRecipesBulk = { photoUris -> navController.navigate(Destinations.bulkImport(bookId = bookId, photoUris = photoUris)) },
+                    onSearchDishClick = { navController.navigate(Destinations.dishSearch(bookId)) }
+                )
+            }
+
+            composable(
+                route = Destinations.DISH_SEARCH_ROUTE,
+                arguments = listOf(
+                    navArgument(Destinations.ARG_BOOK_ID) {
+                        type = NavType.LongType
+                        defaultValue = Destinations.NEW_BOOK_ID
+                    }
+                )
+            ) { backStackEntry ->
+                val bookId = backStackEntry.arguments?.getLong(Destinations.ARG_BOOK_ID) ?: Destinations.NEW_BOOK_ID
+                val viewModel: DishSearchViewModel = viewModel(
+                    factory = viewModelFactory { initializer { DishSearchViewModel(settingsRepository) } }
+                )
+                DishSearchScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onDishSelected = { dish ->
+                        navController.navigate(
+                            Destinations.editor(
+                                bookId = bookId,
+                                sourceDishName = dish.name,
+                                sourceDishDescription = dish.description,
+                                sourceDishOrigin = dish.origin
+                            )
+                        )
+                    }
                 )
             }
 
@@ -254,12 +286,30 @@ fun RecetarioNavHost() {
                         type = NavType.StringType
                         nullable = true
                         defaultValue = null
+                    },
+                    navArgument(Destinations.ARG_SOURCE_DISH_NAME) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument(Destinations.ARG_SOURCE_DISH_DESCRIPTION) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument(Destinations.ARG_SOURCE_DISH_ORIGIN) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
                     }
                 )
             ) { backStackEntry ->
                 val recipeId = backStackEntry.arguments?.getLong(Destinations.ARG_RECIPE_ID) ?: Destinations.NEW_RECIPE_ID
                 val bookId = backStackEntry.arguments?.getLong(Destinations.ARG_BOOK_ID) ?: Destinations.NEW_BOOK_ID
                 val sourcePhotoUris = Destinations.decodeUriList(backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_PHOTO_URIS))
+                val sourceDishName = backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_DISH_NAME)
+                val sourceDishDescription = backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_DISH_DESCRIPTION).orEmpty()
+                val sourceDishOrigin = backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_DISH_ORIGIN)?.takeIf { it.isNotBlank() }
                 val viewModel: RecipeEditorViewModel = viewModel(
                     key = "editor_${recipeId}_$bookId",
                     factory = viewModelFactory { initializer { RecipeEditorViewModel(repository, settingsRepository, recipeId, bookId) } }
@@ -267,6 +317,9 @@ fun RecetarioNavHost() {
                 RecipeEditorScreen(
                     viewModel = viewModel,
                     sourcePhotoUris = sourcePhotoUris,
+                    sourceDishName = sourceDishName,
+                    sourceDishDescription = sourceDishDescription,
+                    sourceDishOrigin = sourceDishOrigin,
                     onSaved = { savedId ->
                         navController.popBackStack()
                         if (recipeId == Destinations.NEW_RECIPE_ID) {
