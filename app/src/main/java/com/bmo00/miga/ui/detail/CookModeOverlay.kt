@@ -1,7 +1,12 @@
 package com.bmo00.miga.ui.detail
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.view.HapticFeedbackConstants
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +25,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
@@ -46,8 +53,13 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
+import com.bmo00.miga.data.model.CookModeVoiceCommands
+import com.bmo00.miga.data.model.CookVoiceCommand
 import com.bmo00.miga.data.model.Recipe
 import com.bmo00.miga.data.model.StepTimerParsing
+import com.bmo00.miga.data.voice.DictationResult
+import com.bmo00.miga.data.voice.SpeechDictation
 import kotlinx.coroutines.delay
 import java.util.Locale
 
@@ -77,6 +89,18 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
     var activeTimer by remember { mutableStateOf<ActiveTimer?>(null) }
     var timerSecondsLeft by remember { mutableIntStateOf(0) }
     var timerFinished by remember { mutableStateOf(false) }
+
+    val speechAvailable = remember { SpeechDictation.isAvailable(context) }
+    var activeRecognizer by remember { mutableStateOf<SpeechRecognizer?>(null) }
+    var isListeningForCommand by remember { mutableStateOf(false) }
+    var voiceFeedback by remember { mutableStateOf<String?>(null) }
+
+    // Se calculan aquí (en vez de solo dentro de la rama que pinta el paso) porque también los
+    // necesita executeVoiceCommand, que puede recibir un comando de temporizador/repetir estando
+    // en cualquier punto de la composición.
+    val currentStepIndex = pageIndex - (if (hasIngredients) 1 else 0)
+    val currentStep = steps.getOrNull(currentStepIndex)
+    val currentDetectedSeconds = remember(currentStep?.instruction) { currentStep?.let { StepTimerParsing.findTimerSeconds(it.instruction) } }
 
     LaunchedEffect(activeTimer) {
         val timer = activeTimer ?: return@LaunchedEffect
@@ -109,12 +133,71 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
             view.keepScreenOn = false
             engine?.stop()
             engine?.shutdown()
+            activeRecognizer?.destroy()
         }
     }
 
     fun goToPage(index: Int) {
         tts?.stop()
         pageIndex = index
+    }
+
+    /** Ejecuta un comando ya reconocido y devuelve el texto de estado a mostrar junto al micro. */
+    fun executeVoiceCommand(command: CookVoiceCommand): String = when (command) {
+        CookVoiceCommand.NextStep ->
+            if (pageIndex < totalPages - 1) { goToPage(pageIndex + 1); "Siguiente paso" } else "Ya estás en el último paso"
+        CookVoiceCommand.PreviousStep ->
+            if (pageIndex > 0) { goToPage(pageIndex - 1); "Paso anterior" } else "Ya estás en el primer paso"
+        CookVoiceCommand.RepeatStep -> {
+            val instruction = currentStep?.instruction
+            if (instruction != null) {
+                tts?.speak(instruction, TextToSpeech.QUEUE_FLUSH, null, "cook_step_voice")
+                "Repitiendo el paso"
+            } else {
+                "No hay ningún paso que repetir aquí"
+            }
+        }
+        CookVoiceCommand.StartTimer -> {
+            val seconds = currentDetectedSeconds
+            if (seconds != null) {
+                activeTimer = ActiveTimer(currentStepIndex, seconds, (activeTimer?.startToken ?: 0) + 1)
+                "Temporizador iniciado"
+            } else {
+                "Este paso no tiene ninguna duración detectada"
+            }
+        }
+        CookVoiceCommand.CancelTimer ->
+            if (activeTimer != null) { activeTimer = null; "Temporizador cancelado" } else "No hay ningún temporizador activo"
+    }
+
+    fun beginListeningForCommand() {
+        voiceFeedback = null
+        isListeningForCommand = true
+        activeRecognizer = SpeechDictation.startListening(context) { result ->
+            isListeningForCommand = false
+            activeRecognizer?.destroy()
+            activeRecognizer = null
+            voiceFeedback = when (result) {
+                is DictationResult.Success -> {
+                    val command = CookModeVoiceCommands.parse(result.text)
+                    if (command != null) executeVoiceCommand(command) else "No he entendido: \"${result.text}\""
+                }
+                is DictationResult.Error -> result.reason
+            }
+        }
+    }
+
+    val voiceCommandPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) beginListeningForCommand()
+    }
+
+    fun onMicClick() {
+        if (isListeningForCommand) {
+            activeRecognizer?.stopListening()
+            return
+        }
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        if (granted) beginListeningForCommand() else voiceCommandPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
     }
 
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -125,10 +208,30 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                 }
             } else {
                 Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(recipe.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(recipe.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, modifier = Modifier.weight(1f))
+                        if (speechAvailable) {
+                            IconButton(onClick = { onMicClick() }) {
+                                if (isListeningForCommand) {
+                                    Icon(Icons.Filled.Stop, contentDescription = "Detener comando de voz", tint = MaterialTheme.colorScheme.error)
+                                } else {
+                                    Icon(Icons.Filled.Mic, contentDescription = "Comando de voz")
+                                }
+                            }
+                        }
                         IconButton(onClick = { tts?.stop(); onClose() }) {
                             Icon(Icons.Filled.Close, contentDescription = "Cerrar modo cocina")
+                        }
+                    }
+                    if (isListeningForCommand) {
+                        Text(
+                            "Escuchando... (siguiente, anterior, repite, temporizador)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        voiceFeedback?.let {
+                            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
@@ -192,9 +295,9 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                             }
                         }
                     } else {
-                        val stepIndex = pageIndex - (if (hasIngredients) 1 else 0)
-                        val step = steps[stepIndex]
-                        val detectedSeconds = remember(step.instruction) { StepTimerParsing.findTimerSeconds(step.instruction) }
+                        val stepIndex = currentStepIndex
+                        val step = currentStep!!
+                        val detectedSeconds = currentDetectedSeconds
                         if (step.groupName != null) {
                             Text(
                                 text = step.groupName.uppercase(),
