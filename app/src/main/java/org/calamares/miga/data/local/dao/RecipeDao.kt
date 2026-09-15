@@ -116,4 +116,19 @@ interface RecipeDao {
             "healthFingerprint = :fingerprint, healthAnalyzedAt = :analyzedAt WHERE id = :id"
     )
     suspend fun updateHealthRating(id: Long, color: String?, description: String?, fingerprint: String?, analyzedAt: Long?)
+
+    @Query(
+        "UPDATE recipes SET nutritionCalories = :calories, nutritionProteinGrams = :protein, " +
+            "nutritionCarbsGrams = :carbs, nutritionFatGrams = :fat, nutritionFingerprint = :fingerprint, " +
+            "nutritionAnalyzedAt = :analyzedAt WHERE id = :id"
+    )
+    suspend fun updateNutritionInfo(
+        id: Long,
+        calories: Int?,
+        protein: Double?,
+        carbs: Double?,
+        fat: Double?,
+        fingerprint: String?,
+        analyzedAt: Long?
+    )
 }

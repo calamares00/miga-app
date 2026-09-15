@@ -9,6 +9,7 @@ import org.calamares.miga.data.local.MIGRATION_5_6
 import org.calamares.miga.data.local.MIGRATION_6_7
 import org.calamares.miga.data.local.MIGRATION_7_8
 import org.calamares.miga.data.local.MIGRATION_8_9
+import org.calamares.miga.data.local.MIGRATION_9_10
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.sync.SyncEngine
@@ -24,7 +25,7 @@ class RecetarioApp : Application() {
 
     val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
-            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
             // Red de seguridad final: si algún día hay un salto de versión sin migración
             // explícita (o un estado corrupto), no crashea, borra y empieza de cero.
             .fallbackToDestructiveMigration()

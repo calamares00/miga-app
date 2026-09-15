@@ -45,5 +45,13 @@ data class RecipeEntity(
     val healthDescription: String? = null,
     /** Huella de ingredientes+pasos analizados; si no coincide con el estado actual, está obsoleta. */
     val healthFingerprint: String? = null,
-    val healthAnalyzedAt: Long? = null
+    val healthAnalyzedAt: Long? = null,
+    /** Estimación nutricional cacheada (ver NutritionInfo en data/model); null = nunca analizada. */
+    val nutritionCalories: Int? = null,
+    val nutritionProteinGrams: Double? = null,
+    val nutritionCarbsGrams: Double? = null,
+    val nutritionFatGrams: Double? = null,
+    /** Huella de ingredientes+pasos analizados; si no coincide con el estado actual, está obsoleta. */
+    val nutritionFingerprint: String? = null,
+    val nutritionAnalyzedAt: Long? = null
 )
