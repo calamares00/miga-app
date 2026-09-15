@@ -1,6 +1,8 @@
 package com.bmo00.miga.ui.detail
 
 import android.speech.tts.TextToSpeech
+import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,11 +14,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -28,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -35,18 +40,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.bmo00.miga.data.model.Recipe
+import com.bmo00.miga.data.model.StepTimerParsing
+import kotlinx.coroutines.delay
 import java.util.Locale
 
 private data class CookStep(val groupName: String?, val stepNumberInGroup: Int, val instruction: String)
 
 private fun Recipe.flattenSteps(): List<CookStep> =
     stepGroups.flatMap { group -> group.instructions.mapIndexed { idx, instruction -> CookStep(group.name, idx + 1, instruction) } }
+
+/** Temporizador activo del modo cocina: a qué paso pertenece (índice dentro de [CookStep], no de
+ *  página) y cuántos segundos tenía al arrancar. [startToken] cambia en cada pulsación de "Iniciar"
+ *  (incluso reiniciando el mismo paso) para que LaunchedEffect siempre relance la cuenta atrás. */
+private data class ActiveTimer(val stepIndex: Int, val totalSeconds: Int, val startToken: Int)
+
+private fun formatTimer(seconds: Int): String = "%d:%02d".format(seconds / 60, seconds % 60)
 
 @Composable
 fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) {
@@ -58,6 +73,25 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
     val view = LocalView.current
     val context = LocalContext.current
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
+
+    var activeTimer by remember { mutableStateOf<ActiveTimer?>(null) }
+    var timerSecondsLeft by remember { mutableIntStateOf(0) }
+    var timerFinished by remember { mutableStateOf(false) }
+
+    LaunchedEffect(activeTimer) {
+        val timer = activeTimer ?: return@LaunchedEffect
+        timerSecondsLeft = timer.totalSeconds
+        timerFinished = false
+        while (timerSecondsLeft > 0) {
+            delay(1000)
+            timerSecondsLeft--
+        }
+        timerFinished = true
+        repeat(4) {
+            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            delay(400)
+        }
+    }
 
     DisposableEffect(Unit) {
         view.keepScreenOn = true
@@ -103,7 +137,33 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                         progress = { (pageIndex + 1f) / totalPages },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    activeTimer?.let { timer ->
+                        val bannerColor = if (timerFinished) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer
+                        val bannerContentColor = if (timerFinished) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(bannerColor)
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Filled.Timer, contentDescription = null, tint = bannerContentColor)
+                            Text(
+                                text = if (timerFinished) "¡Listo! Paso ${timer.stepIndex + 1}" else "Paso ${timer.stepIndex + 1} · ${formatTimer(timerSecondsLeft)}",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = bannerContentColor,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(onClick = { activeTimer = null }) {
+                                Icon(Icons.Filled.Close, contentDescription = "Cancelar temporizador", tint = bannerContentColor)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
 
                     if (hasIngredients && pageIndex == 0) {
                         Text(
@@ -132,7 +192,9 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                             }
                         }
                     } else {
-                        val step = steps[pageIndex - (if (hasIngredients) 1 else 0)]
+                        val stepIndex = pageIndex - (if (hasIngredients) 1 else 0)
+                        val step = steps[stepIndex]
+                        val detectedSeconds = remember(step.instruction) { StepTimerParsing.findTimerSeconds(step.instruction) }
                         if (step.groupName != null) {
                             Text(
                                 text = step.groupName.uppercase(),
@@ -165,6 +227,24 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                             style = MaterialTheme.typography.headlineMedium,
                             modifier = Modifier.weight(1f)
                         )
+                        if (detectedSeconds != null) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            val isThisStepActive = activeTimer?.stepIndex == stepIndex
+                            OutlinedButton(
+                                onClick = {
+                                    activeTimer = if (isThisStepActive) {
+                                        null
+                                    } else {
+                                        ActiveTimer(stepIndex, detectedSeconds, (activeTimer?.startToken ?: 0) + 1)
+                                    }
+                                }
+                            ) {
+                                Icon(Icons.Filled.Timer, contentDescription = null, modifier = Modifier.height(18.dp))
+                                Text(
+                                    text = if (isThisStepActive) " Detener temporizador" else " Iniciar temporizador (${formatTimer(detectedSeconds)})"
+                                )
+                            }
+                        }
                     }
 
                     Row(
