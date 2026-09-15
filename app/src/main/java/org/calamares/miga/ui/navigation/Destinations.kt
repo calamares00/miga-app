@@ -7,13 +7,15 @@ object Destinations {
     const val BOOK_ROUTE = "books/{bookId}"
     const val BOOK_EDITOR_ROUTE = "bookEditor?bookId={bookId}"
     const val DETAIL_ROUTE = "recipes/{recipeId}"
-    const val EDITOR_ROUTE = "editor?recipeId={recipeId}&bookId={bookId}&sourcePhotoUris={sourcePhotoUris}"
+    const val EDITOR_ROUTE = "editor?recipeId={recipeId}&bookId={bookId}&sourcePhotoUris={sourcePhotoUris}" +
+        "&sourceDishName={sourceDishName}&sourceDishDescription={sourceDishDescription}&sourceDishOrigin={sourceDishOrigin}"
     const val SEARCH_ROUTE = "search"
     const val FAVORITES_ROUTE = "favorites"
     const val SHOPPING_LIST_ROUTE = "shoppingList"
     const val PACKS_CATALOG_ROUTE = "packs"
     const val PACK_DETAIL_ROUTE = "packs/{packId}"
     const val BULK_IMPORT_ROUTE = "bulkImport?bookId={bookId}&photoUris={photoUris}"
+    const val DISH_SEARCH_ROUTE = "dishSearch?bookId={bookId}"
     const val SETTINGS_ROUTE = "settings"
     const val MANAGE_CATEGORIES_ROUTE = "settings/categories"
     const val MANAGE_UTENSILS_ROUTE = "settings/utensils"
@@ -26,6 +28,9 @@ object Destinations {
     const val ARG_RECIPE_ID = "recipeId"
     const val ARG_BOOK_ID = "bookId"
     const val ARG_SOURCE_PHOTO_URIS = "sourcePhotoUris"
+    const val ARG_SOURCE_DISH_NAME = "sourceDishName"
+    const val ARG_SOURCE_DISH_DESCRIPTION = "sourceDishDescription"
+    const val ARG_SOURCE_DISH_ORIGIN = "sourceDishOrigin"
     const val ARG_PACK_ID = "packId"
     const val ARG_PHOTO_URIS = "photoUris"
     const val NEW_RECIPE_ID = -1L
@@ -35,12 +40,27 @@ object Destinations {
     fun packDetail(packId: String) = "packs/${Uri.encode(packId)}"
     fun bookEditor(bookId: Long = NEW_BOOK_ID) = "bookEditor?bookId=$bookId"
     fun detail(recipeId: Long) = "recipes/$recipeId"
-    fun editor(bookId: Long, recipeId: Long = NEW_RECIPE_ID, sourcePhotoUris: List<String> = emptyList()): String {
+    fun editor(
+        bookId: Long,
+        recipeId: Long = NEW_RECIPE_ID,
+        sourcePhotoUris: List<String> = emptyList(),
+        sourceDishName: String? = null,
+        sourceDishDescription: String? = null,
+        sourceDishOrigin: String? = null
+    ): String {
         val base = "editor?recipeId=$recipeId&bookId=$bookId"
-        return if (sourcePhotoUris.isNotEmpty()) "$base&sourcePhotoUris=${encodeUriList(sourcePhotoUris)}" else base
+        val withPhotos = if (sourcePhotoUris.isNotEmpty()) "$base&sourcePhotoUris=${encodeUriList(sourcePhotoUris)}" else base
+        return if (sourceDishName != null) {
+            "$withPhotos&sourceDishName=${Uri.encode(sourceDishName)}" +
+                "&sourceDishDescription=${Uri.encode(sourceDishDescription.orEmpty())}" +
+                "&sourceDishOrigin=${Uri.encode(sourceDishOrigin.orEmpty())}"
+        } else {
+            withPhotos
+        }
     }
     fun bulkImport(bookId: Long, photoUris: List<String>): String =
         "bulkImport?bookId=$bookId&photoUris=${encodeUriList(photoUris)}"
+    fun dishSearch(bookId: Long): String = "dishSearch?bookId=$bookId"
 
     // Navigation Compose no tiene un tipo de argumento de lista limpio para rutas con query args,
     // así que varias URIs se codifican como una sola String: cada URI ya pasa por Uri.encode()

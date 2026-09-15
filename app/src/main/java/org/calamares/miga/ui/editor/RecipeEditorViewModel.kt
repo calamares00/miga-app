@@ -16,6 +16,8 @@ import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.data.model.RecipeDraft
 import org.calamares.miga.data.repository.RecipeRepository
+import org.calamares.miga.data.search.DishSuggestion
+import org.calamares.miga.data.search.dishRecipeGenerationClientFor
 import org.calamares.miga.data.vision.RecipeVisionResult
 import org.calamares.miga.data.vision.RecipeVisionResultDto
 import org.calamares.miga.data.vision.VisionImageInput
@@ -132,6 +134,33 @@ class RecipeEditorViewModel(
             }
             val model = settingsRepository.modelFor(provider)
             when (val result = visionClientFor(provider).extractRecipe(images, apiKey, model)) {
+                is RecipeVisionResult.Success -> {
+                    applyVisionResult(result.recipe)
+                    _visionState.value = VisionState.Loaded
+                }
+                is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(result.reason)
+            }
+        }
+    }
+
+    /** Genera una receta completa a partir de un plato elegido en el buscador con IA (ver
+     *  DishSearchScreen) y precarga este formulario con el resultado - mismo mecanismo que
+     *  [startVisionExtraction] (comparte el guard [visionStarted] y el estado [visionState]), pero
+     *  a partir de un nombre/descripción de plato en vez de una foto. */
+    fun startDishGeneration(dishName: String, dishDescription: String, dishOrigin: String?) {
+        if (isEditing || visionStarted || dishName.isBlank()) return
+        visionStarted = true
+        viewModelScope.launch {
+            _visionState.value = VisionState.Loading
+            val provider = settingsRepository.observeVisionProvider().first()
+            val apiKey = settingsRepository.apiKeyFor(provider)
+            if (apiKey.isBlank()) {
+                _visionState.value = VisionState.Error("Configura una API key de ${provider.label} en Ajustes")
+                return@launch
+            }
+            val model = settingsRepository.modelFor(provider)
+            val dish = DishSuggestion(dishName, dishDescription, dishOrigin)
+            when (val result = dishRecipeGenerationClientFor(provider).generateRecipe(dish, apiKey, model)) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
                     _visionState.value = VisionState.Loaded
