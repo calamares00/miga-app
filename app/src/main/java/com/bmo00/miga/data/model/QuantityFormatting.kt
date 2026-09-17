@@ -13,8 +13,9 @@ fun formatIngredientText(name: String, quantity: Double?, unit: String?, scale: 
     return buildString {
         if (quantityPart != null) {
             append(quantityPart)
-            if (!unit.isNullOrBlank()) append(" $unit")
-            append(" de ")
+            // "de" solo tiene sentido pegado a una unidad ("2 tazas de harina"); sin unidad,
+            // "3 de huevos" queda mal - se pone directamente "3 huevos".
+            if (!unit.isNullOrBlank()) append(" $unit de ") else append(" ")
         }
         append(name)
     }
