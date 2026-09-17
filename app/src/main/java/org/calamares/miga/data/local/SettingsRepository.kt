@@ -188,4 +188,18 @@ class SettingsRepository(private val context: Context) {
     } catch (e: IOException) {
         null
     }
+
+    /** Todos los versionCode con changelog embebido en el APK actual, de más reciente a más
+     *  antiguo. Es el mismo historial tanto en beta como en estable: cada build (beta o release)
+     *  lleva embebidos los changelogs de todas las versiones hasta esa, así que en un build beta
+     *  se ve el detalle de cada beta intermedia, y en un build release se ve cada versión que ha
+     *  ido saliendo. Usado por la pantalla de Ayuda para mostrar el historial completo. */
+    fun listAvailableChangelogVersionCodes(): List<Int> = try {
+        context.assets.list("changelogs")
+            ?.mapNotNull { it.removeSuffix(".txt").toIntOrNull() }
+            ?.sortedDescending()
+            .orEmpty()
+    } catch (e: IOException) {
+        emptyList()
+    }
 }
