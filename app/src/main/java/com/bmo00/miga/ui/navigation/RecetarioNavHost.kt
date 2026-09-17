@@ -387,7 +387,7 @@ fun RecetarioNavHost() {
             }
 
             composable(Destinations.HELP_ROUTE) {
-                HelpScreen(onBack = { navController.popBackStack() })
+                HelpScreen(settingsRepository = settingsRepository, onBack = { navController.popBackStack() })
             }
 
             composable(Destinations.ABOUT_ROUTE) {

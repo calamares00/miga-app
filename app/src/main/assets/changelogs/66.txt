@@ -1,0 +1,1 @@
+Nuevo: historial de cambios en Ajustes → Ayuda, con las novedades de cada versión (el mismo en beta y en estable: cada build lleva embebidos los changelogs de todas las versiones hasta esa).

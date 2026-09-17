@@ -24,9 +24,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.bmo00.miga.data.local.SettingsRepository
 
 /**
  * TODO: sustituir por el enlace real de donación (PayPal.me, Ko-fi...) antes de publicar la app.
@@ -37,8 +39,14 @@ private val DONATION_AMOUNTS = listOf("0.99", "2.99", "4.99", "9.99")
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun HelpScreen(onBack: () -> Unit) {
+fun HelpScreen(settingsRepository: SettingsRepository, onBack: () -> Unit) {
     val context = LocalContext.current
+    // Los changelogs son ficheros de assets embebidos en el propio APK (no cambian en tiempo de
+    // ejecución), así que basta con leerlos una vez.
+    val changelogEntries = remember {
+        settingsRepository.listAvailableChangelogVersionCodes()
+            .mapNotNull { versionCode -> settingsRepository.readChangelog(versionCode)?.let { versionCode to it } }
+    }
 
     Scaffold(
         topBar = {
@@ -111,6 +119,24 @@ fun HelpScreen(onBack: () -> Unit) {
                     DONATION_AMOUNTS.forEach { amount ->
                         OutlinedButton(onClick = { openDonationLink(context, amount) }) {
                             Text("${amount.replace('.', ',')} €")
+                        }
+                    }
+                }
+            }
+
+            if (changelogEntries.isNotEmpty()) {
+                HorizontalDivider()
+
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Historial de cambios", style = MaterialTheme.typography.titleMedium)
+                    changelogEntries.forEach { (versionCode, text) ->
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                "v1.0.${versionCode - 1}",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
