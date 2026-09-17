@@ -1,0 +1,1 @@
+Arreglo: cuando un ingrediente no tenía unidad, se mostraba con un "de" de más ("3 de huevos"). Ahora solo se añade "de" cuando hay unidad ("2 tazas de harina"); sin unidad se ve limpio ("3 huevos").

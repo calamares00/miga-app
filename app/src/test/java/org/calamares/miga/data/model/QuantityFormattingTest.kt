@@ -31,10 +31,13 @@ class QuantityFormattingTest {
     }
 
     @Test
-    fun `formatIngredientText omits the unit when blank but keeps the de separator`() {
-        // Comportamiento existente (heredado de ui/detail/IngredientFormatting.kt, sin cambios):
-        // el " de " se añade siempre que hay cantidad, tenga o no unidad.
-        assertEquals("3 de huevos", formatIngredientText("huevos", 3.0, null))
+    fun `formatIngredientText omits the de separator when there is no unit`() {
+        assertEquals("3 huevos", formatIngredientText("huevos", 3.0, null))
+    }
+
+    @Test
+    fun `formatIngredientText omits the de separator when unit is blank`() {
+        assertEquals("3 huevos", formatIngredientText("huevos", 3.0, "  "))
     }
 
     @Test
