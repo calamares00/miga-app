@@ -3,16 +3,21 @@ package com.bmo00.miga.ui.settings
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -25,6 +30,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -39,14 +45,11 @@ private val DONATION_AMOUNTS = listOf("0.99", "2.99", "4.99", "9.99")
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun HelpScreen(settingsRepository: SettingsRepository, onBack: () -> Unit) {
+fun HelpScreen(settingsRepository: SettingsRepository, onBack: () -> Unit, onChangelogClick: () -> Unit) {
     val context = LocalContext.current
-    // Los changelogs son ficheros de assets embebidos en el propio APK (no cambian en tiempo de
-    // ejecución), así que basta con leerlos una vez.
-    val changelogEntries = remember {
-        settingsRepository.listAvailableChangelogVersionCodes()
-            .mapNotNull { versionCode -> settingsRepository.readChangelog(versionCode)?.let { versionCode to it } }
-    }
+    // Solo hace falta saber si hay algún changelog embebido para decidir si se muestra la
+    // entrada; el contenido en sí se lee en ChangelogScreen, al entrar ahí.
+    val hasChangelog = remember { settingsRepository.listAvailableChangelogVersionCodes().isNotEmpty() }
 
     Scaffold(
         topBar = {
@@ -124,21 +127,26 @@ fun HelpScreen(settingsRepository: SettingsRepository, onBack: () -> Unit) {
                 }
             }
 
-            if (changelogEntries.isNotEmpty()) {
+            if (hasChangelog) {
                 HorizontalDivider()
 
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Historial de cambios", style = MaterialTheme.typography.titleMedium)
-                    changelogEntries.forEach { (versionCode, text) ->
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(
-                                "v1.0.${versionCode - 1}",
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onChangelogClick)
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.History, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
+                        Text("Historial de cambios", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Las novedades de cada versión",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
+                    Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
