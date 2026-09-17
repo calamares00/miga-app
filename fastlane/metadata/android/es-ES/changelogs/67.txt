@@ -1,0 +1,1 @@
+El historial de cambios en Ajustes → Ayuda pasa a ser una sección independiente propia (con su botón de entrada), en vez de ir mezclado al final de la misma pantalla de Ayuda.

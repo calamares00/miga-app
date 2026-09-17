@@ -53,6 +53,7 @@ import org.calamares.miga.ui.search.GlobalSearchViewModel
 import org.calamares.miga.ui.shoppinglist.ShoppingListScreen
 import org.calamares.miga.ui.shoppinglist.ShoppingListViewModel
 import org.calamares.miga.ui.settings.AboutScreen
+import org.calamares.miga.ui.settings.ChangelogScreen
 import org.calamares.miga.ui.settings.HelpScreen
 import org.calamares.miga.ui.settings.ManageCategoriesScreen
 import org.calamares.miga.ui.settings.ManageCategoriesViewModel
@@ -387,7 +388,15 @@ fun RecetarioNavHost() {
             }
 
             composable(Destinations.HELP_ROUTE) {
-                HelpScreen(settingsRepository = settingsRepository, onBack = { navController.popBackStack() })
+                HelpScreen(
+                    settingsRepository = settingsRepository,
+                    onBack = { navController.popBackStack() },
+                    onChangelogClick = { navController.navigate(Destinations.HELP_CHANGELOG_ROUTE) }
+                )
+            }
+
+            composable(Destinations.HELP_CHANGELOG_ROUTE) {
+                ChangelogScreen(settingsRepository = settingsRepository, onBack = { navController.popBackStack() })
             }
 
             composable(Destinations.ABOUT_ROUTE) {
