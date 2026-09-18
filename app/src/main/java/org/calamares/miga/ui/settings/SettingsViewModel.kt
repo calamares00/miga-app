@@ -12,6 +12,7 @@ import org.calamares.miga.data.export.RecipeExporter
 import org.calamares.miga.data.export.RecipeImportResult
 import org.calamares.miga.data.export.toDraft
 import org.calamares.miga.data.local.SettingsRepository
+import org.calamares.miga.data.model.ColorTheme
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.ThemeMode
@@ -48,6 +49,13 @@ class SettingsViewModel(
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }
+    }
+
+    val colorTheme: StateFlow<ColorTheme> = settingsRepository.observeColorTheme()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ColorTheme.TERRACOTTA)
+
+    fun setColorTheme(colorTheme: ColorTheme) {
+        viewModelScope.launch { settingsRepository.setColorTheme(colorTheme) }
     }
 
     val biometricLockEnabled: StateFlow<Boolean> = settingsRepository.observeBiometricLockEnabled()
