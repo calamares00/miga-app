@@ -80,6 +80,7 @@ fun RecipeEditorScreen(
     sourceDishName: String? = null,
     sourceDishDescription: String = "",
     sourceDishOrigin: String? = null,
+    sourceRecipeUrl: String? = null,
     onSaved: (Long) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -106,6 +107,9 @@ fun RecipeEditorScreen(
     }
     LaunchedEffect(sourceDishName) {
         if (!sourceDishName.isNullOrBlank()) viewModel.startDishGeneration(sourceDishName, sourceDishDescription, sourceDishOrigin)
+    }
+    LaunchedEffect(sourceRecipeUrl) {
+        if (!sourceRecipeUrl.isNullOrBlank()) viewModel.startUrlImport(sourceRecipeUrl)
     }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->

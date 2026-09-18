@@ -1,0 +1,1 @@
+Nuevo: importar una receta pegando la URL de cualquier web ("Nueva receta → Desde una URL"), filtros rápidos de dieta (vegano, sin gluten...) en Buscar y Favoritas, y una pantalla de Estadísticas en Ajustes (recetas más cocinadas, por dificultad y por categoría).
