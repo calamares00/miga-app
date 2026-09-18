@@ -1,0 +1,1 @@
+Nuevo: temas de color en Ajustes → Apariencia. Elige entre Terracota (el de siempre), Azul, Verde, Morado, Rosa, Naranja o Turquesa; funciona junto al modo claro/oscuro.

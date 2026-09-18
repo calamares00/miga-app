@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.bmo00.miga.data.model.ColorTheme
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.ui.navigation.RecetarioNavHost
 import com.bmo00.miga.ui.security.BiometricAuthenticator
@@ -55,6 +56,7 @@ class MainActivity : FragmentActivity() {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
             }
+            val colorTheme by settingsRepository.observeColorTheme().collectAsState(initial = ColorTheme.TERRACOTTA)
             val biometricLockEnabled by settingsRepository.observeBiometricLockEnabled().collectAsState(initial = false)
             var unlocked by remember { mutableStateOf(false) }
             var showSplash by remember { mutableStateOf(true) }
@@ -74,7 +76,7 @@ class MainActivity : FragmentActivity() {
                 onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
             }
 
-            RecetarioTheme(darkTheme = darkTheme) {
+            RecetarioTheme(darkTheme = darkTheme, colorTheme = colorTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     when {
                         showSplash -> SplashScreen()

@@ -12,6 +12,7 @@ import com.bmo00.miga.data.export.RecipeExporter
 import com.bmo00.miga.data.export.RecipeImportResult
 import com.bmo00.miga.data.export.toDraft
 import com.bmo00.miga.data.local.SettingsRepository
+import com.bmo00.miga.data.model.ColorTheme
 import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ThemeMode
@@ -48,6 +49,13 @@ class SettingsViewModel(
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }
+    }
+
+    val colorTheme: StateFlow<ColorTheme> = settingsRepository.observeColorTheme()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ColorTheme.TERRACOTTA)
+
+    fun setColorTheme(colorTheme: ColorTheme) {
+        viewModelScope.launch { settingsRepository.setColorTheme(colorTheme) }
     }
 
     val biometricLockEnabled: StateFlow<Boolean> = settingsRepository.observeBiometricLockEnabled()

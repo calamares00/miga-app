@@ -7,7 +7,10 @@ import android.speech.tts.Voice
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.navigationBars
@@ -30,6 +33,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.HelpOutline
@@ -75,6 +79,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -86,6 +92,7 @@ import com.bmo00.miga.BuildConfig
 import com.bmo00.miga.data.export.LibraryImportParseResult
 import com.bmo00.miga.data.export.RecipeExportDto
 import com.bmo00.miga.data.export.RecipeImportResult
+import com.bmo00.miga.data.model.ColorTheme
 import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
@@ -94,10 +101,17 @@ import com.bmo00.miga.data.vision.GEMINI_MODELS
 import com.bmo00.miga.data.vision.VisionProviderType
 import com.bmo00.miga.ui.common.BACKUP_MIME_TYPES
 import com.bmo00.miga.ui.security.BiometricAuthenticator
+import com.bmo00.miga.ui.theme.Blue
+import com.bmo00.miga.ui.theme.Green
+import com.bmo00.miga.ui.theme.Orange
+import com.bmo00.miga.ui.theme.Pink
+import com.bmo00.miga.ui.theme.Purple
+import com.bmo00.miga.ui.theme.Teal
+import com.bmo00.miga.ui.theme.Terracotta
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
@@ -112,6 +126,7 @@ fun SettingsScreen(
     onAbout: () -> Unit
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
+    val colorTheme by viewModel.colorTheme.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
     val autoCheckUpdatesEnabled by viewModel.autoCheckUpdatesEnabled.collectAsState()
     val updateChannel by viewModel.updateChannel.collectAsState()
@@ -213,6 +228,25 @@ fun SettingsScreen(
                     ) {
                         RadioButton(selected = themeMode == mode, onClick = { viewModel.setThemeMode(mode) })
                         Text(mode.label, modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                Text(
+                    "Color",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ColorTheme.entries.forEach { theme ->
+                        ColorThemeSwatch(
+                            color = colorForTheme(theme),
+                            selected = colorTheme == theme,
+                            contentDescription = theme.label,
+                            onClick = { viewModel.setColorTheme(theme) }
+                        )
                     }
                 }
             }
@@ -693,6 +727,37 @@ private fun SettingsCard(
             Column(verticalArrangement = Arrangement.spacedBy(contentSpacing)) {
                 content()
             }
+        }
+    }
+}
+
+private fun colorForTheme(colorTheme: ColorTheme) = when (colorTheme) {
+    ColorTheme.TERRACOTTA -> Terracotta
+    ColorTheme.BLUE -> Blue
+    ColorTheme.GREEN -> Green
+    ColorTheme.PURPLE -> Purple
+    ColorTheme.PINK -> Pink
+    ColorTheme.ORANGE -> Orange
+    ColorTheme.TEAL -> Teal
+}
+
+@Composable
+private fun ColorThemeSwatch(color: Color, selected: Boolean, contentDescription: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(color)
+            .border(
+                width = if (selected) 2.dp else 0.dp,
+                color = MaterialTheme.colorScheme.onSurface,
+                shape = CircleShape
+            )
+            .clickable(onClickLabel = contentDescription, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        if (selected) {
+            Icon(Icons.Filled.Check, contentDescription = "Seleccionado", tint = Color.White)
         }
     }
 }

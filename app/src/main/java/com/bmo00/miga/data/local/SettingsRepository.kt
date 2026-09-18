@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import java.io.IOException
+import com.bmo00.miga.data.model.ColorTheme
 import com.bmo00.miga.data.model.RecipeListViewMode
 import com.bmo00.miga.data.model.ThemeMode
 import com.bmo00.miga.data.model.UpdateChannel
@@ -23,6 +24,7 @@ private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 class SettingsRepository(private val context: Context) {
 
     private val themeModeKey = stringPreferencesKey("theme_mode")
+    private val colorThemeKey = stringPreferencesKey("color_theme")
     private val biometricLockKey = booleanPreferencesKey("biometric_lock_enabled")
     private val autoCheckUpdatesKey = booleanPreferencesKey("auto_check_updates_enabled")
     private val updateChannelKey = stringPreferencesKey("update_channel")
@@ -46,6 +48,17 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setThemeMode(mode: ThemeMode) {
         context.settingsDataStore.edit { prefs -> prefs[themeModeKey] = mode.name }
+    }
+
+    fun observeColorTheme(): Flow<ColorTheme> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[colorThemeKey]?.let { stored ->
+                runCatching { ColorTheme.valueOf(stored) }.getOrDefault(ColorTheme.TERRACOTTA)
+            } ?: ColorTheme.TERRACOTTA
+        }
+
+    suspend fun setColorTheme(colorTheme: ColorTheme) {
+        context.settingsDataStore.edit { prefs -> prefs[colorThemeKey] = colorTheme.name }
     }
 
     fun observeBiometricLockEnabled(): Flow<Boolean> =
