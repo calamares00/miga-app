@@ -85,7 +85,8 @@ fun RecipeListScreen(
     onAddRecipeClick: () -> Unit,
     onAddRecipeFromPhoto: (List<String>) -> Unit,
     onAddRecipesBulk: (List<String>) -> Unit,
-    onSearchDishClick: () -> Unit
+    onSearchDishClick: () -> Unit,
+    onAddRecipeFromUrl: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
@@ -99,6 +100,7 @@ fun RecipeListScreen(
     var showDeleteSelectedConfirm by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
     var showNewRecipeSheet by remember { mutableStateOf(false) }
+    var showUrlImportDialog by remember { mutableStateOf(false) }
     var pendingCameraPath by remember { mutableStateOf<String?>(null) }
     val capturedPageUris = remember { mutableStateListOf<String>() }
     var showAddAnotherPageDialog by remember { mutableStateOf(false) }
@@ -313,9 +315,47 @@ fun RecipeListScreen(
                     showNewRecipeSheet = false
                     bulkGalleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 },
-                onSearchDishClick = { showNewRecipeSheet = false; onSearchDishClick() }
+                onSearchDishClick = { showNewRecipeSheet = false; onSearchDishClick() },
+                onUrlClick = { showNewRecipeSheet = false; showUrlImportDialog = true }
             )
         }
+    }
+
+    if (showUrlImportDialog) {
+        var url by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showUrlImportDialog = false },
+            title = { Text("Importar receta desde una URL") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Pega el enlace de una receta de cualquier web y la IA la reconocerá y precargará el editor.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = url,
+                        onValueChange = { url = it },
+                        label = { Text("URL") },
+                        placeholder = { Text("https://...") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val trimmedUrl = url.trim()
+                        showUrlImportDialog = false
+                        if (trimmedUrl.isNotBlank()) onAddRecipeFromUrl(trimmedUrl)
+                    }
+                ) { Text("Importar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUrlImportDialog = false }) { Text("Cancelar") }
+            }
+        )
     }
 
     if (showPhotoSourceSheet) {

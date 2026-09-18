@@ -52,6 +52,8 @@ import com.bmo00.miga.ui.search.GlobalSearchScreen
 import com.bmo00.miga.ui.search.GlobalSearchViewModel
 import com.bmo00.miga.ui.shoppinglist.ShoppingListScreen
 import com.bmo00.miga.ui.shoppinglist.ShoppingListViewModel
+import com.bmo00.miga.ui.stats.StatsScreen
+import com.bmo00.miga.ui.stats.StatsViewModel
 import com.bmo00.miga.ui.settings.AboutScreen
 import com.bmo00.miga.ui.settings.ChangelogScreen
 import com.bmo00.miga.ui.settings.HelpScreen
@@ -196,7 +198,8 @@ fun RecetarioNavHost() {
                     onAddRecipeClick = { navController.navigate(Destinations.editor(bookId = bookId)) },
                     onAddRecipeFromPhoto = { photoUris -> navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUris = photoUris)) },
                     onAddRecipesBulk = { photoUris -> navController.navigate(Destinations.bulkImport(bookId = bookId, photoUris = photoUris)) },
-                    onSearchDishClick = { navController.navigate(Destinations.dishSearch(bookId)) }
+                    onSearchDishClick = { navController.navigate(Destinations.dishSearch(bookId)) },
+                    onAddRecipeFromUrl = { url -> navController.navigate(Destinations.editor(bookId = bookId, sourceRecipeUrl = url)) }
                 )
             }
 
@@ -302,6 +305,11 @@ fun RecetarioNavHost() {
                         type = NavType.StringType
                         nullable = true
                         defaultValue = null
+                    },
+                    navArgument(Destinations.ARG_SOURCE_RECIPE_URL) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
                     }
                 )
             ) { backStackEntry ->
@@ -311,6 +319,7 @@ fun RecetarioNavHost() {
                 val sourceDishName = backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_DISH_NAME)
                 val sourceDishDescription = backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_DISH_DESCRIPTION).orEmpty()
                 val sourceDishOrigin = backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_DISH_ORIGIN)?.takeIf { it.isNotBlank() }
+                val sourceRecipeUrl = backStackEntry.arguments?.getString(Destinations.ARG_SOURCE_RECIPE_URL)?.takeIf { it.isNotBlank() }
                 val viewModel: RecipeEditorViewModel = viewModel(
                     key = "editor_${recipeId}_$bookId",
                     factory = viewModelFactory { initializer { RecipeEditorViewModel(repository, settingsRepository, recipeId, bookId) } }
@@ -321,6 +330,7 @@ fun RecetarioNavHost() {
                     sourceDishName = sourceDishName,
                     sourceDishDescription = sourceDishDescription,
                     sourceDishOrigin = sourceDishOrigin,
+                    sourceRecipeUrl = sourceRecipeUrl,
                     onSaved = { savedId ->
                         navController.popBackStack()
                         if (recipeId == Destinations.NEW_RECIPE_ID) {
@@ -345,8 +355,20 @@ fun RecetarioNavHost() {
                     onManageIngredientCategories = { navController.navigate(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) },
                     onOpenPacksCatalog = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) },
                     onOpenSyncConnections = { navController.navigate(Destinations.SYNC_CONNECTIONS_ROUTE) },
+                    onOpenStats = { navController.navigate(Destinations.STATS_ROUTE) },
                     onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
                     onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) }
+                )
+            }
+
+            composable(Destinations.STATS_ROUTE) {
+                val viewModel: StatsViewModel = viewModel(
+                    factory = viewModelFactory { initializer { StatsViewModel(repository) } }
+                )
+                StatsScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onRecipeClick = { navController.navigate(Destinations.detail(it)) }
                 )
             }
 

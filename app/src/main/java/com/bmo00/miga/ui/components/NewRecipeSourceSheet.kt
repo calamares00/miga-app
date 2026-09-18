@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +33,8 @@ fun NewRecipeSourceSheet(
     onFileClick: () -> Unit,
     onPhotoClick: () -> Unit,
     onBulkPhotoClick: () -> Unit,
-    onSearchDishClick: () -> Unit
+    onSearchDishClick: () -> Unit,
+    onUrlClick: () -> Unit
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text("Nueva receta", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
@@ -40,6 +42,7 @@ fun NewRecipeSourceSheet(
         NewRecipeSourceRow(icon = Icons.Filled.UploadFile, label = "Desde archivo (JSON/ZIP)", onClick = onFileClick)
         NewRecipeSourceRow(icon = Icons.Filled.AddAPhoto, label = "Desde imagen", onClick = onPhotoClick)
         NewRecipeSourceRow(icon = Icons.Filled.Collections, label = "Varias recetas desde imágenes", onClick = onBulkPhotoClick)
+        NewRecipeSourceRow(icon = Icons.Filled.Link, label = "Desde una URL", onClick = onUrlClick)
         NewRecipeSourceRow(icon = Icons.Filled.AutoAwesome, label = "Buscar receta con IA", onClick = onSearchDishClick)
     }
 }

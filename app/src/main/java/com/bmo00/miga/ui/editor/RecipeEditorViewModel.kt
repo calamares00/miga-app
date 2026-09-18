@@ -17,7 +17,10 @@ import com.bmo00.miga.data.model.Difficulty
 import com.bmo00.miga.data.model.RecipeDraft
 import com.bmo00.miga.data.repository.RecipeRepository
 import com.bmo00.miga.data.search.DishSuggestion
+import com.bmo00.miga.data.search.RecipeUrlFetcher
+import com.bmo00.miga.data.search.UrlFetchResult
 import com.bmo00.miga.data.search.dishRecipeGenerationClientFor
+import com.bmo00.miga.data.search.recipeUrlImportClientFor
 import com.bmo00.miga.data.vision.RecipeVisionResult
 import com.bmo00.miga.data.vision.RecipeVisionResultDto
 import com.bmo00.miga.data.vision.VisionImageInput
@@ -161,6 +164,38 @@ class RecipeEditorViewModel(
             val model = settingsRepository.modelFor(provider)
             val dish = DishSuggestion(dishName, dishDescription, dishOrigin)
             when (val result = dishRecipeGenerationClientFor(provider).generateRecipe(dish, apiKey, model)) {
+                is RecipeVisionResult.Success -> {
+                    applyVisionResult(result.recipe)
+                    _visionState.value = VisionState.Loaded
+                }
+                is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(result.reason)
+            }
+        }
+    }
+
+    /** Importa una receta a partir del texto legible de una página web ([RecipeUrlFetcher]) y
+     *  precarga este formulario con el resultado - mismo mecanismo que [startVisionExtraction] y
+     *  [startDishGeneration] (comparte el guard [visionStarted] y el estado [visionState]). */
+    fun startUrlImport(url: String) {
+        if (isEditing || visionStarted || url.isBlank()) return
+        visionStarted = true
+        viewModelScope.launch {
+            _visionState.value = VisionState.Loading
+            val provider = settingsRepository.observeVisionProvider().first()
+            val apiKey = settingsRepository.apiKeyFor(provider)
+            if (apiKey.isBlank()) {
+                _visionState.value = VisionState.Error("Configura una API key de ${provider.label} en Ajustes")
+                return@launch
+            }
+            val pageText = when (val fetchResult = RecipeUrlFetcher.fetchReadableText(url)) {
+                is UrlFetchResult.Success -> fetchResult.text
+                is UrlFetchResult.Error -> {
+                    _visionState.value = VisionState.Error(fetchResult.reason)
+                    return@launch
+                }
+            }
+            val model = settingsRepository.modelFor(provider)
+            when (val result = recipeUrlImportClientFor(provider).importFromUrl(url, pageText, apiKey, model)) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
                     _visionState.value = VisionState.Loaded

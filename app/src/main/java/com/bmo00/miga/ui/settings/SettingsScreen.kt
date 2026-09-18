@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Fingerprint
@@ -106,6 +107,7 @@ fun SettingsScreen(
     onManageIngredientCategories: () -> Unit,
     onOpenPacksCatalog: () -> Unit,
     onOpenSyncConnections: () -> Unit,
+    onOpenStats: () -> Unit,
     onHelp: () -> Unit,
     onAbout: () -> Unit
 ) {
@@ -243,6 +245,10 @@ fun SettingsScreen(
                 ManageRow(icon = Icons.Filled.RestaurantMenu, label = "Ingredientes", onClick = onManageIngredients)
                 HorizontalDivider()
                 ManageRow(icon = Icons.Filled.Sell, label = "Categorías de ingredientes", onClick = onManageIngredientCategories)
+            }
+
+            SettingsCard(icon = Icons.Filled.BarChart, title = "Estadísticas", contentSpacing = 0.dp) {
+                ManageRow(icon = Icons.Filled.BarChart, label = "Ver estadísticas", onClick = onOpenStats)
             }
 
             SettingsCard(icon = Icons.Filled.Backup, title = "Copia de seguridad") {

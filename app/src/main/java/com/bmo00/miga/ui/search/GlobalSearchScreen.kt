@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -37,6 +39,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -63,6 +66,11 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.ui.components.FilterSheetContent
 
+// Candidatas a chip de filtro dietético rápido - solo se muestran las que de verdad existan como
+// etiqueta ya creada por el usuario (comparación sin distinguir mayúsculas/minúsculas), para no
+// inventar una taxonomía nueva por encima del sistema de etiquetas ya existente.
+private val DIETARY_QUICK_TAGS = listOf("Vegano", "Vegetariano", "Sin gluten", "Sin lactosa", "Sin azúcar", "Bajo en calorías")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GlobalSearchScreen(
@@ -77,6 +85,9 @@ fun GlobalSearchScreen(
     val selectionMode = selectedIds.isNotEmpty()
     var showFilters by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
+    val quickDietaryTags = remember(uiState.availableTags) {
+        DIETARY_QUICK_TAGS.mapNotNull { candidate -> uiState.availableTags.firstOrNull { it.equals(candidate, ignoreCase = true) } }
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
@@ -124,6 +135,26 @@ fun GlobalSearchScreen(
                 IconButton(onClick = { showFilters = true }) {
                     BadgedBox(badge = { if (filter.isActive) Badge() }) {
                         Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
+                    }
+                }
+            }
+
+            if (quickDietaryTags.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    quickDietaryTags.forEach { tag ->
+                        FilterChip(
+                            selected = tag in filter.tags,
+                            onClick = {
+                                viewModel.applyFilter(filter.copy(tags = if (tag in filter.tags) filter.tags - tag else filter.tags + tag))
+                            },
+                            label = { Text(tag) }
+                        )
                     }
                 }
             }
