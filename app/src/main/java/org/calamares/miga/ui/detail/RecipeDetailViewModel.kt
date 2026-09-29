@@ -195,6 +195,13 @@ class RecipeDetailViewModel(
         viewModelScope.launch { repository.toggleFavorite(current.id, !current.isFavorite) }
     }
 
+    /** Toca la misma estrella ya puesta para quitar la valoración. */
+    fun setRating(stars: Int) {
+        val current = recipe.value ?: return
+        val newRating = if (current.rating == stars) null else stars
+        viewModelScope.launch { repository.setRating(current.id, newRating) }
+    }
+
     fun markCooked() {
         viewModelScope.launch { repository.markCooked(recipeId) }
     }

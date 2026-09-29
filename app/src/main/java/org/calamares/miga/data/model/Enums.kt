@@ -10,5 +10,6 @@ enum class SortOption(val label: String) {
     NAME_ASC("Nombre (A-Z)"),
     RECENT("Más reciente"),
     MOST_COOKED("Más cocinada"),
-    PREP_TIME("Tiempo de preparación")
+    PREP_TIME("Tiempo de preparación"),
+    BEST_RATED("Mejor valorada")
 }

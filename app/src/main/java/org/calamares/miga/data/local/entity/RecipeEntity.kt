@@ -53,5 +53,8 @@ data class RecipeEntity(
     val nutritionFatGrams: Double? = null,
     /** Huella de ingredientes+pasos analizados; si no coincide con el estado actual, está obsoleta. */
     val nutritionFingerprint: String? = null,
-    val nutritionAnalyzedAt: Long? = null
+    val nutritionAnalyzedAt: Long? = null,
+    /** Valoración personal (1-5 estrellas); null = sin valorar. A diferencia de isFavorite, no
+     *  viene del editor: se pone directamente desde el detalle de receta. */
+    val rating: Int? = null
 )

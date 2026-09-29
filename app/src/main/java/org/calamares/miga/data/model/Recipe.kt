@@ -24,7 +24,9 @@ data class Recipe(
     val tags: List<String>,
     val utensils: List<String>,
     val healthRating: HealthRating? = null,
-    val nutritionInfo: NutritionInfo? = null
+    val nutritionInfo: NutritionInfo? = null,
+    /** Valoración personal (1-5 estrellas); null = sin valorar. */
+    val rating: Int? = null
 ) {
     val totalTimeMinutes: Int?
         get() = if (prepTimeMinutes == null && cookTimeMinutes == null) {

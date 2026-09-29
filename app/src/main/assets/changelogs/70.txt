@@ -1,0 +1,1 @@
+Nuevo: valoración personal (1-5 estrellas) en el detalle de cada receta, para saber cuáles repetir. Se puede ordenar por "Mejor valorada" en Buscar/Favoritas, y se conserva al exportar/importar copias de seguridad.

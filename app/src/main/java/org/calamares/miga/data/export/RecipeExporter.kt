@@ -71,7 +71,8 @@ object RecipeExporter {
         { obj -> obj }, // v0 -> v1: el "esquema v0" ya tenía los mismos campos, no-op.
         { obj -> addUidIfMissing(obj) }, // v1 -> v2: añade "uid" (las fotos ya tienen valor por defecto).
         { obj -> obj }, // v2 -> v3: "health" es opcional con default null, no hace falta generar nada.
-        { obj -> obj } // v3 -> v4: "nutrition" es opcional con default null, no hace falta generar nada.
+        { obj -> obj }, // v3 -> v4: "nutrition" es opcional con default null, no hace falta generar nada.
+        { obj -> obj } // v4 -> v5: "rating" es opcional con default null, no hace falta generar nada.
     )
 
     /** Igual que [recipeMigrations] pero para la copia de seguridad completa ([LibraryExportDto]). */
@@ -84,7 +85,8 @@ object RecipeExporter {
             JsonObject(obj + ("recipes" to migratedRecipes))
         },
         { obj -> obj }, // v2 -> v3: "health" es opcional con default null, no hace falta generar nada.
-        { obj -> obj } // v3 -> v4: "nutrition" es opcional con default null, no hace falta generar nada.
+        { obj -> obj }, // v3 -> v4: "nutrition" es opcional con default null, no hace falta generar nada.
+        { obj -> obj } // v4 -> v5: "rating" es opcional con default null, no hace falta generar nada.
     )
 
     private fun addUidIfMissing(obj: JsonObject): JsonObject =
@@ -254,6 +256,7 @@ object RecipeExporter {
                 val recipeId = repository.saveRecipe(recipeDto.toDraft(bookId, photos))
                 applyHealthFromImport(repository, recipeId, recipeDto.health)
                 applyNutritionFromImport(repository, recipeId, recipeDto.nutrition)
+                if (recipeDto.rating != null) repository.setRating(recipeId, recipeDto.rating)
             }
             LibraryImportResult.Success(dto.recipes.size)
         } catch (e: CancellationException) {

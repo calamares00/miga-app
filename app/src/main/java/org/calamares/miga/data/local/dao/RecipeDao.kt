@@ -96,6 +96,9 @@ interface RecipeDao {
     @Query("UPDATE recipes SET isFavorite = :favorite WHERE id = :id")
     suspend fun setFavorite(id: Long, favorite: Boolean)
 
+    @Query("UPDATE recipes SET rating = :rating WHERE id = :id")
+    suspend fun setRating(id: Long, rating: Int?)
+
     @Query("UPDATE recipes SET timesCooked = timesCooked + 1 WHERE id = :id")
     suspend fun incrementTimesCooked(id: Long)
 

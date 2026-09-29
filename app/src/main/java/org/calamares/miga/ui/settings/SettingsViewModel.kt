@@ -178,6 +178,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             val recipeId = repository.saveRecipe(dto.toDraft(bookId, photos))
             RecipeExporter.applyHealthFromImport(repository, recipeId, dto.health)
+            if (dto.rating != null) repository.setRating(recipeId, dto.rating)
             onFinished()
         }
     }
