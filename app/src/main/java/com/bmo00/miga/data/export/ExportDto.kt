@@ -14,9 +14,11 @@ import kotlinx.serialization.Serializable
  * generar nada en la migración.
  * v3 -> v4: se añade "nutrition" (estimación nutricional con IA), igual de opcional que "health",
  * mismo motivo: no hace falta generar nada en la migración.
+ * v4 -> v5: se añade "rating" (valoración personal 1-5 estrellas), opcional con default null,
+ * mismo motivo que "health"/"nutrition": no hace falta generar nada en la migración.
  */
-const val CURRENT_RECIPE_SCHEMA_VERSION = 4
-const val CURRENT_LIBRARY_SCHEMA_VERSION = 4
+const val CURRENT_RECIPE_SCHEMA_VERSION = 5
+const val CURRENT_LIBRARY_SCHEMA_VERSION = 5
 
 @Serializable
 data class LibraryExportDto(
@@ -58,7 +60,9 @@ data class RecipeExportDto(
     /** Valoración de salud con IA cacheada (ver HealthRating); null si nunca se ha analizado. */
     val health: RecipeHealthDto? = null,
     /** Estimación nutricional con IA cacheada (ver NutritionInfo); null si nunca se ha analizado. */
-    val nutrition: RecipeNutritionDto? = null
+    val nutrition: RecipeNutritionDto? = null,
+    /** Valoración personal (1-5 estrellas); null si no se ha valorado. */
+    val rating: Int? = null
 )
 
 @Serializable

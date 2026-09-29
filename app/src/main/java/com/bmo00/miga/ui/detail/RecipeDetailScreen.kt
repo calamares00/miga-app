@@ -34,9 +34,11 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -205,6 +207,7 @@ fun RecipeDetailScreen(
                 nutritionState = nutritionState,
                 onRetryNutrition = { viewModel.retryNutritionCheck() },
                 onSubstituteIngredient = { name -> viewModel.findSubstitutesFor(name) },
+                onRatingChange = { stars -> viewModel.setRating(stars) },
                 modifier = Modifier.padding(padding)
             )
         }
@@ -322,6 +325,7 @@ private fun RecipeDetailContent(
     nutritionState: NutritionState,
     onRetryNutrition: () -> Unit,
     onSubstituteIngredient: (String) -> Unit,
+    onRatingChange: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var servings by remember(recipe.id) { mutableIntStateOf(recipe.servings) }
@@ -343,6 +347,8 @@ private fun RecipeDetailContent(
                 }
                 Text(recipe.name, style = MaterialTheme.typography.headlineMedium)
             }
+
+            StarRatingRow(rating = recipe.rating, onRatingChange = onRatingChange)
 
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SuggestionChip(onClick = {}, label = { Text(recipe.difficulty.label) })
@@ -563,6 +569,24 @@ private fun CoverPhoto(recipe: Recipe) {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(64.dp).align(Alignment.Center)
             )
+        }
+    }
+}
+
+private const val MAX_RATING_STARS = 5
+
+@Composable
+private fun StarRatingRow(rating: Int?, onRatingChange: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        for (star in 1..MAX_RATING_STARS) {
+            val filled = rating != null && star <= rating
+            IconButton(onClick = { onRatingChange(star) }, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    imageVector = if (filled) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                    contentDescription = "$star estrella(s)",
+                    tint = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

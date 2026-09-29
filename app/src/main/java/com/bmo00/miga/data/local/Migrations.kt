@@ -124,3 +124,14 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
         db.execSQL("ALTER TABLE recipes ADD COLUMN nutritionAnalyzedAt INTEGER DEFAULT NULL")
     }
 }
+
+/**
+ * v10 -> v11: añade la valoración personal (1-5 estrellas) de una receta. Nullable con NULL por
+ * defecto (sin valorar), mismo mecanismo sencillo que isFavorite pero sin caché/huella (no
+ * depende del contenido de la receta, es una opinión del usuario).
+ */
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE recipes ADD COLUMN rating INTEGER DEFAULT NULL")
+    }
+}

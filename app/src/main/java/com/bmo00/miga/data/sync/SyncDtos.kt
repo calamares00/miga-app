@@ -38,6 +38,9 @@ data class RecipeSyncDto(
     val notes: String = "",
     val source: String = "",
     val isFavorite: Boolean = false,
+    /** Valoración personal (1-5), null = sin valorar. Compartida entre los dispositivos de este
+     *  mismo namespace, igual limitación que isFavorite (no es "por persona"). */
+    val rating: Int? = null,
     val ingredientGroups: List<IngredientGroupDto> = emptyList(),
     val stepGroups: List<StepGroupDto> = emptyList(),
     val tags: List<String> = emptyList(),

@@ -33,5 +33,6 @@ fun List<Recipe>.applyFilter(filter: RecipeFilter): List<Recipe> {
         SortOption.RECENT -> filtered.sortedByDescending { it.createdAt }
         SortOption.MOST_COOKED -> filtered.sortedByDescending { it.timesCooked }
         SortOption.PREP_TIME -> filtered.sortedBy { it.prepTimeMinutes ?: Int.MAX_VALUE }
+        SortOption.BEST_RATED -> filtered.sortedByDescending { it.rating ?: -1 }
     }
 }

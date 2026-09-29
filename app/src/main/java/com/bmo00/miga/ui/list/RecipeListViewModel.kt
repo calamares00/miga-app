@@ -114,6 +114,7 @@ class RecipeListViewModel(
                 is RecipeImportResult.Success -> {
                     val recipeId = repository.saveRecipe(result.recipe.toDraft(bookId, result.photos))
                     RecipeExporter.applyHealthFromImport(repository, recipeId, result.recipe.health)
+                    if (result.recipe.rating != null) repository.setRating(recipeId, result.recipe.rating)
                     onMessage("Receta importada")
                 }
                 is RecipeImportResult.Error -> onMessage("No se pudo importar: ${result.reason}")

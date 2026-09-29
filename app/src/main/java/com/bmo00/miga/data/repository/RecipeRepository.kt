@@ -110,6 +110,11 @@ class RecipeRepository(
         recipeDao.setFavorite(id, favorite)
     }
 
+    /** [rating] entre 1 y 5, o null para quitar la valoración. */
+    suspend fun setRating(id: Long, rating: Int?) {
+        recipeDao.setRating(id, rating)
+    }
+
     suspend fun markCooked(id: Long) {
         recipeDao.incrementTimesCooked(id)
     }
@@ -198,7 +203,8 @@ class RecipeRepository(
                         nutritionCarbsGrams = if (keepHealth) existing?.nutritionCarbsGrams else null,
                         nutritionFatGrams = if (keepHealth) existing?.nutritionFatGrams else null,
                         nutritionFingerprint = if (keepHealth) existing?.nutritionFingerprint else null,
-                        nutritionAnalyzedAt = if (keepHealth) existing?.nutritionAnalyzedAt else null
+                        nutritionAnalyzedAt = if (keepHealth) existing?.nutritionAnalyzedAt else null,
+                        rating = existing?.rating
                     )
                 )
                 draft.id
@@ -957,7 +963,8 @@ class RecipeRepository(
             stepGroups = recipe.stepGroups.map { g -> StepGroupDto(g.name, g.instructions) },
             tags = recipe.tags,
             utensils = recipe.utensils,
-            updatedAt = details.recipe.updatedAt
+            updatedAt = details.recipe.updatedAt,
+            rating = recipe.rating
         )
     }
 
@@ -1076,7 +1083,8 @@ class RecipeRepository(
                     isFavorite = dto.isFavorite,
                     timesCooked = 0,
                     createdAt = dto.updatedAt,
-                    updatedAt = dto.updatedAt
+                    updatedAt = dto.updatedAt,
+                    rating = dto.rating
                 )
             )
         } else {
@@ -1093,6 +1101,7 @@ class RecipeRepository(
                     source = dto.source,
                     isFavorite = dto.isFavorite,
                     updatedAt = dto.updatedAt,
+                    rating = dto.rating,
                     healthColor = if (keepHealth) existing.healthColor else null,
                     healthDescription = if (keepHealth) existing.healthDescription else null,
                     healthFingerprint = if (keepHealth) existing.healthFingerprint else null,
@@ -1260,7 +1269,8 @@ fun RecipeWithDetails.toDomain(): Recipe {
                 fingerprint = recipe.nutritionFingerprint.orEmpty(),
                 analyzedAt = recipe.nutritionAnalyzedAt ?: 0L
             )
-        }
+        },
+        rating = recipe.rating
     )
 }
 
