@@ -19,6 +19,7 @@ import com.bmo00.miga.data.local.entity.RecipePhotoEntity
 import com.bmo00.miga.data.local.entity.RecipeTagCrossRef
 import com.bmo00.miga.data.local.entity.RecipeUtensilCrossRef
 import com.bmo00.miga.data.local.entity.RecipeWithDetails
+import com.bmo00.miga.data.local.entity.ShoppingHistoryEntity
 import com.bmo00.miga.data.local.entity.ShoppingListItemEntity
 import com.bmo00.miga.data.local.entity.StepEntity
 import com.bmo00.miga.data.local.entity.SyncChangeType
@@ -42,6 +43,7 @@ import com.bmo00.miga.data.model.RecipeDraft
 import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ShoppingListGroup
 import com.bmo00.miga.data.model.ShoppingListItem
+import com.bmo00.miga.data.model.ShoppingSuggestion
 import com.bmo00.miga.data.model.StepGroup
 import com.bmo00.miga.data.model.SyncConnection
 import com.bmo00.miga.data.model.UNCATEGORIZED_INGREDIENT_LABEL
@@ -80,6 +82,7 @@ class RecipeRepository(
     private val ingredientCatalogDao = db.ingredientCatalogDao()
     private val ingredientCategoryDao = db.ingredientCategoryDao()
     private val shoppingListDao = db.shoppingListDao()
+    private val shoppingHistoryDao = db.shoppingHistoryDao()
     private val syncConnectionDao = db.syncConnectionDao()
     private val pendingSyncChangeDao = db.pendingSyncChangeDao()
 
@@ -498,7 +501,7 @@ class RecipeRepository(
      * Añade ingredientes (de una receta, o de varias) a la lista, fusionando por nombre
      * normalizado + unidad cuando ambos lados tienen cantidad; si no, inserta una fila nueva.
      */
-    suspend fun addIngredientsToShoppingList(ingredients: List<Ingredient>) = db.withTransaction {
+    suspend fun addIngredientsToShoppingList(ingredients: List<Ingredient>, recordHistory: Boolean = false) = db.withTransaction {
         val now = System.currentTimeMillis()
         ingredients.forEach { ingredient ->
             val trimmedName = ingredient.name.trim()
@@ -513,12 +516,47 @@ class RecipeRepository(
                     ShoppingListItemEntity(name = trimmedName, normalizedName = normalized, quantity = ingredient.quantity, unit = trimmedUnit, createdAt = now)
                 )
             }
+            if (recordHistory) {
+                val previous = shoppingHistoryDao.find(normalized)
+                shoppingHistoryDao.upsert(
+                    ShoppingHistoryEntity(
+                        normalizedName = normalized,
+                        name = trimmedName,
+                        lastQuantity = ingredient.quantity ?: previous?.lastQuantity,
+                        lastUnit = if (ingredient.quantity != null) trimmedUnit else previous?.lastUnit,
+                        uses = (previous?.uses ?: 0) + 1,
+                        lastUsedAt = now
+                    )
+                )
+            }
         }
+    }
+
+    /** Artículos escritos, dictados o importados por el usuario: como los de receta, pero además alimentan el historial de sugerencias. */
+    suspend fun addShoppingListEntries(ingredients: List<Ingredient>) {
+        addIngredientsToShoppingList(ingredients, recordHistory = true)
+    }
+
+    fun observeShoppingHistory(): Flow<List<ShoppingSuggestion>> =
+        shoppingHistoryDao.observeAll().map { list -> list.map { ShoppingSuggestion(it.name, it.lastQuantity, it.lastUnit, it.uses) } }
+
+    /** Reinserta un artículo quitado por error (deshacer); no fusiona con filas existentes. */
+    suspend fun restoreShoppingListItem(item: ShoppingListItem) {
+        shoppingListDao.insert(
+            ShoppingListItemEntity(
+                name = item.name,
+                normalizedName = item.name.trim().lowercase(),
+                quantity = item.quantity,
+                unit = item.unit,
+                checked = item.checked,
+                createdAt = System.currentTimeMillis()
+            )
+        )
     }
 
     /** Artículo manual sin receta de origen (p.ej. "papel de aluminio"); pasa por la misma fusión que los de receta. */
     suspend fun addManualShoppingListItem(name: String, quantity: Double?, unit: String?) {
-        addIngredientsToShoppingList(listOf(Ingredient(name, quantity, unit)))
+        addShoppingListEntries(listOf(Ingredient(name, quantity, unit)))
     }
 
     suspend fun setShoppingListItemChecked(id: Long, checked: Boolean) {

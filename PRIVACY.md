@@ -34,9 +34,12 @@ interviene en ese proceso ni tiene acceso a esa copia.
 - **Internet**: solo para las conexiones descritas más abajo, y solo cuando
   las usas (comprobar actualizaciones, explorar el catálogo de packs, o usar
   las funciones de IA si las has configurado).
-- **Cámara**: la app no declara el permiso de cámara. Al añadir una foto,
-  delega en la propia app de cámara del sistema (un `Intent` estándar de
-  Android) y solo recibe el archivo de imagen resultante.
+- **Cámara**: al añadir una foto a una receta, la app delega en la propia app
+  de cámara del sistema (un `Intent` estándar de Android) y solo recibe el
+  archivo de imagen resultante. El único uso directo de la cámara es el
+  escáner de códigos QR de la lista de la compra (Lista → menú → Escanear QR),
+  que solo se abre cuando lo pides; la imagen se procesa en el dispositivo
+  para leer el código y no se guarda ni se envía a ningún sitio.
 - **Biometría** (huella, rostro, PIN): si activas el bloqueo biométrico en
   Ajustes, la verificación la gestiona directamente el sistema operativo
   (`BiometricPrompt`). Miga nunca ve, recibe ni almacena tu huella ni ningún

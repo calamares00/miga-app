@@ -1,0 +1,1 @@
+Nuevo: lista de la compra con barra de añadido rápido ("2 kg tomates, leche"), sugerencias y frecuentes al escribir, dictado por voz, deshacer al quitar un artículo, y compartir/recibir la lista por código QR sin servidor.
