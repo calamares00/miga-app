@@ -8,6 +8,7 @@ import org.calamares.miga.data.local.dao.IngredientCategoryDao
 import org.calamares.miga.data.local.dao.PendingSyncChangeDao
 import org.calamares.miga.data.local.dao.RecipeBookDao
 import org.calamares.miga.data.local.dao.RecipeDao
+import org.calamares.miga.data.local.dao.ShoppingHistoryDao
 import org.calamares.miga.data.local.dao.ShoppingListDao
 import org.calamares.miga.data.local.dao.SyncConnectionDao
 import org.calamares.miga.data.local.dao.TagDao
@@ -22,6 +23,7 @@ import org.calamares.miga.data.local.entity.RecipeEntity
 import org.calamares.miga.data.local.entity.RecipePhotoEntity
 import org.calamares.miga.data.local.entity.RecipeTagCrossRef
 import org.calamares.miga.data.local.entity.RecipeUtensilCrossRef
+import org.calamares.miga.data.local.entity.ShoppingHistoryEntity
 import org.calamares.miga.data.local.entity.ShoppingListItemEntity
 import org.calamares.miga.data.local.entity.StepEntity
 import org.calamares.miga.data.local.entity.SyncConnectionEntity
@@ -43,6 +45,7 @@ import org.calamares.miga.data.local.entity.UtensilEntity
         IngredientCatalogEntity::class,
         IngredientCategoryEntity::class,
         ShoppingListItemEntity::class,
+        ShoppingHistoryEntity::class,
         SyncConnectionEntity::class,
         PendingSyncChangeEntity::class
     ],
@@ -51,7 +54,7 @@ import org.calamares.miga.data.local.entity.UtensilEntity
     // desactivado porque compilar debug+release a la vez (como hace CI) provoca que
     // kspDebugKotlin y kspReleaseKotlin escriban al mismo fichero en paralelo, dando el error
     // intermitente "Empty schema file".
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -63,6 +66,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun ingredientCatalogDao(): IngredientCatalogDao
     abstract fun ingredientCategoryDao(): IngredientCategoryDao
     abstract fun shoppingListDao(): ShoppingListDao
+    abstract fun shoppingHistoryDao(): ShoppingHistoryDao
     abstract fun syncConnectionDao(): SyncConnectionDao
     abstract fun pendingSyncChangeDao(): PendingSyncChangeDao
 

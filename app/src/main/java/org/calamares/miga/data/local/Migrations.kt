@@ -135,3 +135,25 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
         db.execSQL("ALTER TABLE recipes ADD COLUMN rating INTEGER DEFAULT NULL")
     }
 }
+
+/**
+ * v11 -> v12: historial de artículos añadidos a mano a la lista de la compra (sugerencias y
+ * "frecuentes" al añadir). Tabla nueva, sin tocar datos existentes.
+ */
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS shopping_history (
+                normalizedName TEXT NOT NULL,
+                name TEXT NOT NULL,
+                lastQuantity REAL,
+                lastUnit TEXT,
+                uses INTEGER NOT NULL,
+                lastUsedAt INTEGER NOT NULL,
+                PRIMARY KEY(normalizedName)
+            )
+            """.trimIndent()
+        )
+    }
+}

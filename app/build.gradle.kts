@@ -14,8 +14,8 @@ android {
         minSdk = 26
         targetSdk = 34
         // El patch de versionName se incrementa en cada commit (1.0.1, 1.0.2...); versionCode sube en paralelo.
-        versionCode = 70
-        versionName = "1.0.69"
+        versionCode = 71
+        versionName = "1.0.70"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -126,6 +126,8 @@ dependencies {
     implementation(libs.biometric)
     implementation(libs.exifinterface)
     implementation(libs.work.runtime.ktx)
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.embedded)
 
     testImplementation(libs.junit)
 }
