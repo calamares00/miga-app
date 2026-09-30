@@ -10,5 +10,8 @@ data class SyncConnection(
     val accessToken: String,
     val lastSyncedRevision: Long,
     val lastSyncedAt: Long?,
-    val lastSyncError: String?
+    val lastSyncError: String?,
+    /** Esta conexión comparte también la lista de la compra con las demás apps del namespace. */
+    val syncShopping: Boolean = false,
+    val shoppingPulled: Boolean = false
 )

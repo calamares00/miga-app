@@ -157,3 +157,24 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
         )
     }
 }
+
+/**
+ * v12 -> v13: lista de la compra compartida a través del servidor de sincronización. Las filas de
+ * `shopping_list_items` ganan identidad estable (`uid`, aleatoria para las ya existentes),
+ * `updatedAt` (= createdAt al principio), tombstone `deletedAt` y la marca `syncDirty`; y
+ * `sync_connections` gana `syncShopping` (qué conexión comparte la lista, como mucho una) y
+ * `shoppingPulled` (si ya se bajó la lista completa del servidor al activarla).
+ */
+val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE shopping_list_items ADD COLUMN uid TEXT NOT NULL DEFAULT ''")
+        db.execSQL("UPDATE shopping_list_items SET uid = lower(hex(randomblob(16)))")
+        db.execSQL("ALTER TABLE shopping_list_items ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("UPDATE shopping_list_items SET updatedAt = createdAt")
+        db.execSQL("ALTER TABLE shopping_list_items ADD COLUMN deletedAt INTEGER DEFAULT NULL")
+        db.execSQL("ALTER TABLE shopping_list_items ADD COLUMN syncDirty INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_shopping_list_items_uid ON shopping_list_items(uid)")
+        db.execSQL("ALTER TABLE sync_connections ADD COLUMN syncShopping INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE sync_connections ADD COLUMN shoppingPulled INTEGER NOT NULL DEFAULT 0")
+    }
+}

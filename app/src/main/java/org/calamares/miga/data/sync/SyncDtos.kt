@@ -66,13 +66,34 @@ data class PhotoMetaDto(
     val revision: Long = 0
 )
 
+/** Artículo de la lista de la compra compartida (ver miga-server, ShoppingItems). */
+@Serializable
+data class ShoppingItemSyncDto(
+    val uid: String,
+    val name: String,
+    val quantity: Double? = null,
+    val unit: String? = null,
+    val checked: Boolean = false,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+    val revision: Long = 0
+)
+
 @Serializable
 data class ChangesResponseDto(
     val latestRevision: Long,
     val books: List<BookSyncDto> = emptyList(),
     val recipes: List<RecipeSyncDto> = emptyList(),
-    val photos: List<PhotoMetaDto> = emptyList()
+    val photos: List<PhotoMetaDto> = emptyList(),
+    val shoppingItems: List<ShoppingItemSyncDto> = emptyList()
 )
+
+@Serializable
+data class CreateInvitationRequest(val label: String)
+
+/** Respuesta de POST /sync/invitations: un token nuevo del mismo namespace para invitar a otra app. */
+@Serializable
+data class InvitationDto(val namespaceId: String, val tokenId: String, val token: String, val label: String, val createdAt: Long)
 
 @Serializable
 data class RevisionDto(val revision: Long)

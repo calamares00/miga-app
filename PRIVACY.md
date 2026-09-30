@@ -9,7 +9,8 @@ ellos.
 ## Resumen
 
 - **Todos tus datos viven solo en tu dispositivo.** Miga no tiene cuentas de
-  usuario, no tiene servidor propio y no sincroniza nada entre dispositivos.
+  usuario, no tiene servidor propio y no sincroniza nada entre dispositivos, salvo que
+  tú configures un servidor de sincronización que alojes tú mismo.
 - **No hay analítica, publicidad ni rastreo de ningún tipo.** La app no
   incluye ningún SDK de terceros para medir el uso, mostrar anuncios o
   identificarte.
@@ -68,6 +69,13 @@ correspondiente esté activada.
    de lo enviado más allá de lo que tú decidas conservar en la propia
    receta (la foto que añades, o el resultado de la valoración de salud).
    Sin una clave configurada, no se envía nada a Google.
+4. **Servidor de sincronización propio** (Ajustes → Servidor de sincronización,
+   desactivado hasta que añades una conexión): si configuras la URL, el
+   namespace y el token de un servidor que tú mismo alojas (miga-server),
+   los libros y recetas que vincules y, si lo activas, la lista de la compra
+   se envían solo a ese servidor. Las invitaciones por QR contienen la
+   dirección del servidor, el namespace y un token de acceso nuevo; quien
+   escanee el código puede leer y modificar ese namespace.
 
 Ninguna de estas conexiones pasa por un servidor propio de Miga: no existe
 tal servidor.
