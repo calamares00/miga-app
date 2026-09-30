@@ -31,6 +31,18 @@ interface SyncConnectionDao {
     @Query("UPDATE sync_connections SET lastSyncError = :reason WHERE id = :id")
     suspend fun markError(id: Long, reason: String)
 
+    @Query("SELECT * FROM sync_connections WHERE syncShopping = 1 LIMIT 1")
+    suspend fun getShoppingSyncConnection(): SyncConnectionEntity?
+
+    @Query("UPDATE sync_connections SET syncShopping = 0, shoppingPulled = 0")
+    suspend fun clearShoppingSync()
+
+    @Query("UPDATE sync_connections SET syncShopping = 1, shoppingPulled = 0 WHERE id = :id")
+    suspend fun enableShoppingSync(id: Long)
+
+    @Query("UPDATE sync_connections SET shoppingPulled = 1 WHERE id = :id")
+    suspend fun markShoppingPulled(id: Long)
+
     @Delete
     suspend fun delete(connection: SyncConnectionEntity)
 }

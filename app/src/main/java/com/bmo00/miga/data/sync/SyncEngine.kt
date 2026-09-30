@@ -7,6 +7,8 @@ import com.bmo00.miga.data.local.entity.SyncChangeType
 import com.bmo00.miga.data.local.entity.SyncEntityType
 import com.bmo00.miga.data.model.SyncConnection
 import com.bmo00.miga.data.repository.RecipeRepository
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 sealed interface SyncOutcome {
     data class Success(val pulled: Int, val pushed: Int) : SyncOutcome
@@ -25,13 +27,21 @@ sealed interface SyncOutcome {
  * aplican después de las recetas (para que la receta a la que pertenecen ya exista localmente) y
  * antes de las bajas de libro.
  *
+ * Si la conexión comparte la lista de la compra ([SyncConnection.syncShopping]), esa lista viaja
+ * por el mismo camino: sus artículos llegan en la misma respuesta de cambios y los locales
+ * pendientes ("syncDirty") se suben después, ver [syncShoppingList].
+ *
  * Necesita un [Context] únicamente para guardar/borrar el fichero físico de una foto (o portada)
  * descargada o borrada (ver [PhotoStorage]), siguiendo el mismo convenio del resto de la app de
  * pasar el Context a la función en vez de guardarlo en una clase que no es un componente Android.
  */
 class SyncEngine(private val repository: RecipeRepository) {
 
-    suspend fun syncConnection(context: Context, connectionId: Long): SyncOutcome {
+    /** Una sola sincronización a la vez en toda la app: los disparos automáticos (al guardar, al abrir, periódico) pueden solaparse. */
+    suspend fun syncConnection(context: Context, connectionId: Long): SyncOutcome =
+        syncLock.withLock { syncConnectionLocked(context, connectionId) }
+
+    private suspend fun syncConnectionLocked(context: Context, connectionId: Long): SyncOutcome {
         val connection = repository.getSyncConnectionOnce(connectionId)
             ?: return SyncOutcome.Error("Conexión no encontrada")
 
@@ -42,6 +52,7 @@ class SyncEngine(private val repository: RecipeRepository) {
             }
             is SyncFetchResult.Success -> {
                 applyChanges(context, connection, fetch.changes)
+                if (connection.syncShopping) repository.applyRemoteShoppingItems(fetch.changes.shoppingItems)
                 repository.markSyncSuccess(connectionId, fetch.changes.latestRevision)
                 fetch.changes.books.size + fetch.changes.recipes.size + fetch.changes.photos.size
             }
@@ -55,7 +66,52 @@ class SyncEngine(private val repository: RecipeRepository) {
             }
         }
 
+        if (connection.syncShopping) pushed += syncShoppingList(connection)
+
         return SyncOutcome.Success(pulled, pushed)
+    }
+
+    /**
+     * Lista de la compra compartida: la primera vez tras activarla baja la lista completa del
+     * servidor (el cursor normal ya pasó de sus revisiones), y después sube los cambios locales
+     * pendientes. Un 409 se resuelve con la copia del servidor (última escritura gana); un fallo de
+     * red deja lo pendiente marcado para el próximo sync. Devuelve cuántos artículos se subieron.
+     */
+    private suspend fun syncShoppingList(connection: SyncConnection): Int {
+        if (!connection.shoppingPulled) {
+            if (connection.lastSyncedRevision == 0L) {
+                repository.markShoppingInitialPullDone(connection.id) // el pull normal ya fue desde el principio
+            } else when (val full = SyncClient.fetchChanges(connection, 0)) {
+                is SyncFetchResult.Error -> {
+                    repository.markSyncError(connection.id, full.reason)
+                    return 0
+                }
+                is SyncFetchResult.Success -> {
+                    repository.applyRemoteShoppingItems(full.changes.shoppingItems)
+                    repository.markShoppingInitialPullDone(connection.id)
+                }
+            }
+        }
+        var pushed = 0
+        for (item in repository.getDirtyShoppingItems()) {
+            val result = if (item.deletedAt != null) {
+                SyncClient.deleteShoppingItem(connection, item.uid, item.updatedAt)
+            } else {
+                SyncClient.pushShoppingItem(connection, item)
+            }
+            when (result) {
+                is SyncPushResult.Applied -> {
+                    repository.markShoppingItemSynced(item.uid, item.updatedAt)
+                    pushed++
+                }
+                is SyncPushResult.Conflict -> repository.applyRemoteShoppingItems(listOf(result.serverCopy))
+                is SyncPushResult.Error -> {
+                    repository.markSyncError(connection.id, result.reason)
+                    return pushed
+                }
+            }
+        }
+        return pushed
     }
 
     private suspend fun applyChanges(context: Context, connection: SyncConnection, changes: ChangesResponseDto) {
@@ -247,5 +303,9 @@ class SyncEngine(private val repository: RecipeRepository) {
             val localUri = PhotoStorage.copyBytesToInternalStorage(context, bytes) ?: return
             if (!repository.applyRemotePhotoUpsert(copy, localUri)) PhotoStorage.deleteFile(localUri)
         }
+    }
+
+    private companion object {
+        val syncLock = Mutex()
     }
 }

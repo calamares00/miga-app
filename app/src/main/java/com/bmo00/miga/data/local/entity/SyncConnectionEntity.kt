@@ -20,5 +20,9 @@ data class SyncConnectionEntity(
     val lastSyncedRevision: Long = 0,
     val lastSyncedAt: Long? = null,
     val lastSyncError: String? = null,
+    /** true si esta conexión comparte además la lista de la compra (como mucho una conexión a la vez). */
+    val syncShopping: Boolean = false,
+    /** true cuando, tras activar [syncShopping], ya se ha bajado la lista completa del servidor. */
+    val shoppingPulled: Boolean = false,
     val createdAt: Long
 )

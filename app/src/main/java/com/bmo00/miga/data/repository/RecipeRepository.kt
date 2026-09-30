@@ -47,6 +47,7 @@ import com.bmo00.miga.data.model.ShoppingSuggestion
 import com.bmo00.miga.data.model.StepGroup
 import com.bmo00.miga.data.model.SyncConnection
 import com.bmo00.miga.data.model.UNCATEGORIZED_INGREDIENT_LABEL
+import com.bmo00.miga.data.sync.ShoppingItemSyncDto
 import com.bmo00.miga.data.sync.BookSyncDto
 import com.bmo00.miga.data.sync.PhotoMetaDto
 import com.bmo00.miga.data.sync.RecipeSyncDto
@@ -501,7 +502,12 @@ class RecipeRepository(
      * Añade ingredientes (de una receta, o de varias) a la lista, fusionando por nombre
      * normalizado + unidad cuando ambos lados tienen cantidad; si no, inserta una fila nueva.
      */
-    suspend fun addIngredientsToShoppingList(ingredients: List<Ingredient>, recordHistory: Boolean = false) = db.withTransaction {
+    suspend fun addIngredientsToShoppingList(ingredients: List<Ingredient>, recordHistory: Boolean = false) {
+        addIngredientsToShoppingListInTransaction(ingredients, recordHistory)
+        notifyShoppingListChanged()
+    }
+
+    private suspend fun addIngredientsToShoppingListInTransaction(ingredients: List<Ingredient>, recordHistory: Boolean) = db.withTransaction {
         val now = System.currentTimeMillis()
         ingredients.forEach { ingredient ->
             val trimmedName = ingredient.name.trim()
@@ -510,10 +516,10 @@ class RecipeRepository(
             val trimmedUnit = ingredient.unit?.trim()?.takeIf { it.isNotBlank() }
             val existing = if (ingredient.quantity != null) shoppingListDao.findMergeable(normalized, trimmedUnit) else null
             if (existing != null) {
-                shoppingListDao.update(existing.copy(quantity = existing.quantity!! + ingredient.quantity!!))
+                shoppingListDao.update(existing.copy(quantity = existing.quantity!! + ingredient.quantity!!, updatedAt = now, syncDirty = true))
             } else {
                 shoppingListDao.insert(
-                    ShoppingListItemEntity(name = trimmedName, normalizedName = normalized, quantity = ingredient.quantity, unit = trimmedUnit, createdAt = now)
+                    ShoppingListItemEntity(name = trimmedName, normalizedName = normalized, quantity = ingredient.quantity, unit = trimmedUnit, createdAt = now, syncDirty = true)
                 )
             }
             if (recordHistory) {
@@ -549,9 +555,11 @@ class RecipeRepository(
                 quantity = item.quantity,
                 unit = item.unit,
                 checked = item.checked,
-                createdAt = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis(),
+                syncDirty = true
             )
         )
+        notifyShoppingListChanged()
     }
 
     /** Artículo manual sin receta de origen (p.ej. "papel de aluminio"); pasa por la misma fusión que los de receta. */
@@ -560,19 +568,108 @@ class RecipeRepository(
     }
 
     suspend fun setShoppingListItemChecked(id: Long, checked: Boolean) {
-        shoppingListDao.setChecked(id, checked)
+        shoppingListDao.setChecked(id, checked, System.currentTimeMillis())
+        notifyShoppingListChanged()
     }
 
+    /** Borrado lógico (tombstone): así, si la lista está compartida, el borrado también llega a las demás apps. */
     suspend fun deleteShoppingListItem(id: Long) {
-        shoppingListDao.delete(id)
+        shoppingListDao.softDelete(id, System.currentTimeMillis())
+        notifyShoppingListChanged()
     }
 
     suspend fun clearShoppingList() {
-        shoppingListDao.clearAll()
+        shoppingListDao.softDeleteAll(System.currentTimeMillis())
+        notifyShoppingListChanged()
     }
 
     suspend fun clearCheckedShoppingListItems() {
-        shoppingListDao.clearChecked()
+        shoppingListDao.softDeleteChecked(System.currentTimeMillis())
+        notifyShoppingListChanged()
+    }
+
+    // --- Lista de la compra compartida (sincronización) ---
+
+    /** Si hay una conexión que comparte la lista, pide una subida en segundo plano (mismo mecanismo que el outbox de libros). */
+    private suspend fun notifyShoppingListChanged() {
+        syncConnectionDao.getShoppingSyncConnection()?.let { onSyncChangeEnqueued(it.id) }
+        purgeShoppingTombstonesIfNotShared()
+    }
+
+    /** Sin conexión que la comparta, los tombstones no sirven para nada: se limpian en cuanto se crean. */
+    private suspend fun purgeShoppingTombstonesIfNotShared() {
+        if (syncConnectionDao.getShoppingSyncConnection() == null) shoppingListDao.purgeAllTombstones()
+    }
+
+    /**
+     * Activa (o desactiva, con null) la compartición de la lista de la compra a través de la
+     * conexión [connectionId]; como mucho una conexión a la vez. Al activar, todos los artículos
+     * actuales se marcan para subir y la próxima sincronización baja además la lista completa del
+     * servidor (los artículos de ambos lados se combinan, sin fusionar duplicados).
+     */
+    suspend fun setShoppingSyncConnection(connectionId: Long?) {
+        db.withTransaction {
+            syncConnectionDao.clearShoppingSync()
+            if (connectionId != null) {
+                syncConnectionDao.enableShoppingSync(connectionId)
+                shoppingListDao.purgeAllTombstones()
+                shoppingListDao.markAllLiveDirty()
+            } else {
+                shoppingListDao.purgeAllTombstones()
+            }
+        }
+        connectionId?.let { onSyncChangeEnqueued(it) }
+    }
+
+    suspend fun markShoppingInitialPullDone(connectionId: Long) = syncConnectionDao.markShoppingPulled(connectionId)
+
+    /** Cambios locales de la lista pendientes de subir (incluye tombstones: deletedAt != null). */
+    suspend fun getDirtyShoppingItems(): List<ShoppingItemSyncDto> =
+        shoppingListDao.getDirty().map { entity ->
+            ShoppingItemSyncDto(
+                uid = entity.uid,
+                name = entity.name,
+                quantity = entity.quantity,
+                unit = entity.unit,
+                checked = entity.checked,
+                updatedAt = entity.updatedAt,
+                deletedAt = entity.deletedAt
+            )
+        }
+
+    /** Tras subir con éxito: limpia la marca (si la fila no cambió entretanto) y descarta el tombstone ya subido. */
+    suspend fun markShoppingItemSynced(uid: String, updatedAt: Long) = db.withTransaction {
+        shoppingListDao.markSynced(uid, updatedAt)
+        shoppingListDao.purgeSyncedTombstones()
+    }
+
+    /** Aplica artículos bajados del servidor con "última escritura gana" por updatedAt: un cambio local
+     *  todavía sin subir y más reciente que el remoto se conserva (se subirá y ganará en el servidor). */
+    suspend fun applyRemoteShoppingItems(items: List<ShoppingItemSyncDto>) = db.withTransaction {
+        items.forEach { dto ->
+            val local = shoppingListDao.findByUid(dto.uid)
+            if (local != null && local.syncDirty && local.updatedAt > dto.updatedAt) return@forEach
+            if (dto.deletedAt != null) {
+                if (local != null) shoppingListDao.deleteByUid(dto.uid)
+                return@forEach
+            }
+            val name = dto.name.trim()
+            if (name.isEmpty()) return@forEach
+            val entity = ShoppingListItemEntity(
+                id = local?.id ?: 0,
+                name = name,
+                normalizedName = name.lowercase(),
+                quantity = dto.quantity,
+                unit = dto.unit?.trim()?.takeIf { it.isNotBlank() },
+                checked = dto.checked,
+                createdAt = local?.createdAt ?: dto.updatedAt,
+                uid = dto.uid,
+                updatedAt = dto.updatedAt,
+                deletedAt = null,
+                syncDirty = false
+            )
+            if (local == null) shoppingListDao.insert(entity) else shoppingListDao.update(entity)
+        }
     }
 
     // --- Libros de recetas ---
@@ -870,6 +967,7 @@ class RecipeRepository(
         recipeBookDao.clearSyncConnection(id)
         pendingSyncChangeDao.clearAllForConnection(id)
         syncConnectionDao.getOnce(id)?.let { syncConnectionDao.delete(it) }
+        purgeShoppingTombstonesIfNotShared()
     }
 
     suspend fun markSyncSuccess(connectionId: Long, revision: Long) =
@@ -1250,7 +1348,7 @@ fun RecipeBookEntity.toDomain() = RecipeBook(id, uid, name, coverPhotoUri, packI
 // antes de cifrar el token, y en ese caso el valor en claro que ya había sigue siendo válido tal cual.
 fun SyncConnectionEntity.toDomain(): SyncConnection {
     val decryptedToken = TokenCipher.decrypt(accessToken) ?: accessToken
-    return SyncConnection(id, label, serverUrl, namespaceId, decryptedToken, lastSyncedRevision, lastSyncedAt, lastSyncError)
+    return SyncConnection(id, label, serverUrl, namespaceId, decryptedToken, lastSyncedRevision, lastSyncedAt, lastSyncError, syncShopping, shoppingPulled)
 }
 
 fun RecipeWithDetails.toDomain(): Recipe {

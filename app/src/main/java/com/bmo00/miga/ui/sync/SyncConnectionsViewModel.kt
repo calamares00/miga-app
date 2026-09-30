@@ -5,20 +5,32 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bmo00.miga.data.model.SyncConnection
 import com.bmo00.miga.data.repository.RecipeRepository
+import com.bmo00.miga.data.share.SyncInvite
+import com.bmo00.miga.data.share.SyncInviteCodec
 import com.bmo00.miga.data.sync.SyncClient
 import com.bmo00.miga.data.sync.SyncEngine
+import com.bmo00.miga.data.sync.SyncInvitationResult
 import com.bmo00.miga.data.sync.SyncPingResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 sealed interface TestConnectionState {
     data object Idle : TestConnectionState
     data object Testing : TestConnectionState
     data object Success : TestConnectionState
     data class Error(val reason: String) : TestConnectionState
+}
+
+sealed interface InviteState {
+    data object Idle : InviteState
+    data object Loading : InviteState
+    /** [payload] es el texto del QR (ver SyncInviteCodec); [label] es el nombre de la conexión desde la que se invita. */
+    data class Ready(val label: String, val payload: String) : InviteState
+    data class Error(val reason: String) : InviteState
 }
 
 class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewModel() {
@@ -39,6 +51,75 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
             repository.enqueueFullConnectionResync(connectionId)
             syncEngine.syncConnection(context, connectionId)
             _syncingConnectionIds.value = _syncingConnectionIds.value - connectionId
+        }
+    }
+
+    private val _inviteState = MutableStateFlow<InviteState>(InviteState.Idle)
+    val inviteState: StateFlow<InviteState> = _inviteState
+
+    /** Mensaje puntual para mostrar en un snackbar (resultado de unirse por QR, etc.). */
+    private val _message = MutableStateFlow<String?>(null)
+    val message: StateFlow<String?> = _message
+
+    fun postMessage(text: String) {
+        _message.value = text
+    }
+
+    fun consumeMessage() {
+        _message.value = null
+    }
+
+    /** Pide al servidor un token nuevo del namespace y lo deja listo para mostrarlo como QR. */
+    fun createInvite(connection: SyncConnection) {
+        viewModelScope.launch {
+            _inviteState.value = InviteState.Loading
+            val label = "Invitación ${LocalDate.now()}"
+            _inviteState.value = when (val result = SyncClient.createInvitation(connection, label)) {
+                is SyncInvitationResult.Success -> {
+                    val invite = SyncInvite(connection.serverUrl, result.invitation.namespaceId, result.invitation.token, connection.label)
+                    InviteState.Ready(connection.label, SyncInviteCodec.encode(invite))
+                }
+                is SyncInvitationResult.Error -> InviteState.Error(result.reason)
+            }
+        }
+    }
+
+    fun dismissInvite() {
+        _inviteState.value = InviteState.Idle
+    }
+
+    /** Activa/desactiva compartir la lista de la compra a través de [connectionId] (como mucho una conexión a la vez). */
+    fun setShoppingSync(connectionId: Long, enabled: Boolean) {
+        viewModelScope.launch {
+            repository.setShoppingSyncConnection(if (enabled) connectionId else null)
+        }
+    }
+
+    /** Une esta app a un namespace a partir de una invitación escaneada: comprueba la conexión,
+     *  la guarda y sincroniza (con la lista de la compra compartida si [syncShopping]). */
+    fun joinFromInvite(context: Context, invite: SyncInvite, label: String, syncShopping: Boolean) {
+        viewModelScope.launch {
+            val candidate = SyncConnection(
+                id = 0L,
+                label = label,
+                serverUrl = invite.serverUrl.trim().trimEnd('/'),
+                namespaceId = invite.namespaceId,
+                accessToken = invite.token,
+                lastSyncedRevision = 0,
+                lastSyncedAt = null,
+                lastSyncError = null
+            )
+            when (val ping = SyncClient.ping(candidate)) {
+                is SyncPingResult.Error -> _message.value = "No se pudo unir: ${ping.reason}"
+                is SyncPingResult.Success -> {
+                    val id = repository.addSyncConnection(label.ifBlank { invite.namespaceId }, invite.serverUrl, invite.namespaceId, invite.token)
+                    if (syncShopping) repository.setShoppingSyncConnection(id)
+                    _syncingConnectionIds.value = _syncingConnectionIds.value + id
+                    syncEngine.syncConnection(context, id)
+                    _syncingConnectionIds.value = _syncingConnectionIds.value - id
+                    _message.value = "Conexión \"${label.ifBlank { invite.namespaceId }}\" añadida"
+                }
+            }
         }
     }
 

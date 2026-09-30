@@ -15,6 +15,11 @@ sealed interface SyncPingResult {
     data class Error(val reason: String) : SyncPingResult
 }
 
+sealed interface SyncInvitationResult {
+    data class Success(val invitation: InvitationDto) : SyncInvitationResult
+    data class Error(val reason: String) : SyncInvitationResult
+}
+
 sealed interface SyncFetchResult {
     data class Success(val changes: ChangesResponseDto) : SyncFetchResult
     data class Error(val reason: String) : SyncFetchResult
@@ -67,6 +72,44 @@ object SyncClient {
             throw e
         } catch (e: Exception) {
             SyncFetchResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+        }
+    }
+
+    suspend fun pushShoppingItem(connection: SyncConnection, dto: ShoppingItemSyncDto): SyncPushResult<ShoppingItemSyncDto> =
+        pushJson(connection, "PUT", "/sync/shopping/${dto.uid}", ShoppingItemSyncDto.serializer(), dto, ShoppingItemSyncDto.serializer())
+
+    /** Un 404 (el servidor nunca llegó a conocer ese artículo) cuenta como borrado aplicado: no hay nada que borrar allí. */
+    suspend fun deleteShoppingItem(connection: SyncConnection, uid: String, at: Long): SyncPushResult<ShoppingItemSyncDto> = withContext(Dispatchers.IO) {
+        try {
+            val result = request(connection, "DELETE", "/sync/shopping/$uid?at=$at", body = null)
+            if (result.code == HttpURLConnection.HTTP_NOT_FOUND) {
+                SyncPushResult.Applied(0)
+            } else {
+                interpretPushResponse(result, ShoppingItemSyncDto.serializer())
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            SyncPushResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+        }
+    }
+
+    /** Pide al servidor un token nuevo del mismo namespace para invitar a otra app (ver SyncInviteCodec). */
+    suspend fun createInvitation(connection: SyncConnection, label: String): SyncInvitationResult = withContext(Dispatchers.IO) {
+        try {
+            val body = json.encodeToString(CreateInvitationRequest.serializer(), CreateInvitationRequest(label)).toByteArray()
+            val result = request(connection, "POST", "/sync/invitations", body = body)
+            if (result.code == HttpURLConnection.HTTP_CREATED || result.code == HttpURLConnection.HTTP_OK) {
+                SyncInvitationResult.Success(json.decodeFromString(InvitationDto.serializer(), result.body))
+            } else if (result.code == HttpURLConnection.HTTP_NOT_FOUND || result.code == HttpURLConnection.HTTP_BAD_METHOD) {
+                SyncInvitationResult.Error("Este servidor no admite invitaciones: actualiza miga-server")
+            } else {
+                SyncInvitationResult.Error(errorMessageFor(result))
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            SyncInvitationResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
         }
     }
 

@@ -1,0 +1,1 @@
+Nuevo: lista de la compra compartida entre usuarios a través de tu servidor Miga (Ajustes → Servidor de sincronización → "Compartir la lista de la compra"), e invitaciones por código QR para unir otro móvil a un namespace sin copiar la URL ni el token. Requiere actualizar miga-server. La valoración personal de las recetas también se sincroniza.
