@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
@@ -43,6 +44,9 @@ import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Mic
@@ -55,6 +59,7 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -107,6 +112,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.model.IngredientCatalogItem
+import com.bmo00.miga.data.model.PredefinedShoppingLists
+import com.bmo00.miga.data.model.ShoppingAisleOrder
+import com.bmo00.miga.data.model.ShoppingStore
 import com.bmo00.miga.data.model.ShoppingTemplate
 import com.bmo00.miga.data.model.UNCATEGORIZED_INGREDIENT_LABEL
 import com.bmo00.miga.data.share.ShoppingIntentEvent
@@ -149,6 +157,11 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     val catalog by viewModel.catalog.collectAsState()
     val templates by viewModel.templates.collectAsState()
     val imagesEnabled by viewModel.imagesEnabled.collectAsState()
+    val stores by viewModel.stores.collectAsState()
+    val selectedStore by viewModel.selectedStore.collectAsState()
+    val categoryNames by viewModel.ingredientCategoryNames.collectAsState()
+    var showStores by remember { mutableStateOf(false) }
+    var editingStore by remember { mutableStateOf<ShoppingStore?>(null) }
     val quickAddFocus = remember { FocusRequester() }
     val intentEvent by ShoppingIntents.event.collectAsState()
     var collapsed by remember { mutableStateOf(setOf<String>()) }
@@ -157,8 +170,9 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
         view.keepScreenOn = shopMode
         onDispose { view.keepScreenOn = false }
     }
-    val pendingGroups = remember(groups) {
-        groups.map { group -> ShoppingListGroup(group.categoryName, group.items.filter { !it.checked }) }.filter { it.items.isNotEmpty() }
+    val pendingGroups = remember(groups, selectedStore) {
+        val pending = groups.map { group -> ShoppingListGroup(group.categoryName, group.items.filter { !it.checked }) }.filter { it.items.isNotEmpty() }
+        ShoppingAisleOrder.sort(pending, selectedStore?.aisleOrder.orEmpty())
     }
     val cartItems = remember(groups) { groups.flatMap { it.items }.filter { it.checked }.sortedBy { it.name.lowercase() } }
     val totalCount = cartItems.size + pendingGroups.sumOf { it.items.size }
@@ -294,7 +308,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Plantillas…") },
+                            text = { Text("Listas predefinidas y plantillas…") },
                             leadingIcon = { Icon(Icons.Filled.GridView, null) },
                             onClick = { showMenu = false; showTemplates = true }
                         )
@@ -412,6 +426,38 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                         )
                     }
                 }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (stores.isNotEmpty()) {
+                    FilterChip(
+                        selected = selectedStore == null,
+                        onClick = { viewModel.selectStore(0L) },
+                        label = { Text("Sin tienda") }
+                    )
+                    stores.forEach { store ->
+                        FilterChip(
+                            selected = store.id == selectedStore?.id,
+                            onClick = { viewModel.selectStore(store.id) },
+                            label = { Text(store.name) },
+                            leadingIcon = {
+                                Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color(store.argb)))
+                            }
+                        )
+                    }
+                }
+                AssistChip(
+                    onClick = { showStores = true },
+                    label = { Text(if (stores.isEmpty()) "Ordenar por supermercado" else "Supermercados…") },
+                    leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
             }
 
             if (totalCount > 0) {
@@ -545,47 +591,96 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     }
 
     if (showTemplates) {
+        fun applyAndClose(template: ShoppingTemplate) {
+            viewModel.applyTemplate(template)
+            showTemplates = false
+            showMessage("Añadidos ${template.entries.size} artículos de \"${template.name}\"")
+        }
         AlertDialog(
             onDismissRequest = { showTemplates = false },
-            title = { Text("Plantillas") },
+            title = { Text("Listas") },
             text = {
-                if (templates.isEmpty()) {
+                LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
+                    item(key = "predefined_header") {
+                        Text("Predefinidas", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                    }
+                    items(PredefinedShoppingLists.ALL, key = { "p${it.id}" }) { template ->
+                        TemplateRow(template = template, onClick = { applyAndClose(template) }, onDelete = null)
+                    }
+                    item(key = "mine_header") {
+                        Text(
+                            "Mis plantillas",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 12.dp)
+                        )
+                    }
+                    if (templates.isEmpty()) {
+                        item(key = "mine_empty") {
+                            Text(
+                                "Rellena la lista y usa \"Guardar lista como plantilla…\" para crear una.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                    }
+                    items(templates, key = { "m${it.id}" }) { template ->
+                        TemplateRow(template = template, onClick = { applyAndClose(template) }, onDelete = { viewModel.deleteTemplate(template.id) })
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showTemplates = false }) { Text("Cerrar") } }
+        )
+    }
+
+    if (showStores) {
+        AlertDialog(
+            onDismissRequest = { showStores = false },
+            title = { Text("Supermercados") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "Todavía no tienes plantillas. Rellena la lista y usa \"Guardar lista como plantilla…\" para crear una.",
+                        "Cada supermercado guarda su orden de pasillos: al elegirlo, la lista sale ordenada como lo recorres.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                } else {
-                    LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
-                        items(templates, key = { it.id }) { template ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        viewModel.applyTemplate(template)
-                                        showTemplates = false
-                                        showMessage("Añadidos ${template.entries.size} artículos de \"${template.name}\"")
-                                    }
-                                    .padding(vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(template.name, style = MaterialTheme.typography.bodyLarge)
-                                    Text(
-                                        "${template.entries.size} artículos",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                IconButton(onClick = { viewModel.deleteTemplate(template.id) }) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Borrar plantilla \"${template.name}\"")
-                                }
+                    stores.forEach { store ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showStores = false; editingStore = store }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(Color(store.argb)))
+                            Text(store.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(start = 12.dp))
+                            IconButton(onClick = { viewModel.deleteStore(store.id) }) {
+                                Icon(Icons.Filled.Delete, contentDescription = "Borrar ${store.name}")
                             }
                         }
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { showTemplates = false }) { Text("Cerrar") } }
+            confirmButton = {
+                TextButton(onClick = {
+                    showStores = false
+                    editingStore = ShoppingStore(0L, "", ShoppingAisleOrder.PALETTE[0], emptyList())
+                }) { Text("Añadir supermercado") }
+            },
+            dismissButton = { TextButton(onClick = { showStores = false }) { Text("Cerrar") } }
+        )
+    }
+
+    editingStore?.let { store ->
+        StoreEditorSheet(
+            store = store,
+            categoryNames = categoryNames,
+            onSave = { saved ->
+                viewModel.saveStore(saved, select = true)
+                editingStore = null
+            },
+            onDismiss = { editingStore = null }
         )
     }
 
@@ -924,6 +1019,103 @@ private fun CatalogSheet(
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TemplateRow(template: ShoppingTemplate, onClick: () -> Unit, onDelete: (() -> Unit)?) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(template.name, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                "${template.entries.size} artículos",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (onDelete != null) {
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Filled.Delete, contentDescription = "Borrar plantilla \"${template.name}\"")
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StoreEditorSheet(
+    store: ShoppingStore,
+    categoryNames: List<String>,
+    onSave: (ShoppingStore) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var name by remember { mutableStateOf(store.name) }
+    var argb by remember { mutableStateOf(store.argb) }
+    var order by remember {
+        mutableStateOf(ShoppingAisleOrder.complete(store.aisleOrder.ifEmpty { ShoppingAisleOrder.TYPICAL_ORDER }, categoryNames))
+    }
+
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.fillMaxHeight(0.85f).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(if (store.id == 0L) "Nuevo supermercado" else "Editar supermercado", style = MaterialTheme.typography.titleMedium)
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Nombre") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ShoppingAisleOrder.SUGGESTED_NAMES.forEach { suggestion ->
+                    SuggestionChip(onClick = { name = suggestion }, label = { Text(suggestion) })
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                ShoppingAisleOrder.PALETTE.forEach { color ->
+                    Box(
+                        modifier = Modifier
+                            .size(30.dp)
+                            .clip(CircleShape)
+                            .background(Color(color))
+                            .then(if (color == argb) Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier)
+                            .clickable { argb = color }
+                    )
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Orden de pasillos", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                TextButton(onClick = { order = ShoppingAisleOrder.complete(ShoppingAisleOrder.TYPICAL_ORDER, categoryNames) }) {
+                    Text("Recorrido típico")
+                }
+            }
+            LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                itemsIndexed(order, key = { _, category -> category }) { index, category ->
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        EmojiBadge(
+                            emoji = ShoppingVisuals.categoryStyle(category).emoji,
+                            accent = Color(ShoppingVisuals.categoryStyle(category).argb),
+                            size = 30
+                        )
+                        Text("${index + 1}. $category", modifier = Modifier.weight(1f).padding(start = 10.dp))
+                        IconButton(onClick = { order = ShoppingAisleOrder.move(order, index, -1) }, enabled = index > 0) {
+                            Icon(Icons.Filled.ArrowUpward, contentDescription = "Subir $category")
+                        }
+                        IconButton(onClick = { order = ShoppingAisleOrder.move(order, index, 1) }, enabled = index < order.lastIndex) {
+                            Icon(Icons.Filled.ArrowDownward, contentDescription = "Bajar $category")
+                        }
+                    }
+                }
+            }
+            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onDismiss) { Text("Cancelar") }
+                TextButton(onClick = { onSave(store.copy(name = name.trim(), argb = argb, aisleOrder = order)) }, enabled = name.isNotBlank()) {
+                    Text("Guardar")
                 }
             }
         }

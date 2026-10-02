@@ -199,3 +199,23 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
         )
     }
 }
+
+/**
+ * v14 -> v15: supermercados de la lista de la compra (`shopping_stores`): nombre, color y el orden
+ * de pasillos (categorías, una por línea) con el que se ordena la lista al elegir esa tienda.
+ */
+val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS shopping_stores (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                name TEXT NOT NULL,
+                color INTEGER NOT NULL,
+                aisleOrder TEXT NOT NULL,
+                createdAt INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+    }
+}

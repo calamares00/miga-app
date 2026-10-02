@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import java.io.IOException
@@ -27,6 +28,7 @@ class SettingsRepository(private val context: Context) {
     private val colorThemeKey = stringPreferencesKey("color_theme")
     private val biometricLockKey = booleanPreferencesKey("biometric_lock_enabled")
     private val shoppingImagesKey = booleanPreferencesKey("shopping_images_enabled")
+    private val shoppingStoreKey = longPreferencesKey("shopping_store_id")
     private val autoCheckUpdatesKey = booleanPreferencesKey("auto_check_updates_enabled")
     private val updateChannelKey = stringPreferencesKey("update_channel")
     private val recipeListViewModeKey = stringPreferencesKey("recipe_list_view_mode")
@@ -60,6 +62,14 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setColorTheme(colorTheme: ColorTheme) {
         context.settingsDataStore.edit { prefs -> prefs[colorThemeKey] = colorTheme.name }
+    }
+
+    /** Supermercado elegido para ordenar la lista de la compra por sus pasillos; 0 = ninguno. */
+    fun observeShoppingStoreId(): Flow<Long> =
+        context.settingsDataStore.data.map { prefs -> prefs[shoppingStoreKey] ?: 0L }
+
+    suspend fun setShoppingStoreId(id: Long) {
+        context.settingsDataStore.edit { prefs -> prefs[shoppingStoreKey] = id }
     }
 
     /** Por defecto desactivado: mostrar las fotos de producto de la lista de la compra descarga imágenes de Open Food Facts. */

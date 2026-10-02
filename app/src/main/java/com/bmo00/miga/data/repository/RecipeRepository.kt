@@ -21,6 +21,7 @@ import com.bmo00.miga.data.local.entity.RecipeUtensilCrossRef
 import com.bmo00.miga.data.local.entity.RecipeWithDetails
 import com.bmo00.miga.data.local.entity.ShoppingHistoryEntity
 import com.bmo00.miga.data.local.entity.ShoppingListItemEntity
+import com.bmo00.miga.data.local.entity.ShoppingStoreEntity
 import com.bmo00.miga.data.local.entity.ShoppingTemplateEntity
 import com.bmo00.miga.data.local.entity.StepEntity
 import com.bmo00.miga.data.local.entity.SyncChangeType
@@ -45,6 +46,7 @@ import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ParsedShoppingEntry
 import com.bmo00.miga.data.model.ShoppingListGroup
 import com.bmo00.miga.data.model.ShoppingListItem
+import com.bmo00.miga.data.model.ShoppingStore
 import com.bmo00.miga.data.model.ShoppingSuggestion
 import com.bmo00.miga.data.model.ShoppingTemplate
 import com.bmo00.miga.data.share.ShoppingListShareCodec
@@ -89,6 +91,7 @@ class RecipeRepository(
     private val shoppingListDao = db.shoppingListDao()
     private val shoppingHistoryDao = db.shoppingHistoryDao()
     private val shoppingTemplateDao = db.shoppingTemplateDao()
+    private val shoppingStoreDao = db.shoppingStoreDao()
     private val syncConnectionDao = db.syncConnectionDao()
     private val pendingSyncChangeDao = db.pendingSyncChangeDao()
 
@@ -603,6 +606,28 @@ class RecipeRepository(
         }
         notifyShoppingListChanged()
     }
+
+    // --- Supermercados (orden de pasillos) ---
+
+    fun observeShoppingStores(): Flow<List<ShoppingStore>> =
+        shoppingStoreDao.observeAll().map { list ->
+            list.map { ShoppingStore(it.id, it.name, it.color, it.aisleOrder.split("\n").map(String::trim).filter(String::isNotEmpty)) }
+        }
+
+    /** Crea ([store].id == 0) o actualiza una tienda; devuelve su id. */
+    suspend fun saveShoppingStore(store: ShoppingStore): Long {
+        val name = store.name.trim()
+        if (name.isEmpty()) return store.id
+        val order = store.aisleOrder.joinToString("\n")
+        return if (store.id == 0L) {
+            shoppingStoreDao.insert(ShoppingStoreEntity(name = name, color = store.argb, aisleOrder = order, createdAt = System.currentTimeMillis()))
+        } else {
+            shoppingStoreDao.update(ShoppingStoreEntity(id = store.id, name = name, color = store.argb, aisleOrder = order, createdAt = System.currentTimeMillis()))
+            store.id
+        }
+    }
+
+    suspend fun deleteShoppingStore(id: Long) = shoppingStoreDao.delete(id)
 
     // --- Plantillas de lista ---
 

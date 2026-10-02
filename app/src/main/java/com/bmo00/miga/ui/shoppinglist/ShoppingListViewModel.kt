@@ -11,12 +11,15 @@ import com.bmo00.miga.data.model.ParsedShoppingEntry
 import com.bmo00.miga.data.model.ShoppingEntryParser
 import com.bmo00.miga.data.model.ShoppingListGroup
 import com.bmo00.miga.data.model.ShoppingListItem
+import com.bmo00.miga.data.model.ShoppingStore
 import com.bmo00.miga.data.model.ShoppingSuggestion
 import com.bmo00.miga.data.model.ShoppingTemplate
 import com.bmo00.miga.data.remote.OpenFoodFactsClient
 import com.bmo00.miga.data.remote.ProductLookupResult
 import com.bmo00.miga.data.repository.RecipeRepository
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -43,6 +46,39 @@ class ShoppingListViewModel(
 
     val imagesEnabled: StateFlow<Boolean> = settingsRepository.observeShoppingImagesEnabled()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val stores: StateFlow<List<ShoppingStore>> = repository.observeShoppingStores()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val selectedStoreId: StateFlow<Long> = settingsRepository.observeShoppingStoreId()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
+
+    /** La tienda elegida (null si no hay ninguna o fue borrada). */
+    val selectedStore: StateFlow<ShoppingStore?> = combine(stores, selectedStoreId) { list, id -> list.firstOrNull { it.id == id } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    /** Nombres de las categorías de ingredientes, para completar el orden de pasillos al editar una tienda. */
+    val ingredientCategoryNames: StateFlow<List<String>> = repository.observeIngredientCategories()
+        .map { list -> list.map { it.name } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun selectStore(id: Long) {
+        viewModelScope.launch { settingsRepository.setShoppingStoreId(id) }
+    }
+
+    fun saveStore(store: ShoppingStore, select: Boolean) {
+        viewModelScope.launch {
+            val id = repository.saveShoppingStore(store)
+            if (select && id != 0L) settingsRepository.setShoppingStoreId(id)
+        }
+    }
+
+    fun deleteStore(id: Long) {
+        viewModelScope.launch {
+            repository.deleteShoppingStore(id)
+            if (selectedStoreId.value == id) settingsRepository.setShoppingStoreId(0L)
+        }
+    }
 
     fun setImagesEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setShoppingImagesEnabled(enabled) }
