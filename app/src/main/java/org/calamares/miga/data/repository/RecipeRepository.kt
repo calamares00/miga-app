@@ -1250,6 +1250,7 @@ class RecipeRepository(
      *  que autocura fotos sin subir de forma barata en cada push de receta. */
     private suspend fun enqueueBookResyncLocked(bookId: Long, connectionId: Long) {
         val book = recipeBookDao.getOnce(bookId) ?: return
+        recipeDao.backfillPhotoUids() // sin uid, las fotos anteriores a la sincronización se saltarían más abajo
         enqueueSyncChange(connectionId, SyncEntityType.BOOK, book.uid, SyncChangeType.UPSERT)
         recipeDao.getAllWithDetailsForBookOnce(bookId).forEach { details ->
             enqueueSyncChange(connectionId, SyncEntityType.RECIPE, details.recipe.uid, SyncChangeType.UPSERT)
@@ -1278,6 +1279,14 @@ class RecipeRepository(
         db.withTransaction { books.forEach { enqueueBookResyncLocked(it.id, connectionId) } }
         onSyncChangeEnqueued(connectionId)
     }
+
+    /** Pone el cursor de la conexión a 0: la próxima sincronización vuelve a bajar todo el contenido del
+     *  servidor (idempotente: lo que ya está al día no cambia) y recupera lo que se perdió, p. ej. fotos
+     *  cuya descarga falló en una sincronización anterior. Usado por los botones manuales "Sincronizar ahora". */
+    suspend fun resetSyncCursor(connectionId: Long) = syncConnectionDao.resetCursor(connectionId)
+
+    /** Asigna uid a las fotos antiguas que no lo tengan (ver [RecipeDao.backfillPhotoUids]); se llama al arrancar la app. */
+    suspend fun ensurePhotoUids() = recipeDao.backfillPhotoUids()
 
     /** Deja de sincronizar un libro: pasa a ser local, sin borrar nada de su contenido ni del servidor. */
     suspend fun unlinkBookFromSyncConnection(bookId: Long) {
@@ -1372,6 +1381,7 @@ class RecipeRepository(
      *  [SyncEngine.pushBookCoverIfPresent] con la portada de un libro). Ignora las fotos sin `uid`
      *  (dato nullable heredado de la migración, no debería darse en fotos creadas después de ella). */
     suspend fun getRecipePhotosForPush(recipeUid: String): List<Pair<String, PhotoPushInfo>> {
+        recipeDao.backfillPhotoUids() // autocura fotos antiguas sin uid, que de otro modo nunca se subirían
         val recipe = recipeDao.findByUid(recipeUid) ?: return emptyList()
         return recipeDao.getPhotosOnce(recipe.id).mapNotNull { photo ->
             val uid = photo.uid ?: return@mapNotNull null

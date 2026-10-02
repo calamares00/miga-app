@@ -59,6 +59,7 @@ class RecetarioApp : Application() {
         // Lo antes posible, para que un fallo durante el resto del arranque también quede recogido.
         CrashReporter.install(this)
         applicationScope.launch {
+            repository.ensurePhotoUids()
             repository.seedDefaultUtensilsIfEmpty()
             repository.seedDefaultCategoriesIfEmpty()
             repository.seedIngredientCatalogDefaults()
