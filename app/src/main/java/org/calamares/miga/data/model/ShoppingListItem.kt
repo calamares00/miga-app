@@ -24,7 +24,9 @@ data class ShoppingListItem(
     val uid: String = "",
     /** Quién lo añadió / quién lo marcó por última vez, si lo indicó (lista compartida); null si no consta. */
     val addedBy: String? = null,
-    val updatedBy: String? = null
+    val updatedBy: String? = null,
+    /** Ficha de Open Food Facts si el artículo se añadió con el escáner. */
+    val productInfo: ProductInfo? = null
 )
 
 /** Una lista de la compra (la por defecto o una adicional creada por el usuario). */

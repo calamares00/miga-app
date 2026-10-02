@@ -76,6 +76,8 @@ data class ShoppingItemSyncDto(
     val unit: String? = null,
     val checked: Boolean = false,
     val imageUrl: String? = null,
+    /** JSON de ProductInfo (ver data/model/ProductInfo.kt); el servidor lo trata como texto opaco. */
+    val productInfo: String? = null,
     val addedBy: String? = null,
     val updatedBy: String? = null,
     val updatedAt: Long,

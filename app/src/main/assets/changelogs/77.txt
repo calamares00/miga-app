@@ -1,0 +1,1 @@
+Ficha de producto al escanear con Open Food Facts: pulsa la foto de un producto para verlo en grande con su Nutri-Score, NOVA, alérgenos, etiquetas (vegano, sin gluten…), nutrición por 100 g e ingredientes. La insignia del Nutri-Score aparece también en la lista. Requiere actualizar miga-server para sincronizarlo.
