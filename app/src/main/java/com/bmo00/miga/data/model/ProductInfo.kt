@@ -16,6 +16,8 @@ data class ProductInfo(
     val quantity: String? = null,
     /** "a".."e" */
     val nutriScore: String? = null,
+    /** Puntos del Nutri-Score (-15 mejor ... 40 peor), si Open Food Facts los da. */
+    val nutriScoreValue: Int? = null,
     /** 1..4 (grado de procesado) */
     val nova: Int? = null,
     /** "a".."e" */
@@ -24,6 +26,8 @@ data class ProductInfo(
     val traces: List<String> = emptyList(),
     val labels: List<String> = emptyList(),
     val analysis: List<String> = emptyList(),
+    /** Códigos de aditivos ("e330"); null = Open Food Facts no los tiene (no es lo mismo que "ninguno"). */
+    val additives: List<String>? = null,
     val energyKcal: Double? = null,
     val fat: Double? = null,
     val saturatedFat: Double? = null,

@@ -139,12 +139,14 @@ object OpenFoodFactsClient {
             brand = brand,
             quantity = text("quantity")?.take(60),
             nutriScore = text("nutriscore_grade")?.lowercase()?.takeIf { it.length == 1 && it[0] in 'a'..'e' },
+            nutriScoreValue = (text("nutriscore_score")?.toDoubleOrNull() ?: nutrient("nutrition-score-fr_100g"))?.toInt()?.takeIf { it in -20..45 },
             nova = text("nova_group")?.toDoubleOrNull()?.toInt()?.takeIf { it in 1..4 },
             ecoScore = text("ecoscore_grade")?.lowercase()?.takeIf { it.length == 1 && it[0] in 'a'..'e' },
             allergens = tags("allergens_tags").take(MAX_TAGS),
             traces = tags("traces_tags").take(MAX_TAGS),
             labels = tags("labels_tags").take(MAX_TAGS),
             analysis = tags("ingredients_analysis_tags").take(MAX_TAGS),
+            additives = if (product.containsKey("additives_tags")) tags("additives_tags").take(MAX_TAGS) else null,
             energyKcal = nutrient("energy-kcal_100g"),
             fat = nutrient("fat_100g"),
             saturatedFat = nutrient("saturated-fat_100g"),
@@ -164,7 +166,7 @@ object OpenFoodFactsClient {
 
 private const val SEARCH_PAGE_SIZE = 20
 private const val SEARCH_TIMEOUT_MILLIS = 15000
-private const val PRODUCT_FIELDS = "product_name,product_name_es,generic_name_es,brands,quantity,nutriscore_grade,nova_group,ecoscore_grade," +
+private const val PRODUCT_FIELDS = "product_name,product_name_es,generic_name_es,brands,quantity,nutriscore_grade,nutriscore_score,additives_tags,nova_group,ecoscore_grade," +
     "allergens_tags,traces_tags,labels_tags,ingredients_analysis_tags,nutriments,ingredients_text_es,ingredients_text," +
     "image_front_url,image_front_small_url,image_small_url,image_ingredients_url,image_nutrition_url"
 private const val MAX_TAGS = 40

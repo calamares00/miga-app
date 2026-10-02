@@ -128,7 +128,10 @@ import com.bmo00.miga.data.model.PredefinedShoppingLists
 import com.bmo00.miga.data.model.ProductInfo
 import com.bmo00.miga.data.remote.ScannedProduct
 import androidx.compose.material3.CircularProgressIndicator
+import com.bmo00.miga.data.model.AdditiveRisk
 import com.bmo00.miga.data.model.ProductLabels
+import com.bmo00.miga.data.model.ProductScore
+import com.bmo00.miga.data.model.ProductScoring
 import com.bmo00.miga.data.model.ShoppingAisleOrder
 import com.bmo00.miga.data.model.ShoppingStore
 import com.bmo00.miga.data.model.ShoppingTemplate
@@ -1115,6 +1118,11 @@ private fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImage
             val nutriLetter = ProductLabels.gradeLetter(item.productInfo?.nutriScore)
             if (nutriLetter != null) {
                 NutriScoreBadge(letter = nutriLetter, large = false)
+                Spacer(modifier = Modifier.width(6.dp))
+            }
+            val rowScore = remember(item.productInfo) { item.productInfo?.let { ProductScoring.compute(it) } }
+            if (rowScore != null) {
+                ScoreChip(score = rowScore, large = false)
                 Spacer(modifier = Modifier.width(8.dp))
             }
             if (!shopMode) {
@@ -1395,6 +1403,7 @@ private fun ProductDetailSheet(item: ShoppingListItem, onDismiss: () -> Unit) {
     val ecoLetter = ProductLabels.gradeLetter(info.ecoScore)
     val badges = ProductLabels.badges(info)
     val nutrition = ProductLabels.nutritionRows(info)
+    val score = remember(info) { ProductScoring.compute(info) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -1443,7 +1452,7 @@ private fun ProductDetailSheet(item: ShoppingListItem, onDismiss: () -> Unit) {
                 Text(subtitle, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            if (nutriLetter != null || info.nova != null || ecoLetter != null) {
+            if (nutriLetter != null || info.nova != null || ecoLetter != null || score != null) {
                 Row(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1453,6 +1462,12 @@ private fun ProductDetailSheet(item: ShoppingListItem, onDismiss: () -> Unit) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             NutriScoreBadge(letter = nutriLetter, large = true)
                             Text("  Nutri-Score", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                    if (score != null) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            ScoreChip(score = score, large = true)
+                            Text("  Puntuación", style = MaterialTheme.typography.labelLarge)
                         }
                     }
                     val novaColor = ProductLabels.novaArgb(info.nova)
@@ -1481,6 +1496,46 @@ private fun ProductDetailSheet(item: ShoppingListItem, onDismiss: () -> Unit) {
                 Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     badges.forEach { SuggestionChip(onClick = {}, label = { Text(it) }) }
                 }
+            }
+
+            if (score != null) {
+                HorizontalDivider()
+                Text(
+                    "Puntuación ${score.value}/100 · ${score.tier.label}",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color(score.tier.argb)
+                )
+                Text(
+                    "Nutrición ${score.nutrition}/100 (60 %) · Aditivos ${score.additives}/100 (30 %)" +
+                        if (score.organicBonus > 0) " · Ecológico +${score.organicBonus}" else "",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                if (score.cappedByRiskyAdditive) {
+                    Text(
+                        "Limitada a 49 por contener un aditivo de riesgo alto.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                Text(
+                    "Estimación propia de Miga con los datos de Open Food Facts y el reparto 60 % nutrición, 30 % aditivos y 10 % ecológico " +
+                        "que usan apps como Yuka. No es la puntuación oficial de Yuka ni un consejo médico.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            val additiveCodes = info.additives.orEmpty()
+            if (additiveCodes.isNotEmpty()) {
+                HorizontalDivider()
+                Text("Aditivos (${additiveCodes.size})", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    additiveCodes.joinToString(", ") { code ->
+                        val risk = ProductScoring.additiveRisk(code)
+                        code.uppercase() + if (risk == AdditiveRisk.NONE) "" else " (${risk.label})"
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
 
             if (info.allergens.isNotEmpty() || info.traces.isNotEmpty()) {
@@ -1639,6 +1694,10 @@ private fun SearchResultRow(product: ScannedProduct, added: Boolean, onAdd: () -
         }
         ProductLabels.gradeLetter(info.nutriScore)?.let {
             NutriScoreBadge(letter = it, large = false)
+            Spacer(modifier = Modifier.width(6.dp))
+        }
+        remember(info) { ProductScoring.compute(info) }?.let {
+            ScoreChip(score = it, large = false)
             Spacer(modifier = Modifier.width(8.dp))
         }
         IconButton(onClick = onAdd, enabled = !added) {
@@ -1648,5 +1707,26 @@ private fun SearchResultRow(product: ScannedProduct, added: Boolean, onAdd: () -
                 tint = if (added) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+/** Nota de 0 a 100 sobre el color de su tramo (excelente, bueno, mediocre, malo). */
+@Composable
+private fun ScoreChip(score: ProductScore, large: Boolean) {
+    val darkText = score.tier == com.bmo00.miga.data.model.ScoreTier.GOOD || score.tier == com.bmo00.miga.data.model.ScoreTier.MEDIOCRE
+    Box(
+        modifier = Modifier
+            .height(if (large) 40.dp else 24.dp)
+            .width(if (large) 54.dp else 32.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(Color(score.tier.argb)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = score.value.toString(),
+            fontWeight = FontWeight.Bold,
+            fontSize = if (large) 20.sp else 13.sp,
+            color = if (darkText) Color(0xFF1B1B1B) else Color.White
+        )
     }
 }
