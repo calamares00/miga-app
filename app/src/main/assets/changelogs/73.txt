@@ -1,0 +1,1 @@
+Lista de la compra más visual: icono por artículo y por categoría, cabeceras de color que se pliegan, sección "En el carrito" para lo ya marcado con barra de progreso, y modo tienda (botón de la bolsa): filas grandes, pantalla siempre encendida y deslizar para marcar o quitar.
