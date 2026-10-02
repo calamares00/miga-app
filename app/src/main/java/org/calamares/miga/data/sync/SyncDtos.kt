@@ -70,11 +70,24 @@ data class PhotoMetaDto(
 @Serializable
 data class ShoppingItemSyncDto(
     val uid: String,
+    val listId: String = "main",
     val name: String,
     val quantity: Double? = null,
     val unit: String? = null,
     val checked: Boolean = false,
     val imageUrl: String? = null,
+    val addedBy: String? = null,
+    val updatedBy: String? = null,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+    val revision: Long = 0
+)
+
+/** Lista de la compra adicional (la lista "main" por defecto no tiene fila ni DTO). */
+@Serializable
+data class ShoppingListSyncDto(
+    val uid: String,
+    val name: String,
     val updatedAt: Long,
     val deletedAt: Long? = null,
     val revision: Long = 0
@@ -86,7 +99,8 @@ data class ChangesResponseDto(
     val books: List<BookSyncDto> = emptyList(),
     val recipes: List<RecipeSyncDto> = emptyList(),
     val photos: List<PhotoMetaDto> = emptyList(),
-    val shoppingItems: List<ShoppingItemSyncDto> = emptyList()
+    val shoppingItems: List<ShoppingItemSyncDto> = emptyList(),
+    val shoppingLists: List<ShoppingListSyncDto> = emptyList()
 )
 
 @Serializable

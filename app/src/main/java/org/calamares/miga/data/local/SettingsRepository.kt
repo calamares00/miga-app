@@ -29,6 +29,8 @@ class SettingsRepository(private val context: Context) {
     private val biometricLockKey = booleanPreferencesKey("biometric_lock_enabled")
     private val shoppingImagesKey = booleanPreferencesKey("shopping_images_enabled")
     private val shoppingStoreKey = longPreferencesKey("shopping_store_id")
+    private val shoppingListUidKey = stringPreferencesKey("shopping_list_uid")
+    private val shoppingAuthorKey = stringPreferencesKey("shopping_author_name")
     private val autoCheckUpdatesKey = booleanPreferencesKey("auto_check_updates_enabled")
     private val updateChannelKey = stringPreferencesKey("update_channel")
     private val recipeListViewModeKey = stringPreferencesKey("recipe_list_view_mode")
@@ -62,6 +64,22 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setColorTheme(colorTheme: ColorTheme) {
         context.settingsDataStore.edit { prefs -> prefs[colorThemeKey] = colorTheme.name }
+    }
+
+    /** Lista de la compra en la que se está trabajando; "main" = la lista por defecto. */
+    fun observeShoppingListUid(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[shoppingListUidKey] ?: "main" }
+
+    suspend fun setShoppingListUid(uid: String) {
+        context.settingsDataStore.edit { prefs -> prefs[shoppingListUidKey] = uid }
+    }
+
+    /** Nombre con el que se firman los cambios en una lista compartida (vacío = sin firma). */
+    fun observeShoppingAuthor(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[shoppingAuthorKey].orEmpty() }
+
+    suspend fun setShoppingAuthor(name: String) {
+        context.settingsDataStore.edit { prefs -> prefs[shoppingAuthorKey] = name.trim().take(60) }
     }
 
     /** Supermercado elegido para ordenar la lista de la compra por sus pasillos; 0 = ninguno. */

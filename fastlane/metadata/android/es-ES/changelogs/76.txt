@@ -1,0 +1,1 @@
+Lista de la compra con varias listas (Compra, Fiesta, Viaje…) que se sincronizan por tu servidor, con tu nombre para saber quién añadió o marcó cada artículo, avisos cuando otra persona añade cosas y actualización cada 20 segundos mientras tienes la lista abierta. Requiere actualizar miga-server.
