@@ -178,3 +178,24 @@ val MIGRATION_12_13 = object : Migration(12, 13) {
         db.execSQL("ALTER TABLE sync_connections ADD COLUMN shoppingPulled INTEGER NOT NULL DEFAULT 0")
     }
 }
+
+/**
+ * v13 -> v14: foto opcional de producto en la lista de la compra (`imageUrl`, la rellena el
+ * escáner de código de barras con Open Food Facts) y plantillas de lista (`shopping_templates`:
+ * "compra semanal"...), cuyo contenido se guarda como texto, una línea por artículo.
+ */
+val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE shopping_list_items ADD COLUMN imageUrl TEXT DEFAULT NULL")
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS shopping_templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                name TEXT NOT NULL,
+                body TEXT NOT NULL,
+                createdAt INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+    }
+}

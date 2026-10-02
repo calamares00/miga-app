@@ -36,4 +36,15 @@ class ShoppingListShareCodecTest {
         val decoded = ShoppingListShareCodec.decode(ShoppingListShareCodec.encode(listOf(ParsedShoppingEntry("Pan\ttostado\nrústico", 1.0, null))))
         assertEquals("Pan tostado rústico", decoded?.single()?.name)
     }
+
+    @Test
+    fun `lines round trip keeps quantity, unit and name`() {
+        val entries = listOf(ParsedShoppingEntry("Tomates", 2.0, "kg"), ParsedShoppingEntry("Leche", null, null))
+        assertEquals(entries, ShoppingListShareCodec.fromLines(ShoppingListShareCodec.toLines(entries)))
+    }
+
+    @Test
+    fun `lines ignore blank and malformed rows`() {
+        assertEquals(emptyList<ParsedShoppingEntry>(), ShoppingListShareCodec.fromLines("solo texto\n\t\t"))
+    }
 }
