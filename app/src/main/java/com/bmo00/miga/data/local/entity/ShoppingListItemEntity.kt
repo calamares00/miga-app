@@ -38,5 +38,9 @@ data class ShoppingListItemEntity(
     val deletedAt: Long? = null,
     val syncDirty: Boolean = false,
     /** Foto del producto (la rellena el escáner de código de barras); solo se muestra si el usuario lo activa. */
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    /** Lista a la que pertenece (ver ShoppingListEntity); "main" = la lista por defecto. */
+    val listUid: String = "main",
+    val addedBy: String? = null,
+    val updatedBy: String? = null
 )

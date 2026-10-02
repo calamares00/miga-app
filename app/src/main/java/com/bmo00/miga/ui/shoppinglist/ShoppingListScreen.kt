@@ -99,6 +99,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
@@ -110,6 +111,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import com.bmo00.miga.data.model.DEFAULT_SHOPPING_LIST_UID
+import com.bmo00.miga.data.model.ShoppingListInfo
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.model.IngredientCatalogItem
 import com.bmo00.miga.data.model.PredefinedShoppingLists
@@ -137,6 +142,7 @@ import kotlinx.coroutines.launch
 private const val FREQUENT_CHIPS = 10
 private const val QR_SIZE_PX = 720
 private const val CART_KEY = "__cart__"
+private const val SHARED_SYNC_INTERVAL_MILLIS = 20_000L
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -160,6 +166,11 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     val stores by viewModel.stores.collectAsState()
     val selectedStore by viewModel.selectedStore.collectAsState()
     val categoryNames by viewModel.ingredientCategoryNames.collectAsState()
+    val lists by viewModel.lists.collectAsState()
+    val selectedListUid by viewModel.selectedListUid.collectAsState()
+    val author by viewModel.author.collectAsState()
+    var showLists by remember { mutableStateOf(false) }
+    val currentListName = lists.firstOrNull { it.uid == selectedListUid }?.name
     var showStores by remember { mutableStateOf(false) }
     var editingStore by remember { mutableStateOf<ShoppingStore?>(null) }
     val quickAddFocus = remember { FocusRequester() }
@@ -190,6 +201,23 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     }
 
     DisposableEffect(Unit) { onDispose { recognizer?.destroy() } }
+
+    // Mientras la pantalla está visible, trae los cambios de otras personas cada pocos segundos
+    // (el sync periódico en segundo plano es de 15 minutos); sin conexión compartida no hace nada.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                viewModel.syncSharedListsOnce(context)
+                delay(SHARED_SYNC_INTERVAL_MILLIS)
+            }
+        }
+    }
+
+    // Avisos de lo que otras personas añaden a la lista compartida.
+    LaunchedEffect(Unit) {
+        viewModel.remoteAdditions.collect { message -> snackbarHostState.showSnackbar(message) }
+    }
 
     // Texto compartido hacia Miga o botón del widget (ver ShoppingIntents).
     LaunchedEffect(intentEvent) {
@@ -276,7 +304,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text("Lista de la compra") },
+                title = { Text(if (selectedListUid == DEFAULT_SHOPPING_LIST_UID) "Lista de la compra" else currentListName ?: "Lista de la compra") },
                 actions = {
                     IconButton(onClick = { shopMode = !shopMode }) {
                         Icon(
@@ -291,6 +319,11 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                             text = { Text("Añadir varios…") },
                             leadingIcon = { Icon(Icons.Filled.Add, null) },
                             onClick = { showMenu = false; showBulkDialog = true }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Listas y mi nombre…") },
+                            leadingIcon = { Icon(Icons.Filled.Edit, null) },
+                            onClick = { showMenu = false; showLists = true }
                         )
                         DropdownMenuItem(
                             text = { Text("Escanear producto (código de barras)") },
@@ -428,6 +461,30 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                 }
             }
 
+            if (lists.size > 1) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    lists.forEach { list ->
+                        FilterChip(
+                            selected = list.uid == selectedListUid,
+                            onClick = { viewModel.selectList(list.uid) },
+                            label = { Text(list.name) }
+                        )
+                    }
+                    AssistChip(
+                        onClick = { showLists = true },
+                        label = { Text("Listas…") },
+                        leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    )
+                }
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -491,6 +548,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                         item = shoppingItem,
                         shopMode = shopMode,
                         showImage = imagesEnabled,
+                        note = authorNote(shoppingItem, author),
                         onCheckedChange = { viewModel.setChecked(shoppingItem.id, it) },
                         onDelete = {
                             viewModel.deleteItem(shoppingItem) {
@@ -632,6 +690,107 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
             },
             confirmButton = { TextButton(onClick = { showTemplates = false }) { Text("Cerrar") } }
         )
+    }
+
+    if (showLists) {
+        var newListName by remember { mutableStateOf("") }
+        var authorName by remember(author) { mutableStateOf(author) }
+        var renaming by remember { mutableStateOf<ShoppingListInfo?>(null) }
+        AlertDialog(
+            onDismissRequest = {
+                viewModel.setAuthor(authorName)
+                showLists = false
+            },
+            title = { Text("Listas y mi nombre") },
+            text = {
+                LazyColumn(modifier = Modifier.heightIn(max = 420.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    item(key = "author") {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            OutlinedTextField(
+                                value = authorName,
+                                onValueChange = { authorName = it },
+                                label = { Text("Mi nombre en las listas compartidas") },
+                                placeholder = { Text("p. ej. Ana (opcional)") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                "Se muestra al resto de personas para saber quién añadió o marcó cada artículo.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    item(key = "lists_header") {
+                        Text("Listas", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
+                    }
+                    items(lists, key = { "l${it.uid}" }) { list ->
+                        val isDefault = list.uid == DEFAULT_SHOPPING_LIST_UID
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.selectList(list.uid)
+                                    viewModel.setAuthor(authorName)
+                                    showLists = false
+                                }
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = (if (list.uid == selectedListUid) "✓ " else "") + list.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (!isDefault) {
+                                IconButton(onClick = { renaming = list }) { Icon(Icons.Filled.Edit, contentDescription = "Renombrar ${list.name}") }
+                                IconButton(onClick = { viewModel.deleteList(list.uid) }) { Icon(Icons.Filled.Delete, contentDescription = "Borrar ${list.name}") }
+                            }
+                        }
+                    }
+                    item(key = "new_list") {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            OutlinedTextField(
+                                value = newListName,
+                                onValueChange = { newListName = it },
+                                label = { Text("Nueva lista") },
+                                placeholder = { Text("p. ej. Fiesta") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = {
+                                    viewModel.createList(newListName)
+                                    viewModel.setAuthor(authorName)
+                                    showLists = false
+                                },
+                                enabled = newListName.isNotBlank()
+                            ) { Icon(Icons.Filled.Add, contentDescription = "Crear lista") }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.setAuthor(authorName)
+                    showLists = false
+                }) { Text("Listo") }
+            }
+        )
+        renaming?.let { list ->
+            var newName by remember(list.uid) { mutableStateOf(list.name) }
+            AlertDialog(
+                onDismissRequest = { renaming = null },
+                title = { Text("Renombrar lista") },
+                text = {
+                    OutlinedTextField(value = newName, onValueChange = { newName = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.renameList(list.uid, newName); renaming = null }, enabled = newName.isNotBlank()) { Text("Guardar") }
+                },
+                dismissButton = { TextButton(onClick = { renaming = null }) { Text("Cancelar") } }
+            )
+        }
     }
 
     if (showStores) {
@@ -841,7 +1000,7 @@ private fun EmojiBadge(emoji: String, accent: Color, size: Int) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImage: Boolean, onCheckedChange: (Boolean) -> Unit, onDelete: () -> Unit) {
+private fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImage: Boolean, note: String?, onCheckedChange: (Boolean) -> Unit, onDelete: () -> Unit) {
     val style = ShoppingVisuals.categoryStyle(item.categoryName)
     val emoji = ShoppingVisuals.itemEmoji(item.name, item.categoryName)
     val currentChecked = rememberUpdatedState(item.checked)
@@ -878,13 +1037,17 @@ private fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImage
                 }
             }
             Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = formatIngredientText(item.name, item.quantity, item.unit),
-                style = if (shopMode) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
-                textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None,
-                color = if (item.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f)
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = formatIngredientText(item.name, item.quantity, item.unit),
+                    style = if (shopMode) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
+                    textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None,
+                    color = if (item.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                )
+                if (note != null) {
+                    Text(note, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
             if (!shopMode) {
                 IconButton(onClick = onDelete) {
                     Icon(Icons.Filled.Delete, contentDescription = "Quitar artículo", tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1120,4 +1283,11 @@ private fun StoreEditorSheet(
             }
         }
     }
+}
+
+/** "Añadido por Ana" / "Marcado por Luis" si lo hizo otra persona (no uno mismo) y consta quién fue. */
+private fun authorNote(item: ShoppingListItem, me: String): String? {
+    val by = (if (item.checked) item.updatedBy else item.addedBy)?.takeIf { it.isNotBlank() } ?: return null
+    if (by.equals(me.trim(), ignoreCase = true)) return null
+    return if (item.checked) "Marcado por $by" else "Añadido por $by"
 }

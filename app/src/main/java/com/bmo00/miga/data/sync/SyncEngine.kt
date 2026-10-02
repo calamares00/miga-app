@@ -52,7 +52,7 @@ class SyncEngine(private val repository: RecipeRepository) {
             }
             is SyncFetchResult.Success -> {
                 applyChanges(context, connection, fetch.changes)
-                if (connection.syncShopping) repository.applyRemoteShoppingItems(fetch.changes.shoppingItems)
+                if (connection.syncShopping) applyRemoteShopping(fetch.changes)
                 repository.markSyncSuccess(connectionId, fetch.changes.latestRevision)
                 fetch.changes.books.size + fetch.changes.recipes.size + fetch.changes.photos.size
             }
@@ -71,8 +71,14 @@ class SyncEngine(private val repository: RecipeRepository) {
         return SyncOutcome.Success(pulled, pushed)
     }
 
+    /** Las listas se aplican antes que los artículos: un artículo de una lista nueva necesita que su lista ya exista aquí. */
+    private suspend fun applyRemoteShopping(changes: ChangesResponseDto) {
+        repository.applyRemoteShoppingLists(changes.shoppingLists)
+        repository.applyRemoteShoppingItems(changes.shoppingItems)
+    }
+
     /**
-     * Lista de la compra compartida: la primera vez tras activarla baja la lista completa del
+     * Listas de la compra compartidas: la primera vez tras activarla baja la lista completa del
      * servidor (el cursor normal ya pasó de sus revisiones), y después sube los cambios locales
      * pendientes. Un 409 se resuelve con la copia del servidor (última escritura gana); un fallo de
      * red deja lo pendiente marcado para el próximo sync. Devuelve cuántos artículos se subieron.
@@ -87,12 +93,31 @@ class SyncEngine(private val repository: RecipeRepository) {
                     return 0
                 }
                 is SyncFetchResult.Success -> {
-                    repository.applyRemoteShoppingItems(full.changes.shoppingItems)
+                    applyRemoteShopping(full.changes)
                     repository.markShoppingInitialPullDone(connection.id)
                 }
             }
         }
         var pushed = 0
+        // Primero las listas (un artículo de una lista nueva necesita que el servidor ya la conozca).
+        for (list in repository.getDirtyShoppingLists()) {
+            val result = if (list.deletedAt != null) {
+                SyncClient.deleteShoppingList(connection, list.uid, list.updatedAt)
+            } else {
+                SyncClient.pushShoppingList(connection, list)
+            }
+            when (result) {
+                is SyncPushResult.Applied -> {
+                    repository.markShoppingListSynced(list.uid, list.updatedAt)
+                    pushed++
+                }
+                is SyncPushResult.Conflict -> repository.applyRemoteShoppingLists(listOf(result.serverCopy))
+                is SyncPushResult.Error -> {
+                    repository.markSyncError(connection.id, result.reason)
+                    return pushed
+                }
+            }
+        }
         for (item in repository.getDirtyShoppingItems()) {
             val result = if (item.deletedAt != null) {
                 SyncClient.deleteShoppingItem(connection, item.uid, item.updatedAt)

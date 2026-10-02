@@ -78,6 +78,24 @@ object SyncClient {
     suspend fun pushShoppingItem(connection: SyncConnection, dto: ShoppingItemSyncDto): SyncPushResult<ShoppingItemSyncDto> =
         pushJson(connection, "PUT", "/sync/shopping/${dto.uid}", ShoppingItemSyncDto.serializer(), dto, ShoppingItemSyncDto.serializer())
 
+    suspend fun pushShoppingList(connection: SyncConnection, dto: ShoppingListSyncDto): SyncPushResult<ShoppingListSyncDto> =
+        pushJson(connection, "PUT", "/sync/shopping-lists/${dto.uid}", ShoppingListSyncDto.serializer(), dto, ShoppingListSyncDto.serializer())
+
+    suspend fun deleteShoppingList(connection: SyncConnection, uid: String, at: Long): SyncPushResult<ShoppingListSyncDto> = withContext(Dispatchers.IO) {
+        try {
+            val result = request(connection, "DELETE", "/sync/shopping-lists/$uid?at=$at", body = null)
+            if (result.code == HttpURLConnection.HTTP_NOT_FOUND) {
+                SyncPushResult.Applied(0)
+            } else {
+                interpretPushResponse(result, ShoppingListSyncDto.serializer())
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            SyncPushResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+        }
+    }
+
     /** Un 404 (el servidor nunca llegó a conocer ese artículo) cuenta como borrado aplicado: no hay nada que borrar allí. */
     suspend fun deleteShoppingItem(connection: SyncConnection, uid: String, at: Long): SyncPushResult<ShoppingItemSyncDto> = withContext(Dispatchers.IO) {
         try {

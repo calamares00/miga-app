@@ -219,3 +219,30 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
         )
     }
 }
+
+/**
+ * v15 -> v16: varias listas de la compra y autoría. Los artículos ganan `listUid` ("main" = la lista
+ * por defecto, donde caen todos los ya existentes), `addedBy` y `updatedBy` (nombre opcional de quien
+ * los añadió/marcó en una lista compartida); y se crea `shopping_lists` para las listas adicionales.
+ */
+val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE shopping_list_items ADD COLUMN listUid TEXT NOT NULL DEFAULT 'main'")
+        db.execSQL("ALTER TABLE shopping_list_items ADD COLUMN addedBy TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE shopping_list_items ADD COLUMN updatedBy TEXT DEFAULT NULL")
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS shopping_lists (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                uid TEXT NOT NULL,
+                name TEXT NOT NULL,
+                createdAt INTEGER NOT NULL,
+                updatedAt INTEGER NOT NULL,
+                deletedAt INTEGER DEFAULT NULL,
+                syncDirty INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_shopping_lists_uid ON shopping_lists(uid)")
+    }
+}

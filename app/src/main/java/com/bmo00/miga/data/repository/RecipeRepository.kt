@@ -20,6 +20,7 @@ import com.bmo00.miga.data.local.entity.RecipeTagCrossRef
 import com.bmo00.miga.data.local.entity.RecipeUtensilCrossRef
 import com.bmo00.miga.data.local.entity.RecipeWithDetails
 import com.bmo00.miga.data.local.entity.ShoppingHistoryEntity
+import com.bmo00.miga.data.local.entity.ShoppingListEntity
 import com.bmo00.miga.data.local.entity.ShoppingListItemEntity
 import com.bmo00.miga.data.local.entity.ShoppingStoreEntity
 import com.bmo00.miga.data.local.entity.ShoppingTemplateEntity
@@ -44,7 +45,10 @@ import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.model.RecipeDraft
 import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ParsedShoppingEntry
+import com.bmo00.miga.data.model.DEFAULT_SHOPPING_LIST_NAME
+import com.bmo00.miga.data.model.DEFAULT_SHOPPING_LIST_UID
 import com.bmo00.miga.data.model.ShoppingListGroup
+import com.bmo00.miga.data.model.ShoppingListInfo
 import com.bmo00.miga.data.model.ShoppingListItem
 import com.bmo00.miga.data.model.ShoppingStore
 import com.bmo00.miga.data.model.ShoppingSuggestion
@@ -54,12 +58,15 @@ import com.bmo00.miga.data.model.StepGroup
 import com.bmo00.miga.data.model.SyncConnection
 import com.bmo00.miga.data.model.UNCATEGORIZED_INGREDIENT_LABEL
 import com.bmo00.miga.data.sync.ShoppingItemSyncDto
+import com.bmo00.miga.data.sync.ShoppingListSyncDto
 import com.bmo00.miga.data.sync.BookSyncDto
 import com.bmo00.miga.data.sync.PhotoMetaDto
 import com.bmo00.miga.data.sync.RecipeSyncDto
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 
@@ -78,6 +85,7 @@ data class WipeResult(val bookCount: Int, val recipeCount: Int)
  */
 class RecipeRepository(
     private val db: AppDatabase,
+    private val shoppingContext: ShoppingContext = ShoppingContext.Default,
     private val onSyncChangeEnqueued: (connectionId: Long) -> Unit = {}
 ) {
 
@@ -92,6 +100,7 @@ class RecipeRepository(
     private val shoppingHistoryDao = db.shoppingHistoryDao()
     private val shoppingTemplateDao = db.shoppingTemplateDao()
     private val shoppingStoreDao = db.shoppingStoreDao()
+    private val shoppingListsDao = db.shoppingListsDao()
     private val syncConnectionDao = db.syncConnectionDao()
     private val pendingSyncChangeDao = db.pendingSyncChangeDao()
 
@@ -491,15 +500,40 @@ class RecipeRepository(
 
     // --- Lista de la compra ---
 
-    /** Lista persistente agrupada por categoría de ingrediente (ver ingredient_categories); sin categoría al final. */
+    private suspend fun currentShoppingListUid(): String = shoppingContext.listUid.first()
+
+    /** Nombre con el que se firman los cambios, o null si el usuario no ha indicado ninguno. */
+    private suspend fun currentShoppingAuthor(): String? = shoppingContext.author.first().trim().takeIf { it.isNotEmpty() }
+
+    /** Lista actual agrupada por categoría de ingrediente (ver ingredient_categories); sin categoría al final. */
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun observeShoppingList(): Flow<List<ShoppingListGroup>> =
-        combine(shoppingListDao.observeAll(), ingredientCatalogDao.observeAll(), ingredientCategoryDao.observeAll()) { items, catalog, categories ->
+        shoppingContext.listUid.flatMapLatest { listUid -> observeShoppingGroups(listUid) }
+
+    /** Igual que [observeShoppingList] pero acompañada del uid de la lista a la que pertenece cada emisión (sin desfases al cambiar de lista). */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeShoppingListSnapshots(): Flow<Pair<String, List<ShoppingListGroup>>> =
+        shoppingContext.listUid.flatMapLatest { listUid -> observeShoppingGroups(listUid).map { listUid to it } }
+
+    private fun observeShoppingGroups(listUid: String): Flow<List<ShoppingListGroup>> =
+        combine(shoppingListDao.observeAll(listUid), ingredientCatalogDao.observeAll(), ingredientCategoryDao.observeAll()) { items, catalog, categories ->
             val categoryNameById = categories.associateBy({ it.id }, { it.name })
             val categoryIdByIngredientName = catalog.associate { it.name.trim().lowercase() to it.categoryId }
             items.map { entity ->
                 val categoryId = categoryIdByIngredientName[entity.normalizedName]
                 val categoryName = categoryId?.let { categoryNameById[it] } ?: UNCATEGORIZED_INGREDIENT_LABEL
-                ShoppingListItem(entity.id, entity.name, entity.quantity, entity.unit, entity.checked, categoryName, entity.imageUrl)
+                ShoppingListItem(
+                    id = entity.id,
+                    name = entity.name,
+                    quantity = entity.quantity,
+                    unit = entity.unit,
+                    checked = entity.checked,
+                    categoryName = categoryName,
+                    imageUrl = entity.imageUrl,
+                    uid = entity.uid,
+                    addedBy = entity.addedBy,
+                    updatedBy = entity.updatedBy
+                )
             }
                 .groupBy { it.categoryName }
                 .toSortedMap(compareBy { if (it == UNCATEGORIZED_INGREDIENT_LABEL) "￿" else it.lowercase() })
@@ -507,7 +541,7 @@ class RecipeRepository(
         }
 
     /**
-     * Añade ingredientes (de una receta, o de varias) a la lista, fusionando por nombre
+     * Añade ingredientes (de una receta, o de varias) a la lista actual, fusionando por nombre
      * normalizado + unidad cuando ambos lados tienen cantidad; si no, inserta una fila nueva.
      */
     suspend fun addIngredientsToShoppingList(ingredients: List<Ingredient>, recordHistory: Boolean = false) {
@@ -515,33 +549,49 @@ class RecipeRepository(
         notifyShoppingListChanged()
     }
 
-    private suspend fun addIngredientsToShoppingListInTransaction(ingredients: List<Ingredient>, recordHistory: Boolean) = db.withTransaction {
-        val now = System.currentTimeMillis()
-        ingredients.forEach { ingredient ->
-            val trimmedName = ingredient.name.trim()
-            if (trimmedName.isEmpty()) return@forEach
-            val normalized = trimmedName.lowercase()
-            val trimmedUnit = ingredient.unit?.trim()?.takeIf { it.isNotBlank() }
-            val existing = if (ingredient.quantity != null) shoppingListDao.findMergeable(normalized, trimmedUnit) else null
-            if (existing != null) {
-                shoppingListDao.update(existing.copy(quantity = existing.quantity!! + ingredient.quantity!!, updatedAt = now, syncDirty = true))
-            } else {
-                shoppingListDao.insert(
-                    ShoppingListItemEntity(name = trimmedName, normalizedName = normalized, quantity = ingredient.quantity, unit = trimmedUnit, createdAt = now, syncDirty = true)
-                )
-            }
-            if (recordHistory) {
-                val previous = shoppingHistoryDao.find(normalized)
-                shoppingHistoryDao.upsert(
-                    ShoppingHistoryEntity(
-                        normalizedName = normalized,
-                        name = trimmedName,
-                        lastQuantity = ingredient.quantity ?: previous?.lastQuantity,
-                        lastUnit = if (ingredient.quantity != null) trimmedUnit else previous?.lastUnit,
-                        uses = (previous?.uses ?: 0) + 1,
-                        lastUsedAt = now
+    private suspend fun addIngredientsToShoppingListInTransaction(ingredients: List<Ingredient>, recordHistory: Boolean) {
+        val listUid = currentShoppingListUid()
+        val author = currentShoppingAuthor()
+        db.withTransaction {
+            val now = System.currentTimeMillis()
+            ingredients.forEach { ingredient ->
+                val trimmedName = ingredient.name.trim()
+                if (trimmedName.isEmpty()) return@forEach
+                val normalized = trimmedName.lowercase()
+                val trimmedUnit = ingredient.unit?.trim()?.takeIf { it.isNotBlank() }
+                val existing = if (ingredient.quantity != null) shoppingListDao.findMergeable(listUid, normalized, trimmedUnit) else null
+                if (existing != null) {
+                    shoppingListDao.update(
+                        existing.copy(quantity = existing.quantity!! + ingredient.quantity!!, updatedAt = now, updatedBy = author, syncDirty = true)
                     )
-                )
+                } else {
+                    shoppingListDao.insert(
+                        ShoppingListItemEntity(
+                            name = trimmedName,
+                            normalizedName = normalized,
+                            quantity = ingredient.quantity,
+                            unit = trimmedUnit,
+                            createdAt = now,
+                            syncDirty = true,
+                            listUid = listUid,
+                            addedBy = author,
+                            updatedBy = author
+                        )
+                    )
+                }
+                if (recordHistory) {
+                    val previous = shoppingHistoryDao.find(normalized)
+                    shoppingHistoryDao.upsert(
+                        ShoppingHistoryEntity(
+                            normalizedName = normalized,
+                            name = trimmedName,
+                            lastQuantity = ingredient.quantity ?: previous?.lastQuantity,
+                            lastUnit = if (ingredient.quantity != null) trimmedUnit else previous?.lastUnit,
+                            uses = (previous?.uses ?: 0) + 1,
+                            lastUsedAt = now
+                        )
+                    )
+                }
             }
         }
     }
@@ -556,6 +606,7 @@ class RecipeRepository(
 
     /** Reinserta un artículo quitado por error (deshacer); no fusiona con filas existentes. */
     suspend fun restoreShoppingListItem(item: ShoppingListItem) {
+        val author = currentShoppingAuthor()
         shoppingListDao.insert(
             ShoppingListItemEntity(
                 name = item.name,
@@ -564,7 +615,11 @@ class RecipeRepository(
                 unit = item.unit,
                 checked = item.checked,
                 createdAt = System.currentTimeMillis(),
-                syncDirty = true
+                syncDirty = true,
+                imageUrl = item.imageUrl,
+                listUid = currentShoppingListUid(),
+                addedBy = item.addedBy ?: author,
+                updatedBy = author
             )
         )
         notifyShoppingListChanged()
@@ -581,15 +636,28 @@ class RecipeRepository(
         if (trimmed.isEmpty()) return
         val normalized = trimmed.lowercase()
         val now = System.currentTimeMillis()
+        val listUid = currentShoppingListUid()
+        val author = currentShoppingAuthor()
         db.withTransaction {
-            val existing = shoppingListDao.findLiveByName(normalized)
+            val existing = shoppingListDao.findLiveByName(listUid, normalized)
             if (existing != null) {
                 if (existing.imageUrl == null && imageUrl != null) {
-                    shoppingListDao.update(existing.copy(imageUrl = imageUrl, updatedAt = now, syncDirty = true))
+                    shoppingListDao.update(existing.copy(imageUrl = imageUrl, updatedAt = now, updatedBy = author, syncDirty = true))
                 }
             } else {
                 shoppingListDao.insert(
-                    ShoppingListItemEntity(name = trimmed, normalizedName = normalized, quantity = null, unit = null, createdAt = now, syncDirty = true, imageUrl = imageUrl)
+                    ShoppingListItemEntity(
+                        name = trimmed,
+                        normalizedName = normalized,
+                        quantity = null,
+                        unit = null,
+                        createdAt = now,
+                        syncDirty = true,
+                        imageUrl = imageUrl,
+                        listUid = listUid,
+                        addedBy = author,
+                        updatedBy = author
+                    )
                 )
             }
             val previous = shoppingHistoryDao.find(normalized)
@@ -603,6 +671,45 @@ class RecipeRepository(
                     lastUsedAt = now
                 )
             )
+        }
+        notifyShoppingListChanged()
+    }
+
+    // --- Varias listas de la compra ---
+
+    /** La lista por defecto (siempre la primera) y las adicionales del usuario. */
+    fun observeShoppingLists(): Flow<List<ShoppingListInfo>> =
+        shoppingListsDao.observeAll().map { rows ->
+            listOf(ShoppingListInfo(DEFAULT_SHOPPING_LIST_UID, DEFAULT_SHOPPING_LIST_NAME)) + rows.map { ShoppingListInfo(it.uid, it.name) }
+        }
+
+    /** Crea una lista adicional y devuelve su uid (null si el nombre está vacío). */
+    suspend fun createShoppingList(name: String): String? {
+        val trimmed = name.trim().take(60)
+        if (trimmed.isEmpty()) return null
+        val now = System.currentTimeMillis()
+        val entity = ShoppingListEntity(name = trimmed, createdAt = now, syncDirty = true)
+        shoppingListsDao.insert(entity)
+        notifyShoppingListChanged()
+        return entity.uid
+    }
+
+    suspend fun renameShoppingList(uid: String, name: String) {
+        val trimmed = name.trim().take(60)
+        if (trimmed.isEmpty() || uid == DEFAULT_SHOPPING_LIST_UID) return
+        val existing = shoppingListsDao.findByUid(uid) ?: return
+        shoppingListsDao.update(existing.copy(name = trimmed, updatedAt = System.currentTimeMillis(), syncDirty = true))
+        notifyShoppingListChanged()
+    }
+
+    /** Borra una lista adicional con todos sus artículos (tombstones, para que otras apps también la borren). */
+    suspend fun deleteShoppingList(uid: String) {
+        if (uid == DEFAULT_SHOPPING_LIST_UID) return
+        val existing = shoppingListsDao.findByUid(uid) ?: return
+        val now = System.currentTimeMillis()
+        db.withTransaction {
+            shoppingListDao.softDeleteAll(uid, now)
+            shoppingListsDao.update(existing.copy(deletedAt = now, updatedAt = now, syncDirty = true))
         }
         notifyShoppingListChanged()
     }
@@ -645,7 +752,7 @@ class RecipeRepository(
     suspend fun deleteShoppingTemplate(id: Long) = shoppingTemplateDao.delete(id)
 
     suspend fun setShoppingListItemChecked(id: Long, checked: Boolean) {
-        shoppingListDao.setChecked(id, checked, System.currentTimeMillis())
+        shoppingListDao.setChecked(id, checked, System.currentTimeMillis(), currentShoppingAuthor())
         notifyShoppingListChanged()
     }
 
@@ -656,32 +763,38 @@ class RecipeRepository(
     }
 
     suspend fun clearShoppingList() {
-        shoppingListDao.softDeleteAll(System.currentTimeMillis())
+        shoppingListDao.softDeleteAll(currentShoppingListUid(), System.currentTimeMillis())
         notifyShoppingListChanged()
     }
 
     suspend fun clearCheckedShoppingListItems() {
-        shoppingListDao.softDeleteChecked(System.currentTimeMillis())
+        shoppingListDao.softDeleteChecked(currentShoppingListUid(), System.currentTimeMillis())
         notifyShoppingListChanged()
     }
 
-    // --- Lista de la compra compartida (sincronización) ---
+    // --- Listas de la compra compartidas (sincronización) ---
 
-    /** Si hay una conexión que comparte la lista, pide una subida en segundo plano (mismo mecanismo que el outbox de libros). */
+    /** Si hay una conexión que comparte las listas, pide una subida en segundo plano (mismo mecanismo que el outbox de libros). */
     private suspend fun notifyShoppingListChanged() {
         syncConnectionDao.getShoppingSyncConnection()?.let { onSyncChangeEnqueued(it.id) }
         purgeShoppingTombstonesIfNotShared()
     }
 
-    /** Sin conexión que la comparta, los tombstones no sirven para nada: se limpian en cuanto se crean. */
+    /** Sin conexión que las comparta, los tombstones no sirven para nada: se limpian en cuanto se crean. */
     private suspend fun purgeShoppingTombstonesIfNotShared() {
-        if (syncConnectionDao.getShoppingSyncConnection() == null) shoppingListDao.purgeAllTombstones()
+        if (syncConnectionDao.getShoppingSyncConnection() == null) {
+            shoppingListDao.purgeAllTombstones()
+            shoppingListsDao.purgeAllTombstones()
+        }
     }
 
+    /** Id de la conexión que comparte las listas de la compra, o null si ninguna. */
+    suspend fun getShoppingSyncConnectionId(): Long? = syncConnectionDao.getShoppingSyncConnection()?.id
+
     /**
-     * Activa (o desactiva, con null) la compartición de la lista de la compra a través de la
-     * conexión [connectionId]; como mucho una conexión a la vez. Al activar, todos los artículos
-     * actuales se marcan para subir y la próxima sincronización baja además la lista completa del
+     * Activa (o desactiva, con null) la compartición de las listas de la compra a través de la
+     * conexión [connectionId]; como mucho una conexión a la vez. Al activar, todos los artículos y
+     * listas actuales se marcan para subir y la próxima sincronización baja además todo lo del
      * servidor (los artículos de ambos lados se combinan, sin fusionar duplicados).
      */
     suspend fun setShoppingSyncConnection(connectionId: Long?) {
@@ -690,9 +803,12 @@ class RecipeRepository(
             if (connectionId != null) {
                 syncConnectionDao.enableShoppingSync(connectionId)
                 shoppingListDao.purgeAllTombstones()
+                shoppingListsDao.purgeAllTombstones()
                 shoppingListDao.markAllLiveDirty()
+                shoppingListsDao.markAllLiveDirty()
             } else {
                 shoppingListDao.purgeAllTombstones()
+                shoppingListsDao.purgeAllTombstones()
             }
         }
         connectionId?.let { onSyncChangeEnqueued(it) }
@@ -700,16 +816,28 @@ class RecipeRepository(
 
     suspend fun markShoppingInitialPullDone(connectionId: Long) = syncConnectionDao.markShoppingPulled(connectionId)
 
-    /** Cambios locales de la lista pendientes de subir (incluye tombstones: deletedAt != null). */
+    /** Cambios locales de las listas pendientes de subir (incluye tombstones: deletedAt != null). */
+    suspend fun getDirtyShoppingLists(): List<ShoppingListSyncDto> =
+        shoppingListsDao.getDirty().map { ShoppingListSyncDto(uid = it.uid, name = it.name, updatedAt = it.updatedAt, deletedAt = it.deletedAt) }
+
+    suspend fun markShoppingListSynced(uid: String, updatedAt: Long) = db.withTransaction {
+        shoppingListsDao.markSynced(uid, updatedAt)
+        shoppingListsDao.purgeSyncedTombstones()
+    }
+
+    /** Cambios locales de artículos pendientes de subir (incluye tombstones: deletedAt != null). */
     suspend fun getDirtyShoppingItems(): List<ShoppingItemSyncDto> =
         shoppingListDao.getDirty().map { entity ->
             ShoppingItemSyncDto(
                 uid = entity.uid,
+                listId = entity.listUid,
                 name = entity.name,
                 quantity = entity.quantity,
                 unit = entity.unit,
                 checked = entity.checked,
                 imageUrl = entity.imageUrl,
+                addedBy = entity.addedBy,
+                updatedBy = entity.updatedBy,
                 updatedAt = entity.updatedAt,
                 deletedAt = entity.deletedAt
             )
@@ -719,6 +847,27 @@ class RecipeRepository(
     suspend fun markShoppingItemSynced(uid: String, updatedAt: Long) = db.withTransaction {
         shoppingListDao.markSynced(uid, updatedAt)
         shoppingListDao.purgeSyncedTombstones()
+    }
+
+    /** Aplica listas bajadas del servidor con "última escritura gana"; borrar una lista borra también sus artículos locales. */
+    suspend fun applyRemoteShoppingLists(lists: List<ShoppingListSyncDto>) = db.withTransaction {
+        lists.forEach { dto ->
+            if (dto.uid == DEFAULT_SHOPPING_LIST_UID) return@forEach
+            val local = shoppingListsDao.findByUid(dto.uid)
+            if (local != null && local.syncDirty && local.updatedAt > dto.updatedAt) return@forEach
+            if (dto.deletedAt != null) {
+                if (local != null) shoppingListsDao.deleteByUid(dto.uid)
+                shoppingListDao.deleteByListUid(dto.uid)
+                return@forEach
+            }
+            val name = dto.name.trim()
+            if (name.isEmpty()) return@forEach
+            if (local == null) {
+                shoppingListsDao.insert(ShoppingListEntity(uid = dto.uid, name = name, createdAt = dto.updatedAt, updatedAt = dto.updatedAt))
+            } else {
+                shoppingListsDao.update(local.copy(name = name, updatedAt = dto.updatedAt, deletedAt = null, syncDirty = false))
+            }
+        }
     }
 
     /** Aplica artículos bajados del servidor con "última escritura gana" por updatedAt: un cambio local
@@ -733,6 +882,9 @@ class RecipeRepository(
             }
             val name = dto.name.trim()
             if (name.isEmpty()) return@forEach
+            val listUid = dto.listId.ifBlank { DEFAULT_SHOPPING_LIST_UID }
+            // Un artículo de una lista que aquí no existe (ya borrada) no se guarda: quedaría huérfano.
+            if (listUid != DEFAULT_SHOPPING_LIST_UID && shoppingListsDao.findByUid(listUid) == null) return@forEach
             val entity = ShoppingListItemEntity(
                 id = local?.id ?: 0,
                 name = name,
@@ -745,7 +897,10 @@ class RecipeRepository(
                 uid = dto.uid,
                 updatedAt = dto.updatedAt,
                 deletedAt = null,
-                syncDirty = false
+                syncDirty = false,
+                listUid = listUid,
+                addedBy = dto.addedBy,
+                updatedBy = dto.updatedBy
             )
             if (local == null) shoppingListDao.insert(entity) else shoppingListDao.update(entity)
         }

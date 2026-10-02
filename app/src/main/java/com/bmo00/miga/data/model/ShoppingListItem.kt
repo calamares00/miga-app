@@ -9,6 +9,10 @@ package com.bmo00.miga.data.model
  */
 const val UNCATEGORIZED_INGREDIENT_LABEL = "Sin categoría"
 
+/** Uid de la lista de la compra por defecto: existe siempre, sin fila propia, y es la que usaban todos los artículos antes de poder tener varias. */
+const val DEFAULT_SHOPPING_LIST_UID = "main"
+const val DEFAULT_SHOPPING_LIST_NAME = "Compra"
+
 data class ShoppingListItem(
     val id: Long,
     val name: String,
@@ -16,8 +20,15 @@ data class ShoppingListItem(
     val unit: String?,
     val checked: Boolean,
     val categoryName: String,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val uid: String = "",
+    /** Quién lo añadió / quién lo marcó por última vez, si lo indicó (lista compartida); null si no consta. */
+    val addedBy: String? = null,
+    val updatedBy: String? = null
 )
+
+/** Una lista de la compra (la por defecto o una adicional creada por el usuario). */
+data class ShoppingListInfo(val uid: String, val name: String)
 
 data class ShoppingListGroup(
     val categoryName: String,

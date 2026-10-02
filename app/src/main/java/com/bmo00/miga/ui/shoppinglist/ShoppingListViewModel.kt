@@ -10,6 +10,8 @@ import com.bmo00.miga.data.model.IngredientCatalogItem
 import com.bmo00.miga.data.model.ParsedShoppingEntry
 import com.bmo00.miga.data.model.ShoppingEntryParser
 import com.bmo00.miga.data.model.ShoppingListGroup
+import com.bmo00.miga.data.model.DEFAULT_SHOPPING_LIST_UID
+import com.bmo00.miga.data.model.ShoppingListInfo
 import com.bmo00.miga.data.model.ShoppingListItem
 import com.bmo00.miga.data.model.ShoppingStore
 import com.bmo00.miga.data.model.ShoppingSuggestion
@@ -17,8 +19,13 @@ import com.bmo00.miga.data.model.ShoppingTemplate
 import com.bmo00.miga.data.remote.OpenFoodFactsClient
 import com.bmo00.miga.data.remote.ProductLookupResult
 import com.bmo00.miga.data.repository.RecipeRepository
+import com.bmo00.miga.data.sync.SyncEngine
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -46,6 +53,79 @@ class ShoppingListViewModel(
 
     val imagesEnabled: StateFlow<Boolean> = settingsRepository.observeShoppingImagesEnabled()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    private val syncEngine = SyncEngine(repository)
+
+    val lists: StateFlow<List<ShoppingListInfo>> = repository.observeShoppingLists()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf(ShoppingListInfo(DEFAULT_SHOPPING_LIST_UID, "Compra")))
+
+    val selectedListUid: StateFlow<String> = settingsRepository.observeShoppingListUid()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_SHOPPING_LIST_UID)
+
+    /** Nombre con el que se firman los cambios en una lista compartida (vacío = sin firma). */
+    val author: StateFlow<String> = settingsRepository.observeShoppingAuthor()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    fun selectList(uid: String) {
+        viewModelScope.launch { settingsRepository.setShoppingListUid(uid) }
+    }
+
+    fun createList(name: String) {
+        viewModelScope.launch {
+            repository.createShoppingList(name)?.let { settingsRepository.setShoppingListUid(it) }
+        }
+    }
+
+    fun renameList(uid: String, name: String) {
+        viewModelScope.launch { repository.renameShoppingList(uid, name) }
+    }
+
+    fun deleteList(uid: String) {
+        viewModelScope.launch {
+            if (selectedListUid.value == uid) settingsRepository.setShoppingListUid(DEFAULT_SHOPPING_LIST_UID)
+            repository.deleteShoppingList(uid)
+        }
+    }
+
+    fun setAuthor(name: String) {
+        viewModelScope.launch { settingsRepository.setShoppingAuthor(name) }
+    }
+
+    /** Sincroniza ahora la conexión que comparte las listas (si hay una); la pantalla lo repite mientras está visible. */
+    suspend fun syncSharedListsOnce(context: Context) {
+        val connectionId = repository.getShoppingSyncConnectionId() ?: return
+        syncEngine.syncConnection(context, connectionId)
+    }
+
+    /**
+     * Avisos de "Ana añadió 2 artículos" cuando llegan artículos nuevos de otra persona (por sync) a la
+     * lista que se está viendo. La primera carga de cada lista no avisa (todo sería "nuevo").
+     */
+    private val _remoteAdditions = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    val remoteAdditions: SharedFlow<String> = _remoteAdditions.asSharedFlow()
+    private var announcedListUid: String? = null
+    private var knownItemUids: Set<String> = emptySet()
+
+    init {
+        viewModelScope.launch {
+            repository.observeShoppingListSnapshots()
+                .collect { (listUid, snapshot) ->
+                    val items = snapshot.flatMap { it.items }
+                    val me = settingsRepository.observeShoppingAuthor().first()
+                    val uids = items.map { it.uid }.toSet()
+                    if (announcedListUid == listUid) {
+                        val others = items.filter { it.uid !in knownItemUids && !it.addedBy.isNullOrBlank() && !it.addedBy.equals(me, ignoreCase = true) }
+                        if (others.isNotEmpty()) {
+                            val who = others.map { it.addedBy!! }.distinct()
+                            val names = if (who.size == 1) who.single() else "Varias personas"
+                            _remoteAdditions.tryEmit("$names añadió ${if (others.size == 1) "1 artículo" else "${others.size} artículos"}")
+                        }
+                    }
+                    announcedListUid = listUid
+                    knownItemUids = uids
+                }
+        }
+    }
 
     val stores: StateFlow<List<ShoppingStore>> = repository.observeShoppingStores()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
