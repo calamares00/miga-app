@@ -92,7 +92,14 @@ object ProductScoring {
     fun additivesSubscore(additives: List<String>?): Pair<Int, Boolean> {
         val risks = additives.orEmpty().map { additiveRisk(it) }
         if (AdditiveRisk.HIGH in risks) return 0 to true
-        val penalty = risks.sumOf { if (it == AdditiveRisk.MODERATE) 25 else if (it == AdditiveRisk.LIMITED) 10 else 0 }
+        // fold en vez de sumOf: con literales enteros en las ramas, sumOf es ambiguo entre sus sobrecargas (Int/Long/...).
+        val penalty = risks.fold(0) { total, risk ->
+            total + when (risk) {
+                AdditiveRisk.MODERATE -> 25
+                AdditiveRisk.LIMITED -> 10
+                else -> 0
+            }
+        }
         return (100 - penalty).coerceAtLeast(0) to false
     }
 
