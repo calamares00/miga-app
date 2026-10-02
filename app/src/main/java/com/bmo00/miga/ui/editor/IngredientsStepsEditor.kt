@@ -147,6 +147,7 @@ private fun IngredientRow(row: IngredientRowUi, availableNames: List<String>, on
 fun StepsEditor(viewModel: RecipeEditorViewModel) {
     val context = LocalContext.current
     val speechAvailable = remember { SpeechDictation.isAvailable(context) }
+    val dictationLanguage = com.bmo00.miga.ui.components.rememberDictationLanguage()
     // Solo puede haber una grabación activa a la vez (un único SpeechRecognizer); se destruye al
     // terminar (éxito, error o cancelación) y también si la pantalla se abandona a mitad.
     var activeRecognizer by remember { mutableStateOf<SpeechRecognizer?>(null) }
@@ -157,7 +158,7 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
         row.dictationError = null
         row.isRecording = true
         recordingRow = row
-        activeRecognizer = SpeechDictation.startListening(context) { result ->
+        activeRecognizer = SpeechDictation.startListening(context, dictationLanguage) { result ->
             row.isRecording = false
             recordingRow = null
             activeRecognizer?.destroy()

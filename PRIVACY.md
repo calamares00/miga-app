@@ -85,7 +85,12 @@ correspondiente esté activada.
    compartes la lista, en tu propio servidor. Las fotos de producto solo se
    descargan si activas "Mostrar fotos de productos" (desactivado por
    defecto) o cuando abres la ficha de un producto, y entonces se piden a los
-   servidores de Open Food Facts.
+   servidores de Open Food Facts. También puedes buscar productos por nombre
+   (Lista de la compra → Buscar en Open Food Facts): el texto que escribes se
+   envía a Open Food Facts y se descargan las miniaturas de los resultados.
+
+El dictado por voz usa el reconocimiento de voz de Android en el idioma que
+elijas en Ajustes; Miga no recibe ni guarda el audio.
 
 Miga también puede recibir texto que compartas desde otras apps hacia la
 lista de la compra; ese texto se queda en tu dispositivo.

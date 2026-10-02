@@ -18,9 +18,12 @@ import com.bmo00.miga.data.model.ShoppingSuggestion
 import com.bmo00.miga.data.model.ShoppingTemplate
 import com.bmo00.miga.data.remote.OpenFoodFactsClient
 import com.bmo00.miga.data.remote.ProductLookupResult
+import com.bmo00.miga.data.remote.ProductSearchResult
+import com.bmo00.miga.data.remote.ScannedProduct
 import com.bmo00.miga.data.repository.RecipeRepository
 import com.bmo00.miga.data.sync.SyncEngine
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
@@ -30,6 +33,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/** Estado de la búsqueda de productos en Open Food Facts. */
+sealed interface ProductSearchState {
+    data object Idle : ProductSearchState
+    data object Loading : ProductSearchState
+    data class Results(val products: List<ScannedProduct>) : ProductSearchState
+    data class Error(val reason: String) : ProductSearchState
+}
 
 class ShoppingListViewModel(
     private val repository: RecipeRepository,
@@ -58,6 +69,37 @@ class ShoppingListViewModel(
 
     val lists: StateFlow<List<ShoppingListInfo>> = repository.observeShoppingLists()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf(ShoppingListInfo(DEFAULT_SHOPPING_LIST_UID, "Compra")))
+
+    /** Artículos pendientes de cada lista (uid -> cantidad), para mostrarlos en las pestañas de listas. */
+    val listCounts: StateFlow<Map<String, Int>> = repository.observeShoppingListPendingCounts()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    private val _searchState = MutableStateFlow<ProductSearchState>(ProductSearchState.Idle)
+    val searchState: StateFlow<ProductSearchState> = _searchState
+
+    /** Busca productos por nombre en Open Food Facts (solo al enviar la búsqueda, no en cada tecla). */
+    fun searchProducts(query: String, spainOnly: Boolean) {
+        if (query.trim().length < 2) {
+            _searchState.value = ProductSearchState.Idle
+            return
+        }
+        viewModelScope.launch {
+            _searchState.value = ProductSearchState.Loading
+            _searchState.value = when (val result = OpenFoodFactsClient.search(query, spainOnly)) {
+                is ProductSearchResult.Success -> ProductSearchState.Results(result.products)
+                is ProductSearchResult.Error -> ProductSearchState.Error(result.reason)
+            }
+        }
+    }
+
+    fun clearSearch() {
+        _searchState.value = ProductSearchState.Idle
+    }
+
+    /** Añade a la lista actual un producto elegido en la búsqueda (con su foto y su ficha). */
+    fun addSearchedProduct(product: ScannedProduct) {
+        viewModelScope.launch { repository.addScannedShoppingProduct(product.name, product.imageUrl, product.info) }
+    }
 
     val selectedListUid: StateFlow<String> = settingsRepository.observeShoppingListUid()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_SHOPPING_LIST_UID)

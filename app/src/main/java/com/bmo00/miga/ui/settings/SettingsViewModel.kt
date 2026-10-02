@@ -167,6 +167,13 @@ class SettingsViewModel(
     val ttsVoiceName: StateFlow<String?> = settingsRepository.observeTtsVoiceName()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    val dictationLanguage: StateFlow<String> = settingsRepository.observeDictationLanguage()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.bmo00.miga.data.voice.DictationLanguages.DEFAULT)
+
+    fun setDictationLanguage(tag: String) {
+        viewModelScope.launch { settingsRepository.setDictationLanguage(tag) }
+    }
+
     fun setTtsVoiceName(name: String?) {
         viewModelScope.launch { settingsRepository.setTtsVoiceName(name) }
     }

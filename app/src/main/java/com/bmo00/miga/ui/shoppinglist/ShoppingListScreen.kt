@@ -57,6 +57,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Stop
@@ -125,6 +126,8 @@ import coil.compose.AsyncImage
 import com.bmo00.miga.data.model.IngredientCatalogItem
 import com.bmo00.miga.data.model.PredefinedShoppingLists
 import com.bmo00.miga.data.model.ProductInfo
+import com.bmo00.miga.data.remote.ScannedProduct
+import androidx.compose.material3.CircularProgressIndicator
 import com.bmo00.miga.data.model.ProductLabels
 import com.bmo00.miga.data.model.ShoppingAisleOrder
 import com.bmo00.miga.data.model.ShoppingStore
@@ -142,12 +145,12 @@ import com.bmo00.miga.data.model.formatIngredientText
 import com.bmo00.miga.data.share.ShoppingListShareCodec
 import com.bmo00.miga.data.voice.DictationResult
 import com.bmo00.miga.data.voice.SpeechDictation
+import com.bmo00.miga.ui.components.rememberDictationLanguage
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private const val FREQUENT_CHIPS = 10
 private const val QR_SIZE_PX = 720
 private const val CART_KEY = "__cart__"
 private const val SHARED_SYNC_INTERVAL_MILLIS = 20_000L
@@ -165,6 +168,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     var scannedEntries by remember { mutableStateOf<List<ParsedShoppingEntry>?>(null) }
     var quickText by remember { mutableStateOf("") }
     var shopMode by remember { mutableStateOf(false) }
+    val dictationLanguage = rememberDictationLanguage()
     var showCatalog by remember { mutableStateOf(false) }
     var showTemplates by remember { mutableStateOf(false) }
     var showSaveTemplate by remember { mutableStateOf(false) }
@@ -179,6 +183,10 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     val author by viewModel.author.collectAsState()
     var showLists by remember { mutableStateOf(false) }
     var productDetail by remember { mutableStateOf<ShoppingListItem?>(null) }
+    var showProductSearch by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var showNewList by remember { mutableStateOf(false) }
+    val listCounts by viewModel.listCounts.collectAsState()
     val currentListName = lists.firstOrNull { it.uid == selectedListUid }?.name
     var showStores by remember { mutableStateOf(false) }
     var editingStore by remember { mutableStateOf<ShoppingStore?>(null) }
@@ -252,7 +260,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     }
     val suggestions = remember(quickText, typedEntry, history, catalogNames) {
         when {
-            quickText.isBlank() -> history.take(FREQUENT_CHIPS)
+            quickText.isBlank() -> emptyList()
             typedEntry == null -> emptyList()
             else -> ShoppingSuggestions.rank(typedEntry.name, history, catalogNames)
         }
@@ -269,7 +277,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
         }
         recognizer?.destroy()
         listening = true
-        recognizer = SpeechDictation.startListening(context) { result ->
+        recognizer = SpeechDictation.startListening(context, dictationLanguage) { result ->
             listening = false
             when (result) {
                 is DictationResult.Success -> {
@@ -307,6 +315,17 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
         if (contents != null) viewModel.addScannedProduct(contents.trim()) { showMessage(it) }
     }
 
+    fun launchProductScan() {
+        productScanLauncher.launch(
+            ScanOptions().apply {
+                setDesiredBarcodeFormats(ScanOptions.PRODUCT_CODE_TYPES)
+                setPrompt("Apunta al código de barras del producto")
+                setBeepEnabled(false)
+                setOrientationLocked(false)
+            }
+        )
+    }
+
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -337,17 +356,12 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                         DropdownMenuItem(
                             text = { Text("Escanear producto (código de barras)") },
                             leadingIcon = { Icon(Icons.Filled.QrCodeScanner, null) },
-                            onClick = {
-                                showMenu = false
-                                productScanLauncher.launch(
-                                    ScanOptions().apply {
-                                        setDesiredBarcodeFormats(ScanOptions.PRODUCT_CODE_TYPES)
-                                        setPrompt("Apunta al código de barras del producto")
-                                        setBeepEnabled(false)
-                                        setOrientationLocked(false)
-                                    }
-                                )
-                            }
+                            onClick = { showMenu = false; launchProductScan() }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Buscar producto en Open Food Facts…") },
+                            leadingIcon = { Icon(Icons.Filled.GridView, null) },
+                            onClick = { showMenu = false; searchQuery = quickText.trim(); showProductSearch = true }
                         )
                         DropdownMenuItem(
                             text = { Text("Listas predefinidas y plantillas…") },
@@ -425,6 +439,9 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { submitQuick() })
                 )
+                IconButton(onClick = { launchProductScan() }) {
+                    Icon(Icons.Filled.QrCodeScanner, contentDescription = "Escanear código de barras de un producto")
+                }
                 IconButton(onClick = { onMicClick() }) {
                     Icon(
                         imageVector = if (listening) Icons.Filled.Stop else Icons.Filled.Mic,
@@ -442,15 +459,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                 }
             }
 
-            if (!shopMode && suggestions.isNotEmpty()) {
-                if (quickText.isBlank()) {
-                    Text(
-                        "Frecuentes",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                }
+            if (!shopMode && quickText.isNotBlank()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -458,6 +467,10 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    AssistChip(
+                        onClick = { searchQuery = typedEntry?.name ?: quickText.trim(); showProductSearch = true },
+                        label = { Text("🔍 Buscar en Open Food Facts") }
+                    )
                     suggestions.forEach { suggestion ->
                         SuggestionChip(
                             onClick = {
@@ -470,28 +483,27 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                 }
             }
 
-            if (lists.size > 1) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    lists.forEach { list ->
-                        FilterChip(
-                            selected = list.uid == selectedListUid,
-                            onClick = { viewModel.selectList(list.uid) },
-                            label = { Text(list.name) }
-                        )
-                    }
-                    AssistChip(
-                        onClick = { showLists = true },
-                        label = { Text("Listas…") },
-                        leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp)) }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                lists.forEach { list ->
+                    val pending = listCounts[list.uid] ?: 0
+                    FilterChip(
+                        selected = list.uid == selectedListUid,
+                        onClick = { viewModel.selectList(list.uid) },
+                        label = { Text(if (pending > 0) "${list.name} · $pending" else list.name) }
                     )
                 }
+                AssistChip(
+                    onClick = { showNewList = true },
+                    label = { Text("Nueva lista") },
+                    leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
             }
 
             Row(
@@ -699,6 +711,40 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                 }
             },
             confirmButton = { TextButton(onClick = { showTemplates = false }) { Text("Cerrar") } }
+        )
+    }
+
+    if (showNewList) {
+        var newListName by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showNewList = false },
+            title = { Text("Nueva lista") },
+            text = {
+                OutlinedTextField(
+                    value = newListName,
+                    onValueChange = { newListName = it },
+                    label = { Text("Nombre") },
+                    placeholder = { Text("p. ej. Fiesta, Viaje, Cena del sábado") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.createList(newListName); showNewList = false },
+                    enabled = newListName.isNotBlank()
+                ) { Text("Crear") }
+            },
+            dismissButton = { TextButton(onClick = { showNewList = false }) { Text("Cancelar") } }
+        )
+    }
+
+    if (showProductSearch) {
+        ProductSearchSheet(
+            viewModel = viewModel,
+            initialQuery = searchQuery,
+            onAdded = { name -> showMessage("Añadido: $name") },
+            onDismiss = { showProductSearch = false; viewModel.clearSearch() }
         )
     }
 
@@ -1481,6 +1527,125 @@ private fun ProductDetailSheet(item: ShoppingListItem, onDismiss: () -> Unit) {
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 24.dp)
+            )
+        }
+    }
+}
+
+/** Búsqueda de productos por nombre en Open Food Facts; tocar un resultado lo añade a la lista (con su foto y su ficha). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ProductSearchSheet(
+    viewModel: ShoppingListViewModel,
+    initialQuery: String,
+    onAdded: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val state by viewModel.searchState.collectAsState()
+    var query by remember { mutableStateOf(initialQuery) }
+    var spainOnly by remember { mutableStateOf(true) }
+    var addedBarcodes by remember { mutableStateOf(setOf<String>()) }
+
+    LaunchedEffect(Unit) {
+        if (initialQuery.trim().length >= 2) viewModel.searchProducts(initialQuery, spainOnly)
+    }
+
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.fillMaxHeight(0.9f).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Buscar en Open Food Facts", style = MaterialTheme.typography.titleMedium)
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("p. ej. leche, galletas digestive…") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { viewModel.searchProducts(query, spainOnly) }),
+                trailingIcon = {
+                    IconButton(onClick = { viewModel.searchProducts(query, spainOnly) }, enabled = query.trim().length >= 2) {
+                        Icon(Icons.Filled.Search, contentDescription = "Buscar")
+                    }
+                }
+            )
+            FilterChip(
+                selected = spainOnly,
+                onClick = { spainOnly = !spainOnly; if (query.trim().length >= 2) viewModel.searchProducts(query, spainOnly) },
+                label = { Text("Solo productos de España") }
+            )
+            when (val current = state) {
+                ProductSearchState.Idle -> Text(
+                    "Escribe el nombre de un producto y pulsa buscar. Salen primero los más escaneados.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                ProductSearchState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                    Text("  Buscando…")
+                }
+                is ProductSearchState.Error -> Text(current.reason, color = MaterialTheme.colorScheme.error)
+                is ProductSearchState.Results -> if (current.products.isEmpty()) {
+                    Text(
+                        "Sin resultados. Prueba con otro nombre" + if (spainOnly) " o quita el filtro de España." else ".",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(bottom = 24.dp)) {
+                        items(current.products, key = { it.barcode }) { product ->
+                            val added = product.barcode in addedBarcodes
+                            SearchResultRow(
+                                product = product,
+                                added = added,
+                                onAdd = {
+                                    viewModel.addSearchedProduct(product)
+                                    addedBarcodes = addedBarcodes + product.barcode
+                                    onAdded(product.name)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchResultRow(product: ScannedProduct, added: Boolean, onAdd: () -> Unit) {
+    val info = product.info
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(enabled = !added, onClick = onAdd).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (product.imageUrl != null) {
+            AsyncImage(
+                model = product.imageUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(52.dp).clip(MaterialTheme.shapes.small)
+            )
+        } else {
+            Box(
+                modifier = Modifier.size(52.dp).clip(MaterialTheme.shapes.small).background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) { Text("🛒", fontSize = 22.sp) }
+        }
+        Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Text(product.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            val subtitle = listOfNotNull(info.brand, info.quantity).joinToString(" · ")
+            if (subtitle.isNotEmpty()) {
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        ProductLabels.gradeLetter(info.nutriScore)?.let {
+            NutriScoreBadge(letter = it, large = false)
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        IconButton(onClick = onAdd, enabled = !added) {
+            Icon(
+                imageVector = if (added) Icons.Filled.CheckBox else Icons.Filled.Add,
+                contentDescription = if (added) "Añadido" else "Añadir a la lista",
+                tint = if (added) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

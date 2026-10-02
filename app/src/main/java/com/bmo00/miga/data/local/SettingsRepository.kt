@@ -1,6 +1,7 @@
 package com.bmo00.miga.data.local
 
 import android.content.Context
+import com.bmo00.miga.data.voice.DictationLanguages
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -41,6 +42,7 @@ class SettingsRepository(private val context: Context) {
     private val anthropicApiKeyKey = stringPreferencesKey("anthropic_api_key")
     private val anthropicModelKey = stringPreferencesKey("anthropic_model")
     private val ttsVoiceNameKey = stringPreferencesKey("tts_voice_name")
+    private val dictationLanguageKey = stringPreferencesKey("dictation_language")
     private val lastSeenVersionCodeKey = intPreferencesKey("last_seen_version_code")
     private val packsCatalogRepoKey = stringPreferencesKey("packs_catalog_repo")
 
@@ -212,6 +214,14 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs ->
             if (name.isNullOrBlank()) prefs.remove(ttsVoiceNameKey) else prefs[ttsVoiceNameKey] = name
         }
+    }
+
+    /** Idioma del dictado por voz (etiqueta BCP-47, ver DictationLanguages); español de España por defecto. */
+    fun observeDictationLanguage(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[dictationLanguageKey] ?: DictationLanguages.DEFAULT }
+
+    suspend fun setDictationLanguage(tag: String) {
+        context.settingsDataStore.edit { prefs -> prefs[dictationLanguageKey] = tag }
     }
 
     /** Último versionCode instalado del que ya se mostró el changelog; 0 si aún no se ha registrado ninguno. */

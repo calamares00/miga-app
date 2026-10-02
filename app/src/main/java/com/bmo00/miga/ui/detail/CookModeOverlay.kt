@@ -91,6 +91,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
     var timerFinished by remember { mutableStateOf(false) }
 
     val speechAvailable = remember { SpeechDictation.isAvailable(context) }
+    val dictationLanguage = com.bmo00.miga.ui.components.rememberDictationLanguage()
     var activeRecognizer by remember { mutableStateOf<SpeechRecognizer?>(null) }
     var isListeningForCommand by remember { mutableStateOf(false) }
     var voiceFeedback by remember { mutableStateOf<String?>(null) }
@@ -173,7 +174,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
     fun beginListeningForCommand() {
         voiceFeedback = null
         isListeningForCommand = true
-        activeRecognizer = SpeechDictation.startListening(context) { result ->
+        activeRecognizer = SpeechDictation.startListening(context, dictationLanguage) { result ->
             isListeningForCommand = false
             activeRecognizer?.destroy()
             activeRecognizer = null

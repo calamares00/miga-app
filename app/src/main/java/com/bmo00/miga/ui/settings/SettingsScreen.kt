@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Sell
@@ -92,6 +93,7 @@ import com.bmo00.miga.BuildConfig
 import com.bmo00.miga.data.export.LibraryImportParseResult
 import com.bmo00.miga.data.export.RecipeExportDto
 import com.bmo00.miga.data.export.RecipeImportResult
+import com.bmo00.miga.data.voice.DictationLanguages
 import com.bmo00.miga.data.model.ColorTheme
 import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ThemeMode
@@ -136,6 +138,8 @@ fun SettingsScreen(
     val packsCatalogRepo by viewModel.packsCatalogRepo.collectAsState()
     val geminiModel by viewModel.geminiModel.collectAsState()
     var modelMenuExpanded by remember { mutableStateOf(false) }
+    var dictationMenuExpanded by remember { mutableStateOf(false) }
+    val dictationLanguage by viewModel.dictationLanguage.collectAsState()
     val visionProvider by viewModel.visionProvider.collectAsState()
     val anthropicApiKey by viewModel.anthropicApiKey.collectAsState()
     val anthropicModel by viewModel.anthropicModel.collectAsState()
@@ -469,6 +473,37 @@ fun SettingsScreen(
             ) {
                 OutlinedButton(onClick = onOpenSyncConnections, modifier = Modifier.fillMaxWidth()) {
                     Text("Gestionar conexiones")
+                }
+            }
+
+            SettingsCard(
+                icon = Icons.Filled.Mic,
+                title = "Dictado por voz",
+                description = "Idioma en el que se reconoce lo que dictas (lista de la compra, pasos de receta " +
+                    "y modo cocina). Si tu móvil está en otro idioma, elige aquí español."
+            ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = DictationLanguages.label(dictationLanguage),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Idioma del dictado") },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = "Abrir selector de idioma") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Box(modifier = Modifier.matchParentSize().clickable { dictationMenuExpanded = true })
+                    DropdownMenu(
+                        expanded = dictationMenuExpanded,
+                        onDismissRequest = { dictationMenuExpanded = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        DictationLanguages.ALL.forEach { (tag, label) ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = { viewModel.setDictationLanguage(tag); dictationMenuExpanded = false }
+                            )
+                        }
+                    }
                 }
             }
 

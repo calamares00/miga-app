@@ -697,6 +697,10 @@ class RecipeRepository(
             listOf(ShoppingListInfo(DEFAULT_SHOPPING_LIST_UID, DEFAULT_SHOPPING_LIST_NAME)) + rows.map { ShoppingListInfo(it.uid, it.name) }
         }
 
+    /** Artículos pendientes (sin marcar) por lista, para mostrarlos en el selector de listas; las listas vacías no salen. */
+    fun observeShoppingListPendingCounts(): Flow<Map<String, Int>> =
+        shoppingListDao.observePendingCounts().map { rows -> rows.associate { it.listUid to it.pending } }
+
     /** Crea una lista adicional y devuelve su uid (null si el nombre está vacío). */
     suspend fun createShoppingList(name: String): String? {
         val trimmed = name.trim().take(60)
