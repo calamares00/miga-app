@@ -80,9 +80,12 @@ correspondiente esté activada.
 5. **Escáner de productos de la lista de la compra** (Lista de la compra →
    menú → Escanear producto): solo cuando escaneas un código de barras, se
    envía ese código a Open Food Facts (base de datos abierta, sin cuenta) para
-   obtener el nombre y una foto. Las fotos de producto solo se descargan si
-   activas "Mostrar fotos de productos" (desactivado por defecto), y entonces
-   se piden a los servidores de Open Food Facts.
+   obtener el nombre, la foto y la ficha del producto (Nutri-Score, alérgenos,
+   nutrición, ingredientes). La ficha se guarda en tu dispositivo y, si
+   compartes la lista, en tu propio servidor. Las fotos de producto solo se
+   descargan si activas "Mostrar fotos de productos" (desactivado por
+   defecto) o cuando abres la ficha de un producto, y entonces se piden a los
+   servidores de Open Food Facts.
 
 Miga también puede recibir texto que compartas desde otras apps hacia la
 lista de la compra; ese texto se queda en tu dispositivo.

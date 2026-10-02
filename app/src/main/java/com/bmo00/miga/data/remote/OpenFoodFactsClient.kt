@@ -1,10 +1,12 @@
 package com.bmo00.miga.data.remote
 
 import com.bmo00.miga.BuildConfig
+import com.bmo00.miga.data.model.ProductInfo
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -12,7 +14,7 @@ import kotlinx.serialization.json.jsonObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-data class ScannedProduct(val barcode: String, val name: String, val imageUrl: String?)
+data class ScannedProduct(val barcode: String, val name: String, val imageUrl: String?, val info: ProductInfo)
 
 sealed interface ProductLookupResult {
     data class Found(val product: ScannedProduct) : ProductLookupResult
@@ -35,7 +37,9 @@ object OpenFoodFactsClient {
     suspend fun lookup(barcode: String): ProductLookupResult = withContext(Dispatchers.IO) {
         if (!isValidBarcode(barcode)) return@withContext ProductLookupResult.NotFound
         try {
-            val fields = "product_name,product_name_es,generic_name_es,brands,image_front_small_url,image_small_url"
+            val fields = "product_name,product_name_es,generic_name_es,brands,quantity,nutriscore_grade,nova_group,ecoscore_grade," +
+                "allergens_tags,traces_tags,labels_tags,ingredients_analysis_tags,nutriments,ingredients_text_es,ingredients_text," +
+                "image_front_url,image_front_small_url,image_small_url,image_ingredients_url,image_nutrition_url"
             val connection = URL("$OFF_BASE/$barcode.json?fields=$fields").openConnection() as HttpURLConnection
             try {
                 connection.connectTimeout = TIMEOUT_MILLIS
@@ -68,10 +72,43 @@ object OpenFoodFactsClient {
         if (status == "0") return null
         val product = root["product"] as? JsonObject ?: return null
         fun text(key: String): String? = (product[key] as? JsonPrimitive)?.contentOrNull?.trim()?.takeIf { it.isNotEmpty() }
-        val name = text("product_name_es") ?: text("product_name") ?: text("generic_name_es")
-            ?: text("brands")?.substringBefore(',')?.trim()
-            ?: return null
-        val image = (text("image_front_small_url") ?: text("image_small_url"))?.takeIf { it.startsWith("https://") }
-        return ScannedProduct(barcode, name, image)
+        fun https(key: String): String? = text(key)?.takeIf { it.startsWith("https://") }
+        /** Etiquetas tipo "en:gluten" -> "gluten" (se descarta el prefijo de idioma). */
+        fun tags(key: String): List<String> = (product[key] as? JsonArray).orEmpty()
+            .mapNotNull { (it as? JsonPrimitive)?.contentOrNull?.substringAfter(':')?.trim()?.takeIf { tag -> tag.isNotEmpty() } }
+        val nutriments = product["nutriments"] as? JsonObject
+        fun nutrient(key: String): Double? = (nutriments?.get(key) as? JsonPrimitive)?.contentOrNull?.toDoubleOrNull()
+
+        val brand = text("brands")?.substringBefore(',')?.trim()?.takeIf { it.isNotEmpty() }
+        val name = text("product_name_es") ?: text("product_name") ?: text("generic_name_es") ?: brand ?: return null
+        val smallImage = https("image_front_small_url") ?: https("image_small_url")
+        val info = ProductInfo(
+            barcode = barcode,
+            brand = brand,
+            quantity = text("quantity")?.take(60),
+            nutriScore = text("nutriscore_grade")?.lowercase()?.takeIf { it.length == 1 && it[0] in 'a'..'e' },
+            nova = text("nova_group")?.toDoubleOrNull()?.toInt()?.takeIf { it in 1..4 },
+            ecoScore = text("ecoscore_grade")?.lowercase()?.takeIf { it.length == 1 && it[0] in 'a'..'e' },
+            allergens = tags("allergens_tags").take(MAX_TAGS),
+            traces = tags("traces_tags").take(MAX_TAGS),
+            labels = tags("labels_tags").take(MAX_TAGS),
+            analysis = tags("ingredients_analysis_tags").take(MAX_TAGS),
+            energyKcal = nutrient("energy-kcal_100g"),
+            fat = nutrient("fat_100g"),
+            saturatedFat = nutrient("saturated-fat_100g"),
+            carbohydrates = nutrient("carbohydrates_100g"),
+            sugars = nutrient("sugars_100g"),
+            fiber = nutrient("fiber_100g"),
+            proteins = nutrient("proteins_100g"),
+            salt = nutrient("salt_100g"),
+            ingredients = (text("ingredients_text_es") ?: text("ingredients_text"))?.take(MAX_INGREDIENTS_CHARS),
+            imageUrl = https("image_front_url") ?: smallImage,
+            ingredientsImageUrl = https("image_ingredients_url"),
+            nutritionImageUrl = https("image_nutrition_url")
+        )
+        return ScannedProduct(barcode, name, smallImage, info)
     }
 }
+
+private const val MAX_TAGS = 40
+private const val MAX_INGREDIENTS_CHARS = 1500

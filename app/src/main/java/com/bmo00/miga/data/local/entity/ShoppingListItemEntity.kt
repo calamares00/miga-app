@@ -42,5 +42,7 @@ data class ShoppingListItemEntity(
     /** Lista a la que pertenece (ver ShoppingListEntity); "main" = la lista por defecto. */
     val listUid: String = "main",
     val addedBy: String? = null,
-    val updatedBy: String? = null
+    val updatedBy: String? = null,
+    /** Ficha del producto escaneado (JSON de ProductInfo); null si el artículo no viene del escáner. */
+    val productInfo: String? = null
 )

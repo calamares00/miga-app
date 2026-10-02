@@ -45,6 +45,8 @@ import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.model.RecipeDraft
 import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ParsedShoppingEntry
+import com.bmo00.miga.data.model.ProductInfo
+import com.bmo00.miga.data.model.ProductInfoCodec
 import com.bmo00.miga.data.model.DEFAULT_SHOPPING_LIST_NAME
 import com.bmo00.miga.data.model.DEFAULT_SHOPPING_LIST_UID
 import com.bmo00.miga.data.model.ShoppingListGroup
@@ -532,7 +534,8 @@ class RecipeRepository(
                     imageUrl = entity.imageUrl,
                     uid = entity.uid,
                     addedBy = entity.addedBy,
-                    updatedBy = entity.updatedBy
+                    updatedBy = entity.updatedBy,
+                    productInfo = ProductInfoCodec.decode(entity.productInfo)
                 )
             }
                 .groupBy { it.categoryName }
@@ -617,6 +620,7 @@ class RecipeRepository(
                 createdAt = System.currentTimeMillis(),
                 syncDirty = true,
                 imageUrl = item.imageUrl,
+                productInfo = item.productInfo?.let { ProductInfoCodec.encode(it) },
                 listUid = currentShoppingListUid(),
                 addedBy = item.addedBy ?: author,
                 updatedBy = author
@@ -631,7 +635,8 @@ class RecipeRepository(
     }
 
     /** Producto escaneado (con foto): si ya hay un artículo pendiente con ese nombre solo se le añade la foto. */
-    suspend fun addScannedShoppingProduct(name: String, imageUrl: String?) {
+    suspend fun addScannedShoppingProduct(name: String, imageUrl: String?, info: ProductInfo?) {
+        val infoJson = info?.let { ProductInfoCodec.encode(it) }
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
         val normalized = trimmed.lowercase()
@@ -641,8 +646,16 @@ class RecipeRepository(
         db.withTransaction {
             val existing = shoppingListDao.findLiveByName(listUid, normalized)
             if (existing != null) {
-                if (existing.imageUrl == null && imageUrl != null) {
-                    shoppingListDao.update(existing.copy(imageUrl = imageUrl, updatedAt = now, updatedBy = author, syncDirty = true))
+                if ((existing.imageUrl == null && imageUrl != null) || (existing.productInfo == null && infoJson != null)) {
+                    shoppingListDao.update(
+                        existing.copy(
+                            imageUrl = existing.imageUrl ?: imageUrl,
+                            productInfo = existing.productInfo ?: infoJson,
+                            updatedAt = now,
+                            updatedBy = author,
+                            syncDirty = true
+                        )
+                    )
                 }
             } else {
                 shoppingListDao.insert(
@@ -654,6 +667,7 @@ class RecipeRepository(
                         createdAt = now,
                         syncDirty = true,
                         imageUrl = imageUrl,
+                        productInfo = infoJson,
                         listUid = listUid,
                         addedBy = author,
                         updatedBy = author
@@ -836,6 +850,7 @@ class RecipeRepository(
                 unit = entity.unit,
                 checked = entity.checked,
                 imageUrl = entity.imageUrl,
+                productInfo = entity.productInfo,
                 addedBy = entity.addedBy,
                 updatedBy = entity.updatedBy,
                 updatedAt = entity.updatedAt,
@@ -894,6 +909,7 @@ class RecipeRepository(
                 checked = dto.checked,
                 createdAt = local?.createdAt ?: dto.updatedAt,
                 imageUrl = dto.imageUrl,
+                productInfo = dto.productInfo,
                 uid = dto.uid,
                 updatedAt = dto.updatedAt,
                 deletedAt = null,

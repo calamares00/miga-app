@@ -246,3 +246,13 @@ val MIGRATION_15_16 = object : Migration(15, 16) {
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_shopping_lists_uid ON shopping_lists(uid)")
     }
 }
+
+/**
+ * v16 -> v17: ficha del producto escaneado (`productInfo`, JSON de ProductInfo con Nutri-Score,
+ * alérgenos, nutrición...) en los artículos de la lista de la compra. Nullable.
+ */
+val MIGRATION_16_17 = object : Migration(16, 17) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE shopping_list_items ADD COLUMN productInfo TEXT DEFAULT NULL")
+    }
+}

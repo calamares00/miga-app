@@ -183,7 +183,7 @@ class ShoppingListViewModel(
         viewModelScope.launch {
             when (val result = OpenFoodFactsClient.lookup(barcode)) {
                 is ProductLookupResult.Found -> {
-                    repository.addScannedShoppingProduct(result.product.name, result.product.imageUrl)
+                    repository.addScannedShoppingProduct(result.product.name, result.product.imageUrl, result.product.info)
                     onResult("Añadido: ${result.product.name}")
                 }
                 ProductLookupResult.NotFound -> onResult("Producto no encontrado en Open Food Facts ($barcode). Escríbelo a mano.")
