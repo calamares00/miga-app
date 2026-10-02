@@ -111,6 +111,14 @@ interface RecipeDao {
     @Query("DELETE FROM recipes WHERE recipeBookId = :bookId AND uid NOT IN (:keepUids)")
     suspend fun deleteRecipesNotInUidSet(bookId: Long, keepUids: List<String>)
 
+    /**
+     * Da identidad (uid) a las fotos que no la tienen: las creadas antes de que existiera la
+     * sincronización (migración v7 -> v8, que añadió la columna a NULL). Sin uid una foto no se
+     * puede subir ni diferenciar en el servidor. Idempotente.
+     */
+    @Query("UPDATE recipe_photos SET uid = lower(hex(randomblob(16))) WHERE uid IS NULL")
+    suspend fun backfillPhotoUids()
+
     @Query("DELETE FROM recipes WHERE recipeBookId = :bookId")
     suspend fun deleteAllForBook(bookId: Long)
 

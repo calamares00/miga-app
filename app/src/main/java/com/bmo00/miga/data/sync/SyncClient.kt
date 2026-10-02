@@ -20,6 +20,13 @@ sealed interface SyncInvitationResult {
     data class Error(val reason: String) : SyncInvitationResult
 }
 
+/** Resultado de bajar una foto: los bytes, "no existe en el servidor" (permanente) o un fallo transitorio (red, timeout, 5xx) que merece reintento. */
+sealed interface PhotoDownloadResult {
+    class Success(val bytes: ByteArray) : PhotoDownloadResult
+    data object NotFound : PhotoDownloadResult
+    data class Error(val reason: String) : PhotoDownloadResult
+}
+
 sealed interface SyncFetchResult {
     data class Success(val changes: ChangesResponseDto) : SyncFetchResult
     data class Error(val reason: String) : SyncFetchResult
@@ -187,14 +194,19 @@ object SyncClient {
         }
     }
 
-    suspend fun downloadPhoto(connection: SyncConnection, recipeUid: String, photoUid: String): ByteArray? = withContext(Dispatchers.IO) {
+    suspend fun downloadPhoto(connection: SyncConnection, recipeUid: String, photoUid: String): PhotoDownloadResult = withContext(Dispatchers.IO) {
         try {
             val result = requestBinary(connection, "GET", "/sync/recipes/$recipeUid/photos/$photoUid", timeoutMillis = PHOTO_TIMEOUT_MILLIS)
-            if (result?.code == HttpURLConnection.HTTP_OK) result.bytes else null
+            when {
+                result == null -> PhotoDownloadResult.Error("Sin respuesta del servidor")
+                result.code == HttpURLConnection.HTTP_OK -> PhotoDownloadResult.Success(result.bytes)
+                result.code == HttpURLConnection.HTTP_NOT_FOUND -> PhotoDownloadResult.NotFound
+                else -> PhotoDownloadResult.Error("El servidor respondió con el código ${result.code}")
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            null
+            PhotoDownloadResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
         }
     }
 

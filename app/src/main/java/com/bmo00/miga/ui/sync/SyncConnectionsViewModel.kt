@@ -48,6 +48,7 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
     fun syncNow(context: Context, connectionId: Long) {
         viewModelScope.launch {
             _syncingConnectionIds.value = _syncingConnectionIds.value + connectionId
+            repository.resetSyncCursor(connectionId) // reparación manual: vuelve a bajar todo, recupera fotos que se perdieron
             repository.enqueueFullConnectionResync(connectionId)
             syncEngine.syncConnection(context, connectionId)
             _syncingConnectionIds.value = _syncingConnectionIds.value - connectionId

@@ -140,6 +140,7 @@ class RecipeBookEditorViewModel(
         viewModelScope.launch {
             isSyncingNow = true
             syncNowError = null
+            repository.resetSyncCursor(connectionId) // reparación manual: vuelve a bajar todo, recupera fotos que se perdieron
             repository.enqueueFullBookResync(bookId, connectionId)
             when (val outcome = syncEngine.syncConnection(context, connectionId)) {
                 is SyncOutcome.Error -> syncNowError = outcome.reason

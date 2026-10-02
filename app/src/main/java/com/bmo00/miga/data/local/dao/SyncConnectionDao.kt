@@ -28,6 +28,9 @@ interface SyncConnectionDao {
     @Query("UPDATE sync_connections SET lastSyncedRevision = :revision, lastSyncedAt = :syncedAt, lastSyncError = NULL WHERE id = :id")
     suspend fun markSynced(id: Long, revision: Long, syncedAt: Long)
 
+    @Query("UPDATE sync_connections SET lastSyncedRevision = 0 WHERE id = :id")
+    suspend fun resetCursor(id: Long)
+
     @Query("UPDATE sync_connections SET lastSyncError = :reason WHERE id = :id")
     suspend fun markError(id: Long, reason: String)
 
