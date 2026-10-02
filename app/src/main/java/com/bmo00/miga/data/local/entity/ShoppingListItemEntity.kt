@@ -36,5 +36,7 @@ data class ShoppingListItemEntity(
     val uid: String = UUID.randomUUID().toString(),
     val updatedAt: Long = createdAt,
     val deletedAt: Long? = null,
-    val syncDirty: Boolean = false
+    val syncDirty: Boolean = false,
+    /** Foto del producto (la rellena el escáner de código de barras); solo se muestra si el usuario lo activa. */
+    val imageUrl: String? = null
 )

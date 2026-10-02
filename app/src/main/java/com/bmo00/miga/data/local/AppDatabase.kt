@@ -10,6 +10,7 @@ import com.bmo00.miga.data.local.dao.RecipeBookDao
 import com.bmo00.miga.data.local.dao.RecipeDao
 import com.bmo00.miga.data.local.dao.ShoppingHistoryDao
 import com.bmo00.miga.data.local.dao.ShoppingListDao
+import com.bmo00.miga.data.local.dao.ShoppingTemplateDao
 import com.bmo00.miga.data.local.dao.SyncConnectionDao
 import com.bmo00.miga.data.local.dao.TagDao
 import com.bmo00.miga.data.local.dao.UtensilDao
@@ -25,6 +26,7 @@ import com.bmo00.miga.data.local.entity.RecipeTagCrossRef
 import com.bmo00.miga.data.local.entity.RecipeUtensilCrossRef
 import com.bmo00.miga.data.local.entity.ShoppingHistoryEntity
 import com.bmo00.miga.data.local.entity.ShoppingListItemEntity
+import com.bmo00.miga.data.local.entity.ShoppingTemplateEntity
 import com.bmo00.miga.data.local.entity.StepEntity
 import com.bmo00.miga.data.local.entity.SyncConnectionEntity
 import com.bmo00.miga.data.local.entity.TagEntity
@@ -46,6 +48,7 @@ import com.bmo00.miga.data.local.entity.UtensilEntity
         IngredientCategoryEntity::class,
         ShoppingListItemEntity::class,
         ShoppingHistoryEntity::class,
+        ShoppingTemplateEntity::class,
         SyncConnectionEntity::class,
         PendingSyncChangeEntity::class
     ],
@@ -54,7 +57,7 @@ import com.bmo00.miga.data.local.entity.UtensilEntity
     // desactivado porque compilar debug+release a la vez (como hace CI) provoca que
     // kspDebugKotlin y kspReleaseKotlin escriban al mismo fichero en paralelo, dando el error
     // intermitente "Empty schema file".
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -67,6 +70,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun ingredientCategoryDao(): IngredientCategoryDao
     abstract fun shoppingListDao(): ShoppingListDao
     abstract fun shoppingHistoryDao(): ShoppingHistoryDao
+    abstract fun shoppingTemplateDao(): ShoppingTemplateDao
     abstract fun syncConnectionDao(): SyncConnectionDao
     abstract fun pendingSyncChangeDao(): PendingSyncChangeDao
 

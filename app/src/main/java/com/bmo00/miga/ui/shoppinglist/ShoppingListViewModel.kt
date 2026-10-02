@@ -4,19 +4,27 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bmo00.miga.data.export.RecipeExporter
+import com.bmo00.miga.data.local.SettingsRepository
 import com.bmo00.miga.data.model.Ingredient
+import com.bmo00.miga.data.model.IngredientCatalogItem
 import com.bmo00.miga.data.model.ParsedShoppingEntry
 import com.bmo00.miga.data.model.ShoppingEntryParser
 import com.bmo00.miga.data.model.ShoppingListGroup
 import com.bmo00.miga.data.model.ShoppingListItem
 import com.bmo00.miga.data.model.ShoppingSuggestion
+import com.bmo00.miga.data.model.ShoppingTemplate
+import com.bmo00.miga.data.remote.OpenFoodFactsClient
+import com.bmo00.miga.data.remote.ProductLookupResult
 import com.bmo00.miga.data.repository.RecipeRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class ShoppingListViewModel(private val repository: RecipeRepository) : ViewModel() {
+class ShoppingListViewModel(
+    private val repository: RecipeRepository,
+    private val settingsRepository: SettingsRepository
+) : ViewModel() {
 
     val groups: StateFlow<List<ShoppingListGroup>> = repository.observeShoppingList()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -26,6 +34,59 @@ class ShoppingListViewModel(private val repository: RecipeRepository) : ViewMode
 
     val catalogNames: StateFlow<List<String>> = repository.observeIngredientNames()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val catalog: StateFlow<List<IngredientCatalogItem>> = repository.observeIngredientCatalogWithCategory()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val templates: StateFlow<List<ShoppingTemplate>> = repository.observeShoppingTemplates()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val imagesEnabled: StateFlow<Boolean> = settingsRepository.observeShoppingImagesEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setImagesEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setShoppingImagesEnabled(enabled) }
+    }
+
+    /**
+     * Casilla del catálogo táctil: si [name] ya está pendiente en la lista lo quita (con tombstone,
+     * como cualquier borrado) y si no lo añade sin cantidad.
+     */
+    fun toggleCatalogItem(name: String) {
+        val key = name.trim().lowercase()
+        val existing = groups.value.flatMap { it.items }.firstOrNull { !it.checked && it.name.trim().lowercase() == key }
+        if (existing != null) {
+            viewModelScope.launch { repository.deleteShoppingListItem(existing.id) }
+        } else {
+            addParsedEntries(listOf(ParsedShoppingEntry(name.trim(), null, null)))
+        }
+    }
+
+    /** Busca [barcode] en Open Food Facts y, si existe, lo añade con su foto; [onResult] recibe el mensaje a mostrar. */
+    fun addScannedProduct(barcode: String, onResult: (String) -> Unit) {
+        viewModelScope.launch {
+            when (val result = OpenFoodFactsClient.lookup(barcode)) {
+                is ProductLookupResult.Found -> {
+                    repository.addScannedShoppingProduct(result.product.name, result.product.imageUrl)
+                    onResult("Añadido: ${result.product.name}")
+                }
+                ProductLookupResult.NotFound -> onResult("Producto no encontrado en Open Food Facts ($barcode). Escríbelo a mano.")
+                is ProductLookupResult.Error -> onResult("No se pudo consultar el producto: ${result.reason}")
+            }
+        }
+    }
+
+    fun saveTemplate(name: String) {
+        val entries = groups.value.flatMap { it.items }.map { ParsedShoppingEntry(it.name, it.quantity, it.unit) }
+        if (entries.isEmpty() || name.isBlank()) return
+        viewModelScope.launch { repository.saveShoppingTemplate(name, entries) }
+    }
+
+    fun applyTemplate(template: ShoppingTemplate) = addParsedEntries(template.entries)
+
+    fun deleteTemplate(id: Long) {
+        viewModelScope.launch { repository.deleteShoppingTemplate(id) }
+    }
 
     fun setChecked(id: Long, checked: Boolean) {
         viewModelScope.launch { repository.setShoppingListItemChecked(id, checked) }

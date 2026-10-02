@@ -77,6 +77,16 @@ correspondiente esté activada.
    dirección del servidor, el namespace y un token de acceso nuevo; quien
    escanee el código puede leer y modificar ese namespace.
 
+5. **Escáner de productos de la lista de la compra** (Lista de la compra →
+   menú → Escanear producto): solo cuando escaneas un código de barras, se
+   envía ese código a Open Food Facts (base de datos abierta, sin cuenta) para
+   obtener el nombre y una foto. Las fotos de producto solo se descargan si
+   activas "Mostrar fotos de productos" (desactivado por defecto), y entonces
+   se piden a los servidores de Open Food Facts.
+
+Miga también puede recibir texto que compartas desde otras apps hacia la
+lista de la compra; ese texto se queda en tu dispositivo.
+
 Ninguna de estas conexiones pasa por un servidor propio de Miga: no existe
 tal servidor.
 

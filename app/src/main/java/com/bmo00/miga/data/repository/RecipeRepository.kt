@@ -21,6 +21,7 @@ import com.bmo00.miga.data.local.entity.RecipeUtensilCrossRef
 import com.bmo00.miga.data.local.entity.RecipeWithDetails
 import com.bmo00.miga.data.local.entity.ShoppingHistoryEntity
 import com.bmo00.miga.data.local.entity.ShoppingListItemEntity
+import com.bmo00.miga.data.local.entity.ShoppingTemplateEntity
 import com.bmo00.miga.data.local.entity.StepEntity
 import com.bmo00.miga.data.local.entity.SyncChangeType
 import com.bmo00.miga.data.local.entity.SyncConnectionEntity
@@ -41,9 +42,12 @@ import com.bmo00.miga.data.model.RecipeBookDraft
 import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.model.RecipeDraft
 import com.bmo00.miga.data.model.RecipePhoto
+import com.bmo00.miga.data.model.ParsedShoppingEntry
 import com.bmo00.miga.data.model.ShoppingListGroup
 import com.bmo00.miga.data.model.ShoppingListItem
 import com.bmo00.miga.data.model.ShoppingSuggestion
+import com.bmo00.miga.data.model.ShoppingTemplate
+import com.bmo00.miga.data.share.ShoppingListShareCodec
 import com.bmo00.miga.data.model.StepGroup
 import com.bmo00.miga.data.model.SyncConnection
 import com.bmo00.miga.data.model.UNCATEGORIZED_INGREDIENT_LABEL
@@ -84,6 +88,7 @@ class RecipeRepository(
     private val ingredientCategoryDao = db.ingredientCategoryDao()
     private val shoppingListDao = db.shoppingListDao()
     private val shoppingHistoryDao = db.shoppingHistoryDao()
+    private val shoppingTemplateDao = db.shoppingTemplateDao()
     private val syncConnectionDao = db.syncConnectionDao()
     private val pendingSyncChangeDao = db.pendingSyncChangeDao()
 
@@ -491,7 +496,7 @@ class RecipeRepository(
             items.map { entity ->
                 val categoryId = categoryIdByIngredientName[entity.normalizedName]
                 val categoryName = categoryId?.let { categoryNameById[it] } ?: UNCATEGORIZED_INGREDIENT_LABEL
-                ShoppingListItem(entity.id, entity.name, entity.quantity, entity.unit, entity.checked, categoryName)
+                ShoppingListItem(entity.id, entity.name, entity.quantity, entity.unit, entity.checked, categoryName, entity.imageUrl)
             }
                 .groupBy { it.categoryName }
                 .toSortedMap(compareBy { if (it == UNCATEGORIZED_INGREDIENT_LABEL) "￿" else it.lowercase() })
@@ -567,6 +572,53 @@ class RecipeRepository(
         addShoppingListEntries(listOf(Ingredient(name, quantity, unit)))
     }
 
+    /** Producto escaneado (con foto): si ya hay un artículo pendiente con ese nombre solo se le añade la foto. */
+    suspend fun addScannedShoppingProduct(name: String, imageUrl: String?) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        val normalized = trimmed.lowercase()
+        val now = System.currentTimeMillis()
+        db.withTransaction {
+            val existing = shoppingListDao.findLiveByName(normalized)
+            if (existing != null) {
+                if (existing.imageUrl == null && imageUrl != null) {
+                    shoppingListDao.update(existing.copy(imageUrl = imageUrl, updatedAt = now, syncDirty = true))
+                }
+            } else {
+                shoppingListDao.insert(
+                    ShoppingListItemEntity(name = trimmed, normalizedName = normalized, quantity = null, unit = null, createdAt = now, syncDirty = true, imageUrl = imageUrl)
+                )
+            }
+            val previous = shoppingHistoryDao.find(normalized)
+            shoppingHistoryDao.upsert(
+                ShoppingHistoryEntity(
+                    normalizedName = normalized,
+                    name = trimmed,
+                    lastQuantity = previous?.lastQuantity,
+                    lastUnit = previous?.lastUnit,
+                    uses = (previous?.uses ?: 0) + 1,
+                    lastUsedAt = now
+                )
+            )
+        }
+        notifyShoppingListChanged()
+    }
+
+    // --- Plantillas de lista ---
+
+    fun observeShoppingTemplates(): Flow<List<ShoppingTemplate>> =
+        shoppingTemplateDao.observeAll().map { list ->
+            list.map { ShoppingTemplate(it.id, it.name, ShoppingListShareCodec.fromLines(it.body)) }
+        }
+
+    suspend fun saveShoppingTemplate(name: String, entries: List<ParsedShoppingEntry>) {
+        val body = ShoppingListShareCodec.toLines(entries)
+        if (name.isBlank() || body.isEmpty()) return
+        shoppingTemplateDao.insert(ShoppingTemplateEntity(name = name.trim(), body = body, createdAt = System.currentTimeMillis()))
+    }
+
+    suspend fun deleteShoppingTemplate(id: Long) = shoppingTemplateDao.delete(id)
+
     suspend fun setShoppingListItemChecked(id: Long, checked: Boolean) {
         shoppingListDao.setChecked(id, checked, System.currentTimeMillis())
         notifyShoppingListChanged()
@@ -632,6 +684,7 @@ class RecipeRepository(
                 quantity = entity.quantity,
                 unit = entity.unit,
                 checked = entity.checked,
+                imageUrl = entity.imageUrl,
                 updatedAt = entity.updatedAt,
                 deletedAt = entity.deletedAt
             )
@@ -663,6 +716,7 @@ class RecipeRepository(
                 unit = dto.unit?.trim()?.takeIf { it.isNotBlank() },
                 checked = dto.checked,
                 createdAt = local?.createdAt ?: dto.updatedAt,
+                imageUrl = dto.imageUrl,
                 uid = dto.uid,
                 updatedAt = dto.updatedAt,
                 deletedAt = null,

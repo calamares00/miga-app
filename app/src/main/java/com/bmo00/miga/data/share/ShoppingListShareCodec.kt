@@ -19,14 +19,28 @@ object ShoppingListShareCodec {
     private const val MAX_ENTRIES = 500
     private const val MAX_DECOMPRESSED_BYTES = 64 * 1024
 
+    /** Un artículo por línea ("cantidad<TAB>unidad<TAB>nombre"); también sirve para guardar plantillas. */
+    fun toLines(entries: List<ParsedShoppingEntry>): String = entries
+        .filter { it.name.isNotBlank() }
+        .take(MAX_ENTRIES)
+        .joinToString("\n") { entry ->
+            val quantity = entry.quantity?.let { formatQuantity(it) }.orEmpty()
+            "$quantity\t${clean(entry.unit.orEmpty())}\t${clean(entry.name)}"
+        }
+
+    fun fromLines(text: String): List<ParsedShoppingEntry> =
+        text.split("\n").take(MAX_ENTRIES).mapNotNull { line ->
+            val parts = line.split("\t")
+            if (parts.size != 3 || parts[2].isBlank()) return@mapNotNull null
+            ParsedShoppingEntry(
+                name = parts[2].trim(),
+                quantity = parts[0].toDoubleOrNull(),
+                unit = parts[1].trim().ifEmpty { null }
+            )
+        }
+
     fun encode(entries: List<ParsedShoppingEntry>): String {
-        val text = entries
-            .filter { it.name.isNotBlank() }
-            .take(MAX_ENTRIES)
-            .joinToString("\n") { entry ->
-                val quantity = entry.quantity?.let { formatQuantity(it) }.orEmpty()
-                "$quantity\t${clean(entry.unit.orEmpty())}\t${clean(entry.name)}"
-            }
+        val text = toLines(entries)
         return PREFIX + Base64.getUrlEncoder().withoutPadding().encodeToString(deflate(text.toByteArray(Charsets.UTF_8)))
     }
 
@@ -39,16 +53,7 @@ object ShoppingListShareCodec {
             return null
         }
         val bytes = inflate(compressed) ?: return null
-        val entries = String(bytes, Charsets.UTF_8).split("\n").take(MAX_ENTRIES).mapNotNull { line ->
-            val parts = line.split("\t")
-            if (parts.size != 3 || parts[2].isBlank()) return@mapNotNull null
-            ParsedShoppingEntry(
-                name = parts[2].trim(),
-                quantity = parts[0].toDoubleOrNull(),
-                unit = parts[1].trim().ifEmpty { null }
-            )
-        }
-        return entries.ifEmpty { null }
+        return fromLines(String(bytes, Charsets.UTF_8)).ifEmpty { null }
     }
 
     private fun clean(value: String) = value.replace('\t', ' ').replace('\n', ' ').trim()

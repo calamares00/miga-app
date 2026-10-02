@@ -14,6 +14,9 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -50,6 +53,7 @@ import com.bmo00.miga.ui.packs.PacksCatalogScreen
 import com.bmo00.miga.ui.packs.PacksCatalogViewModel
 import com.bmo00.miga.ui.search.GlobalSearchScreen
 import com.bmo00.miga.ui.search.GlobalSearchViewModel
+import com.bmo00.miga.data.share.ShoppingIntents
 import com.bmo00.miga.ui.shoppinglist.ShoppingListScreen
 import com.bmo00.miga.ui.shoppinglist.ShoppingListViewModel
 import com.bmo00.miga.ui.stats.StatsScreen
@@ -90,6 +94,18 @@ fun RecetarioNavHost() {
     val repository = repositoryOf(context)
     val settingsRepository = (context.applicationContext as RecetarioApp).settingsRepository
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+
+    // Texto compartido hacia Miga o botón del widget: ir a la pestaña de la compra, que consume el evento.
+    val shoppingEvent by ShoppingIntents.event.collectAsState()
+    LaunchedEffect(shoppingEvent) {
+        if (shoppingEvent != null) {
+            navController.navigate(Destinations.SHOPPING_LIST_ROUTE) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
@@ -155,7 +171,7 @@ fun RecetarioNavHost() {
 
             composable(Destinations.SHOPPING_LIST_ROUTE) {
                 val viewModel: ShoppingListViewModel = viewModel(
-                    factory = viewModelFactory { initializer { ShoppingListViewModel(repository) } }
+                    factory = viewModelFactory { initializer { ShoppingListViewModel(repository, settingsRepository) } }
                 )
                 ShoppingListScreen(viewModel = viewModel)
             }

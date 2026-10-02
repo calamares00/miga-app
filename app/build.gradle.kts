@@ -14,8 +14,8 @@ android {
         minSdk = 26
         targetSdk = 34
         // El patch de versionName se incrementa en cada commit (1.0.1, 1.0.2...); versionCode sube en paralelo.
-        versionCode = 73
-        versionName = "1.0.72"
+        versionCode = 74
+        versionName = "1.0.73"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

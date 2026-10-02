@@ -26,6 +26,10 @@ interface ShoppingListDao {
     @Query("SELECT * FROM shopping_list_items WHERE deletedAt IS NULL AND normalizedName = :normalizedName AND unit IS :unit AND quantity IS NOT NULL LIMIT 1")
     suspend fun findMergeable(normalizedName: String, unit: String?): ShoppingListItemEntity?
 
+    /** Artículo todavía en la lista (sin tombstone) con ese nombre normalizado, marcado o no. */
+    @Query("SELECT * FROM shopping_list_items WHERE deletedAt IS NULL AND normalizedName = :normalizedName LIMIT 1")
+    suspend fun findLiveByName(normalizedName: String): ShoppingListItemEntity?
+
     @Insert
     suspend fun insert(item: ShoppingListItemEntity): Long
 

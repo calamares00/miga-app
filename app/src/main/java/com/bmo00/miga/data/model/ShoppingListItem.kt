@@ -15,7 +15,8 @@ data class ShoppingListItem(
     val quantity: Double?,
     val unit: String?,
     val checked: Boolean,
-    val categoryName: String
+    val categoryName: String,
+    val imageUrl: String? = null
 )
 
 data class ShoppingListGroup(

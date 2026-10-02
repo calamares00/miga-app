@@ -74,6 +74,7 @@ data class ShoppingItemSyncDto(
     val quantity: Double? = null,
     val unit: String? = null,
     val checked: Boolean = false,
+    val imageUrl: String? = null,
     val updatedAt: Long,
     val deletedAt: Long? = null,
     val revision: Long = 0

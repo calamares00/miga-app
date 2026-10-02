@@ -7,6 +7,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.horizontalScroll
@@ -20,6 +24,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -38,6 +44,7 @@ import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QrCode2
@@ -48,11 +55,13 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -68,6 +77,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -78,6 +88,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -86,11 +98,19 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import coil.compose.AsyncImage
+import com.bmo00.miga.data.model.IngredientCatalogItem
+import com.bmo00.miga.data.model.ShoppingTemplate
+import com.bmo00.miga.data.model.UNCATEGORIZED_INGREDIENT_LABEL
+import com.bmo00.miga.data.share.ShoppingIntentEvent
+import com.bmo00.miga.data.share.ShoppingIntents
 import com.bmo00.miga.data.model.ParsedShoppingEntry
 import com.bmo00.miga.data.model.ShoppingEntryParser
 import com.bmo00.miga.data.model.ShoppingListGroup
@@ -103,6 +123,7 @@ import com.bmo00.miga.data.voice.DictationResult
 import com.bmo00.miga.data.voice.SpeechDictation
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val FREQUENT_CHIPS = 10
@@ -122,6 +143,14 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     var scannedEntries by remember { mutableStateOf<List<ParsedShoppingEntry>?>(null) }
     var quickText by remember { mutableStateOf("") }
     var shopMode by remember { mutableStateOf(false) }
+    var showCatalog by remember { mutableStateOf(false) }
+    var showTemplates by remember { mutableStateOf(false) }
+    var showSaveTemplate by remember { mutableStateOf(false) }
+    val catalog by viewModel.catalog.collectAsState()
+    val templates by viewModel.templates.collectAsState()
+    val imagesEnabled by viewModel.imagesEnabled.collectAsState()
+    val quickAddFocus = remember { FocusRequester() }
+    val intentEvent by ShoppingIntents.event.collectAsState()
     var collapsed by remember { mutableStateOf(setOf<String>()) }
     val view = LocalView.current
     DisposableEffect(shopMode) {
@@ -147,6 +176,24 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     }
 
     DisposableEffect(Unit) { onDispose { recognizer?.destroy() } }
+
+    // Texto compartido hacia Miga o botón del widget (ver ShoppingIntents).
+    LaunchedEffect(intentEvent) {
+        when (val event = intentEvent) {
+            is ShoppingIntentEvent.SharedText -> {
+                val entries = ShoppingEntryParser.parse(event.text)
+                if (entries.isEmpty()) showMessage("No se reconocieron artículos en el texto recibido") else scannedEntries = entries
+                ShoppingIntents.consume()
+            }
+            ShoppingIntentEvent.QuickAdd -> {
+                shopMode = false
+                delay(200) // da tiempo a que el campo de añadir vuelva a componerse
+                runCatching { quickAddFocus.requestFocus() }
+                ShoppingIntents.consume() // al final: consumirlo antes cancelaría esta corrutina (cambia la clave)
+            }
+            null -> Unit
+        }
+    }
 
     val typedEntry = remember(quickText) {
         if (quickText.isBlank() || quickText.any { it == ',' || it == ';' || it == '\n' }) null
@@ -204,6 +251,11 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
         }
     }
 
+    val productScanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
+        val contents = result.contents
+        if (contents != null) viewModel.addScannedProduct(contents.trim()) { showMessage(it) }
+    }
+
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -225,6 +277,39 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                             text = { Text("Añadir varios…") },
                             leadingIcon = { Icon(Icons.Filled.Add, null) },
                             onClick = { showMenu = false; showBulkDialog = true }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Escanear producto (código de barras)") },
+                            leadingIcon = { Icon(Icons.Filled.QrCodeScanner, null) },
+                            onClick = {
+                                showMenu = false
+                                productScanLauncher.launch(
+                                    ScanOptions().apply {
+                                        setDesiredBarcodeFormats(ScanOptions.PRODUCT_CODE_TYPES)
+                                        setPrompt("Apunta al código de barras del producto")
+                                        setBeepEnabled(false)
+                                        setOrientationLocked(false)
+                                    }
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Plantillas…") },
+                            leadingIcon = { Icon(Icons.Filled.GridView, null) },
+                            onClick = { showMenu = false; showTemplates = true }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Guardar lista como plantilla…") },
+                            leadingIcon = { Icon(Icons.Filled.Add, null) },
+                            onClick = {
+                                showMenu = false
+                                if (totalCount == 0) showMessage("La lista está vacía") else showSaveTemplate = true
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(if (imagesEnabled) "Ocultar fotos de productos" else "Mostrar fotos de productos") },
+                            leadingIcon = { Icon(Icons.Filled.ShoppingBag, null) },
+                            onClick = { showMenu = false; viewModel.setImagesEnabled(!imagesEnabled) }
                         )
                         DropdownMenuItem(
                             text = { Text("Compartir lista") },
@@ -278,7 +363,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                 OutlinedTextField(
                     value = quickText,
                     onValueChange = { quickText = it },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).focusRequester(quickAddFocus),
                     placeholder = { Text("Añadir: 2 kg tomates, leche…") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
@@ -290,8 +375,14 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                         contentDescription = if (listening) "Dejar de escuchar" else "Dictar artículos"
                     )
                 }
-                IconButton(onClick = { submitQuick() }, enabled = quickText.isNotBlank()) {
-                    Icon(Icons.Filled.Add, contentDescription = "Añadir a la lista")
+                if (quickText.isBlank()) {
+                    IconButton(onClick = { showCatalog = true }) {
+                        Icon(Icons.Filled.GridView, contentDescription = "Abrir el catálogo para tocar")
+                    }
+                } else {
+                    IconButton(onClick = { submitQuick() }) {
+                        Icon(Icons.Filled.Add, contentDescription = "Añadir a la lista")
+                    }
                 }
             }
 
@@ -353,6 +444,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                     ShoppingListRow(
                         item = shoppingItem,
                         shopMode = shopMode,
+                        showImage = imagesEnabled,
                         onCheckedChange = { viewModel.setChecked(shoppingItem.id, it) },
                         onDelete = {
                             viewModel.deleteItem(shoppingItem) {
@@ -402,6 +494,99 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                 }
             }
         }
+    }
+
+    if (showCatalog) {
+        val pendingNames = remember(groups) {
+            groups.flatMap { it.items }.filter { !it.checked }.map { it.name.trim().lowercase() }.toSet()
+        }
+        CatalogSheet(
+            catalog = catalog,
+            pendingNames = pendingNames,
+            onToggle = { viewModel.toggleCatalogItem(it) },
+            onDismiss = { showCatalog = false }
+        )
+    }
+
+    if (showSaveTemplate) {
+        var templateName by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showSaveTemplate = false },
+            title = { Text("Guardar como plantilla") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Se guardan los $totalCount artículos de la lista para volver a añadirlos con un toque.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = templateName,
+                        onValueChange = { templateName = it },
+                        label = { Text("Nombre") },
+                        placeholder = { Text("p. ej. Compra semanal") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.saveTemplate(templateName)
+                        showSaveTemplate = false
+                        showMessage("Plantilla \"${templateName.trim()}\" guardada")
+                    },
+                    enabled = templateName.isNotBlank()
+                ) { Text("Guardar") }
+            },
+            dismissButton = { TextButton(onClick = { showSaveTemplate = false }) { Text("Cancelar") } }
+        )
+    }
+
+    if (showTemplates) {
+        AlertDialog(
+            onDismissRequest = { showTemplates = false },
+            title = { Text("Plantillas") },
+            text = {
+                if (templates.isEmpty()) {
+                    Text(
+                        "Todavía no tienes plantillas. Rellena la lista y usa \"Guardar lista como plantilla…\" para crear una.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+                        items(templates, key = { it.id }) { template ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.applyTemplate(template)
+                                        showTemplates = false
+                                        showMessage("Añadidos ${template.entries.size} artículos de \"${template.name}\"")
+                                    }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(template.name, style = MaterialTheme.typography.bodyLarge)
+                                    Text(
+                                        "${template.entries.size} artículos",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                IconButton(onClick = { viewModel.deleteTemplate(template.id) }) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "Borrar plantilla \"${template.name}\"")
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showTemplates = false }) { Text("Cerrar") } }
+        )
     }
 
     if (showClearAllConfirm) {
@@ -561,7 +746,7 @@ private fun EmojiBadge(emoji: String, accent: Color, size: Int) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, onCheckedChange: (Boolean) -> Unit, onDelete: () -> Unit) {
+private fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImage: Boolean, onCheckedChange: (Boolean) -> Unit, onDelete: () -> Unit) {
     val style = ShoppingVisuals.categoryStyle(item.categoryName)
     val emoji = ShoppingVisuals.itemEmoji(item.name, item.categoryName)
     val currentChecked = rememberUpdatedState(item.checked)
@@ -585,7 +770,17 @@ private fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, onChecked
             )
             Spacer(modifier = Modifier.width(12.dp))
             Box(modifier = Modifier.alpha(if (item.checked) 0.5f else 1f)) {
-                EmojiBadge(emoji = emoji, accent = Color(style.argb), size = if (shopMode) 44 else 34)
+                val badgeSize = if (shopMode) 44 else 34
+                if (showImage && item.imageUrl != null) {
+                    AsyncImage(
+                        model = item.imageUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(badgeSize.dp).clip(CircleShape)
+                    )
+                } else {
+                    EmojiBadge(emoji = emoji, accent = Color(style.argb), size = badgeSize)
+                }
             }
             Spacer(modifier = Modifier.width(12.dp))
             Text(
@@ -642,4 +837,95 @@ private fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, onChecked
         },
         content = { rowContent() }
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CatalogSheet(
+    catalog: List<IngredientCatalogItem>,
+    pendingNames: Set<String>,
+    onToggle: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val byCategory = remember(catalog) {
+        catalog.groupBy { it.categoryName ?: UNCATEGORIZED_INGREDIENT_LABEL }
+            .mapValues { (_, items) -> items.map { it.name }.sortedBy { it.lowercase() } }
+    }
+    val categories = remember(byCategory) {
+        byCategory.keys.sortedWith(compareBy({ it == UNCATEGORIZED_INGREDIENT_LABEL || it == "Otros" }, { it.lowercase() }))
+    }
+    var selected by remember { mutableStateOf<String?>(null) }
+    val current = selected?.takeIf { it in byCategory } ?: categories.firstOrNull()
+
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.fillMaxHeight(0.8f)) {
+            Text(
+                "Toca para añadir o quitar de la lista",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                categories.forEach { category ->
+                    FilterChip(
+                        selected = category == current,
+                        onClick = { selected = category },
+                        label = { Text("${ShoppingVisuals.categoryStyle(category).emoji} $category") }
+                    )
+                }
+            }
+            if (current == null) {
+                Text(
+                    "El catálogo de ingredientes está vacío.",
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                val style = ShoppingVisuals.categoryStyle(current)
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(84.dp),
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    gridItems(byCategory.getValue(current), key = { it }) { name ->
+                        val inList = name.trim().lowercase() in pendingNames
+                        val accent = Color(style.argb)
+                        Column(
+                            modifier = Modifier
+                                .clip(MaterialTheme.shapes.medium)
+                                .clickable { onToggle(name) }
+                                .padding(6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(52.dp)
+                                    .clip(CircleShape)
+                                    .background(accent.copy(alpha = if (inList) 0.35f else 0.14f))
+                                    .then(if (inList) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape) else Modifier),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(ShoppingVisuals.itemEmoji(name, current), fontSize = 26.sp)
+                            }
+                            Text(
+                                text = name,
+                                style = MaterialTheme.typography.labelMedium,
+                                textAlign = TextAlign.Center,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

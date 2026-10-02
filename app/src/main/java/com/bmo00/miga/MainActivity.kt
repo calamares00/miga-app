@@ -1,5 +1,6 @@
 package com.bmo00.miga
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -36,6 +37,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.bmo00.miga.data.model.ColorTheme
 import com.bmo00.miga.data.model.ThemeMode
+import com.bmo00.miga.data.share.ShoppingIntents
 import com.bmo00.miga.ui.navigation.RecetarioNavHost
 import com.bmo00.miga.ui.security.BiometricAuthenticator
 import com.bmo00.miga.ui.theme.RecetarioTheme
@@ -45,9 +47,16 @@ import kotlinx.coroutines.launch
 private const val SPLASH_MIN_DURATION_MILLIS = 1200L
 
 class MainActivity : FragmentActivity() {
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        ShoppingIntents.handle(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (savedInstanceState == null) ShoppingIntents.handle(intent)
         val settingsRepository = (application as RecetarioApp).settingsRepository
         setContent {
             val themeMode by settingsRepository.observeThemeMode().collectAsState(initial = ThemeMode.SYSTEM)
