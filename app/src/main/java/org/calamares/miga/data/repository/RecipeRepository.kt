@@ -21,6 +21,7 @@ import org.calamares.miga.data.local.entity.RecipeUtensilCrossRef
 import org.calamares.miga.data.local.entity.RecipeWithDetails
 import org.calamares.miga.data.local.entity.ShoppingHistoryEntity
 import org.calamares.miga.data.local.entity.ShoppingListItemEntity
+import org.calamares.miga.data.local.entity.ShoppingStoreEntity
 import org.calamares.miga.data.local.entity.ShoppingTemplateEntity
 import org.calamares.miga.data.local.entity.StepEntity
 import org.calamares.miga.data.local.entity.SyncChangeType
@@ -45,6 +46,7 @@ import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.ParsedShoppingEntry
 import org.calamares.miga.data.model.ShoppingListGroup
 import org.calamares.miga.data.model.ShoppingListItem
+import org.calamares.miga.data.model.ShoppingStore
 import org.calamares.miga.data.model.ShoppingSuggestion
 import org.calamares.miga.data.model.ShoppingTemplate
 import org.calamares.miga.data.share.ShoppingListShareCodec
@@ -89,6 +91,7 @@ class RecipeRepository(
     private val shoppingListDao = db.shoppingListDao()
     private val shoppingHistoryDao = db.shoppingHistoryDao()
     private val shoppingTemplateDao = db.shoppingTemplateDao()
+    private val shoppingStoreDao = db.shoppingStoreDao()
     private val syncConnectionDao = db.syncConnectionDao()
     private val pendingSyncChangeDao = db.pendingSyncChangeDao()
 
@@ -603,6 +606,28 @@ class RecipeRepository(
         }
         notifyShoppingListChanged()
     }
+
+    // --- Supermercados (orden de pasillos) ---
+
+    fun observeShoppingStores(): Flow<List<ShoppingStore>> =
+        shoppingStoreDao.observeAll().map { list ->
+            list.map { ShoppingStore(it.id, it.name, it.color, it.aisleOrder.split("\n").map(String::trim).filter(String::isNotEmpty)) }
+        }
+
+    /** Crea ([store].id == 0) o actualiza una tienda; devuelve su id. */
+    suspend fun saveShoppingStore(store: ShoppingStore): Long {
+        val name = store.name.trim()
+        if (name.isEmpty()) return store.id
+        val order = store.aisleOrder.joinToString("\n")
+        return if (store.id == 0L) {
+            shoppingStoreDao.insert(ShoppingStoreEntity(name = name, color = store.argb, aisleOrder = order, createdAt = System.currentTimeMillis()))
+        } else {
+            shoppingStoreDao.update(ShoppingStoreEntity(id = store.id, name = name, color = store.argb, aisleOrder = order, createdAt = System.currentTimeMillis()))
+            store.id
+        }
+    }
+
+    suspend fun deleteShoppingStore(id: Long) = shoppingStoreDao.delete(id)
 
     // --- Plantillas de lista ---
 

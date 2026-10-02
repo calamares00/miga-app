@@ -1,0 +1,1 @@
+Lista de la compra por supermercado: crea tus supermercados (Mercadona, Lidl, Aldi, Dia, Deza… o el que quieras) con su color y ordena la lista según el recorrido de sus pasillos. Nuevas listas predefinidas (despensa básica, desayuno, barbacoa, Navidad, limpieza…) que se añaden con un toque.
