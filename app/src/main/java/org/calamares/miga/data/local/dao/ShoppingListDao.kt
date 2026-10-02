@@ -12,11 +12,17 @@ import kotlinx.coroutines.flow.Flow
  * (tombstones pendientes de subir al servidor). Toda escritura local marca la fila como
  * "syncDirty" con un updatedAt nuevo; ver RecipeRepository para la lógica de sincronización.
  */
+/** Cuántos artículos pendientes (sin marcar) tiene una lista. */
+data class ShoppingListPendingCount(val listUid: String, val pending: Int)
+
 @Dao
 interface ShoppingListDao {
 
     @Query("SELECT * FROM shopping_list_items WHERE deletedAt IS NULL AND listUid = :listUid ORDER BY normalizedName ASC")
     fun observeAll(listUid: String): Flow<List<ShoppingListItemEntity>>
+
+    @Query("SELECT listUid AS listUid, COUNT(*) AS pending FROM shopping_list_items WHERE deletedAt IS NULL AND checked = 0 GROUP BY listUid")
+    fun observePendingCounts(): Flow<List<ShoppingListPendingCount>>
 
     /**
      * Fila fusionable: mismo nombre normalizado + misma unidad (incluye null=null, por eso se usa

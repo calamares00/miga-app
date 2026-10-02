@@ -24,15 +24,16 @@ object SpeechDictation {
     fun isAvailable(context: Context): Boolean = SpeechRecognizer.isRecognitionAvailable(context)
 
     /**
-     * Empieza a escuchar y llama a [onResult] una única vez, al terminar (éxito o error). El
+     * Empieza a escuchar en [languageTag] (p. ej. "es-ES") y llama a [onResult] una única vez, al terminar (éxito o error). El
      * [SpeechRecognizer] devuelto sigue vivo hasta que se llame a [SpeechRecognizer.destroy] -
      * quien llama es responsable de eso (ver DisposableEffect en la pantalla que lo usa).
      */
-    fun startListening(context: Context, onResult: (DictationResult) -> Unit): SpeechRecognizer {
+    fun startListening(context: Context, languageTag: String, onResult: (DictationResult) -> Unit): SpeechRecognizer {
         val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toString())
+            // El idioma lo elige el usuario en Ajustes: si se dejara el del sistema, un móvil en inglés dictaría en inglés.
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.forLanguageTag(languageTag).toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
         }
         recognizer.setRecognitionListener(object : RecognitionListener {

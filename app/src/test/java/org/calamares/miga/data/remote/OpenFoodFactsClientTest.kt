@@ -87,4 +87,25 @@ class OpenFoodFactsClientTest {
         assertNull(info.nutriScore)
         assertNull(info.nova)
     }
+
+    @Test
+    fun `search response keeps valid products and skips the rest`() {
+        val body = """
+            {"count":3,"products":[
+              {"code":"8410000000000","product_name_es":"Leche entera","brands":"Marca","nutriscore_grade":"b","image_front_small_url":"https://img/l.jpg"},
+              {"code":"abc","product_name":"Sin código válido"},
+              {"code":"8410000000017","product_name":"  "}
+            ]}
+        """.trimIndent()
+        val results = OpenFoodFactsClient.parseSearchResponse(body)
+        assertEquals(1, results.size)
+        assertEquals("Leche entera", results.single().name)
+        assertEquals("8410000000000", results.single().barcode)
+        assertEquals("b", results.single().info.nutriScore)
+    }
+
+    @Test
+    fun `search response without products is empty`() {
+        assertEquals(0, OpenFoodFactsClient.parseSearchResponse("""{"count":0}""").size)
+    }
 }
