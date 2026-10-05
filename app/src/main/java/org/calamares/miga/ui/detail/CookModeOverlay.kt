@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.detail
 
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.WindowInsets
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.Manifest
@@ -204,7 +207,10 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
     }
 
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        // Desde Android 15/16 las ventanas a pantalla completa se dibujan bajo las barras del sistema:
+        // se respetan aquí para que los botones de abajo no queden tapados por la navegación.
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
             if (totalPages == 0) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(L10n.str(R.string.esta_receta_no_tiene_pasos), style = MaterialTheme.typography.bodyLarge)
@@ -380,6 +386,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                     }
                 }
             }
+        }
         }
     }
 }

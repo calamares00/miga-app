@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.components
 
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.WindowInsets
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.graphics.Bitmap
@@ -100,6 +103,7 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
 
     Dialog(onDismissRequest = onCancel, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(8.dp),
@@ -254,6 +258,7 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
                     modifier = Modifier.fillMaxWidth().padding(16.dp)
                 )
             }
+        }
         }
     }
 }
