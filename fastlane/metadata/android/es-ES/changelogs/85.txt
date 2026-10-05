@@ -1,0 +1,1 @@
+Favoritas más compacta: el botón de filtros pasa a la barra del título y desaparece el hueco vacío de arriba. El punto rojo de filtros ya no sale siempre en Favoritas, solo cuando hay filtros aplicados.

@@ -89,6 +89,16 @@ fun GlobalSearchScreen(
         DIETARY_QUICK_TAGS.mapNotNull { candidate -> uiState.availableTags.firstOrNull { it.equals(candidate, ignoreCase = true) } }
     }
 
+    // En Favoritas "solo favoritas" va implícito: no cuenta como filtro aplicado.
+    val filtersApplied = if (showQueryField) filter.isActive else filter.copy(onlyFavorites = false).isActive
+    val filterButton: @Composable () -> Unit = {
+        IconButton(onClick = { showFilters = true }) {
+            BadgedBox(badge = { if (filtersApplied) Badge() }) {
+                Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
+            }
+        }
+    }
+
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
         topBar = {
@@ -110,17 +120,18 @@ fun GlobalSearchScreen(
             } else {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                    title = { Text(title) }
+                    title = { Text(title) },
+                    actions = { if (!showQueryField) filterButton() }
                 )
             }
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (showQueryField) {
+            if (showQueryField) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     OutlinedTextField(
                         value = filter.query,
                         onValueChange = viewModel::updateQuery,
@@ -129,13 +140,7 @@ fun GlobalSearchScreen(
                         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                         singleLine = true
                     )
-                } else {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-                IconButton(onClick = { showFilters = true }) {
-                    BadgedBox(badge = { if (filter.isActive) Badge() }) {
-                        Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
-                    }
+                    filterButton()
                 }
             }
 
