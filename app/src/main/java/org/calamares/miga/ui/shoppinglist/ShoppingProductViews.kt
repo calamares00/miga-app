@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.shoppinglist
 
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -181,7 +183,8 @@ internal fun NutriScoreBadge(letter: String, large: Boolean) {
         modifier = Modifier
             .size(if (large) 40.dp else 24.dp)
             .clip(MaterialTheme.shapes.small)
-            .background(Color(argb)),
+            .background(Color(argb))
+            .clearAndSetSemantics { contentDescription = "Nutri-Score $letter" },
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -461,7 +464,8 @@ internal fun ScoreChip(score: ProductScore, large: Boolean) {
             .height(if (large) 40.dp else 24.dp)
             .width(if (large) 54.dp else 32.dp)
             .clip(MaterialTheme.shapes.small)
-            .background(Color(score.tier.argb)),
+            .background(Color(score.tier.argb))
+            .clearAndSetSemantics { contentDescription = "Puntuación ${score.value} de 100" },
         contentAlignment = Alignment.Center
     ) {
         Text(

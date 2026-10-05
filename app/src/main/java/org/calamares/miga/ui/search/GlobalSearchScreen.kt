@@ -1,5 +1,9 @@
 package org.calamares.miga.ui.search
 
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.FavoriteBorder
+import org.calamares.miga.ui.components.EmptyState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -168,18 +172,27 @@ fun GlobalSearchScreen(
                 uiState.isLoading -> Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
-                uiState.results.isEmpty() -> Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = when {
-                            !showQueryField -> "Aún no tienes recetas favoritas.\nToca el corazón de una receta para añadirla aquí."
-                            filter.query.isBlank() && !filter.isActive -> "Busca por nombre, ingrediente, etiqueta, utensilio o dificultad."
-                            else -> "No se encontraron recetas."
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(32.dp)
+                uiState.results.isEmpty() -> when {
+                    !showQueryField && !filtersApplied -> EmptyState(
+                        icon = Icons.Filled.FavoriteBorder,
+                        title = "Aún no tienes favoritas",
+                        body = "Toca el corazón de una receta para tenerla siempre a mano aquí.",
+                        modifier = Modifier.fillMaxSize().weight(1f)
                     )
+                    filter.query.isBlank() && !filter.isActive -> EmptyState(
+                        icon = Icons.Filled.Search,
+                        title = "Busca en todas tus recetas",
+                        body = "Por nombre, ingrediente, etiqueta, utensilio o dificultad, en todos tus libros a la vez.",
+                        modifier = Modifier.fillMaxSize().weight(1f)
+                    )
+                    else -> EmptyState(
+                        icon = Icons.Filled.SearchOff,
+                        title = "Sin resultados",
+                        body = "Prueba con otras palabras o quita algún filtro.",
+                        modifier = Modifier.fillMaxSize().weight(1f)
+                    ) {
+                        if (filtersApplied) OutlinedButton(onClick = { viewModel.clearFilters() }) { Text("Quitar filtros") }
+                    }
                 }
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize().weight(1f),

@@ -28,6 +28,7 @@ class SettingsRepository(private val context: Context) {
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val colorThemeKey = stringPreferencesKey("color_theme")
     private val biometricLockKey = booleanPreferencesKey("biometric_lock_enabled")
+    private val onboardingDoneKey = booleanPreferencesKey("onboarding_done")
     private val shoppingImagesKey = booleanPreferencesKey("shopping_images_enabled")
     private val shoppingStoreKey = longPreferencesKey("shopping_store_id")
     private val shoppingListUidKey = stringPreferencesKey("shopping_list_uid")
@@ -96,6 +97,14 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setShoppingImagesEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[shoppingImagesKey] = enabled }
+    }
+
+    /** true cuando ya se ha visto (o saltado) la bienvenida de la primera ejecución. */
+    fun observeOnboardingDone(): Flow<Boolean> =
+        context.settingsDataStore.data.map { prefs -> prefs[onboardingDoneKey] ?: false }
+
+    suspend fun setOnboardingDone() {
+        context.settingsDataStore.edit { prefs -> prefs[onboardingDoneKey] = true }
     }
 
     fun observeBiometricLockEnabled(): Flow<Boolean> =

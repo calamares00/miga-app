@@ -43,7 +43,8 @@ private data class FilterOptions(
 
 class GlobalSearchViewModel(
     private val repository: RecipeRepository,
-    initialOnlyFavorites: Boolean = false
+    /** true en la pestaña Favoritas: "solo favoritas" es fijo y limpiar filtros no lo quita. */
+    private val initialOnlyFavorites: Boolean = false
 ) : ViewModel() {
 
     private val _filter = MutableStateFlow(RecipeFilter(onlyFavorites = initialOnlyFavorites))
@@ -87,7 +88,7 @@ class GlobalSearchViewModel(
                 utensils = emptySet(),
                 tags = emptySet(),
                 ingredients = emptySet(),
-                onlyFavorites = false
+                onlyFavorites = initialOnlyFavorites
             )
         }
     }

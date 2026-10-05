@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.shoppinglist
 
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -232,6 +235,8 @@ internal fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImag
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.background)
                 .toggleable(value = item.checked, role = Role.Checkbox, onValueChange = onCheckedChange)
+                // En modo tienda quitar es un gesto (deslizar): se ofrece también como acción accesible.
+                .semantics { customActions = listOf(CustomAccessibilityAction("Quitar ${item.name}") { onDelete(); true }) }
                 .padding(vertical = if (shopMode) 12.dp else 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -251,7 +256,7 @@ internal fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImag
                 if (showImage && item.imageUrl != null) {
                     AsyncImage(
                         model = item.imageUrl,
-                        contentDescription = null,
+                        contentDescription = if (onOpenProduct != null) "Ficha de ${item.name}" else null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.size(badgeSize.dp).clip(CircleShape)
                     )
@@ -283,7 +288,7 @@ internal fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImag
             }
             if (!shopMode) {
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Quitar artículo", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Filled.Delete, contentDescription = "Quitar ${item.name}", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

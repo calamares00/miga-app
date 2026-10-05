@@ -1,6 +1,7 @@
 package org.calamares.miga.data.export
 
 import kotlinx.serialization.Serializable
+import org.calamares.miga.data.model.TemplateItem
 
 /**
  * Versión del esquema de cada JSON exportado. Un archivo sin la clave "version" (todo lo
@@ -25,8 +26,18 @@ data class LibraryExportDto(
     val version: Int = CURRENT_LIBRARY_SCHEMA_VERSION,
     val exportedAt: Long,
     val books: List<BookExportDto> = emptyList(),
-    val recipes: List<RecipeExportDto>
+    val recipes: List<RecipeExportDto>,
+    /** Plantillas de la lista de la compra (opcional: las copias anteriores no lo traen). */
+    val shoppingTemplates: List<TemplateBackupDto> = emptyList(),
+    /** Supermercados con su orden de pasillos (opcional, igual que [shoppingTemplates]). */
+    val shoppingStores: List<StoreBackupDto> = emptyList()
 )
+
+@Serializable
+data class TemplateBackupDto(val name: String, val items: List<TemplateItem> = emptyList())
+
+@Serializable
+data class StoreBackupDto(val name: String, val argb: Long, val aisleOrder: List<String> = emptyList())
 
 /** Metadatos de un libro incluidos junto a sus recetas al exportar un libro o toda la app. */
 @Serializable

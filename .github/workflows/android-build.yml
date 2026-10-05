@@ -280,7 +280,7 @@ jobs:
       contents: write
     steps:
       # Además del artefacto de la propia ejecución (subido por build), se publica/actualiza una
-      # única Release "beta-latest" (canal beta del selector de actualizaciones dentro de la app)
+      # única Release "beta-latest" (para probar builds de desarrollo instalando el APK a mano)
       # con el APK debug más reciente de cualquier rama de desarrollo. El tag es fijo a propósito:
       # cada push la sobrescribe, no se acumulan releases.
       - name: Download beta dist

@@ -1,5 +1,6 @@
 package org.calamares.miga.data.export
 
+import kotlinx.coroutines.flow.first
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -10,6 +11,8 @@ import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.RecipeBook
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.ShoppingListGroup
+import org.calamares.miga.data.model.ShoppingStore
+import org.calamares.miga.data.model.ShoppingTemplate
 import org.calamares.miga.data.model.formatQuantity
 import org.calamares.miga.data.repository.RecipeRepository
 import kotlinx.coroutines.CancellationException
@@ -178,11 +181,20 @@ object RecipeExporter {
     }
 
     /** Copia de seguridad de toda la app: siempre en ZIP (con o sin fotos) para no tener que decidir el formato al elegir dónde guardarla. */
-    suspend fun exportLibrary(context: Context, destination: Uri, books: List<RecipeBook>, recipes: List<Recipe>) = withContext(Dispatchers.IO) {
+    suspend fun exportLibrary(
+        context: Context,
+        destination: Uri,
+        books: List<RecipeBook>,
+        recipes: List<Recipe>,
+        templates: List<ShoppingTemplate> = emptyList(),
+        stores: List<ShoppingStore> = emptyList()
+    ) = withContext(Dispatchers.IO) {
         val dto = LibraryExportDto(
             exportedAt = System.currentTimeMillis(),
             books = books.map { bookExportDto(it) },
-            recipes = recipes.map { it.toExportDto() }
+            recipes = recipes.map { it.toExportDto() },
+            shoppingTemplates = templates.filter { !it.isPredefined }.map { TemplateBackupDto(it.name, it.items) },
+            shoppingStores = stores.map { StoreBackupDto(it.name, it.argb, it.aisleOrder) }
         )
         val content = json.encodeToString(dto)
         val photoSources = books.flatMap { book ->
@@ -257,6 +269,22 @@ object RecipeExporter {
                 applyHealthFromImport(repository, recipeId, recipeDto.health)
                 applyNutritionFromImport(repository, recipeId, recipeDto.nutrition)
                 if (recipeDto.rating != null) repository.setRating(recipeId, recipeDto.rating)
+            }
+            // Libros sin recetas: también se restauran (antes solo se creaban al importar sus recetas).
+            dto.books.filter { it.name !in bookIdsByName }.forEach { bookMeta ->
+                val coverUri = bookMeta.coverPhotoFileName?.let { fileName ->
+                    entries["books/${bookMeta.uid}/$fileName"]?.let { PhotoStorage.copyBytesToInternalStorage(context, it) }
+                }
+                bookIdsByName[bookMeta.name] = repository.getOrCreateRecipeBookIdByName(bookMeta.name, bookMeta.uid, coverUri)
+            }
+            // Plantillas y supermercados: se añaden los que no existan ya con ese nombre.
+            val existingTemplates = repository.observeShoppingTemplates().first().map { it.name.trim().lowercase() }.toSet()
+            dto.shoppingTemplates.filter { it.name.trim().lowercase() !in existingTemplates }.forEach {
+                repository.saveShoppingTemplate(it.name, it.items)
+            }
+            val existingStores = repository.observeShoppingStores().first().map { it.name.trim().lowercase() }.toSet()
+            dto.shoppingStores.filter { it.name.trim().lowercase() !in existingStores }.forEach {
+                repository.saveShoppingStore(ShoppingStore(0L, it.name, it.argb, it.aisleOrder))
             }
             LibraryImportResult.Success(dto.recipes.size)
         } catch (e: CancellationException) {
@@ -374,9 +402,11 @@ object RecipeExporter {
             zip.write(manifestJson.toByteArray())
             zip.closeEntry()
             photoSources.forEach { (path, sourceUri) ->
-                context.contentResolver.openInputStream(Uri.parse(sourceUri))?.use { input ->
+                // Una foto que ya no existe (borrada fuera de la app) no debe abortar la copia entera.
+                val input = runCatching { context.contentResolver.openInputStream(Uri.parse(sourceUri)) }.getOrNull()
+                input?.use {
                     zip.putNextEntry(ZipEntry(path))
-                    input.copyTo(zip)
+                    it.copyTo(zip)
                     zip.closeEntry()
                 }
             }
