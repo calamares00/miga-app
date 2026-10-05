@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -37,9 +39,9 @@ fun AboutScreen(onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text("Acerca de") },
+                title = { Text(L10n.str(R.string.acerca)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
                 }
             )
         }
@@ -52,14 +54,14 @@ fun AboutScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Text("Miga", style = MaterialTheme.typography.headlineSmall)
-            AboutRow("Versión", "${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})")
-            AboutRow("Tipo de build", if (BuildConfig.DEBUG) "Beta (desarrollo)" else "Estable")
-            AboutRow("Arquitectura", Build.SUPPORTED_ABIS.firstOrNull() ?: "Desconocida")
+            AboutRow(L10n.str(R.string.version), "${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})")
+            AboutRow(L10n.str(R.string.tipo_build), if (BuildConfig.DEBUG) L10n.str(R.string.beta_desarrollo) else L10n.str(R.string.estable))
+            AboutRow(L10n.str(R.string.arquitectura), Build.SUPPORTED_ABIS.firstOrNull() ?: L10n.str(R.string.desconocida))
             OutlinedButton(onClick = {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL))
                 runCatching { context.startActivity(intent) }
             }) {
-                Text("Política de privacidad")
+                Text(L10n.str(R.string.politica_privacidad))
             }
         }
     }

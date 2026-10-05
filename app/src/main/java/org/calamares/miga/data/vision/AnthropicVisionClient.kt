@@ -1,5 +1,7 @@
 package org.calamares.miga.data.vision
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,7 +22,7 @@ object AnthropicVisionClient : RecipeVisionClient {
 
     override suspend fun extractRecipe(images: List<VisionImageInput>, apiKey: String, model: String): RecipeVisionResult =
         withContext(Dispatchers.IO) {
-            if (images.isEmpty()) return@withContext RecipeVisionResult.Error("No hay ninguna foto que procesar")
+            if (images.isEmpty()) return@withContext RecipeVisionResult.Error(L10n.str(R.string.no_hay_ninguna_foto_procesar))
             try {
                 val requestBody = json.encodeToString(
                     AnthropicRequest.serializer(),
@@ -55,7 +57,7 @@ object AnthropicVisionClient : RecipeVisionClient {
                         val reason = errorBody?.let {
                             runCatching { json.decodeFromString(AnthropicErrorEnvelope.serializer(), it).error?.message }.getOrNull()
                         }
-                        return@withContext RecipeVisionResult.Error(reason ?: "Claude respondió con el código $responseCode")
+                        return@withContext RecipeVisionResult.Error(reason ?: L10n.str(R.string.claude_respondio_codigo_x, responseCode))
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(AnthropicResponse.serializer(), body)
@@ -64,11 +66,11 @@ object AnthropicVisionClient : RecipeVisionClient {
                     val recipe = try {
                         json.decodeFromString(RecipeVisionResultDto.serializer(), stripMarkdownFences(text))
                     } catch (e: Exception) {
-                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: "no se pudo interpretar el JSON"
-                        return@withContext RecipeVisionResult.Error("$shortReason\n\nRespuesta completa del modelo:\n$text")
+                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: L10n.str(R.string.no_pudo_interpretar_json)
+                        return@withContext RecipeVisionResult.Error(L10n.str(R.string.x_respuesta_completa_modelo_x, shortReason, text))
                     }
                     if (recipe.name.isBlank()) {
-                        RecipeVisionResult.Error("No se ha reconocido ninguna receta en la foto")
+                        RecipeVisionResult.Error(L10n.str(R.string.no_ha_reconocido_ninguna_receta_2))
                     } else {
                         RecipeVisionResult.Success(recipe)
                     }
@@ -78,7 +80,7 @@ object AnthropicVisionClient : RecipeVisionClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                RecipeVisionResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+                RecipeVisionResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
             }
         }
 }

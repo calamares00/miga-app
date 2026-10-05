@@ -22,11 +22,12 @@ sealed interface CookVoiceCommand {
  * "temporizador".
  */
 object CookModeVoiceCommands {
-    private val nextPhrases = listOf("siguiente", "adelante", "continua", "proximo paso")
-    private val previousPhrases = listOf("anterior", "atras", "retrocede", "paso anterior")
-    private val repeatPhrases = listOf("repite", "repetir", "otra vez", "de nuevo")
-    private val cancelVerbs = listOf("cancela", "cancelar", "deten", "detener", "para", "quita", "quitar")
-    private val timerWords = listOf("temporizador", "cuenta atras")
+    // Español e inglés: el dictado puede estar en cualquiera de los dos (Ajustes → Voz y dictado).
+    private val nextPhrases = listOf("siguiente", "adelante", "continua", "proximo paso", "next", "forward")
+    private val previousPhrases = listOf("anterior", "atras", "retrocede", "paso anterior", "previous", "back")
+    private val repeatPhrases = listOf("repite", "repetir", "otra vez", "de nuevo", "repeat", "again")
+    private val cancelVerbs = listOf("cancela", "cancelar", "deten", "detener", "para", "quita", "quitar", "cancel", "stop")
+    private val timerWords = listOf("temporizador", "cuenta atras", "timer", "countdown")
 
     fun parse(rawText: String): CookVoiceCommand? {
         val text = normalize(rawText)

@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.shoppinglist
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -70,7 +72,7 @@ class ShoppingListViewModel(
     private val syncEngine = SyncEngine(repository)
 
     val lists: StateFlow<List<ShoppingListInfo>> = repository.observeShoppingLists()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf(ShoppingListInfo(DEFAULT_SHOPPING_LIST_UID, "Compra")))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf(ShoppingListInfo(DEFAULT_SHOPPING_LIST_UID, L10n.str(R.string.compra))))
 
     /** Artículos pendientes de cada lista (uid -> cantidad), para mostrarlos en las pestañas de listas. */
     val listCounts: StateFlow<Map<String, Int>> = repository.observeShoppingListPendingCounts()
@@ -161,8 +163,8 @@ class ShoppingListViewModel(
                         val others = items.filter { it.uid !in knownItemUids && !it.addedBy.isNullOrBlank() && !it.addedBy.equals(me, ignoreCase = true) }
                         if (others.isNotEmpty()) {
                             val who = others.map { it.addedBy!! }.distinct()
-                            val names = if (who.size == 1) who.single() else "Varias personas"
-                            _remoteAdditions.tryEmit("$names añadió ${if (others.size == 1) "1 artículo" else "${others.size} artículos"}")
+                            val names = if (who.size == 1) who.single() else L10n.str(R.string.varias_personas)
+                            _remoteAdditions.tryEmit(L10n.str(R.string.x_anadio_x, names, if (others.size == 1) L10n.str(R.string.n1_articulo) else L10n.str(R.string.x_articulos, others.size)))
                         }
                     }
                     announcedListUid = listUid
@@ -228,10 +230,10 @@ class ShoppingListViewModel(
             when (val result = OpenFoodFactsClient.lookup(barcode)) {
                 is ProductLookupResult.Found -> {
                     repository.addScannedShoppingProduct(result.product.name, result.product.imageUrl, result.product.info)
-                    onResult("Añadido: ${result.product.name}")
+                    onResult(L10n.str(R.string.anadido_x, result.product.name))
                 }
-                ProductLookupResult.NotFound -> onResult("Producto no encontrado en Open Food Facts ($barcode). Escríbelo a mano.")
-                is ProductLookupResult.Error -> onResult("No se pudo consultar el producto: ${result.reason}")
+                ProductLookupResult.NotFound -> onResult(L10n.str(R.string.producto_no_encontrado_open_food_2, barcode))
+                is ProductLookupResult.Error -> onResult(L10n.str(R.string.no_pudo_consultar_producto_x, result.reason))
             }
         }
     }
@@ -285,10 +287,10 @@ class ShoppingListViewModel(
             when (val result = OpenFoodFactsClient.lookup(barcode)) {
                 is ProductLookupResult.Found -> {
                     addToTemplate(templateId, result.product.toTemplateItem())
-                    onResult("Añadido a la plantilla: ${result.product.name}")
+                    onResult(L10n.str(R.string.anadido_plantilla_x, result.product.name))
                 }
-                ProductLookupResult.NotFound -> onResult("Producto no encontrado en Open Food Facts ($barcode)")
-                is ProductLookupResult.Error -> onResult("No se pudo consultar el producto: ${result.reason}")
+                ProductLookupResult.NotFound -> onResult(L10n.str(R.string.producto_no_encontrado_open_food, barcode))
+                is ProductLookupResult.Error -> onResult(L10n.str(R.string.no_pudo_consultar_producto_x, result.reason))
             }
         }
     }

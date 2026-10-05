@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.ui.components.AiContentNotice
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -119,25 +121,25 @@ fun RecipeDetailScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(recipe?.name.orEmpty(), maxLines = 1) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
                 },
                 actions = {
                     val current = recipe
                     IconButton(onClick = { viewModel.toggleFavorite() }, enabled = current != null) {
                         Icon(
                             imageVector = if (current?.isFavorite == true) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Favorita",
+                            contentDescription = L10n.str(R.string.favorita),
                             tint = if (current?.isFavorite == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     val currentBookIsPack = recipeBooks.firstOrNull { it.id == current?.recipeBookId }?.isPack == true
-                    IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Más opciones") }
+                    IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = L10n.str(R.string.mas_opciones)) }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         if (!currentBookIsPack) {
-                            DropdownMenuItem(text = { Text("Editar") }, leadingIcon = { Icon(Icons.Filled.Edit, null) }, onClick = { showMenu = false; onEdit() })
+                            DropdownMenuItem(text = { Text(L10n.str(R.string.editar)) }, leadingIcon = { Icon(Icons.Filled.Edit, null) }, onClick = { showMenu = false; onEdit() })
                         }
                         DropdownMenuItem(
-                            text = { Text("Compartir como texto") },
+                            text = { Text(L10n.str(R.string.compartir_como_texto)) },
                             leadingIcon = { Icon(Icons.Filled.Share, null) },
                             onClick = {
                                 showMenu = false
@@ -145,7 +147,7 @@ fun RecipeDetailScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Exportar como PDF") },
+                            text = { Text(L10n.str(R.string.exportar_como_pdf)) },
                             leadingIcon = { Icon(Icons.Filled.Share, null) },
                             onClick = {
                                 showMenu = false
@@ -153,7 +155,7 @@ fun RecipeDetailScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Exportar copia de seguridad") },
+                            text = { Text(L10n.str(R.string.exportar_copia_seguridad)) },
                             leadingIcon = { Icon(Icons.Filled.Share, null) },
                             onClick = {
                                 showMenu = false
@@ -161,22 +163,22 @@ fun RecipeDetailScreen(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Mover a otro libro") },
+                            text = { Text(L10n.str(R.string.mover_otro_libro)) },
                             leadingIcon = { Icon(Icons.Filled.SwapHoriz, null) },
                             onClick = { showMenu = false; showMoveDialog = true }
                         )
                         DropdownMenuItem(
-                            text = { Text("Añadir a la lista de la compra") },
+                            text = { Text(L10n.str(R.string.anadir_lista_compra)) },
                             leadingIcon = { Icon(Icons.Filled.ShoppingCart, null) },
                             onClick = {
                                 showMenu = false
                                 viewModel.addIngredientsToShoppingList()
-                                Toast.makeText(context, "Añadido a la lista de la compra", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, L10n.str(R.string.anadido_lista_compra), Toast.LENGTH_SHORT).show()
                             }
                         )
                         if (!currentBookIsPack) {
                             DropdownMenuItem(
-                                text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
+                                text = { Text(L10n.str(R.string.eliminar), color = MaterialTheme.colorScheme.error) },
                                 leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
                                 onClick = { showMenu = false; showDeleteConfirm = true }
                             )
@@ -190,7 +192,7 @@ fun RecipeDetailScreen(
                 ExtendedFloatingActionButton(
                     onClick = { showCookMode = true },
                     icon = { Icon(Icons.Filled.PlayArrow, null) },
-                    text = { Text("Modo cocina") }
+                    text = { Text(L10n.str(R.string.modo_cocina)) }
                 )
             }
         }
@@ -198,7 +200,7 @@ fun RecipeDetailScreen(
         val current = recipe
         if (current == null) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Cargando...")
+                Text(L10n.str(R.string.cargando))
             }
         } else {
             RecipeDetailContent(
@@ -222,16 +224,16 @@ fun RecipeDetailScreen(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Eliminar receta") },
-            text = { Text("¿Seguro que quieres eliminar \"${recipe?.name}\"? Esta acción no se puede deshacer.") },
+            title = { Text(L10n.str(R.string.eliminar_receta)) },
+            text = { Text(L10n.str(R.string.seguro_quieres_eliminar_x_esta, recipe?.name)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
                     viewModel.deleteRecipe(onDeleted = onBack)
-                }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
+                }) { Text(L10n.str(R.string.eliminar), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancelar") }
+                TextButton(onClick = { showDeleteConfirm = false }) { Text(L10n.str(R.string.cancelar)) }
             }
         )
     }
@@ -241,10 +243,10 @@ fun RecipeDetailScreen(
         val otherBooks = recipeBooks.filter { it.id != recipeForMove.recipeBookId && !it.isPack }
         AlertDialog(
             onDismissRequest = { showMoveDialog = false },
-            title = { Text("Mover a otro libro") },
+            title = { Text(L10n.str(R.string.mover_otro_libro)) },
             text = {
                 if (otherBooks.isEmpty()) {
-                    Text("No tienes más libros de recetas todavía.")
+                    Text(L10n.str(R.string.no_tienes_mas_libros_recetas))
                 } else {
                     Column {
                         otherBooks.forEach { book ->
@@ -266,7 +268,7 @@ fun RecipeDetailScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showMoveDialog = false }) { Text("Cerrar") }
+                TextButton(onClick = { showMoveDialog = false }) { Text(L10n.str(R.string.cerrar)) }
             }
         )
     }
@@ -280,16 +282,16 @@ fun RecipeDetailScreen(
                     is SubstitutionDialogState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         Text(
-                            "Buscando sustitutos con IA...",
+                            L10n.str(R.string.buscando_sustitutos_ia),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(start = 12.dp)
                         )
                     }
-                    is SubstitutionDialogState.NotConfigured -> Text("Configura un proveedor de IA en Ajustes para usar esto.")
+                    is SubstitutionDialogState.NotConfigured -> Text(L10n.str(R.string.configura_proveedor_ia_ajustes_usar))
                     is SubstitutionDialogState.Error -> Text(state.reason, color = MaterialTheme.colorScheme.error)
                     is SubstitutionDialogState.Loaded -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         AiContentNotice(
-                            feature = "Sustitución de ingredientes",
+                            feature = L10n.str(R.string.sustitucion_ingredientes),
                             content = { "${state.ingredientName}: " + state.substitutions.joinToString("; ") { "${it.substitute} (${it.notes})" } }
                         )
                         state.substitutions.forEach { substitution ->
@@ -307,7 +309,7 @@ fun RecipeDetailScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { viewModel.dismissSubstitutionDialog() }) { Text("Cerrar") }
+                TextButton(onClick = { viewModel.dismissSubstitutionDialog() }) { Text(L10n.str(R.string.cerrar)) }
             }
         )
     }
@@ -358,12 +360,12 @@ private fun RecipeDetailContent(
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SuggestionChip(onClick = {}, label = { Text(recipe.difficulty.label) })
                 if (recipe.prepTimeMinutes != null) SuggestionChip(onClick = {}, label = { Text("Prep: ${recipe.prepTimeMinutes} min") })
-                if (recipe.cookTimeMinutes != null) SuggestionChip(onClick = {}, label = { Text("Cocción: ${recipe.cookTimeMinutes} min") })
-                if (recipe.timesCooked > 0) SuggestionChip(onClick = {}, label = { Text("Cocinada ${recipe.timesCooked}x") })
+                if (recipe.cookTimeMinutes != null) SuggestionChip(onClick = {}, label = { Text(L10n.str(R.string.coccion_x_min, recipe.cookTimeMinutes)) })
+                if (recipe.timesCooked > 0) SuggestionChip(onClick = {}, label = { Text(L10n.str(R.string.cocinada_x_x, recipe.timesCooked)) })
             }
 
             if (recipe.utensils.isNotEmpty()) {
-                Section(title = "Utensilios") {
+                Section(title = L10n.str(R.string.utensilios)) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         recipe.utensils.forEach { SuggestionChip(onClick = {}, label = { Text(it) }) }
                     }
@@ -371,31 +373,31 @@ private fun RecipeDetailContent(
             }
 
             if (healthState != HealthState.Idle) {
-                Section(title = "Salud") {
+                Section(title = L10n.str(R.string.salud)) {
                     when (healthState) {
                         HealthState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
                             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             Text(
-                                "Analizando con IA...",
+                                L10n.str(R.string.analizando_ia),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(start = 12.dp)
                             )
                         }
                         HealthState.NotConfigured -> Text(
-                            "Configura un proveedor de IA en Ajustes para ver esto.",
+                            L10n.str(R.string.configura_proveedor_ia_ajustes_ver),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         is HealthState.Error -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(healthState.reason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                            TextButton(onClick = onRetryHealth) { Text("Reintentar") }
+                            TextButton(onClick = onRetryHealth) { Text(L10n.str(R.string.reintentar)) }
                         }
                         HealthState.Loaded -> recipe.healthRating?.let { rating ->
                             val (containerColor, contentColor, label) = when (rating.color) {
-                                HealthColorLevel.GREEN -> Triple(HealthGreenContainer, HealthGreenOn, "Saludable")
-                                HealthColorLevel.YELLOW -> Triple(HealthAmberContainer, HealthAmberOn, "Moderada")
-                                HealthColorLevel.RED -> Triple(HealthRedContainer, HealthRedOn, "Poco saludable")
+                                HealthColorLevel.GREEN -> Triple(HealthGreenContainer, HealthGreenOn, L10n.str(R.string.saludable))
+                                HealthColorLevel.YELLOW -> Triple(HealthAmberContainer, HealthAmberOn, L10n.str(R.string.moderada))
+                                HealthColorLevel.RED -> Triple(HealthRedContainer, HealthRedOn, L10n.str(R.string.poco_saludable))
                             }
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 AssistChip(
@@ -404,7 +406,7 @@ private fun RecipeDetailContent(
                                     colors = AssistChipDefaults.assistChipColors(containerColor = containerColor, labelColor = contentColor)
                                 )
                                 Text(rating.description, style = MaterialTheme.typography.bodyMedium)
-                                AiContentNotice(feature = "Valoración de salud", content = { "${recipe.name}: $label. ${rating.description}" })
+                                AiContentNotice(feature = L10n.str(R.string.valoracion_salud), content = { "${recipe.name}: $label. ${rating.description}" })
                             }
                         }
                         HealthState.Idle -> Unit
@@ -413,38 +415,37 @@ private fun RecipeDetailContent(
             }
 
             if (nutritionState != NutritionState.Idle) {
-                Section(title = "Nutrición (por ración)") {
+                Section(title = L10n.str(R.string.nutricion_racion)) {
                     when (nutritionState) {
                         NutritionState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
                             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             Text(
-                                "Analizando con IA...",
+                                L10n.str(R.string.analizando_ia),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(start = 12.dp)
                             )
                         }
                         NutritionState.NotConfigured -> Text(
-                            "Configura un proveedor de IA en Ajustes para ver esto.",
+                            L10n.str(R.string.configura_proveedor_ia_ajustes_ver),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         is NutritionState.Error -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(nutritionState.reason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                            TextButton(onClick = onRetryNutrition) { Text("Reintentar") }
+                            TextButton(onClick = onRetryNutrition) { Text(L10n.str(R.string.reintentar)) }
                         }
                         NutritionState.Loaded -> recipe.nutritionInfo?.let { nutrition ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 NutritionStat(value = "${nutrition.caloriesPerServing}", label = "kcal")
-                                NutritionStat(value = formatQuantity(nutrition.proteinGrams), label = "Proteínas (g)")
-                                NutritionStat(value = formatQuantity(nutrition.carbsGrams), label = "Carbohidratos (g)")
-                                NutritionStat(value = formatQuantity(nutrition.fatGrams), label = "Grasas (g)")
+                                NutritionStat(value = formatQuantity(nutrition.proteinGrams), label = L10n.str(R.string.proteinas_g))
+                                NutritionStat(value = formatQuantity(nutrition.carbsGrams), label = L10n.str(R.string.carbohidratos_g))
+                                NutritionStat(value = formatQuantity(nutrition.fatGrams), label = L10n.str(R.string.grasas_g))
                             }
                             AiContentNotice(
-                                feature = "Nutrición estimada",
+                                feature = L10n.str(R.string.nutricion_estimada),
                                 content = {
-                                    "${recipe.name}: ${nutrition.caloriesPerServing} kcal, ${nutrition.proteinGrams} g proteínas, " +
-                                        "${nutrition.carbsGrams} g carbohidratos, ${nutrition.fatGrams} g grasas por ración"
+                                    L10n.str(R.string.x_x_kcal_x_g, recipe.name, nutrition.caloriesPerServing, nutrition.proteinGrams, nutrition.carbsGrams, nutrition.fatGrams)
                                 }
                             )
                         }
@@ -456,7 +457,7 @@ private fun RecipeDetailContent(
             HorizontalDivider()
 
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Ingredientes", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                Text(L10n.str(R.string.ingredientes), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 ServingsStepper(servings = servings, onChange = { servings = it.coerceIn(1, 99) })
             }
 
@@ -515,7 +516,7 @@ private fun RecipeDetailContent(
 
             HorizontalDivider()
 
-            Text("Preparación", style = MaterialTheme.typography.titleLarge)
+            Text(L10n.str(R.string.preparacion), style = MaterialTheme.typography.titleLarge)
             recipe.stepGroups.forEach { group ->
                 if (group.instructions.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -543,14 +544,14 @@ private fun RecipeDetailContent(
             }
 
             if (recipe.notes.isNotBlank()) {
-                Section(title = "Notas") { Text(recipe.notes, style = MaterialTheme.typography.bodyLarge) }
+                Section(title = L10n.str(R.string.notas)) { Text(recipe.notes, style = MaterialTheme.typography.bodyLarge) }
             }
             if (recipe.source.isNotBlank()) {
-                Section(title = "Origen") { Text(recipe.source, style = MaterialTheme.typography.bodyMedium) }
+                Section(title = L10n.str(R.string.origen)) { Text(recipe.source, style = MaterialTheme.typography.bodyMedium) }
             }
 
             if (recipe.tags.isNotEmpty()) {
-                Section(title = "Etiquetas") {
+                Section(title = L10n.str(R.string.etiquetas)) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         recipe.tags.forEach { SuggestionChip(onClick = {}, label = { Text("#$it") }) }
                     }
@@ -607,9 +608,9 @@ private fun StarRatingRow(rating: Int?, onRatingChange: (Int) -> Unit) {
 @Composable
 private fun ServingsStepper(servings: Int, onChange: (Int) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = { onChange(servings - 1) }) { Icon(Icons.Filled.Remove, contentDescription = "Menos raciones") }
+        IconButton(onClick = { onChange(servings - 1) }) { Icon(Icons.Filled.Remove, contentDescription = L10n.str(R.string.menos_raciones)) }
         Text("$servings", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 4.dp))
-        IconButton(onClick = { onChange(servings + 1) }) { Icon(Icons.Filled.Add, contentDescription = "Más raciones") }
+        IconButton(onClick = { onChange(servings + 1) }) { Icon(Icons.Filled.Add, contentDescription = L10n.str(R.string.mas_raciones)) }
     }
 }
 

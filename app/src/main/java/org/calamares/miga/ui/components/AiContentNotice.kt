@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.components
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -49,14 +51,14 @@ fun AiContentNotice(feature: String, content: () -> String, modifier: Modifier =
             modifier = Modifier.size(16.dp)
         )
         Text(
-            "Generado con IA · puede contener errores",
+            L10n.str(R.string.generado_ia_puede_contener_errores),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f).padding(start = 6.dp)
         )
         TextButton(onClick = { reporting = true }) {
             Icon(Icons.Filled.Flag, contentDescription = null, modifier = Modifier.size(16.dp))
-            Text(" Reportar", style = MaterialTheme.typography.labelLarge)
+            Text(L10n.str(R.string.reportar), style = MaterialTheme.typography.labelLarge)
         }
     }
     if (reporting) {
@@ -72,11 +74,11 @@ private fun AiReportDialog(feature: String, content: () -> String, onDismiss: ()
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Filled.Flag, contentDescription = null) },
-        title = { Text("Reportar contenido de IA") },
+        title = { Text(L10n.str(R.string.reportar_contenido_ia)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    "Cuéntanos qué está mal. Se enviará el texto generado junto con tu reporte para revisarlo.",
+                    L10n.str(R.string.cuentanos_esta_mal_enviara_texto),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -92,7 +94,7 @@ private fun AiReportDialog(feature: String, content: () -> String, onDismiss: ()
                 OutlinedTextField(
                     value = comment,
                     onValueChange = { comment = it },
-                    label = { Text("Comentario (opcional)") },
+                    label = { Text(L10n.str(R.string.comentario_opcional)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2
                 )
@@ -105,10 +107,10 @@ private fun AiReportDialog(feature: String, content: () -> String, onDismiss: ()
                 val opened = runCatching {
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(AiContentReport.targetUrl(subject, body))))
                 }.isSuccess
-                if (!opened) Toast.makeText(context, "No hay ninguna app para enviar el reporte", Toast.LENGTH_SHORT).show()
+                if (!opened) Toast.makeText(context, L10n.str(R.string.no_hay_ninguna_app_enviar), Toast.LENGTH_SHORT).show()
                 onDismiss()
-            }) { Text("Enviar reporte") }
+            }) { Text(L10n.str(R.string.enviar_reporte)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
     )
 }

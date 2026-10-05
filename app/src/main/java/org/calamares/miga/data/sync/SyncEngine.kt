@@ -1,5 +1,7 @@
 package org.calamares.miga.data.sync
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.content.Context
 import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.local.entity.PendingSyncChangeEntity
@@ -43,7 +45,7 @@ class SyncEngine(private val repository: RecipeRepository) {
 
     private suspend fun syncConnectionLocked(context: Context, connectionId: Long): SyncOutcome {
         val connection = repository.getSyncConnectionOnce(connectionId)
-            ?: return SyncOutcome.Error("Conexión no encontrada")
+            ?: return SyncOutcome.Error(L10n.str(R.string.conexion_no_encontrada))
 
         val pulled = when (val fetch = SyncClient.fetchChanges(connection, connection.lastSyncedRevision)) {
             is SyncFetchResult.Error -> {

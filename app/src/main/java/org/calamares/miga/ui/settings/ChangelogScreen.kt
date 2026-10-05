@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,9 +38,9 @@ fun ChangelogScreen(settingsRepository: SettingsRepository, onBack: () -> Unit) 
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text("Historial de cambios") },
+                title = { Text(L10n.str(R.string.historial_cambios)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
                 }
             )
         }

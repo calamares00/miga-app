@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.navigation
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -83,11 +85,11 @@ private fun repositoryOf(context: android.content.Context): RecipeRepository =
 private data class BottomTab(val route: String, val label: String, val icon: ImageVector)
 
 private val BOTTOM_TABS = listOf(
-    BottomTab(Destinations.BOOKS_ROUTE, "Libros", Icons.Outlined.MenuBook),
-    BottomTab(Destinations.FAVORITES_ROUTE, "Favoritos", Icons.Filled.Favorite),
-    BottomTab(Destinations.SHOPPING_LIST_ROUTE, "Compra", Icons.Filled.ShoppingCart),
-    BottomTab(Destinations.SEARCH_ROUTE, "Buscar", Icons.Filled.Search),
-    BottomTab(Destinations.SETTINGS_ROUTE, "Ajustes", Icons.Filled.Settings)
+    BottomTab(Destinations.BOOKS_ROUTE, L10n.str(R.string.libros), Icons.Outlined.MenuBook),
+    BottomTab(Destinations.FAVORITES_ROUTE, L10n.str(R.string.favoritos), Icons.Filled.Favorite),
+    BottomTab(Destinations.SHOPPING_LIST_ROUTE, L10n.str(R.string.compra), Icons.Filled.ShoppingCart),
+    BottomTab(Destinations.SEARCH_ROUTE, L10n.str(R.string.buscar), Icons.Filled.Search),
+    BottomTab(Destinations.SETTINGS_ROUTE, L10n.str(R.string.ajustes), Icons.Filled.Settings)
 )
 
 @Composable
@@ -172,7 +174,7 @@ fun RecetarioNavHost(initialRoute: String? = null) {
                 GlobalSearchScreen(
                     viewModel = viewModel,
                     onRecipeClick = { navController.navigate(Destinations.detail(it)) },
-                    title = "Favoritas",
+                    title = L10n.str(R.string.favoritas),
                     showQueryField = false
                 )
             }

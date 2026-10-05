@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.bulkimport
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.ui.components.AiContentNotice
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -61,10 +63,10 @@ fun BulkImportScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text("Varias recetas desde imágenes") },
+                title = { Text(L10n.str(R.string.varias_recetas_desde_imagenes)) },
                 navigationIcon = {
                     IconButton(onClick = { if (isProcessing) showExitConfirm = true else onBack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver))
                     }
                 }
             )
@@ -73,8 +75,8 @@ fun BulkImportScreen(
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
             item {
                 AiContentNotice(
-                    feature = "Varias recetas desde imágenes",
-                    content = { "Recetas importadas con IA desde ${rows.size} fotos (revisa cada receta y reporta la concreta desde su editor)." },
+                    feature = L10n.str(R.string.varias_recetas_desde_imagenes),
+                    content = { L10n.str(R.string.recetas_importadas_ia_desde_x, rows.size) },
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
@@ -91,13 +93,13 @@ fun BulkImportScreen(
     if (showExitConfirm) {
         AlertDialog(
             onDismissRequest = { showExitConfirm = false },
-            title = { Text("¿Salir?") },
-            text = { Text("Aún se están procesando fotos. Las que no se hayan terminado no se guardarán.") },
+            title = { Text(L10n.str(R.string.salir_2)) },
+            text = { Text(L10n.str(R.string.aun_estan_procesando_fotos_no)) },
             confirmButton = {
-                TextButton(onClick = { showExitConfirm = false; onBack() }) { Text("Salir") }
+                TextButton(onClick = { showExitConfirm = false; onBack() }) { Text(L10n.str(R.string.salir)) }
             },
             dismissButton = {
-                TextButton(onClick = { showExitConfirm = false }) { Text("Esperar") }
+                TextButton(onClick = { showExitConfirm = false }) { Text(L10n.str(R.string.esperar)) }
             }
         )
     }
@@ -124,13 +126,13 @@ private fun BulkImportRowItem(row: BulkImportRow, onClick: () -> Unit, onRetry: 
         )
         when (val state = row.state) {
             BulkImportRowState.Pending -> Text(
-                "En cola…",
+                L10n.str(R.string.cola),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             BulkImportRowState.Processing -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                Text("Procesando…", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(L10n.str(R.string.procesando), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             is BulkImportRowState.Success -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -148,7 +150,7 @@ private fun BulkImportRowItem(row: BulkImportRow, onClick: () -> Unit, onRetry: 
                     modifier = Modifier.weight(1f),
                     maxLines = 3
                 )
-                TextButton(onClick = onRetry) { Text("Reintentar") }
+                TextButton(onClick = onRetry) { Text(L10n.str(R.string.reintentar)) }
             }
         }
     }

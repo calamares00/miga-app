@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.dishsearch
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.calamares.miga.data.local.SettingsRepository
@@ -41,7 +43,7 @@ class DishSearchViewModel(private val settingsRepository: SettingsRepository) : 
             val model = settingsRepository.modelFor(provider)
             _state.value = when (val result = dishSearchClientFor(provider).searchDishes(trimmed, apiKey, model)) {
                 is DishSearchResult.Success ->
-                    if (result.dishes.isEmpty()) DishSearchUiState.Error("No se han encontrado platos para esa búsqueda")
+                    if (result.dishes.isEmpty()) DishSearchUiState.Error(L10n.str(R.string.no_han_encontrado_platos_esa))
                     else DishSearchUiState.Loaded(result.dishes)
                 is DishSearchResult.Error -> DishSearchUiState.Error(result.reason)
             }

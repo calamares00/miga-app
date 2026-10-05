@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.BuildConfig
 import org.calamares.miga.data.support.AiContentReport
 import android.content.Context
@@ -47,9 +49,9 @@ fun HelpScreen(onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text("Ayuda y soporte") },
+                title = { Text(L10n.str(R.string.ayuda_soporte)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
                 }
             )
         }
@@ -63,57 +65,47 @@ fun HelpScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             HelpSection(
-                title = "Libros de recetas",
-                body = "Cada libro es el recetario de una persona (por ejemplo Josi o Helen), con su propia portada. " +
-                    "Cuando tienes un libro abierto, las recetas nuevas que crees se guardan ahí por defecto. " +
-                    "Puedes mover una receta a otro libro desde su menú de opciones (⋮)."
+                title = L10n.str(R.string.libros_recetas),
+                body = L10n.str(R.string.cada_libro_es_recetario_persona)
             )
             HelpSection(
-                title = "Categorías, etiquetas y utensilios",
-                body = "Las recetas se agrupan por categoría en el listado. Puedes añadir, renombrar o borrar " +
-                    "categorías, utensilios e ingredientes desde Ajustes → Gestionar."
+                title = L10n.str(R.string.categorias_etiquetas_utensilios),
+                body = L10n.str(R.string.recetas_agrupan_categoria_listado_puedes)
             )
             HelpSection(
-                title = "Ingredientes",
-                body = "Al escribir el nombre de un ingrediente en una receta, la app sugiere los que ya has " +
-                    "usado antes para que no tengas que volver a escribirlos."
+                title = L10n.str(R.string.ingredientes),
+                body = L10n.str(R.string.escribir_nombre_ingrediente_receta_app)
             )
             HelpSection(
-                title = "Modo cocina",
-                body = "Desde una receta con pasos, pulsa \"Modo cocina\" para verlos en pantalla completa, uno " +
-                    "a uno, sin que la pantalla se apague mientras cocinas."
+                title = L10n.str(R.string.modo_cocina),
+                body = L10n.str(R.string.desde_receta_pasos_pulsa_modo)
             )
             HelpSection(
-                title = "Exportar e importar",
-                body = "Desde una receta puedes exportarla como texto, PDF o JSON. Desde un libro puedes " +
-                    "exportarlo entero. Y desde Ajustes puedes hacer o restaurar una copia de seguridad completa."
+                title = L10n.str(R.string.exportar_e_importar),
+                body = L10n.str(R.string.desde_receta_puedes_exportarla_como)
             )
             HelpSection(
-                title = "Añadir receta con foto (beta)",
-                body = "Desde el menú de un libro, \"Añadir con foto\" reconoce el texto de una foto (cámara o " +
-                    "galería) con Google Gemini y precarga el editor para que solo tengas que revisarlo antes de " +
-                    "guardar. Necesita conexión a internet y tu propia API key gratuita de Gemini, configurable " +
-                    "en Ajustes → Importar con IA; sin ella no se envía ninguna foto a ningún sitio."
+                title = L10n.str(R.string.anadir_receta_foto_beta),
+                body = L10n.str(R.string.desde_menu_libro_anadir_foto)
             )
             HelpSection(
-                title = "Bloqueo biométrico",
-                body = "Actívalo en Ajustes → Seguridad para que la app pida tu huella, rostro o PIN cada vez " +
-                    "que la abras."
+                title = L10n.str(R.string.bloqueo_biometrico),
+                body = L10n.str(R.string.activalo_ajustes_seguridad_app_pida)
             )
 
             HorizontalDivider()
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Contacto", style = MaterialTheme.typography.titleMedium)
+                Text(L10n.str(R.string.contacto), style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = "¿Has encontrado un fallo o tienes una sugerencia? Escríbenos.",
+                    text = L10n.str(R.string.has_encontrado_fallo_tienes_sugerencia),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 OutlinedButton(onClick = {
-                    val url = AiContentReport.targetUrl("Soporte Miga", "Versión de Miga: ${BuildConfig.VERSION_NAME}\n\n")
+                    val url = AiContentReport.targetUrl(L10n.str(R.string.soporte_miga), L10n.str(R.string.version_miga_x_2, BuildConfig.VERSION_NAME))
                     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-                }) { Text("Informar de un problema") }
+                }) { Text(L10n.str(R.string.informar_problema)) }
             }
         }
     }

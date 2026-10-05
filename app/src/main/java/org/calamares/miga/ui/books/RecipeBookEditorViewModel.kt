@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.books
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -107,9 +109,8 @@ class RecipeBookEditorViewModel(
                 repository.deleteRecipeBook(bookId)
                 onDeleted()
             } catch (e: RecipeBookNotEmptyException) {
-                deleteError = "Este libro tiene ${e.recipeCount} " +
-                    (if (e.recipeCount == 1) "receta" else "recetas") +
-                    ". Muévelas o bórralas antes de eliminar el libro."
+                deleteError = if (e.recipeCount == 1) L10n.str(R.string.book_not_empty_one)
+                else L10n.str(R.string.book_not_empty_many, e.recipeCount)
             } finally {
                 isDeleting = false
             }

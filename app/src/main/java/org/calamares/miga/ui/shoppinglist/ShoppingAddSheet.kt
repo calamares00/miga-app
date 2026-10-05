@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.shoppinglist
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -174,10 +176,10 @@ import kotlinx.coroutines.launch
 
 /** Pestañas de la hoja "Añadir": todo lo que no es escribir/dictar/escanear vive aquí y no en menús. */
 internal enum class AddTab(val title: String) {
-    CATALOG("Catálogo"),
-    PRODUCTS("Productos"),
-    TEMPLATES("Plantillas"),
-    BULK("Varios")
+    CATALOG(L10n.str(R.string.catalogo)),
+    PRODUCTS(L10n.str(R.string.productos)),
+    TEMPLATES(L10n.str(R.string.plantillas)),
+    BULK(L10n.str(R.string.varios))
 }
 
 /**
@@ -221,10 +223,10 @@ internal fun ShoppingAddSheet(
                         ProductSearchContent(
                             viewModel = viewModel,
                             initialQuery = initialQuery,
-                            addDescription = "Añadir a la lista",
+                            addDescription = L10n.str(R.string.anadir_lista),
                             onAdd = { product ->
                                 viewModel.addSearchedProduct(product)
-                                onMessage("Añadido: ${product.name}")
+                                onMessage(L10n.str(R.string.anadido_x, product.name))
                             },
                             onSaveToTemplate = { product -> onSaveToTemplate(product.toTemplateItem()) }
                         )
@@ -234,7 +236,7 @@ internal fun ShoppingAddSheet(
                         listIsEmpty = listIsEmpty,
                         onApply = { template ->
                             viewModel.applyTemplate(template)
-                            onMessage("Añadidos ${template.items.size} artículos de \"${template.name}\"")
+                            onMessage(L10n.str(R.string.anadidos_x_articulos_x, template.items.size, template.name))
                         },
                         onEdit = onEditTemplate,
                         onNew = onNewTemplate,
@@ -243,7 +245,7 @@ internal fun ShoppingAddSheet(
                     AddTab.BULK -> BulkContent(
                         onAdd = { text ->
                             val count = viewModel.addEntries(text)
-                            onMessage(if (count == 1) "Añadido 1 artículo" else "Añadidos $count artículos")
+                            onMessage(if (count == 1) L10n.str(R.string.anadido_1_articulo) else L10n.str(R.string.anadidos_x_articulos, count))
                         }
                     )
                 }
@@ -270,7 +272,7 @@ private fun CatalogContent(
 
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
-            "Toca para añadir o quitar de la lista",
+            L10n.str(R.string.toca_anadir_quitar_lista),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp)
@@ -292,7 +294,7 @@ private fun CatalogContent(
         }
         if (current == null) {
             Text(
-                "El catálogo de ingredientes está vacío.",
+                L10n.str(R.string.catalogo_ingredientes_esta_vacio),
                 modifier = Modifier.padding(16.dp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -372,7 +374,7 @@ internal fun ProductSearchContent(
             value = query,
             onValueChange = { query = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Buscar en Open Food Facts: leche, galletas…") },
+            placeholder = { Text(L10n.str(R.string.buscar_open_food_facts_leche)) },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Search),
@@ -382,30 +384,30 @@ internal fun ProductSearchContent(
             FilterChip(
                 selected = spainOnly,
                 onClick = { spainOnly = !spainOnly; if (query.trim().length >= 2) viewModel.searchProducts(query, spainOnly) },
-                label = { Text("Solo España") }
+                label = { Text(L10n.str(R.string.solo_espana)) }
             )
             if (query.trim().length >= 2) {
-                AssistChip(onClick = { viewModel.searchProducts(query, spainOnly) }, label = { Text("Buscar") })
+                AssistChip(onClick = { viewModel.searchProducts(query, spainOnly) }, label = { Text(L10n.str(R.string.buscar)) })
             }
         }
         when (val current = state) {
             ProductSearchState.Idle -> Text(
                 if (onSaveToTemplate != null) {
-                    "Escribe un producto y pulsa buscar. Con ⊕ va a la lista; con el marcador lo guardas en una plantilla para la próxima vez."
+                    L10n.str(R.string.escribe_producto_pulsa_buscar_va)
                 } else {
-                    "Escribe un producto y pulsa buscar. Salen primero los más escaneados."
+                    L10n.str(R.string.escribe_producto_pulsa_buscar_salen)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             ProductSearchState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                Text("  Buscando…")
+                Text(L10n.str(R.string.buscando))
             }
             is ProductSearchState.Error -> Text(current.reason, color = MaterialTheme.colorScheme.error)
             is ProductSearchState.Results -> if (current.products.isEmpty()) {
                 Text(
-                    "Sin resultados. Prueba con otro nombre" + if (spainOnly) " o quita el filtro de España." else ".",
+                    if (spainOnly) L10n.str(R.string.no_results_try_other_name_or_spain) else L10n.str(R.string.no_results_try_other_name),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -469,14 +471,14 @@ private fun TemplatesContent(
                     Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text("  Nueva")
                 }
-                OutlinedButton(onClick = onSaveList, enabled = !listIsEmpty) { Text("Guardar esta lista") }
+                OutlinedButton(onClick = onSaveList, enabled = !listIsEmpty) { Text(L10n.str(R.string.guardar_esta_lista)) }
             }
         }
-        item(key = "mine_header") { SectionLabel("Mis plantillas") }
+        item(key = "mine_header") { SectionLabel(L10n.str(R.string.mis_plantillas)) }
         if (templates.isEmpty()) {
             item(key = "mine_empty") {
                 Text(
-                    "Aún no tienes plantillas. Crea una y llénala con productos de Open Food Facts (icono de marcador en Productos) o guarda la lista actual.",
+                    L10n.str(R.string.aun_no_tienes_plantillas_crea),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 8.dp)
@@ -486,7 +488,7 @@ private fun TemplatesContent(
         items(templates, key = { "m${it.id}" }) { template ->
             TemplateRow(template = template, onApply = { onApply(template) }, onClick = { onEdit(template.id) })
         }
-        item(key = "predefined_header") { SectionLabel("Predefinidas", top = 16.dp) }
+        item(key = "predefined_header") { SectionLabel(L10n.str(R.string.predefinidas), top = 16.dp) }
         items(PredefinedShoppingLists.ALL, key = { "p${it.id}" }) { template ->
             TemplateRow(template = template, onApply = { onApply(template) }, onClick = null)
         }
@@ -509,7 +511,7 @@ private fun BulkContent(onAdd: (String) -> Unit) {
     val parsedCount = remember(bulkText) { ShoppingEntryParser.parse(bulkText).size }
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            "Escribe o pega un artículo por línea, o separados por comas. Puedes indicar cantidad y unidad: \"2 kg tomates\".",
+            L10n.str(R.string.escribe_pega_articulo_linea_separados),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -523,6 +525,6 @@ private fun BulkContent(onAdd: (String) -> Unit) {
             onClick = { onAdd(bulkText); bulkText = "" },
             enabled = parsedCount > 0,
             modifier = Modifier.align(Alignment.End)
-        ) { Text(if (parsedCount > 0) "Añadir $parsedCount" else "Añadir") }
+        ) { Text(if (parsedCount > 0) L10n.str(R.string.anadir_x, parsedCount) else L10n.str(R.string.anadir)) }
     }
 }

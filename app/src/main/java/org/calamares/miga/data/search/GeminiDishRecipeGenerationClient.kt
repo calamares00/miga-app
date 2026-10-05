@@ -1,5 +1,7 @@
 package org.calamares.miga.data.search
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.data.vision.GeminiContent
 import org.calamares.miga.data.vision.GeminiErrorEnvelope
 import org.calamares.miga.data.vision.GeminiGenerationConfig
@@ -50,7 +52,7 @@ object GeminiDishRecipeGenerationClient : DishRecipeGenerationClient {
                         val reason = errorBody?.let {
                             runCatching { json.decodeFromString(GeminiErrorEnvelope.serializer(), it).error?.message }.getOrNull()
                         }
-                        return@withContext RecipeVisionResult.Error(reason ?: "Gemini respondió con el código $responseCode")
+                        return@withContext RecipeVisionResult.Error(reason ?: L10n.str(R.string.gemini_respondio_codigo_x, responseCode))
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(GeminiResponse.serializer(), body)
@@ -62,11 +64,11 @@ object GeminiDishRecipeGenerationClient : DishRecipeGenerationClient {
                     val recipe = try {
                         json.decodeFromString(RecipeVisionResultDto.serializer(), stripMarkdownFences(text))
                     } catch (e: Exception) {
-                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: "no se pudo interpretar el JSON"
-                        return@withContext RecipeVisionResult.Error("$shortReason\n\nRespuesta completa del modelo:\n$text")
+                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: L10n.str(R.string.no_pudo_interpretar_json)
+                        return@withContext RecipeVisionResult.Error(L10n.str(R.string.x_respuesta_completa_modelo_x, shortReason, text))
                     }
                     if (recipe.name.isBlank()) {
-                        RecipeVisionResult.Error("No se ha podido generar la receta")
+                        RecipeVisionResult.Error(L10n.str(R.string.no_ha_podido_generar_receta))
                     } else {
                         RecipeVisionResult.Success(recipe)
                     }
@@ -76,7 +78,7 @@ object GeminiDishRecipeGenerationClient : DishRecipeGenerationClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                RecipeVisionResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+                RecipeVisionResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
             }
         }
 }

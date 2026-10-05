@@ -1,5 +1,7 @@
 package org.calamares.miga.data.local
 
+import org.calamares.miga.R
+import org.calamares.miga.L10n
 import android.content.Context
 import org.calamares.miga.data.voice.DictationLanguages
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -230,8 +232,12 @@ class SettingsRepository(private val context: Context) {
     }
 
     /** Texto breve de novedades de [versionCode] embebido en `assets/changelogs/`, o null si no existe. */
-    fun readChangelog(versionCode: Int): String? = try {
-        context.assets.open("changelogs/$versionCode.txt").bufferedReader().use { it.readText() }
+    /** Nota de la versión en el idioma de la app (assets/changelogs-en para inglés), o en español si no hay traducción. */
+    fun readChangelog(versionCode: Int): String? =
+        readAsset("${L10n.str(R.string.changelog_assets_dir)}/$versionCode.txt") ?: readAsset("changelogs/$versionCode.txt")
+
+    private fun readAsset(path: String): String? = try {
+        context.assets.open(path).bufferedReader().use { it.readText() }
             .trim()
             .ifBlank { null }
     } catch (e: IOException) {

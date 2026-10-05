@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.list
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -115,9 +117,9 @@ class RecipeListViewModel(
                     val recipeId = repository.saveRecipe(result.recipe.toDraft(bookId, result.photos))
                     RecipeExporter.applyHealthFromImport(repository, recipeId, result.recipe.health)
                     if (result.recipe.rating != null) repository.setRating(recipeId, result.recipe.rating)
-                    onMessage("Receta importada")
+                    onMessage(L10n.str(R.string.receta_importada))
                 }
-                is RecipeImportResult.Error -> onMessage("No se pudo importar: ${result.reason}")
+                is RecipeImportResult.Error -> onMessage(L10n.str(R.string.no_pudo_importar_x, result.reason))
             }
         }
     }

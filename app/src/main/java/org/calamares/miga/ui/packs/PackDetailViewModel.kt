@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.packs
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -47,7 +49,7 @@ class PackDetailViewModel(
                 is CatalogFetchResult.Success -> {
                     val entry = result.packs.find { it.id == packId }
                     _uiState.value = if (entry == null) {
-                        PackDetailUiState.Error("Este pack ya no está en el catálogo")
+                        PackDetailUiState.Error(L10n.str(R.string.este_pack_ya_no_esta))
                     } else {
                         PackDetailUiState.Loaded(entry, repository.findRecipeBookByPackId(packId)?.packVersion)
                     }
@@ -63,7 +65,7 @@ class PackDetailViewModel(
             _installState.value = InstallState.Installing
             val bytes = PacksCatalogClient.downloadPackZip(state.entry.downloadUrl)
             if (bytes == null) {
-                _installState.value = InstallState.Error("No se pudo descargar el pack. Comprueba tu conexión e inténtalo de nuevo.")
+                _installState.value = InstallState.Error(L10n.str(R.string.no_pudo_descargar_pack_comprueba))
                 return@launch
             }
             when (val result = RecipeExporter.importPackFromBytes(context, bytes, repository, packId, state.entry.latestVersion)) {

@@ -1,5 +1,7 @@
 package org.calamares.miga.data.remote
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -72,7 +74,7 @@ object PacksCatalogClient {
 
     suspend fun fetchCatalog(repoPath: String): CatalogFetchResult = withContext(Dispatchers.IO) {
         if (repoPath.isBlank()) {
-            return@withContext CatalogFetchResult.Error("Configura el catálogo en Ajustes")
+            return@withContext CatalogFetchResult.Error(L10n.str(R.string.configura_catalogo_ajustes))
         }
         try {
             val catalogUrl = catalogUrlFor(repoPath)
@@ -84,7 +86,7 @@ object PacksCatalogClient {
                 val responseCode = connection.responseCode
                 if (responseCode != HttpURLConnection.HTTP_OK) {
                     return@withContext CatalogFetchResult.Error(
-                        "No se pudo cargar el catálogo (código $responseCode). Revisa el catálogo configurado en Ajustes."
+                        L10n.str(R.string.no_pudo_cargar_catalogo_codigo, responseCode)
                     )
                 }
                 val body = connection.inputStream.bufferedReader().use { it.readText() }
@@ -103,7 +105,7 @@ object PacksCatalogClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            CatalogFetchResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+            CatalogFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
         }
     }
 

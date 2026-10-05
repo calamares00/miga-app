@@ -16,7 +16,7 @@ android {
         // versionCode sube en cada commit (Play exige que crezca siempre). versionName es la versión
         // pública y solo cambia al publicar una nueva versión (1.0.0, 1.0.1, 1.1.0...), con su nota
         // de versión en assets/changelogs y fastlane/.../changelogs (<versionCode>.txt).
-        versionCode = 90
+        versionCode = 91
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

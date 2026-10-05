@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -74,7 +76,7 @@ fun SettingsHomeScreen(
         contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
         topBar = {
             LargeTopAppBar(
-                title = { Text("Ajustes") },
+                title = { Text(L10n.str(R.string.ajustes)) },
                 colors = TopAppBarDefaults.largeTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     scrolledContainerColor = MaterialTheme.colorScheme.background
@@ -99,33 +101,33 @@ fun SettingsHomeScreen(
                     HomeItem(
                         SettingsSection.SECURITY.icon,
                         SettingsSection.SECURITY.title,
-                        if (biometricLockEnabled) "Bloqueo biométrico activado" else "Bloqueo biométrico desactivado"
+                        if (biometricLockEnabled) L10n.str(R.string.bloqueo_biometrico_activado) else L10n.str(R.string.bloqueo_biometrico_desactivado)
                     ) { onOpenSection(SettingsSection.SECURITY) },
-                    HomeItem(SettingsSection.VOICE.icon, SettingsSection.VOICE.title, "Dictado en ${DictationLanguages.label(dictationLanguage)}") {
+                    HomeItem(SettingsSection.VOICE.icon, SettingsSection.VOICE.title, L10n.str(R.string.dictado_x, DictationLanguages.label(dictationLanguage))) {
                         onOpenSection(SettingsSection.VOICE)
                     }
                 )
             )
             HomeGroup(
                 listOf(
-                    HomeItem(SettingsSection.CONTENT.icon, SettingsSection.CONTENT.title, "Categorías, utensilios e ingredientes") {
+                    HomeItem(SettingsSection.CONTENT.icon, SettingsSection.CONTENT.title, L10n.str(R.string.categorias_utensilios_e_ingredientes)) {
                         onOpenSection(SettingsSection.CONTENT)
                     },
-                    HomeItem(SettingsSection.BACKUP.icon, SettingsSection.BACKUP.title, "Exportar e importar libros y recetas") {
+                    HomeItem(SettingsSection.BACKUP.icon, SettingsSection.BACKUP.title, L10n.str(R.string.exportar_e_importar_libros_recetas)) {
                         onOpenSection(SettingsSection.BACKUP)
                     },
-                    HomeItem(Icons.Filled.BarChart, "Estadísticas", "Recetas, favoritas y más cocinadas", onOpenStats)
+                    HomeItem(Icons.Filled.BarChart, L10n.str(R.string.estadisticas), L10n.str(R.string.recetas_favoritas_mas_cocinadas), onOpenStats)
                 )
             )
             HomeGroup(
                 listOf(
-                    HomeItem(SettingsSection.SYNC.icon, SettingsSection.SYNC.title, "Servidor propio: libros, recetas y lista de la compra") {
+                    HomeItem(SettingsSection.SYNC.icon, SettingsSection.SYNC.title, L10n.str(R.string.servidor_propio_libros_recetas_lista)) {
                         onOpenSection(SettingsSection.SYNC)
                     },
-                    HomeItem(SettingsSection.PACKS.icon, SettingsSection.PACKS.title, "Libros de recetas listos para instalar") {
+                    HomeItem(SettingsSection.PACKS.icon, SettingsSection.PACKS.title, L10n.str(R.string.libros_recetas_listos_instalar)) {
                         onOpenSection(SettingsSection.PACKS)
                     },
-                    HomeItem(SettingsSection.AI.icon, SettingsSection.AI.title, "${visionProvider.label} · foto, URL y valoración de salud") {
+                    HomeItem(SettingsSection.AI.icon, SettingsSection.AI.title, L10n.str(R.string.x_foto_url_valoracion_salud, visionProvider.label)) {
                         onOpenSection(SettingsSection.AI)
                     }
                 )
@@ -133,10 +135,10 @@ fun SettingsHomeScreen(
             HomeGroup(
                 buildList {
                     if (hasChangelog) {
-                        add(HomeItem(Icons.Filled.NewReleases, "Novedades", "Qué hay de nuevo en cada versión", onOpenChangelog))
+                        add(HomeItem(Icons.Filled.NewReleases, L10n.str(R.string.novedades), L10n.str(R.string.hay_nuevo_cada_version), onOpenChangelog))
                     }
-                    add(HomeItem(Icons.Filled.HelpOutline, "Ayuda y soporte", "Preguntas frecuentes y contacto", onHelp))
-                    add(HomeItem(Icons.Filled.Info, "Acerca de", "Versión ${BuildConfig.VERSION_NAME} y política de privacidad", onAbout))
+                    add(HomeItem(Icons.Filled.HelpOutline, L10n.str(R.string.ayuda_soporte), L10n.str(R.string.preguntas_frecuentes_contacto), onHelp))
+                    add(HomeItem(Icons.Filled.Info, L10n.str(R.string.acerca), L10n.str(R.string.version_x_politica_privacidad, BuildConfig.VERSION_NAME), onAbout))
                 }
             )
         }

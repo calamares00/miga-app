@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import kotlinx.coroutines.flow.first
 import android.content.Context
 import android.net.Uri
@@ -73,11 +75,11 @@ class SettingsViewModel(
         viewModelScope.launch {
             val wipeMessage = if (wipeFirst) {
                 val result = repository.wipeUserRecipesAndBooks()
-                "Se borraron ${result.bookCount} libro(s) y ${result.recipeCount} receta(s). "
+                L10n.str(R.string.borraron_x_libro_s_x, result.bookCount, result.recipeCount)
             } else ""
             when (val result = RecipeExporter.importParsedLibrary(context, parsed.dto, parsed.entries, repository)) {
-                is LibraryImportResult.Success -> onMessage("$wipeMessage" + "Se importaron ${result.count} recetas")
-                is LibraryImportResult.Error -> onMessage("No se pudo importar: ${result.reason}")
+                is LibraryImportResult.Success -> onMessage(wipeMessage + L10n.str(R.string.imported_n_recipes, result.count))
+                is LibraryImportResult.Error -> onMessage(L10n.str(R.string.no_pudo_importar_x, result.reason))
             }
         }
     }

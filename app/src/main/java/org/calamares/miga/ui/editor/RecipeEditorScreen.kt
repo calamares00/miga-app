@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.ui.components.AiContentNotice
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -127,15 +129,15 @@ fun RecipeEditorScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(if (viewModel.isEditing) "Editar receta" else "Nueva receta") },
+                title = { Text(if (viewModel.isEditing) L10n.str(R.string.editar_receta) else L10n.str(R.string.nueva_receta)) },
                 navigationIcon = {
-                    IconButton(onClick = attemptExit) { Icon(Icons.Filled.Close, contentDescription = "Cancelar") }
+                    IconButton(onClick = attemptExit) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancelar)) }
                 },
                 actions = {
                     if (viewModel.isSaving) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp).padding(end = 16.dp))
                     } else {
-                        TextButton(onClick = { viewModel.save(onSaved) }) { Text("Guardar") }
+                        TextButton(onClick = { viewModel.save(onSaved) }) { Text(L10n.str(R.string.guardar)) }
                     }
                 }
             )
@@ -159,7 +161,7 @@ fun RecipeEditorScreen(
             if (visionState is VisionState.Error && !visionErrorDismissed) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "No se pudo generar la receta con IA: ${(visionState as VisionState.Error).reason}",
+                        L10n.str(R.string.no_pudo_generar_receta_ia, (visionState as VisionState.Error).reason),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                         maxLines = 2,
@@ -169,14 +171,14 @@ fun RecipeEditorScreen(
                             .clickable { showVisionErrorDialog = true }
                     )
                     IconButton(onClick = { visionErrorDismissed = true }) {
-                        Icon(Icons.Filled.Close, contentDescription = "Cerrar aviso")
+                        Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cerrar_aviso))
                     }
                 }
             }
 
             if (visionState is VisionState.Loaded) {
                 AiContentNotice(
-                    feature = "Receta generada con IA",
+                    feature = L10n.str(R.string.receta_generada_ia),
                     content = {
                         buildString {
                             appendLine(viewModel.name)
@@ -196,9 +198,9 @@ fun RecipeEditorScreen(
             OutlinedTextField(
                 value = viewModel.name,
                 onValueChange = { viewModel.name = it; viewModel.nameError = false },
-                label = { Text("Nombre de la receta") },
+                label = { Text(L10n.str(R.string.nombre_receta)) },
                 isError = viewModel.nameError,
-                supportingText = { if (viewModel.nameError) Text("El nombre es obligatorio") },
+                supportingText = { if (viewModel.nameError) Text(L10n.str(R.string.nombre_es_obligatorio)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -208,7 +210,7 @@ fun RecipeEditorScreen(
                 onValueChange = { text -> viewModel.categoryName = text.takeIf { it.isNotBlank() } }
             )
 
-            Section(title = "Dificultad") {
+            Section(title = L10n.str(R.string.dificultad)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Difficulty.entries.forEach { d ->
                         FilterChip(selected = viewModel.difficulty == d, onClick = { viewModel.difficulty = d }, label = { Text(d.label) })
@@ -220,40 +222,40 @@ fun RecipeEditorScreen(
                 OutlinedTextField(
                     value = viewModel.prepTimeMinutesText,
                     onValueChange = { if (it.all(Char::isDigit)) viewModel.prepTimeMinutesText = it },
-                    label = { Text("Prep. (min)") },
+                    label = { Text(L10n.str(R.string.prep_min)) },
                     modifier = Modifier.weight(1f)
                 )
                 OutlinedTextField(
                     value = viewModel.cookTimeMinutesText,
                     onValueChange = { if (it.all(Char::isDigit)) viewModel.cookTimeMinutesText = it },
-                    label = { Text("Cocción (min)") },
+                    label = { Text(L10n.str(R.string.coccion_min)) },
                     modifier = Modifier.weight(1f)
                 )
                 OutlinedTextField(
                     value = viewModel.servings.toString(),
                     onValueChange = { text -> text.toIntOrNull()?.let { viewModel.servings = it.coerceIn(1, 99) } },
-                    label = { Text("Raciones") },
+                    label = { Text(L10n.str(R.string.raciones_2)) },
                     modifier = Modifier.weight(1f)
                 )
             }
 
-            Section(title = "Utensilios necesarios") {
+            Section(title = L10n.str(R.string.utensilios_necesarios)) {
                 ChipMultiSelect(
                     selected = viewModel.selectedUtensils,
                     available = availableUtensils,
                     onToggle = viewModel::toggleUtensil,
                     onAddCustom = viewModel::addCustomUtensil,
-                    addDialogTitle = "Añadir utensilio"
+                    addDialogTitle = L10n.str(R.string.anadir_utensilio)
                 )
             }
 
-            Section(title = "Etiquetas") {
+            Section(title = L10n.str(R.string.etiquetas)) {
                 ChipMultiSelect(
                     selected = viewModel.selectedTags,
                     available = availableTags,
                     onToggle = viewModel::toggleTag,
                     onAddCustom = viewModel::addCustomTag,
-                    addDialogTitle = "Añadir etiqueta"
+                    addDialogTitle = L10n.str(R.string.anadir_etiqueta)
                 )
             }
 
@@ -275,13 +277,13 @@ fun RecipeEditorScreen(
             OutlinedTextField(
                 value = viewModel.source,
                 onValueChange = { viewModel.source = it },
-                label = { Text("Origen (libro, web, etc.)") },
+                label = { Text(L10n.str(R.string.origen_libro_web_etc)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = viewModel.isFavorite, onCheckedChange = { viewModel.isFavorite = it })
-                Text("Marcar como favorita")
+                Text(L10n.str(R.string.marcar_como_favorita))
             }
 
             Spacer(modifier = Modifier.height(60.dp))
@@ -307,7 +309,7 @@ fun RecipeEditorScreen(
                             strokeWidth = 4.dp
                         )
                         Text(
-                            "Generando la receta con IA...",
+                            L10n.str(R.string.generando_receta_ia),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(top = 16.dp)
@@ -323,7 +325,7 @@ fun RecipeEditorScreen(
         val reason = (visionState as VisionState.Error).reason
         AlertDialog(
             onDismissRequest = { showVisionErrorDialog = false },
-            title = { Text("Detalle del error") },
+            title = { Text(L10n.str(R.string.detalle_error)) },
             text = {
                 Column(
                     modifier = Modifier
@@ -337,10 +339,10 @@ fun RecipeEditorScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { clipboardManager.setText(AnnotatedString(reason)) }) { Text("Copiar") }
+                TextButton(onClick = { clipboardManager.setText(AnnotatedString(reason)) }) { Text(L10n.str(R.string.copiar)) }
             },
             dismissButton = {
-                TextButton(onClick = { showVisionErrorDialog = false }) { Text("Cerrar") }
+                TextButton(onClick = { showVisionErrorDialog = false }) { Text(L10n.str(R.string.cerrar)) }
             }
         )
     }
@@ -348,7 +350,7 @@ fun RecipeEditorScreen(
     if (showPhotoSourceSheet) {
         ModalBottomSheet(onDismissRequest = { showPhotoSourceSheet = false }, sheetState = photoSheetState) {
             PhotoSourceSheet(
-                title = "Añadir foto",
+                title = L10n.str(R.string.anadir_foto),
                 onCameraClick = {
                     showPhotoSourceSheet = false
                     val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
@@ -387,16 +389,16 @@ fun RecipeEditorScreen(
     if (showDiscardDialog) {
         AlertDialog(
             onDismissRequest = { showDiscardDialog = false },
-            title = { Text("¿Descartar cambios?") },
-            text = { Text("Se perderán los cambios que has hecho.") },
+            title = { Text(L10n.str(R.string.descartar_cambios)) },
+            text = { Text(L10n.str(R.string.perderan_cambios_has_hecho)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDiscardDialog = false
                     onCancel()
-                }) { Text("Descartar", color = MaterialTheme.colorScheme.error) }
+                }) { Text(L10n.str(R.string.descartar), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDiscardDialog = false }) { Text("Seguir editando") }
+                TextButton(onClick = { showDiscardDialog = false }) { Text(L10n.str(R.string.seguir_editando)) }
             }
         )
     }
@@ -404,13 +406,13 @@ fun RecipeEditorScreen(
 
 @Composable
 private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit, onEditPhoto: (PhotoUi) -> Unit) {
-    Section(title = "Fotos") {
+    Section(title = L10n.str(R.string.fotos)) {
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(viewModel.photos, key = { it.uri }) { photo ->
                 Box(modifier = Modifier.size(88.dp)) {
                     AsyncImage(
                         model = photo.uri,
-                        contentDescription = "Editar foto",
+                        contentDescription = L10n.str(R.string.editar_foto),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxSize()
@@ -423,7 +425,7 @@ private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit, 
                     ) {
                         Icon(
                             Icons.Filled.Close,
-                            contentDescription = "Quitar foto",
+                            contentDescription = L10n.str(R.string.quitar_foto),
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier
                                 .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
@@ -435,7 +437,7 @@ private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit, 
                     ) {
                         Icon(
                             if (photo.isCover) Icons.Filled.Star else Icons.Filled.StarBorder,
-                            contentDescription = if (photo.isCover) "Foto de portada" else "Marcar como portada",
+                            contentDescription = if (photo.isCover) L10n.str(R.string.foto_portada) else L10n.str(R.string.marcar_como_portada),
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier
                                 .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
@@ -452,7 +454,7 @@ private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit, 
                         .clickable(onClick = onAddPhoto),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Filled.AddAPhoto, contentDescription = "Añadir foto")
+                    Icon(Icons.Filled.AddAPhoto, contentDescription = L10n.str(R.string.anadir_foto))
                 }
             }
         }
@@ -467,8 +469,8 @@ private fun CategoryField(value: String, suggestions: List<String>, onValueChang
         OutlinedTextField(
             value = value,
             onValueChange = { onValueChange(it); expanded = true },
-            label = { Text("Categoría") },
-            placeholder = { Text("Ej. Postres, Cremas, Pastas...") },
+            label = { Text(L10n.str(R.string.categoria)) },
+            placeholder = { Text(L10n.str(R.string.ej_postres_cremas_pastas)) },
             modifier = Modifier.fillMaxWidth()
         )
         if (expanded && suggestions.isNotEmpty()) {
@@ -530,10 +532,10 @@ private fun ChipMultiSelect(
                 TextButton(onClick = {
                     if (newValue.isNotBlank()) onAddCustom(newValue)
                     showAddDialog = false
-                }) { Text("Añadir") }
+                }) { Text(L10n.str(R.string.anadir)) }
             },
             dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = { showAddDialog = false }) { Text(L10n.str(R.string.cancelar)) }
             }
         )
     }

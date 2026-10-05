@@ -1,5 +1,7 @@
 package org.calamares.miga.data.remote
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.BuildConfig
 import org.calamares.miga.data.model.ProductInfo
 import kotlinx.coroutines.CancellationException
@@ -51,7 +53,7 @@ object OpenFoodFactsClient {
                 connection.setRequestProperty("User-Agent", "Miga/${BuildConfig.VERSION_NAME} (miga@calamares.org)")
                 val code = connection.responseCode
                 if (code == HttpURLConnection.HTTP_NOT_FOUND) return@withContext ProductLookupResult.NotFound
-                if (code != HttpURLConnection.HTTP_OK) return@withContext ProductLookupResult.Error("Open Food Facts respondió con el código $code")
+                if (code != HttpURLConnection.HTTP_OK) return@withContext ProductLookupResult.Error(L10n.str(R.string.open_food_facts_respondio_codigo, code))
                 val body = connection.inputStream.bufferedReader().use { it.readText() }
                 val product = parseProductResponse(body, barcode)
                 if (product == null) ProductLookupResult.NotFound else ProductLookupResult.Found(product)
@@ -61,7 +63,7 @@ object OpenFoodFactsClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            ProductLookupResult.Error(e.message ?: e::class.simpleName ?: "No se pudo consultar Open Food Facts")
+            ProductLookupResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.no_pudo_consultar_open_food))
         }
     }
 
@@ -76,8 +78,7 @@ object OpenFoodFactsClient {
         try {
             val encoded = URLEncoder.encode(trimmed, "UTF-8")
             val countryFilter = if (spainOnly) "&tagtype_0=countries&tag_contains_0=contains&tag_0=spain" else ""
-            val url = "https://world.openfoodfacts.org/cgi/search.pl?search_terms=$encoded&search_simple=1&action=process&json=1" +
-                "&page_size=$SEARCH_PAGE_SIZE&sort_by=unique_scans_n&lc=es$countryFilter&fields=code,$PRODUCT_FIELDS"
+            val url = "https://world.openfoodfacts.org/cgi/search.pl?search_terms=$encoded&search_simple=1&action=process&json=1&page_size=$SEARCH_PAGE_SIZE&sort_by=unique_scans_n&lc=es$countryFilter&fields=code,$PRODUCT_FIELDS"
             val connection = URL(url).openConnection() as HttpURLConnection
             try {
                 connection.connectTimeout = SEARCH_TIMEOUT_MILLIS
@@ -85,7 +86,7 @@ object OpenFoodFactsClient {
                 connection.setRequestProperty("User-Agent", "Miga/${BuildConfig.VERSION_NAME} (miga@calamares.org)")
                 val code = connection.responseCode
                 if (code != HttpURLConnection.HTTP_OK) {
-                    return@withContext ProductSearchResult.Error("Open Food Facts respondió con el código $code")
+                    return@withContext ProductSearchResult.Error(L10n.str(R.string.open_food_facts_respondio_codigo, code))
                 }
                 val body = connection.inputStream.bufferedReader().use { it.readText() }
                 ProductSearchResult.Success(parseSearchResponse(body))
@@ -95,7 +96,7 @@ object OpenFoodFactsClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            ProductSearchResult.Error(e.message ?: e::class.simpleName ?: "No se pudo buscar en Open Food Facts")
+            ProductSearchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.no_pudo_buscar_open_food))
         }
     }
 
@@ -166,8 +167,6 @@ object OpenFoodFactsClient {
 
 private const val SEARCH_PAGE_SIZE = 20
 private const val SEARCH_TIMEOUT_MILLIS = 15000
-private const val PRODUCT_FIELDS = "product_name,product_name_es,generic_name_es,brands,quantity,nutriscore_grade,nutriscore_score,additives_tags,nova_group,ecoscore_grade," +
-    "allergens_tags,traces_tags,labels_tags,ingredients_analysis_tags,nutriments,ingredients_text_es,ingredients_text," +
-    "image_front_url,image_front_small_url,image_small_url,image_ingredients_url,image_nutrition_url"
+private const val PRODUCT_FIELDS = "product_name,product_name_es,generic_name_es,brands,quantity,nutriscore_grade,nutriscore_score,additives_tags,nova_group,ecoscore_grade,allergens_tags,traces_tags,labels_tags,ingredients_analysis_tags,nutriments,ingredients_text_es,ingredients_text,image_front_url,image_front_small_url,image_small_url,image_ingredients_url,image_nutrition_url"
 private const val MAX_TAGS = 40
 private const val MAX_INGREDIENTS_CHARS = 1500

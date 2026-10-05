@@ -1,5 +1,6 @@
 package org.calamares.miga
 
+import android.content.Context
 import android.app.Application
 import androidx.room.Room
 import org.calamares.miga.crash.CrashReporter
@@ -54,8 +55,14 @@ class RecetarioApp : Application() {
 
     private val syncEngine: SyncEngine by lazy { SyncEngine(repository) }
 
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        L10n.init(base)
+    }
+
     override fun onCreate() {
         super.onCreate()
+        L10n.init(this)
         // Lo antes posible, para que un fallo durante el resto del arranque también quede recogido.
         CrashReporter.install(this)
         applicationScope.launch {

@@ -49,4 +49,13 @@ class CookModeVoiceCommandsTest {
     fun `accents are ignored`() {
         assertEquals(CookVoiceCommand.PreviousStep, CookModeVoiceCommands.parse("ATRÁS"))
     }
+
+    @Test
+    fun `english commands`() {
+        assertEquals(CookVoiceCommand.NextStep, CookModeVoiceCommands.parse("Next step please"))
+        assertEquals(CookVoiceCommand.PreviousStep, CookModeVoiceCommands.parse("go back"))
+        assertEquals(CookVoiceCommand.RepeatStep, CookModeVoiceCommands.parse("repeat that"))
+        assertEquals(CookVoiceCommand.StartTimer, CookModeVoiceCommands.parse("start the timer"))
+        assertEquals(CookVoiceCommand.CancelTimer, CookModeVoiceCommands.parse("stop the timer"))
+    }
 }

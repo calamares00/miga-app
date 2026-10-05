@@ -1,5 +1,7 @@
 package org.calamares.miga.data.dictation
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.data.vision.GeminiContent
 import org.calamares.miga.data.vision.GeminiErrorEnvelope
 import org.calamares.miga.data.vision.GeminiGenerationConfig
@@ -47,7 +49,7 @@ object GeminiDictationCleanupClient : DictationCleanupClient {
                         val reason = errorBody?.let {
                             runCatching { json.decodeFromString(GeminiErrorEnvelope.serializer(), it).error?.message }.getOrNull()
                         }
-                        return@withContext DictationCleanupResult.Error(reason ?: "Gemini respondió con el código $responseCode")
+                        return@withContext DictationCleanupResult.Error(reason ?: L10n.str(R.string.gemini_respondio_codigo_x, responseCode))
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(GeminiResponse.serializer(), body)
@@ -63,7 +65,7 @@ object GeminiDictationCleanupClient : DictationCleanupClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                DictationCleanupResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+                DictationCleanupResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
             }
         }
 }

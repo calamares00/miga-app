@@ -1,5 +1,7 @@
 package org.calamares.miga.data.dictation
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.data.vision.AnthropicContentBlock
 import org.calamares.miga.data.vision.AnthropicErrorEnvelope
 import org.calamares.miga.data.vision.AnthropicMessage
@@ -49,7 +51,7 @@ object AnthropicDictationCleanupClient : DictationCleanupClient {
                         val reason = errorBody?.let {
                             runCatching { json.decodeFromString(AnthropicErrorEnvelope.serializer(), it).error?.message }.getOrNull()
                         }
-                        return@withContext DictationCleanupResult.Error(reason ?: "Claude respondió con el código $responseCode")
+                        return@withContext DictationCleanupResult.Error(reason ?: L10n.str(R.string.claude_respondio_codigo_x, responseCode))
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(AnthropicResponse.serializer(), body)
@@ -62,7 +64,7 @@ object AnthropicDictationCleanupClient : DictationCleanupClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                DictationCleanupResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+                DictationCleanupResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
             }
         }
 }

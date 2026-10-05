@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.security
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -30,7 +32,7 @@ object BiometricAuthenticator {
 
         val prompt = BiometricPrompt(activity, executor, callback)
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Desbloquear Miga")
+            .setTitle(L10n.str(R.string.desbloquear_miga))
             .setAllowedAuthenticators(ALLOWED_AUTHENTICATORS)
             .build()
 

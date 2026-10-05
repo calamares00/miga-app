@@ -1,5 +1,7 @@
 package org.calamares.miga.data.health
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.data.model.HealthColorLevel
 import org.calamares.miga.data.vision.AnthropicContentBlock
 import org.calamares.miga.data.vision.AnthropicErrorEnvelope
@@ -53,7 +55,7 @@ object AnthropicHealthClient : RecipeHealthClient {
                         val reason = errorBody?.let {
                             runCatching { json.decodeFromString(AnthropicErrorEnvelope.serializer(), it).error?.message }.getOrNull()
                         }
-                        return@withContext RecipeHealthResult.Error(reason ?: "Claude respondió con el código $responseCode")
+                        return@withContext RecipeHealthResult.Error(reason ?: L10n.str(R.string.claude_respondio_codigo_x, responseCode))
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(AnthropicResponse.serializer(), body)
@@ -62,7 +64,7 @@ object AnthropicHealthClient : RecipeHealthClient {
                     val resultDto = try {
                         json.decodeFromString(RecipeHealthResultDto.serializer(), stripMarkdownFences(text))
                     } catch (e: Exception) {
-                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: "no se pudo interpretar el JSON"
+                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: L10n.str(R.string.no_pudo_interpretar_json)
                         return@withContext RecipeHealthResult.Error(shortReason)
                     }
                     val colorLevel = runCatching { HealthColorLevel.valueOf(resultDto.colorLevel) }.getOrDefault(HealthColorLevel.YELLOW)
@@ -73,7 +75,7 @@ object AnthropicHealthClient : RecipeHealthClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                RecipeHealthResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+                RecipeHealthResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
             }
         }
 }

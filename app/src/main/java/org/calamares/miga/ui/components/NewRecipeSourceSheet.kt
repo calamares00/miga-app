@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.components
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,13 +39,13 @@ fun NewRecipeSourceSheet(
     onUrlClick: () -> Unit
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text("Nueva receta", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
-        NewRecipeSourceRow(icon = Icons.Filled.Edit, label = "Manual", onClick = onManualClick)
-        NewRecipeSourceRow(icon = Icons.Filled.UploadFile, label = "Desde archivo (JSON/ZIP)", onClick = onFileClick)
-        NewRecipeSourceRow(icon = Icons.Filled.AddAPhoto, label = "Desde imagen", onClick = onPhotoClick)
-        NewRecipeSourceRow(icon = Icons.Filled.Collections, label = "Varias recetas desde imágenes", onClick = onBulkPhotoClick)
-        NewRecipeSourceRow(icon = Icons.Filled.Link, label = "Desde una URL", onClick = onUrlClick)
-        NewRecipeSourceRow(icon = Icons.Filled.AutoAwesome, label = "Buscar receta con IA", onClick = onSearchDishClick)
+        Text(L10n.str(R.string.nueva_receta), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+        NewRecipeSourceRow(icon = Icons.Filled.Edit, label = L10n.str(R.string.manual), onClick = onManualClick)
+        NewRecipeSourceRow(icon = Icons.Filled.UploadFile, label = L10n.str(R.string.desde_archivo_json_zip), onClick = onFileClick)
+        NewRecipeSourceRow(icon = Icons.Filled.AddAPhoto, label = L10n.str(R.string.desde_imagen), onClick = onPhotoClick)
+        NewRecipeSourceRow(icon = Icons.Filled.Collections, label = L10n.str(R.string.varias_recetas_desde_imagenes), onClick = onBulkPhotoClick)
+        NewRecipeSourceRow(icon = Icons.Filled.Link, label = L10n.str(R.string.desde_url), onClick = onUrlClick)
+        NewRecipeSourceRow(icon = Icons.Filled.AutoAwesome, label = L10n.str(R.string.buscar_receta_ia), onClick = onSearchDishClick)
     }
 }
 

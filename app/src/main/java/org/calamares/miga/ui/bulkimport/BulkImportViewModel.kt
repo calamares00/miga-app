@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.bulkimport
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -47,7 +49,7 @@ class BulkImportViewModel(
             val provider = settingsRepository.observeVisionProvider().first()
             val apiKey = settingsRepository.apiKeyFor(provider)
             if (apiKey.isBlank()) {
-                _rows.update { rows -> rows.map { it.copy(state = BulkImportRowState.Failed("Configura una API key de ${provider.label} en Ajustes")) } }
+                _rows.update { rows -> rows.map { it.copy(state = BulkImportRowState.Failed(L10n.str(R.string.configura_api_key_x_ajustes, provider.label))) } }
                 return@launch
             }
             val model = settingsRepository.modelFor(provider)
@@ -61,7 +63,7 @@ class BulkImportViewModel(
             val provider = settingsRepository.observeVisionProvider().first()
             val apiKey = settingsRepository.apiKeyFor(provider)
             if (apiKey.isBlank()) {
-                updateRow(index) { it.copy(state = BulkImportRowState.Failed("Configura una API key de ${provider.label} en Ajustes")) }
+                updateRow(index) { it.copy(state = BulkImportRowState.Failed(L10n.str(R.string.configura_api_key_x_ajustes, provider.label))) }
                 return@launch
             }
             val model = settingsRepository.modelFor(provider)
@@ -74,7 +76,7 @@ class BulkImportViewModel(
         val uri = Uri.parse(photoUris[index])
         val bytes = PhotoStorage.readResizedJpegBytes(context, uri)
         if (bytes == null) {
-            updateRow(index) { it.copy(state = BulkImportRowState.Failed("No se pudo leer la foto")) }
+            updateRow(index) { it.copy(state = BulkImportRowState.Failed(L10n.str(R.string.no_pudo_leer_foto))) }
             return
         }
         when (val result = visionClientFor(provider).extractRecipe(listOf(VisionImageInput(bytes, "image/jpeg")), apiKey, model)) {
