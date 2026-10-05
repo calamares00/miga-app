@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.components
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.WindowInsets
@@ -101,7 +102,10 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
     val handleRadiusPx = with(density) { 24.dp.toPx() }
     val minCropSizePx = with(density) { 48.dp.toPx() }
 
-    Dialog(onDismissRequest = onCancel, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // Capa a pantalla completa dentro de la propia ventana de la app (no un Dialog): así recibe los
+    // márgenes reales de las barras del sistema y no deja ver la pantalla de debajo.
+    BackHandler(onBack = onCancel)
+    Box(modifier = Modifier.fillMaxSize()) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
             Column(modifier = Modifier.fillMaxSize()) {
