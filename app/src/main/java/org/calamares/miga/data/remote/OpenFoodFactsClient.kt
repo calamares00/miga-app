@@ -48,7 +48,7 @@ object OpenFoodFactsClient {
                 connection.connectTimeout = TIMEOUT_MILLIS
                 connection.readTimeout = TIMEOUT_MILLIS
                 // Open Food Facts pide identificar a la app en el User-Agent.
-                connection.setRequestProperty("User-Agent", "Miga/${BuildConfig.VERSION_NAME} (https://github.com/calamares00/app-miga)")
+                connection.setRequestProperty("User-Agent", "Miga/${BuildConfig.VERSION_NAME} (miga@calamares.org)")
                 val code = connection.responseCode
                 if (code == HttpURLConnection.HTTP_NOT_FOUND) return@withContext ProductLookupResult.NotFound
                 if (code != HttpURLConnection.HTTP_OK) return@withContext ProductLookupResult.Error("Open Food Facts respondió con el código $code")
@@ -82,7 +82,7 @@ object OpenFoodFactsClient {
             try {
                 connection.connectTimeout = SEARCH_TIMEOUT_MILLIS
                 connection.readTimeout = SEARCH_TIMEOUT_MILLIS
-                connection.setRequestProperty("User-Agent", "Miga/${BuildConfig.VERSION_NAME} (https://github.com/calamares00/app-miga)")
+                connection.setRequestProperty("User-Agent", "Miga/${BuildConfig.VERSION_NAME} (miga@calamares.org)")
                 val code = connection.responseCode
                 if (code != HttpURLConnection.HTTP_OK) {
                     return@withContext ProductSearchResult.Error("Open Food Facts respondió con el código $code")

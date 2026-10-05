@@ -138,7 +138,6 @@ fun SettingsSectionScreen(
     val themeMode by viewModel.themeMode.collectAsState()
     val colorTheme by viewModel.colorTheme.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
-    val autoCheckUpdatesEnabled by viewModel.autoCheckUpdatesEnabled.collectAsState()
     val books by viewModel.books.collectAsState()
     val geminiApiKey by viewModel.geminiApiKey.collectAsState()
     val packsCatalogRepo by viewModel.packsCatalogRepo.collectAsState()

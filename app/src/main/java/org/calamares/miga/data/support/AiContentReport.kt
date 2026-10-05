@@ -17,7 +17,7 @@ enum class AiReportReason(val label: String) {
  */
 object AiContentReport {
     /** Correo de soporte; vacío = se usa [ISSUES_URL]. */
-    const val SUPPORT_EMAIL = ""
+    const val SUPPORT_EMAIL = "miga@calamares.org"
     const val ISSUES_URL = "https://github.com/calamares00/app-miga/issues/new"
     private const val MAX_CONTENT_CHARS = 1500
 
