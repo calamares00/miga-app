@@ -12,7 +12,6 @@ import java.io.IOException
 import com.bmo00.miga.data.model.ColorTheme
 import com.bmo00.miga.data.model.RecipeListViewMode
 import com.bmo00.miga.data.model.ThemeMode
-import com.bmo00.miga.data.model.UpdateChannel
 import com.bmo00.miga.data.remote.DEFAULT_PACKS_CATALOG_REPO
 import com.bmo00.miga.data.vision.DEFAULT_ANTHROPIC_MODEL
 import com.bmo00.miga.data.vision.DEFAULT_GEMINI_MODEL
@@ -32,8 +31,6 @@ class SettingsRepository(private val context: Context) {
     private val shoppingStoreKey = longPreferencesKey("shopping_store_id")
     private val shoppingListUidKey = stringPreferencesKey("shopping_list_uid")
     private val shoppingAuthorKey = stringPreferencesKey("shopping_author_name")
-    private val autoCheckUpdatesKey = booleanPreferencesKey("auto_check_updates_enabled")
-    private val updateChannelKey = stringPreferencesKey("update_channel")
     private val recipeListViewModeKey = stringPreferencesKey("recipe_list_view_mode")
     private val recipeBookListViewModeKey = stringPreferencesKey("recipe_book_list_view_mode")
     private val visionProviderKey = stringPreferencesKey("vision_provider")
@@ -108,24 +105,6 @@ class SettingsRepository(private val context: Context) {
     }
 
     /** Por defecto activado: comprobar si hay una versión nueva cada vez que se abre la app. */
-    fun observeAutoCheckUpdatesEnabled(): Flow<Boolean> =
-        context.settingsDataStore.data.map { prefs -> prefs[autoCheckUpdatesKey] ?: true }
-
-    suspend fun setAutoCheckUpdatesEnabled(enabled: Boolean) {
-        context.settingsDataStore.edit { prefs -> prefs[autoCheckUpdatesKey] = enabled }
-    }
-
-    fun observeUpdateChannel(): Flow<UpdateChannel> =
-        context.settingsDataStore.data.map { prefs ->
-            prefs[updateChannelKey]?.let { stored ->
-                runCatching { UpdateChannel.valueOf(stored) }.getOrDefault(UpdateChannel.STABLE)
-            } ?: UpdateChannel.STABLE
-        }
-
-    suspend fun setUpdateChannel(channel: UpdateChannel) {
-        context.settingsDataStore.edit { prefs -> prefs[updateChannelKey] = channel.name }
-    }
-
     /** Vista de la lista de recetas: se guarda de forma global (no por libro), como el tema. */
     fun observeRecipeListViewMode(): Flow<RecipeListViewMode> =
         context.settingsDataStore.data.map { prefs ->

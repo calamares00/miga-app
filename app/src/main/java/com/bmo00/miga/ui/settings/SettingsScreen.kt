@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.settings
 
+import com.bmo00.miga.data.remote.DEFAULT_PACKS_CATALOG_REPO
 import android.content.Intent
 import android.net.Uri
 import android.speech.tts.TextToSpeech
@@ -102,7 +103,6 @@ import com.bmo00.miga.data.voice.DictationLanguages
 import com.bmo00.miga.data.model.ColorTheme
 import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ThemeMode
-import com.bmo00.miga.data.model.UpdateChannel
 import com.bmo00.miga.data.vision.ANTHROPIC_MODELS
 import com.bmo00.miga.data.vision.GEMINI_MODELS
 import com.bmo00.miga.data.vision.VisionProviderType
@@ -139,8 +139,6 @@ fun SettingsSectionScreen(
     val colorTheme by viewModel.colorTheme.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
     val autoCheckUpdatesEnabled by viewModel.autoCheckUpdatesEnabled.collectAsState()
-    val updateChannel by viewModel.updateChannel.collectAsState()
-    val updateCheckState by viewModel.updateCheckState.collectAsState()
     val books by viewModel.books.collectAsState()
     val geminiApiKey by viewModel.geminiApiKey.collectAsState()
     val packsCatalogRepo by viewModel.packsCatalogRepo.collectAsState()
@@ -573,18 +571,24 @@ fun SettingsSectionScreen(
             SettingsCard(
                 icon = Icons.Filled.Storefront,
                 title = "",
-                description = "Instala libros de recetas publicados por otros usuarios. Son de solo " +
-                    "lectura: no se pueden editar, solo consultar, cocinar y desinstalar."
+                description = "Instala libros de recetas listos para usar. Son de solo lectura: se " +
+                    "pueden consultar, cocinar y desinstalar, pero no editar."
             ) {
-                OutlinedTextField(
-                    value = packsCatalogRepo,
-                    onValueChange = { viewModel.setPacksCatalogRepo(it) },
-                    label = { Text("Repositorio del catálogo") },
-                    placeholder = { Text("usuario/repositorio") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
                 ManageRow(icon = Icons.Filled.Storefront, label = "Explorar catálogo", onClick = onOpenPacksCatalog)
+                var showCustomCatalog by remember { mutableStateOf(packsCatalogRepo != DEFAULT_PACKS_CATALOG_REPO) }
+                if (showCustomCatalog) {
+                    OutlinedTextField(
+                        // El catálogo oficial no se muestra: el campo vacío equivale a usarlo.
+                        value = if (packsCatalogRepo == DEFAULT_PACKS_CATALOG_REPO) "" else packsCatalogRepo,
+                        onValueChange = { viewModel.setPacksCatalogRepo(it) },
+                        label = { Text("Catálogo alternativo (GitHub)") },
+                        placeholder = { Text("usuario/repositorio · vacío = catálogo oficial") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    TextButton(onClick = { showCustomCatalog = true }) { Text("Usar otro catálogo…") }
+                }
             }
                 }
                 SettingsSection.SYNC -> {
@@ -596,91 +600,6 @@ fun SettingsSectionScreen(
                     "apps Miga."
             ) {
                 ManageRow(icon = Icons.Filled.Sync, label = "Gestionar conexiones", summary = "Servidor, namespace e invitaciones por QR", onClick = onOpenSyncConnections)
-            }
-                }
-                SettingsSection.UPDATES -> {
-            SettingsCard(icon = Icons.Filled.SystemUpdate, title = "") {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Notificar si hay una versión nueva", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            "Se comprueba al abrir la app",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Switch(checked = autoCheckUpdatesEnabled, onCheckedChange = { viewModel.setAutoCheckUpdatesEnabled(it) })
-                }
-
-                Text(
-                    "Canal",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-                UpdateChannel.entries.forEach { channel ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { viewModel.setUpdateChannel(channel) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(selected = updateChannel == channel, onClick = { viewModel.setUpdateChannel(channel) })
-                        Text(channel.label, modifier = Modifier.padding(start = 8.dp))
-                    }
-                }
-
-                ManageRow(
-                    icon = Icons.Filled.SystemUpdate,
-                    label = "Buscar actualizaciones",
-                    summary = "Versión instalada: ${BuildConfig.VERSION_NAME}",
-                    chevron = false,
-                    onClick = { if (updateCheckState !is UpdateCheckState.Checking) viewModel.checkForUpdatesNow() }
-                )
-
-                when (val state = updateCheckState) {
-                    is UpdateCheckState.Checking -> {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                            Text(
-                                "Buscando...",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                        }
-                    }
-                    is UpdateCheckState.UpToDate -> {
-                        Text(
-                            "Ya tienes la última versión (${BuildConfig.VERSION_NAME})",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    is UpdateCheckState.Available -> {
-                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                "Hay una versión nueva: ${state.info.latestVersion}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.weight(1f)
-                            )
-                            TextButton(onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(state.info.apkDownloadUrl ?: state.info.releaseUrl))
-                                runCatching { context.startActivity(intent) }
-                            }) { Text("Descargar") }
-                        }
-                    }
-                    is UpdateCheckState.Error -> {
-                        Text(
-                            "No se pudo comprobar: ${state.reason}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                    is UpdateCheckState.Idle -> Unit
-                }
             }
                 }
             }

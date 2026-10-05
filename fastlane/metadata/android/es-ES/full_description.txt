@@ -1,32 +1,32 @@
-Miga es un cuaderno de recetas digital, minimalista, sin anuncios y pensado
-para funcionar sin conexión: guardar, organizar y editar tus recetas no
-necesita internet ni envía nada fuera del teléfono.
+Miga es el recetario de tu familia y tu lista de la compra en una sola app: sin anuncios, sin cuentas y con tus datos guardados en el teléfono.
 
-Funciones principales:
+LIBROS DE RECETAS
+• Organiza tus recetas en libros (por ejemplo, uno por cada persona de la familia), cada uno con su portada.
+• Recetas completas: ingredientes con cantidad y unidad, pasos, fotos, utensilios, dificultad, etiquetas y subrecetas (salsas, guarniciones…).
+• Búsqueda y filtros por categoría, etiqueta, utensilio, ingrediente o dificultad, y favoritas a un toque.
+• Modo cocina: paso a paso en pantalla completa, con temporizadores y control por voz.
+• Ajusta las raciones y las cantidades se recalculan solas.
 
-* Libros de recetas: organiza tus recetas en libros independientes (por
-  ejemplo, uno por cada miembro de la familia), cada uno con su propia
-  portada.
-* Recetas completas: ingredientes con cantidad y unidad, pasos numerados,
-  foto, utensilios, dificultad, etiquetas y grupos de subreceta (para
-  salsas, guarniciones...).
-* Categorías: organiza y filtra las recetas por categoría, totalmente
-  personalizables.
-* Búsqueda y filtros por categoría, etiqueta, utensilio o dificultad.
-* Modo cocina: pantalla ampliada paso a paso, pensada para seguir mientras
-  cocinas.
-* Autocompletado de ingredientes a partir de lo que ya has escrito antes.
-* Exportación e importación: comparte una receta o un libro entero como
-  texto, PDF o JSON/ZIP (con fotos), y haz copias de seguridad completas de
-  tu biblioteca.
-* Añadir receta con foto (beta): haz una foto a una receta y su texto se
-  reconoce y organiza automáticamente en el editor para que solo tengas que
-  revisarlo. Requiere conexión y tu propia API key de Gemini; es opcional,
-  no se activa si no la configuras.
-* Bloqueo biométrico opcional (huella, rostro o PIN del dispositivo).
-* Tema claro, oscuro o según el sistema.
+LISTA DE LA COMPRA
+• Añade escribiendo, dictando o escaneando el código de barras.
+• Se agrupa por categorías y se ordena por los pasillos de tu supermercado.
+• Varias listas a la vez y plantillas reutilizables (también con productos escaneados).
+• Ficha de producto de Open Food Facts: Nutri-Score, NOVA, alérgenos, aditivos y tabla nutricional, con una puntuación orientativa de 0 a 100.
+• Modo tienda: desliza para marcar y la pantalla no se apaga.
+• Widget para añadir artículos sin abrir la app.
 
-Sin cuentas, sin publicidad. La app no usa conexión a internet salvo, de
-forma opcional, para comprobar si hay una versión nueva y para la función
-beta de añadir receta con foto (que solo se activa si configuras tu propia
-API key de Gemini).
+IMPORTAR Y COMPARTIR
+• Exporta e importa recetas y libros (texto, PDF, JSON/ZIP con fotos) y haz copias de seguridad completas.
+• Packs de recetas listos para instalar.
+• Comparte la lista por texto o por código QR.
+
+FUNCIONES OPCIONALES CON IA
+Con tu propia clave de Google Gemini o Anthropic Claude: crea recetas a partir de una foto o de una página web, busca recetas de un plato, estima la nutrición y la valoración de salud o encuentra sustitutos de ingredientes. Solo se activan si configuras tu clave; el contenido generado se marca como tal y se puede reportar.
+
+SINCRONIZACIÓN CON TU PROPIO SERVIDOR
+¿Quieres compartir libros y la lista de la compra en familia? Conecta Miga a un servidor que alojes tú mismo (miga-server) e invita a otros con un código QR.
+
+PRIVACIDAD
+Sin publicidad, sin analítica y sin cuentas. Internet solo se usa para las funciones que eliges: IA con tu clave, Open Food Facts, el catálogo de packs y tu servidor de sincronización.
+
+Los datos de productos proceden de Open Food Facts (licencia ODbL).

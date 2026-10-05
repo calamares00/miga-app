@@ -8,9 +8,6 @@ import com.bmo00.miga.crash.CrashReporter
 import com.bmo00.miga.data.local.SettingsRepository
 import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.model.RecipeListViewMode
-import com.bmo00.miga.data.remote.UpdateCheckResult
-import com.bmo00.miga.data.remote.UpdateChecker
-import com.bmo00.miga.data.remote.UpdateInfo
 import com.bmo00.miga.data.repository.RecipeRepository
 import com.bmo00.miga.data.sync.SyncEngine
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,9 +36,6 @@ class RecipeBooksViewModel(
         viewModelScope.launch { settingsRepository.setRecipeBookListViewMode(mode) }
     }
 
-    private val _updateAvailable = MutableStateFlow<UpdateInfo?>(null)
-    val updateAvailable: StateFlow<UpdateInfo?> = _updateAvailable
-
     private val _changelogAnnouncement = MutableStateFlow<ChangelogAnnouncement?>(null)
     val changelogAnnouncement: StateFlow<ChangelogAnnouncement?> = _changelogAnnouncement
 
@@ -55,13 +49,6 @@ class RecipeBooksViewModel(
     }
 
     init {
-        viewModelScope.launch {
-            if (settingsRepository.observeAutoCheckUpdatesEnabled().first()) {
-                val channel = settingsRepository.observeUpdateChannel().first()
-                val result = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, channel)
-                _updateAvailable.value = (result as? UpdateCheckResult.UpdateFound)?.info
-            }
-        }
         viewModelScope.launch {
             val lastSeen = settingsRepository.observeLastSeenVersionCode().first()
             val current = BuildConfig.VERSION_CODE
@@ -87,8 +74,8 @@ class RecipeBooksViewModel(
     }
 
     /** Sincroniza automáticamente todas las conexiones configuradas (ver Ajustes → Servidor de
-     *  sincronización) al abrir la app, mismo sitio y espíritu que el chequeo de actualizaciones de
-     *  arriba - así los cambios de otras apps Miga conectadas al mismo namespace llegan sin que el
+     *  sincronización) al abrir la app, en el mismo sitio que se hacía la comprobación inicial de
+     *  arriba (versión e historial) - así los cambios de otras apps Miga conectadas al mismo namespace llegan sin que el
      *  usuario tenga que sincronizar a mano. Solo una vez por instancia de este ViewModel (que
      *  persiste mientras la pestaña de libros siga viva) para no repetir el sync en cada
      *  recomposición o cambio de pestaña. */
@@ -100,10 +87,6 @@ class RecipeBooksViewModel(
                 syncEngine.syncConnection(context, connection.id)
             }
         }
-    }
-
-    fun dismissUpdateBanner() {
-        _updateAvailable.value = null
     }
 
     fun dismissChangelogAnnouncement() {

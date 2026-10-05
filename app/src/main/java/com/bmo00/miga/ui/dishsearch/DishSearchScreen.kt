@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.dishsearch
 
+import com.bmo00.miga.ui.components.AiContentNotice
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -98,6 +99,12 @@ fun DishSearchScreen(
                     color = MaterialTheme.colorScheme.error
                 )
                 is DishSearchUiState.Loaded -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item {
+                        AiContentNotice(
+                            feature = "Buscar receta con IA",
+                            content = { current.dishes.joinToString("\n") { "${it.name}: ${it.description}" } }
+                        )
+                    }
                     items(current.dishes) { dish ->
                         DishCard(dish = dish, onClick = { onDishSelected(dish) })
                     }

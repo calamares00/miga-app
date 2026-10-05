@@ -327,8 +327,8 @@ internal fun ProductDetailSheet(
                     )
                 }
                 Text(
-                    "Estimación propia de Miga con los datos de Open Food Facts y el reparto 60 % nutrición, 30 % aditivos y 10 % ecológico " +
-                        "que usan apps como Yuka. No es la puntuación oficial de Yuka ni un consejo médico.",
+                    "Estimación propia de Miga con los datos de Open Food Facts: 60 % calidad nutricional, 30 % aditivos y 10 % " +
+                        "ecológico. Es orientativa y no sustituye el consejo de un profesional de la salud.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

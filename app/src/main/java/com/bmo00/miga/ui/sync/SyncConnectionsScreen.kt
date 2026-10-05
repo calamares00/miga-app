@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.sync
 
+import com.bmo00.miga.data.sync.ServerUrlSecurity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -295,6 +296,9 @@ private fun JoinInviteDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (ServerUrlSecurity.isInsecurePublic(invite.serverUrl)) {
+                    Text(ServerUrlSecurity.INSECURE_WARNING, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                }
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it },
@@ -345,6 +349,10 @@ private fun AddConnectionDialog(
                     label = { Text("URL del servidor") },
                     placeholder = { Text("http://192.168.1.10:8080") },
                     singleLine = true,
+                    isError = ServerUrlSecurity.isInsecurePublic(serverUrl),
+                    supportingText = if (ServerUrlSecurity.isInsecurePublic(serverUrl)) {
+                        { Text(ServerUrlSecurity.INSECURE_WARNING) }
+                    } else null,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(

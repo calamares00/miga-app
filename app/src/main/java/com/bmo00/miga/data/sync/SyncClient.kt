@@ -46,7 +46,7 @@ private const val PHOTO_TIMEOUT_MILLIS = 30000
 
 /**
  * Cliente HTTP del servidor de sincronización self-hosted (ver miga-server). Mismo estilo que
- * PacksCatalogClient/UpdateChecker: HttpURLConnection crudo + kotlinx.serialization, sin
+ * PacksCatalogClient: HttpURLConnection crudo + kotlinx.serialization, sin
  * librería de red nueva, sin reintentos.
  */
 object SyncClient {

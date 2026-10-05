@@ -16,11 +16,7 @@ import com.bmo00.miga.data.model.ColorTheme
 import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.model.RecipePhoto
 import com.bmo00.miga.data.model.ThemeMode
-import com.bmo00.miga.data.model.UpdateChannel
 import com.bmo00.miga.data.remote.DEFAULT_PACKS_CATALOG_REPO
-import com.bmo00.miga.data.remote.UpdateCheckResult
-import com.bmo00.miga.data.remote.UpdateChecker
-import com.bmo00.miga.data.remote.UpdateInfo
 import com.bmo00.miga.data.repository.RecipeRepository
 import com.bmo00.miga.data.vision.DEFAULT_ANTHROPIC_MODEL
 import com.bmo00.miga.data.vision.DEFAULT_GEMINI_MODEL
@@ -30,14 +26,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-
-sealed interface UpdateCheckState {
-    data object Idle : UpdateCheckState
-    data object Checking : UpdateCheckState
-    data object UpToDate : UpdateCheckState
-    data class Available(val info: UpdateInfo) : UpdateCheckState
-    data class Error(val reason: String) : UpdateCheckState
-}
 
 class SettingsViewModel(
     private val repository: RecipeRepository,
@@ -63,34 +51,6 @@ class SettingsViewModel(
 
     fun setBiometricLockEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setBiometricLockEnabled(enabled) }
-    }
-
-    val autoCheckUpdatesEnabled: StateFlow<Boolean> = settingsRepository.observeAutoCheckUpdatesEnabled()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
-    fun setAutoCheckUpdatesEnabled(enabled: Boolean) {
-        viewModelScope.launch { settingsRepository.setAutoCheckUpdatesEnabled(enabled) }
-    }
-
-    val updateChannel: StateFlow<UpdateChannel> = settingsRepository.observeUpdateChannel()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UpdateChannel.STABLE)
-
-    fun setUpdateChannel(channel: UpdateChannel) {
-        viewModelScope.launch { settingsRepository.setUpdateChannel(channel) }
-    }
-
-    private val _updateCheckState = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
-    val updateCheckState: StateFlow<UpdateCheckState> = _updateCheckState
-
-    fun checkForUpdatesNow() {
-        viewModelScope.launch {
-            _updateCheckState.value = UpdateCheckState.Checking
-            _updateCheckState.value = when (val result = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, updateChannel.value)) {
-                is UpdateCheckResult.UpdateFound -> UpdateCheckState.Available(result.info)
-                is UpdateCheckResult.UpToDate -> UpdateCheckState.UpToDate
-                is UpdateCheckResult.Error -> UpdateCheckState.Error(result.reason)
-            }
-        }
     }
 
     fun exportLibrary(context: Context, destination: Uri) {

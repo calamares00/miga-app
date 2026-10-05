@@ -7,15 +7,15 @@ plugins {
 
 android {
     namespace = "com.bmo00.miga"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.bmo00.miga"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         // El patch de versionName se incrementa en cada commit (1.0.1, 1.0.2...); versionCode sube en paralelo.
-        versionCode = 85
-        versionName = "1.0.84"
+        versionCode = 86
+        versionName = "1.0.85"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.detail
 
+import com.bmo00.miga.ui.components.AiContentNotice
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -287,6 +288,10 @@ fun RecipeDetailScreen(
                     is SubstitutionDialogState.NotConfigured -> Text("Configura un proveedor de IA en Ajustes para usar esto.")
                     is SubstitutionDialogState.Error -> Text(state.reason, color = MaterialTheme.colorScheme.error)
                     is SubstitutionDialogState.Loaded -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        AiContentNotice(
+                            feature = "Sustitución de ingredientes",
+                            content = { "${state.ingredientName}: " + state.substitutions.joinToString("; ") { "${it.substitute} (${it.notes})" } }
+                        )
                         state.substitutions.forEach { substitution ->
                             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text(substitution.substitute, style = MaterialTheme.typography.titleSmall)
@@ -399,6 +404,7 @@ private fun RecipeDetailContent(
                                     colors = AssistChipDefaults.assistChipColors(containerColor = containerColor, labelColor = contentColor)
                                 )
                                 Text(rating.description, style = MaterialTheme.typography.bodyMedium)
+                                AiContentNotice(feature = "Valoración de salud", content = { "${recipe.name}: $label. ${rating.description}" })
                             }
                         }
                         HealthState.Idle -> Unit
@@ -434,6 +440,13 @@ private fun RecipeDetailContent(
                                 NutritionStat(value = formatQuantity(nutrition.carbsGrams), label = "Carbohidratos (g)")
                                 NutritionStat(value = formatQuantity(nutrition.fatGrams), label = "Grasas (g)")
                             }
+                            AiContentNotice(
+                                feature = "Nutrición estimada",
+                                content = {
+                                    "${recipe.name}: ${nutrition.caloriesPerServing} kcal, ${nutrition.proteinGrams} g proteínas, " +
+                                        "${nutrition.carbsGrams} g carbohidratos, ${nutrition.fatGrams} g grasas por ración"
+                                }
+                            )
                         }
                         NutritionState.Idle -> Unit
                     }

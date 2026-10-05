@@ -74,7 +74,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.model.RecipeListViewMode
-import com.bmo00.miga.data.remote.UpdateInfo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +84,6 @@ fun RecipeBooksScreen(
     onEditBookClick: (Long) -> Unit
 ) {
     val books by viewModel.books.collectAsState()
-    val updateAvailable by viewModel.updateAvailable.collectAsState()
     val changelogAnnouncement by viewModel.changelogAnnouncement.collectAsState()
     val crashReport by viewModel.crashReport.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
@@ -128,17 +126,6 @@ fun RecipeBooksScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            updateAvailable?.let { info ->
-                UpdateBanner(
-                    info = info,
-                    onDismiss = { viewModel.dismissUpdateBanner() },
-                    onOpen = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(info.apkDownloadUrl ?: info.releaseUrl))
-                        runCatching { context.startActivity(intent) }
-                    }
-                )
-            }
-
             if (books.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
                     Text(
@@ -243,34 +230,6 @@ fun RecipeBooksScreen(
                 }
             }
         )
-    }
-}
-
-@Composable
-private fun UpdateBanner(info: UpdateInfo, onDismiss: () -> Unit, onOpen: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-    ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.SystemUpdate, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
-            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
-                Text(
-                    "Nueva versión disponible",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
-                    "Miga ${info.latestVersion}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-            TextButton(onClick = onOpen) { Text("Descargar") }
-            IconButton(onClick = onDismiss) {
-                Icon(Icons.Filled.Close, contentDescription = "Descartar", tint = MaterialTheme.colorScheme.onPrimaryContainer)
-            }
-        }
     }
 }
 

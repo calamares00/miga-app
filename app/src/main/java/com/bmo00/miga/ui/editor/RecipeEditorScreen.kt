@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.editor
 
+import com.bmo00.miga.ui.components.AiContentNotice
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -171,6 +172,19 @@ fun RecipeEditorScreen(
                         Icon(Icons.Filled.Close, contentDescription = "Cerrar aviso")
                     }
                 }
+            }
+
+            if (visionState is VisionState.Loaded) {
+                AiContentNotice(
+                    feature = "Receta generada con IA",
+                    content = {
+                        buildString {
+                            appendLine(viewModel.name)
+                            viewModel.ingredientGroups.flatMap { it.ingredients }.forEach { appendLine("- ${it.quantity} ${it.unit} ${it.name}".trim()) }
+                            viewModel.stepGroups.flatMap { it.steps }.forEachIndexed { i, step -> appendLine("${i + 1}. ${step.text}") }
+                        }
+                    }
+                )
             }
 
             PhotosRow(

@@ -1,5 +1,6 @@
 package com.bmo00.miga.ui.bulkimport
 
+import com.bmo00.miga.ui.components.AiContentNotice
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -70,6 +71,13 @@ fun BulkImportScreen(
         }
     ) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+            item {
+                AiContentNotice(
+                    feature = "Varias recetas desde imágenes",
+                    content = { "Recetas importadas con IA desde ${rows.size} fotos (revisa cada receta y reporta la concreta desde su editor)." },
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
             items(rows) { row ->
                 BulkImportRowItem(
                     row = row,

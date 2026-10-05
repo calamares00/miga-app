@@ -1,5 +1,7 @@
 package com.bmo00.miga.ui.settings
 
+import com.bmo00.miga.BuildConfig
+import com.bmo00.miga.data.support.AiContentReport
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -35,13 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.bmo00.miga.data.local.SettingsRepository
-
-/**
- * TODO: sustituir por el enlace real de donación (PayPal.me, Ko-fi...) antes de publicar la app.
- * Se le añade el importe al final, ej. "$DONATION_BASE_URL/0.99".
- */
-private const val DONATION_BASE_URL = "https://TODO_DONATION_URL"
-private val DONATION_AMOUNTS = listOf("0.99", "2.99", "4.99", "9.99")
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -112,19 +107,16 @@ fun HelpScreen(settingsRepository: SettingsRepository, onBack: () -> Unit, onCha
             HorizontalDivider()
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Apoya la app", style = MaterialTheme.typography.titleMedium)
+                Text("Contacto", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = "Si te resulta útil, puedes invitarnos a un café con una pequeña donación.",
+                    text = "¿Has encontrado un fallo o tienes una sugerencia? Escríbenos.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    DONATION_AMOUNTS.forEach { amount ->
-                        OutlinedButton(onClick = { openDonationLink(context, amount) }) {
-                            Text("${amount.replace('.', ',')} €")
-                        }
-                    }
-                }
+                OutlinedButton(onClick = {
+                    val url = AiContentReport.targetUrl("Soporte Miga", "Versión de Miga: ${BuildConfig.VERSION_NAME}\n\n")
+                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                }) { Text("Informar de un problema") }
             }
 
             if (hasChangelog) {
@@ -159,9 +151,4 @@ private fun HelpSection(title: String, body: String) {
         Text(title, style = MaterialTheme.typography.titleMedium)
         Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-}
-
-private fun openDonationLink(context: Context, amount: String) {
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("$DONATION_BASE_URL/$amount"))
-    runCatching { context.startActivity(intent) }
 }
