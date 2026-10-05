@@ -91,8 +91,12 @@ private val BOTTOM_TABS = listOf(
 )
 
 @Composable
-fun RecetarioNavHost() {
+fun RecetarioNavHost(initialRoute: String? = null) {
     val navController = rememberNavController()
+    // Destino elegido en la bienvenida (packs, restaurar copia...), encima de la pantalla principal.
+    LaunchedEffect(initialRoute) {
+        if (initialRoute != null) runCatching { navController.navigate(initialRoute) }
+    }
     val context = LocalContext.current
     val repository = repositoryOf(context)
     val settingsRepository = (context.applicationContext as RecetarioApp).settingsRepository
@@ -146,7 +150,8 @@ fun RecetarioNavHost() {
                     viewModel = viewModel,
                     onBookClick = { navController.navigate(Destinations.book(it)) },
                     onAddBookClick = { navController.navigate(Destinations.bookEditor()) },
-                    onEditBookClick = { navController.navigate(Destinations.bookEditor(it)) }
+                    onEditBookClick = { navController.navigate(Destinations.bookEditor(it)) },
+                    onExplorePacks = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) }
                 )
             }
 
@@ -448,11 +453,7 @@ fun RecetarioNavHost() {
             }
 
             composable(Destinations.HELP_ROUTE) {
-                HelpScreen(
-                    settingsRepository = settingsRepository,
-                    onBack = { navController.popBackStack() },
-                    onChangelogClick = { navController.navigate(Destinations.HELP_CHANGELOG_ROUTE) }
-                )
+                HelpScreen(onBack = { navController.popBackStack() })
             }
 
             composable(Destinations.HELP_CHANGELOG_ROUTE) {

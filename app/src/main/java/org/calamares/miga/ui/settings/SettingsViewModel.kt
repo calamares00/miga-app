@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.settings
 
+import kotlinx.coroutines.flow.first
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -57,7 +58,9 @@ class SettingsViewModel(
         viewModelScope.launch {
             val allBooks = repository.getAllRecipeBooksOnce()
             val recipes = repository.getAllRecipesOnce()
-            RecipeExporter.exportLibrary(context, destination, allBooks, recipes)
+            val templates = repository.observeShoppingTemplates().first()
+            val stores = repository.observeShoppingStores().first()
+            RecipeExporter.exportLibrary(context, destination, allBooks, recipes, templates, stores)
         }
     }
 

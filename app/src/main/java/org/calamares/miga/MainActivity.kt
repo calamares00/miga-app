@@ -38,7 +38,10 @@ import androidx.lifecycle.LifecycleEventObserver
 import org.calamares.miga.data.model.ColorTheme
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.share.ShoppingIntents
+import org.calamares.miga.ui.navigation.Destinations
 import org.calamares.miga.ui.navigation.RecetarioNavHost
+import org.calamares.miga.ui.settings.SettingsSection
+import org.calamares.miga.ui.welcome.WelcomeScreen
 import org.calamares.miga.ui.security.BiometricAuthenticator
 import org.calamares.miga.ui.theme.RecetarioTheme
 import kotlinx.coroutines.delay
@@ -67,6 +70,9 @@ class MainActivity : FragmentActivity() {
             }
             val colorTheme by settingsRepository.observeColorTheme().collectAsState(initial = ColorTheme.TERRACOTTA)
             val biometricLockEnabled by settingsRepository.observeBiometricLockEnabled().collectAsState(initial = false)
+            // null mientras se lee el ajuste (se sigue mostrando el splash para no parpadear).
+            val onboardingDone by settingsRepository.observeOnboardingDone().collectAsState(initial = null)
+            var welcomeDestination by remember { mutableStateOf<String?>(null) }
             var unlocked by remember { mutableStateOf(false) }
             var showSplash by remember { mutableStateOf(true) }
             val lifecycleOwner = LocalLifecycleOwner.current
@@ -88,7 +94,15 @@ class MainActivity : FragmentActivity() {
             RecetarioTheme(darkTheme = darkTheme, colorTheme = colorTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     when {
-                        showSplash -> SplashScreen()
+                        showSplash || onboardingDone == null -> SplashScreen()
+                        onboardingDone == false -> WelcomeScreen(
+                            packsRoute = Destinations.PACKS_CATALOG_ROUTE,
+                            backupRoute = Destinations.settingsSection(SettingsSection.BACKUP.id),
+                            onFinish = { destination ->
+                                welcomeDestination = destination
+                                scope.launch { settingsRepository.setOnboardingDone() }
+                            }
+                        )
                         biometricLockEnabled && !unlocked -> LockScreen(
                             onUnlockClick = {
                                 scope.launch {
@@ -96,7 +110,7 @@ class MainActivity : FragmentActivity() {
                                 }
                             }
                         )
-                        else -> RecetarioNavHost()
+                        else -> RecetarioNavHost(initialRoute = welcomeDestination)
                     }
                 }
             }

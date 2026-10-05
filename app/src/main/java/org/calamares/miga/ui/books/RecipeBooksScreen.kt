@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.books
 
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Button
+import org.calamares.miga.ui.components.EmptyState
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -81,7 +84,8 @@ fun RecipeBooksScreen(
     viewModel: RecipeBooksViewModel,
     onBookClick: (Long) -> Unit,
     onAddBookClick: () -> Unit,
-    onEditBookClick: (Long) -> Unit
+    onEditBookClick: (Long) -> Unit,
+    onExplorePacks: () -> Unit = {}
 ) {
     val books by viewModel.books.collectAsState()
     val changelogAnnouncement by viewModel.changelogAnnouncement.collectAsState()
@@ -127,17 +131,20 @@ fun RecipeBooksScreen(
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (books.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
-                    Text(
-                        "Aún no tienes libros de recetas.\nPulsa \"Nuevo libro\" para crear el primero.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                EmptyState(
+                    icon = Icons.Outlined.MenuBook,
+                    title = "Empieza tu recetario",
+                    body = "Crea un libro para cada persona o tema (de la abuela, postres, cenas rápidas…) y ve llenándolo de recetas.",
+                    modifier = Modifier.fillMaxSize().weight(1f)
+                ) {
+                    Button(onClick = onAddBookClick) { Text("Crear mi primer libro") }
+                    OutlinedButton(onClick = onExplorePacks) { Text("Explorar packs de recetas") }
                 }
             } else if (viewMode == RecipeListViewMode.GRID) {
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(16.dp),
+                    columns = GridCells.Adaptive(150.dp),
+                    // Abajo deja hueco para que el botón "Nuevo libro" no tape la última fila.
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.weight(1f)
@@ -148,7 +155,7 @@ fun RecipeBooksScreen(
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.weight(1f)
                 ) {

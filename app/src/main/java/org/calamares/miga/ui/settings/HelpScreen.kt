@@ -40,11 +40,8 @@ import org.calamares.miga.data.local.SettingsRepository
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun HelpScreen(settingsRepository: SettingsRepository, onBack: () -> Unit, onChangelogClick: () -> Unit) {
+fun HelpScreen(onBack: () -> Unit) {
     val context = LocalContext.current
-    // Solo hace falta saber si hay algún changelog embebido para decidir si se muestra la
-    // entrada; el contenido en sí se lee en ChangelogScreen, al entrar ahí.
-    val hasChangelog = remember { settingsRepository.listAvailableChangelogVersionCodes().isNotEmpty() }
 
     Scaffold(
         topBar = {
@@ -117,29 +114,6 @@ fun HelpScreen(settingsRepository: SettingsRepository, onBack: () -> Unit, onCha
                     val url = AiContentReport.targetUrl("Soporte Miga", "Versión de Miga: ${BuildConfig.VERSION_NAME}\n\n")
                     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
                 }) { Text("Informar de un problema") }
-            }
-
-            if (hasChangelog) {
-                HorizontalDivider()
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onChangelogClick)
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Filled.History, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
-                        Text("Historial de cambios", style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "Las novedades de cada versión",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
             }
         }
     }
