@@ -7,7 +7,7 @@ package com.bmo00.miga.data.model
 object PredefinedShoppingLists {
 
     private fun list(id: Long, name: String, items: String) =
-        ShoppingTemplate(id, name, ShoppingEntryParser.parse(items))
+        ShoppingTemplate(id, name, ShoppingEntryParser.parse(items).map { TemplateItem.of(it) })
 
     val ALL: List<ShoppingTemplate> = listOf(
         list(-1, "🧺 Despensa básica", "Arroz, Pasta, Aceite de oliva, Sal, Azúcar, Harina, Lentejas, Garbanzos, Tomate frito, Atún en lata, Café, Galletas"),

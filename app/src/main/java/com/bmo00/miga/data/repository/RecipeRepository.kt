@@ -44,7 +44,6 @@ import com.bmo00.miga.data.model.RecipeBookDraft
 import com.bmo00.miga.data.model.RecipeBookSummary
 import com.bmo00.miga.data.model.RecipeDraft
 import com.bmo00.miga.data.model.RecipePhoto
-import com.bmo00.miga.data.model.ParsedShoppingEntry
 import com.bmo00.miga.data.model.ProductInfo
 import com.bmo00.miga.data.model.ProductInfoCodec
 import com.bmo00.miga.data.model.DEFAULT_SHOPPING_LIST_NAME
@@ -55,6 +54,8 @@ import com.bmo00.miga.data.model.ShoppingListItem
 import com.bmo00.miga.data.model.ShoppingStore
 import com.bmo00.miga.data.model.ShoppingSuggestion
 import com.bmo00.miga.data.model.ShoppingTemplate
+import com.bmo00.miga.data.model.ShoppingTemplateCodec
+import com.bmo00.miga.data.model.TemplateItem
 import com.bmo00.miga.data.share.ShoppingListShareCodec
 import com.bmo00.miga.data.model.StepGroup
 import com.bmo00.miga.data.model.SyncConnection
@@ -635,7 +636,7 @@ class RecipeRepository(
     }
 
     /** Producto escaneado (con foto): si ya hay un artículo pendiente con ese nombre solo se le añade la foto. */
-    suspend fun addScannedShoppingProduct(name: String, imageUrl: String?, info: ProductInfo?) {
+    suspend fun addScannedShoppingProduct(name: String, imageUrl: String?, info: ProductInfo?, quantity: Double? = null, unit: String? = null) {
         val infoJson = info?.let { ProductInfoCodec.encode(it) }
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
@@ -662,8 +663,8 @@ class RecipeRepository(
                     ShoppingListItemEntity(
                         name = trimmed,
                         normalizedName = normalized,
-                        quantity = null,
-                        unit = null,
+                        quantity = quantity,
+                        unit = unit,
                         createdAt = now,
                         syncDirty = true,
                         imageUrl = imageUrl,
@@ -758,13 +759,35 @@ class RecipeRepository(
 
     fun observeShoppingTemplates(): Flow<List<ShoppingTemplate>> =
         shoppingTemplateDao.observeAll().map { list ->
-            list.map { ShoppingTemplate(it.id, it.name, ShoppingListShareCodec.fromLines(it.body)) }
+            list.map { ShoppingTemplate(it.id, it.name, ShoppingTemplateCodec.decode(it.body, ShoppingListShareCodec::fromLines)) }
         }
 
-    suspend fun saveShoppingTemplate(name: String, entries: List<ParsedShoppingEntry>) {
-        val body = ShoppingListShareCodec.toLines(entries)
-        if (name.isBlank() || body.isEmpty()) return
-        shoppingTemplateDao.insert(ShoppingTemplateEntity(name = name.trim(), body = body, createdAt = System.currentTimeMillis()))
+    /** Crea una plantilla (puede estar vacía) y devuelve su id, o null si el nombre está vacío. */
+    suspend fun saveShoppingTemplate(name: String, items: List<TemplateItem>): Long? {
+        if (name.isBlank()) return null
+        val body = ShoppingTemplateCodec.encode(items)
+        return shoppingTemplateDao.insert(ShoppingTemplateEntity(name = name.trim(), body = body, createdAt = System.currentTimeMillis()))
+    }
+
+    /** Cambia los artículos de una plantilla del usuario aplicando [transform] a los actuales. */
+    suspend fun updateShoppingTemplateItems(id: Long, transform: (List<TemplateItem>) -> List<TemplateItem>) {
+        db.withTransaction {
+            val entity = shoppingTemplateDao.get(id) ?: return@withTransaction
+            val current = ShoppingTemplateCodec.decode(entity.body, ShoppingListShareCodec::fromLines)
+            shoppingTemplateDao.setBody(id, ShoppingTemplateCodec.encode(transform(current)))
+        }
+    }
+
+    suspend fun renameShoppingTemplate(id: Long, name: String) {
+        if (name.isBlank()) return
+        shoppingTemplateDao.rename(id, name.trim())
+    }
+
+    /** Añade a la lista actual los artículos de una plantilla; los productos llegan con su foto y su ficha. */
+    suspend fun applyShoppingTemplate(items: List<TemplateItem>) {
+        val (products, plain) = items.partition { it.isProduct }
+        if (plain.isNotEmpty()) addShoppingListEntries(plain.map { Ingredient(it.name, it.quantity, it.unit) })
+        products.forEach { addScannedShoppingProduct(it.name, it.imageUrl, it.info, it.quantity, it.unit) }
     }
 
     suspend fun deleteShoppingTemplate(id: Long) = shoppingTemplateDao.delete(id)

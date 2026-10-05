@@ -47,6 +47,6 @@ class ShoppingAisleOrderTest {
         val lists = PredefinedShoppingLists.ALL
         assertTrue(lists.all { it.id < 0 })
         assertEquals(lists.size, lists.map { it.id }.toSet().size)
-        assertTrue(lists.all { it.entries.size >= 5 })
+        assertTrue(lists.all { it.items.size >= 5 })
     }
 }

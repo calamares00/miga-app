@@ -16,6 +16,8 @@ import com.bmo00.miga.data.model.ShoppingListItem
 import com.bmo00.miga.data.model.ShoppingStore
 import com.bmo00.miga.data.model.ShoppingSuggestion
 import com.bmo00.miga.data.model.ShoppingTemplate
+import com.bmo00.miga.data.model.ShoppingTemplateCodec
+import com.bmo00.miga.data.model.TemplateItem
 import com.bmo00.miga.data.remote.OpenFoodFactsClient
 import com.bmo00.miga.data.remote.ProductLookupResult
 import com.bmo00.miga.data.remote.ProductSearchResult
@@ -234,13 +236,66 @@ class ShoppingListViewModel(
         }
     }
 
+    /** Guarda la lista actual (con fotos y fichas de los productos) como plantilla nueva. */
     fun saveTemplate(name: String) {
-        val entries = groups.value.flatMap { it.items }.map { ParsedShoppingEntry(it.name, it.quantity, it.unit) }
-        if (entries.isEmpty() || name.isBlank()) return
-        viewModelScope.launch { repository.saveShoppingTemplate(name, entries) }
+        val items = groups.value.flatMap { it.items }.map { TemplateItem(it.name, it.quantity, it.unit, it.imageUrl, it.productInfo) }
+        if (items.isEmpty() || name.isBlank()) return
+        viewModelScope.launch { repository.saveShoppingTemplate(name, items) }
     }
 
-    fun applyTemplate(template: ShoppingTemplate) = addParsedEntries(template.entries)
+    /** Crea una plantilla vacía (o con [first]) y devuelve su id por [onCreated]. */
+    fun createTemplate(name: String, first: TemplateItem? = null, onCreated: (Long) -> Unit = {}) {
+        if (name.isBlank()) return
+        viewModelScope.launch {
+            repository.saveShoppingTemplate(name, listOfNotNull(first))?.let(onCreated)
+        }
+    }
+
+    fun addToTemplate(templateId: Long, item: TemplateItem) {
+        viewModelScope.launch { repository.updateShoppingTemplateItems(templateId) { ShoppingTemplateCodec.upsert(it, item) } }
+    }
+
+    /** Añade a la plantilla lo escrito a mano ("2 kg tomates, leche"); devuelve cuántos artículos. */
+    fun addTextToTemplate(templateId: Long, text: String): Int {
+        val entries = ShoppingEntryParser.parse(text)
+        if (entries.isEmpty()) return 0
+        viewModelScope.launch {
+            repository.updateShoppingTemplateItems(templateId) { current ->
+                entries.fold(current) { acc, entry -> ShoppingTemplateCodec.upsert(acc, TemplateItem.of(entry)) }
+            }
+        }
+        return entries.size
+    }
+
+    fun removeFromTemplate(templateId: Long, index: Int) {
+        viewModelScope.launch {
+            repository.updateShoppingTemplateItems(templateId) { current ->
+                if (index in current.indices) current.filterIndexed { i, _ -> i != index } else current
+            }
+        }
+    }
+
+    fun renameTemplate(templateId: Long, name: String) {
+        viewModelScope.launch { repository.renameShoppingTemplate(templateId, name) }
+    }
+
+    /** Busca el código en Open Food Facts y lo guarda en la plantilla; [onResult] recibe el mensaje a mostrar. */
+    fun addScannedProductToTemplate(templateId: Long, barcode: String, onResult: (String) -> Unit) {
+        viewModelScope.launch {
+            when (val result = OpenFoodFactsClient.lookup(barcode)) {
+                is ProductLookupResult.Found -> {
+                    addToTemplate(templateId, result.product.toTemplateItem())
+                    onResult("Añadido a la plantilla: ${result.product.name}")
+                }
+                ProductLookupResult.NotFound -> onResult("Producto no encontrado en Open Food Facts ($barcode)")
+                is ProductLookupResult.Error -> onResult("No se pudo consultar el producto: ${result.reason}")
+            }
+        }
+    }
+
+    fun applyTemplate(template: ShoppingTemplate) {
+        viewModelScope.launch { repository.applyShoppingTemplate(template.items) }
+    }
 
     fun deleteTemplate(id: Long) {
         viewModelScope.launch { repository.deleteShoppingTemplate(id) }
@@ -299,3 +354,9 @@ class ShoppingListViewModel(
         RecipeExporter.shareShoppingListAsText(context, groups.value)
     }
 }
+
+/** Producto de Open Food Facts como artículo de plantilla (con foto y ficha). */
+fun ScannedProduct.toTemplateItem(): TemplateItem = TemplateItem(name = name, imageUrl = imageUrl, info = info)
+
+/** Artículo de la lista con producto de Open Food Facts como artículo de plantilla. */
+fun ShoppingListItem.toTemplateItem(): TemplateItem = TemplateItem(name, quantity, unit, imageUrl, productInfo)
