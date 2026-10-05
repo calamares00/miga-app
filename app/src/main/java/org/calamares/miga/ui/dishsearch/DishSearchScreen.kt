@@ -95,7 +95,7 @@ fun DishSearchScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                is DishSearchUiState.Error -> ErrorMessage(current.reason)
+                is DishSearchUiState.Error -> ErrorMessage(current.reason, onRetry = { viewModel.search(query) })
                 is DishSearchUiState.Loaded -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     item {
                         AiContentNotice(

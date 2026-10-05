@@ -14,11 +14,17 @@ import java.net.UnknownHostException
  */
 object ErrorDetail {
     private const val SEPARATOR = "\u001F"
+    /** Marca al inicio: el error viene de un proveedor de IA y tiene sentido ofrecer cambiar de modelo. */
+    private const val AI_MARK = "\u001E"
 
     fun withDetail(summary: String, detail: String?): String =
         if (detail.isNullOrBlank()) summary else summary + SEPARATOR + detail
 
-    fun summary(reason: String): String = reason.substringBefore(SEPARATOR)
+    fun markAsAi(reason: String): String = if (reason.startsWith(AI_MARK)) reason else AI_MARK + reason
+
+    fun isAiError(reason: String): Boolean = reason.startsWith(AI_MARK)
+
+    fun summary(reason: String): String = reason.removePrefix(AI_MARK).substringBefore(SEPARATOR)
 
     fun detail(reason: String): String? = reason.substringAfter(SEPARATOR, "").takeIf { it.isNotBlank() }
 }
@@ -29,7 +35,7 @@ object AiErrors {
     /** La IA respondió, pero no con el JSON esperado. */
     fun badResponse(error: Throwable, modelText: String): String {
         val technical = error.message?.substringBefore("\nJSON input:") ?: error::class.simpleName.orEmpty()
-        return ErrorDetail.withDetail(L10n.str(R.string.ai_error_bad_response), "$technical\n\n$modelText")
+        return ErrorDetail.markAsAi(ErrorDetail.withDetail(L10n.str(R.string.ai_error_bad_response), "$technical\n\n$modelText"))
     }
 
     /** Respuesta HTTP no correcta de [provider] (Gemini, Claude...). */
@@ -42,7 +48,7 @@ object AiErrors {
             in 500..599 -> L10n.str(R.string.ai_error_unavailable, provider)
             else -> L10n.str(R.string.ai_error_generic, provider)
         }
-        return ErrorDetail.withDetail(summary, "HTTP $code" + (providerMessage?.let { "\n$it" } ?: ""))
+        return ErrorDetail.markAsAi(ErrorDetail.withDetail(summary, "HTTP $code" + (providerMessage?.let { "\n$it" } ?: "")))
     }
 
     /** Fallo de red o inesperado al llamar a la IA. */
@@ -52,6 +58,6 @@ object AiErrors {
             is IOException -> L10n.str(R.string.ai_error_network)
             else -> L10n.str(R.string.ai_error_unexpected)
         }
-        return ErrorDetail.withDetail(summary, error.toString())
+        return ErrorDetail.markAsAi(ErrorDetail.withDetail(summary, error.toString()))
     }
 }

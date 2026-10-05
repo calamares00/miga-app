@@ -115,11 +115,23 @@ class RecipeEditorViewModel(
     val visionState: StateFlow<VisionState> = _visionState
     private var visionStarted = false
 
+    /** Última operación de IA lanzada (foto, plato o URL), para poder reintentarla tras un error. */
+    private var lastAiOperation: (() -> Unit)? = null
+
+    /** Reintenta la última operación de IA (p. ej. tras cambiar de modelo desde el aviso de error). */
+    fun retryAi() {
+        val operation = lastAiOperation ?: return
+        visionStarted = false
+        operation()
+    }
+
     /** Reconoce una receta a partir de una o varias fotos (páginas de la misma receta) y precarga
      *  este formulario con el resultado combinado. */
     fun startVisionExtraction(context: Context, photoUris: List<Uri>) {
         if (isEditing || visionStarted || photoUris.isEmpty()) return
         visionStarted = true
+        val appContext = context.applicationContext
+        lastAiOperation = { startVisionExtraction(appContext, photoUris) }
         viewModelScope.launch {
             _visionState.value = VisionState.Loading
             val provider = settingsRepository.observeVisionProvider().first()
@@ -155,6 +167,7 @@ class RecipeEditorViewModel(
     fun startDishGeneration(dishName: String, dishDescription: String, dishOrigin: String?) {
         if (isEditing || visionStarted || dishName.isBlank()) return
         visionStarted = true
+        lastAiOperation = { startDishGeneration(dishName, dishDescription, dishOrigin) }
         viewModelScope.launch {
             _visionState.value = VisionState.Loading
             val provider = settingsRepository.observeVisionProvider().first()
@@ -181,6 +194,7 @@ class RecipeEditorViewModel(
     fun startUrlImport(url: String) {
         if (isEditing || visionStarted || url.isBlank()) return
         visionStarted = true
+        lastAiOperation = { startUrlImport(url) }
         viewModelScope.launch {
             _visionState.value = VisionState.Loading
             val provider = settingsRepository.observeVisionProvider().first()

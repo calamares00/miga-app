@@ -1,5 +1,8 @@
 package org.calamares.miga.data.vision
 
+import org.calamares.miga.data.support.ErrorDetail
+import org.calamares.miga.R
+import org.calamares.miga.L10n
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -52,11 +55,13 @@ internal data class GeminiErrorDetail(val message: String? = null)
 // terminar (candidate.finishReason) o bien toda la respuesta se bloqueó de entrada
 // (promptFeedback.blockReason) — sin esto, el llamante solo podría mostrar un "no hay resultado"
 // genérico sin explicar por qué. Compartida entre GeminiVisionClient y GeminiHealthClient.
-internal fun describeGeminiIncompleteResponse(finishReason: String?, blockReason: String?): String = when {
-    blockReason != null -> "Gemini bloqueó la respuesta por su política de contenido ($blockReason)."
-    finishReason == "MAX_TOKENS" -> "Gemini cortó la respuesta antes de terminar (demasiado larga). Prueba con menos fotos a la vez o una foto más sencilla."
-    finishReason == "SAFETY" -> "Gemini bloqueó la respuesta por su política de contenido."
-    finishReason == "RECITATION" -> "Gemini bloqueó la respuesta por posible contenido protegido."
-    finishReason != null -> "Gemini no completó la respuesta (motivo: $finishReason)."
-    else -> "Gemini no devolvió ningún resultado."
-}
+internal fun describeGeminiIncompleteResponse(finishReason: String?, blockReason: String?): String = ErrorDetail.markAsAi(
+    when {
+        blockReason != null -> L10n.str(R.string.gemini_blocked_x, blockReason)
+        finishReason == "MAX_TOKENS" -> L10n.str(R.string.gemini_max_tokens)
+        finishReason == "SAFETY" -> L10n.str(R.string.gemini_safety)
+        finishReason == "RECITATION" -> L10n.str(R.string.gemini_recitation)
+        finishReason != null -> L10n.str(R.string.gemini_incomplete_x, finishReason)
+        else -> L10n.str(R.string.gemini_empty)
+    }
+)

@@ -335,7 +335,7 @@ fun RecipeDetailScreen(
                         )
                     }
                     is SubstitutionDialogState.NotConfigured -> Text(L10n.str(R.string.configura_proveedor_ia_ajustes_usar))
-                    is SubstitutionDialogState.Error -> ErrorMessage(state.reason)
+                    is SubstitutionDialogState.Error -> ErrorMessage(state.reason, onRetry = { viewModel.findSubstitutesFor(state.ingredientName) })
                     is SubstitutionDialogState.Loaded -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         AiContentNotice(
                             feature = L10n.str(R.string.sustitucion_ingredientes),
