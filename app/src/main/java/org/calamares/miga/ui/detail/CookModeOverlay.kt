@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.detail
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.WindowInsets
@@ -206,7 +207,10 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
         if (granted) beginListeningForCommand() else voiceCommandPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
     }
 
-    Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // Capa a pantalla completa dentro de la propia ventana de la app (no un Dialog): así recibe los
+    // márgenes reales de las barras del sistema y no deja ver la pantalla de debajo.
+    BackHandler(onBack = onClose)
+    Box(modifier = Modifier.fillMaxSize()) {
         // Desde Android 15/16 las ventanas a pantalla completa se dibujan bajo las barras del sistema:
         // se respetan aquí para que los botones de abajo no queden tapados por la navegación.
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
