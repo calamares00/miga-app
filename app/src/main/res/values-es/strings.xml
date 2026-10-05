@@ -724,4 +724,15 @@
     <string name="editor_details">"Tiempo y raciones"</string>
     <string name="editor_more">"Más"</string>
     <string name="notes_variants">"Notas / variantes"</string>
+    <string name="gemini_blocked_x">"Gemini bloqueó la respuesta por su política de contenido (%1$s)."</string>
+    <string name="gemini_max_tokens">"Gemini cortó la respuesta antes de terminar (demasiado larga). Prueba con menos fotos a la vez o una foto más sencilla."</string>
+    <string name="gemini_safety">"Gemini bloqueó la respuesta por su política de contenido."</string>
+    <string name="gemini_recitation">"Gemini bloqueó la respuesta por posible contenido protegido."</string>
+    <string name="gemini_incomplete_x">"Gemini no completó la respuesta (motivo: %1$s)."</string>
+    <string name="gemini_empty">"Gemini no devolvió ningún resultado."</string>
+    <string name="change_model">"Cambiar modelo"</string>
+    <string name="change_model_title">"Probar con otro modelo"</string>
+    <string name="change_model_body">"Elige un modelo y Miga lo volverá a intentar. También queda guardado como predeterminado en Ajustes."</string>
+    <string name="no_ai_keys">"Añade una clave de API en Ajustes → Importar con IA para usar otros modelos."</string>
+    <string name="current_model">"actual"</string>
 </resources>

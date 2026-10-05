@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.ui.components.ErrorMessage
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -170,16 +171,11 @@ fun RecipeEditorScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
             if (visionState is VisionState.Error && !visionErrorDismissed) {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        L10n.str(R.string.no_pudo_generar_receta_ia, ErrorDetail.summary((visionState as VisionState.Error).reason)),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { showVisionErrorDialog = true }
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                    ErrorMessage(
+                        reason = (visionState as VisionState.Error).reason,
+                        modifier = Modifier.weight(1f),
+                        onRetry = { viewModel.retryAi() }
                     )
                     IconButton(onClick = { visionErrorDismissed = true }) {
                         Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cerrar_aviso))

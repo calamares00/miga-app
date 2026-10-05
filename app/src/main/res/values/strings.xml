@@ -725,4 +725,15 @@
     <string name="editor_details">"Time and servings"</string>
     <string name="editor_more">"More"</string>
     <string name="notes_variants">"Notes / variations"</string>
+    <string name="gemini_blocked_x">"Gemini blocked the response under its content policy (%1$s)."</string>
+    <string name="gemini_max_tokens">"Gemini cut the response short (too long). Try fewer photos at once or a simpler photo."</string>
+    <string name="gemini_safety">"Gemini blocked the response under its content policy."</string>
+    <string name="gemini_recitation">"Gemini blocked the response because of possible protected content."</string>
+    <string name="gemini_incomplete_x">"Gemini didn't finish the response (reason: %1$s)."</string>
+    <string name="gemini_empty">"Gemini didn't return any result."</string>
+    <string name="change_model">"Change model"</string>
+    <string name="change_model_title">"Try another model"</string>
+    <string name="change_model_body">"Pick a model and Miga will try again. It's also saved as your default in Settings."</string>
+    <string name="no_ai_keys">"Add an API key in Settings → Import with AI to use other models."</string>
+    <string name="current_model">"current"</string>
 </resources>
