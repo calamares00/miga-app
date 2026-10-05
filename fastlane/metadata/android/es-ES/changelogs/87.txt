@@ -1,0 +1,3 @@
+Miga estrena identificador (org.calamares.miga) para publicarse en Google Play: se instala como una app nueva junto a la anterior. Para llevarte tus recetas, haz una copia de seguridad en la versión antigua (Ajustes → Copia de seguridad) e impórtala aquí, o sincroniza con tu servidor.
+Contacto y reportes de IA: miga@calamares.org.
+Incluye los cambios de la 1.0.85, que no llegó a publicarse por un fallo de compilación.

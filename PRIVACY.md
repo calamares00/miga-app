@@ -69,7 +69,7 @@ Todas se inician por una acción tuya o por una función que has activado.
 5. **Importar desde una URL**: la app descarga la página que indiques para extraer la receta (y, si
    usas IA, envía su texto al proveedor elegido, ver punto 1).
 6. **Reportes y contacto**: si reportas un contenido generado con IA o informas de un problema, la
-   app abre tu correo o una incidencia en GitHub con el texto ya escrito; tú decides si lo envías.
+   app abre tu correo con el mensaje para miga@calamares.org ya escrito; tú decides si lo envías.
 
 Ninguna de estas conexiones pasa por un servidor del desarrollador de Miga: no existe tal servidor.
 
@@ -104,5 +104,5 @@ del archivo en el repositorio sirve como registro.
 
 ## Contacto
 
-Para preguntas sobre privacidad, usa "Ayuda y soporte → Informar de un problema" en la app o abre
-una incidencia en el repositorio del proyecto en GitHub.
+Para preguntas sobre privacidad escribe a **miga@calamares.org** (también desde "Ayuda y soporte →
+Informar de un problema" en la app).
