@@ -1,1 +1,0 @@
-Corrige un fallo de compilación de la versión 1.0.78: la puntuación estimada junto al Nutri-Score (60 % nutrición, 30 % aditivos, 10 % ecológico) llega ahora sí en esta versión.

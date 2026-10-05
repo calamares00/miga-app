@@ -1,1 +1,0 @@
-Lista de la compra más rápida: catálogo para tocar por categorías (toca para añadir o quitar), escáner de código de barras con Open Food Facts (nombre y foto opcional), plantillas de lista, widget "Añadir a la compra" y compartir texto desde otras apps hacia la lista. Requiere actualizar miga-server para sincronizar las fotos.

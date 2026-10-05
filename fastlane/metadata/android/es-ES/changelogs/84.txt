@@ -1,6 +1,0 @@
-Lista de la compra rediseñada:
-• Arriba solo escribir, dictar, escanear y "Explorar", que reúne Catálogo, Productos de Open Food Facts, Plantillas y Añadir varios.
-• Cambia de lista tocando el título.
-• Guarda productos de Open Food Facts en tus plantillas (icono de marcador), con foto y Nutri-Score.
-• Editor de plantillas: escribe, busca o escanea productos.
-• Menú reducido a Compartir, Supermercados, Fotos y Vaciar.

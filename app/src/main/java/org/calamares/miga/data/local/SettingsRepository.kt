@@ -12,7 +12,8 @@ import java.io.IOException
 import org.calamares.miga.data.model.ColorTheme
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.data.model.ThemeMode
-import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG_REPO
+import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
+import org.calamares.miga.data.remote.LEGACY_DEFAULT_PACKS_CATALOG
 import org.calamares.miga.data.vision.DEFAULT_ANTHROPIC_MODEL
 import org.calamares.miga.data.vision.DEFAULT_GEMINI_MODEL
 import org.calamares.miga.data.vision.VisionProviderType
@@ -213,7 +214,7 @@ class SettingsRepository(private val context: Context) {
 
     /** Repositorio de GitHub ("owner/repo") del catálogo de packs de recetas; editable en Ajustes. */
     fun observePacksCatalogRepo(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> prefs[packsCatalogRepoKey]?.takeIf { it.isNotBlank() } ?: DEFAULT_PACKS_CATALOG_REPO }
+        context.settingsDataStore.data.map { prefs -> prefs[packsCatalogRepoKey]?.takeIf { it.isNotBlank() && it.trim() != LEGACY_DEFAULT_PACKS_CATALOG } ?: DEFAULT_PACKS_CATALOG }
 
     suspend fun setPacksCatalogRepo(repo: String) {
         context.settingsDataStore.edit { prefs -> prefs[packsCatalogRepoKey] = repo.trim() }

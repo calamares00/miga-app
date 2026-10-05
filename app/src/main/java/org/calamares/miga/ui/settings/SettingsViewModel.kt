@@ -16,7 +16,7 @@ import org.calamares.miga.data.model.ColorTheme
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.ThemeMode
-import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG_REPO
+import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.vision.DEFAULT_ANTHROPIC_MODEL
 import org.calamares.miga.data.vision.DEFAULT_GEMINI_MODEL
@@ -118,7 +118,7 @@ class SettingsViewModel(
     }
 
     val packsCatalogRepo: StateFlow<String> = settingsRepository.observePacksCatalogRepo()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_PACKS_CATALOG_REPO)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_PACKS_CATALOG)
 
     fun setPacksCatalogRepo(repo: String) {
         viewModelScope.launch { settingsRepository.setPacksCatalogRepo(repo) }

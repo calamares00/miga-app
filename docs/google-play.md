@@ -6,8 +6,9 @@ cambian las funciones de red, los permisos o la IA (y actualizar a la vez `PRIVA
 ## Ficha de la tienda
 
 - Título, descripción corta y larga: `fastlane/metadata/android/es-ES/` (corta ≤ 80 caracteres).
-- Correo de contacto: miga@calamares.org. Sitio web (opcional): https://calamares.org
-- Política de privacidad (URL pública): `PRIVACY.md`; mejor publicarla en calamares.org (p. ej. https://calamares.org/miga/privacidad) y actualizar `PRIVACY_POLICY_URL` en `AboutScreen.kt`.
+- Correo de contacto: miga@calamares.org. Sitio web: https://miga.calamares.org
+- Política de privacidad (URL pública): https://miga.calamares.org/privacy (mismo texto que `PRIVACY.md`).
+- Catálogo de packs: https://miga.calamares.org/packs/catalog.json (las URLs de portada y ZIP pueden ser relativas a él).
 - ID de la aplicación: `org.calamares.miga` (permanente una vez publicada).
 - Categoría: Comida y bebida. Etiquetas sugeridas: recetas, lista de la compra.
 - Recursos gráficos pendientes: icono 512×512, gráfico destacado 1024×500, 4-8 capturas de teléfono.
@@ -20,7 +21,7 @@ Respuestas recomendadas:
 | Pregunta | Respuesta |
 |---|---|
 | ¿Recoge o comparte datos de usuario? | **Sí** (solo por acciones del usuario, ver abajo). |
-| ¿Los datos se cifran en tránsito? | **Sí** para IA, Open Food Facts y GitHub (HTTPS). El servidor propio puede ser `http://` en red local, elegido por el usuario; la app avisa si es público sin cifrar. |
+| ¿Los datos se cifran en tránsito? | **Sí** para IA, Open Food Facts y el catálogo de packs (HTTPS). El servidor propio puede ser `http://` en red local, elegido por el usuario; la app avisa si es público sin cifrar. |
 | ¿El usuario puede pedir que se borren? | **Sí**: todo se borra desde la app o desinstalándola; no hay datos en servidores del desarrollador. |
 | Cuentas | La app no tiene cuentas (no aplica el requisito de borrado de cuenta). |
 

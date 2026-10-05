@@ -1,1 +1,0 @@
-Arregla la sincronización de fotos de recetas con el servidor: las fotos antiguas (de antes de la sincronización) no se subían y, si una descarga fallaba, esa foto no se reintentaba nunca. Ahora se suben todas y las fallidas se reintentan. "Sincronizar ahora" vuelve a bajar todo del servidor para recuperar fotos que faltaban.

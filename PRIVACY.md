@@ -57,8 +57,8 @@ Todas se inician por una acción tuya o por una función que has activado.
    nombre, la foto y la ficha del producto. Las fotos de producto se descargan de sus servidores.
    Datos de Open Food Facts bajo licencia ODbL.
 3. **Catálogo de packs de recetas**: al abrir el catálogo o instalar un pack se descargan un
-   listado público y el archivo del pack desde GitHub (`raw.githubusercontent.com`). No se envían
-   datos tuyos.
+   listado público y el archivo del pack desde `miga.calamares.org` (o desde el catálogo alternativo
+   que configures). No se envían datos tuyos.
 4. **Servidor de sincronización propio (opcional)**: si añades una conexión a un servidor que
    alojas tú (miga-server), los libros, recetas y fotos que vincules y, si lo activas, la lista de
    la compra (con el nombre que pongas como autor) se envían solo a ese servidor. La app sincroniza
