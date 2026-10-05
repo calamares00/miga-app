@@ -712,4 +712,16 @@
     <string name="ai_error_network">"Sin conexión o la IA no responde. Comprueba internet e inténtalo de nuevo."</string>
     <string name="ai_error_unexpected">"Algo ha fallado con la IA. Inténtalo de nuevo."</string>
     <string name="view_details">"Ver detalle"</string>
+    <string name="prep_short">"Preparación"</string>
+    <string name="cook_short">"Cocción"</string>
+    <string name="minutes_short">"%1$s min"</string>
+    <string name="substitute_x">"Sustituir \"%1$s\""</string>
+    <string name="stars_x">"%1$s estrella(s)"</string>
+    <string name="health_and_nutrition">"Salud y nutrición"</string>
+    <string name="my_books">"Mis libros"</string>
+    <string name="view_x">"Vista: %1$s"</string>
+    <string name="editor_basics">"Lo básico"</string>
+    <string name="editor_details">"Tiempo y raciones"</string>
+    <string name="editor_more">"Más"</string>
+    <string name="notes_variants">"Notas / variantes"</string>
 </resources>

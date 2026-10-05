@@ -1,5 +1,15 @@
 package org.calamares.miga.ui.editor
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
+import androidx.compose.material3.Switch
+import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Info
 import org.calamares.miga.data.support.ErrorDetail
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -138,7 +148,7 @@ fun RecipeEditorScreen(
                     if (viewModel.isSaving) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp).padding(end = 16.dp))
                     } else {
-                        TextButton(onClick = { viewModel.save(onSaved) }) { Text(L10n.str(R.string.guardar)) }
+                        Button(onClick = { viewModel.save(onSaved) }, modifier = Modifier.padding(end = 8.dp)) { Text(L10n.str(R.string.guardar)) }
                     }
                 }
             )
@@ -156,8 +166,8 @@ fun RecipeEditorScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
             if (visionState is VisionState.Error && !visionErrorDismissed) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -190,101 +200,106 @@ fun RecipeEditorScreen(
                 )
             }
 
-            PhotosRow(
-                viewModel = viewModel,
-                onAddPhoto = { showPhotoSourceSheet = true },
-                onEditPhoto = { editingPhoto = it }
-            )
+            EditorCard(title = L10n.str(R.string.editor_basics), icon = Icons.Outlined.Info) {
+                PhotosRow(
+                    viewModel = viewModel,
+                    onAddPhoto = { showPhotoSourceSheet = true },
+                    onEditPhoto = { editingPhoto = it }
+                )
+                OutlinedTextField(
+                    value = viewModel.name,
+                    onValueChange = { viewModel.name = it; viewModel.nameError = false },
+                    label = { Text(L10n.str(R.string.nombre_receta)) },
+                    isError = viewModel.nameError,
+                    supportingText = { if (viewModel.nameError) Text(L10n.str(R.string.nombre_es_obligatorio)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                CategoryField(
+                    value = viewModel.categoryName.orEmpty(),
+                    suggestions = availableCategories,
+                    onValueChange = { text -> viewModel.categoryName = text.takeIf { it.isNotBlank() } }
+                )
+            }
 
-            OutlinedTextField(
-                value = viewModel.name,
-                onValueChange = { viewModel.name = it; viewModel.nameError = false },
-                label = { Text(L10n.str(R.string.nombre_receta)) },
-                isError = viewModel.nameError,
-                supportingText = { if (viewModel.nameError) Text(L10n.str(R.string.nombre_es_obligatorio)) },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            CategoryField(
-                value = viewModel.categoryName.orEmpty(),
-                suggestions = availableCategories,
-                onValueChange = { text -> viewModel.categoryName = text.takeIf { it.isNotBlank() } }
-            )
-
-            Section(title = L10n.str(R.string.dificultad)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Difficulty.entries.forEach { d ->
-                        FilterChip(selected = viewModel.difficulty == d, onClick = { viewModel.difficulty = d }, label = { Text(d.label) })
+            EditorCard(title = L10n.str(R.string.editor_details), icon = Icons.Outlined.Timer) {
+                Section(title = L10n.str(R.string.dificultad)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Difficulty.entries.forEach { d ->
+                            FilterChip(selected = viewModel.difficulty == d, onClick = { viewModel.difficulty = d }, label = { Text(d.label) })
+                        }
                     }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = viewModel.prepTimeMinutesText,
+                        onValueChange = { if (it.all(Char::isDigit)) viewModel.prepTimeMinutesText = it },
+                        label = { Text(L10n.str(R.string.prep_min)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = viewModel.cookTimeMinutesText,
+                        onValueChange = { if (it.all(Char::isDigit)) viewModel.cookTimeMinutesText = it },
+                        label = { Text(L10n.str(R.string.coccion_min)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = viewModel.servings.toString(),
+                        onValueChange = { text -> text.toIntOrNull()?.let { viewModel.servings = it.coerceIn(1, 99) } },
+                        label = { Text(L10n.str(R.string.raciones_2)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            EditorCard(title = null, icon = null) { IngredientsEditor(viewModel) }
+
+            EditorCard(title = null, icon = null) { StepsEditor(viewModel) }
+
+            EditorCard(title = L10n.str(R.string.editor_more), icon = Icons.Outlined.MoreHoriz) {
+                Section(title = L10n.str(R.string.utensilios_necesarios)) {
+                    ChipMultiSelect(
+                        selected = viewModel.selectedUtensils,
+                        available = availableUtensils,
+                        onToggle = viewModel::toggleUtensil,
+                        onAddCustom = viewModel::addCustomUtensil,
+                        addDialogTitle = L10n.str(R.string.anadir_utensilio)
+                    )
+                }
+                Section(title = L10n.str(R.string.etiquetas)) {
+                    ChipMultiSelect(
+                        selected = viewModel.selectedTags,
+                        available = availableTags,
+                        onToggle = viewModel::toggleTag,
+                        onAddCustom = viewModel::addCustomTag,
+                        addDialogTitle = L10n.str(R.string.anadir_etiqueta)
+                    )
+                }
                 OutlinedTextField(
-                    value = viewModel.prepTimeMinutesText,
-                    onValueChange = { if (it.all(Char::isDigit)) viewModel.prepTimeMinutesText = it },
-                    label = { Text(L10n.str(R.string.prep_min)) },
-                    modifier = Modifier.weight(1f)
+                    value = viewModel.notes,
+                    onValueChange = { viewModel.notes = it },
+                    label = { Text(L10n.str(R.string.notes_variants)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2
                 )
                 OutlinedTextField(
-                    value = viewModel.cookTimeMinutesText,
-                    onValueChange = { if (it.all(Char::isDigit)) viewModel.cookTimeMinutesText = it },
-                    label = { Text(L10n.str(R.string.coccion_min)) },
-                    modifier = Modifier.weight(1f)
+                    value = viewModel.source,
+                    onValueChange = { viewModel.source = it },
+                    label = { Text(L10n.str(R.string.origen_libro_web_etc)) },
+                    modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = viewModel.servings.toString(),
-                    onValueChange = { text -> text.toIntOrNull()?.let { viewModel.servings = it.coerceIn(1, 99) } },
-                    label = { Text(L10n.str(R.string.raciones_2)) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Section(title = L10n.str(R.string.utensilios_necesarios)) {
-                ChipMultiSelect(
-                    selected = viewModel.selectedUtensils,
-                    available = availableUtensils,
-                    onToggle = viewModel::toggleUtensil,
-                    onAddCustom = viewModel::addCustomUtensil,
-                    addDialogTitle = L10n.str(R.string.anadir_utensilio)
-                )
-            }
-
-            Section(title = L10n.str(R.string.etiquetas)) {
-                ChipMultiSelect(
-                    selected = viewModel.selectedTags,
-                    available = availableTags,
-                    onToggle = viewModel::toggleTag,
-                    onAddCustom = viewModel::addCustomTag,
-                    addDialogTitle = L10n.str(R.string.anadir_etiqueta)
-                )
-            }
-
-            HorizontalDivider()
-            IngredientsEditor(viewModel)
-
-            HorizontalDivider()
-            StepsEditor(viewModel)
-
-            HorizontalDivider()
-
-            OutlinedTextField(
-                value = viewModel.notes,
-                onValueChange = { viewModel.notes = it },
-                label = { Text("Notas / variantes") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 2
-            )
-            OutlinedTextField(
-                value = viewModel.source,
-                onValueChange = { viewModel.source = it },
-                label = { Text(L10n.str(R.string.origen_libro_web_etc)) },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = viewModel.isFavorite, onCheckedChange = { viewModel.isFavorite = it })
-                Text(L10n.str(R.string.marcar_como_favorita))
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { viewModel.isFavorite = !viewModel.isFavorite },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(L10n.str(R.string.marcar_como_favorita), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    Switch(checked = viewModel.isFavorite, onCheckedChange = { viewModel.isFavorite = it })
+                }
             }
 
             Spacer(modifier = Modifier.height(60.dp))
@@ -547,6 +562,30 @@ private fun ChipMultiSelect(
 internal fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(title, style = MaterialTheme.typography.titleMedium)
+        content()
+    }
+}
+
+/** Bloque del editor con el estilo de los grupos de Ajustes: contenedor redondeado y título con icono. */
+@Composable
+private fun EditorCard(title: String?, icon: ImageVector?, content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        if (title != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (icon != null) {
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            }
+        }
         content()
     }
 }

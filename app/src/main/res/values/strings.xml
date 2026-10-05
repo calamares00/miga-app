@@ -713,4 +713,16 @@
     <string name="ai_error_network">"No connection or the AI isn't responding. Check your internet and try again."</string>
     <string name="ai_error_unexpected">"Something went wrong with the AI. Try again."</string>
     <string name="view_details">"View details"</string>
+    <string name="prep_short">"Prep"</string>
+    <string name="cook_short">"Cook"</string>
+    <string name="minutes_short">"%1$s min"</string>
+    <string name="substitute_x">"Substitute \"%1$s\""</string>
+    <string name="stars_x">"%1$s star(s)"</string>
+    <string name="health_and_nutrition">"Health and nutrition"</string>
+    <string name="my_books">"My books"</string>
+    <string name="view_x">"View: %1$s"</string>
+    <string name="editor_basics">"Basics"</string>
+    <string name="editor_details">"Time and servings"</string>
+    <string name="editor_more">"More"</string>
+    <string name="notes_variants">"Notes / variations"</string>
 </resources>
