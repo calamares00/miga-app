@@ -34,7 +34,7 @@ private const val TIMEOUT_MILLIS = 8000
 /**
  * Busca un producto por su código de barras en Open Food Facts (base de datos abierta y colaborativa;
  * sin cuenta ni clave). Solo se llama cuando el usuario escanea un código a propósito. Mismo estilo
- * que UpdateChecker/PacksCatalogClient: HttpURLConnection + kotlinx.serialization.
+ * que PacksCatalogClient: HttpURLConnection + kotlinx.serialization.
  */
 object OpenFoodFactsClient {
 

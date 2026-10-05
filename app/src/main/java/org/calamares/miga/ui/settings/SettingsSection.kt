@@ -24,8 +24,7 @@ enum class SettingsSection(val id: String, val title: String, val icon: ImageVec
     AI("ai", "Importar con IA", Icons.Filled.AutoAwesome),
     VOICE("voice", "Voz y dictado", Icons.Filled.Mic),
     PACKS("packs", "Packs de recetas", Icons.Filled.Storefront),
-    SYNC("sync", "Sincronización", Icons.Filled.Sync),
-    UPDATES("updates", "Actualizaciones", Icons.Filled.SystemUpdate);
+    SYNC("sync", "Sincronización", Icons.Filled.Sync);
 
     companion object {
         /** La sección con ese [id]; si no existe (ruta corrupta), la primera. */

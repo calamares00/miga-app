@@ -32,11 +32,9 @@ data class ProductScore(
 )
 
 /**
- * Estimación PROPIA de una puntuación de 0 a 100 a partir de los datos de Open Food Facts, siguiendo
- * el reparto que publica Yuka (60 % calidad nutricional según el Nutri-Score, 30 % aditivos, 10 %
- * ecológico). No es la puntuación de Yuka: Yuka no publica su base de datos ni sus criterios exactos
- * de riesgo de aditivos, así que la tabla de riesgos de aquí es una aproximación basada en
- * clasificaciones conocidas (EFSA/IARC, controversias habituales) y puede diferir de la suya.
+ * Estimación PROPIA de una puntuación de 0 a 100 a partir de los datos de Open Food Facts: 60 % calidad
+ * nutricional según el Nutri-Score, 30 % aditivos y 10 % ecológico. La tabla de riesgo de aditivos es
+ * una aproximación basada en clasificaciones públicas (EFSA/IARC, controversias habituales).
  * Lógica pura, sin Android.
  */
 object ProductScoring {

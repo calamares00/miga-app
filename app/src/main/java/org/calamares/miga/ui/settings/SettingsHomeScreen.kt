@@ -67,7 +67,6 @@ fun SettingsHomeScreen(
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
     val visionProvider by viewModel.visionProvider.collectAsState()
     val dictationLanguage by viewModel.dictationLanguage.collectAsState()
-    val updateChannel by viewModel.updateChannel.collectAsState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
@@ -123,7 +122,7 @@ fun SettingsHomeScreen(
                     HomeItem(SettingsSection.SYNC.icon, SettingsSection.SYNC.title, "Servidor propio: libros, recetas y lista de la compra") {
                         onOpenSection(SettingsSection.SYNC)
                     },
-                    HomeItem(SettingsSection.PACKS.icon, SettingsSection.PACKS.title, "Libros de recetas publicados por otros usuarios") {
+                    HomeItem(SettingsSection.PACKS.icon, SettingsSection.PACKS.title, "Libros de recetas listos para instalar") {
                         onOpenSection(SettingsSection.PACKS)
                     },
                     HomeItem(SettingsSection.AI.icon, SettingsSection.AI.title, "${visionProvider.label} · foto, URL y valoración de salud") {
@@ -133,16 +132,11 @@ fun SettingsHomeScreen(
             )
             HomeGroup(
                 buildList {
-                    add(
-                        HomeItem(SettingsSection.UPDATES.icon, SettingsSection.UPDATES.title, "Versión ${BuildConfig.VERSION_NAME} · canal ${updateChannel.label}") {
-                            onOpenSection(SettingsSection.UPDATES)
-                        }
-                    )
                     if (hasChangelog) {
                         add(HomeItem(Icons.Filled.NewReleases, "Novedades", "Qué hay de nuevo en cada versión", onOpenChangelog))
                     }
                     add(HomeItem(Icons.Filled.HelpOutline, "Ayuda y soporte", "Preguntas frecuentes y contacto", onHelp))
-                    add(HomeItem(Icons.Filled.Info, "Acerca de", "Información de la app y donaciones", onAbout))
+                    add(HomeItem(Icons.Filled.Info, "Acerca de", "Versión ${BuildConfig.VERSION_NAME} y política de privacidad", onAbout))
                 }
             )
         }

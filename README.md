@@ -2,10 +2,10 @@
 
 **Tus recetas. Tus libros. Tu cocina.**
 
-Miga es una app de recetas para Android, minimalista, sin cuentas y sin
-anuncios. Funciona sin conexión: no necesita internet ni envía nada fuera
-del teléfono, salvo si activas voluntariamente alguna función opcional que
-sí la requiere (comprobar actualizaciones, añadir receta con foto vía IA).
+Miga es una app de recetas y lista de la compra para Android, sin cuentas y
+sin anuncios. Tus datos se guardan en el teléfono; internet solo se usa para
+las funciones opcionales que eliges (IA con tu propia clave, Open Food Facts,
+catálogo de packs y sincronización con un servidor propio).
 
 ## Funciones
 
@@ -26,8 +26,13 @@ sí la requiere (comprobar actualizaciones, añadir receta con foto vía IA).
   sin ella, esta función no hace ninguna llamada de red.
 - **Bloqueo biométrico** opcional (huella, rostro o PIN del dispositivo).
 - **Tema** claro, oscuro o según el sistema.
-- **Comprobación de actualizaciones** opcional contra las Releases de
-  este repositorio.
+- **Lista de la compra** con escáner de productos (Open Food Facts),
+  plantillas, varias listas y orden por supermercado.
+- **Sincronización** opcional con un servidor propio (miga-server).
+
+Las actualizaciones llegan por Google Play (o instalando a mano el APK de
+las Releases); la app no se actualiza por su cuenta. Guía de publicación:
+[docs/google-play.md](docs/google-play.md).
 
 ## Stack técnico
 
@@ -43,7 +48,7 @@ sí la requiere (comprobar actualizaciones, añadir receta con foto vía IA).
 
 Miga no tiene cuentas, servidor propio, analítica ni publicidad. Ver
 [PRIVACY.md](PRIVACY.md) para el detalle de qué datos maneja la app y las
-pocas conexiones de red que hace (todas opcionales o de solo lectura).
+conexiones de red que hace (todas opcionales).
 
 ## Compilar en local
 
@@ -58,8 +63,7 @@ pocas conexiones de red que hace (todas opcionales o de solo lectura).
 ```
 
 Tests unitarios (JVM, sin emulador) de la lógica de dominio: filtrado y
-orden de recetas, huella de invalidación de la valoración de salud,
-comparación de versiones del comprobador de actualizaciones, construcción
+orden de recetas, huella de invalidación de la valoración de salud, construcción
 de la URL del catálogo de packs, y la regla de solo-lectura de un pack.
 
 El APK debug se firma con el keystore `debug.keystore` (versionado a

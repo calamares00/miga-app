@@ -1,136 +1,108 @@
 # Política de privacidad de Miga
 
-Última actualización: ver el historial de este archivo en GitHub.
+Última actualización: 5 de octubre de 2026.
 
-Miga es una app de recetario familiar. Este documento explica, con la mayor
-concreción posible, qué datos maneja la app y qué se hace (o no se hace) con
-ellos.
+Miga es una app de recetario familiar y lista de la compra. Este documento explica qué datos
+maneja la app, adónde van y qué control tienes sobre ellos.
 
 ## Resumen
 
-- **Todos tus datos viven solo en tu dispositivo.** Miga no tiene cuentas de
-  usuario, no tiene servidor propio y no sincroniza nada entre dispositivos, salvo que
-  tú configures un servidor de sincronización que alojes tú mismo.
-- **No hay analítica, publicidad ni rastreo de ningún tipo.** La app no
-  incluye ningún SDK de terceros para medir el uso, mostrar anuncios o
-  identificarte.
-- Las únicas conexiones a internet que hace la app son las que se describen
-  en la sección "Conexiones de red" — todas opcionales o de solo lectura.
+- **Tus datos viven en tu dispositivo.** Miga no tiene cuentas de usuario ni un servidor propio
+  del desarrollador.
+- **Sin analítica, publicidad ni rastreo.** La app no incluye SDKs de terceros para medir el uso,
+  mostrar anuncios o identificarte.
+- **Las conexiones a internet son opcionales.** Ocurren solo cuando usas una función que las
+  necesita (las detallamos más abajo): IA con tu propia clave, Open Food Facts, el catálogo de
+  packs o un servidor de sincronización que alojas tú.
+- **No vendemos ni compartimos datos** con fines comerciales.
 
 ## Qué datos guarda la app y dónde
 
-Tus recetas, libros, categorías, etiquetas, utensilios y fotos se guardan
-**únicamente en el almacenamiento interno de tu dispositivo** (una base de
-datos local y los archivos de fotos que añades). Nada de esto sale de tu
-teléfono salvo que tú, explícitamente, lo exportes o lo compartas (ver
-"Exportar y compartir").
+Recetas, libros, fotos, categorías, etiquetas, utensilios, valoraciones, listas de la compra,
+plantillas, supermercados y ajustes se guardan **en el almacenamiento interno de tu dispositivo**.
 
-Si activas la copia de seguridad automática de Android (`allowBackup`), el
-propio sistema operativo puede incluir estos datos en su copia de seguridad
-gestionada por tu cuenta de Google, igual que con cualquier otra app; Miga no
-interviene en ese proceso ni tiene acceso a esa copia.
+Las claves de API de Google Gemini o Anthropic que introduzcas se guardan solo en tu dispositivo y
+se usan únicamente para llamar al proveedor que elijas.
 
-## Permisos que usa la app
+Si tienes activada la copia de seguridad de Android, el sistema puede incluir estos datos en la
+copia gestionada por tu cuenta de Google, como con cualquier otra app. Miga no tiene acceso a esa
+copia.
 
-- **Internet**: solo para las conexiones descritas más abajo, y solo cuando
-  las usas (comprobar actualizaciones, explorar el catálogo de packs, o usar
-  las funciones de IA si las has configurado).
-- **Cámara**: al añadir una foto a una receta, la app delega en la propia app
-  de cámara del sistema (un `Intent` estándar de Android) y solo recibe el
-  archivo de imagen resultante. El único uso directo de la cámara es el
-  escáner de códigos QR de la lista de la compra (Lista → menú → Escanear QR),
-  que solo se abre cuando lo pides; la imagen se procesa en el dispositivo
-  para leer el código y no se guarda ni se envía a ningún sitio.
-- **Biometría** (huella, rostro, PIN): si activas el bloqueo biométrico en
-  Ajustes, la verificación la gestiona directamente el sistema operativo
-  (`BiometricPrompt`). Miga nunca ve, recibe ni almacena tu huella ni ningún
-  otro dato biométrico; solo recibe un "sí" o un "no" de Android.
+## Permisos
 
-## Conexiones de red
+- **Internet**: solo para las conexiones de la sección siguiente.
+- **Micrófono**: para dictar pasos de receta y artículos de la lista. El reconocimiento lo hace el
+  servicio de voz de Android en el idioma que elijas; Miga recibe el texto, no el audio, y no lo
+  guarda.
+- **Cámara**: para escanear códigos de barras de productos y códigos QR de listas o invitaciones.
+  La imagen se procesa en el dispositivo y no se guarda ni se envía. Las fotos de recetas se hacen
+  con la app de cámara del sistema; Miga solo recibe el archivo resultante.
+- **Biometría**: si activas el bloqueo, la verificación la hace Android (`BiometricPrompt`). Miga
+  solo recibe un "sí" o un "no"; nunca ve tu huella ni tu rostro.
 
-Todas son bajo demanda; ninguna ocurre en segundo plano sin que la acción
-correspondiente esté activada.
+## Conexiones de red y con quién se comparten datos
 
-1. **Comprobar actualizaciones** (Ajustes → Actualizaciones, activado por
-   defecto pero desactivable): consulta la API pública de GitHub
-   (`api.github.com`) para ver si hay una versión nueva de la app. No se
-   envía ningún dato personal, solo una petición HTTP estándar.
-2. **Catálogo de packs de recetas** (Ajustes → Packs de recetas): si abres
-   el catálogo, la app descarga un listado público (`catalog.json`) y, si
-   decides instalar un pack, su archivo ZIP, desde el repositorio de GitHub
-   que tengas configurado (`raw.githubusercontent.com`). No requiere cuenta
-   ni envía datos tuyos: es una descarga de contenido público.
-3. **Importar receta con foto / valoración de salud con IA** (Ajustes →
-   Importar con IA, desactivado hasta que introduces tu propia clave):
-   ambas funciones son opcionales y usan tu propia clave de API de Google
-   Gemini (BYOK, *bring your own key*). Si las usas, la foto o el texto de
-   ingredientes/pasos de esa receta se envía a la API de Google Gemini para
-   su análisis, sujeto a las condiciones de Google. Miga no guarda una copia
-   de lo enviado más allá de lo que tú decidas conservar en la propia
-   receta (la foto que añades, o el resultado de la valoración de salud).
-   Sin una clave configurada, no se envía nada a Google.
-4. **Servidor de sincronización propio** (Ajustes → Servidor de sincronización,
-   desactivado hasta que añades una conexión): si configuras la URL, el
-   namespace y el token de un servidor que tú mismo alojas (miga-server),
-   los libros y recetas que vincules y, si lo activas, la lista de la compra
-   se envían solo a ese servidor. Las invitaciones por QR contienen la
-   dirección del servidor, el namespace y un token de acceso nuevo; quien
-   escanee el código puede leer y modificar ese namespace.
+Todas se inician por una acción tuya o por una función que has activado.
 
-5. **Escáner de productos de la lista de la compra** (Lista de la compra →
-   menú → Escanear producto): solo cuando escaneas un código de barras, se
-   envía ese código a Open Food Facts (base de datos abierta, sin cuenta) para
-   obtener el nombre, la foto y la ficha del producto (Nutri-Score, alérgenos,
-   nutrición, ingredientes). La ficha se guarda en tu dispositivo y, si
-   compartes la lista, en tu propio servidor. Las fotos de producto solo se
-   descargan si activas "Mostrar fotos de productos" (desactivado por
-   defecto) o cuando abres la ficha de un producto, y entonces se piden a los
-   servidores de Open Food Facts. También puedes buscar productos por nombre
-   (Lista de la compra → Buscar en Open Food Facts): el texto que escribes se
-   envía a Open Food Facts y se descargan las miniaturas de los resultados.
+1. **Funciones de IA (opcionales, con tu propia clave)**: importar recetas desde fotos o desde una
+   página web, buscar y generar recetas de un plato, valoración de salud, estimación nutricional,
+   sustitución de ingredientes y limpieza del texto dictado. Al usarlas, se envía al proveedor que
+   elijas (**Google Gemini** o **Anthropic Claude**) la foto, el texto de la página, el nombre del
+   plato o los ingredientes y pasos de la receta, según la función. El tratamiento de esos datos
+   está sujeto a las condiciones del proveedor asociadas a tu clave. Sin clave configurada no se
+   envía nada. El contenido generado con IA se marca en la app, puede contener errores y se puede
+   reportar.
+2. **Open Food Facts**: al escanear un código de barras o buscar un producto por nombre se envía
+   ese código o ese texto a Open Food Facts (base de datos abierta, sin cuenta) para obtener el
+   nombre, la foto y la ficha del producto. Las fotos de producto se descargan de sus servidores.
+   Datos de Open Food Facts bajo licencia ODbL.
+3. **Catálogo de packs de recetas**: al abrir el catálogo o instalar un pack se descargan un
+   listado público y el archivo del pack desde GitHub (`raw.githubusercontent.com`). No se envían
+   datos tuyos.
+4. **Servidor de sincronización propio (opcional)**: si añades una conexión a un servidor que
+   alojas tú (miga-server), los libros, recetas y fotos que vincules y, si lo activas, la lista de
+   la compra (con el nombre que pongas como autor) se envían solo a ese servidor. La app sincroniza
+   al abrirse, periódicamente en segundo plano y cada pocos segundos mientras ves una lista
+   compartida. Las invitaciones por QR contienen la dirección del servidor, el espacio compartido y
+   un token de acceso: quien escanee el código puede leer y modificar ese espacio. Si el servidor
+   usa `http://` fuera de tu red local, la app te avisa de que la conexión no está cifrada.
+5. **Importar desde una URL**: la app descarga la página que indiques para extraer la receta (y, si
+   usas IA, envía su texto al proveedor elegido, ver punto 1).
+6. **Reportes y contacto**: si reportas un contenido generado con IA o informas de un problema, la
+   app abre tu correo o una incidencia en GitHub con el texto ya escrito; tú decides si lo envías.
 
-El dictado por voz usa el reconocimiento de voz de Android en el idioma que
-elijas en Ajustes; Miga no recibe ni guarda el audio.
-
-Miga también puede recibir texto que compartas desde otras apps hacia la
-lista de la compra; ese texto se queda en tu dispositivo.
-
-Ninguna de estas conexiones pasa por un servidor propio de Miga: no existe
-tal servidor.
+Ninguna de estas conexiones pasa por un servidor del desarrollador de Miga: no existe tal servidor.
 
 ## Informe de fallos
 
-Si la app se cierra de forma inesperada, se guarda un informe de texto
-(versión de la app, modelo del dispositivo, versión de Android y la traza
-del error) **solo en el almacenamiento interno de tu dispositivo**. Al
-volver a abrir la app, se te ofrece verlo, copiarlo o compartirlo tú
-mismo (por ejemplo, adjuntándolo a un email o un issue de GitHub) si
-quieres reportarlo, o simplemente descartarlo. No se usa ningún servicio
-de terceros (tipo Crashlytics o Sentry) ni se envía nada de forma
-automática: la app no se entera de que has tenido un fallo salvo que tú
-decidas contárselo a alguien.
+Si la app se cierra de forma inesperada, se guarda un informe de texto (versión de la app, modelo
+del dispositivo, versión de Android y traza del error) **solo en tu dispositivo**. Al volver a
+abrirla puedes verlo, compartirlo tú mismo o descartarlo. No se envía nada automáticamente ni se
+usan servicios como Crashlytics o Sentry.
 
 ## Exportar y compartir
 
-Las funciones de exportar (JSON, ZIP, PDF), compartir una receta o hacer una
-copia de seguridad completa usan el selector de compartir estándar de
-Android (`Intent.ACTION_SEND` / creación de documentos). Eres tú quien elige
-el destino final (otra app, un contacto, guardarlo en tu almacenamiento...);
-Miga no envía esos archivos a ningún sitio por sí sola.
+Exportar (JSON, ZIP, PDF), compartir recetas o listas y las copias de seguridad usan el selector
+estándar de Android. Tú eliges el destino; Miga no envía esos archivos por su cuenta.
+
+## Conservación y borrado
+
+Los datos se conservan mientras tengas la app instalada. Puedes borrar recetas, libros, listas y
+plantillas desde la app, quitar tus claves de IA en Ajustes, eliminar conexiones de sincronización
+(los datos que ya estén en tu servidor dependen de ti como administrador) o borrarlo todo
+desinstalando la app o limpiando sus datos desde los ajustes de Android.
 
 ## Menores de edad
 
-Miga no está dirigida a menores ni recopila datos que permitan identificar
-la edad de quien la usa. Al no haber cuentas ni recogida de datos personales,
-no hay un tratamiento diferenciado para menores más allá de lo anterior.
+Miga no está dirigida a menores de 13 años y no recopila datos que permitan conocer la edad de
+quien la usa.
 
 ## Cambios en esta política
 
-Cualquier cambio se reflejará en este mismo archivo, versionado junto con el
-código de la app; el historial de commits de este archivo en el repositorio
-sirve como registro de cambios.
+Los cambios se publican en este mismo documento, junto con su fecha de actualización. El historial
+del archivo en el repositorio sirve como registro.
 
 ## Contacto
 
-Para preguntas sobre esta política, abre un issue en el repositorio de
-GitHub del proyecto.
+Para preguntas sobre privacidad, usa "Ayuda y soporte → Informar de un problema" en la app o abre
+una incidencia en el repositorio del proyecto en GitHub.

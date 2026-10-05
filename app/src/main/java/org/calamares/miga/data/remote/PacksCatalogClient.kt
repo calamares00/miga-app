@@ -44,7 +44,7 @@ private const val DOWNLOAD_TIMEOUT_MILLIS = 30000
  * Cliente del catálogo de packs de recetas descargables: un repositorio de GitHub (configurable
  * en Ajustes, ver SettingsRepository.observePacksCatalogRepo) con un catalog.json y un ZIP por
  * pack, servidos vía raw.githubusercontent.com (sin límite de peticiones, a diferencia de
- * api.github.com que ya usa UpdateChecker). Mismo estilo que UpdateChecker/GeminiVisionClient:
+ * api.github.com). Mismo estilo que GeminiVisionClient:
  * HttpURLConnection crudo + kotlinx.serialization, sin librería de red nueva.
  */
 object PacksCatalogClient {
