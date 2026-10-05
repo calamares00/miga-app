@@ -14,6 +14,15 @@ interface ShoppingTemplateDao {
     @Insert
     suspend fun insert(template: ShoppingTemplateEntity): Long
 
+    @Query("SELECT * FROM shopping_templates WHERE id = :id")
+    suspend fun get(id: Long): ShoppingTemplateEntity?
+
+    @Query("UPDATE shopping_templates SET body = :body WHERE id = :id")
+    suspend fun setBody(id: Long, body: String)
+
+    @Query("UPDATE shopping_templates SET name = :name WHERE id = :id")
+    suspend fun rename(id: Long, name: String)
+
     @Query("DELETE FROM shopping_templates WHERE id = :id")
     suspend fun delete(id: Long)
 }
