@@ -1,5 +1,6 @@
 package org.calamares.miga.data.search
 
+import org.calamares.miga.data.vision.outputLanguageInstruction
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.vision.RecipeVisionResult
@@ -48,5 +49,5 @@ Usa cantidades e ingredientes realistas para el número de raciones que elijas. 
 la elaboración como una instrucción independiente del array "instructions", en un orden lógico de
 preparación. En "source" indica que la receta fue generada por IA (por ejemplo "Generada por IA").
 Si no puedes determinar algún dato, usa null (o una lista vacía) en vez de inventarlo al azar.
-""".trimIndent()
+""".trimIndent() + outputLanguageInstruction()
 }

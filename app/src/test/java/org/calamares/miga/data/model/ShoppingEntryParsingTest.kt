@@ -67,4 +67,18 @@ class ShoppingEntryParsingTest {
     fun `lone number stays as name`() {
         assertNull(single("3").quantity)
     }
+
+    @Test
+    fun `english units and words`() {
+        assertEquals(ParsedShoppingEntry("tomatoes", 2.0, "kg"), ShoppingEntryParser.parse("2 kg of tomatoes").single())
+        assertEquals(ParsedShoppingEntry("flour", 1.0, "lb"), ShoppingEntryParser.parse("1 lb flour").single())
+        assertEquals(ParsedShoppingEntry("eggs", 1.0, "dozen"), ShoppingEntryParser.parse("a dozen eggs").single())
+        assertEquals(listOf("milk", "bread"), ShoppingEntryParser.parse("milk and bread", splitOnY = true).map { it.name })
+    }
+
+    @Test
+    fun `spanish word numbers with unit`() {
+        assertEquals(ParsedShoppingEntry("tomates", 2.0, "kg"), ShoppingEntryParser.parse("dos kilos de tomates").single())
+        assertEquals(ParsedShoppingEntry("una lechuga", null, null), ShoppingEntryParser.parse("una lechuga").single())
+    }
 }

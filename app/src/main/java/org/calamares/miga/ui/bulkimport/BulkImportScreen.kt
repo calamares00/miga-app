@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.bulkimport
 
+import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.ui.components.AiContentNotice
@@ -143,14 +144,7 @@ private fun BulkImportRowItem(row: BulkImportRow, onClick: () -> Unit, onRetry: 
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    state.reason,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 3
-                )
-                TextButton(onClick = onRetry) { Text(L10n.str(R.string.reintentar)) }
+                ErrorMessage(state.reason, modifier = Modifier.weight(1f), onRetry = onRetry)
             }
         }
     }

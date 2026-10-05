@@ -26,7 +26,7 @@ internal fun buildDictationCleanupPrompt(rawText: String): String = """
     Se ha dictado por voz el siguiente paso de una receta de cocina, así que puede tener muletillas
     ("eh", "esto", "o sea"), repeticiones, falta de puntuación o una corrección a mitad de frase
     (p. ej. "bueno no, mejor pon..."). Reescríbelo como una única instrucción de receta clara, en
-    español, conservando el sentido y el orden de lo dicho, sin añadir información que no esté en
+    el mismo idioma en que se ha dictado (sin traducirlo), conservando el sentido y el orden de lo dicho, sin añadir información que no esté en
     el texto original ni cambiar cantidades o ingredientes. Devuelve solo el texto final del paso,
     sin comillas ni explicaciones.
 

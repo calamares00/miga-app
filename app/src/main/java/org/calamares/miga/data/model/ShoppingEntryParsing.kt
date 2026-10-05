@@ -32,16 +32,45 @@ object ShoppingEntryParser {
         "loncha" to "loncha", "lonchas" to "loncha",
         "cucharada" to "cucharada", "cucharadas" to "cucharada",
         "cucharadita" to "cucharadita", "cucharaditas" to "cucharadita",
-        "taza" to "taza", "tazas" to "taza"
+        "taza" to "taza", "tazas" to "taza",
+        // Inglés
+        "kilogram" to "kg", "kilograms" to "kg", "gram" to "g", "grams" to "g",
+        "litre" to "l", "litres" to "l", "liter" to "l", "liters" to "l",
+        "lb" to "lb", "lbs" to "lb", "pound" to "lb", "pounds" to "lb",
+        "oz" to "oz", "ounce" to "oz", "ounces" to "oz",
+        "can" to "can", "cans" to "can", "tin" to "tin", "tins" to "tin",
+        "jar" to "jar", "jars" to "jar",
+        "packet" to "pack", "packets" to "pack", "package" to "pack", "packages" to "pack",
+        "bag" to "bag", "bags" to "bag",
+        "bottle" to "bottle", "bottles" to "bottle",
+        "box" to "box", "boxes" to "box",
+        "dozen" to "dozen", "dozens" to "dozen",
+        "tray" to "tray", "trays" to "tray",
+        "bunch" to "bunch", "bunches" to "bunch",
+        "carton" to "carton", "cartons" to "carton",
+        "loaf" to "loaf", "loaves" to "loaf",
+        "slice" to "slice", "slices" to "slice",
+        "tbsp" to "tbsp", "tablespoon" to "tbsp", "tablespoons" to "tbsp",
+        "tsp" to "tsp", "teaspoon" to "tsp", "teaspoons" to "tsp",
+        "cup" to "cup", "cups" to "cup",
+        "unit" to "unit", "units" to "unit", "piece" to "unit", "pieces" to "unit"
+    )
+
+    /** Números dichos o escritos con letra ("dos kilos de tomates", "a dozen eggs"), solo al inicio. */
+    private val WORD_NUMBERS: Map<String, Double> = mapOf(
+        "un" to 1.0, "una" to 1.0, "uno" to 1.0, "dos" to 2.0, "tres" to 3.0, "cuatro" to 4.0, "cinco" to 5.0,
+        "seis" to 6.0, "siete" to 7.0, "ocho" to 8.0, "nueve" to 9.0, "diez" to 10.0, "medio" to 0.5, "media" to 0.5,
+        "a" to 1.0, "an" to 1.0, "one" to 1.0, "two" to 2.0, "three" to 3.0, "four" to 4.0, "five" to 5.0,
+        "six" to 6.0, "seven" to 7.0, "eight" to 8.0, "nine" to 9.0, "ten" to 10.0, "half" to 0.5
     )
 
     private val NUMBER_PREFIX = Regex("""^(\d+/\d+|\d+(?:[.,]\d+)?|½|¼|¾)(\s*)(.*)$""")
 
     // Una coma separa artículos salvo que sea un decimal ("1,5 kg"), es decir, con dígito a ambos lados.
     private val SEPARATORS = Regex("""[\n;]+|,(?!\d)|(?<!\d),""")
-    private val CONJUNCTION = Regex("""\s+y\s+""", RegexOption.IGNORE_CASE)
+    private val CONJUNCTION = Regex("""\s+(?:y|and)\s+""", RegexOption.IGNORE_CASE)
 
-    /** [splitOnY] separa también por " y " ("leche y pan"); útil al dictar, arriesgado al escribir. */
+    /** [splitOnY] separa también por " y "/" and " ("leche y pan"); útil al dictar, arriesgado al escribir. */
     fun parse(text: String, splitOnY: Boolean = false): List<ParsedShoppingEntry> {
         val chunks = text.split(SEPARATORS).flatMap { chunk ->
             if (splitOnY) chunk.split(CONJUNCTION) else listOf(chunk)
@@ -50,7 +79,7 @@ object ShoppingEntryParser {
     }
 
     private fun parseOne(entry: String): ParsedShoppingEntry {
-        val match = NUMBER_PREFIX.matchEntire(entry) ?: return ParsedShoppingEntry(entry, null, null)
+        val match = NUMBER_PREFIX.matchEntire(entry) ?: return parseWordNumber(entry)
         val quantity = parseNumber(match.groupValues[1]) ?: return ParsedShoppingEntry(entry, null, null)
         val attached = match.groupValues[2].isEmpty()
         val rest = match.groupValues[3].trim()
@@ -68,11 +97,24 @@ object ShoppingEntryParser {
         }
     }
 
+    /**
+     * "dos kilos de tomates", "a dozen eggs": número con letra seguido de una unidad conocida. Sin
+     * unidad no se toca ("una lechuga" se queda tal cual: el nombre ya se entiende).
+     */
+    private fun parseWordNumber(entry: String): ParsedShoppingEntry {
+        val words = entry.trim().split(Regex("""\s+"""), limit = 3)
+        if (words.size < 3) return ParsedShoppingEntry(entry, null, null)
+        val quantity = WORD_NUMBERS[words[0].lowercase()] ?: return ParsedShoppingEntry(entry, null, null)
+        val unit = UNIT_ALIASES[words[1].lowercase().trimEnd('.')] ?: return ParsedShoppingEntry(entry, null, null)
+        return ParsedShoppingEntry(stripLeadingDe(words[2]), quantity, unit)
+    }
+
     private fun stripLeadingDe(text: String): String {
         val lower = text.lowercase()
         val stripped = when {
             lower.startsWith("de ") -> text.drop(3)
             lower.startsWith("del ") -> text.drop(4)
+            lower.startsWith("of ") -> text.drop(3)
             else -> text
         }.trim()
         return stripped.ifEmpty { text }

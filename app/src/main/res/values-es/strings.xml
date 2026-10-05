@@ -702,4 +702,14 @@
     <string name="voice_n">"Voz %1$d"</string>
     <string name="voice_online">"en línea"</string>
     <string name="uncategorized">"Sin categoría"</string>
+    <string name="ai_error_bad_response">"No se pudo entender la respuesta de la IA. Inténtalo de nuevo."</string>
+    <string name="ai_error_bad_request">"%1$s rechazó la petición. Revisa el modelo elegido en Ajustes."</string>
+    <string name="ai_error_key">"La clave de API de %1$s no es válida o no tiene permisos. Revísala en Ajustes."</string>
+    <string name="ai_error_model">"%1$s no reconoce el modelo elegido. Elige otro en Ajustes."</string>
+    <string name="ai_error_quota">"Has alcanzado el límite de uso de %1$s. Inténtalo más tarde."</string>
+    <string name="ai_error_unavailable">"%1$s no está disponible ahora mismo. Inténtalo en unos minutos."</string>
+    <string name="ai_error_generic">"%1$s devolvió un error. Inténtalo de nuevo."</string>
+    <string name="ai_error_network">"Sin conexión o la IA no responde. Comprueba internet e inténtalo de nuevo."</string>
+    <string name="ai_error_unexpected">"Algo ha fallado con la IA. Inténtalo de nuevo."</string>
+    <string name="view_details">"Ver detalle"</string>
 </resources>

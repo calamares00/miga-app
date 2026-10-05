@@ -1,5 +1,6 @@
 package org.calamares.miga.data.health
 
+import org.calamares.miga.data.vision.outputLanguageInstruction
 import org.calamares.miga.data.model.HealthColorLevel
 import org.calamares.miga.data.vision.VisionProviderType
 import kotlinx.serialization.Serializable
@@ -41,4 +42,4 @@ GREEN = receta equilibrada y saludable. YELLOW = moderada (algún exceso de gras
 procesados, fritos ocasionales). RED = poco saludable (frituras, mucho azúcar o grasa saturada,
 ultraprocesados, sin verdura ni proteína magra). Basa el análisis solo en lo indicado, sin inventar
 datos nutricionales exactos.
-""".trimIndent()
+""".trimIndent() + outputLanguageInstruction()

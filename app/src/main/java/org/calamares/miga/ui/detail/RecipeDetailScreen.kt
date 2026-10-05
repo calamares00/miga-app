@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.ui.components.AiContentNotice
@@ -288,7 +289,7 @@ fun RecipeDetailScreen(
                         )
                     }
                     is SubstitutionDialogState.NotConfigured -> Text(L10n.str(R.string.configura_proveedor_ia_ajustes_usar))
-                    is SubstitutionDialogState.Error -> Text(state.reason, color = MaterialTheme.colorScheme.error)
+                    is SubstitutionDialogState.Error -> ErrorMessage(state.reason)
                     is SubstitutionDialogState.Loaded -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         AiContentNotice(
                             feature = L10n.str(R.string.sustitucion_ingredientes),
@@ -389,10 +390,7 @@ private fun RecipeDetailContent(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        is HealthState.Error -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(healthState.reason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                            TextButton(onClick = onRetryHealth) { Text(L10n.str(R.string.reintentar)) }
-                        }
+                        is HealthState.Error -> ErrorMessage(healthState.reason, onRetry = onRetryHealth)
                         HealthState.Loaded -> recipe.healthRating?.let { rating ->
                             val (containerColor, contentColor, label) = when (rating.color) {
                                 HealthColorLevel.GREEN -> Triple(HealthGreenContainer, HealthGreenOn, L10n.str(R.string.saludable))
@@ -431,10 +429,7 @@ private fun RecipeDetailContent(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        is NutritionState.Error -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(nutritionState.reason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                            TextButton(onClick = onRetryNutrition) { Text(L10n.str(R.string.reintentar)) }
-                        }
+                        is NutritionState.Error -> ErrorMessage(nutritionState.reason, onRetry = onRetryNutrition)
                         NutritionState.Loaded -> recipe.nutritionInfo?.let { nutrition ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 NutritionStat(value = "${nutrition.caloriesPerServing}", label = "kcal")

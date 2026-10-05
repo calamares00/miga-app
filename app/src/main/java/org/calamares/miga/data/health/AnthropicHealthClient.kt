@@ -1,5 +1,6 @@
 package org.calamares.miga.data.health
 
+import org.calamares.miga.data.support.AiErrors
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.model.HealthColorLevel
@@ -55,7 +56,7 @@ object AnthropicHealthClient : RecipeHealthClient {
                         val reason = errorBody?.let {
                             runCatching { json.decodeFromString(AnthropicErrorEnvelope.serializer(), it).error?.message }.getOrNull()
                         }
-                        return@withContext RecipeHealthResult.Error(reason ?: L10n.str(R.string.claude_respondio_codigo_x, responseCode))
+                        return@withContext RecipeHealthResult.Error(AiErrors.http("Claude", responseCode, reason))
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(AnthropicResponse.serializer(), body)
@@ -64,8 +65,7 @@ object AnthropicHealthClient : RecipeHealthClient {
                     val resultDto = try {
                         json.decodeFromString(RecipeHealthResultDto.serializer(), stripMarkdownFences(text))
                     } catch (e: Exception) {
-                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: L10n.str(R.string.no_pudo_interpretar_json)
-                        return@withContext RecipeHealthResult.Error(shortReason)
+                        return@withContext RecipeHealthResult.Error(AiErrors.badResponse(e, text))
                     }
                     val colorLevel = runCatching { HealthColorLevel.valueOf(resultDto.colorLevel) }.getOrDefault(HealthColorLevel.YELLOW)
                     RecipeHealthResult.Success(colorLevel, resultDto.description)
@@ -75,7 +75,7 @@ object AnthropicHealthClient : RecipeHealthClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                RecipeHealthResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+                RecipeHealthResult.Error(AiErrors.exception(e))
             }
         }
 }

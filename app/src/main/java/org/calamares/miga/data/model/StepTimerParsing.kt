@@ -13,9 +13,9 @@ private data class DurationPart(val start: Int, val end: Int, val seconds: Int)
  * con la que tiene sentido arrancar un temporizador al leer el paso.
  */
 object StepTimerParsing {
-    private val hoursRegex = Regex("""(\d+)\s*(?:horas?|h\.)\b""", RegexOption.IGNORE_CASE)
-    private val minutesRegex = Regex("""(\d+)\s*(?:minutos?|mins?\.?)\b""", RegexOption.IGNORE_CASE)
-    private val secondsRegex = Regex("""(\d+)\s*(?:segundos?|segs?\.?)\b""", RegexOption.IGNORE_CASE)
+    private val hoursRegex = Regex("""(\d+)\s*(?:horas?|hours?|hrs?|h\.)\b""", RegexOption.IGNORE_CASE)
+    private val minutesRegex = Regex("""(\d+)\s*(?:minutos?|minutes?|mins?\.?)\b""", RegexOption.IGNORE_CASE)
+    private val secondsRegex = Regex("""(\d+)\s*(?:segundos?|seconds?|secs?\.?)\b""", RegexOption.IGNORE_CASE)
 
     private const val MAX_GAP_TO_COMBINE = 15
 

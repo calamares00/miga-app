@@ -1,5 +1,6 @@
 package org.calamares.miga.data.nutrition
 
+import org.calamares.miga.data.support.AiErrors
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.vision.GeminiContent
@@ -51,7 +52,7 @@ object GeminiNutritionClient : RecipeNutritionClient {
                         val reason = errorBody?.let {
                             runCatching { json.decodeFromString(GeminiErrorEnvelope.serializer(), it).error?.message }.getOrNull()
                         }
-                        return@withContext RecipeNutritionResult.Error(reason ?: L10n.str(R.string.gemini_respondio_codigo_x, responseCode))
+                        return@withContext RecipeNutritionResult.Error(AiErrors.http("Gemini", responseCode, reason))
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(GeminiResponse.serializer(), body)
@@ -63,8 +64,7 @@ object GeminiNutritionClient : RecipeNutritionClient {
                     val resultDto = try {
                         json.decodeFromString(RecipeNutritionResultDto.serializer(), stripMarkdownFences(text))
                     } catch (e: Exception) {
-                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: L10n.str(R.string.no_pudo_interpretar_json)
-                        return@withContext RecipeNutritionResult.Error(shortReason)
+                        return@withContext RecipeNutritionResult.Error(AiErrors.badResponse(e, text))
                     }
                     RecipeNutritionResult.Success(resultDto.caloriesPerServing, resultDto.proteinGrams, resultDto.carbsGrams, resultDto.fatGrams)
                 } finally {
@@ -73,7 +73,7 @@ object GeminiNutritionClient : RecipeNutritionClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                RecipeNutritionResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+                RecipeNutritionResult.Error(AiErrors.exception(e))
             }
         }
 }
