@@ -1,1 +1,0 @@
-Lista de la compra: busca productos por nombre en Open Food Facts (con foto, Nutri-Score y ficha), botón rápido para escanear el código de barras, listas siempre visibles arriba con el número de artículos pendientes y botón "Nueva lista". Se quitan los "Frecuentes". El dictado por voz ahora reconoce en español por defecto y el idioma se cambia en Ajustes → Dictado por voz.

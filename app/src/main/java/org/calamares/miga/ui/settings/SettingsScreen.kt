@@ -1,6 +1,6 @@
 package org.calamares.miga.ui.settings
 
-import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG_REPO
+import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
 import android.content.Intent
 import android.net.Uri
 import android.speech.tts.TextToSpeech
@@ -574,14 +574,14 @@ fun SettingsSectionScreen(
                     "pueden consultar, cocinar y desinstalar, pero no editar."
             ) {
                 ManageRow(icon = Icons.Filled.Storefront, label = "Explorar catálogo", onClick = onOpenPacksCatalog)
-                var showCustomCatalog by remember { mutableStateOf(packsCatalogRepo != DEFAULT_PACKS_CATALOG_REPO) }
+                var showCustomCatalog by remember { mutableStateOf(packsCatalogRepo != DEFAULT_PACKS_CATALOG) }
                 if (showCustomCatalog) {
                     OutlinedTextField(
                         // El catálogo oficial no se muestra: el campo vacío equivale a usarlo.
-                        value = if (packsCatalogRepo == DEFAULT_PACKS_CATALOG_REPO) "" else packsCatalogRepo,
+                        value = if (packsCatalogRepo == DEFAULT_PACKS_CATALOG) "" else packsCatalogRepo,
                         onValueChange = { viewModel.setPacksCatalogRepo(it) },
-                        label = { Text("Catálogo alternativo (GitHub)") },
-                        placeholder = { Text("usuario/repositorio · vacío = catálogo oficial") },
+                        label = { Text("Catálogo alternativo") },
+                        placeholder = { Text("URL o usuario/repo de GitHub · vacío = oficial") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )

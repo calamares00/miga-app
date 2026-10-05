@@ -1,6 +1,0 @@
-Preparación para Google Play:
-• Compatible con Android 16.
-• Las actualizaciones llegarán por la tienda: se quita la comprobación de versiones nuevas.
-• El contenido generado con IA se marca y se puede reportar.
-• Aviso si tu servidor usa http sin cifrar fuera de casa.
-• Nueva política de privacidad y apartado de Contacto en Ayuda.

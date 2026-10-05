@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.net.HttpURLConnection
+import java.net.URI
 import java.net.URL
 
 @Serializable
@@ -33,33 +34,49 @@ sealed interface CatalogFetchResult {
     data class Error(val reason: String) : CatalogFetchResult
 }
 
-/** Repositorio de GitHub ("owner/repo") con el catálogo por defecto; el usuario puede cambiarlo en Ajustes. */
-const val DEFAULT_PACKS_CATALOG_REPO = "bmo00/miga-packs"
+/** Catálogo oficial de packs; el usuario puede usar otro en Ajustes (una URL o un repositorio "usuario/repo" de GitHub). */
+const val DEFAULT_PACKS_CATALOG = "https://miga.calamares.org/packs/catalog.json"
+
+/** Valor que guardaban versiones anteriores como catálogo por defecto; se trata como el oficial. */
+const val LEGACY_DEFAULT_PACKS_CATALOG = "bmo00/miga-packs"
 
 private const val TIMEOUT_MILLIS = 8000
 // Descargar un ZIP de recetas con fotos puede tardar más que la simple lectura del catálogo.
 private const val DOWNLOAD_TIMEOUT_MILLIS = 30000
 
 /**
- * Cliente del catálogo de packs de recetas descargables: un repositorio de GitHub (configurable
- * en Ajustes, ver SettingsRepository.observePacksCatalogRepo) con un catalog.json y un ZIP por
- * pack, servidos vía raw.githubusercontent.com (sin límite de peticiones, a diferencia de
- * api.github.com). Mismo estilo que GeminiVisionClient:
- * HttpURLConnection crudo + kotlinx.serialization, sin librería de red nueva.
+ * Cliente del catálogo de packs de recetas descargables: un catalog.json con un ZIP por pack. El
+ * catálogo puede estar en una web (URL, por defecto [DEFAULT_PACKS_CATALOG]) o en un repositorio de
+ * GitHub ("usuario/repo", servido vía raw.githubusercontent.com). Las URLs de portada y descarga del
+ * catálogo pueden ser relativas a él. HttpURLConnection crudo + kotlinx.serialization.
  */
 object PacksCatalogClient {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun catalogUrlFor(repoPath: String): String =
-        "https://raw.githubusercontent.com/${repoPath.trim().trim('/')}/main/catalog.json"
+    /**
+     * URL del catalog.json para [source]: una URL (si no acaba en .json se le añade /catalog.json)
+     * o un repositorio de GitHub "usuario/repo".
+     */
+    fun catalogUrlFor(source: String): String {
+        val trimmed = source.trim()
+        if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)) {
+            return if (trimmed.substringBefore('?').endsWith(".json", ignoreCase = true)) trimmed else trimmed.trimEnd('/') + "/catalog.json"
+        }
+        return "https://raw.githubusercontent.com/${trimmed.trim('/')}/main/catalog.json"
+    }
+
+    /** Resuelve [ref] (absoluta o relativa, p. ej. "zips/pack.zip") respecto a la URL del catálogo. */
+    fun resolveUrl(catalogUrl: String, ref: String): String =
+        runCatching { URI(catalogUrl).resolve(ref.trim()).toString() }.getOrDefault(ref)
 
     suspend fun fetchCatalog(repoPath: String): CatalogFetchResult = withContext(Dispatchers.IO) {
         if (repoPath.isBlank()) {
-            return@withContext CatalogFetchResult.Error("Configura el repositorio del catálogo en Ajustes")
+            return@withContext CatalogFetchResult.Error("Configura el catálogo en Ajustes")
         }
         try {
-            val connection = URL(catalogUrlFor(repoPath)).openConnection() as HttpURLConnection
+            val catalogUrl = catalogUrlFor(repoPath)
+            val connection = URL(catalogUrl).openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = TIMEOUT_MILLIS
             connection.readTimeout = TIMEOUT_MILLIS
@@ -67,12 +84,19 @@ object PacksCatalogClient {
                 val responseCode = connection.responseCode
                 if (responseCode != HttpURLConnection.HTTP_OK) {
                     return@withContext CatalogFetchResult.Error(
-                        "No se pudo cargar el catálogo (código $responseCode). Revisa el repositorio configurado en Ajustes."
+                        "No se pudo cargar el catálogo (código $responseCode). Revisa el catálogo configurado en Ajustes."
                     )
                 }
                 val body = connection.inputStream.bufferedReader().use { it.readText() }
                 val catalog = json.decodeFromString(CatalogDto.serializer(), body)
-                CatalogFetchResult.Success(catalog.packs)
+                CatalogFetchResult.Success(
+                    catalog.packs.map { pack ->
+                        pack.copy(
+                            downloadUrl = resolveUrl(catalogUrl, pack.downloadUrl),
+                            coverImageUrl = pack.coverImageUrl?.let { resolveUrl(catalogUrl, it) }
+                        )
+                    }
+                )
             } finally {
                 connection.disconnect()
             }

@@ -24,9 +24,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import org.calamares.miga.BuildConfig
 
-// Documento versionado junto con el código (ver PRIVACY.md en la raíz del repo); se abre en el
-// navegador en vez de duplicar el texto dentro de la app, para que quede siempre sincronizado.
-private const val PRIVACY_POLICY_URL = "https://github.com/bmo00/app-miga/blob/main/PRIVACY.md"
+// Publicada en la web de Miga (mismo texto que PRIVACY.md en la raíz del repo); se abre en el
+// navegador en vez de duplicar el texto dentro de la app. Es la misma URL que se da a Google Play.
+private const val PRIVACY_POLICY_URL = "https://miga.calamares.org/privacy"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
