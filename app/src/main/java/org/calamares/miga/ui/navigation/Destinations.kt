@@ -19,6 +19,7 @@ object Destinations {
     const val BULK_IMPORT_ROUTE = "bulkImport?bookId={bookId}&photoUris={photoUris}"
     const val DISH_SEARCH_ROUTE = "dishSearch?bookId={bookId}"
     const val SETTINGS_ROUTE = "settings"
+    const val SETTINGS_SECTION_ROUTE = "settings/section/{section}"
     const val MANAGE_CATEGORIES_ROUTE = "settings/categories"
     const val MANAGE_UTENSILS_ROUTE = "settings/utensils"
     const val MANAGE_INGREDIENTS_ROUTE = "settings/ingredients"
@@ -30,6 +31,7 @@ object Destinations {
 
     const val ARG_RECIPE_ID = "recipeId"
     const val ARG_BOOK_ID = "bookId"
+    const val ARG_SETTINGS_SECTION = "section"
     const val ARG_SOURCE_PHOTO_URIS = "sourcePhotoUris"
     const val ARG_SOURCE_DISH_NAME = "sourceDishName"
     const val ARG_SOURCE_DISH_DESCRIPTION = "sourceDishDescription"
@@ -44,6 +46,8 @@ object Destinations {
     fun packDetail(packId: String) = "packs/${Uri.encode(packId)}"
     fun bookEditor(bookId: Long = NEW_BOOK_ID) = "bookEditor?bookId=$bookId"
     fun detail(recipeId: Long) = "recipes/$recipeId"
+    fun settingsSection(sectionId: String) = "settings/section/$sectionId"
+
     fun editor(
         bookId: Long,
         recipeId: Long = NEW_RECIPE_ID,
