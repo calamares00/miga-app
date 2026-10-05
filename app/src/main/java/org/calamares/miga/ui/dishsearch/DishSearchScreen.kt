@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.dishsearch
 
+import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.ui.components.AiContentNotice
@@ -94,11 +95,7 @@ fun DishSearchScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                is DishSearchUiState.Error -> Text(
-                    current.reason,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error
-                )
+                is DishSearchUiState.Error -> ErrorMessage(current.reason)
                 is DishSearchUiState.Loaded -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     item {
                         AiContentNotice(

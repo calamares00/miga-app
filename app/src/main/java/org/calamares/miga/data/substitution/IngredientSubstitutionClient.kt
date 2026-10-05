@@ -1,5 +1,6 @@
 package org.calamares.miga.data.substitution
 
+import org.calamares.miga.data.vision.outputLanguageInstruction
 import org.calamares.miga.data.vision.VisionProviderType
 import kotlinx.serialization.Serializable
 
@@ -47,4 +48,4 @@ Devuelve ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto
   ]
 }
 No sugieras el propio ingrediente original como sustituto de sí mismo.
-""".trimIndent()
+""".trimIndent() + outputLanguageInstruction()

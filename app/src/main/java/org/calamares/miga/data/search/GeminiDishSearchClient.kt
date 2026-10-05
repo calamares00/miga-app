@@ -1,5 +1,6 @@
 package org.calamares.miga.data.search
 
+import org.calamares.miga.data.support.AiErrors
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.vision.GeminiContent
@@ -50,7 +51,7 @@ object GeminiDishSearchClient : DishSearchClient {
                         val reason = errorBody?.let {
                             runCatching { json.decodeFromString(GeminiErrorEnvelope.serializer(), it).error?.message }.getOrNull()
                         }
-                        return@withContext DishSearchResult.Error(reason ?: L10n.str(R.string.gemini_respondio_codigo_x, responseCode))
+                        return@withContext DishSearchResult.Error(AiErrors.http("Gemini", responseCode, reason))
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(GeminiResponse.serializer(), body)
@@ -62,8 +63,7 @@ object GeminiDishSearchClient : DishSearchClient {
                     val resultDto = try {
                         json.decodeFromString(DishSearchResultDto.serializer(), stripMarkdownFences(text))
                     } catch (e: Exception) {
-                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: L10n.str(R.string.no_pudo_interpretar_json)
-                        return@withContext DishSearchResult.Error(shortReason)
+                        return@withContext DishSearchResult.Error(AiErrors.badResponse(e, text))
                     }
                     val dishes = resultDto.dishes.filter { it.name.isNotBlank() }.map { DishSuggestion(it.name, it.description, it.origin) }
                     DishSearchResult.Success(dishes)
@@ -73,7 +73,7 @@ object GeminiDishSearchClient : DishSearchClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                DishSearchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+                DishSearchResult.Error(AiErrors.exception(e))
             }
         }
 }

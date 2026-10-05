@@ -50,4 +50,11 @@ class StepTimerParsingTest {
     fun `a duration of zero is treated as no timer`() {
         assertNull(StepTimerParsing.findTimerSeconds("Repite el paso 0 veces"))
     }
+
+    @Test
+    fun `english durations`() {
+        assertEquals(600, StepTimerParsing.findTimerSeconds("Simmer for 10 minutes"))
+        assertEquals(4500, StepTimerParsing.findTimerSeconds("Bake for 1 hour and 15 minutes"))
+        assertEquals(30, StepTimerParsing.findTimerSeconds("Whisk for 30 seconds"))
+    }
 }

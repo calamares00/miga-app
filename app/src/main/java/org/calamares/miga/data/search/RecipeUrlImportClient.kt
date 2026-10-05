@@ -48,7 +48,8 @@ Devuelve ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto
   "tags": ["string", ...],
   "utensils": ["string", ...]
 }
-Si el texto no contiene ninguna receta reconocible, deja "name" vacío. En "source" pon la URL
+Respeta el idioma original de la receta: transcríbela tal cual, sin traducirla. Si el texto no
+contiene ninguna receta reconocible, deja "name" vacío. En "source" pon la URL
 original ($url). Si no puedes determinar algún dato, usa null (o una lista vacía) en vez de
 inventarlo al azar.
 """.trimIndent()

@@ -1,5 +1,6 @@
 package org.calamares.miga.data.vision
 
+import org.calamares.miga.L10n
 import org.calamares.miga.data.export.IngredientGroupDto
 import org.calamares.miga.data.export.StepGroupDto
 import kotlinx.serialization.Serializable
@@ -50,7 +51,8 @@ fun visionClientFor(provider: VisionProviderType): RecipeVisionClient = when (pr
 // si no divergirían al cambiar de proveedor en Ajustes.
 internal const val RECIPE_EXTRACTION_PROMPT = """
 Eres un asistente que transcribe recetas de cocina a partir de una foto (de un libro, revista o
-receta manuscrita, normalmente en español, a veces con el texto girado o en columnas). Devuelve
+receta manuscrita, a veces con el texto girado o en columnas). Respeta el idioma original de la
+receta: transcríbela tal cual, sin traducirla. Devuelve
 ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto adicional:
 {
   "name": "string",
@@ -73,6 +75,15 @@ Si se incluyen varias imágenes en esta petición, todas son páginas o fragment
 receta (por ejemplo, fotos consecutivas de un libro de cocina); combina la información de todas
 ellas en un único resultado, en el orden en que aparecen las imágenes.
 """
+
+/**
+ * Instrucción que se añade a los prompts que GENERAN texto (no a los que transcriben una receta
+ * existente) para que la IA responda en el idioma de la app.
+ */
+internal fun outputLanguageInstruction(): String {
+    val language = if (L10n.locale().language == "es") "español" else "inglés (English)"
+    return "\n\nEscribe todos los textos de la respuesta (nombres, descripciones, pasos, notas...) en $language."
+}
 
 // Algunos proveedores envuelven el JSON en un bloque de markdown pese a pedir JSON puro; se lo
 // quitamos antes de parsear. Compartida entre los clientes de Gemini y Anthropic (visión y salud).

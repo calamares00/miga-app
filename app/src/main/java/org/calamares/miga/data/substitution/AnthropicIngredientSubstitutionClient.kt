@@ -1,5 +1,6 @@
 package org.calamares.miga.data.substitution
 
+import org.calamares.miga.data.support.AiErrors
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.vision.AnthropicContentBlock
@@ -55,7 +56,7 @@ object AnthropicIngredientSubstitutionClient : IngredientSubstitutionClient {
                         val reason = errorBody?.let {
                             runCatching { json.decodeFromString(AnthropicErrorEnvelope.serializer(), it).error?.message }.getOrNull()
                         }
-                        return@withContext SubstitutionResult.Error(reason ?: L10n.str(R.string.claude_respondio_codigo_x, responseCode))
+                        return@withContext SubstitutionResult.Error(AiErrors.http("Claude", responseCode, reason))
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(AnthropicResponse.serializer(), body)
@@ -64,8 +65,7 @@ object AnthropicIngredientSubstitutionClient : IngredientSubstitutionClient {
                     val resultDto = try {
                         json.decodeFromString(SubstitutionResultDto.serializer(), stripMarkdownFences(text))
                     } catch (e: Exception) {
-                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: L10n.str(R.string.no_pudo_interpretar_json)
-                        return@withContext SubstitutionResult.Error(shortReason)
+                        return@withContext SubstitutionResult.Error(AiErrors.badResponse(e, text))
                     }
                     val substitutions = resultDto.substitutions.filter { it.substitute.isNotBlank() }
                         .map { IngredientSubstitution(it.substitute, it.notes) }
@@ -80,7 +80,7 @@ object AnthropicIngredientSubstitutionClient : IngredientSubstitutionClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                SubstitutionResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+                SubstitutionResult.Error(AiErrors.exception(e))
             }
         }
 }

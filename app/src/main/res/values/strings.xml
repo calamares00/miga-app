@@ -703,4 +703,14 @@
     <string name="voice_n">"Voice %1$d"</string>
     <string name="voice_online">"online"</string>
     <string name="uncategorized">"No category"</string>
+    <string name="ai_error_bad_response">"The AI's response couldn't be understood. Try again."</string>
+    <string name="ai_error_bad_request">"%1$s rejected the request. Check the selected model in Settings."</string>
+    <string name="ai_error_key">"The %1$s API key isn't valid or has no permissions. Check it in Settings."</string>
+    <string name="ai_error_model">"%1$s doesn't recognise the selected model. Choose another one in Settings."</string>
+    <string name="ai_error_quota">"You've reached %1$s's usage limit. Try again later."</string>
+    <string name="ai_error_unavailable">"%1$s isn't available right now. Try again in a few minutes."</string>
+    <string name="ai_error_generic">"%1$s returned an error. Try again."</string>
+    <string name="ai_error_network">"No connection or the AI isn't responding. Check your internet and try again."</string>
+    <string name="ai_error_unexpected">"Something went wrong with the AI. Try again."</string>
+    <string name="view_details">"View details"</string>
 </resources>

@@ -1,5 +1,6 @@
 package org.calamares.miga.data.nutrition
 
+import org.calamares.miga.data.vision.outputLanguageInstruction
 import org.calamares.miga.data.vision.VisionProviderType
 import kotlinx.serialization.Serializable
 
@@ -47,4 +48,4 @@ estimación POR RACIÓN (dividiendo el total de la receta entre $servings, no el
 Es una estimación aproximada basada en ingredientes habituales, no un análisis exacto de
 laboratorio; si algún ingrediente es ambiguo, usa una estimación razonable en vez de dejarlo en
 blanco o en cero.
-""".trimIndent()
+""".trimIndent() + outputLanguageInstruction()

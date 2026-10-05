@@ -1,5 +1,6 @@
 package org.calamares.miga.data.vision
 
+import org.calamares.miga.data.support.AiErrors
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import kotlinx.coroutines.CancellationException
@@ -57,7 +58,7 @@ object AnthropicVisionClient : RecipeVisionClient {
                         val reason = errorBody?.let {
                             runCatching { json.decodeFromString(AnthropicErrorEnvelope.serializer(), it).error?.message }.getOrNull()
                         }
-                        return@withContext RecipeVisionResult.Error(reason ?: L10n.str(R.string.claude_respondio_codigo_x, responseCode))
+                        return@withContext RecipeVisionResult.Error(AiErrors.http("Claude", responseCode, reason))
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(AnthropicResponse.serializer(), body)
@@ -66,8 +67,7 @@ object AnthropicVisionClient : RecipeVisionClient {
                     val recipe = try {
                         json.decodeFromString(RecipeVisionResultDto.serializer(), stripMarkdownFences(text))
                     } catch (e: Exception) {
-                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: L10n.str(R.string.no_pudo_interpretar_json)
-                        return@withContext RecipeVisionResult.Error(L10n.str(R.string.x_respuesta_completa_modelo_x, shortReason, text))
+                        return@withContext RecipeVisionResult.Error(AiErrors.badResponse(e, text))
                     }
                     if (recipe.name.isBlank()) {
                         RecipeVisionResult.Error(L10n.str(R.string.no_ha_reconocido_ninguna_receta_2))
@@ -80,7 +80,7 @@ object AnthropicVisionClient : RecipeVisionClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                RecipeVisionResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+                RecipeVisionResult.Error(AiErrors.exception(e))
             }
         }
 }

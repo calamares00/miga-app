@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.data.support.ErrorDetail
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.ui.components.AiContentNotice
@@ -161,7 +162,7 @@ fun RecipeEditorScreen(
             if (visionState is VisionState.Error && !visionErrorDismissed) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        L10n.str(R.string.no_pudo_generar_receta_ia, (visionState as VisionState.Error).reason),
+                        L10n.str(R.string.no_pudo_generar_receta_ia, ErrorDetail.summary((visionState as VisionState.Error).reason)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                         maxLines = 2,
@@ -322,7 +323,8 @@ fun RecipeEditorScreen(
     }
 
     if (showVisionErrorDialog && visionState is VisionState.Error) {
-        val reason = (visionState as VisionState.Error).reason
+        val fullReason = (visionState as VisionState.Error).reason
+        val reason = ErrorDetail.detail(fullReason) ?: ErrorDetail.summary(fullReason)
         AlertDialog(
             onDismissRequest = { showVisionErrorDialog = false },
             title = { Text(L10n.str(R.string.detalle_error)) },

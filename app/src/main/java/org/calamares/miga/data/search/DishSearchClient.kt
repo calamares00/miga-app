@@ -1,5 +1,6 @@
 package org.calamares.miga.data.search
 
+import org.calamares.miga.data.vision.outputLanguageInstruction
 import org.calamares.miga.data.vision.VisionProviderType
 import kotlinx.serialization.Serializable
 
@@ -36,7 +37,7 @@ internal data class DishSearchResultDto(val dishes: List<DishSuggestionDto> = em
 internal fun buildDishSearchPrompt(query: String): String = """
 Eres un asistente experto en cocina y gastronomía de todo el mundo. Un usuario de una app de
 recetas busca ideas con esta petición: "$query" (puede ser una zona/país, un tipo de plato, un
-ingrediente principal, una ocasión, o cualquier descripción libre en español).
+ingrediente principal, una ocasión, o cualquier descripción libre en cualquier idioma).
 
 Sugiere entre 6 y 10 platos que encajen bien con la petición. Si la petición es geográfica
 (zona/país/región), prioriza platos realmente típicos y reconocibles de ese lugar; si no lo es,
@@ -50,4 +51,4 @@ Devuelve ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto
 }
 "origin" es la zona/país/región de la que es típico el plato, o null si no aplica. No repitas
 platos y no dejes ningún "name" vacío.
-""".trimIndent()
+""".trimIndent() + outputLanguageInstruction()
