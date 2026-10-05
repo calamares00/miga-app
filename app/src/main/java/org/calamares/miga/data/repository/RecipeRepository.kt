@@ -375,8 +375,9 @@ class RecipeRepository(
     suspend fun countRecipesUsingCategory(id: Long): Int = categoryDao.countRecipesUsing(id)
 
     /** Crea el catálogo inicial de categorías si la base de datos está vacía. */
-    suspend fun seedDefaultCategoriesIfEmpty() {
-        listOf("Postres", "Cremas", "Pastas").forEach { name ->
+    suspend fun seedDefaultCategoriesIfEmpty(language: String = "es") {
+        val names = if (language == "es") listOf("Postres", "Cremas", "Pastas") else listOf("Desserts", "Soups", "Pasta")
+        names.forEach { name ->
             if (categoryDao.findByName(name) == null) {
                 categoryDao.insert(CategoryEntity(name = name))
             }
@@ -403,10 +404,13 @@ class RecipeRepository(
     suspend fun countRecipesUsingUtensil(id: Long): Int = utensilDao.countRecipesUsing(id)
 
     /** Crea el catálogo inicial de utensilios habituales si la base de datos está vacía. */
-    suspend fun seedDefaultUtensilsIfEmpty() {
-        val defaults = listOf(
+    suspend fun seedDefaultUtensilsIfEmpty(language: String = "es") {
+        val defaults = if (language == "es") listOf(
             "Horno", "Microondas", "Sartén", "Olla", "Batidora", "Robot de cocina",
             "Thermomix", "Airfryer", "Nevera", "Congelador", "Parrilla / Plancha", "Wok", "Cuchillo"
+        ) else listOf(
+            "Oven", "Microwave", "Frying pan", "Pot", "Blender", "Food processor",
+            "Thermomix", "Air fryer", "Fridge", "Freezer", "Grill / Griddle", "Wok", "Knife"
         )
         defaults.forEach { name ->
             if (utensilDao.findByName(name) == null) {
@@ -484,8 +488,8 @@ class RecipeRepository(
      * ingredientes que el usuario ya tuviera creados NO se tocan ni se recategorizan: solo se
      * insertan los nombres que todavía no existan, así que se puede llamar en cada arranque.
      */
-    suspend fun seedIngredientCatalogDefaults() {
-        IngredientCatalogSeed.DEFAULT_INGREDIENTS.forEach { (categoryName, names) ->
+    suspend fun seedIngredientCatalogDefaults(language: String = "es") {
+        IngredientCatalogSeed.forLanguage(language).forEach { (categoryName, names) ->
             val categoryId = resolveIngredientCategoryId(categoryName)
             names.forEach { ingredientName ->
                 if (ingredientCatalogDao.findByName(ingredientName) == null) {

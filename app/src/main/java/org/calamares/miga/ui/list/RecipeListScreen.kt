@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.list
 
+import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -237,7 +238,7 @@ fun RecipeListScreen(
                     uiState.groups.forEach { group ->
                         item(key = "header_${group.categoryName}", span = { GridItemSpan(maxLineSpan) }) {
                             Text(
-                                text = "${group.categoryName} (${group.recipes.size})",
+                                text = "${displayCategoryName(group.categoryName)} (${group.recipes.size})",
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                             )
@@ -265,7 +266,7 @@ fun RecipeListScreen(
                     uiState.groups.forEach { group ->
                         item(key = "header_${group.categoryName}") {
                             Text(
-                                text = "${group.categoryName} (${group.recipes.size})",
+                                text = "${displayCategoryName(group.categoryName)} (${group.recipes.size})",
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                             )

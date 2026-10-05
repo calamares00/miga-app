@@ -56,6 +56,9 @@ object L10n {
         return localized(base, Locale.forLanguageTag(tag))
     }
 
+    /** Idioma efectivo de la app (el elegido en Ajustes o el del sistema). */
+    fun locale(): Locale = Locale.getDefault()
+
     fun str(@StringRes id: Int, vararg args: Any?): String {
         // Tests JVM (sin Android): texto estable a partir del id para poder comparar resultados.
         if (!::app.isInitialized) return "#$id" + args.joinToString(prefix = if (args.isEmpty()) "" else ":", separator = ",")

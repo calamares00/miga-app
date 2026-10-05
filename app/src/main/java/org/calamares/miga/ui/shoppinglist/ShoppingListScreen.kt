@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.shoppinglist
 
+import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.Manifest
@@ -604,7 +605,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                     pendingGroups.forEach { group ->
                         item(key = "header_${group.categoryName}") {
                             CategoryHeader(
-                                title = group.categoryName,
+                                title = displayCategoryName(group.categoryName),
                                 count = group.items.size,
                                 style = ShoppingVisuals.categoryStyle(group.categoryName),
                                 collapsed = group.categoryName in collapsed,

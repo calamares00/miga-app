@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.components
 
+import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import androidx.compose.foundation.layout.Arrangement
@@ -79,7 +80,7 @@ fun FilterSheetContent(
                             onClick = {
                                 categoryNames = if (category in categoryNames) categoryNames - category else categoryNames + category
                             },
-                            label = { Text(category) }
+                            label = { Text(displayCategoryName(category)) }
                         )
                     }
                 }

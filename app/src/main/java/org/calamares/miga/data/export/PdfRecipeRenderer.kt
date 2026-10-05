@@ -1,5 +1,6 @@
 package org.calamares.miga.data.export
 
+import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.graphics.Bitmap
@@ -163,7 +164,7 @@ object PdfRecipeRenderer {
         ordered.forEach { recipe ->
             val category = recipe.categoryName?.takeIf { it.isNotBlank() } ?: UNCATEGORIZED_CATEGORY_LABEL
             if (category != lastCategory) {
-                items += Item.TocCategory(category, if (lastCategory == null) 20f else 16f)
+                items += Item.TocCategory(displayCategoryName(category), if (lastCategory == null) 20f else 16f)
                 lastCategory = category
             }
             items += Item.TocRecipe(recipe.name, pageNumberFor(recipe), 8f)

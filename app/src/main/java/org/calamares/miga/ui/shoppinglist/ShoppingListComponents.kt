@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.shoppinglist
 
+import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -392,7 +393,7 @@ internal fun StoreEditorSheet(
                             accent = Color(ShoppingVisuals.categoryStyle(category).argb),
                             size = 30
                         )
-                        Text("${index + 1}. $category", modifier = Modifier.weight(1f).padding(start = 10.dp))
+                        Text("${index + 1}. ${displayCategoryName(category)}", modifier = Modifier.weight(1f).padding(start = 10.dp))
                         IconButton(onClick = { order = ShoppingAisleOrder.move(order, index, -1) }, enabled = index > 0) {
                             Icon(Icons.Filled.ArrowUpward, contentDescription = L10n.str(R.string.subir_x, category))
                         }

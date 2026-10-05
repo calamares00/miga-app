@@ -125,7 +125,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
         var engine: TextToSpeech? = null
         engine = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                engine?.setLanguage(Locale("es", "ES"))
+                engine?.setLanguage(L10n.locale())
                 if (!ttsVoiceName.isNullOrBlank()) {
                     engine?.voices?.firstOrNull { it.name == ttsVoiceName }?.let { voice -> engine?.setVoice(voice) }
                 }

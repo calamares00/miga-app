@@ -106,7 +106,7 @@
     <string name="buscar_recetas_ia">"Buscar recetas con IA"</string>
     <string name="buscar_recetas_ingredientes">"Buscar recetas o ingredientes..."</string>
     <string name="cacahuetes">"Cacahuetes"</string>
-    <string name="cada_libro_es_recetario_persona">"Cada libro es el recetario de una persona (por ejemplo Josi o Helen), con su propia portada. Cuando tienes un libro abierto, las recetas nuevas que crees se guardan ahí por defecto. Puedes mover una receta a otro libro desde su menú de opciones (⋮)."</string>
+    <string name="cada_libro_es_recetario_persona">"Cada libro es el recetario de una persona (por ejemplo el de tu madre, el de un amigo o uno por temas), con su propia portada. Cuando tienes un libro abierto, las recetas nuevas que crees se guardan ahí por defecto. Puedes mover una receta a otro libro desde su menú de opciones (⋮)."</string>
     <string name="cada_supermercado_guarda_orden_pasillos">"Cada supermercado guarda su orden de pasillos: al elegirlo, la lista sale ordenada como lo recorres."</string>
     <string name="cambiar_lista">"Cambiar de lista"</string>
     <string name="cambiar_portada">"Cambiar portada"</string>
@@ -230,7 +230,7 @@
     <string name="editar_misma_lista_entre_varias">"Para editar la misma lista entre varias personas, compártela desde Ajustes → Sincronización."</string>
     <string name="editar_receta">"Editar receta"</string>
     <string name="editar_supermercado">"Editar supermercado"</string>
-    <string name="ej_josi_helen">"Ej. Josi, Helen..."</string>
+    <string name="ej_josi_helen">"Ej. Abuela, Postres..."</string>
     <string name="ej_postres_cremas_pastas">"Ej. Postres, Cremas, Pastas..."</string>
     <string name="elegir_galeria">"Elegir de galería"</string>
     <string name="eliminar">"Eliminar"</string>
@@ -699,4 +699,7 @@
     <string name="ya_estas_primer_paso">"Ya estás en el primer paso"</string>
     <string name="ya_estas_ultimo_paso">"Ya estás en el último paso"</string>
     <string name="zona_pais_ingrediente_tipo_plato">"Zona, país, ingrediente o tipo de plato"</string>
+    <string name="voice_n">"Voz %1$d"</string>
+    <string name="voice_online">"en línea"</string>
+    <string name="uncategorized">"Sin categoría"</string>
 </resources>

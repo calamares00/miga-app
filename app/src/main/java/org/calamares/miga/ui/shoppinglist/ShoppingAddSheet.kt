@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.shoppinglist
 
+import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.Manifest
@@ -288,7 +289,7 @@ private fun CatalogContent(
                 FilterChip(
                     selected = category == current,
                     onClick = { selected = category },
-                    label = { Text("${ShoppingVisuals.categoryStyle(category).emoji} $category") }
+                    label = { Text("${ShoppingVisuals.categoryStyle(category).emoji} ${displayCategoryName(category)}") }
                 )
             }
         }

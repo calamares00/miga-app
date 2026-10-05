@@ -107,7 +107,7 @@
     <string name="buscar_recetas_ia">"Find recipes with AI"</string>
     <string name="buscar_recetas_ingredientes">"Search recipes or ingredients..."</string>
     <string name="cacahuetes">"Peanuts"</string>
-    <string name="cada_libro_es_recetario_persona">"Each book is someone's recipe collection (for example Josi or Helen), with its own cover. When a book is open, new recipes are saved there by default. You can move a recipe to another book from its options menu (⋮)."</string>
+    <string name="cada_libro_es_recetario_persona">"Each book is someone's recipe collection (for example your mum's, a friend's or one per theme), with its own cover. When a book is open, new recipes are saved there by default. You can move a recipe to another book from its options menu (⋮)."</string>
     <string name="cada_supermercado_guarda_orden_pasillos">"Each supermarket keeps its own aisle order: pick one and the list is sorted the way you walk through it."</string>
     <string name="cambiar_lista">"Switch list"</string>
     <string name="cambiar_portada">"Change cover"</string>
@@ -231,7 +231,7 @@
     <string name="editar_misma_lista_entre_varias">"To edit the same list with other people, share it from Settings → Sync."</string>
     <string name="editar_receta">"Edit recipe"</string>
     <string name="editar_supermercado">"Edit supermarket"</string>
-    <string name="ej_josi_helen">"E.g. Josi, Helen..."</string>
+    <string name="ej_josi_helen">"E.g. Grandma, Desserts..."</string>
     <string name="ej_postres_cremas_pastas">"E.g. Desserts, Soups, Pasta..."</string>
     <string name="elegir_galeria">"Choose from gallery"</string>
     <string name="eliminar">"Delete"</string>
@@ -700,4 +700,7 @@
     <string name="ya_estas_primer_paso">"You're already on the first step"</string>
     <string name="ya_estas_ultimo_paso">"You're already on the last step"</string>
     <string name="zona_pais_ingrediente_tipo_plato">"Region, country, ingredient or type of dish"</string>
+    <string name="voice_n">"Voice %1$d"</string>
+    <string name="voice_online">"online"</string>
+    <string name="uncategorized">"No category"</string>
 </resources>

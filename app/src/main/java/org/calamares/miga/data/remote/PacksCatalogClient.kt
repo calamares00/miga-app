@@ -39,9 +39,6 @@ sealed interface CatalogFetchResult {
 /** Catálogo oficial de packs; el usuario puede usar otro en Ajustes (una URL o un repositorio "usuario/repo" de GitHub). */
 const val DEFAULT_PACKS_CATALOG = "https://miga.calamares.org/packs/catalog.json"
 
-/** Valor que guardaban versiones anteriores como catálogo por defecto; se trata como el oficial. */
-const val LEGACY_DEFAULT_PACKS_CATALOG = "bmo00/miga-packs"
-
 private const val TIMEOUT_MILLIS = 8000
 // Descargar un ZIP de recetas con fotos puede tardar más que la simple lectura del catálogo.
 private const val DOWNLOAD_TIMEOUT_MILLIS = 30000

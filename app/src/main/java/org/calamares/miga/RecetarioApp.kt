@@ -67,9 +67,10 @@ class RecetarioApp : Application() {
         CrashReporter.install(this)
         applicationScope.launch {
             repository.ensurePhotoUids()
-            repository.seedDefaultUtensilsIfEmpty()
-            repository.seedDefaultCategoriesIfEmpty()
-            repository.seedIngredientCatalogDefaults()
+            val seedLanguage = settingsRepository.seedLanguage(L10n.locale().language)
+            repository.seedDefaultUtensilsIfEmpty(seedLanguage)
+            repository.seedDefaultCategoriesIfEmpty(seedLanguage)
+            repository.seedIngredientCatalogDefaults(seedLanguage)
         }
         SyncWorker.enqueuePeriodic(this)
     }

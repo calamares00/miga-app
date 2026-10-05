@@ -1,5 +1,6 @@
 package org.calamares.miga.data.model
 
+import org.calamares.miga.L10n
 import java.text.Normalizer
 
 /** Supermercado del usuario: un nombre, un color y el orden en que recorre las categorías (sus pasillos). */
@@ -14,11 +15,21 @@ data class ShoppingStore(
 object ShoppingAisleOrder {
 
     /** Recorrido típico de un súper: frescos primero, congelados/bebidas/limpieza al final. */
-    val TYPICAL_ORDER = listOf(
+    val TYPICAL_ORDER: List<String>
+        get() = if (L10n.locale().language == "es") TYPICAL_ORDER_ES else TYPICAL_ORDER_EN
+
+    private val TYPICAL_ORDER_ES = listOf(
         "Frutas", "Verduras", "Carnes", "Pescados", "Mariscos", "Huevos", "Lácteos", "Fermentados",
         "Cereales", "Legumbres", "Harinas", "Repostería", "Azúcares y edulcorantes",
         "Conservas", "Salsas y condimentos", "Aceites y grasas", "Hierbas y especias",
         "Frutos secos", "Semillas", "Bebidas", "Otros", UNCATEGORIZED_INGREDIENT_LABEL
+    )
+
+    private val TYPICAL_ORDER_EN = listOf(
+        "Fruit", "Vegetables", "Meat", "Fish", "Seafood", "Eggs", "Dairy", "Fermented",
+        "Grains", "Pulses", "Flours", "Baking", "Sugars and sweeteners",
+        "Tinned and jarred", "Sauces and condiments", "Oils and fats", "Herbs and spices",
+        "Nuts", "Seeds", "Drinks", "Other", UNCATEGORIZED_INGREDIENT_LABEL
     )
 
     /** Nombres sugeridos al crear una tienda; solo texto, sin logos ni marcas. */
