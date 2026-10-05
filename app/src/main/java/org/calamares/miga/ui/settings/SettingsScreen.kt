@@ -167,8 +167,8 @@ fun SettingsSectionScreen(
         engine = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 availableVoices = engine?.voices
-                    ?.filter { it.locale.language == "es" }
-                    ?.sortedBy { "${it.locale} ${it.name}" }
+                    ?.filter { it.locale.language == "es" || it.locale.language == "en" }
+                    ?.sortedWith(compareBy({ it.locale.language != L10n.locale().language }, { it.locale.toString() }, { it.isNetworkConnectionRequired }, { it.name }))
                     .orEmpty()
             }
         }
@@ -525,8 +525,9 @@ fun SettingsSectionScreen(
                 title = L10n.str(R.string.modo_cocina),
                 description = L10n.str(R.string.voz_usada_leer_pasos_voz)
             ) {
+                val voiceLabels = remember(availableVoices) { simpleVoiceLabels(availableVoices) }
                 val selectedVoiceLabel = availableVoices.firstOrNull { it.name == ttsVoiceName }
-                    ?.let { "${it.locale.displayName} (${it.name})" }
+                    ?.let { voiceLabels[it.name] }
                     ?: L10n.str(R.string.predeterminada_sistema)
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
@@ -553,7 +554,7 @@ fun SettingsSectionScreen(
                         )
                         availableVoices.forEach { voice ->
                             DropdownMenuItem(
-                                text = { Text("${voice.locale.displayName} (${voice.name})") },
+                                text = { Text(voiceLabels[voice.name] ?: voice.name) },
                                 onClick = { viewModel.setTtsVoiceName(voice.name); voiceMenuExpanded = false }
                             )
                         }
@@ -562,9 +563,12 @@ fun SettingsSectionScreen(
                 OutlinedButton(
                     onClick = {
                         val engine = tts ?: return@OutlinedButton
-                        availableVoices.firstOrNull { it.name == ttsVoiceName }?.let { engine.setVoice(it) }
-                        engine.setLanguage(Locale("es", "ES"))
-                        engine.speak("Añade dos cucharadas de aceite de oliva.", TextToSpeech.QUEUE_FLUSH, null, "voice_preview")
+                        val chosen = availableVoices.firstOrNull { it.name == ttsVoiceName }
+                        if (chosen != null) engine.setVoice(chosen) else engine.setLanguage(L10n.locale())
+                        // La frase de prueba va en el idioma de la voz elegida (si no, en el de la app).
+                        val language = (chosen?.locale ?: L10n.locale()).language
+                        val sample = if (language == "es") "Añade dos cucharadas de aceite de oliva." else "Add two tablespoons of olive oil."
+                        engine.speak(sample, TextToSpeech.QUEUE_FLUSH, null, "voice_preview")
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -811,4 +815,17 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+/** Nombres cortos para las voces ("Español (España) · Voz 1", con "sin conexión"/"en línea" solo si hace falta distinguir). */
+private fun simpleVoiceLabels(voices: List<Voice>): Map<String, String> {
+    val labels = mutableMapOf<String, String>()
+    voices.groupBy { it.locale.toString() }.forEach { (_, group) ->
+        group.forEachIndexed { index, voice ->
+            val name = voice.locale.getDisplayName(L10n.locale()).replaceFirstChar { it.uppercase() }
+            val online = if (voice.isNetworkConnectionRequired) " · ${L10n.str(R.string.voice_online)}" else ""
+            labels[voice.name] = "$name · ${L10n.str(R.string.voice_n, index + 1)}$online"
+        }
+    }
+    return labels
 }

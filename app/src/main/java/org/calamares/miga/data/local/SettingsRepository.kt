@@ -15,7 +15,6 @@ import org.calamares.miga.data.model.ColorTheme
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
-import org.calamares.miga.data.remote.LEGACY_DEFAULT_PACKS_CATALOG
 import org.calamares.miga.data.vision.DEFAULT_ANTHROPIC_MODEL
 import org.calamares.miga.data.vision.DEFAULT_GEMINI_MODEL
 import org.calamares.miga.data.vision.VisionProviderType
@@ -31,6 +30,7 @@ class SettingsRepository(private val context: Context) {
     private val colorThemeKey = stringPreferencesKey("color_theme")
     private val biometricLockKey = booleanPreferencesKey("biometric_lock_enabled")
     private val onboardingDoneKey = booleanPreferencesKey("onboarding_done")
+    private val seedLanguageKey = stringPreferencesKey("seed_language")
     private val shoppingImagesKey = booleanPreferencesKey("shopping_images_enabled")
     private val shoppingStoreKey = longPreferencesKey("shopping_store_id")
     private val shoppingListUidKey = stringPreferencesKey("shopping_list_uid")
@@ -99,6 +99,19 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setShoppingImagesEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[shoppingImagesKey] = enabled }
+    }
+
+    /**
+     * Idioma ("es" o "en") del catálogo inicial (utensilios, categorías, ingredientes). Se fija en la
+     * primera ejecución según el idioma de la app y no cambia después, para que cambiar de idioma no
+     * duplique los datos ya creados.
+     */
+    suspend fun seedLanguage(current: String): String {
+        val stored = context.settingsDataStore.data.first()[seedLanguageKey]
+        if (stored != null) return stored
+        val chosen = if (current == "es") "es" else "en"
+        context.settingsDataStore.edit { prefs -> prefs[seedLanguageKey] = chosen }
+        return chosen
     }
 
     /** true cuando ya se ha visto (o saltado) la bienvenida de la primera ejecución. */
@@ -225,7 +238,7 @@ class SettingsRepository(private val context: Context) {
 
     /** Repositorio de GitHub ("owner/repo") del catálogo de packs de recetas; editable en Ajustes. */
     fun observePacksCatalogRepo(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> prefs[packsCatalogRepoKey]?.takeIf { it.isNotBlank() && it.trim() != LEGACY_DEFAULT_PACKS_CATALOG } ?: DEFAULT_PACKS_CATALOG }
+        context.settingsDataStore.data.map { prefs -> prefs[packsCatalogRepoKey]?.takeIf { it.isNotBlank() } ?: DEFAULT_PACKS_CATALOG }
 
     suspend fun setPacksCatalogRepo(repo: String) {
         context.settingsDataStore.edit { prefs -> prefs[packsCatalogRepoKey] = repo.trim() }

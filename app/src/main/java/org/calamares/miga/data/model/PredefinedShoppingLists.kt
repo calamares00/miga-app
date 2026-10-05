@@ -1,5 +1,7 @@
 package org.calamares.miga.data.model
 
+import org.calamares.miga.L10n
+
 /**
  * Listas de la compra típicas ya preparadas para añadir con un toque. Van dentro de la app (sin red);
  * sus [ShoppingTemplate.id] son negativos para distinguirlas de las plantillas del usuario (Room, id > 0).
@@ -9,7 +11,22 @@ object PredefinedShoppingLists {
     private fun list(id: Long, name: String, items: String) =
         ShoppingTemplate(id, name, ShoppingEntryParser.parse(items).map { TemplateItem.of(it) })
 
-    val ALL: List<ShoppingTemplate> = listOf(
+    /** Las listas en el idioma de la app. */
+    val ALL: List<ShoppingTemplate>
+        get() = if (L10n.locale().language == "es") SPANISH else ENGLISH
+
+    private val ENGLISH: List<ShoppingTemplate> = listOf(
+        list(-1, "🧺 Pantry basics", "Rice, Pasta, Olive oil, Salt, Sugar, Flour, Lentils, Chickpeas, Tomato sauce, Tinned tuna, Coffee, Biscuits"),
+        list(-2, "🥐 Breakfast", "Milk, Bread, Butter, Jam, Cereal, Coffee, Orange juice, Yoghurt, Eggs, Fruit"),
+        list(-3, "🥗 Fresh food for the week", "Tomatoes, Lettuce, Carrots, Onion, Potatoes, Peppers, Courgette, Apples, Bananas, Oranges, Chicken, Fish"),
+        list(-4, "🍖 Barbecue", "Sausages, Black pudding, Ribs, Burgers, Bread rolls, Charcoal, Peppers, Beer, Soft drinks, Ice, Napkins"),
+        list(-5, "🎄 Christmas dinner", "Seafood, Lamb, Nougat, Shortbread, Wine, Sparkling wine, Pineapple, Nuts, Potatoes, Piquillo peppers, Prawns"),
+        list(-6, "🥂 Party snacks", "Crisps, Olives, Nuts, Cheese, Ham, Bread, Beer, Soft drinks, Ice, Cups"),
+        list(-7, "🧴 Cleaning and hygiene", "Detergent, Dishwasher tablets, Floor cleaner, Bleach, Toilet paper, Kitchen roll, Bin bags, Hand soap, Shampoo, Shower gel, Toothpaste"),
+        list(-8, "🌱 Vegetarian dinner", "Tofu, Chickpeas, Spinach, Mushrooms, Aubergine, Courgette, Rice, Quinoa, Avocado, Tomato")
+    )
+
+    private val SPANISH: List<ShoppingTemplate> = listOf(
         list(-1, "🧺 Despensa básica", "Arroz, Pasta, Aceite de oliva, Sal, Azúcar, Harina, Lentejas, Garbanzos, Tomate frito, Atún en lata, Café, Galletas"),
         list(-2, "🥐 Desayuno", "Leche, Pan, Mantequilla, Mermelada, Cereales, Café, Zumo de naranja, Yogur, Huevos, Fruta"),
         list(-3, "🥗 Frescos de la semana", "Tomates, Lechuga, Zanahorias, Cebolla, Patatas, Pimientos, Calabacín, Manzanas, Plátanos, Naranjas, Pollo, Pescado"),

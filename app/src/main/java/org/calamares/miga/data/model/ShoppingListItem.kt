@@ -12,6 +12,10 @@ import org.calamares.miga.R
  */
 const val UNCATEGORIZED_INGREDIENT_LABEL = "Sin categoría"
 
+/** Nombre de categoría para mostrar: el de "sin categoría" se traduce; el resto son datos del usuario y se dejan tal cual. */
+fun displayCategoryName(name: String): String =
+    if (name == UNCATEGORIZED_INGREDIENT_LABEL) L10n.str(R.string.uncategorized) else name
+
 /** Uid de la lista de la compra por defecto: existe siempre, sin fila propia, y es la que usaban todos los artículos antes de poder tener varias. */
 const val DEFAULT_SHOPPING_LIST_UID = "main"
 val DEFAULT_SHOPPING_LIST_NAME: String get() = L10n.str(R.string.compra)

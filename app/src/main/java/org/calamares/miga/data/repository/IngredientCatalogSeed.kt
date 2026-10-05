@@ -3,6 +3,10 @@ package org.calamares.miga.data.repository
 /** Catálogo base de ingredientes agrupados por categoría, usado para poblar el catálogo. */
 object IngredientCatalogSeed {
 
+    /** Catálogo en [language] ("es" o "en"); el idioma se fija en la primera ejecución (ver SettingsRepository.seedLanguage). */
+    fun forLanguage(language: String): List<Pair<String, List<String>>> =
+        if (language == "es") DEFAULT_INGREDIENTS else IngredientCatalogSeedEn.DEFAULT_INGREDIENTS
+
     val DEFAULT_INGREDIENTS: List<Pair<String, List<String>>> = listOf(
         "Frutas" to listOf(
             "Manzana", "Pera", "Plátano", "Naranja", "Mandarina", "Limón", "Lima", "Pomelo",
