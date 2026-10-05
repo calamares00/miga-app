@@ -39,7 +39,7 @@ class ProductInfoTest {
 
     @Test
     fun `nova descriptions cover 1 to 4`() {
-        assertEquals("Ultraprocesado", ProductLabels.novaDescription(4))
+        assertEquals(L10n.str(R.string.ultraprocesado), ProductLabels.novaDescription(4))
         assertNull(ProductLabels.novaDescription(7))
         assertNull(ProductLabels.novaArgb(0))
     }
