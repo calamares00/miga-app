@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.shoppinglist
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
@@ -204,7 +206,7 @@ internal fun CategoryHeader(
         trailing()
         Icon(
             imageVector = if (collapsed) Icons.Filled.ExpandMore else Icons.Filled.ExpandLess,
-            contentDescription = if (collapsed) "Desplegar $title" else "Plegar $title",
+            contentDescription = if (collapsed) L10n.str(R.string.desplegar_x, title) else L10n.str(R.string.plegar_x, title),
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
@@ -236,7 +238,7 @@ internal fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImag
                 .background(MaterialTheme.colorScheme.background)
                 .toggleable(value = item.checked, role = Role.Checkbox, onValueChange = onCheckedChange)
                 // En modo tienda quitar es un gesto (deslizar): se ofrece también como acción accesible.
-                .semantics { customActions = listOf(CustomAccessibilityAction("Quitar ${item.name}") { onDelete(); true }) }
+                .semantics { customActions = listOf(CustomAccessibilityAction(L10n.str(R.string.quitar_x, item.name)) { onDelete(); true }) }
                 .padding(vertical = if (shopMode) 12.dp else 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -250,13 +252,13 @@ internal fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImag
             Box(
                 modifier = Modifier
                     .alpha(if (item.checked) 0.5f else 1f)
-                    .then(if (onOpenProduct != null) Modifier.clip(CircleShape).clickable(onClickLabel = "Ver detalles del producto", onClick = onOpenProduct) else Modifier)
+                    .then(if (onOpenProduct != null) Modifier.clip(CircleShape).clickable(onClickLabel = L10n.str(R.string.ver_detalles_producto), onClick = onOpenProduct) else Modifier)
             ) {
                 val badgeSize = if (shopMode) 44 else 34
                 if (showImage && item.imageUrl != null) {
                     AsyncImage(
                         model = item.imageUrl,
-                        contentDescription = if (onOpenProduct != null) "Ficha de ${item.name}" else null,
+                        contentDescription = if (onOpenProduct != null) L10n.str(R.string.ficha_x, item.name) else null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.size(badgeSize.dp).clip(CircleShape)
                     )
@@ -288,7 +290,7 @@ internal fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImag
             }
             if (!shopMode) {
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Quitar ${item.name}", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.quitar_x, item.name), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -325,8 +327,8 @@ internal fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImag
                 contentAlignment = if (direction == SwipeToDismissBoxValue.EndToStart) Alignment.CenterEnd else Alignment.CenterStart
             ) {
                 when (direction) {
-                    SwipeToDismissBoxValue.StartToEnd -> Icon(Icons.Filled.CheckBox, contentDescription = "Marcar")
-                    SwipeToDismissBoxValue.EndToStart -> Icon(Icons.Filled.Delete, contentDescription = "Quitar")
+                    SwipeToDismissBoxValue.StartToEnd -> Icon(Icons.Filled.CheckBox, contentDescription = L10n.str(R.string.marcar))
+                    SwipeToDismissBoxValue.EndToStart -> Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.quitar))
                     SwipeToDismissBoxValue.Settled -> Unit
                 }
             }
@@ -351,11 +353,11 @@ internal fun StoreEditorSheet(
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.fillMaxHeight(0.85f).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(if (store.id == 0L) "Nuevo supermercado" else "Editar supermercado", style = MaterialTheme.typography.titleMedium)
+            Text(if (store.id == 0L) L10n.str(R.string.nuevo_supermercado) else L10n.str(R.string.editar_supermercado), style = MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nombre") },
+                label = { Text(L10n.str(R.string.nombre)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -377,9 +379,9 @@ internal fun StoreEditorSheet(
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Orden de pasillos", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Text(L10n.str(R.string.orden_pasillos), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                 TextButton(onClick = { order = ShoppingAisleOrder.complete(ShoppingAisleOrder.TYPICAL_ORDER, categoryNames) }) {
-                    Text("Recorrido típico")
+                    Text(L10n.str(R.string.recorrido_tipico))
                 }
             }
             LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -392,18 +394,18 @@ internal fun StoreEditorSheet(
                         )
                         Text("${index + 1}. $category", modifier = Modifier.weight(1f).padding(start = 10.dp))
                         IconButton(onClick = { order = ShoppingAisleOrder.move(order, index, -1) }, enabled = index > 0) {
-                            Icon(Icons.Filled.ArrowUpward, contentDescription = "Subir $category")
+                            Icon(Icons.Filled.ArrowUpward, contentDescription = L10n.str(R.string.subir_x, category))
                         }
                         IconButton(onClick = { order = ShoppingAisleOrder.move(order, index, 1) }, enabled = index < order.lastIndex) {
-                            Icon(Icons.Filled.ArrowDownward, contentDescription = "Bajar $category")
+                            Icon(Icons.Filled.ArrowDownward, contentDescription = L10n.str(R.string.bajar_x, category))
                         }
                     }
                 }
             }
             Row(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onDismiss) { Text("Cancelar") }
+                TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) }
                 TextButton(onClick = { onSave(store.copy(name = name.trim(), argb = argb, aisleOrder = order)) }, enabled = name.isNotBlank()) {
-                    Text("Guardar")
+                    Text(L10n.str(R.string.guardar))
                 }
             }
         }
@@ -414,5 +416,5 @@ internal fun StoreEditorSheet(
 internal fun authorNote(item: ShoppingListItem, me: String): String? {
     val by = (if (item.checked) item.updatedBy else item.addedBy)?.takeIf { it.isNotBlank() } ?: return null
     if (by.equals(me.trim(), ignoreCase = true)) return null
-    return if (item.checked) "Marcado por $by" else "Añadido por $by"
+    return if (item.checked) L10n.str(R.string.marcado_x, by) else L10n.str(R.string.anadido_x_2, by)
 }

@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,7 +41,7 @@ class ManageCategoriesViewModel(private val repository: RecipeRepository) : View
 fun ManageCategoriesScreen(viewModel: ManageCategoriesViewModel, onBack: () -> Unit) {
     val items by viewModel.items.collectAsState()
     ManageCatalogScreen(
-        title = "Categorías",
+        title = L10n.str(R.string.categorias),
         items = items,
         onBack = onBack,
         onAdd = viewModel::add,

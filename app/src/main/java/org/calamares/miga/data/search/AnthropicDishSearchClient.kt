@@ -1,5 +1,7 @@
 package org.calamares.miga.data.search
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.data.vision.AnthropicContentBlock
 import org.calamares.miga.data.vision.AnthropicErrorEnvelope
 import org.calamares.miga.data.vision.AnthropicMessage
@@ -51,7 +53,7 @@ object AnthropicDishSearchClient : DishSearchClient {
                         val reason = errorBody?.let {
                             runCatching { json.decodeFromString(AnthropicErrorEnvelope.serializer(), it).error?.message }.getOrNull()
                         }
-                        return@withContext DishSearchResult.Error(reason ?: "Claude respondió con el código $responseCode")
+                        return@withContext DishSearchResult.Error(reason ?: L10n.str(R.string.claude_respondio_codigo_x, responseCode))
                     }
                     val body = connection.inputStream.bufferedReader().use { it.readText() }
                     val response = json.decodeFromString(AnthropicResponse.serializer(), body)
@@ -60,7 +62,7 @@ object AnthropicDishSearchClient : DishSearchClient {
                     val resultDto = try {
                         json.decodeFromString(DishSearchResultDto.serializer(), stripMarkdownFences(text))
                     } catch (e: Exception) {
-                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: "no se pudo interpretar el JSON"
+                        val shortReason = e.message?.substringBefore("\nJSON input:") ?: L10n.str(R.string.no_pudo_interpretar_json)
                         return@withContext DishSearchResult.Error(shortReason)
                     }
                     val dishes = resultDto.dishes.filter { it.name.isNotBlank() }.map { DishSuggestion(it.name, it.description, it.origin) }
@@ -71,7 +73,7 @@ object AnthropicDishSearchClient : DishSearchClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                DishSearchResult.Error(e.message ?: e::class.simpleName ?: "Error desconocido")
+                DishSearchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
             }
         }
 }

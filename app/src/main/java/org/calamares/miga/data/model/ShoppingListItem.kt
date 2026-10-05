@@ -1,5 +1,8 @@
 package org.calamares.miga.data.model
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
+
 /**
  * "Sin categoría" para un ingrediente de la lista de la compra sin match en el catálogo (ver
  * data/local/dao/IngredientCategoryDao.kt). Constante propia, no [UNCATEGORIZED_CATEGORY_LABEL]
@@ -11,7 +14,7 @@ const val UNCATEGORIZED_INGREDIENT_LABEL = "Sin categoría"
 
 /** Uid de la lista de la compra por defecto: existe siempre, sin fila propia, y es la que usaban todos los artículos antes de poder tener varias. */
 const val DEFAULT_SHOPPING_LIST_UID = "main"
-const val DEFAULT_SHOPPING_LIST_NAME = "Compra"
+val DEFAULT_SHOPPING_LIST_NAME: String get() = L10n.str(R.string.compra)
 
 data class ShoppingListItem(
     val id: Long,

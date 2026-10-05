@@ -1,5 +1,7 @@
 package org.calamares.miga.data.model
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -44,21 +46,21 @@ class ProductInfoTest {
 
     @Test
     fun `allergen names are translated and unknown ones stay readable`() {
-        assertEquals("Leche", ProductLabels.allergenName("milk"))
-        assertEquals("Sulfitos", ProductLabels.allergenName("sulphur-dioxide-and-sulphites"))
+        assertEquals(L10n.str(R.string.leche), ProductLabels.allergenName("milk"))
+        assertEquals(L10n.str(R.string.sulfitos), ProductLabels.allergenName("sulphur-dioxide-and-sulphites"))
         assertEquals("Kiwi rojo", ProductLabels.allergenName("kiwi-rojo"))
     }
 
     @Test
     fun `badges merge labels and analysis without repeats and skip unknown ones`() {
         val info = ProductInfo("x", labels = listOf("organic", "vegan", "algo-raro"), analysis = listOf("vegan", "palm-oil-free"))
-        assertEquals(listOf("Ecológico", "Vegano", "Sin aceite de palma"), ProductLabels.badges(info))
+        assertEquals(listOf(L10n.str(R.string.ecologico), L10n.str(R.string.vegano), L10n.str(R.string.sin_aceite_palma)), ProductLabels.badges(info))
     }
 
     @Test
     fun `nutrition rows list only the available values`() {
         val rows = ProductLabels.nutritionRows(ProductInfo("x", energyKcal = 250.0, sugars = 4.5))
-        assertEquals(listOf("Energía" to "250 kcal", "  de los cuales azúcares" to "4.5 g"), rows)
+        assertEquals(listOf(L10n.str(R.string.energia) to "250 kcal", L10n.str(R.string.cuales_azucares) to "4.5 g"), rows)
         assertTrue(ProductLabels.nutritionRows(ProductInfo("x")).isEmpty())
     }
 }

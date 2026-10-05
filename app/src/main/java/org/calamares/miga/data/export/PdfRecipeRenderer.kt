@@ -1,5 +1,7 @@
 package org.calamares.miga.data.export
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -156,7 +158,7 @@ object PdfRecipeRenderer {
 
     private fun buildTocItems(ordered: List<Recipe>, paints: Paints, pageNumberFor: (Recipe) -> Int): List<Item> {
         val items = mutableListOf<Item>()
-        items += Item.Text("Índice", paints.tocTitle, 0f)
+        items += Item.Text(L10n.str(R.string.indice), paints.tocTitle, 0f)
         var lastCategory: String? = null
         ordered.forEach { recipe ->
             val category = recipe.categoryName?.takeIf { it.isNotBlank() } ?: UNCATEGORIZED_CATEGORY_LABEL
@@ -177,7 +179,7 @@ object PdfRecipeRenderer {
             append(recipe.difficulty.label)
             recipe.categoryName?.let { append(" · ").append(it) }
             recipe.totalTimeMinutes?.let { append(" · ").append(it).append(" min") }
-            append(" · Raciones: ").append(recipe.servings)
+            append(L10n.str(R.string.raciones)).append(recipe.servings)
         }
         items += Item.Text(meta, paints.meta, 6f)
 
@@ -200,7 +202,7 @@ object PdfRecipeRenderer {
             items += Item.Text("Etiquetas: " + recipe.tags.joinToString(", "), paints.body, 4f)
         }
 
-        items += Item.Text("Ingredientes", paints.header, 18f)
+        items += Item.Text(L10n.str(R.string.ingredientes), paints.header, 18f)
         recipe.ingredientGroups.forEach { group ->
             if (group.ingredients.isNotEmpty()) {
                 if (group.name != null) items += Item.Text(group.name, paints.subHeader, 10f)
@@ -212,7 +214,7 @@ object PdfRecipeRenderer {
             }
         }
 
-        items += Item.Text("Preparación", paints.header, 18f)
+        items += Item.Text(L10n.str(R.string.preparacion), paints.header, 18f)
         recipe.stepGroups.forEach { group ->
             if (group.instructions.isNotEmpty()) {
                 if (group.name != null) items += Item.Text(group.name, paints.subHeader, 10f)
@@ -223,7 +225,7 @@ object PdfRecipeRenderer {
         }
 
         if (recipe.notes.isNotBlank()) {
-            items += Item.Text("Notas", paints.header, 18f)
+            items += Item.Text(L10n.str(R.string.notas), paints.header, 18f)
             items += Item.Text(recipe.notes, paints.body, 4f)
         }
         if (recipe.source.isNotBlank()) {
@@ -354,7 +356,7 @@ object PdfRecipeRenderer {
             canvas.drawText(headerText, MARGIN, MARGIN + 6f, paints.runningHeader)
             canvas.drawLine(MARGIN, MARGIN + 12f, PAGE_WIDTH - MARGIN, MARGIN + 12f, paints.rule)
         }
-        canvas.drawText("Miga · página $pageNum de $totalPages", PAGE_WIDTH / 2f, PAGE_HEIGHT - MARGIN + 14f, paints.footer)
+        canvas.drawText(L10n.str(R.string.miga_pagina_x_x, pageNum, totalPages), PAGE_WIDTH / 2f, PAGE_HEIGHT - MARGIN + 14f, paints.footer)
     }
 
     /** Decodifica una foto ya guardada por la app (uri "file://...") reduciéndola de entrada al

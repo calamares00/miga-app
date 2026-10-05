@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.components
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -66,10 +68,10 @@ fun FilterSheetContent(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Filtrar y ordenar", style = MaterialTheme.typography.titleLarge)
+        Text(L10n.str(R.string.filtrar_ordenar), style = MaterialTheme.typography.titleLarge)
 
         if (availableCategories.isNotEmpty()) {
-            FilterSection(title = "Categoría") {
+            FilterSection(title = L10n.str(R.string.categoria)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     availableCategories.forEach { category ->
                         FilterChip(
@@ -84,7 +86,7 @@ fun FilterSheetContent(
             }
         }
 
-        FilterSection(title = "Dificultad") {
+        FilterSection(title = L10n.str(R.string.dificultad)) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Difficulty.entries.forEach { difficulty ->
                     FilterChip(
@@ -97,7 +99,7 @@ fun FilterSheetContent(
         }
 
         if (availableUtensils.isNotEmpty()) {
-            FilterSection(title = "Utensilios") {
+            FilterSection(title = L10n.str(R.string.utensilios)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     availableUtensils.forEach { utensil ->
                         FilterChip(
@@ -111,7 +113,7 @@ fun FilterSheetContent(
         }
 
         if (availableTags.isNotEmpty()) {
-            FilterSection(title = "Etiquetas") {
+            FilterSection(title = L10n.str(R.string.etiquetas)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     availableTags.forEach { tag ->
                         FilterChip(
@@ -125,7 +127,7 @@ fun FilterSheetContent(
         }
 
         if (availableIngredients.isNotEmpty()) {
-            FilterSection(title = "Ingredientes") {
+            FilterSection(title = L10n.str(R.string.ingredientes)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     availableIngredients.forEach { ingredient ->
                         FilterChip(
@@ -138,7 +140,7 @@ fun FilterSheetContent(
             }
         }
 
-        FilterSection(title = "Ordenar por") {
+        FilterSection(title = L10n.str(R.string.ordenar)) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SortOption.entries.forEach { option ->
                     FilterChip(
@@ -153,7 +155,7 @@ fun FilterSheetContent(
         HorizontalDivider()
 
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Solo favoritas", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Text(L10n.str(R.string.solo_favoritas), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             Switch(checked = onlyFavorites, onCheckedChange = { onlyFavorites = it })
         }
 
@@ -165,7 +167,7 @@ fun FilterSheetContent(
                 onClear()
             },
             modifier = Modifier.fillMaxWidth()
-        ) { Text("Limpiar") }
+        ) { Text(L10n.str(R.string.limpiar)) }
     }
 }
 

@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,16 +59,16 @@ fun ManageCatalogScreen(
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(title) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") } }
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) } }
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(onClick = { showAddDialog = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text("Añadir") })
+            ExtendedFloatingActionButton(onClick = { showAddDialog = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text(L10n.str(R.string.anadir)) })
         }
     ) { padding ->
         if (items.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Todavía no hay elementos.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(L10n.str(R.string.todavia_no_hay_elementos), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             LazyColumn(contentPadding = PaddingValues(vertical = 8.dp), modifier = Modifier.padding(padding)) {
@@ -85,8 +87,8 @@ fun ManageCatalogScreen(
                                 )
                             }
                         }
-                        IconButton(onClick = { itemToRename = item }) { Icon(Icons.Filled.Edit, contentDescription = "Renombrar") }
-                        IconButton(onClick = { itemToDelete = item }) { Icon(Icons.Filled.Delete, contentDescription = "Borrar") }
+                        IconButton(onClick = { itemToRename = item }) { Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.renombrar)) }
+                        IconButton(onClick = { itemToDelete = item }) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.borrar)) }
                     }
                     HorizontalDivider()
                 }
@@ -96,7 +98,7 @@ fun ManageCatalogScreen(
 
     if (showAddDialog) {
         NameDialog(
-            title = "Añadir",
+            title = L10n.str(R.string.anadir),
             initialValue = "",
             onConfirm = { onAdd(it); showAddDialog = false },
             onDismiss = { showAddDialog = false }
@@ -105,7 +107,7 @@ fun ManageCatalogScreen(
 
     itemToRename?.let { item ->
         NameDialog(
-            title = "Renombrar",
+            title = L10n.str(R.string.renombrar),
             initialValue = item.name,
             onConfirm = { onRename(item, it); itemToRename = null },
             onDismiss = { itemToRename = null }
@@ -116,13 +118,13 @@ fun ManageCatalogScreen(
         AlertDialog(
             onDismissRequest = { itemToDelete = null },
             title = { Text("Borrar \"${item.name}\"") },
-            text = { Text("¿Seguro que quieres borrarlo? Esta acción no se puede deshacer.") },
+            text = { Text(L10n.str(R.string.seguro_quieres_borrarlo_esta_accion)) },
             confirmButton = {
                 TextButton(onClick = { onDelete(item); itemToDelete = null }) {
-                    Text("Borrar", color = MaterialTheme.colorScheme.error)
+                    Text(L10n.str(R.string.borrar), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { itemToDelete = null }) { Text("Cancelar") } }
+            dismissButton = { TextButton(onClick = { itemToDelete = null }) { Text(L10n.str(R.string.cancelar)) } }
         )
     }
 }
@@ -137,8 +139,8 @@ private fun NameDialog(title: String, initialValue: String, onConfirm: (String) 
             OutlinedTextField(value = value, onValueChange = { value = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
         },
         confirmButton = {
-            TextButton(onClick = { if (value.isNotBlank()) onConfirm(value) }) { Text("Guardar") }
+            TextButton(onClick = { if (value.isNotBlank()) onConfirm(value) }) { Text(L10n.str(R.string.guardar)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
     )
 }

@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.search
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -80,7 +82,7 @@ private val DIETARY_QUICK_TAGS = listOf("Vegano", "Vegetariano", "Sin gluten", "
 fun GlobalSearchScreen(
     viewModel: GlobalSearchViewModel,
     onRecipeClick: (Long) -> Unit,
-    title: String = "Buscar recetas",
+    title: String = L10n.str(R.string.buscar_recetas),
     showQueryField: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -98,7 +100,7 @@ fun GlobalSearchScreen(
     val filterButton: @Composable () -> Unit = {
         IconButton(onClick = { showFilters = true }) {
             BadgedBox(badge = { if (filtersApplied) Badge() }) {
-                Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
+                Icon(Icons.Filled.FilterList, contentDescription = L10n.str(R.string.filtros))
             }
         }
     }
@@ -112,12 +114,12 @@ fun GlobalSearchScreen(
                     title = { Text("${selectedIds.size} seleccionadas") },
                     navigationIcon = {
                         IconButton(onClick = viewModel::clearSelection) {
-                            Icon(Icons.Filled.Close, contentDescription = "Cancelar selección")
+                            Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancelar_seleccion))
                         }
                     },
                     actions = {
                         IconButton(onClick = { viewModel.addSelectedToShoppingList() }) {
-                            Icon(Icons.Filled.ShoppingCart, contentDescription = "Añadir a la lista de la compra")
+                            Icon(Icons.Filled.ShoppingCart, contentDescription = L10n.str(R.string.anadir_lista_compra))
                         }
                     }
                 )
@@ -140,7 +142,7 @@ fun GlobalSearchScreen(
                         value = filter.query,
                         onValueChange = viewModel::updateQuery,
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Nombre, ingrediente, etiqueta...") },
+                        placeholder = { Text(L10n.str(R.string.nombre_ingrediente_etiqueta)) },
                         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                         singleLine = true
                     )
@@ -175,23 +177,23 @@ fun GlobalSearchScreen(
                 uiState.results.isEmpty() -> when {
                     !showQueryField && !filtersApplied -> EmptyState(
                         icon = Icons.Filled.FavoriteBorder,
-                        title = "Aún no tienes favoritas",
-                        body = "Toca el corazón de una receta para tenerla siempre a mano aquí.",
+                        title = L10n.str(R.string.aun_no_tienes_favoritas),
+                        body = L10n.str(R.string.toca_corazon_receta_tenerla_siempre),
                         modifier = Modifier.fillMaxSize().weight(1f)
                     )
                     filter.query.isBlank() && !filter.isActive -> EmptyState(
                         icon = Icons.Filled.Search,
-                        title = "Busca en todas tus recetas",
-                        body = "Por nombre, ingrediente, etiqueta, utensilio o dificultad, en todos tus libros a la vez.",
+                        title = L10n.str(R.string.busca_todas_recetas),
+                        body = L10n.str(R.string.nombre_ingrediente_etiqueta_utensilio_dificultad),
                         modifier = Modifier.fillMaxSize().weight(1f)
                     )
                     else -> EmptyState(
                         icon = Icons.Filled.SearchOff,
-                        title = "Sin resultados",
-                        body = "Prueba con otras palabras o quita algún filtro.",
+                        title = L10n.str(R.string.sin_resultados),
+                        body = L10n.str(R.string.prueba_otras_palabras_quita_algun),
                         modifier = Modifier.fillMaxSize().weight(1f)
                     ) {
-                        if (filtersApplied) OutlinedButton(onClick = { viewModel.clearFilters() }) { Text("Quitar filtros") }
+                        if (filtersApplied) OutlinedButton(onClick = { viewModel.clearFilters() }) { Text(L10n.str(R.string.quitar_filtros)) }
                     }
                 }
                 else -> LazyColumn(
@@ -259,7 +261,7 @@ private fun SearchResultCard(
             if (selectionMode) {
                 Icon(
                     imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                    contentDescription = if (isSelected) "Seleccionada" else "No seleccionada",
+                    contentDescription = if (isSelected) L10n.str(R.string.seleccionada) else L10n.str(R.string.no_seleccionada),
                     tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {

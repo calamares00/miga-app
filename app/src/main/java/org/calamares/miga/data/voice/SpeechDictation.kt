@@ -1,5 +1,7 @@
 package org.calamares.miga.data.voice
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -39,7 +41,7 @@ object SpeechDictation {
         recognizer.setRecognitionListener(object : RecognitionListener {
             override fun onResults(results: Bundle) {
                 val text = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-                onResult(if (text.isNullOrBlank()) DictationResult.Error("No se ha entendido nada") else DictationResult.Success(text))
+                onResult(if (text.isNullOrBlank()) DictationResult.Error(L10n.str(R.string.no_ha_entendido_nada)) else DictationResult.Success(text))
             }
 
             override fun onError(error: Int) {
@@ -59,12 +61,12 @@ object SpeechDictation {
     }
 
     private fun describeError(error: Int): String = when (error) {
-        SpeechRecognizer.ERROR_NO_MATCH -> "No se ha entendido nada, prueba otra vez"
-        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No se ha detectado voz"
-        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Sin conexión para el reconocimiento de voz"
-        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Falta el permiso de micrófono"
-        SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "El reconocimiento de voz está ocupado, prueba otra vez"
-        SpeechRecognizer.ERROR_CLIENT -> "No se pudo iniciar el micrófono"
-        else -> "No se pudo reconocer el audio"
+        SpeechRecognizer.ERROR_NO_MATCH -> L10n.str(R.string.no_ha_entendido_nada_prueba)
+        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> L10n.str(R.string.no_ha_detectado_voz)
+        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> L10n.str(R.string.sin_conexion_reconocimiento_voz)
+        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> L10n.str(R.string.falta_permiso_microfono)
+        SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> L10n.str(R.string.reconocimiento_voz_esta_ocupado_prueba)
+        SpeechRecognizer.ERROR_CLIENT -> L10n.str(R.string.no_pudo_iniciar_microfono)
+        else -> L10n.str(R.string.no_pudo_reconocer_audio)
     }
 }

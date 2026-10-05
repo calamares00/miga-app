@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.packs
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -61,9 +63,9 @@ fun PacksCatalogScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text("Catálogo de packs") },
+                title = { Text(L10n.str(R.string.catalogo_packs)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
                 }
             )
         }
@@ -73,7 +75,7 @@ fun PacksCatalogScreen(
                 value = query,
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Buscar packs...") },
+                placeholder = { Text(L10n.str(R.string.buscar_packs)) },
                 leadingIcon = { Icon(Icons.Filled.Search, null) },
                 singleLine = true
             )
@@ -93,7 +95,7 @@ fun PacksCatalogScreen(
                                 color = MaterialTheme.colorScheme.error
                             )
                             OutlinedButton(onClick = { viewModel.refresh() }, modifier = Modifier.padding(top = 16.dp)) {
-                                Text("Reintentar")
+                                Text(L10n.str(R.string.reintentar))
                             }
                         }
                     }
@@ -108,7 +110,7 @@ fun PacksCatalogScreen(
                     if (filtered.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text(
-                                if (state.items.isEmpty()) "No hay ningún pack publicado todavía." else "No hay packs que coincidan con la búsqueda.",
+                                if (state.items.isEmpty()) L10n.str(R.string.no_hay_ningun_pack_publicado) else L10n.str(R.string.no_hay_packs_coincidan_busqueda),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -162,7 +164,7 @@ private fun PackListCard(item: PackListItem, onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(text = item.entry.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
                 Text(
-                    text = "De ${item.entry.author} · ${item.entry.recipeCount} recetas",
+                    text = L10n.str(R.string.x_x_recetas, item.entry.author, item.entry.recipeCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -177,13 +179,13 @@ private fun PackListCard(item: PackListItem, onClick: () -> Unit) {
                 if (item.hasUpdate) {
                     AssistChip(
                         onClick = onClick,
-                        label = { Text("Actualización disponible") },
+                        label = { Text(L10n.str(R.string.actualizacion_disponible)) },
                         leadingIcon = { Icon(Icons.Filled.SystemUpdate, null, modifier = Modifier.size(16.dp)) }
                     )
                 } else if (item.isInstalled) {
                     AssistChip(
                         onClick = onClick,
-                        label = { Text("Instalado") },
+                        label = { Text(L10n.str(R.string.instalado)) },
                         leadingIcon = { Icon(Icons.Filled.CloudDone, null, modifier = Modifier.size(16.dp)) }
                     )
                 }

@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.dishsearch
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.ui.components.AiContentNotice
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,9 +57,9 @@ fun DishSearchScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Buscar recetas con IA") },
+                title = { Text(L10n.str(R.string.buscar_recetas_ia)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
                 }
             )
         }
@@ -66,12 +68,12 @@ fun DishSearchScreen(
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                label = { Text("Zona, país, ingrediente o tipo de plato") },
-                placeholder = { Text("p. ej. \"platos típicos de Andalucía\"") },
+                label = { Text(L10n.str(R.string.zona_pais_ingrediente_tipo_plato)) },
+                placeholder = { Text(L10n.str(R.string.p_ej_platos_tipicos_andalucia)) },
                 singleLine = true,
                 trailingIcon = {
                     IconButton(onClick = { viewModel.search(query) }) {
-                        Icon(Icons.Filled.Search, contentDescription = "Buscar")
+                        Icon(Icons.Filled.Search, contentDescription = L10n.str(R.string.buscar))
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -80,8 +82,7 @@ fun DishSearchScreen(
 
             when (val current = state) {
                 DishSearchUiState.Idle -> Text(
-                    "Busca platos típicos de una zona o país, o describe qué te apetece cocinar; " +
-                        "la IA te sugerirá varias ideas para elegir.",
+                    L10n.str(R.string.busca_platos_tipicos_zona_pais),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -89,7 +90,7 @@ fun DishSearchScreen(
                     CircularProgressIndicator()
                 }
                 DishSearchUiState.NotConfigured -> Text(
-                    "Configura un proveedor de IA en Ajustes para usar el buscador.",
+                    L10n.str(R.string.configura_proveedor_ia_ajustes_usar_2),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -101,7 +102,7 @@ fun DishSearchScreen(
                 is DishSearchUiState.Loaded -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     item {
                         AiContentNotice(
-                            feature = "Buscar receta con IA",
+                            feature = L10n.str(R.string.buscar_receta_ia),
                             content = { current.dishes.joinToString("\n") { "${it.name}: ${it.description}" } }
                         )
                     }

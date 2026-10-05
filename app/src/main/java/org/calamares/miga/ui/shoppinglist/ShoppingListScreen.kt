@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.shoppinglist
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -198,7 +200,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     val selectedListUid by viewModel.selectedListUid.collectAsState()
     val author by viewModel.author.collectAsState()
     val intentEvent by ShoppingIntents.event.collectAsState()
-    val currentListName = lists.firstOrNull { it.uid == selectedListUid }?.name ?: "Compra"
+    val currentListName = lists.firstOrNull { it.uid == selectedListUid }?.name ?: L10n.str(R.string.compra)
 
     var quickText by remember { mutableStateOf("") }
     var shopMode by remember { mutableStateOf(false) }
@@ -285,7 +287,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
         when (val event = intentEvent) {
             is ShoppingIntentEvent.SharedText -> {
                 val entries = ShoppingEntryParser.parse(event.text)
-                if (entries.isEmpty()) showMessage("No se reconocieron artículos en el texto recibido") else scannedEntries = entries
+                if (entries.isEmpty()) showMessage(L10n.str(R.string.no_reconocieron_articulos_texto_recibido)) else scannedEntries = entries
                 ShoppingIntents.consume()
             }
             ShoppingIntentEvent.QuickAdd -> {
@@ -312,7 +314,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
 
     fun beginListening() {
         if (!SpeechDictation.isAvailable(context)) {
-            showMessage("El reconocimiento de voz no está disponible en este dispositivo")
+            showMessage(L10n.str(R.string.reconocimiento_voz_no_esta_disponible))
             return
         }
         recognizer?.destroy()
@@ -322,7 +324,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
             when (result) {
                 is DictationResult.Success -> {
                     val count = viewModel.addEntries(result.text, splitOnY = true)
-                    showMessage(if (count == 1) "Añadido: ${result.text}" else "Añadidos $count artículos")
+                    showMessage(if (count == 1) L10n.str(R.string.anadido_x, result.text) else L10n.str(R.string.anadidos_x_articulos, count))
                 }
                 is DictationResult.Error -> showMessage(result.reason)
             }
@@ -330,7 +332,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     }
 
     val micPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) beginListening() else showMessage("Sin permiso de micrófono no se puede dictar")
+        if (granted) beginListening() else showMessage(L10n.str(R.string.sin_permiso_microfono_no_puede))
     }
 
     fun onMicClick() {
@@ -346,7 +348,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
         val contents = result.contents
         if (contents != null) {
             val decoded = ShoppingListShareCodec.decode(contents)
-            if (decoded == null) showMessage("Ese código QR no es una lista de Miga") else scannedEntries = decoded
+            if (decoded == null) showMessage(L10n.str(R.string.ese_codigo_qr_no_es)) else scannedEntries = decoded
         }
     }
 
@@ -359,7 +361,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
         productScanLauncher.launch(
             ScanOptions().apply {
                 setDesiredBarcodeFormats(ScanOptions.PRODUCT_CODE_TYPES)
-                setPrompt("Apunta al código de barras del producto")
+                setPrompt(L10n.str(R.string.apunta_codigo_barras_producto))
                 setBeepEnabled(false)
                 setOrientationLocked(false)
             }
@@ -379,49 +381,49 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                     ) {
                         Column {
                             Text(
-                                if (selectedListUid == DEFAULT_SHOPPING_LIST_UID) "Lista de la compra" else currentListName,
+                                if (selectedListUid == DEFAULT_SHOPPING_LIST_UID) L10n.str(R.string.lista_compra_2) else currentListName,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                             if (lists.size > 1) {
                                 Text(
-                                    if (selectedListUid == DEFAULT_SHOPPING_LIST_UID) currentListName else "Lista de la compra",
+                                    if (selectedListUid == DEFAULT_SHOPPING_LIST_UID) currentListName else L10n.str(R.string.lista_compra_2),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
-                        Icon(Icons.Filled.ArrowDropDown, contentDescription = "Cambiar de lista")
+                        Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.cambiar_lista))
                     }
                 },
                 actions = {
                     IconButton(onClick = { shopMode = !shopMode }) {
                         Icon(
                             Icons.Filled.ShoppingBag,
-                            contentDescription = if (shopMode) "Salir del modo tienda" else "Modo tienda",
+                            contentDescription = if (shopMode) L10n.str(R.string.salir_modo_tienda) else L10n.str(R.string.modo_tienda),
                             tint = if (shopMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Más opciones") }
+                    IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = L10n.str(R.string.mas_opciones)) }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         DropdownMenuItem(
-                            text = { Text("Compartir…") },
+                            text = { Text(L10n.str(R.string.compartir_2)) },
                             leadingIcon = { Icon(Icons.Filled.Share, null) },
                             onClick = { showMenu = false; showShare = true }
                         )
                         DropdownMenuItem(
-                            text = { Text("Supermercados…") },
+                            text = { Text(L10n.str(R.string.supermercados_2)) },
                             leadingIcon = { Icon(Icons.Filled.Store, null) },
                             onClick = { showMenu = false; showStores = true }
                         )
                         DropdownMenuItem(
-                            text = { Text(if (imagesEnabled) "Ocultar fotos" else "Mostrar fotos") },
+                            text = { Text(if (imagesEnabled) L10n.str(R.string.ocultar_fotos) else L10n.str(R.string.mostrar_fotos)) },
                             leadingIcon = { Icon(if (imagesEnabled) Icons.Filled.HideImage else Icons.Filled.Photo, null) },
                             onClick = { showMenu = false; viewModel.setImagesEnabled(!imagesEnabled) }
                         )
                         HorizontalDivider()
                         DropdownMenuItem(
-                            text = { Text("Vaciar lista", color = MaterialTheme.colorScheme.error) },
+                            text = { Text(L10n.str(R.string.vaciar_lista), color = MaterialTheme.colorScheme.error) },
                             leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
                             enabled = totalCount > 0,
                             onClick = { showMenu = false; showClearAllConfirm = true }
@@ -441,7 +443,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                         value = quickText,
                         onValueChange = { quickText = it },
                         modifier = Modifier.weight(1f).focusRequester(quickAddFocus),
-                        placeholder = { Text("Añadir: 2 kg tomates, leche…") },
+                        placeholder = { Text(L10n.str(R.string.anadir_2_kg_tomates_leche)) },
                         shape = CircleShape,
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
@@ -452,24 +454,24 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                                     IconButton(onClick = { onMicClick() }) {
                                         Icon(
                                             imageVector = if (listening) Icons.Filled.Stop else Icons.Filled.Mic,
-                                            contentDescription = if (listening) "Dejar de escuchar" else "Dictar artículos",
+                                            contentDescription = if (listening) L10n.str(R.string.dejar_escuchar) else L10n.str(R.string.dictar_articulos),
                                             tint = if (listening) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                     IconButton(onClick = { launchProductScan() }) {
-                                        Icon(Icons.Filled.QrCodeScanner, contentDescription = "Escanear código de barras de un producto")
+                                        Icon(Icons.Filled.QrCodeScanner, contentDescription = L10n.str(R.string.escanear_codigo_barras_producto))
                                     }
                                 }
                             } else {
                                 IconButton(onClick = { submitQuick() }) {
-                                    Icon(Icons.Filled.AddCircle, contentDescription = "Añadir a la lista", tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Filled.AddCircle, contentDescription = L10n.str(R.string.anadir_lista), tint = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     FilledTonalIconButton(onClick = { openAddSheet(AddTab.CATALOG) }, modifier = Modifier.size(52.dp)) {
-                        Icon(Icons.Filled.GridView, contentDescription = "Explorar: catálogo, Open Food Facts, plantillas")
+                        Icon(Icons.Filled.GridView, contentDescription = L10n.str(R.string.explorar_catalogo_open_food_facts))
                     }
                 }
 
@@ -492,7 +494,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                         }
                         AssistChip(
                             onClick = { openAddSheet(AddTab.PRODUCTS, typedEntry?.name ?: quickText.trim()) },
-                            label = { Text("Buscar producto") },
+                            label = { Text(L10n.str(R.string.buscar_producto)) },
                             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         )
                     }
@@ -524,7 +526,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (shopMode) "Desliza → para marcar · ${cartItems.size}/$totalCount" else "$pendingCount por comprar · ${cartItems.size} en el carrito",
+                        text = if (shopMode) L10n.str(R.string.desliza_marcar_x_x, cartItems.size, totalCount) else L10n.str(R.string.x_comprar_x_carrito, pendingCount, cartItems.size),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f)
@@ -535,12 +537,12 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                                 Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color(store.argb)))
                                 Spacer(modifier = Modifier.width(6.dp))
                             }
-                            Text(selectedStore?.name ?: "Orden por tienda", style = MaterialTheme.typography.labelLarge)
+                            Text(selectedStore?.name ?: L10n.str(R.string.orden_tienda), style = MaterialTheme.typography.labelLarge)
                             Icon(Icons.Filled.ArrowDropDown, contentDescription = null, modifier = Modifier.size(18.dp))
                         }
                         DropdownMenu(expanded = showStoreMenu, onDismissRequest = { showStoreMenu = false }) {
                             DropdownMenuItem(
-                                text = { Text("Sin tienda (por categorías)") },
+                                text = { Text(L10n.str(R.string.sin_tienda_categorias)) },
                                 onClick = { showStoreMenu = false; viewModel.selectStore(0L) },
                                 trailingIcon = { if (selectedStore == null) Icon(Icons.Filled.Check, null) }
                             )
@@ -554,7 +556,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                             }
                             HorizontalDivider()
                             DropdownMenuItem(
-                                text = { Text("Gestionar supermercados…") },
+                                text = { Text(L10n.str(R.string.gestionar_supermercados)) },
                                 leadingIcon = { Icon(Icons.Filled.Edit, null) },
                                 onClick = { showStoreMenu = false; showStores = true }
                             )
@@ -587,7 +589,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                         onDelete = {
                             viewModel.deleteItem(shoppingItem) {
                                 scope.launch {
-                                    val result = snackbarHostState.showSnackbar("Artículo quitado", actionLabel = "Deshacer")
+                                    val result = snackbarHostState.showSnackbar(L10n.str(R.string.articulo_quitado), actionLabel = L10n.str(R.string.deshacer))
                                     if (result == SnackbarResult.ActionPerformed) viewModel.restoreItem(shoppingItem)
                                 }
                             }
@@ -616,12 +618,12 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                     if (cartItems.isNotEmpty()) {
                         item(key = "header_cart") {
                             CategoryHeader(
-                                title = "En el carrito",
+                                title = L10n.str(R.string.carrito),
                                 count = cartItems.size,
                                 style = org.calamares.miga.data.model.CategoryStyle("🛒", 0xFF7B8794),
                                 collapsed = CART_KEY in collapsed,
                                 onToggle = { toggleCollapsed(CART_KEY) },
-                                trailing = { TextButton(onClick = { viewModel.clearChecked() }) { Text("Quitar") } }
+                                trailing = { TextButton(onClick = { viewModel.clearChecked() }) { Text(L10n.str(R.string.quitar)) } }
                             )
                         }
                         if (CART_KEY !in collapsed) {
@@ -672,12 +674,12 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
             onPick = { template ->
                 viewModel.addToTemplate(template.id, item)
                 templateTarget = null
-                announce("Guardado en \"${template.name}\"")
+                announce(L10n.str(R.string.guardado_x, template.name))
             },
             onCreate = { name ->
                 viewModel.createTemplate(name, item)
                 templateTarget = null
-                announce("Plantilla \"$name\" creada con ${item.name}")
+                announce(L10n.str(R.string.plantilla_x_creada_x, name, item.name))
             },
             onDismiss = { templateTarget = null }
         )
@@ -685,10 +687,10 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
 
     if (showNewTemplate) {
         NameDialog(
-            title = "Nueva plantilla",
-            placeholder = "p. ej. Compra semanal",
-            confirmLabel = "Crear",
-            supporting = "Después podrás añadirle productos de Open Food Facts, escaneados o escritos.",
+            title = L10n.str(R.string.nueva_plantilla),
+            placeholder = L10n.str(R.string.p_ej_compra_semanal),
+            confirmLabel = L10n.str(R.string.crear),
+            supporting = L10n.str(R.string.despues_podras_anadirle_productos_open),
             onConfirm = { name ->
                 showNewTemplate = false
                 viewModel.createTemplate(name) { id ->
@@ -703,10 +705,10 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
 
     if (showSaveTemplate) {
         NameDialog(
-            title = "Guardar como plantilla",
-            placeholder = "p. ej. Compra semanal",
-            confirmLabel = "Guardar",
-            supporting = "Se guardan los $totalCount artículos de la lista (con sus fotos y fichas) para volver a añadirlos con un toque.",
+            title = L10n.str(R.string.guardar_como_plantilla),
+            placeholder = L10n.str(R.string.p_ej_compra_semanal),
+            confirmLabel = L10n.str(R.string.guardar),
+            supporting = L10n.str(R.string.guardan_x_articulos_lista_fotos, totalCount),
             onConfirm = { name ->
                 viewModel.saveTemplate(name)
                 showSaveTemplate = false
@@ -727,7 +729,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                 actions = {
                     OutlinedButton(onClick = { templateTarget = item.toTemplateItem() }) {
                         Icon(Icons.Filled.BookmarkAdd, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Text("  Guardar en plantilla")
+                        Text(L10n.str(R.string.guardar_plantilla))
                     }
                 }
             )
@@ -753,49 +755,49 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
         AlertDialog(
             onDismissRequest = { showShare = false },
             icon = { Icon(Icons.Filled.Share, contentDescription = null) },
-            title = { Text("Compartir") },
+            title = { Text(L10n.str(R.string.compartir)) },
             text = {
                 Column {
-                    ShareOption(Icons.Filled.Share, "Enviar como texto", "WhatsApp, correo, notas…") {
+                    ShareOption(Icons.Filled.Share, L10n.str(R.string.enviar_como_texto), L10n.str(R.string.whatsapp_correo_notas)) {
                         showShare = false
                         viewModel.share(context)
                     }
-                    ShareOption(Icons.Filled.QrCode2, "Mostrar QR", "Para pasarla a otro móvil con Miga") {
+                    ShareOption(Icons.Filled.QrCode2, L10n.str(R.string.mostrar_qr), L10n.str(R.string.pasarla_otro_movil_miga)) {
                         showShare = false
                         val pending = viewModel.pendingEntries()
-                        if (pending.isEmpty()) showMessage("No hay artículos pendientes que compartir") else qrShareEntries = pending
+                        if (pending.isEmpty()) showMessage(L10n.str(R.string.no_hay_articulos_pendientes_compartir)) else qrShareEntries = pending
                     }
-                    ShareOption(Icons.Filled.QrCodeScanner, "Recibir por QR", "Escanea el QR de otra lista de Miga") {
+                    ShareOption(Icons.Filled.QrCodeScanner, L10n.str(R.string.recibir_qr), L10n.str(R.string.escanea_qr_otra_lista_miga)) {
                         showShare = false
                         listQrLauncher.launch(
                             ScanOptions().apply {
                                 setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                                setPrompt("Apunta al QR de la lista de Miga")
+                                setPrompt(L10n.str(R.string.apunta_qr_lista_miga))
                                 setBeepEnabled(false)
                                 setOrientationLocked(false)
                             }
                         )
                     }
                     Text(
-                        "Para editar la misma lista entre varias personas, compártela desde Ajustes → Sincronización.",
+                        L10n.str(R.string.editar_misma_lista_entre_varias),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
             },
-            confirmButton = { TextButton(onClick = { showShare = false }) { Text("Cerrar") } }
+            confirmButton = { TextButton(onClick = { showShare = false }) { Text(L10n.str(R.string.cerrar)) } }
         )
     }
 
     if (showStores) {
         AlertDialog(
             onDismissRequest = { showStores = false },
-            title = { Text("Supermercados") },
+            title = { Text(L10n.str(R.string.supermercados)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "Cada supermercado guarda su orden de pasillos: al elegirlo, la lista sale ordenada como lo recorres.",
+                        L10n.str(R.string.cada_supermercado_guarda_orden_pasillos),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -810,7 +812,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                             Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(Color(store.argb)))
                             Text(store.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(start = 12.dp))
                             IconButton(onClick = { viewModel.deleteStore(store.id) }) {
-                                Icon(Icons.Filled.Delete, contentDescription = "Borrar ${store.name}")
+                                Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.borrar_x, store.name))
                             }
                         }
                     }
@@ -820,9 +822,9 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                 TextButton(onClick = {
                     showStores = false
                     editingStore = ShoppingStore(0L, "", ShoppingAisleOrder.PALETTE[0], emptyList())
-                }) { Text("Añadir supermercado") }
+                }) { Text(L10n.str(R.string.anadir_supermercado)) }
             },
-            dismissButton = { TextButton(onClick = { showStores = false }) { Text("Cerrar") } }
+            dismissButton = { TextButton(onClick = { showStores = false }) { Text(L10n.str(R.string.cerrar)) } }
         )
     }
 
@@ -841,15 +843,15 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     if (showClearAllConfirm) {
         AlertDialog(
             onDismissRequest = { showClearAllConfirm = false },
-            title = { Text("Vaciar lista") },
-            text = { Text("¿Seguro que quieres borrar todos los artículos de \"$currentListName\"?") },
+            title = { Text(L10n.str(R.string.vaciar_lista)) },
+            text = { Text(L10n.str(R.string.seguro_quieres_borrar_todos_articulos, currentListName)) },
             confirmButton = {
                 TextButton(onClick = {
                     showClearAllConfirm = false
                     viewModel.clearAll()
-                }) { Text("Vaciar", color = MaterialTheme.colorScheme.error) }
+                }) { Text(L10n.str(R.string.vaciar), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { showClearAllConfirm = false }) { Text("Cancelar") } }
+            dismissButton = { TextButton(onClick = { showClearAllConfirm = false }) { Text(L10n.str(R.string.cancelar)) } }
         )
     }
 
@@ -858,50 +860,50 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
         val qrBitmap = remember(payload) { renderQrBitmap(payload, QR_SIZE_PX) }
         AlertDialog(
             onDismissRequest = { qrShareEntries = null },
-            title = { Text("QR de la lista") },
+            title = { Text(L10n.str(R.string.qr_lista)) },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (qrBitmap != null) {
                         Image(
                             bitmap = qrBitmap.asImageBitmap(),
-                            contentDescription = "Código QR con ${entries.size} artículos",
+                            contentDescription = L10n.str(R.string.codigo_qr_x_articulos, entries.size),
                             modifier = Modifier.size(260.dp)
                         )
                         Text(
-                            "${entries.size} artículos pendientes. En el otro móvil: menú → Compartir… → Recibir por QR.",
+                            L10n.str(R.string.x_articulos_pendientes_otro_movil, entries.size),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
                     } else {
-                        Text("La lista es demasiado grande para un QR. Usa \"Enviar como texto\".")
+                        Text(L10n.str(R.string.lista_es_demasiado_grande_qr))
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { qrShareEntries = null }) { Text("Cerrar") } }
+            confirmButton = { TextButton(onClick = { qrShareEntries = null }) { Text(L10n.str(R.string.cerrar)) } }
         )
     }
 
     scannedEntries?.let { entries ->
         AlertDialog(
             onDismissRequest = { scannedEntries = null },
-            title = { Text("Lista recibida") },
+            title = { Text(L10n.str(R.string.lista_recibida)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Se van a añadir ${entries.size} artículos a tu lista (las cantidades se suman a lo que ya tengas):")
+                    Text(L10n.str(R.string.van_anadir_x_articulos_lista, entries.size))
                     entries.take(8).forEach { entry ->
                         Text("• ${formatIngredientText(entry.name, entry.quantity, entry.unit)}", style = MaterialTheme.typography.bodyMedium)
                     }
-                    if (entries.size > 8) Text("… y ${entries.size - 8} más", style = MaterialTheme.typography.bodyMedium)
+                    if (entries.size > 8) Text(L10n.str(R.string.x_mas, entries.size - 8), style = MaterialTheme.typography.bodyMedium)
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.addParsedEntries(entries)
                     scannedEntries = null
-                }) { Text("Añadir") }
+                }) { Text(L10n.str(R.string.anadir)) }
             },
-            dismissButton = { TextButton(onClick = { scannedEntries = null }) { Text("Cancelar") } }
+            dismissButton = { TextButton(onClick = { scannedEntries = null }) { Text(L10n.str(R.string.cancelar)) } }
         )
     }
 }
@@ -920,12 +922,12 @@ private fun EmptyShoppingList(
     ) {
         Text("🛒", fontSize = 56.sp)
         Text(
-            "Tu lista está vacía",
+            L10n.str(R.string.lista_esta_vacia),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(top = 8.dp)
         )
         Text(
-            "Escribe o dicta arriba lo que necesitas, o empieza desde aquí:",
+            L10n.str(R.string.escribe_dicta_arriba_necesitas_empieza),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -934,19 +936,19 @@ private fun EmptyShoppingList(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.widthIn(max = 320.dp)) {
             FilledTonalButton(onClick = onTemplates, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.Bookmarks, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text("  Usar una plantilla")
+                Text(L10n.str(R.string.usar_plantilla))
             }
             OutlinedButton(onClick = onCatalog, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.GridView, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text("  Catálogo")
+                Text(L10n.str(R.string.catalogo_2))
             }
             OutlinedButton(onClick = onSearch, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text("  Buscar en Open Food Facts")
+                Text(L10n.str(R.string.buscar_open_food_facts))
             }
             OutlinedButton(onClick = onScan, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text("  Escanear un producto")
+                Text(L10n.str(R.string.escanear_producto))
             }
         }
     } }
@@ -992,7 +994,7 @@ private fun ShoppingListsSheet(
 
     ModalBottomSheet(onDismissRequest = { saveAuthor(); onDismiss() }) {
         LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp)) {
-            item(key = "title") { Text("Mis listas", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 8.dp)) }
+            item(key = "title") { Text(L10n.str(R.string.mis_listas), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 8.dp)) }
             items(lists, key = { "l${it.uid}" }) { list ->
                 val selected = list.uid == selectedListUid
                 val pending = listCounts[list.uid] ?: 0
@@ -1013,21 +1015,21 @@ private fun ShoppingListsSheet(
                     Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 8.dp)) {
                         Text(list.name, style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            if (pending == 0) "Nada pendiente" else if (pending == 1) "1 por comprar" else "$pending por comprar",
+                            if (pending == 0) L10n.str(R.string.nada_pendiente) else if (pending == 1) L10n.str(R.string.n1_comprar) else L10n.str(R.string.x_comprar, pending),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     if (list.uid != DEFAULT_SHOPPING_LIST_UID) {
-                        IconButton(onClick = { renaming = list }) { Icon(Icons.Filled.Edit, contentDescription = "Renombrar ${list.name}") }
-                        IconButton(onClick = { deleting = list }) { Icon(Icons.Filled.Delete, contentDescription = "Borrar ${list.name}") }
+                        IconButton(onClick = { renaming = list }) { Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.renombrar_x, list.name)) }
+                        IconButton(onClick = { deleting = list }) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.borrar_x, list.name)) }
                     }
                 }
             }
             item(key = "new") {
                 TextButton(onClick = { creating = true }, modifier = Modifier.padding(top = 4.dp)) {
                     Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text("  Nueva lista")
+                    Text(L10n.str(R.string.nueva_lista_2))
                 }
             }
             item(key = "author") {
@@ -1035,9 +1037,9 @@ private fun ShoppingListsSheet(
                 OutlinedTextField(
                     value = authorName,
                     onValueChange = { authorName = it },
-                    label = { Text("Mi nombre en listas compartidas") },
-                    placeholder = { Text("p. ej. Ana (opcional)") },
-                    supportingText = { Text("Así el resto sabe quién añadió o marcó cada artículo.") },
+                    label = { Text(L10n.str(R.string.mi_nombre_listas_compartidas)) },
+                    placeholder = { Text(L10n.str(R.string.p_ej_ana_opcional)) },
+                    supportingText = { Text(L10n.str(R.string.asi_resto_sabe_quien_anadio)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { saveAuthor() }),
@@ -1049,19 +1051,19 @@ private fun ShoppingListsSheet(
 
     if (creating) {
         NameDialog(
-            title = "Nueva lista",
-            placeholder = "p. ej. Fiesta, Viaje, Cena del sábado",
-            confirmLabel = "Crear",
+            title = L10n.str(R.string.nueva_lista),
+            placeholder = L10n.str(R.string.p_ej_fiesta_viaje_cena),
+            confirmLabel = L10n.str(R.string.crear),
             onConfirm = { creating = false; saveAuthor(); onCreate(it) },
             onDismiss = { creating = false }
         )
     }
     renaming?.let { list ->
         NameDialog(
-            title = "Renombrar lista",
+            title = L10n.str(R.string.renombrar_lista),
             initial = list.name,
             placeholder = list.name,
-            confirmLabel = "Guardar",
+            confirmLabel = L10n.str(R.string.guardar),
             onConfirm = { onRename(list.uid, it); renaming = null },
             onDismiss = { renaming = null }
         )
@@ -1069,12 +1071,12 @@ private fun ShoppingListsSheet(
     deleting?.let { list ->
         AlertDialog(
             onDismissRequest = { deleting = null },
-            title = { Text("Borrar lista") },
-            text = { Text("¿Borrar \"${list.name}\" y sus artículos?") },
+            title = { Text(L10n.str(R.string.borrar_lista)) },
+            text = { Text(L10n.str(R.string.borrar_x_articulos, list.name)) },
             confirmButton = {
-                TextButton(onClick = { onDelete(list.uid); deleting = null }) { Text("Borrar", color = MaterialTheme.colorScheme.error) }
+                TextButton(onClick = { onDelete(list.uid); deleting = null }) { Text(L10n.str(R.string.borrar), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Cancelar") } }
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text(L10n.str(R.string.cancelar)) } }
         )
     }
 }

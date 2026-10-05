@@ -1,5 +1,7 @@
 package org.calamares.miga.data.search
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -32,12 +34,12 @@ object RecipeUrlFetcher {
             try {
                 val responseCode = connection.responseCode
                 if (responseCode != HttpURLConnection.HTTP_OK) {
-                    return@withContext UrlFetchResult.Error("La página respondió con el código $responseCode")
+                    return@withContext UrlFetchResult.Error(L10n.str(R.string.pagina_respondio_codigo_x, responseCode))
                 }
                 val html = connection.inputStream.bufferedReader().use { it.readText() }
                 val text = extractReadableText(html)
                 if (text.isBlank()) {
-                    UrlFetchResult.Error("No se pudo extraer texto de la página")
+                    UrlFetchResult.Error(L10n.str(R.string.no_pudo_extraer_texto_pagina))
                 } else {
                     UrlFetchResult.Success(text.take(MAX_PAGE_TEXT_CHARS))
                 }
@@ -47,7 +49,7 @@ object RecipeUrlFetcher {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            UrlFetchResult.Error(e.message ?: e::class.simpleName ?: "No se pudo descargar la página")
+            UrlFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.no_pudo_descargar_pagina))
         }
     }
 

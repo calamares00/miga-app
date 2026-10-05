@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.Manifest
 import android.content.pm.PackageManager
 import android.speech.SpeechRecognizer
@@ -146,29 +148,29 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
     /** Ejecuta un comando ya reconocido y devuelve el texto de estado a mostrar junto al micro. */
     fun executeVoiceCommand(command: CookVoiceCommand): String = when (command) {
         CookVoiceCommand.NextStep ->
-            if (pageIndex < totalPages - 1) { goToPage(pageIndex + 1); "Siguiente paso" } else "Ya estás en el último paso"
+            if (pageIndex < totalPages - 1) { goToPage(pageIndex + 1); L10n.str(R.string.siguiente_paso) } else L10n.str(R.string.ya_estas_ultimo_paso)
         CookVoiceCommand.PreviousStep ->
-            if (pageIndex > 0) { goToPage(pageIndex - 1); "Paso anterior" } else "Ya estás en el primer paso"
+            if (pageIndex > 0) { goToPage(pageIndex - 1); L10n.str(R.string.paso_anterior) } else L10n.str(R.string.ya_estas_primer_paso)
         CookVoiceCommand.RepeatStep -> {
             val instruction = currentStep?.instruction
             if (instruction != null) {
                 tts?.speak(instruction, TextToSpeech.QUEUE_FLUSH, null, "cook_step_voice")
-                "Repitiendo el paso"
+                L10n.str(R.string.repitiendo_paso)
             } else {
-                "No hay ningún paso que repetir aquí"
+                L10n.str(R.string.no_hay_ningun_paso_repetir)
             }
         }
         CookVoiceCommand.StartTimer -> {
             val seconds = currentDetectedSeconds
             if (seconds != null) {
                 activeTimer = ActiveTimer(currentStepIndex, seconds, (activeTimer?.startToken ?: 0) + 1)
-                "Temporizador iniciado"
+                L10n.str(R.string.temporizador_iniciado)
             } else {
-                "Este paso no tiene ninguna duración detectada"
+                L10n.str(R.string.este_paso_no_tiene_ninguna)
             }
         }
         CookVoiceCommand.CancelTimer ->
-            if (activeTimer != null) { activeTimer = null; "Temporizador cancelado" } else "No hay ningún temporizador activo"
+            if (activeTimer != null) { activeTimer = null; L10n.str(R.string.temporizador_cancelado) } else L10n.str(R.string.no_hay_ningun_temporizador_activo)
     }
 
     fun beginListeningForCommand() {
@@ -181,7 +183,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
             voiceFeedback = when (result) {
                 is DictationResult.Success -> {
                     val command = CookModeVoiceCommands.parse(result.text)
-                    if (command != null) executeVoiceCommand(command) else "No he entendido: \"${result.text}\""
+                    if (command != null) executeVoiceCommand(command) else L10n.str(R.string.no_he_entendido_x, result.text)
                 }
                 is DictationResult.Error -> result.reason
             }
@@ -205,7 +207,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             if (totalPages == 0) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Esta receta no tiene pasos.", style = MaterialTheme.typography.bodyLarge)
+                    Text(L10n.str(R.string.esta_receta_no_tiene_pasos), style = MaterialTheme.typography.bodyLarge)
                 }
             } else {
                 Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
@@ -214,19 +216,19 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                         if (speechAvailable) {
                             IconButton(onClick = { onMicClick() }) {
                                 if (isListeningForCommand) {
-                                    Icon(Icons.Filled.Stop, contentDescription = "Detener comando de voz", tint = MaterialTheme.colorScheme.error)
+                                    Icon(Icons.Filled.Stop, contentDescription = L10n.str(R.string.detener_comando_voz), tint = MaterialTheme.colorScheme.error)
                                 } else {
-                                    Icon(Icons.Filled.Mic, contentDescription = "Comando de voz")
+                                    Icon(Icons.Filled.Mic, contentDescription = L10n.str(R.string.comando_voz))
                                 }
                             }
                         }
                         IconButton(onClick = { tts?.stop(); onClose() }) {
-                            Icon(Icons.Filled.Close, contentDescription = "Cerrar modo cocina")
+                            Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cerrar_modo_cocina))
                         }
                     }
                     if (isListeningForCommand) {
                         Text(
-                            "Escuchando... (siguiente, anterior, repite, temporizador)",
+                            L10n.str(R.string.escuchando_siguiente_anterior_repite_temporizado),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -257,13 +259,13 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                         ) {
                             Icon(Icons.Filled.Timer, contentDescription = null, tint = bannerContentColor)
                             Text(
-                                text = if (timerFinished) "¡Listo! Paso ${timer.stepIndex + 1}" else "Paso ${timer.stepIndex + 1} · ${formatTimer(timerSecondsLeft)}",
+                                text = if (timerFinished) L10n.str(R.string.listo_paso_x, timer.stepIndex + 1) else L10n.str(R.string.paso_x_x, timer.stepIndex + 1, formatTimer(timerSecondsLeft)),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = bannerContentColor,
                                 modifier = Modifier.weight(1f)
                             )
                             IconButton(onClick = { activeTimer = null }) {
-                                Icon(Icons.Filled.Close, contentDescription = "Cancelar temporizador", tint = bannerContentColor)
+                                Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancelar_temporizador), tint = bannerContentColor)
                             }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
@@ -271,7 +273,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
 
                     if (hasIngredients && pageIndex == 0) {
                         Text(
-                            text = "Ingredientes",
+                            text = L10n.str(R.string.ingredientes),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -280,7 +282,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                             ingredientGroups.forEach { group ->
                                 if (ingredientGroups.size > 1) {
                                     Text(
-                                        text = (group.name ?: "Receta principal").uppercase(),
+                                        text = (group.name ?: L10n.str(R.string.receta_principal)).uppercase(),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
@@ -309,7 +311,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                         }
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "Paso ${step.stepNumberInGroup}",
+                                text = L10n.str(R.string.paso_x, step.stepNumberInGroup),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f)
@@ -320,7 +322,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                             }) {
                                 Icon(
                                     Icons.Filled.VolumeUp,
-                                    contentDescription = "Escuchar paso",
+                                    contentDescription = L10n.str(R.string.escuchar_paso),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -345,7 +347,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                             ) {
                                 Icon(Icons.Filled.Timer, contentDescription = null, modifier = Modifier.height(18.dp))
                                 Text(
-                                    text = if (isThisStepActive) " Detener temporizador" else " Iniciar temporizador (${formatTimer(detectedSeconds)})"
+                                    text = if (isThisStepActive) L10n.str(R.string.detener_temporizador) else L10n.str(R.string.iniciar_temporizador_x, formatTimer(detectedSeconds))
                                 )
                             }
                         }
@@ -363,14 +365,14 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                         ) {
                             Icon(Icons.Filled.ArrowBackIosNew, contentDescription = null, modifier = Modifier.height(16.dp))
                             Spacer(modifier = Modifier.height(0.dp))
-                            Text(" Anterior")
+                            Text(L10n.str(R.string.anterior))
                         }
                         Button(
                             onClick = { if (pageIndex < totalPages - 1) goToPage(pageIndex + 1) else { tts?.stop(); onClose() } },
                             modifier = Modifier.weight(1f),
                             contentPadding = PaddingValues(vertical = 16.dp)
                         ) {
-                            Text(if (pageIndex < totalPages - 1) "Siguiente " else "Terminar")
+                            Text(if (pageIndex < totalPages - 1) L10n.str(R.string.siguiente) else L10n.str(R.string.terminar))
                             if (pageIndex < totalPages - 1) {
                                 Icon(Icons.Filled.ArrowForwardIos, contentDescription = null, modifier = Modifier.height(16.dp))
                             }

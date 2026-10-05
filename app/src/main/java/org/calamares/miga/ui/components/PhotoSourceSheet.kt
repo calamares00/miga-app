@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.components
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,7 +35,7 @@ fun PhotoSourceSheet(title: String, onCameraClick: () -> Unit, onGalleryClick: (
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(Icons.Filled.PhotoCamera, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Hacer foto", modifier = Modifier.padding(start = 16.dp))
+            Text(L10n.str(R.string.hacer_foto), modifier = Modifier.padding(start = 16.dp))
         }
         Row(
             modifier = Modifier
@@ -43,7 +45,7 @@ fun PhotoSourceSheet(title: String, onCameraClick: () -> Unit, onGalleryClick: (
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(Icons.Filled.PhotoLibrary, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Elegir de galería", modifier = Modifier.padding(start = 16.dp))
+            Text(L10n.str(R.string.elegir_galeria), modifier = Modifier.padding(start = 16.dp))
         }
     }
 }

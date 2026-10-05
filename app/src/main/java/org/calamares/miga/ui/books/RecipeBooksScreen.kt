@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.books
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
 import org.calamares.miga.ui.components.EmptyState
@@ -125,7 +127,7 @@ fun RecipeBooksScreen(
             ExtendedFloatingActionButton(
                 onClick = onAddBookClick,
                 icon = { Icon(Icons.Filled.Add, null) },
-                text = { Text("Nuevo libro") }
+                text = { Text(L10n.str(R.string.nuevo_libro)) }
             )
         }
     ) { padding ->
@@ -133,12 +135,12 @@ fun RecipeBooksScreen(
             if (books.isEmpty()) {
                 EmptyState(
                     icon = Icons.Outlined.MenuBook,
-                    title = "Empieza tu recetario",
-                    body = "Crea un libro para cada persona o tema (de la abuela, postres, cenas rápidas…) y ve llenándolo de recetas.",
+                    title = L10n.str(R.string.empieza_recetario),
+                    body = L10n.str(R.string.crea_libro_cada_persona_tema),
                     modifier = Modifier.fillMaxSize().weight(1f)
                 ) {
-                    Button(onClick = onAddBookClick) { Text("Crear mi primer libro") }
-                    OutlinedButton(onClick = onExplorePacks) { Text("Explorar packs de recetas") }
+                    Button(onClick = onAddBookClick) { Text(L10n.str(R.string.crear_mi_primer_libro)) }
+                    OutlinedButton(onClick = onExplorePacks) { Text(L10n.str(R.string.explorar_packs_recetas)) }
                 }
             } else if (viewMode == RecipeListViewMode.GRID) {
                 LazyVerticalGrid(
@@ -175,7 +177,7 @@ fun RecipeBooksScreen(
     changelogAnnouncement?.let { announcement ->
         AlertDialog(
             onDismissRequest = { viewModel.dismissChangelogAnnouncement() },
-            title = { Text("Novedades de la versión ${announcement.versionName}") },
+            title = { Text(L10n.str(R.string.novedades_version_x, announcement.versionName)) },
             text = {
                 Column(
                     modifier = Modifier
@@ -193,7 +195,7 @@ fun RecipeBooksScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { viewModel.dismissChangelogAnnouncement() }) { Text("Entendido") }
+                TextButton(onClick = { viewModel.dismissChangelogAnnouncement() }) { Text(L10n.str(R.string.entendido)) }
             }
         )
     }
@@ -201,7 +203,7 @@ fun RecipeBooksScreen(
     crashReport?.let { report ->
         AlertDialog(
             onDismissRequest = { viewModel.dismissCrashReport() },
-            title = { Text("La app se cerró de forma inesperada") },
+            title = { Text(L10n.str(R.string.app_cerro_forma_inesperada)) },
             text = {
                 Column(
                     modifier = Modifier
@@ -210,8 +212,7 @@ fun RecipeBooksScreen(
                         .verticalScroll(rememberScrollState())
                 ) {
                     Text(
-                        "Esto es lo que se guardó del último fallo, solo en este dispositivo. " +
-                            "Puedes copiarlo o compartirlo para reportarlo, o simplemente descartarlo.",
+                        L10n.str(R.string.esto_es_guardo_ultimo_fallo),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
@@ -224,16 +225,16 @@ fun RecipeBooksScreen(
                 TextButton(onClick = {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_SUBJECT, "Informe de fallo - Miga")
+                        putExtra(Intent.EXTRA_SUBJECT, L10n.str(R.string.informe_fallo_miga))
                         putExtra(Intent.EXTRA_TEXT, report)
                     }
-                    runCatching { context.startActivity(Intent.createChooser(intent, "Compartir informe")) }
-                }) { Text("Compartir") }
+                    runCatching { context.startActivity(Intent.createChooser(intent, L10n.str(R.string.compartir_informe))) }
+                }) { Text(L10n.str(R.string.compartir)) }
             },
             dismissButton = {
                 Row {
-                    TextButton(onClick = { clipboardManager.setText(AnnotatedString(report)) }) { Text("Copiar") }
-                    TextButton(onClick = { viewModel.dismissCrashReport() }) { Text("Descartar") }
+                    TextButton(onClick = { clipboardManager.setText(AnnotatedString(report)) }) { Text(L10n.str(R.string.copiar)) }
+                    TextButton(onClick = { viewModel.dismissCrashReport() }) { Text(L10n.str(R.string.descartar)) }
                 }
             }
         )
@@ -273,7 +274,7 @@ private fun RecipeBookCard(book: RecipeBookSummary, onClick: () -> Unit, onEditC
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.Filled.CloudDone,
-                            contentDescription = "Pack instalado",
+                            contentDescription = L10n.str(R.string.pack_instalado),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(16.dp)
                         )
@@ -288,7 +289,7 @@ private fun RecipeBookCard(book: RecipeBookSummary, onClick: () -> Unit, onEditC
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Filled.Sync,
-                                contentDescription = "Sincronizado con el servidor",
+                                contentDescription = L10n.str(R.string.sincronizado_servidor),
                                 tint = MaterialTheme.colorScheme.onTertiaryContainer,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -300,7 +301,7 @@ private fun RecipeBookCard(book: RecipeBookSummary, onClick: () -> Unit, onEditC
                     modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(32.dp)
                 ) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Filled.Edit, contentDescription = "Editar libro", modifier = Modifier.size(16.dp))
+                        Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.editar_libro), modifier = Modifier.size(16.dp))
                     }
                 }
             }
@@ -313,7 +314,7 @@ private fun RecipeBookCard(book: RecipeBookSummary, onClick: () -> Unit, onEditC
             modifier = Modifier.padding(top = 8.dp)
         )
         Text(
-            text = "${book.recipeCount} ${if (book.recipeCount == 1) "receta" else "recetas"}",
+            text = if (book.recipeCount == 1) L10n.str(R.string.recipe_count_one) else L10n.str(R.string.recipe_count_many, book.recipeCount),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -369,14 +370,14 @@ private fun RecipeBookRow(book: RecipeBookSummary, compact: Boolean, onClick: ()
                     if (book.isPack) {
                         Icon(
                             Icons.Filled.CloudDone,
-                            contentDescription = "Pack instalado",
+                            contentDescription = L10n.str(R.string.pack_instalado),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
                     } else if (book.isSynced) {
                         Icon(
                             Icons.Filled.Sync,
-                            contentDescription = "Sincronizado con el servidor",
+                            contentDescription = L10n.str(R.string.sincronizado_servidor),
                             tint = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.size(16.dp)
                         )
@@ -389,7 +390,7 @@ private fun RecipeBookRow(book: RecipeBookSummary, compact: Boolean, onClick: ()
                     )
                 }
                 Text(
-                    text = "${book.recipeCount} ${if (book.recipeCount == 1) "receta" else "recetas"}",
+                    text = if (book.recipeCount == 1) L10n.str(R.string.recipe_count_one) else L10n.str(R.string.recipe_count_many, book.recipeCount),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -397,7 +398,7 @@ private fun RecipeBookRow(book: RecipeBookSummary, compact: Boolean, onClick: ()
 
             if (!book.isPack) {
                 IconButton(onClick = onEditClick) {
-                    Icon(Icons.Filled.Edit, contentDescription = "Editar libro", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.editar_libro), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

@@ -1,5 +1,11 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.AppLanguage
+import android.content.ContextWrapper
+import android.content.Context
+import android.app.Activity
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
 import android.content.Intent
 import android.net.Uri
@@ -178,7 +184,7 @@ fun SettingsSectionScreen(
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         if (uri != null) {
             viewModel.exportLibrary(context, uri)
-            scope.launch { snackbarHostState.showSnackbar("Copia de seguridad exportada") }
+            scope.launch { snackbarHostState.showSnackbar(L10n.str(R.string.copia_seguridad_exportada)) }
         }
     }
     var pendingLibraryImport by remember { mutableStateOf<LibraryImportParseResult.Success?>(null) }
@@ -186,7 +192,7 @@ fun SettingsSectionScreen(
         if (uri != null) {
             scope.launch {
                 when (val result = viewModel.validateLibraryImport(context, uri)) {
-                    is LibraryImportParseResult.Error -> snackbarHostState.showSnackbar("No se pudo importar: ${result.reason}")
+                    is LibraryImportParseResult.Error -> snackbarHostState.showSnackbar(L10n.str(R.string.no_pudo_importar_x, result.reason))
                     is LibraryImportParseResult.Success -> pendingLibraryImport = result
                 }
             }
@@ -196,9 +202,9 @@ fun SettingsSectionScreen(
         if (uri != null) {
             scope.launch {
                 when (val result = viewModel.parseRecipeJson(context, uri)) {
-                    is RecipeImportResult.Error -> snackbarHostState.showSnackbar("No se pudo importar: ${result.reason}")
+                    is RecipeImportResult.Error -> snackbarHostState.showSnackbar(L10n.str(R.string.no_pudo_importar_x, result.reason))
                     is RecipeImportResult.Success -> when {
-                        books.isEmpty() -> snackbarHostState.showSnackbar("No tienes ningún libro. Crea uno primero.")
+                        books.isEmpty() -> snackbarHostState.showSnackbar(L10n.str(R.string.no_tienes_ningun_libro_crea))
                         else -> {
                             selectedBookId = books.first().id
                             pendingRecipeImport = result.recipe to result.photos
@@ -217,7 +223,7 @@ fun SettingsSectionScreen(
             LargeTopAppBar(
                 title = { Text(section.title) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
                 },
                 colors = TopAppBarDefaults.largeTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
@@ -253,8 +259,12 @@ fun SettingsSectionScreen(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
+                LanguagePicker()
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
                 Text(
-                    "Color",
+                    L10n.str(R.string.color),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -275,9 +285,9 @@ fun SettingsSectionScreen(
             SettingsCard(icon = Icons.Filled.Fingerprint, title = "") {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Bloqueo biométrico", style = MaterialTheme.typography.bodyLarge)
+                        Text(L10n.str(R.string.bloqueo_biometrico), style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            "Pide huella, rostro o PIN del dispositivo al abrir la app",
+                            L10n.str(R.string.pide_huella_rostro_pin_dispositivo),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -291,7 +301,7 @@ fun SettingsSectionScreen(
                                 viewModel.setBiometricLockEnabled(true)
                             } else {
                                 scope.launch {
-                                    snackbarHostState.showSnackbar("Configura una huella, rostro o PIN en el dispositivo para activar el bloqueo")
+                                    snackbarHostState.showSnackbar(L10n.str(R.string.configura_huella_rostro_pin_dispositivo))
                                 }
                             }
                         }
@@ -301,37 +311,37 @@ fun SettingsSectionScreen(
                 }
                 SettingsSection.CONTENT -> {
             SettingsCard(icon = Icons.Filled.Tune, title = "", contentSpacing = 0.dp) {
-                ManageRow(icon = Icons.Filled.Category, label = "Categorías", onClick = onManageCategories)
+                ManageRow(icon = Icons.Filled.Category, label = L10n.str(R.string.categorias), onClick = onManageCategories)
                 HorizontalDivider()
-                ManageRow(icon = Icons.Filled.Kitchen, label = "Utensilios", onClick = onManageUtensils)
+                ManageRow(icon = Icons.Filled.Kitchen, label = L10n.str(R.string.utensilios), onClick = onManageUtensils)
                 HorizontalDivider()
-                ManageRow(icon = Icons.Filled.RestaurantMenu, label = "Ingredientes", onClick = onManageIngredients)
+                ManageRow(icon = Icons.Filled.RestaurantMenu, label = L10n.str(R.string.ingredientes), onClick = onManageIngredients)
                 HorizontalDivider()
-                ManageRow(icon = Icons.Filled.Sell, label = "Categorías de ingredientes", onClick = onManageIngredientCategories)
+                ManageRow(icon = Icons.Filled.Sell, label = L10n.str(R.string.categorias_ingredientes), onClick = onManageIngredientCategories)
             }
                 }
                 SettingsSection.BACKUP -> {
             SettingsCard(icon = Icons.Filled.Backup, title = "", contentSpacing = 0.dp) {
                 ManageRow(
                     icon = Icons.Filled.Backup,
-                    label = "Exportar toda la app",
-                    summary = "Guarda libros, recetas y fotos en un archivo ZIP",
+                    label = L10n.str(R.string.exportar_toda_app),
+                    summary = L10n.str(R.string.guarda_libros_recetas_fotos_archivo),
                     chevron = false,
                     onClick = { exportLauncher.launch("recetarios_backup.zip") }
                 )
                 HorizontalDivider()
                 ManageRow(
                     icon = Icons.Filled.Restore,
-                    label = "Importar copia de seguridad",
-                    summary = "Restaura desde un ZIP o JSON; puedes borrar antes lo actual",
+                    label = L10n.str(R.string.importar_copia_seguridad),
+                    summary = L10n.str(R.string.restaura_desde_zip_json_puedes),
                     chevron = false,
                     onClick = { importLauncher.launch(BACKUP_MIME_TYPES) }
                 )
                 HorizontalDivider()
                 ManageRow(
                     icon = Icons.Filled.Add,
-                    label = "Importar receta",
-                    summary = "Añade una receta suelta a uno de tus libros",
+                    label = L10n.str(R.string.importar_receta),
+                    summary = L10n.str(R.string.anade_receta_suelta_uno_libros),
                     chevron = false,
                     onClick = { importRecipeLauncher.launch(BACKUP_MIME_TYPES) }
                 )
@@ -341,10 +351,7 @@ fun SettingsSectionScreen(
             SettingsCard(
                 icon = Icons.Filled.AutoAwesome,
                 title = "",
-                description = "Reconoce el texto de una foto de una receta (libro, revista, escrita a mano) " +
-                    "y valora lo saludable que es, usando el proveedor de IA que elijas. La foto o el " +
-                    "texto se envían a ese proveedor para procesarlos; no se guarda ninguna copia salvo " +
-                    "la que decidas añadir tú a la receta."
+                description = L10n.str(R.string.reconoce_texto_foto_receta_libro)
             ) {
                 VisionProviderType.entries.forEach { provider ->
                     Row(
@@ -363,8 +370,8 @@ fun SettingsSectionScreen(
                     OutlinedTextField(
                         value = geminiApiKey,
                         onValueChange = { viewModel.setGeminiApiKey(it) },
-                        label = { Text("API key de Gemini") },
-                        placeholder = { Text("Consíguela gratis en aistudio.google.com") },
+                        label = { Text(L10n.str(R.string.api_key_gemini)) },
+                        placeholder = { Text(L10n.str(R.string.consiguela_gratis_aistudio_google_com)) },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth()
@@ -373,11 +380,11 @@ fun SettingsSectionScreen(
                     val isCustomModel = geminiModel !in GEMINI_MODELS
                     Box(modifier = Modifier.fillMaxWidth()) {
                         OutlinedTextField(
-                            value = if (isCustomModel) "Personalizado" else geminiModel,
+                            value = if (isCustomModel) L10n.str(R.string.personalizado_2) else geminiModel,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Modelo de Gemini") },
-                            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = "Abrir selector de modelo") },
+                            label = { Text(L10n.str(R.string.modelo_gemini)) },
+                            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.abrir_selector_modelo)) },
                             modifier = Modifier.fillMaxWidth()
                         )
                         // Capa transparente encima del campo para abrir el menú al tocar, sin que el
@@ -402,7 +409,7 @@ fun SettingsSectionScreen(
                                 )
                             }
                             DropdownMenuItem(
-                                text = { Text("Personalizado…") },
+                                text = { Text(L10n.str(R.string.personalizado)) },
                                 onClick = {
                                     viewModel.setGeminiModel("")
                                     modelMenuExpanded = false
@@ -414,8 +421,8 @@ fun SettingsSectionScreen(
                         OutlinedTextField(
                             value = geminiModel,
                             onValueChange = { viewModel.setGeminiModel(it) },
-                            label = { Text("Id del modelo") },
-                            placeholder = { Text("p. ej. gemini-3.6-flash") },
+                            label = { Text(L10n.str(R.string.id_modelo)) },
+                            placeholder = { Text(L10n.str(R.string.p_ej_gemini_3_6)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -424,8 +431,8 @@ fun SettingsSectionScreen(
                     OutlinedTextField(
                         value = anthropicApiKey,
                         onValueChange = { viewModel.setAnthropicApiKey(it) },
-                        label = { Text("API key de Anthropic") },
-                        placeholder = { Text("Consíguela en console.anthropic.com") },
+                        label = { Text(L10n.str(R.string.api_key_anthropic)) },
+                        placeholder = { Text(L10n.str(R.string.consiguela_console_anthropic_com)) },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth()
@@ -434,11 +441,11 @@ fun SettingsSectionScreen(
                     val isCustomAnthropicModel = anthropicModel !in ANTHROPIC_MODELS
                     Box(modifier = Modifier.fillMaxWidth()) {
                         OutlinedTextField(
-                            value = if (isCustomAnthropicModel) "Personalizado" else anthropicModel,
+                            value = if (isCustomAnthropicModel) L10n.str(R.string.personalizado_2) else anthropicModel,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Modelo de Claude") },
-                            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = "Abrir selector de modelo") },
+                            label = { Text(L10n.str(R.string.modelo_claude)) },
+                            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.abrir_selector_modelo)) },
                             modifier = Modifier.fillMaxWidth()
                         )
                         Box(
@@ -461,7 +468,7 @@ fun SettingsSectionScreen(
                                 )
                             }
                             DropdownMenuItem(
-                                text = { Text("Personalizado…") },
+                                text = { Text(L10n.str(R.string.personalizado)) },
                                 onClick = {
                                     viewModel.setAnthropicModel("")
                                     anthropicModelMenuExpanded = false
@@ -473,8 +480,8 @@ fun SettingsSectionScreen(
                         OutlinedTextField(
                             value = anthropicModel,
                             onValueChange = { viewModel.setAnthropicModel(it) },
-                            label = { Text("Id del modelo") },
-                            placeholder = { Text("p. ej. claude-haiku-4-5") },
+                            label = { Text(L10n.str(R.string.id_modelo)) },
+                            placeholder = { Text(L10n.str(R.string.p_ej_claude_haiku_4)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -485,17 +492,16 @@ fun SettingsSectionScreen(
                 SettingsSection.VOICE -> {
             SettingsCard(
                 icon = Icons.Filled.Mic,
-                title = "Dictado por voz",
-                description = "Idioma en el que se reconoce lo que dictas (lista de la compra, pasos de receta " +
-                    "y modo cocina). Si tu móvil está en otro idioma, elige aquí español."
+                title = L10n.str(R.string.dictado_voz),
+                description = L10n.str(R.string.idioma_reconoce_dictas_lista_compra)
             ) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = DictationLanguages.label(dictationLanguage),
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Idioma del dictado") },
-                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = "Abrir selector de idioma") },
+                        label = { Text(L10n.str(R.string.idioma_dictado)) },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.abrir_selector_idioma)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Box(modifier = Modifier.matchParentSize().clickable { dictationMenuExpanded = true })
@@ -516,19 +522,19 @@ fun SettingsSectionScreen(
 
             SettingsCard(
                 icon = Icons.Filled.RecordVoiceOver,
-                title = "Modo cocina",
-                description = "Voz usada para leer los pasos en voz alta en el modo cocina."
+                title = L10n.str(R.string.modo_cocina),
+                description = L10n.str(R.string.voz_usada_leer_pasos_voz)
             ) {
                 val selectedVoiceLabel = availableVoices.firstOrNull { it.name == ttsVoiceName }
                     ?.let { "${it.locale.displayName} (${it.name})" }
-                    ?: "Predeterminada del sistema"
+                    ?: L10n.str(R.string.predeterminada_sistema)
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = selectedVoiceLabel,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Voz") },
-                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = "Abrir selector de voz") },
+                        label = { Text(L10n.str(R.string.voz)) },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.abrir_selector_voz)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Box(
@@ -542,7 +548,7 @@ fun SettingsSectionScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Predeterminada del sistema") },
+                            text = { Text(L10n.str(R.string.predeterminada_sistema)) },
                             onClick = { viewModel.setTtsVoiceName(null); voiceMenuExpanded = false }
                         )
                         availableVoices.forEach { voice ->
@@ -562,7 +568,7 @@ fun SettingsSectionScreen(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Probar voz")
+                    Text(L10n.str(R.string.probar_voz))
                 }
             }
                 }
@@ -570,23 +576,22 @@ fun SettingsSectionScreen(
             SettingsCard(
                 icon = Icons.Filled.Storefront,
                 title = "",
-                description = "Instala libros de recetas listos para usar. Son de solo lectura: se " +
-                    "pueden consultar, cocinar y desinstalar, pero no editar."
+                description = L10n.str(R.string.instala_libros_recetas_listos_usar)
             ) {
-                ManageRow(icon = Icons.Filled.Storefront, label = "Explorar catálogo", onClick = onOpenPacksCatalog)
+                ManageRow(icon = Icons.Filled.Storefront, label = L10n.str(R.string.explorar_catalogo), onClick = onOpenPacksCatalog)
                 var showCustomCatalog by remember { mutableStateOf(packsCatalogRepo != DEFAULT_PACKS_CATALOG) }
                 if (showCustomCatalog) {
                     OutlinedTextField(
                         // El catálogo oficial no se muestra: el campo vacío equivale a usarlo.
                         value = if (packsCatalogRepo == DEFAULT_PACKS_CATALOG) "" else packsCatalogRepo,
                         onValueChange = { viewModel.setPacksCatalogRepo(it) },
-                        label = { Text("Catálogo alternativo") },
-                        placeholder = { Text("URL o usuario/repo de GitHub · vacío = oficial") },
+                        label = { Text(L10n.str(R.string.catalogo_alternativo)) },
+                        placeholder = { Text(L10n.str(R.string.url_usuario_repo_github_vacio)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
-                    TextButton(onClick = { showCustomCatalog = true }) { Text("Usar otro catálogo…") }
+                    TextButton(onClick = { showCustomCatalog = true }) { Text(L10n.str(R.string.usar_otro_catalogo)) }
                 }
             }
                 }
@@ -594,11 +599,9 @@ fun SettingsSectionScreen(
             SettingsCard(
                 icon = Icons.Filled.Sync,
                 title = "",
-                description = "Conecta la app a uno o varios namespaces de un servidor self-hosted " +
-                    "para compartir y sincronizar libros y recetas de lectura-escritura con otras " +
-                    "apps Miga."
+                description = L10n.str(R.string.conecta_app_uno_varios_namespaces)
             ) {
-                ManageRow(icon = Icons.Filled.Sync, label = "Gestionar conexiones", summary = "Servidor, namespace e invitaciones por QR", onClick = onOpenSyncConnections)
+                ManageRow(icon = Icons.Filled.Sync, label = L10n.str(R.string.gestionar_conexiones), summary = L10n.str(R.string.servidor_namespace_e_invitaciones_qr), onClick = onOpenSyncConnections)
             }
                 }
             }
@@ -611,7 +614,7 @@ fun SettingsSectionScreen(
             title = { Text("Importar \"${dto.name}\"") },
             text = {
                 Column {
-                    Text("¿A qué libro quieres añadir esta receta?", modifier = Modifier.padding(bottom = 8.dp))
+                    Text(L10n.str(R.string.libro_quieres_anadir_esta_receta), modifier = Modifier.padding(bottom = 8.dp))
                     books.forEach { book ->
                         Row(
                             modifier = Modifier
@@ -632,27 +635,25 @@ fun SettingsSectionScreen(
                         val bookId = selectedBookId
                         if (bookId != null) {
                             viewModel.importRecipeIntoBook(dto, photos, bookId) {
-                                scope.launch { snackbarHostState.showSnackbar("Receta importada") }
+                                scope.launch { snackbarHostState.showSnackbar(L10n.str(R.string.receta_importada)) }
                             }
                         }
                         pendingRecipeImport = null
                     },
                     enabled = selectedBookId != null
-                ) { Text("Importar") }
+                ) { Text(L10n.str(R.string.importar)) }
             },
-            dismissButton = { TextButton(onClick = { pendingRecipeImport = null }) { Text("Cancelar") } }
+            dismissButton = { TextButton(onClick = { pendingRecipeImport = null }) { Text(L10n.str(R.string.cancelar)) } }
         )
     }
 
     pendingLibraryImport?.let { parsed ->
         AlertDialog(
             onDismissRequest = { pendingLibraryImport = null },
-            title = { Text("Importar copia de seguridad") },
+            title = { Text(L10n.str(R.string.importar_copia_seguridad)) },
             text = {
                 Text(
-                    "Se van a importar ${parsed.dto.recipes.size} receta(s). ¿Quieres borrar antes tus " +
-                        "libros y recetas actuales (con sus fotos) para dejarlo limpio, o añadir el " +
-                        "contenido importado a lo que ya tienes? Los packs instalados no se ven afectados."
+                    L10n.str(R.string.van_importar_x_receta_s, parsed.dto.recipes.size)
                 )
             },
             confirmButton = {
@@ -662,18 +663,18 @@ fun SettingsSectionScreen(
                     viewModel.confirmLibraryImport(context, toImport, wipeFirst = true) { message ->
                         scope.launch { snackbarHostState.showSnackbar(message) }
                     }
-                }) { Text("Borrar todo e importar", color = MaterialTheme.colorScheme.error) }
+                }) { Text(L10n.str(R.string.borrar_todo_e_importar), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
                 Row {
-                    TextButton(onClick = { pendingLibraryImport = null }) { Text("Cancelar") }
+                    TextButton(onClick = { pendingLibraryImport = null }) { Text(L10n.str(R.string.cancelar)) }
                     TextButton(onClick = {
                         val toImport = parsed
                         pendingLibraryImport = null
                         viewModel.confirmLibraryImport(context, toImport, wipeFirst = false) { message ->
                             scope.launch { snackbarHostState.showSnackbar(message) }
                         }
-                    }) { Text("Añadir sin borrar") }
+                    }) { Text(L10n.str(R.string.anadir_sin_borrar)) }
                 }
             }
         )
@@ -733,7 +734,7 @@ private fun ColorThemeSwatch(color: Color, selected: Boolean, contentDescription
         contentAlignment = Alignment.Center
     ) {
         if (selected) {
-            Icon(Icons.Filled.Check, contentDescription = "Seleccionado", tint = Color.White)
+            Icon(Icons.Filled.Check, contentDescription = L10n.str(R.string.seleccionado), tint = Color.White)
         }
     }
 }
@@ -758,4 +759,56 @@ private fun ManageRow(icon: ImageVector, label: String, onClick: () -> Unit, sum
             Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+/** Idioma de la interfaz: el del sistema, español o inglés. Cambiarlo reinicia la app. */
+@Composable
+private fun LanguagePicker() {
+    val context = LocalContext.current
+    val current = remember { L10n.language(context) }
+    var pending by remember { mutableStateOf<AppLanguage?>(null) }
+    Text(
+        L10n.str(R.string.language_title),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    AppLanguage.entries.forEach { language ->
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { if (language != current) pending = language }
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            RadioButton(selected = current == language, onClick = { if (language != current) pending = language })
+            Text(languageLabel(language), modifier = Modifier.padding(start = 8.dp))
+        }
+    }
+    pending?.let { language ->
+        AlertDialog(
+            onDismissRequest = { pending = null },
+            title = { Text(L10n.str(R.string.language_restart_title)) },
+            text = { Text(L10n.str(R.string.language_restart_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val activity = context.findActivity()
+                    if (activity != null) L10n.setLanguage(activity, language) else pending = null
+                }) { Text(L10n.str(R.string.language_restart_confirm)) }
+            },
+            dismissButton = { TextButton(onClick = { pending = null }) { Text(L10n.str(R.string.cancelar)) } }
+        )
+    }
+}
+
+// Los nombres de idioma se muestran en su propio idioma, como en los ajustes de Android.
+private fun languageLabel(language: AppLanguage): String = when (language) {
+    AppLanguage.SYSTEM -> L10n.str(R.string.language_system)
+    AppLanguage.SPANISH -> "Español"
+    AppLanguage.ENGLISH -> "English"
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

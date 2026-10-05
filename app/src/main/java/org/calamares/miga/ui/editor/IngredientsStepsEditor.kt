@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.Manifest
 import android.content.pm.PackageManager
 import android.speech.SpeechRecognizer
@@ -44,7 +46,7 @@ import org.calamares.miga.data.voice.SpeechDictation
 fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
     val availableIngredientNames by viewModel.availableIngredientNames.collectAsState()
 
-    Section(title = "Ingredientes") {
+    Section(title = L10n.str(R.string.ingredientes)) {
         viewModel.ingredientGroups.forEachIndexed { groupIndex, group ->
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (group.name != null) {
@@ -52,16 +54,16 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
                         OutlinedTextField(
                             value = group.name.orEmpty(),
                             onValueChange = { group.name = it },
-                            label = { Text("Nombre de la sub-receta (ej. Salsa)") },
+                            label = { Text(L10n.str(R.string.nombre_sub_receta_ej_salsa)) },
                             singleLine = true,
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = { viewModel.removeIngredientGroup(groupIndex) }) {
-                            Icon(Icons.Filled.Close, contentDescription = "Quitar sub-receta")
+                            Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.quitar_sub_receta))
                         }
                     }
                 } else {
-                    Text("Ingredientes principales", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(L10n.str(R.string.ingredientes_principales), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 group.ingredients.forEachIndexed { rowIndex, row ->
@@ -74,7 +76,7 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
 
                 TextButton(onClick = { viewModel.addIngredientRow(groupIndex) }) {
                     Icon(Icons.Filled.Add, contentDescription = null)
-                    Text("Añadir ingrediente")
+                    Text(L10n.str(R.string.anadir_ingrediente))
                 }
             }
             if (groupIndex < viewModel.ingredientGroups.lastIndex) {
@@ -84,7 +86,7 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
 
         TextButton(onClick = { viewModel.addIngredientSubGroup() }) {
             Icon(Icons.Filled.Add, contentDescription = null)
-            Text("Añadir sub-receta (ej. una salsa)")
+            Text(L10n.str(R.string.anadir_sub_receta_ej_salsa))
         }
     }
 }
@@ -98,26 +100,26 @@ private fun IngredientRow(row: IngredientRowUi, availableNames: List<String>, on
             OutlinedTextField(
                 value = row.quantity,
                 onValueChange = { row.quantity = it },
-                label = { Text("Cant.") },
+                label = { Text(L10n.str(R.string.cant)) },
                 modifier = Modifier.weight(0.7f),
                 singleLine = true
             )
             OutlinedTextField(
                 value = row.unit,
                 onValueChange = { row.unit = it },
-                label = { Text("Ud.") },
+                label = { Text(L10n.str(R.string.ud)) },
                 modifier = Modifier.weight(0.8f),
                 singleLine = true
             )
             OutlinedTextField(
                 value = row.name,
                 onValueChange = { row.name = it; showSuggestions = true },
-                label = { Text("Ingrediente") },
+                label = { Text(L10n.str(R.string.ingrediente)) },
                 modifier = Modifier.weight(1.5f),
                 singleLine = true
             )
             IconButton(onClick = onRemove) {
-                Icon(Icons.Filled.Close, contentDescription = "Quitar ingrediente")
+                Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.quitar_ingrediente))
             }
         }
 
@@ -195,7 +197,7 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
         onDispose { activeRecognizer?.destroy() }
     }
 
-    Section(title = "Preparación") {
+    Section(title = L10n.str(R.string.preparacion)) {
         viewModel.stepGroups.forEachIndexed { groupIndex, group ->
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (group.name != null) {
@@ -203,16 +205,16 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
                         OutlinedTextField(
                             value = group.name.orEmpty(),
                             onValueChange = { group.name = it },
-                            label = { Text("Nombre de la sub-receta (ej. Salsa)") },
+                            label = { Text(L10n.str(R.string.nombre_sub_receta_ej_salsa)) },
                             singleLine = true,
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = { viewModel.removeStepGroup(groupIndex) }) {
-                            Icon(Icons.Filled.Close, contentDescription = "Quitar sub-receta")
+                            Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.quitar_sub_receta))
                         }
                     }
                 } else {
-                    Text("Pasos principales", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(L10n.str(R.string.pasos_principales), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 group.steps.forEachIndexed { rowIndex, row ->
@@ -226,7 +228,7 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
                             OutlinedTextField(
                                 value = row.text,
                                 onValueChange = { row.text = it },
-                                label = { Text("Paso ${rowIndex + 1}") },
+                                label = { Text(L10n.str(R.string.paso_x, rowIndex + 1)) },
                                 modifier = Modifier.weight(1f),
                                 minLines = 1
                             )
@@ -237,13 +239,13 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
                                 ) {
                                     when {
                                         row.isTranscribing -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                        row.isRecording -> Icon(Icons.Filled.Stop, contentDescription = "Detener dictado", tint = MaterialTheme.colorScheme.error)
-                                        else -> Icon(Icons.Filled.Mic, contentDescription = "Dictar paso por voz")
+                                        row.isRecording -> Icon(Icons.Filled.Stop, contentDescription = L10n.str(R.string.detener_dictado), tint = MaterialTheme.colorScheme.error)
+                                        else -> Icon(Icons.Filled.Mic, contentDescription = L10n.str(R.string.dictar_paso_voz))
                                     }
                                 }
                             }
                             IconButton(onClick = { viewModel.removeStepRow(groupIndex, rowIndex) }) {
-                                Icon(Icons.Filled.Close, contentDescription = "Quitar paso")
+                                Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.quitar_paso))
                             }
                         }
                         row.dictationError?.let { reason ->
@@ -259,7 +261,7 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
 
                 TextButton(onClick = { viewModel.addStepRow(groupIndex) }) {
                     Icon(Icons.Filled.Add, contentDescription = null)
-                    Text("Añadir paso")
+                    Text(L10n.str(R.string.anadir_paso))
                 }
             }
             if (groupIndex < viewModel.stepGroups.lastIndex) {
@@ -269,7 +271,7 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
 
         TextButton(onClick = { viewModel.addStepSubGroup() }) {
             Icon(Icons.Filled.Add, contentDescription = null)
-            Text("Añadir pasos de una sub-receta (ej. una salsa)")
+            Text(L10n.str(R.string.anadir_pasos_sub_receta_ej))
         }
     }
 }

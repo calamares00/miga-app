@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.sync
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -74,7 +76,7 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
     fun createInvite(connection: SyncConnection) {
         viewModelScope.launch {
             _inviteState.value = InviteState.Loading
-            val label = "Invitación ${LocalDate.now()}"
+            val label = L10n.str(R.string.invitacion_x, LocalDate.now())
             _inviteState.value = when (val result = SyncClient.createInvitation(connection, label)) {
                 is SyncInvitationResult.Success -> {
                     val invite = SyncInvite(connection.serverUrl, result.invitation.namespaceId, result.invitation.token, connection.label)
@@ -111,14 +113,14 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
                 lastSyncError = null
             )
             when (val ping = SyncClient.ping(candidate)) {
-                is SyncPingResult.Error -> _message.value = "No se pudo unir: ${ping.reason}"
+                is SyncPingResult.Error -> _message.value = L10n.str(R.string.no_pudo_unir_x, ping.reason)
                 is SyncPingResult.Success -> {
                     val id = repository.addSyncConnection(label.ifBlank { invite.namespaceId }, invite.serverUrl, invite.namespaceId, invite.token)
                     if (syncShopping) repository.setShoppingSyncConnection(id)
                     _syncingConnectionIds.value = _syncingConnectionIds.value + id
                     syncEngine.syncConnection(context, id)
                     _syncingConnectionIds.value = _syncingConnectionIds.value - id
-                    _message.value = "Conexión \"${label.ifBlank { invite.namespaceId }}\" añadida"
+                    _message.value = L10n.str(R.string.conexion_x_anadida, label.ifBlank { invite.namespaceId })
                 }
             }
         }

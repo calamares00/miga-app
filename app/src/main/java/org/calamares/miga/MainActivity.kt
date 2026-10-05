@@ -1,5 +1,6 @@
 package org.calamares.miga
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -54,6 +55,10 @@ class MainActivity : FragmentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         ShoppingIntents.handle(intent)
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(L10n.wrap(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -136,7 +141,7 @@ private fun SplashScreen() {
             modifier = Modifier.padding(top = 16.dp)
         )
         Text(
-            text = "Tus recetas. Tus libros. Tu cocina.",
+            text = L10n.str(R.string.recetas_libros_cocina),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp)
@@ -159,11 +164,11 @@ private fun LockScreen(onUnlockClick: () -> Unit) {
         )
         Text("Miga", style = MaterialTheme.typography.titleLarge)
         Text(
-            text = "Desbloquea la app para continuar",
+            text = L10n.str(R.string.desbloquea_app_continuar),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
         )
-        Button(onClick = onUnlockClick) { Text("Desbloquear") }
+        Button(onClick = onUnlockClick) { Text(L10n.str(R.string.desbloquear)) }
     }
 }

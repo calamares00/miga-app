@@ -1,0 +1,32 @@
+Miga is your family recipe book and shopping list in one app: no ads, no accounts, and your data stays on your phone.
+
+RECIPE BOOKS
+• Organise your recipes in books (for example, one for each family member), each with its own cover.
+• Complete recipes: ingredients with quantity and unit, steps, photos, utensils, difficulty, tags and sub-recipes (sauces, sides…).
+• Search and filter by category, tag, utensil, ingredient or difficulty, and keep favourites one tap away.
+• Cooking mode: step by step on full screen, with timers and voice control.
+• Adjust the servings and the quantities are recalculated for you.
+
+SHOPPING LIST
+• Add items by typing, dictating or scanning the barcode.
+• Grouped by category and sorted by the aisles of your supermarket.
+• Several lists at once and reusable templates (including scanned products).
+• Open Food Facts product sheet: Nutri-Score, NOVA, allergens, additives and nutrition table, plus a 0–100 guide score.
+• Shop mode: swipe to tick items and the screen stays on.
+• Widget to add items without opening the app.
+
+IMPORT AND SHARE
+• Export and import recipes and books (text, PDF, JSON/ZIP with photos) and make full backups.
+• Ready-to-install recipe packs.
+• Share the list as text or with a QR code.
+
+OPTIONAL AI FEATURES
+With your own Google Gemini or Anthropic Claude key: create recipes from a photo or a web page, find recipes for a dish, estimate nutrition and a health rating, or find ingredient substitutes. They're only enabled if you add your key; generated content is labelled and can be reported.
+
+SYNC WITH YOUR OWN SERVER
+Want to share books and the shopping list with your family? Connect Miga to a server you host yourself (miga-server) and invite others with a QR code.
+
+PRIVACY
+No ads, no analytics and no accounts. The internet is only used for the features you choose: AI with your key, Open Food Facts, the pack catalogue and your sync server.
+
+Available in English and Spanish. Product data from Open Food Facts (ODbL licence).

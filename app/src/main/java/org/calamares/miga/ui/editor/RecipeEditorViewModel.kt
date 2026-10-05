@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -123,7 +125,7 @@ class RecipeEditorViewModel(
             val provider = settingsRepository.observeVisionProvider().first()
             val apiKey = settingsRepository.apiKeyFor(provider)
             if (apiKey.isBlank()) {
-                _visionState.value = VisionState.Error("Configura una API key de ${provider.label} en Ajustes")
+                _visionState.value = VisionState.Error(L10n.str(R.string.configura_api_key_x_ajustes, provider.label))
                 return@launch
             }
             // Si alguna página falla al leerse pero otras sí, seguimos con las que se pudieron
@@ -132,7 +134,7 @@ class RecipeEditorViewModel(
                 PhotoStorage.readResizedJpegBytes(context, uri)?.let { VisionImageInput(it, "image/jpeg") }
             }
             if (images.isEmpty()) {
-                _visionState.value = VisionState.Error("No se pudo leer ninguna de las fotos")
+                _visionState.value = VisionState.Error(L10n.str(R.string.no_pudo_leer_ninguna_fotos))
                 return@launch
             }
             val model = settingsRepository.modelFor(provider)
@@ -158,7 +160,7 @@ class RecipeEditorViewModel(
             val provider = settingsRepository.observeVisionProvider().first()
             val apiKey = settingsRepository.apiKeyFor(provider)
             if (apiKey.isBlank()) {
-                _visionState.value = VisionState.Error("Configura una API key de ${provider.label} en Ajustes")
+                _visionState.value = VisionState.Error(L10n.str(R.string.configura_api_key_x_ajustes, provider.label))
                 return@launch
             }
             val model = settingsRepository.modelFor(provider)
@@ -184,7 +186,7 @@ class RecipeEditorViewModel(
             val provider = settingsRepository.observeVisionProvider().first()
             val apiKey = settingsRepository.apiKeyFor(provider)
             if (apiKey.isBlank()) {
-                _visionState.value = VisionState.Error("Configura una API key de ${provider.label} en Ajustes")
+                _visionState.value = VisionState.Error(L10n.str(R.string.configura_api_key_x_ajustes, provider.label))
                 return@launch
             }
             val pageText = when (val fetchResult = RecipeUrlFetcher.fetchReadableText(url)) {
@@ -285,7 +287,7 @@ class RecipeEditorViewModel(
     }
 
     fun addIngredientSubGroup() {
-        ingredientGroups.add(IngredientGroupUi(name = "Nueva sub-receta", ingredients = mutableListOf(IngredientRowUi())))
+        ingredientGroups.add(IngredientGroupUi(name = L10n.str(R.string.nueva_sub_receta), ingredients = mutableListOf(IngredientRowUi())))
     }
 
     fun removeIngredientGroup(groupIndex: Int) {
@@ -325,7 +327,7 @@ class RecipeEditorViewModel(
     }
 
     fun addStepSubGroup() {
-        stepGroups.add(StepGroupUi(name = "Nueva sub-receta", steps = mutableListOf(StepRowUi())))
+        stepGroups.add(StepGroupUi(name = L10n.str(R.string.nueva_sub_receta), steps = mutableListOf(StepRowUi())))
     }
 
     fun removeStepGroup(groupIndex: Int) {

@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.welcome
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -48,18 +50,18 @@ private data class WelcomePage(val icon: ImageVector, val title: String, val bod
 private val PAGES = listOf(
     WelcomePage(
         Icons.Filled.MenuBook,
-        "Tu recetario familiar",
-        "Guarda las recetas de casa en libros, con fotos, subrecetas, raciones ajustables y un modo cocina paso a paso."
+        L10n.str(R.string.recetario_familiar),
+        L10n.str(R.string.guarda_recetas_casa_libros_fotos)
     ),
     WelcomePage(
         Icons.Filled.ShoppingCart,
-        "La compra, más rápida",
-        "Añade escribiendo, dictando o escaneando el código de barras. La lista se ordena por categorías y por los pasillos de tu súper."
+        L10n.str(R.string.compra_mas_rapida),
+        L10n.str(R.string.anade_escribiendo_dictando_escaneando_codigo)
     ),
     WelcomePage(
         Icons.Filled.Lock,
-        "Tus datos, en tu móvil",
-        "Sin cuentas ni anuncios. La IA con tu propia clave, Open Food Facts y la sincronización con tu servidor son opcionales."
+        L10n.str(R.string.datos_movil),
+        L10n.str(R.string.sin_cuentas_ni_anuncios_ia)
     )
 )
 
@@ -89,7 +91,7 @@ fun WelcomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            if (!isLast) TextButton(onClick = { onFinish(null) }) { Text("Saltar") }
+            if (!isLast) TextButton(onClick = { onFinish(null) }) { Text(L10n.str(R.string.saltar)) }
         }
         HorizontalPager(state = pagerState, modifier = Modifier.weight(1f).fillMaxWidth()) { index ->
             val page = PAGES[index]
@@ -122,7 +124,7 @@ fun WelcomeScreen(
         Row(
             modifier = Modifier
                 .padding(vertical = 24.dp)
-                .semantics { contentDescription = "Página ${pagerState.currentPage + 1} de ${PAGES.size}" },
+                .semantics { contentDescription = L10n.str(R.string.pagina_x_x, pagerState.currentPage + 1, PAGES.size) },
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             PAGES.indices.forEach { index ->
@@ -135,14 +137,14 @@ fun WelcomeScreen(
         }
         Column(modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (isLast) {
-                Button(onClick = { onFinish(null) }, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("Empezar") }
-                OutlinedButton(onClick = { onFinish(packsRoute) }, modifier = Modifier.fillMaxWidth()) { Text("Explorar packs de recetas") }
-                TextButton(onClick = { onFinish(backupRoute) }, modifier = Modifier.fillMaxWidth()) { Text("Restaurar una copia de seguridad") }
+                Button(onClick = { onFinish(null) }, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text(L10n.str(R.string.empezar)) }
+                OutlinedButton(onClick = { onFinish(packsRoute) }, modifier = Modifier.fillMaxWidth()) { Text(L10n.str(R.string.explorar_packs_recetas)) }
+                TextButton(onClick = { onFinish(backupRoute) }, modifier = Modifier.fillMaxWidth()) { Text(L10n.str(R.string.restaurar_copia_seguridad)) }
             } else {
                 Button(
                     onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
                     modifier = Modifier.fillMaxWidth().height(52.dp)
-                ) { Text("Siguiente") }
+                ) { Text(L10n.str(R.string.siguiente_2)) }
                 Spacer(modifier = Modifier.height(96.dp))
             }
         }

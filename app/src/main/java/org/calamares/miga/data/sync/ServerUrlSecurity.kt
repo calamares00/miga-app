@@ -1,5 +1,7 @@
 package org.calamares.miga.data.sync
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import java.net.URI
 
 /**
@@ -9,8 +11,7 @@ import java.net.URI
  */
 object ServerUrlSecurity {
 
-    const val INSECURE_WARNING = "Conexión sin cifrar (http) fuera de tu red local: el token y tus datos viajarían " +
-        "sin protección por internet. Usa https:// o una VPN."
+    val INSECURE_WARNING: String get() = L10n.str(R.string.conexion_sin_cifrar_http_fuera)
 
     /** true si [url] es http:// y su host no es de una red local/privada. */
     fun isInsecurePublic(url: String): Boolean {

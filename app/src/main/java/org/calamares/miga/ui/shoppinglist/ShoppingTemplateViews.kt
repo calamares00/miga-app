@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.shoppinglist
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -187,9 +189,9 @@ internal fun TemplateRow(template: ShoppingTemplate, onApply: () -> Unit, onClic
         TemplateThumb(template)
         Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
             Text(template.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            val count = if (template.items.size == 1) "1 artículo" else "${template.items.size} artículos"
+            val count = if (template.items.size == 1) L10n.str(R.string.n1_articulo) else L10n.str(R.string.x_articulos, template.items.size)
             Text(
-                if (products > 0) "$count · $products de Open Food Facts" else count,
+                if (products > 0) L10n.str(R.string.x_x_open_food_facts, count, products) else count,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -203,7 +205,7 @@ internal fun TemplateRow(template: ShoppingTemplate, onApply: () -> Unit, onClic
         }
         FilledTonalButton(onClick = onApply, enabled = template.items.isNotEmpty(), contentPadding = PaddingValues(horizontal = 12.dp)) {
             Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(" Añadir")
+            Text(L10n.str(R.string.anadir_2))
         }
     }
 }
@@ -237,12 +239,12 @@ internal fun TemplatePickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Filled.BookmarkAdd, contentDescription = null) },
-        title = { Text("Guardar en plantilla") },
+        title = { Text(L10n.str(R.string.guardar_plantilla_3)) },
         text = {
             LazyColumn(modifier = Modifier.heightIn(max = 380.dp)) {
                 item(key = "what") {
                     Text(
-                        "\"${item.name}\" se guardará con su foto y su ficha.",
+                        L10n.str(R.string.x_guardara_foto_ficha, item.name),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 8.dp)
@@ -262,7 +264,7 @@ internal fun TemplatePickerDialog(
                         Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                             Text(template.name, style = MaterialTheme.typography.bodyLarge)
                             Text(
-                                if (already) "Ya está: se actualizará" else "${template.items.size} artículos",
+                                if (already) L10n.str(R.string.ya_esta_actualizara) else L10n.str(R.string.x_articulos, template.items.size),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -274,21 +276,21 @@ internal fun TemplatePickerDialog(
                         OutlinedTextField(
                             value = newName,
                             onValueChange = { newName = it },
-                            label = { Text(if (templates.isEmpty()) "Nombre de la plantilla" else "O crea una nueva") },
-                            placeholder = { Text("p. ej. Compra semanal") },
+                            label = { Text(if (templates.isEmpty()) L10n.str(R.string.nombre_plantilla) else L10n.str(R.string.crea_nueva)) },
+                            placeholder = { Text(L10n.str(R.string.p_ej_compra_semanal)) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { if (newName.isNotBlank()) onCreate(newName) }),
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = { onCreate(newName) }, enabled = newName.isNotBlank()) {
-                            Icon(Icons.Filled.Add, contentDescription = "Crear plantilla")
+                            Icon(Icons.Filled.Add, contentDescription = L10n.str(R.string.crear_plantilla))
                         }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        confirmButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
     )
 }
 
@@ -315,7 +317,7 @@ internal fun NameDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nombre") },
+                    label = { Text(L10n.str(R.string.nombre)) },
                     placeholder = { Text(placeholder) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
@@ -325,7 +327,7 @@ internal fun NameDialog(
             }
         },
         confirmButton = { TextButton(onClick = { onConfirm(name.trim()) }, enabled = name.isNotBlank()) { Text(confirmLabel) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
     )
 }
 
@@ -367,28 +369,28 @@ internal fun TemplateEditorSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(template.name, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
-                        if (template.items.size == 1) "1 artículo" else "${template.items.size} artículos",
+                        if (template.items.size == 1) L10n.str(R.string.n1_articulo) else L10n.str(R.string.x_articulos, template.items.size),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(onClick = { renaming = true }) { Icon(Icons.Filled.Edit, contentDescription = "Renombrar plantilla") }
-                IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, contentDescription = "Borrar plantilla") }
+                IconButton(onClick = { renaming = true }) { Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.renombrar_plantilla)) }
+                IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.borrar_plantilla)) }
             }
 
             if (searching) {
                 TextButton(onClick = { searching = false; viewModel.clearSearch() }) {
                     Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text("  Volver a la plantilla")
+                    Text(L10n.str(R.string.volver_plantilla))
                 }
                 Box(modifier = Modifier.weight(1f)) {
                     ProductSearchContent(
                         viewModel = viewModel,
                         initialQuery = text.trim(),
-                        addDescription = "Añadir a la plantilla",
+                        addDescription = L10n.str(R.string.anadir_plantilla),
                         onAdd = { product ->
                             viewModel.addToTemplate(template.id, product.toTemplateItem())
-                            onMessage("Añadido a \"${template.name}\": ${product.name}")
+                            onMessage(L10n.str(R.string.anadido_x_x, template.name, product.name))
                         },
                         onSaveToTemplate = null
                     )
@@ -398,20 +400,20 @@ internal fun TemplateEditorSheet(
                     value = text,
                     onValueChange = { text = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Añadir: 2 kg tomates, leche…") },
+                    placeholder = { Text(L10n.str(R.string.anadir_2_kg_tomates_leche)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { submitText() }),
                     trailingIcon = {
                         if (text.isNotBlank()) {
-                            IconButton(onClick = { submitText() }) { Icon(Icons.Filled.Add, contentDescription = "Añadir a la plantilla") }
+                            IconButton(onClick = { submitText() }) { Icon(Icons.Filled.Add, contentDescription = L10n.str(R.string.anadir_plantilla)) }
                         }
                     }
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AssistChip(
                         onClick = { searching = true },
-                        label = { Text("Buscar en Open Food Facts") },
+                        label = { Text(L10n.str(R.string.buscar_open_food_facts_2)) },
                         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp)) }
                     )
                     AssistChip(
@@ -419,19 +421,19 @@ internal fun TemplateEditorSheet(
                             scanLauncher.launch(
                                 ScanOptions().apply {
                                     setDesiredBarcodeFormats(ScanOptions.PRODUCT_CODE_TYPES)
-                                    setPrompt("Apunta al código de barras del producto")
+                                    setPrompt(L10n.str(R.string.apunta_codigo_barras_producto))
                                     setBeepEnabled(false)
                                     setOrientationLocked(false)
                                 }
                             )
                         },
-                        label = { Text("Escanear") },
+                        label = { Text(L10n.str(R.string.escanear)) },
                         leadingIcon = { Icon(Icons.Filled.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp)) }
                     )
                 }
                 if (template.items.isEmpty()) {
                     Text(
-                        "Plantilla vacía. Escribe artículos, busca productos en Open Food Facts o escanea su código de barras.",
+                        L10n.str(R.string.plantilla_vacia_escribe_articulos_busca),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 16.dp)
@@ -449,12 +451,12 @@ internal fun TemplateEditorSheet(
                 Button(
                     onClick = {
                         viewModel.applyTemplate(template)
-                        onMessage("Añadidos ${template.items.size} artículos de \"${template.name}\"")
+                        onMessage(L10n.str(R.string.anadidos_x_articulos_x, template.items.size, template.name))
                         close()
                     },
                     enabled = template.items.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-                ) { Text("Añadir todo a la lista") }
+                ) { Text(L10n.str(R.string.anadir_todo_lista)) }
             }
         }
     }
@@ -468,10 +470,10 @@ internal fun TemplateEditorSheet(
 
     if (renaming) {
         NameDialog(
-            title = "Renombrar plantilla",
+            title = L10n.str(R.string.renombrar_plantilla),
             initial = template.name,
-            placeholder = "p. ej. Compra semanal",
-            confirmLabel = "Guardar",
+            placeholder = L10n.str(R.string.p_ej_compra_semanal),
+            confirmLabel = L10n.str(R.string.guardar),
             onConfirm = { viewModel.renameTemplate(template.id, it); renaming = false },
             onDismiss = { renaming = false }
         )
@@ -480,16 +482,16 @@ internal fun TemplateEditorSheet(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Borrar plantilla") },
-            text = { Text("¿Borrar \"${template.name}\"? Los artículos de tu lista no cambian.") },
+            title = { Text(L10n.str(R.string.borrar_plantilla)) },
+            text = { Text(L10n.str(R.string.borrar_x_articulos_lista_no, template.name)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
                     viewModel.deleteTemplate(template.id)
                     close()
-                }) { Text("Borrar", color = MaterialTheme.colorScheme.error) }
+                }) { Text(L10n.str(R.string.borrar), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } }
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(L10n.str(R.string.cancelar)) } }
         )
     }
 }
@@ -538,7 +540,7 @@ private fun TemplateItemRow(item: TemplateItem, onOpen: (() -> Unit)?, onRemove:
             }
         }
         IconButton(onClick = onRemove) {
-            Icon(Icons.Filled.Close, contentDescription = "Quitar ${item.name} de la plantilla", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.quitar_x_plantilla, item.name), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

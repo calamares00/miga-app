@@ -1,5 +1,7 @@
 package org.calamares.miga.data.search
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.data.vision.RecipeVisionResult
 import org.calamares.miga.data.vision.VisionProviderType
 
@@ -21,7 +23,7 @@ fun dishRecipeGenerationClientFor(provider: VisionProviderType): DishRecipeGener
 // sitios con riesgo de que diverjan; solo cambia la instrucción de partida (generar en vez de
 // transcribir una foto).
 internal fun buildDishRecipePrompt(dish: DishSuggestion): String {
-    val originText = dish.origin?.takeIf { it.isNotBlank() }?.let { " (típico de $it)" }.orEmpty()
+    val originText = dish.origin?.takeIf { it.isNotBlank() }?.let { L10n.str(R.string.tipico_x, it) }.orEmpty()
     val contextText = dish.description.takeIf { it.isNotBlank() }?.let { "\nContexto: $it" }.orEmpty()
     return """
 Eres un asistente de cocina. Genera una receta completa, realista y bien explicada para el plato

@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.books
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -105,24 +107,24 @@ fun RecipeBookEditorScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(if (viewModel.isPack) "Pack instalado" else if (viewModel.isEditing) "Editar libro" else "Nuevo libro") },
+                title = { Text(if (viewModel.isPack) L10n.str(R.string.pack_instalado) else if (viewModel.isEditing) L10n.str(R.string.editar_libro) else L10n.str(R.string.nuevo_libro)) },
                 navigationIcon = {
-                    IconButton(onClick = attemptExit) { Icon(Icons.Filled.Close, contentDescription = "Cancelar") }
+                    IconButton(onClick = attemptExit) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancelar)) }
                 },
                 actions = {
                     if (viewModel.isSaving || viewModel.isDeleting) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp).padding(end = 16.dp))
                     } else if (viewModel.isPack) {
                         IconButton(onClick = { showDeleteConfirm = true }) {
-                            Icon(Icons.Filled.Delete, contentDescription = "Desinstalar pack", tint = MaterialTheme.colorScheme.error)
+                            Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.desinstalar_pack), tint = MaterialTheme.colorScheme.error)
                         }
                     } else {
                         if (viewModel.isEditing) {
                             IconButton(onClick = { showDeleteConfirm = true }) {
-                                Icon(Icons.Filled.Delete, contentDescription = "Borrar libro", tint = MaterialTheme.colorScheme.error)
+                                Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.borrar_libro), tint = MaterialTheme.colorScheme.error)
                             }
                         }
-                        TextButton(onClick = { viewModel.save(onSaved) }) { Text("Guardar") }
+                        TextButton(onClick = { viewModel.save(onSaved) }) { Text(L10n.str(R.string.guardar)) }
                     }
                 }
             )
@@ -159,7 +161,7 @@ fun RecipeBookEditorScreen(
                 if (cover != null) {
                     AsyncImage(
                         model = cover,
-                        contentDescription = "Portada",
+                        contentDescription = L10n.str(R.string.portada),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -170,7 +172,7 @@ fun RecipeBookEditorScreen(
                         ) {
                             Icon(
                                 Icons.Filled.AddAPhoto,
-                                contentDescription = "Cambiar portada",
+                                contentDescription = L10n.str(R.string.cambiar_portada),
                                 tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier
                                     .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
@@ -181,7 +183,7 @@ fun RecipeBookEditorScreen(
                 } else {
                     Icon(
                         imageVector = Icons.Filled.AddAPhoto,
-                        contentDescription = "Añadir portada",
+                        contentDescription = L10n.str(R.string.anadir_portada),
                         modifier = Modifier.size(40.dp).align(Alignment.Center)
                     )
                 }
@@ -190,18 +192,17 @@ fun RecipeBookEditorScreen(
             OutlinedTextField(
                 value = viewModel.name,
                 onValueChange = { viewModel.name = it; viewModel.nameError = false },
-                label = { Text("Nombre del libro") },
-                placeholder = { Text("Ej. Josi, Helen...") },
+                label = { Text(L10n.str(R.string.nombre_libro)) },
+                placeholder = { Text(L10n.str(R.string.ej_josi_helen)) },
                 isError = viewModel.nameError,
-                supportingText = { if (viewModel.nameError) Text("El nombre es obligatorio") },
+                supportingText = { if (viewModel.nameError) Text(L10n.str(R.string.nombre_es_obligatorio)) },
                 readOnly = viewModel.isPack,
                 modifier = Modifier.fillMaxWidth()
             )
 
             if (viewModel.isPack) {
                 Text(
-                    "Este libro es un pack instalado: es de solo lectura. Puedes ver y cocinar sus " +
-                        "recetas, pero no cambiar su nombre, portada ni contenido. Solo puedes desinstalarlo.",
+                    L10n.str(R.string.este_libro_es_pack_instalado),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -211,13 +212,13 @@ fun RecipeBookEditorScreen(
                 if (connectionId == null) {
                     if (availableSyncConnections.isNotEmpty()) {
                         OutlinedButton(onClick = { showLinkDialog = true }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Sincronizar con...")
+                            Text(L10n.str(R.string.sincronizar))
                         }
                     }
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            "Sincronizado con \"${connectionLabel ?: "conexión eliminada"}\"",
+                            L10n.str(R.string.sincronizado_x, connectionLabel ?: L10n.str(R.string.conexion_eliminada)),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -229,11 +230,11 @@ fun RecipeBookEditorScreen(
                             if (viewModel.isSyncingNow) {
                                 CircularProgressIndicator(modifier = Modifier.size(18.dp))
                             } else {
-                                Text("Sincronizar ahora")
+                                Text(L10n.str(R.string.sincronizar_ahora))
                             }
                         }
                         TextButton(onClick = { viewModel.unlinkFromSyncConnection() }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Dejar de sincronizar")
+                            Text(L10n.str(R.string.dejar_sincronizar))
                         }
                     }
                 }
@@ -244,13 +245,13 @@ fun RecipeBookEditorScreen(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text(if (viewModel.isPack) "Desinstalar pack" else "Eliminar libro") },
+            title = { Text(if (viewModel.isPack) L10n.str(R.string.desinstalar_pack) else L10n.str(R.string.eliminar_libro)) },
             text = {
                 Text(
                     if (viewModel.isPack) {
-                        "¿Seguro que quieres desinstalar \"${viewModel.name}\"? Se borrarán todas sus recetas de este dispositivo."
+                        L10n.str(R.string.seguro_quieres_desinstalar_x_borraran, viewModel.name)
                     } else {
-                        "¿Seguro que quieres eliminar \"${viewModel.name}\"? Esta acción no se puede deshacer."
+                        L10n.str(R.string.seguro_quieres_eliminar_x_esta, viewModel.name)
                     }
                 )
             },
@@ -258,10 +259,10 @@ fun RecipeBookEditorScreen(
                 TextButton(onClick = {
                     showDeleteConfirm = false
                     viewModel.delete(onDeleted = onSaved)
-                }) { Text(if (viewModel.isPack) "Desinstalar" else "Eliminar", color = MaterialTheme.colorScheme.error) }
+                }) { Text(if (viewModel.isPack) L10n.str(R.string.desinstalar) else L10n.str(R.string.eliminar), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancelar") }
+                TextButton(onClick = { showDeleteConfirm = false }) { Text(L10n.str(R.string.cancelar)) }
             }
         )
     }
@@ -269,7 +270,7 @@ fun RecipeBookEditorScreen(
     if (showPhotoSourceSheet) {
         ModalBottomSheet(onDismissRequest = { showPhotoSourceSheet = false }, sheetState = photoSheetState) {
             PhotoSourceSheet(
-                title = "Añadir portada",
+                title = L10n.str(R.string.anadir_portada),
                 onCameraClick = {
                     showPhotoSourceSheet = false
                     val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
@@ -304,7 +305,7 @@ fun RecipeBookEditorScreen(
     if (showLinkDialog) {
         AlertDialog(
             onDismissRequest = { showLinkDialog = false },
-            title = { Text("Sincronizar con...") },
+            title = { Text(L10n.str(R.string.sincronizar)) },
             text = {
                 Column {
                     availableSyncConnections.forEach { connection ->
@@ -321,23 +322,23 @@ fun RecipeBookEditorScreen(
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { showLinkDialog = false }) { Text("Cancelar") } }
+            dismissButton = { TextButton(onClick = { showLinkDialog = false }) { Text(L10n.str(R.string.cancelar)) } }
         )
     }
 
     if (showDiscardDialog) {
         AlertDialog(
             onDismissRequest = { showDiscardDialog = false },
-            title = { Text("¿Descartar cambios?") },
-            text = { Text("Se perderán los cambios que has hecho.") },
+            title = { Text(L10n.str(R.string.descartar_cambios)) },
+            text = { Text(L10n.str(R.string.perderan_cambios_has_hecho)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDiscardDialog = false
                     onCancel()
-                }) { Text("Descartar", color = MaterialTheme.colorScheme.error) }
+                }) { Text(L10n.str(R.string.descartar), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDiscardDialog = false }) { Text("Seguir editando") }
+                TextButton(onClick = { showDiscardDialog = false }) { Text(L10n.str(R.string.seguir_editando)) }
             }
         )
     }
