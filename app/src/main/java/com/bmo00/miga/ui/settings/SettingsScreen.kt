@@ -28,6 +28,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Backup
@@ -56,6 +59,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -83,6 +87,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedScroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -113,19 +118,22 @@ import com.bmo00.miga.ui.theme.Terracotta
 import kotlinx.coroutines.launch
 import java.util.Locale
 
+/**
+ * Pantalla de una categoría de Ajustes (ver [SettingsSection]); la pantalla principal es [SettingsHomeScreen].
+ * Cada categoría reúne las opciones que antes estaban apiladas en tarjetas dentro de una sola pantalla.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun SettingsScreen(
+fun SettingsSectionScreen(
     viewModel: SettingsViewModel,
+    section: SettingsSection,
+    onBack: () -> Unit,
     onManageCategories: () -> Unit,
     onManageUtensils: () -> Unit,
     onManageIngredients: () -> Unit,
     onManageIngredientCategories: () -> Unit,
     onOpenPacksCatalog: () -> Unit,
-    onOpenSyncConnections: () -> Unit,
-    onOpenStats: () -> Unit,
-    onHelp: () -> Unit,
-    onAbout: () -> Unit
+    onOpenSyncConnections: () -> Unit
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
     val colorTheme by viewModel.colorTheme.collectAsState()
@@ -150,7 +158,8 @@ fun SettingsScreen(
     var availableVoices by remember { mutableStateOf<List<Voice>>(emptyList()) }
     val context = LocalContext.current
 
-    DisposableEffect(Unit) {
+    DisposableEffect(section) {
+        if (section != SettingsSection.VOICE) return@DisposableEffect onDispose { }
         var engine: TextToSpeech? = null
         engine = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
@@ -203,13 +212,21 @@ fun SettingsScreen(
         }
     }
 
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
-        contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text("Ajustes") }
+            LargeTopAppBar(
+                title = { Text(section.title) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
+                },
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background
+                ),
+                scrollBehavior = scrollBehavior
             )
         }
     ) { padding ->
@@ -218,10 +235,12 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            SettingsCard(icon = Icons.Filled.Palette, title = "Apariencia") {
+            when (section) {
+                SettingsSection.APPEARANCE -> {
+            SettingsCard(icon = Icons.Filled.Palette, title = "") {
                 ThemeMode.entries.forEach { mode ->
                     Row(
                         modifier = Modifier
@@ -254,10 +273,18 @@ fun SettingsScreen(
                     }
                 }
             }
-
-            SettingsCard(icon = Icons.Filled.Fingerprint, title = "Seguridad") {
+                }
+                SettingsSection.SECURITY -> {
+            SettingsCard(icon = Icons.Filled.Fingerprint, title = "") {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Bloqueo biométrico", modifier = Modifier.weight(1f))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Bloqueo biométrico", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "Pide huella, rostro o PIN del dispositivo al abrir la app",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Switch(
                         checked = biometricLockEnabled,
                         onCheckedChange = { checked ->
@@ -274,8 +301,9 @@ fun SettingsScreen(
                     )
                 }
             }
-
-            SettingsCard(icon = Icons.Filled.Tune, title = "Gestionar contenido", contentSpacing = 0.dp) {
+                }
+                SettingsSection.CONTENT -> {
+            SettingsCard(icon = Icons.Filled.Tune, title = "", contentSpacing = 0.dp) {
                 ManageRow(icon = Icons.Filled.Category, label = "Categorías", onClick = onManageCategories)
                 HorizontalDivider()
                 ManageRow(icon = Icons.Filled.Kitchen, label = "Utensilios", onClick = onManageUtensils)
@@ -284,26 +312,38 @@ fun SettingsScreen(
                 HorizontalDivider()
                 ManageRow(icon = Icons.Filled.Sell, label = "Categorías de ingredientes", onClick = onManageIngredientCategories)
             }
-
-            SettingsCard(icon = Icons.Filled.BarChart, title = "Estadísticas", contentSpacing = 0.dp) {
-                ManageRow(icon = Icons.Filled.BarChart, label = "Ver estadísticas", onClick = onOpenStats)
+                }
+                SettingsSection.BACKUP -> {
+            SettingsCard(icon = Icons.Filled.Backup, title = "", contentSpacing = 0.dp) {
+                ManageRow(
+                    icon = Icons.Filled.Backup,
+                    label = "Exportar toda la app",
+                    summary = "Guarda libros, recetas y fotos en un archivo ZIP",
+                    chevron = false,
+                    onClick = { exportLauncher.launch("recetarios_backup.zip") }
+                )
+                HorizontalDivider()
+                ManageRow(
+                    icon = Icons.Filled.Restore,
+                    label = "Importar copia de seguridad",
+                    summary = "Restaura desde un ZIP o JSON; puedes borrar antes lo actual",
+                    chevron = false,
+                    onClick = { importLauncher.launch(BACKUP_MIME_TYPES) }
+                )
+                HorizontalDivider()
+                ManageRow(
+                    icon = Icons.Filled.Add,
+                    label = "Importar receta",
+                    summary = "Añade una receta suelta a uno de tus libros",
+                    chevron = false,
+                    onClick = { importRecipeLauncher.launch(BACKUP_MIME_TYPES) }
+                )
             }
-
-            SettingsCard(icon = Icons.Filled.Backup, title = "Copia de seguridad") {
-                OutlinedButton(onClick = { exportLauncher.launch("recetarios_backup.zip") }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Exportar toda la app")
                 }
-                OutlinedButton(onClick = { importLauncher.launch(BACKUP_MIME_TYPES) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Importar copia de seguridad")
-                }
-                OutlinedButton(onClick = { importRecipeLauncher.launch(BACKUP_MIME_TYPES) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Importar receta")
-                }
-            }
-
+                SettingsSection.AI -> {
             SettingsCard(
                 icon = Icons.Filled.AutoAwesome,
-                title = "Importar con IA (beta)",
+                title = "",
                 description = "Reconoce el texto de una foto de una receta (libro, revista, escrita a mano) " +
                     "y valora lo saludable que es, usando el proveedor de IA que elijas. La foto o el " +
                     "texto se envían a ese proveedor para procesarlos; no se guarda ninguna copia salvo " +
@@ -444,38 +484,8 @@ fun SettingsScreen(
                     }
                 }
             }
-
-            SettingsCard(
-                icon = Icons.Filled.Storefront,
-                title = "Packs de recetas",
-                description = "Instala libros de recetas publicados por otros usuarios. Son de solo " +
-                    "lectura: no se pueden editar, solo consultar, cocinar y desinstalar."
-            ) {
-                OutlinedTextField(
-                    value = packsCatalogRepo,
-                    onValueChange = { viewModel.setPacksCatalogRepo(it) },
-                    label = { Text("Repositorio del catálogo") },
-                    placeholder = { Text("usuario/repositorio") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedButton(onClick = onOpenPacksCatalog, modifier = Modifier.fillMaxWidth()) {
-                    Text("Explorar catálogo")
                 }
-            }
-
-            SettingsCard(
-                icon = Icons.Filled.Sync,
-                title = "Servidor de sincronización",
-                description = "Conecta la app a uno o varios namespaces de un servidor self-hosted " +
-                    "para compartir y sincronizar libros y recetas de lectura-escritura con otras " +
-                    "apps Miga."
-            ) {
-                OutlinedButton(onClick = onOpenSyncConnections, modifier = Modifier.fillMaxWidth()) {
-                    Text("Gestionar conexiones")
-                }
-            }
-
+                SettingsSection.VOICE -> {
             SettingsCard(
                 icon = Icons.Filled.Mic,
                 title = "Dictado por voz",
@@ -558,10 +568,47 @@ fun SettingsScreen(
                     Text("Probar voz")
                 }
             }
-
-            SettingsCard(icon = Icons.Filled.SystemUpdate, title = "Actualizaciones") {
+                }
+                SettingsSection.PACKS -> {
+            SettingsCard(
+                icon = Icons.Filled.Storefront,
+                title = "",
+                description = "Instala libros de recetas publicados por otros usuarios. Son de solo " +
+                    "lectura: no se pueden editar, solo consultar, cocinar y desinstalar."
+            ) {
+                OutlinedTextField(
+                    value = packsCatalogRepo,
+                    onValueChange = { viewModel.setPacksCatalogRepo(it) },
+                    label = { Text("Repositorio del catálogo") },
+                    placeholder = { Text("usuario/repositorio") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                ManageRow(icon = Icons.Filled.Storefront, label = "Explorar catálogo", onClick = onOpenPacksCatalog)
+            }
+                }
+                SettingsSection.SYNC -> {
+            SettingsCard(
+                icon = Icons.Filled.Sync,
+                title = "",
+                description = "Conecta la app a uno o varios namespaces de un servidor self-hosted " +
+                    "para compartir y sincronizar libros y recetas de lectura-escritura con otras " +
+                    "apps Miga."
+            ) {
+                ManageRow(icon = Icons.Filled.Sync, label = "Gestionar conexiones", summary = "Servidor, namespace e invitaciones por QR", onClick = onOpenSyncConnections)
+            }
+                }
+                SettingsSection.UPDATES -> {
+            SettingsCard(icon = Icons.Filled.SystemUpdate, title = "") {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Notificar si hay una versión nueva", modifier = Modifier.weight(1f))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Notificar si hay una versión nueva", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "Se comprueba al abrir la app",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Switch(checked = autoCheckUpdatesEnabled, onCheckedChange = { viewModel.setAutoCheckUpdatesEnabled(it) })
                 }
 
@@ -584,13 +631,13 @@ fun SettingsScreen(
                     }
                 }
 
-                OutlinedButton(
-                    onClick = { viewModel.checkForUpdatesNow() },
-                    enabled = updateCheckState !is UpdateCheckState.Checking,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Buscar actualizaciones")
-                }
+                ManageRow(
+                    icon = Icons.Filled.SystemUpdate,
+                    label = "Buscar actualizaciones",
+                    summary = "Versión instalada: ${BuildConfig.VERSION_NAME}",
+                    chevron = false,
+                    onClick = { if (updateCheckState !is UpdateCheckState.Checking) viewModel.checkForUpdatesNow() }
+                )
 
                 when (val state = updateCheckState) {
                     is UpdateCheckState.Checking -> {
@@ -635,11 +682,7 @@ fun SettingsScreen(
                     is UpdateCheckState.Idle -> Unit
                 }
             }
-
-            SettingsCard(icon = Icons.Filled.HelpOutline, title = "Ayuda", contentSpacing = 0.dp) {
-                ManageRow(icon = Icons.Filled.HelpOutline, label = "Ayuda y soporte", onClick = onHelp)
-                HorizontalDivider()
-                ManageRow(icon = Icons.Filled.Info, label = "Acerca de", onClick = onAbout)
+                }
             }
         }
     }
@@ -719,49 +762,29 @@ fun SettingsScreen(
     }
 }
 
+/**
+ * Grupo de opciones dentro de la pantalla de una categoría: sin tarjeta ni icono (el icono y el título
+ * de la categoría ya están en la barra superior), con un encabezado opcional en el color primario
+ * (se omite si [title] está vacío) y una descripción opcional. [icon] ya no se dibuja; se conserva
+ * para no tocar las llamadas existentes.
+ */
 @Composable
 private fun SettingsCard(
     icon: ImageVector,
     title: String,
     description: String? = null,
-    contentSpacing: Dp = 14.dp,
+    contentSpacing: Dp = 12.dp,
     content: @Composable () -> Unit
 ) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-                Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
-                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    if (description != null) {
-                        Text(
-                            description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
-                    }
-                }
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(contentSpacing)) {
-                content()
-            }
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (title.isNotBlank()) {
+            Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+        }
+        if (description != null) {
+            Text(description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(contentSpacing)) {
+            content()
         }
     }
 }
@@ -798,7 +821,7 @@ private fun ColorThemeSwatch(color: Color, selected: Boolean, contentDescription
 }
 
 @Composable
-private fun ManageRow(icon: ImageVector, label: String, onClick: () -> Unit) {
+private fun ManageRow(icon: ImageVector, label: String, onClick: () -> Unit, summary: String? = null, chevron: Boolean = true) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -807,7 +830,14 @@ private fun ManageRow(icon: ImageVector, label: String, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(label, modifier = Modifier.padding(start = 16.dp).weight(1f))
-        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge)
+            if (summary != null) {
+                Text(summary, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        if (chevron) {
+            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }

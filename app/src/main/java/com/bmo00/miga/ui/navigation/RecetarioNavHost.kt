@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -69,7 +70,9 @@ import com.bmo00.miga.ui.settings.ManageIngredientsScreen
 import com.bmo00.miga.ui.settings.ManageIngredientsViewModel
 import com.bmo00.miga.ui.settings.ManageUtensilsScreen
 import com.bmo00.miga.ui.settings.ManageUtensilsViewModel
-import com.bmo00.miga.ui.settings.SettingsScreen
+import com.bmo00.miga.ui.settings.SettingsHomeScreen
+import com.bmo00.miga.ui.settings.SettingsSection
+import com.bmo00.miga.ui.settings.SettingsSectionScreen
 import com.bmo00.miga.ui.settings.SettingsViewModel
 import com.bmo00.miga.ui.sync.SyncConnectionsScreen
 import com.bmo00.miga.ui.sync.SyncConnectionsViewModel
@@ -363,17 +366,36 @@ fun RecetarioNavHost() {
                 val viewModel: SettingsViewModel = viewModel(
                     factory = viewModelFactory { initializer { SettingsViewModel(repository, settingsRepository) } }
                 )
-                SettingsScreen(
+                val hasChangelog = remember { settingsRepository.listAvailableChangelogVersionCodes().isNotEmpty() }
+                SettingsHomeScreen(
                     viewModel = viewModel,
+                    hasChangelog = hasChangelog,
+                    onOpenSection = { navController.navigate(Destinations.settingsSection(it.id)) },
+                    onOpenStats = { navController.navigate(Destinations.STATS_ROUTE) },
+                    onOpenChangelog = { navController.navigate(Destinations.HELP_CHANGELOG_ROUTE) },
+                    onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
+                    onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) }
+                )
+            }
+
+            composable(
+                route = Destinations.SETTINGS_SECTION_ROUTE,
+                arguments = listOf(navArgument(Destinations.ARG_SETTINGS_SECTION) { type = NavType.StringType })
+            ) { backStackEntry ->
+                val section = SettingsSection.fromId(backStackEntry.arguments?.getString(Destinations.ARG_SETTINGS_SECTION))
+                val viewModel: SettingsViewModel = viewModel(
+                    factory = viewModelFactory { initializer { SettingsViewModel(repository, settingsRepository) } }
+                )
+                SettingsSectionScreen(
+                    viewModel = viewModel,
+                    section = section,
+                    onBack = { navController.popBackStack() },
                     onManageCategories = { navController.navigate(Destinations.MANAGE_CATEGORIES_ROUTE) },
                     onManageUtensils = { navController.navigate(Destinations.MANAGE_UTENSILS_ROUTE) },
                     onManageIngredients = { navController.navigate(Destinations.MANAGE_INGREDIENTS_ROUTE) },
                     onManageIngredientCategories = { navController.navigate(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) },
                     onOpenPacksCatalog = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) },
-                    onOpenSyncConnections = { navController.navigate(Destinations.SYNC_CONNECTIONS_ROUTE) },
-                    onOpenStats = { navController.navigate(Destinations.STATS_ROUTE) },
-                    onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
-                    onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) }
+                    onOpenSyncConnections = { navController.navigate(Destinations.SYNC_CONNECTIONS_ROUTE) }
                 )
             }
 
