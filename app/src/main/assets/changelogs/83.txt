@@ -1,0 +1,1 @@
+Corrige un fallo de compilación de la versión 1.0.81: el rediseño de Ajustes al estilo de las apps de Google (categorías con icono y resumen, una pantalla por categoría y Novedades como sección propia) llega ahora sí en esta versión.
