@@ -13,9 +13,11 @@ android {
         applicationId = "org.calamares.miga"
         minSdk = 26
         targetSdk = 36
-        // El patch de versionName se incrementa en cada commit (1.0.1, 1.0.2...); versionCode sube en paralelo.
-        versionCode = 88
-        versionName = "1.0.87"
+        // versionCode sube en cada commit (Play exige que crezca siempre). versionName es la versión
+        // pública y solo cambia al publicar una nueva versión (1.0.0, 1.0.1, 1.1.0...), con su nota
+        // de versión en assets/changelogs y fastlane/.../changelogs (<versionCode>.txt).
+        versionCode = 89
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
