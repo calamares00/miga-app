@@ -27,6 +27,9 @@ private const val OPENROUTER_MODELS_ENDPOINT = "https://openrouter.ai/api/v1/mod
 // Free OpenRouter models are usually slower than the providers' own APIs.
 private const val TIMEOUT_MILLIS = 60_000
 
+// Output budget for the second attempt after an answer was cut off.
+private const val LARGE_MAX_TOKENS = 32_000
+
 // Request and response DTOs follow the OpenAI chat completions format used by OpenRouter.
 
 @Serializable
@@ -110,34 +113,59 @@ internal object OpenRouterTransport : AiTransport {
                 )
             } + OpenRouterPart(type = "text", text = request.prompt)
             val messages = listOf(OpenRouterMessage(content = parts))
-            var response = post(OpenRouterRequest(model, messages, request.maxTokens), apiKey)
-            var errorDetail: String? = null
-            // A 400 usually means the upstream provider rejects a parameter; with free models it is
-            // most often a max_tokens above their output limit. Retry once letting the provider pick.
-            if (response.code == 400) {
-                val retry = post(OpenRouterRequest(model, messages), apiKey)
-                if (retry.isSuccessful) {
-                    response = retry
-                } else {
-                    errorDetail = describeErrorBody(response.body) + "\n— retry without max_tokens:\n" + describeErrorBody(retry.body)
-                }
+            var answer = send(model, messages, request.maxTokens, apiKey)
+            // Reasoning models spend part of the budget thinking and may run out before finishing
+            // the answer, which leaves a cut JSON. Try once more with a larger budget.
+            if (answer is Answer.Truncated && request.maxTokens < LARGE_MAX_TOKENS) {
+                answer = send(model, messages, LARGE_MAX_TOKENS, apiKey)
             }
-            if (!response.isSuccessful) {
-                return@withContext AiText.Error(AiErrors.http(name, response.code, errorDetail ?: describeErrorBody(response.body)))
+            when (val result = answer) {
+                is Answer.Complete -> AiText.Success(result.text)
+                is Answer.Truncated -> AiText.Error(
+                    ErrorDetail.withDetail(describeIncomplete("length"), result.partialText.take(1500))
+                )
+                is Answer.Failed -> AiText.Error(result.reason)
             }
-            val decoded = aiJson.decodeFromString(OpenRouterResponse.serializer(), response.body)
-            // OpenRouter may answer 200 with the upstream provider's error inside the body.
-            decoded.error?.let { error ->
-                return@withContext AiText.Error(AiErrors.http(name, error.code ?: 502, error.describe()))
-            }
-            val choice = decoded.choices.firstOrNull()
-            val text = choice?.message?.content
-            if (text.isNullOrBlank()) AiText.Error(describeIncomplete(choice?.finishReason)) else AiText.Success(text)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             AiText.Error(AiErrors.exception(e))
         }
+    }
+
+    private sealed interface Answer {
+        class Complete(val text: String) : Answer
+        class Truncated(val partialText: String) : Answer
+        class Failed(val reason: String) : Answer
+    }
+
+    /** One completion request, retried without max_tokens when the upstream provider rejects it. */
+    private fun send(model: String, messages: List<OpenRouterMessage>, maxTokens: Int, apiKey: String): Answer {
+        var response = post(OpenRouterRequest(model, messages, maxTokens), apiKey)
+        var errorDetail: String? = null
+        // A 400 usually means the upstream provider rejects a parameter; with free models it is
+        // most often a max_tokens above their output limit. Retry once letting the provider pick.
+        if (response.code == 400) {
+            val retry = post(OpenRouterRequest(model, messages), apiKey)
+            if (retry.isSuccessful) {
+                response = retry
+            } else {
+                errorDetail = describeErrorBody(response.body) + "\n— retry without max_tokens:\n" + describeErrorBody(retry.body)
+            }
+        }
+        if (!response.isSuccessful) {
+            return Answer.Failed(AiErrors.http(name, response.code, errorDetail ?: describeErrorBody(response.body)))
+        }
+        val decoded = aiJson.decodeFromString(OpenRouterResponse.serializer(), response.body)
+        // OpenRouter may answer 200 with the upstream provider's error inside the body.
+        decoded.error?.let { error -> return Answer.Failed(AiErrors.http(name, error.code ?: 502, error.describe())) }
+        val choice = decoded.choices.firstOrNull()
+        val text = choice?.message?.content
+        val truncated = choice?.finishReason == "length"
+        if (text.isNullOrBlank()) {
+            return if (truncated) Answer.Truncated("") else Answer.Failed(describeIncomplete(choice?.finishReason))
+        }
+        return if (truncated) Answer.Truncated(text) else Answer.Complete(text)
     }
 
     private fun post(request: OpenRouterRequest, apiKey: String): HttpResponse = postJson(

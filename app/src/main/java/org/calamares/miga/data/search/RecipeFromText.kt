@@ -34,7 +34,7 @@ internal fun buildDishRecipePrompt(dish: DishSuggestion): String {
 You are a cooking assistant. Write a complete, realistic and well explained recipe for the dish
 "${dish.name}"$originText.$contextText
 
-Return ONLY a JSON object with exactly this format, with no explanations or extra text:
+Return ONLY a compact JSON object (no indentation or line breaks) with exactly this format, with no explanations or extra text:
 $RECIPE_JSON_FORMAT
 Use realistic quantities and ingredients for the number of servings you choose. Put each
 preparation step as a separate entry of the "instructions" array, in a logical order. In "source"
@@ -53,7 +53,7 @@ Page text:
 $pageText
 ---
 
-Return ONLY a JSON object with exactly this format, with no explanations or extra text:
+Return ONLY a compact JSON object (no indentation or line breaks) with exactly this format, with no explanations or extra text:
 $RECIPE_JSON_FORMAT
 If the text does not contain a recognisable recipe, leave "name" empty. Put the original URL ($url)
 in "source". If you cannot determine a value, use null (or an empty list) instead of making it up.

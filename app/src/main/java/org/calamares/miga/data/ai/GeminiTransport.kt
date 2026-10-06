@@ -84,7 +84,8 @@ internal object GeminiTransport : AiTransport {
             val decoded = aiJson.decodeFromString(GeminiResponse.serializer(), response.body)
             val candidate = decoded.candidates.firstOrNull()
             val text = candidate?.content?.parts?.firstOrNull { it.text != null }?.text
-            if (text.isNullOrBlank()) {
+            // An answer cut off by the output limit is unusable (half a JSON), so it counts as a failure.
+            if (text.isNullOrBlank() || candidate?.finishReason == "MAX_TOKENS") {
                 AiText.Error(describeIncomplete(candidate?.finishReason, decoded.promptFeedback?.blockReason))
             } else {
                 AiText.Success(text)

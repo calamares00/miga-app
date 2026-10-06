@@ -42,7 +42,7 @@ $ingredientsText
 Method:
 $stepsText
 
-Return ONLY a JSON object with exactly this format, with no explanations or extra text:
+Return ONLY a compact JSON object (no indentation or line breaks) with exactly this format, with no explanations or extra text:
 { "colorLevel": "GREEN" | "YELLOW" | "RED", "description": "string, 2-4 sentences explaining why" }
 GREEN = balanced and healthy recipe. YELLOW = moderate (some excess fat, sugar or salt, processed
 foods, occasional frying). RED = unhealthy (deep frying, lots of sugar or saturated fat,

@@ -54,7 +54,7 @@ Suggest between 6 and 10 dishes that fit the request well. If the request is geo
 country or region), favour dishes that are truly typical and recognisable from that place;
 otherwise, suggest a varied set of recipe ideas that match the request.
 
-Return ONLY a JSON object with exactly this format, with no explanations or extra text:
+Return ONLY a compact JSON object (no indentation or line breaks) with exactly this format, with no explanations or extra text:
 {
   "dishes": [
     { "name": "string", "description": "string, 1-2 sentences", "origin": "string or null" }
