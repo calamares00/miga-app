@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.list
 
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.SelectAll
 import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -102,6 +104,7 @@ fun RecipeListScreen(
     var showViewModeMenu by remember { mutableStateOf(false) }
     var recipeToDelete by remember { mutableStateOf<RecipeSummary?>(null) }
     var showDeleteSelectedConfirm by remember { mutableStateOf(false) }
+    var showBulkEditSheet by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
     var showNewRecipeSheet by remember { mutableStateOf(false) }
     var showUrlImportDialog by remember { mutableStateOf(false) }
@@ -139,13 +142,19 @@ fun RecipeListScreen(
             if (selectionMode) {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                    title = { Text("${selectedIds.size} seleccionadas") },
+                    title = { Text(L10n.str(R.string.n_selected, selectedIds.size)) },
                     navigationIcon = {
                         IconButton(onClick = viewModel::clearSelection) {
                             Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancelar_seleccion))
                         }
                     },
                     actions = {
+                        IconButton(onClick = viewModel::selectAll) {
+                            Icon(Icons.Filled.SelectAll, contentDescription = L10n.str(R.string.select_all))
+                        }
+                        IconButton(onClick = { showBulkEditSheet = true }) {
+                            Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.bulk_edit))
+                        }
                         IconButton(onClick = { viewModel.exportSelected(context) }) {
                             Icon(Icons.Filled.FileDownload, contentDescription = L10n.str(R.string.exportar_seleccionadas))
                         }
@@ -424,6 +433,29 @@ fun RecipeListScreen(
             dismissButton = {
                 TextButton(onClick = { recipeToDelete = null }) { Text(L10n.str(R.string.cancelar)) }
             }
+        )
+    }
+
+    if (showBulkEditSheet && selectionMode) {
+        val categoryNames by viewModel.categoryNames.collectAsState()
+        val targetBooks by viewModel.targetBooks.collectAsState()
+        val aiRecalculation by viewModel.aiRecalculationAvailable.collectAsState()
+        val showMessage: (String) -> Unit = { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
+        BulkEditSheet(
+            count = selectedIds.size,
+            categories = categoryNames,
+            books = targetBooks,
+            aiAvailable = aiRecalculation,
+            onDismiss = { showBulkEditSheet = false },
+            onCategory = { viewModel.bulkSetCategory(it, showMessage) },
+            onDifficulty = { viewModel.bulkSetDifficulty(it, showMessage) },
+            onServings = { servings, scale -> viewModel.bulkSetServings(servings, scale, showMessage) },
+            onSource = { viewModel.bulkSetSource(it, showMessage) },
+            onFavorite = { viewModel.bulkSetFavorite(it, showMessage) },
+            onMove = { viewModel.bulkMoveTo(it, showMessage) },
+            onCopy = { viewModel.bulkCopyTo(context, it, showMessage) },
+            onShopping = { viewModel.bulkAddToShoppingList(showMessage) },
+            onRecalculateAi = { viewModel.bulkRecalculateAi(showMessage) }
         )
     }
 
