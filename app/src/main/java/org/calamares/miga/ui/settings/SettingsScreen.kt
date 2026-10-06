@@ -152,6 +152,9 @@ fun SettingsSectionScreen(
     var dictationMenuExpanded by remember { mutableStateOf(false) }
     val dictationLanguage by viewModel.dictationLanguage.collectAsState()
     val visionProvider by viewModel.visionProvider.collectAsState()
+    val aiEnabled by viewModel.aiEnabled.collectAsState()
+    val aiHealthEnabled by viewModel.aiHealthEnabled.collectAsState()
+    val aiNutritionEnabled by viewModel.aiNutritionEnabled.collectAsState()
     val anthropicApiKey by viewModel.anthropicApiKey.collectAsState()
     val anthropicModel by viewModel.anthropicModel.collectAsState()
     var anthropicModelMenuExpanded by remember { mutableStateOf(false) }
@@ -348,6 +351,29 @@ fun SettingsSectionScreen(
             }
                 }
                 SettingsSection.AI -> {
+            SettingsCard(icon = Icons.Filled.AutoAwesome, title = "") {
+                AiSwitchRow(
+                    title = L10n.str(R.string.ai_enabled_title),
+                    subtitle = L10n.str(R.string.ai_enabled_desc),
+                    checked = aiEnabled,
+                    onCheckedChange = { viewModel.setAiEnabled(it) }
+                )
+                if (aiEnabled) {
+                    AiSwitchRow(
+                        title = L10n.str(R.string.ai_health_title),
+                        subtitle = L10n.str(R.string.ai_health_desc),
+                        checked = aiHealthEnabled,
+                        onCheckedChange = { viewModel.setAiHealthEnabled(it) }
+                    )
+                    AiSwitchRow(
+                        title = L10n.str(R.string.ai_nutrition_title),
+                        subtitle = L10n.str(R.string.ai_nutrition_desc),
+                        checked = aiNutritionEnabled,
+                        onCheckedChange = { viewModel.setAiNutritionEnabled(it) }
+                    )
+                }
+            }
+            if (aiEnabled) {
             SettingsCard(
                 icon = Icons.Filled.AutoAwesome,
                 title = "",
@@ -487,6 +513,7 @@ fun SettingsSectionScreen(
                         )
                     }
                 }
+            }
             }
                 }
                 SettingsSection.VOICE -> {
@@ -682,6 +709,20 @@ fun SettingsSectionScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun AiSwitchRow(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onCheckedChange(!checked) },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 

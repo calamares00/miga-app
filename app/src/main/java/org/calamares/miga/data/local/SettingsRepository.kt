@@ -29,6 +29,9 @@ class SettingsRepository(private val context: Context) {
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val colorThemeKey = stringPreferencesKey("color_theme")
     private val biometricLockKey = booleanPreferencesKey("biometric_lock_enabled")
+    private val aiEnabledKey = booleanPreferencesKey("ai_enabled")
+    private val aiHealthEnabledKey = booleanPreferencesKey("ai_health_enabled")
+    private val aiNutritionEnabledKey = booleanPreferencesKey("ai_nutrition_enabled")
     private val onboardingDoneKey = booleanPreferencesKey("onboarding_done")
     private val seedLanguageKey = stringPreferencesKey("seed_language")
     private val shoppingImagesKey = booleanPreferencesKey("shopping_images_enabled")
@@ -120,6 +123,31 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setOnboardingDone() {
         context.settingsDataStore.edit { prefs -> prefs[onboardingDoneKey] = true }
+    }
+
+    /** Interruptor global de IA: si está apagado, la app no muestra ni usa ninguna función de IA. */
+    fun observeAiEnabled(): Flow<Boolean> = context.settingsDataStore.data.map { prefs -> prefs[aiEnabledKey] ?: true }
+
+    suspend fun setAiEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[aiEnabledKey] = enabled }
+    }
+
+    /** Valoración automática de salud al abrir una receta (solo con la IA global activada). */
+    fun observeAiHealthEnabled(): Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        (prefs[aiEnabledKey] ?: true) && (prefs[aiHealthEnabledKey] ?: true)
+    }
+
+    suspend fun setAiHealthEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[aiHealthEnabledKey] = enabled }
+    }
+
+    /** Estimación nutricional automática al abrir una receta (solo con la IA global activada). */
+    fun observeAiNutritionEnabled(): Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        (prefs[aiEnabledKey] ?: true) && (prefs[aiNutritionEnabledKey] ?: true)
+    }
+
+    suspend fun setAiNutritionEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[aiNutritionEnabledKey] = enabled }
     }
 
     fun observeBiometricLockEnabled(): Flow<Boolean> =

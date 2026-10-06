@@ -101,6 +101,25 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setGeminiModel(model) }
     }
 
+    val aiEnabled: StateFlow<Boolean> = settingsRepository.observeAiEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val aiHealthEnabled: StateFlow<Boolean> = settingsRepository.observeAiHealthEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val aiNutritionEnabled: StateFlow<Boolean> = settingsRepository.observeAiNutritionEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setAiEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAiEnabled(enabled) }
+    }
+
+    fun setAiHealthEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAiHealthEnabled(enabled) }
+    }
+
+    fun setAiNutritionEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAiNutritionEnabled(enabled) }
+    }
+
     val visionProvider: StateFlow<VisionProviderType> = settingsRepository.observeVisionProvider()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), VisionProviderType.GEMINI)
 

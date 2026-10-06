@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.ui.components.rememberAiEnabled
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.BuildConfig
@@ -56,6 +57,7 @@ fun HelpScreen(onBack: () -> Unit) {
             )
         }
     ) { padding ->
+        val aiEnabled = rememberAiEnabled()
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -84,10 +86,12 @@ fun HelpScreen(onBack: () -> Unit) {
                 title = L10n.str(R.string.exportar_e_importar),
                 body = L10n.str(R.string.desde_receta_puedes_exportarla_como)
             )
-            HelpSection(
-                title = L10n.str(R.string.anadir_receta_foto_beta),
-                body = L10n.str(R.string.desde_menu_libro_anadir_foto)
-            )
+            if (aiEnabled) {
+                HelpSection(
+                    title = L10n.str(R.string.anadir_receta_foto_beta),
+                    body = L10n.str(R.string.desde_menu_libro_anadir_foto)
+                )
+            }
             HelpSection(
                 title = L10n.str(R.string.bloqueo_biometrico),
                 body = L10n.str(R.string.activalo_ajustes_seguridad_app_pida)

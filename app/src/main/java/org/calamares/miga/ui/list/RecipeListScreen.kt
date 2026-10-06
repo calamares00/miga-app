@@ -73,6 +73,7 @@ import org.calamares.miga.data.model.RecipeSummary
 import org.calamares.miga.ui.common.BACKUP_MIME_TYPES
 import org.calamares.miga.ui.components.FilterSheetContent
 import org.calamares.miga.ui.components.NewRecipeSourceSheet
+import org.calamares.miga.ui.components.rememberAiEnabled
 import org.calamares.miga.ui.components.PhotoSourceSheet
 import org.calamares.miga.ui.components.RecipeCard
 import org.calamares.miga.ui.components.RecipeGridCard
@@ -319,7 +320,8 @@ fun RecipeListScreen(
                     bulkGalleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 },
                 onSearchDishClick = { showNewRecipeSheet = false; onSearchDishClick() },
-                onUrlClick = { showNewRecipeSheet = false; showUrlImportDialog = true }
+                onUrlClick = { showNewRecipeSheet = false; showUrlImportDialog = true },
+                aiEnabled = rememberAiEnabled()
             )
         }
     }

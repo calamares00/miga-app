@@ -20,7 +20,7 @@ fun dishRecipeGenerationClientFor(provider: VisionProviderType): DishRecipeGener
 }
 
 // Prompt compartido entre todos los proveedores: pide exactamente el mismo JSON que ya usa
-// RECIPE_EXTRACTION_PROMPT (mismo RecipeVisionResultDto), para no tener el formato duplicado en dos
+// recipeExtractionPrompt() (mismo RecipeVisionResultDto), para no tener el formato duplicado en dos
 // sitios con riesgo de que diverjan; solo cambia la instrucción de partida (generar en vez de
 // transcribir una foto).
 internal fun buildDishRecipePrompt(dish: DishSuggestion): String {

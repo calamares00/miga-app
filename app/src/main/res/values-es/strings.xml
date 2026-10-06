@@ -200,7 +200,7 @@
     <string name="desconocida">"Desconocida"</string>
     <string name="desde_archivo_json_zip">"Desde archivo (JSON/ZIP)"</string>
     <string name="desde_imagen">"Desde imagen"</string>
-    <string name="desde_menu_libro_anadir_foto">"Desde el menú de un libro, \"Añadir con foto\" reconoce el texto de una foto (cámara o galería) con IA y precarga el editor para que solo tengas que revisarlo antes de guardar. Necesita conexión a internet y tu propia API key de IA, configurable en Ajustes → Importar con IA; sin ella no se envía ninguna foto a ningún sitio."</string>
+    <string name="desde_menu_libro_anadir_foto">"Desde el menú de un libro, \"Añadir con foto\" reconoce el texto de una foto (cámara o galería) con IA y precarga el editor para que solo tengas que revisarlo antes de guardar. Necesita conexión a internet y tu propia API key de IA, configurable en Ajustes → Inteligencia artificial; sin ella no se envía ninguna foto a ningún sitio."</string>
     <string name="desde_receta_pasos_pulsa_modo">"Desde una receta con pasos, pulsa \"Modo cocina\" para verlos en pantalla completa, uno a uno, sin que la pantalla se apague mientras cocinas."</string>
     <string name="desde_receta_puedes_exportarla_como">"Desde una receta puedes exportarla como texto, PDF o JSON. Desde un libro puedes exportarlo entero. Y desde Ajustes puedes hacer o restaurar una copia de seguridad completa."</string>
     <string name="desde_url">"Desde una URL"</string>
@@ -327,7 +327,7 @@
     <string name="idioma_reconoce_dictas_lista_compra">"Idioma en el que se reconoce lo que dictas (lista de la compra, pasos de receta y modo cocina). Si tu móvil está en otro idioma, elige aquí español."</string>
     <string name="importar">"Importar"</string>
     <string name="importar_copia_seguridad">"Importar copia de seguridad"</string>
-    <string name="importar_ia">"Importar con IA"</string>
+    <string name="importar_ia">"Inteligencia artificial"</string>
     <string name="importar_receta">"Importar receta"</string>
     <string name="importar_receta_desde_url">"Importar receta desde una URL"</string>
     <string name="imported_n_recipes">"Se importaron %1$s recetas"</string>
@@ -733,6 +733,13 @@
     <string name="change_model">"Cambiar modelo"</string>
     <string name="change_model_title">"Probar con otro modelo"</string>
     <string name="change_model_body">"Elige un modelo y Miga lo volverá a intentar. También queda guardado como predeterminado en Ajustes."</string>
-    <string name="no_ai_keys">"Añade una clave de API en Ajustes → Importar con IA para usar otros modelos."</string>
+    <string name="no_ai_keys">"Añade una clave de API en Ajustes → Inteligencia artificial para usar otros modelos."</string>
     <string name="current_model">"actual"</string>
+    <string name="ai_enabled_title">"Usar inteligencia artificial"</string>
+    <string name="ai_enabled_desc">"Desactívala para ocultar todas las funciones de IA: importar desde fotos o enlaces, buscar recetas, valoración de salud, nutrición y sustitutos."</string>
+    <string name="ai_health_title">"Valoración de salud automática"</string>
+    <string name="ai_health_desc">"Valora lo saludable que es una receta según sus ingredientes al abrirla."</string>
+    <string name="ai_nutrition_title">"Estimación nutricional automática"</string>
+    <string name="ai_nutrition_desc">"Estima calorías y macros por ración al abrir una receta."</string>
+    <string name="ai_disabled_summary">"Desactivada"</string>
 </resources>

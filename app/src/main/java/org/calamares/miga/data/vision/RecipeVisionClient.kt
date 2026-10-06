@@ -49,10 +49,9 @@ fun visionClientFor(provider: VisionProviderType): RecipeVisionClient = when (pr
 
 // Prompt compartido entre todos los proveedores de visión: deben pedir exactamente el mismo JSON,
 // si no divergirían al cambiar de proveedor en Ajustes.
-internal const val RECIPE_EXTRACTION_PROMPT = """
+internal fun recipeExtractionPrompt(): String = """
 Eres un asistente que transcribe recetas de cocina a partir de una foto (de un libro, revista o
-receta manuscrita, a veces con el texto girado o en columnas). Respeta el idioma original de la
-receta: transcríbela tal cual, sin traducirla. Devuelve
+receta manuscrita, a veces con el texto girado o en columnas). Devuelve
 ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto adicional:
 {
   "name": "string",
@@ -74,7 +73,7 @@ lista vacía) en vez de inventarlo. Si no reconoces ninguna receta en la imagen,
 Si se incluyen varias imágenes en esta petición, todas son páginas o fragmentos de la MISMA
 receta (por ejemplo, fotos consecutivas de un libro de cocina); combina la información de todas
 ellas en un único resultado, en el orden en que aparecen las imágenes.
-"""
+""".trimIndent() + transcriptionLanguageInstruction()
 
 /**
  * Instrucción que se añade a los prompts que GENERAN texto (no a los que transcriben una receta
@@ -83,6 +82,17 @@ ellas en un único resultado, en el orden en que aparecen las imágenes.
 internal fun outputLanguageInstruction(): String {
     val language = if (L10n.locale().language == "es") "español" else "inglés (English)"
     return "\n\nEscribe todos los textos de la respuesta (nombres, descripciones, pasos, notas...) en $language."
+}
+
+/**
+ * Instrucción para los prompts que TRANSCRIBEN una receta existente (foto, página web): la receta
+ * se guarda en el idioma de la app, traduciéndola si el original está en otro idioma.
+ */
+internal fun transcriptionLanguageInstruction(): String {
+    val language = if (L10n.locale().language == "es") "español" else "inglés (English)"
+    return "\n\nEscribe la receta en $language. Si el original está en otro idioma, tradúcela entera " +
+        "(nombre, categoría, ingredientes, unidades, pasos, notas, etiquetas y utensilios) de forma natural; " +
+        "si ya está en $language, transcríbela tal cual. No cambies las cantidades ni los valores de \"difficulty\"."
 }
 
 // Algunos proveedores envuelven el JSON en un bloque de markdown pese a pedir JSON puro; se lo

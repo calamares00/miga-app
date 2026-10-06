@@ -37,7 +37,7 @@ object AnthropicVisionClient : RecipeVisionClient {
                                         type = "image",
                                         source = AnthropicImageSource(mediaType = it.mimeType, data = Base64.getEncoder().encodeToString(it.bytes))
                                     )
-                                } + AnthropicContentBlock(type = "text", text = RECIPE_EXTRACTION_PROMPT)
+                                } + AnthropicContentBlock(type = "text", text = recipeExtractionPrompt())
                             )
                         )
                     )

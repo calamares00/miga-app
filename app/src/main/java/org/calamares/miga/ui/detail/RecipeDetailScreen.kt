@@ -4,6 +4,7 @@ import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.ui.components.AiContentNotice
+import org.calamares.miga.ui.components.rememberAiEnabled
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -137,6 +138,7 @@ fun RecipeDetailScreen(
     val healthState by viewModel.healthState.collectAsState()
     val nutritionState by viewModel.nutritionState.collectAsState()
     val substitutionDialogState by viewModel.substitutionDialogState.collectAsState()
+    val aiEnabled = rememberAiEnabled()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
@@ -183,7 +185,7 @@ fun RecipeDetailScreen(
                     onRetryHealth = { viewModel.retryHealthCheck() },
                     nutritionState = nutritionState,
                     onRetryNutrition = { viewModel.retryNutritionCheck() },
-                    onSubstituteIngredient = { name -> viewModel.findSubstitutesFor(name) },
+                    onSubstituteIngredient = { name: String -> viewModel.findSubstitutesFor(name) }.takeIf { aiEnabled },
                     onRatingChange = { stars -> viewModel.setRating(stars) },
                     onAddToShoppingList = { addToShoppingList() }
                 )
@@ -392,7 +394,7 @@ private fun RecipeDetailContent(
     onRetryHealth: () -> Unit,
     nutritionState: NutritionState,
     onRetryNutrition: () -> Unit,
-    onSubstituteIngredient: (String) -> Unit,
+    onSubstituteIngredient: ((String) -> Unit)?,
     onRatingChange: (Int) -> Unit,
     onAddToShoppingList: () -> Unit
 ) {
@@ -475,13 +477,15 @@ private fun RecipeDetailContent(
                                     color = if (checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 8.dp)
                                 )
-                                IconButton(onClick = { onSubstituteIngredient(ingredient.name) }) {
-                                    Icon(
-                                        Icons.Filled.Autorenew,
-                                        contentDescription = L10n.str(R.string.substitute_x, ingredient.name),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                if (onSubstituteIngredient != null) {
+                                    IconButton(onClick = { onSubstituteIngredient(ingredient.name) }) {
+                                        Icon(
+                                            Icons.Filled.Autorenew,
+                                            contentDescription = L10n.str(R.string.substitute_x, ingredient.name),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
                                 }
                             }
                         }

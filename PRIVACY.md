@@ -50,8 +50,9 @@ Todas se inician por una acción tuya o por una función que has activado.
    elijas (**Google Gemini** o **Anthropic Claude**) la foto, el texto de la página, el nombre del
    plato o los ingredientes y pasos de la receta, según la función. El tratamiento de esos datos
    está sujeto a las condiciones del proveedor asociadas a tu clave. Sin clave configurada no se
-   envía nada. El contenido generado con IA se marca en la app, puede contener errores y se puede
-   reportar.
+   envía nada. Puedes desactivar todas las funciones de IA (o solo la valoración de salud o la
+   estimación nutricional automáticas) en Ajustes → Inteligencia artificial. El contenido generado
+   con IA se marca en la app, puede contener errores y se puede reportar.
 2. **Open Food Facts**: al escanear un código de barras o buscar un producto por nombre se envía
    ese código o ese texto a Open Food Facts (base de datos abierta, sin cuenta) para obtener el
    nombre, la foto y la ficha del producto. Las fotos de producto se descargan de sus servidores.

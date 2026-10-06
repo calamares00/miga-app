@@ -68,6 +68,7 @@ fun SettingsHomeScreen(
     val colorTheme by viewModel.colorTheme.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
     val visionProvider by viewModel.visionProvider.collectAsState()
+    val aiEnabled by viewModel.aiEnabled.collectAsState()
     val dictationLanguage by viewModel.dictationLanguage.collectAsState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
@@ -127,7 +128,7 @@ fun SettingsHomeScreen(
                     HomeItem(SettingsSection.PACKS.icon, SettingsSection.PACKS.title, L10n.str(R.string.libros_recetas_listos_instalar)) {
                         onOpenSection(SettingsSection.PACKS)
                     },
-                    HomeItem(SettingsSection.AI.icon, SettingsSection.AI.title, L10n.str(R.string.x_foto_url_valoracion_salud, visionProvider.label)) {
+                    HomeItem(SettingsSection.AI.icon, SettingsSection.AI.title, if (aiEnabled) L10n.str(R.string.x_foto_url_valoracion_salud, visionProvider.label) else L10n.str(R.string.ai_disabled_summary)) {
                         onOpenSection(SettingsSection.AI)
                     }
                 )

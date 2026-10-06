@@ -72,6 +72,11 @@ class RecipeDetailViewModel(
         if (healthCheckStarted) return
         healthCheckStarted = true
         viewModelScope.launch {
+            // Desactivada en Ajustes (o la IA entera): no se analiza ni se muestra nada.
+            if (!settingsRepository.observeAiHealthEnabled().first()) {
+                _healthState.value = HealthState.Idle
+                return@launch
+            }
             val current = recipe.filterNotNull().first()
             val provider = settingsRepository.observeVisionProvider().first()
             val apiKey = settingsRepository.apiKeyFor(provider)
@@ -118,6 +123,10 @@ class RecipeDetailViewModel(
         if (nutritionCheckStarted) return
         nutritionCheckStarted = true
         viewModelScope.launch {
+            if (!settingsRepository.observeAiNutritionEnabled().first()) {
+                _nutritionState.value = NutritionState.Idle
+                return@launch
+            }
             val current = recipe.filterNotNull().first()
             val provider = settingsRepository.observeVisionProvider().first()
             val apiKey = settingsRepository.apiKeyFor(provider)
