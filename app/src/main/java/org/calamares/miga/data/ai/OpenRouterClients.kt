@@ -58,23 +58,23 @@ private fun recipeResult(result: OpenRouterText, emptyMessage: () -> String): Re
 
 object OpenRouterVisionClient : RecipeVisionClient {
     override suspend fun extractRecipe(images: List<VisionImageInput>, apiKey: String, model: String): RecipeVisionResult {
-        if (images.isEmpty()) return RecipeVisionResult.Error(L10n.str(R.string.no_hay_ninguna_foto_procesar))
+        if (images.isEmpty()) return RecipeVisionResult.Error(L10n.str(R.string.there_no_photos_process))
         val result = OpenRouterChat.complete(recipeExtractionPrompt(), apiKey, model, RECIPE_MAX_TOKENS, images)
-        return recipeResult(result) { L10n.str(R.string.no_ha_reconocido_ninguna_receta_2) }
+        return recipeResult(result) { L10n.str(R.string.no_recipe_was_found_photo) }
     }
 }
 
 object OpenRouterRecipeUrlImportClient : RecipeUrlImportClient {
     override suspend fun importFromUrl(url: String, pageText: String, apiKey: String, model: String): RecipeVisionResult {
         val result = OpenRouterChat.complete(buildUrlImportPrompt(url, pageText), apiKey, model, RECIPE_MAX_TOKENS)
-        return recipeResult(result) { L10n.str(R.string.no_ha_reconocido_ninguna_receta) }
+        return recipeResult(result) { L10n.str(R.string.no_recipe_was_found_page) }
     }
 }
 
 object OpenRouterDishRecipeGenerationClient : DishRecipeGenerationClient {
     override suspend fun generateRecipe(dish: DishSuggestion, apiKey: String, model: String): RecipeVisionResult {
         val result = OpenRouterChat.complete(buildDishRecipePrompt(dish), apiKey, model, RECIPE_MAX_TOKENS)
-        return recipeResult(result) { L10n.str(R.string.no_ha_podido_generar_receta) }
+        return recipeResult(result) { L10n.str(R.string.couldnt_generate_recipe) }
     }
 }
 
@@ -132,7 +132,7 @@ object OpenRouterIngredientSubstitutionClient : IngredientSubstitutionClient {
                 val dto = json.decodeFromString(SubstitutionResultDto.serializer(), extractJsonObject(result.text))
                 val substitutions = dto.substitutions.filter { it.substitute.isNotBlank() }.map { IngredientSubstitution(it.substitute, it.notes) }
                 if (substitutions.isEmpty()) {
-                    SubstitutionResult.Error(L10n.str(R.string.no_han_encontrado_sustitutos_este))
+                    SubstitutionResult.Error(L10n.str(R.string.no_substitutes_found_ingredient))
                 } else {
                     SubstitutionResult.Success(substitutions)
                 }

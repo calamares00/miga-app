@@ -113,16 +113,16 @@ object RecipeExporter {
             putExtra(Intent.EXTRA_SUBJECT, recipe.name)
             putExtra(Intent.EXTRA_TEXT, formatRecipeAsText(recipe))
         }
-        context.startActivity(Intent.createChooser(intent, L10n.str(R.string.compartir_receta)))
+        context.startActivity(Intent.createChooser(intent, L10n.str(R.string.share_recipe)))
     }
 
     fun shareShoppingListAsText(context: Context, groups: List<ShoppingListGroup>) {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, L10n.str(R.string.lista_compra_2))
+            putExtra(Intent.EXTRA_SUBJECT, L10n.str(R.string.shopping_list_2))
             putExtra(Intent.EXTRA_TEXT, formatShoppingListAsText(groups))
         }
-        context.startActivity(Intent.createChooser(intent, L10n.str(R.string.compartir_lista)))
+        context.startActivity(Intent.createChooser(intent, L10n.str(R.string.share_list)))
     }
 
     /** Exporta una receta: ZIP con sus fotos si tiene alguna, si no un .json plano como hasta ahora. */
@@ -211,12 +211,12 @@ object RecipeExporter {
     suspend fun importRecipe(context: Context, source: Uri): RecipeImportResult = withContext(Dispatchers.IO) {
         try {
             val bytes = context.contentResolver.openInputStream(source)?.use { it.readBytes() }
-                ?: return@withContext RecipeImportResult.Error(L10n.str(R.string.no_pudo_abrir_archivo))
+                ?: return@withContext RecipeImportResult.Error(L10n.str(R.string.couldnt_open_file))
             val isZip = isZip(bytes)
             val entries = if (isZip) readZipEntries(bytes) else emptyMap<String, ByteArray>()
             val manifestText = if (isZip) {
                 entries["manifest.json"]?.toString(Charsets.UTF_8)
-                    ?: return@withContext RecipeImportResult.Error(L10n.str(R.string.archivo_zip_no_contiene_manifest))
+                    ?: return@withContext RecipeImportResult.Error(L10n.str(R.string.zip_file_doesnt_contain_manifest))
             } else {
                 bytes.toString(Charsets.UTF_8)
             }
@@ -227,7 +227,7 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            RecipeImportResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+            RecipeImportResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
 
@@ -235,12 +235,12 @@ object RecipeExporter {
     suspend fun parseLibraryImport(context: Context, source: Uri): LibraryImportParseResult = withContext(Dispatchers.IO) {
         try {
             val bytes = context.contentResolver.openInputStream(source)?.use { it.readBytes() }
-                ?: return@withContext LibraryImportParseResult.Error(L10n.str(R.string.no_pudo_abrir_archivo))
+                ?: return@withContext LibraryImportParseResult.Error(L10n.str(R.string.couldnt_open_file))
             val isZip = isZip(bytes)
             val entries = if (isZip) readZipEntries(bytes) else emptyMap<String, ByteArray>()
             val manifestText = if (isZip) {
                 entries["manifest.json"]?.toString(Charsets.UTF_8)
-                    ?: return@withContext LibraryImportParseResult.Error(L10n.str(R.string.archivo_zip_no_contiene_manifest))
+                    ?: return@withContext LibraryImportParseResult.Error(L10n.str(R.string.zip_file_doesnt_contain_manifest))
             } else {
                 bytes.toString(Charsets.UTF_8)
             }
@@ -250,7 +250,7 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            LibraryImportParseResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.archivo_no_es_copia_seguridad))
+            LibraryImportParseResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.file_isnt_valid_backup))
         }
     }
 
@@ -292,7 +292,7 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            LibraryImportResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+            LibraryImportResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
 
@@ -311,14 +311,14 @@ object RecipeExporter {
         packVersion: Int
     ): PackImportResult = withContext(Dispatchers.IO) {
         try {
-            if (!isZip(zipBytes)) return@withContext PackImportResult.Error(L10n.str(R.string.archivo_descargado_no_es_zip))
+            if (!isZip(zipBytes)) return@withContext PackImportResult.Error(L10n.str(R.string.downloaded_file_isnt_valid_zip))
             val entries = readZipEntries(zipBytes)
             val manifestText = entries["manifest.json"]?.toString(Charsets.UTF_8)
-                ?: return@withContext PackImportResult.Error(L10n.str(R.string.pack_no_contiene_manifest_json))
+                ?: return@withContext PackImportResult.Error(L10n.str(R.string.pack_doesnt_contain_manifest_json))
             val migrated = migrateJson(manifestText, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
             val dto = json.decodeFromJsonElement(LibraryExportDto.serializer(), migrated)
             val bookMeta = dto.books.firstOrNull()
-                ?: return@withContext PackImportResult.Error(L10n.str(R.string.pack_no_incluye_metadatos_libro))
+                ?: return@withContext PackImportResult.Error(L10n.str(R.string.pack_doesnt_include_book_details))
             val bookCoverUri = bookMeta.coverPhotoFileName?.let { fileName ->
                 entries["books/${bookMeta.uid}/$fileName"]?.let { PhotoStorage.copyBytesToInternalStorage(context, it) }
             }
@@ -338,7 +338,7 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            PackImportResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+            PackImportResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
 
@@ -436,14 +436,14 @@ object RecipeExporter {
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, L10n.str(R.string.compartir_receta)))
+        context.startActivity(Intent.createChooser(intent, L10n.str(R.string.share_recipe)))
     }
 
     private fun sanitizeFileName(name: String): String =
         name.trim().ifBlank { "receta" }.replace(Regex("[^A-Za-z0-9-_ ]"), "").replace(" ", "_").take(60)
 
     private fun formatShoppingListAsText(groups: List<ShoppingListGroup>): String = buildString {
-        appendLine(L10n.str(R.string.lista_compra))
+        appendLine(L10n.str(R.string.shopping_list))
         groups.forEach { group ->
             appendLine()
             appendLine(group.categoryName.uppercase())
@@ -461,7 +461,7 @@ object RecipeExporter {
         append(recipe.difficulty.label)
         recipe.categoryName?.let { append(" · ").append(it) }
         recipe.totalTimeMinutes?.let { append(" · ").append(it).append(" min") }
-        appendLine(L10n.str(R.string.raciones_x, recipe.servings))
+        appendLine(L10n.str(R.string.servings_x, recipe.servings))
         if (recipe.utensils.isNotEmpty()) appendLine("Utensilios: ${recipe.utensils.joinToString(", ")}")
         appendLine()
         appendLine("INGREDIENTES")
@@ -475,7 +475,7 @@ object RecipeExporter {
             }
         }
         appendLine()
-        appendLine(L10n.str(R.string.preparacion_2))
+        appendLine(L10n.str(R.string.method_2))
         recipe.stepGroups.forEach { group ->
             if (group.instructions.isNotEmpty()) {
                 if (group.name != null) appendLine(group.name.uppercase())

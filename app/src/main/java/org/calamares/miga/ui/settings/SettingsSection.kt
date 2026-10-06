@@ -19,14 +19,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * estas categorías, al estilo de los ajustes de las apps de Google). [id] es el argumento de la ruta.
  */
 enum class SettingsSection(val id: String, val title: String, val icon: ImageVector) {
-    APPEARANCE("appearance", L10n.str(R.string.apariencia), Icons.Filled.Palette),
-    SECURITY("security", L10n.str(R.string.seguridad), Icons.Filled.Fingerprint),
-    CONTENT("content", L10n.str(R.string.gestionar_contenido), Icons.Filled.Tune),
-    BACKUP("backup", L10n.str(R.string.copia_seguridad), Icons.Filled.Backup),
-    AI("ai", L10n.str(R.string.importar_ia), Icons.Filled.AutoAwesome),
-    VOICE("voice", L10n.str(R.string.voz_dictado), Icons.Filled.Mic),
-    PACKS("packs", L10n.str(R.string.packs_recetas), Icons.Filled.Storefront),
-    SYNC("sync", L10n.str(R.string.sincronizacion), Icons.Filled.Sync);
+    APPEARANCE("appearance", L10n.str(R.string.appearance), Icons.Filled.Palette),
+    SECURITY("security", L10n.str(R.string.security), Icons.Filled.Fingerprint),
+    CONTENT("content", L10n.str(R.string.manage_content), Icons.Filled.Tune),
+    BACKUP("backup", L10n.str(R.string.backup), Icons.Filled.Backup),
+    AI("ai", L10n.str(R.string.artificial_intelligence), Icons.Filled.AutoAwesome),
+    VOICE("voice", L10n.str(R.string.voice_dictation_2), Icons.Filled.Mic),
+    PACKS("packs", L10n.str(R.string.recipe_packs), Icons.Filled.Storefront),
+    SYNC("sync", L10n.str(R.string.sync), Icons.Filled.Sync);
 
     companion object {
         /** La sección con ese [id]; si no existe (ruta corrupta), la primera. */

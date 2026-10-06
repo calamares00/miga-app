@@ -34,20 +34,19 @@ internal data class IngredientSubstitutionDto(val substitute: String = "", val n
 @Serializable
 internal data class SubstitutionResultDto(val substitutions: List<IngredientSubstitutionDto> = emptyList())
 
-// Prompt compartido entre todos los proveedores: deben pedir exactamente el mismo formato.
+/** Prompt shared by every provider so the format never diverges. */
 internal fun buildSubstitutionPrompt(ingredientName: String, recipeName: String): String = """
-Eres un asistente de cocina. Un usuario está preparando la receta "$recipeName" y quiere
-sustituir el ingrediente "$ingredientName" (porque no lo tiene, no puede tomarlo, o quiere una
-alternativa).
+You are a cooking assistant. A user is making the recipe "$recipeName" and wants to replace the
+ingredient "$ingredientName" (because they do not have it, cannot eat it or want an alternative).
 
-Sugiere entre 2 y 4 sustitutos razonables para ese ingrediente EN EL CONTEXTO de esta receta
-concreta (el mismo sustituto puede no valer igual en un bizcocho que en una salsa salada).
+Suggest between 2 and 4 reasonable substitutes for that ingredient IN THE CONTEXT of this specific
+recipe (the same substitute may not work the same in a sponge cake as in a savoury sauce).
 
-Devuelve ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto adicional:
+Return ONLY a JSON object with exactly this format, with no explanations or extra text:
 {
   "substitutions": [
-    { "substitute": "string, nombre del sustituto", "notes": "string, 1 frase: proporción y qué cambia (sabor, textura...)" }
+    { "substitute": "string, name of the substitute", "notes": "string, 1 sentence: ratio and what changes (flavour, texture...)" }
   ]
 }
-No sugieras el propio ingrediente original como sustituto de sí mismo.
+Do not suggest the original ingredient as a substitute for itself.
 """.trimIndent() + outputLanguageInstruction()

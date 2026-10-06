@@ -210,7 +210,7 @@ internal fun ProductDetailSheet(
 ) {
     val context = LocalContext.current
     val photos = listOfNotNull(info.imageUrl ?: imageUrl, info.ingredientsImageUrl, info.nutritionImageUrl).distinct()
-    val photoLabels = mapOf(info.imageUrl to L10n.str(R.string.frontal), info.ingredientsImageUrl to L10n.str(R.string.ingredientes), info.nutritionImageUrl to L10n.str(R.string.nutricion))
+    val photoLabels = mapOf(info.imageUrl to L10n.str(R.string.front), info.ingredientsImageUrl to L10n.str(R.string.ingredients), info.nutritionImageUrl to L10n.str(R.string.nutrition))
     var selectedPhoto by remember(info.barcode) { mutableStateOf(photos.firstOrNull()) }
     val nutriLetter = ProductLabels.gradeLetter(info.nutriScore)
     val ecoLetter = ProductLabels.gradeLetter(info.ecoScore)
@@ -229,7 +229,7 @@ internal fun ProductDetailSheet(
             if (selectedPhoto != null) {
                 AsyncImage(
                     model = selectedPhoto,
-                    contentDescription = L10n.str(R.string.foto_x, name),
+                    contentDescription = L10n.str(R.string.photo_x, name),
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxWidth().height(260.dp)
                 )
@@ -252,7 +252,7 @@ internal fun ProductDetailSheet(
                                         .clip(MaterialTheme.shapes.small)
                                         .then(if (url == selectedPhoto) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier)
                                 )
-                                Text(photoLabels[url] ?: L10n.str(R.string.foto), style = MaterialTheme.typography.labelSmall)
+                                Text(photoLabels[url] ?: L10n.str(R.string.photo), style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -281,7 +281,7 @@ internal fun ProductDetailSheet(
                     if (score != null) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             ScoreChip(score = score, large = true)
-                            Text(L10n.str(R.string.puntuacion), style = MaterialTheme.typography.labelLarge)
+                            Text(L10n.str(R.string.score), style = MaterialTheme.typography.labelLarge)
                         }
                     }
                     val novaColor = ProductLabels.novaArgb(info.nova)
@@ -315,24 +315,24 @@ internal fun ProductDetailSheet(
             if (score != null) {
                 HorizontalDivider()
                 Text(
-                    L10n.str(R.string.puntuacion_x_100_x, score.value, score.tier.label),
+                    L10n.str(R.string.score_x_100_x, score.value, score.tier.label),
                     style = MaterialTheme.typography.titleSmall,
                     color = Color(score.tier.argb)
                 )
                 Text(
-                    L10n.str(R.string.nutricion_x_100_60_aditivos, score.nutrition, score.additives) +
-                        if (score.organicBonus > 0) L10n.str(R.string.ecologico_x, score.organicBonus) else "",
+                    L10n.str(R.string.nutrition_x_100_60_additives, score.nutrition, score.additives) +
+                        if (score.organicBonus > 0) L10n.str(R.string.organic_x, score.organicBonus) else "",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 if (score.cappedByRiskyAdditive) {
                     Text(
-                        L10n.str(R.string.limitada_49_contener_aditivo_riesgo),
+                        L10n.str(R.string.capped_49_because_contains_high),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
                 }
                 Text(
-                    L10n.str(R.string.estimacion_propia_miga_datos_open),
+                    L10n.str(R.string.migas_own_estimate_based_open),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -341,7 +341,7 @@ internal fun ProductDetailSheet(
             val additiveCodes = info.additives.orEmpty()
             if (additiveCodes.isNotEmpty()) {
                 HorizontalDivider()
-                Text(L10n.str(R.string.aditivos_x, additiveCodes.size), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Text(L10n.str(R.string.additives_x, additiveCodes.size), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                 Text(
                     additiveCodes.joinToString(", ") { code ->
                         val risk = ProductScoring.additiveRisk(code)
@@ -353,15 +353,15 @@ internal fun ProductDetailSheet(
 
             if (info.allergens.isNotEmpty() || info.traces.isNotEmpty()) {
                 HorizontalDivider()
-                Text(L10n.str(R.string.alergenos), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Text(L10n.str(R.string.allergens), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                 if (info.allergens.isNotEmpty()) {
                     Text("Contiene: " + info.allergens.joinToString(", ") { ProductLabels.allergenName(it) }, style = MaterialTheme.typography.bodyMedium)
                 }
                 if (info.traces.isNotEmpty()) {
-                    Text(L10n.str(R.string.puede_contener_trazas) + info.traces.joinToString(", ") { ProductLabels.allergenName(it) }, style = MaterialTheme.typography.bodyMedium)
+                    Text(L10n.str(R.string.may_contain_traces) + info.traces.joinToString(", ") { ProductLabels.allergenName(it) }, style = MaterialTheme.typography.bodyMedium)
                 }
                 Text(
-                    L10n.str(R.string.datos_colaborativos_open_food_facts),
+                    L10n.str(R.string.collaborative_data_open_food_facts),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -369,7 +369,7 @@ internal fun ProductDetailSheet(
 
             if (nutrition.isNotEmpty()) {
                 HorizontalDivider()
-                Text(L10n.str(R.string.nutricion_100_g), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Text(L10n.str(R.string.nutrition_per_100_g), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                 nutrition.forEach { (label, value) ->
                     Row(modifier = Modifier.fillMaxWidth()) {
                         Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
@@ -380,7 +380,7 @@ internal fun ProductDetailSheet(
 
             if (!info.ingredients.isNullOrBlank()) {
                 HorizontalDivider()
-                Text(L10n.str(R.string.ingredientes), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Text(L10n.str(R.string.ingredients), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                 Text(info.ingredients, style = MaterialTheme.typography.bodyMedium)
             }
 
@@ -389,9 +389,9 @@ internal fun ProductDetailSheet(
                 runCatching {
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://world.openfoodfacts.org/product/${info.barcode}")))
                 }
-            }) { Text(L10n.str(R.string.ver_open_food_facts)) }
+            }) { Text(L10n.str(R.string.view_open_food_facts)) }
             Text(
-                L10n.str(R.string.datos_open_food_facts_licencia),
+                L10n.str(R.string.data_open_food_facts_odbl),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 24.dp)
@@ -443,13 +443,13 @@ internal fun SearchResultRow(
         }
         if (onSaveToTemplate != null) {
             IconButton(onClick = onSaveToTemplate) {
-                Icon(Icons.Filled.BookmarkAdd, contentDescription = L10n.str(R.string.guardar_plantilla_2), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(Icons.Filled.BookmarkAdd, contentDescription = L10n.str(R.string.save_template_3), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         IconButton(onClick = onAdd, enabled = !added) {
             Icon(
                 imageVector = if (added) Icons.Filled.CheckCircle else Icons.Filled.AddCircle,
-                contentDescription = if (added) L10n.str(R.string.anadido) else addDescription,
+                contentDescription = if (added) L10n.str(R.string.added) else addDescription,
                 tint = MaterialTheme.colorScheme.primary
             )
         }
@@ -466,7 +466,7 @@ internal fun ScoreChip(score: ProductScore, large: Boolean) {
             .width(if (large) 54.dp else 32.dp)
             .clip(MaterialTheme.shapes.small)
             .background(Color(score.tier.argb))
-            .clearAndSetSemantics { contentDescription = L10n.str(R.string.puntuacion_x_100, score.value) },
+            .clearAndSetSemantics { contentDescription = L10n.str(R.string.score_x_out_100, score.value) },
         contentAlignment = Alignment.Center
     ) {
         Text(

@@ -51,14 +51,14 @@ fun AiContentNotice(feature: String, content: () -> String, modifier: Modifier =
             modifier = Modifier.size(16.dp)
         )
         Text(
-            L10n.str(R.string.generado_ia_puede_contener_errores),
+            L10n.str(R.string.ai_generated_may_contain_mistakes),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f).padding(start = 6.dp)
         )
         TextButton(onClick = { reporting = true }) {
             Icon(Icons.Filled.Flag, contentDescription = null, modifier = Modifier.size(16.dp))
-            Text(L10n.str(R.string.reportar), style = MaterialTheme.typography.labelLarge)
+            Text(L10n.str(R.string.report), style = MaterialTheme.typography.labelLarge)
         }
     }
     if (reporting) {
@@ -74,11 +74,11 @@ private fun AiReportDialog(feature: String, content: () -> String, onDismiss: ()
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Filled.Flag, contentDescription = null) },
-        title = { Text(L10n.str(R.string.reportar_contenido_ia)) },
+        title = { Text(L10n.str(R.string.report_ai_content)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    L10n.str(R.string.cuentanos_esta_mal_enviara_texto),
+                    L10n.str(R.string.tell_us_whats_wrong_generated),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -94,7 +94,7 @@ private fun AiReportDialog(feature: String, content: () -> String, onDismiss: ()
                 OutlinedTextField(
                     value = comment,
                     onValueChange = { comment = it },
-                    label = { Text(L10n.str(R.string.comentario_opcional)) },
+                    label = { Text(L10n.str(R.string.comment_optional)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2
                 )
@@ -107,10 +107,10 @@ private fun AiReportDialog(feature: String, content: () -> String, onDismiss: ()
                 val opened = runCatching {
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(AiContentReport.targetUrl(subject, body))))
                 }.isSuccess
-                if (!opened) Toast.makeText(context, L10n.str(R.string.no_hay_ninguna_app_enviar), Toast.LENGTH_SHORT).show()
+                if (!opened) Toast.makeText(context, L10n.str(R.string.theres_no_app_send_report), Toast.LENGTH_SHORT).show()
                 onDismiss()
-            }) { Text(L10n.str(R.string.enviar_reporte)) }
+            }) { Text(L10n.str(R.string.send_report)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
 }

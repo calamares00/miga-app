@@ -50,18 +50,18 @@ private data class WelcomePage(val icon: ImageVector, val title: String, val bod
 private val PAGES = listOf(
     WelcomePage(
         Icons.Filled.MenuBook,
-        L10n.str(R.string.recetario_familiar),
-        L10n.str(R.string.guarda_recetas_casa_libros_fotos)
+        L10n.str(R.string.family_recipe_book),
+        L10n.str(R.string.keep_family_recipes_books_photos)
     ),
     WelcomePage(
         Icons.Filled.ShoppingCart,
-        L10n.str(R.string.compra_mas_rapida),
-        L10n.str(R.string.anade_escribiendo_dictando_escaneando_codigo)
+        L10n.str(R.string.faster_shopping),
+        L10n.str(R.string.add_items_typing_dictating_scanning)
     ),
     WelcomePage(
         Icons.Filled.Lock,
-        L10n.str(R.string.datos_movil),
-        L10n.str(R.string.sin_cuentas_ni_anuncios_ia)
+        L10n.str(R.string.data_phone),
+        L10n.str(R.string.no_accounts_ads_ai_own)
     )
 )
 
@@ -91,7 +91,7 @@ fun WelcomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            if (!isLast) TextButton(onClick = { onFinish(null) }) { Text(L10n.str(R.string.saltar)) }
+            if (!isLast) TextButton(onClick = { onFinish(null) }) { Text(L10n.str(R.string.skip)) }
         }
         HorizontalPager(state = pagerState, modifier = Modifier.weight(1f).fillMaxWidth()) { index ->
             val page = PAGES[index]
@@ -124,7 +124,7 @@ fun WelcomeScreen(
         Row(
             modifier = Modifier
                 .padding(vertical = 24.dp)
-                .semantics { contentDescription = L10n.str(R.string.pagina_x_x, pagerState.currentPage + 1, PAGES.size) },
+                .semantics { contentDescription = L10n.str(R.string.page_x_x, pagerState.currentPage + 1, PAGES.size) },
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             PAGES.indices.forEach { index ->
@@ -137,14 +137,14 @@ fun WelcomeScreen(
         }
         Column(modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (isLast) {
-                Button(onClick = { onFinish(null) }, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text(L10n.str(R.string.empezar)) }
-                OutlinedButton(onClick = { onFinish(packsRoute) }, modifier = Modifier.fillMaxWidth()) { Text(L10n.str(R.string.explorar_packs_recetas)) }
-                TextButton(onClick = { onFinish(backupRoute) }, modifier = Modifier.fillMaxWidth()) { Text(L10n.str(R.string.restaurar_copia_seguridad)) }
+                Button(onClick = { onFinish(null) }, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text(L10n.str(R.string.get_started)) }
+                OutlinedButton(onClick = { onFinish(packsRoute) }, modifier = Modifier.fillMaxWidth()) { Text(L10n.str(R.string.explore_recipe_packs)) }
+                TextButton(onClick = { onFinish(backupRoute) }, modifier = Modifier.fillMaxWidth()) { Text(L10n.str(R.string.restore_backup)) }
             } else {
                 Button(
                     onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
                     modifier = Modifier.fillMaxWidth().height(52.dp)
-                ) { Text(L10n.str(R.string.siguiente_2)) }
+                ) { Text(L10n.str(R.string.next_2)) }
                 Spacer(modifier = Modifier.height(96.dp))
             }
         }

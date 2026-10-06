@@ -141,15 +141,15 @@ fun RecipeEditorScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(if (viewModel.isEditing) L10n.str(R.string.editar_receta) else L10n.str(R.string.nueva_receta)) },
+                title = { Text(if (viewModel.isEditing) L10n.str(R.string.edit_recipe) else L10n.str(R.string.new_recipe)) },
                 navigationIcon = {
-                    IconButton(onClick = attemptExit) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancelar)) }
+                    IconButton(onClick = attemptExit) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel)) }
                 },
                 actions = {
                     if (viewModel.isSaving) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp).padding(end = 16.dp))
                     } else {
-                        Button(onClick = { viewModel.save(onSaved) }, modifier = Modifier.padding(end = 8.dp)) { Text(L10n.str(R.string.guardar)) }
+                        Button(onClick = { viewModel.save(onSaved) }, modifier = Modifier.padding(end = 8.dp)) { Text(L10n.str(R.string.save)) }
                     }
                 }
             )
@@ -178,14 +178,14 @@ fun RecipeEditorScreen(
                         onRetry = { viewModel.retryAi() }
                     )
                     IconButton(onClick = { visionErrorDismissed = true }) {
-                        Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cerrar_aviso))
+                        Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.dismiss_notice))
                     }
                 }
             }
 
             if (visionState is VisionState.Loaded) {
                 AiContentNotice(
-                    feature = L10n.str(R.string.receta_generada_ia),
+                    feature = L10n.str(R.string.ai_generated_recipe),
                     content = {
                         buildString {
                             appendLine(viewModel.name)
@@ -205,9 +205,9 @@ fun RecipeEditorScreen(
                 OutlinedTextField(
                     value = viewModel.name,
                     onValueChange = { viewModel.name = it; viewModel.nameError = false },
-                    label = { Text(L10n.str(R.string.nombre_receta)) },
+                    label = { Text(L10n.str(R.string.recipe_name)) },
                     isError = viewModel.nameError,
-                    supportingText = { if (viewModel.nameError) Text(L10n.str(R.string.nombre_es_obligatorio)) },
+                    supportingText = { if (viewModel.nameError) Text(L10n.str(R.string.name_required)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 CategoryField(
@@ -218,7 +218,7 @@ fun RecipeEditorScreen(
             }
 
             EditorCard(title = L10n.str(R.string.editor_details), icon = Icons.Outlined.Timer) {
-                Section(title = L10n.str(R.string.dificultad)) {
+                Section(title = L10n.str(R.string.difficulty)) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Difficulty.entries.forEach { d ->
                             FilterChip(selected = viewModel.difficulty == d, onClick = { viewModel.difficulty = d }, label = { Text(d.label) })
@@ -237,7 +237,7 @@ fun RecipeEditorScreen(
                     OutlinedTextField(
                         value = viewModel.cookTimeMinutesText,
                         onValueChange = { if (it.all(Char::isDigit)) viewModel.cookTimeMinutesText = it },
-                        label = { Text(L10n.str(R.string.coccion_min)) },
+                        label = { Text(L10n.str(R.string.cooking_min)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.weight(1f)
@@ -245,7 +245,7 @@ fun RecipeEditorScreen(
                     OutlinedTextField(
                         value = viewModel.servings.toString(),
                         onValueChange = { text -> text.toIntOrNull()?.let { viewModel.servings = it.coerceIn(1, 99) } },
-                        label = { Text(L10n.str(R.string.raciones_2)) },
+                        label = { Text(L10n.str(R.string.servings_2)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.weight(1f)
@@ -258,22 +258,22 @@ fun RecipeEditorScreen(
             EditorCard(title = null, icon = null) { StepsEditor(viewModel) }
 
             EditorCard(title = L10n.str(R.string.editor_more), icon = Icons.Outlined.MoreHoriz) {
-                Section(title = L10n.str(R.string.utensilios_necesarios)) {
+                Section(title = L10n.str(R.string.utensils_needed)) {
                     ChipMultiSelect(
                         selected = viewModel.selectedUtensils,
                         available = availableUtensils,
                         onToggle = viewModel::toggleUtensil,
                         onAddCustom = viewModel::addCustomUtensil,
-                        addDialogTitle = L10n.str(R.string.anadir_utensilio)
+                        addDialogTitle = L10n.str(R.string.add_utensil)
                     )
                 }
-                Section(title = L10n.str(R.string.etiquetas)) {
+                Section(title = L10n.str(R.string.tags)) {
                     ChipMultiSelect(
                         selected = viewModel.selectedTags,
                         available = availableTags,
                         onToggle = viewModel::toggleTag,
                         onAddCustom = viewModel::addCustomTag,
-                        addDialogTitle = L10n.str(R.string.anadir_etiqueta)
+                        addDialogTitle = L10n.str(R.string.add_tag)
                     )
                 }
                 OutlinedTextField(
@@ -286,14 +286,14 @@ fun RecipeEditorScreen(
                 OutlinedTextField(
                     value = viewModel.source,
                     onValueChange = { viewModel.source = it },
-                    label = { Text(L10n.str(R.string.origen_libro_web_etc)) },
+                    label = { Text(L10n.str(R.string.source_book_website_etc)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth().clickable { viewModel.isFavorite = !viewModel.isFavorite },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(L10n.str(R.string.marcar_como_favorita), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    Text(L10n.str(R.string.mark_favourite), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                     Switch(checked = viewModel.isFavorite, onCheckedChange = { viewModel.isFavorite = it })
                 }
             }
@@ -321,7 +321,7 @@ fun RecipeEditorScreen(
                             strokeWidth = 4.dp
                         )
                         Text(
-                            L10n.str(R.string.generando_receta_ia),
+                            L10n.str(R.string.generating_recipe_ai),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(top = 16.dp)
@@ -338,7 +338,7 @@ fun RecipeEditorScreen(
         val reason = ErrorDetail.detail(fullReason) ?: ErrorDetail.summary(fullReason)
         AlertDialog(
             onDismissRequest = { showVisionErrorDialog = false },
-            title = { Text(L10n.str(R.string.detalle_error)) },
+            title = { Text(L10n.str(R.string.error_details)) },
             text = {
                 Column(
                     modifier = Modifier
@@ -352,10 +352,10 @@ fun RecipeEditorScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { clipboardManager.setText(AnnotatedString(reason)) }) { Text(L10n.str(R.string.copiar)) }
+                TextButton(onClick = { clipboardManager.setText(AnnotatedString(reason)) }) { Text(L10n.str(R.string.copy)) }
             },
             dismissButton = {
-                TextButton(onClick = { showVisionErrorDialog = false }) { Text(L10n.str(R.string.cerrar)) }
+                TextButton(onClick = { showVisionErrorDialog = false }) { Text(L10n.str(R.string.close)) }
             }
         )
     }
@@ -363,7 +363,7 @@ fun RecipeEditorScreen(
     if (showPhotoSourceSheet) {
         ModalBottomSheet(onDismissRequest = { showPhotoSourceSheet = false }, sheetState = photoSheetState) {
             PhotoSourceSheet(
-                title = L10n.str(R.string.anadir_foto),
+                title = L10n.str(R.string.add_photo),
                 onCameraClick = {
                     showPhotoSourceSheet = false
                     val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
@@ -402,16 +402,16 @@ fun RecipeEditorScreen(
     if (showDiscardDialog) {
         AlertDialog(
             onDismissRequest = { showDiscardDialog = false },
-            title = { Text(L10n.str(R.string.descartar_cambios)) },
-            text = { Text(L10n.str(R.string.perderan_cambios_has_hecho)) },
+            title = { Text(L10n.str(R.string.discard_changes)) },
+            text = { Text(L10n.str(R.string.changes_lost)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDiscardDialog = false
                     onCancel()
-                }) { Text(L10n.str(R.string.descartar), color = MaterialTheme.colorScheme.error) }
+                }) { Text(L10n.str(R.string.discard), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDiscardDialog = false }) { Text(L10n.str(R.string.seguir_editando)) }
+                TextButton(onClick = { showDiscardDialog = false }) { Text(L10n.str(R.string.keep_editing)) }
             }
         )
     }
@@ -419,13 +419,13 @@ fun RecipeEditorScreen(
 
 @Composable
 private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit, onEditPhoto: (PhotoUi) -> Unit) {
-    Section(title = L10n.str(R.string.fotos)) {
+    Section(title = L10n.str(R.string.photos)) {
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(viewModel.photos, key = { it.uri }) { photo ->
                 Box(modifier = Modifier.size(88.dp)) {
                     AsyncImage(
                         model = photo.uri,
-                        contentDescription = L10n.str(R.string.editar_foto),
+                        contentDescription = L10n.str(R.string.edit_photo),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxSize()
@@ -438,7 +438,7 @@ private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit, 
                     ) {
                         Icon(
                             Icons.Filled.Close,
-                            contentDescription = L10n.str(R.string.quitar_foto),
+                            contentDescription = L10n.str(R.string.remove_photo),
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier
                                 .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
@@ -450,7 +450,7 @@ private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit, 
                     ) {
                         Icon(
                             if (photo.isCover) Icons.Filled.Star else Icons.Filled.StarBorder,
-                            contentDescription = if (photo.isCover) L10n.str(R.string.foto_portada) else L10n.str(R.string.marcar_como_portada),
+                            contentDescription = if (photo.isCover) L10n.str(R.string.cover_photo) else L10n.str(R.string.set_cover),
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier
                                 .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
@@ -467,7 +467,7 @@ private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit, 
                         .clickable(onClick = onAddPhoto),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Filled.AddAPhoto, contentDescription = L10n.str(R.string.anadir_foto))
+                    Icon(Icons.Filled.AddAPhoto, contentDescription = L10n.str(R.string.add_photo))
                 }
             }
         }
@@ -482,8 +482,8 @@ private fun CategoryField(value: String, suggestions: List<String>, onValueChang
         OutlinedTextField(
             value = value,
             onValueChange = { onValueChange(it); expanded = true },
-            label = { Text(L10n.str(R.string.categoria)) },
-            placeholder = { Text(L10n.str(R.string.ej_postres_cremas_pastas)) },
+            label = { Text(L10n.str(R.string.category)) },
+            placeholder = { Text(L10n.str(R.string.e_g_desserts_soups_pasta)) },
             modifier = Modifier.fillMaxWidth()
         )
         if (expanded && suggestions.isNotEmpty()) {
@@ -545,10 +545,10 @@ private fun ChipMultiSelect(
                 TextButton(onClick = {
                     if (newValue.isNotBlank()) onAddCustom(newValue)
                     showAddDialog = false
-                }) { Text(L10n.str(R.string.anadir)) }
+                }) { Text(L10n.str(R.string.add)) }
             },
             dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) { Text(L10n.str(R.string.cancelar)) }
+                TextButton(onClick = { showAddDialog = false }) { Text(L10n.str(R.string.cancel)) }
             }
         )
     }

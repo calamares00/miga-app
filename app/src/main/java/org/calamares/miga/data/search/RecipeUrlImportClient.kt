@@ -2,6 +2,7 @@ package org.calamares.miga.data.search
 
 import org.calamares.miga.data.ai.OpenRouterRecipeUrlImportClient
 import org.calamares.miga.data.vision.transcriptionLanguageInstruction
+import org.calamares.miga.data.vision.RECIPE_JSON_FORMAT
 import org.calamares.miga.data.vision.RecipeVisionResult
 import org.calamares.miga.data.vision.VisionProviderType
 
@@ -21,37 +22,19 @@ fun recipeUrlImportClientFor(provider: VisionProviderType): RecipeUrlImportClien
     VisionProviderType.OPENROUTER -> OpenRouterRecipeUrlImportClient
 }
 
-// Prompt compartido entre todos los proveedores: pide exactamente el mismo JSON que ya usa
-// recipeExtractionPrompt()/buildDishRecipePrompt (mismo RecipeVisionResultDto), para no tener el
-// formato duplicado en varios sitios con riesgo de que diverjan; solo cambia la instrucción de
-// partida (interpretar el texto de una página en vez de una foto o generar desde cero).
+/** Extracts the main recipe from a web page's text using the same JSON format as photo transcription. */
 internal fun buildUrlImportPrompt(url: String, pageText: String): String = """
-Eres un asistente de cocina. A continuación tienes el texto extraído de una página web ($url) que
-se supone que contiene una receta. El texto puede incluir ruido ajeno a la receta (menús de
-navegación, publicidad, comentarios de otros usuarios, enlaces a otras recetas...); ignóralo y
-quédate solo con la receta principal de la página.
+You are a cooking assistant. Below is the text extracted from a web page ($url) that should contain
+a recipe. The text may include noise unrelated to the recipe (navigation menus, ads, comments from
+other users, links to other recipes...); ignore it and keep only the main recipe of the page.
 
-Texto de la página:
+Page text:
 ---
 $pageText
 ---
 
-Devuelve ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto adicional:
-{
-  "name": "string",
-  "categoryName": "string o null",
-  "difficulty": "FACIL" | "MEDIA" | "DIFICIL",
-  "prepTimeMinutes": number o null,
-  "cookTimeMinutes": number o null,
-  "servings": number,
-  "notes": "string",
-  "source": "string",
-  "ingredientGroups": [ { "name": "string o null", "ingredients": [ { "name": "string", "quantity": number o null, "unit": "string o null" } ] } ],
-  "stepGroups": [ { "name": "string o null", "instructions": ["string", ...] } ],
-  "tags": ["string", ...],
-  "utensils": ["string", ...]
-}
-Si el texto no contiene ninguna receta reconocible, deja "name" vacío. En "source" pon la URL
-original ($url). Si no puedes determinar algún dato, usa null (o una lista vacía) en vez de
-inventarlo al azar.
+Return ONLY a JSON object with exactly this format, with no explanations or extra text:
+$RECIPE_JSON_FORMAT
+If the text does not contain a recognisable recipe, leave "name" empty. Put the original URL ($url)
+in "source". If you cannot determine a value, use null (or an empty list) instead of making it up.
 """.trimIndent() + transcriptionLanguageInstruction()

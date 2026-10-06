@@ -59,16 +59,16 @@ fun ManageCatalogScreen(
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(title) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) } }
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) } }
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(onClick = { showAddDialog = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text(L10n.str(R.string.anadir)) })
+            ExtendedFloatingActionButton(onClick = { showAddDialog = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text(L10n.str(R.string.add)) })
         }
     ) { padding ->
         if (items.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text(L10n.str(R.string.todavia_no_hay_elementos), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(L10n.str(R.string.there_no_items_yet), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             LazyColumn(contentPadding = PaddingValues(vertical = 8.dp), modifier = Modifier.padding(padding)) {
@@ -87,8 +87,8 @@ fun ManageCatalogScreen(
                                 )
                             }
                         }
-                        IconButton(onClick = { itemToRename = item }) { Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.renombrar)) }
-                        IconButton(onClick = { itemToDelete = item }) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.borrar)) }
+                        IconButton(onClick = { itemToRename = item }) { Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.rename)) }
+                        IconButton(onClick = { itemToDelete = item }) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete)) }
                     }
                     HorizontalDivider()
                 }
@@ -98,7 +98,7 @@ fun ManageCatalogScreen(
 
     if (showAddDialog) {
         NameDialog(
-            title = L10n.str(R.string.anadir),
+            title = L10n.str(R.string.add),
             initialValue = "",
             onConfirm = { onAdd(it); showAddDialog = false },
             onDismiss = { showAddDialog = false }
@@ -107,7 +107,7 @@ fun ManageCatalogScreen(
 
     itemToRename?.let { item ->
         NameDialog(
-            title = L10n.str(R.string.renombrar),
+            title = L10n.str(R.string.rename),
             initialValue = item.name,
             onConfirm = { onRename(item, it); itemToRename = null },
             onDismiss = { itemToRename = null }
@@ -118,13 +118,13 @@ fun ManageCatalogScreen(
         AlertDialog(
             onDismissRequest = { itemToDelete = null },
             title = { Text("Borrar \"${item.name}\"") },
-            text = { Text(L10n.str(R.string.seguro_quieres_borrarlo_esta_accion)) },
+            text = { Text(L10n.str(R.string.sure_want_delete_cant_undone)) },
             confirmButton = {
                 TextButton(onClick = { onDelete(item); itemToDelete = null }) {
-                    Text(L10n.str(R.string.borrar), color = MaterialTheme.colorScheme.error)
+                    Text(L10n.str(R.string.delete), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { itemToDelete = null }) { Text(L10n.str(R.string.cancelar)) } }
+            dismissButton = { TextButton(onClick = { itemToDelete = null }) { Text(L10n.str(R.string.cancel)) } }
         )
     }
 }
@@ -139,8 +139,8 @@ private fun NameDialog(title: String, initialValue: String, onConfirm: (String) 
             OutlinedTextField(value = value, onValueChange = { value = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
         },
         confirmButton = {
-            TextButton(onClick = { if (value.isNotBlank()) onConfirm(value) }) { Text(L10n.str(R.string.guardar)) }
+            TextButton(onClick = { if (value.isNotBlank()) onConfirm(value) }) { Text(L10n.str(R.string.save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
 }

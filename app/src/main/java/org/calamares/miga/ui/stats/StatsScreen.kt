@@ -47,9 +47,9 @@ fun StatsScreen(viewModel: StatsViewModel, onBack: () -> Unit, onRecipeClick: (L
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(L10n.str(R.string.estadisticas)) },
+                title = { Text(L10n.str(R.string.statistics)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                 }
             )
         }
@@ -60,7 +60,7 @@ fun StatsScreen(viewModel: StatsViewModel, onBack: () -> Unit, onRecipeClick: (L
             }
             uiState.totalRecipes == 0 -> Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Text(
-                    L10n.str(R.string.aun_no_tienes_recetas_anade),
+                    L10n.str(R.string.dont_have_recipes_yet_nadd),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -76,21 +76,21 @@ fun StatsScreen(viewModel: StatsViewModel, onBack: () -> Unit, onRecipeClick: (L
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StatTile(value = uiState.totalRecipes, label = L10n.str(R.string.recetas), modifier = Modifier.weight(1f))
-                    StatTile(value = uiState.totalBooks, label = L10n.str(R.string.libros), modifier = Modifier.weight(1f))
-                    StatTile(value = uiState.favoritesCount, label = L10n.str(R.string.favoritas), modifier = Modifier.weight(1f))
+                    StatTile(value = uiState.totalRecipes, label = L10n.str(R.string.recipes), modifier = Modifier.weight(1f))
+                    StatTile(value = uiState.totalBooks, label = L10n.str(R.string.books), modifier = Modifier.weight(1f))
+                    StatTile(value = uiState.favoritesCount, label = L10n.str(R.string.favourites), modifier = Modifier.weight(1f))
                 }
 
                 if (uiState.addedThisMonth > 0) {
                     Text(
-                        L10n.str(R.string.x_receta_s_anadidas_este, uiState.addedThisMonth),
+                        L10n.str(R.string.x_recipe_added_month, uiState.addedThisMonth),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 if (uiState.mostCooked.isNotEmpty()) {
-                    StatsSection(title = L10n.str(R.string.mas_cocinadas)) {
+                    StatsSection(title = L10n.str(R.string.most_cooked_2)) {
                         uiState.mostCooked.forEach { entry ->
                             Row(
                                 modifier = Modifier
@@ -111,14 +111,14 @@ fun StatsScreen(viewModel: StatsViewModel, onBack: () -> Unit, onRecipeClick: (L
                 }
 
                 if (uiState.byDifficulty.isNotEmpty()) {
-                    StatsSection(title = L10n.str(R.string.dificultad_2)) {
+                    StatsSection(title = L10n.str(R.string.difficulty_2)) {
                         val maxCount = uiState.byDifficulty.maxOf { it.count }
                         uiState.byDifficulty.forEach { entry -> StatBarRow(entry, maxCount) }
                     }
                 }
 
                 if (uiState.byCategory.isNotEmpty()) {
-                    StatsSection(title = L10n.str(R.string.categoria_2)) {
+                    StatsSection(title = L10n.str(R.string.category_2)) {
                         val maxCount = uiState.byCategory.maxOf { it.count }
                         uiState.byCategory.forEach { entry -> StatBarRow(entry, maxCount) }
                     }

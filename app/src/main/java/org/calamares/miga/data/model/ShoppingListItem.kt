@@ -18,7 +18,7 @@ fun displayCategoryName(name: String): String =
 
 /** Uid de la lista de la compra por defecto: existe siempre, sin fila propia, y es la que usaban todos los artículos antes de poder tener varias. */
 const val DEFAULT_SHOPPING_LIST_UID = "main"
-val DEFAULT_SHOPPING_LIST_NAME: String get() = L10n.str(R.string.compra)
+val DEFAULT_SHOPPING_LIST_NAME: String get() = L10n.str(R.string.shopping)
 
 data class ShoppingListItem(
     val id: Long,

@@ -6,10 +6,10 @@ import java.net.URLEncoder
 
 /** Motivos para reportar un contenido generado con IA (política de contenido generado con IA de Google Play). */
 enum class AiReportReason(val label: String) {
-    OFFENSIVE(L10n.str(R.string.ofensivo_inapropiado)),
-    DANGEROUS(L10n.str(R.string.peligroso_alimentos_alergias_salud)),
-    WRONG(L10n.str(R.string.incorrecto_sin_sentido)),
-    OTHER(L10n.str(R.string.otro_motivo))
+    OFFENSIVE(L10n.str(R.string.offensive_inappropriate)),
+    DANGEROUS(L10n.str(R.string.dangerous_food_allergies_health)),
+    WRONG(L10n.str(R.string.wrong_nonsensical)),
+    OTHER(L10n.str(R.string.other_reason))
 }
 
 /**
@@ -21,15 +21,15 @@ object AiContentReport {
     const val SUPPORT_EMAIL = "miga@calamares.org"
     private const val MAX_CONTENT_CHARS = 1500
 
-    fun subject(feature: String): String = L10n.str(R.string.reporte_contenido_ia_x, feature)
+    fun subject(feature: String): String = L10n.str(R.string.ai_content_report_x, feature)
 
     fun body(feature: String, reason: AiReportReason, comment: String, content: String, appVersion: String): String = buildString {
-        appendLine(L10n.str(R.string.funcion_x, feature))
+        appendLine(L10n.str(R.string.feature_x, feature))
         appendLine("Motivo: ${reason.label}")
         if (comment.isNotBlank()) appendLine("Comentario: ${comment.trim()}")
         appendLine(L10n.str(R.string.version_miga_x, appVersion))
         appendLine()
-        appendLine(L10n.str(R.string.contenido_generado))
+        appendLine(L10n.str(R.string.generated_content))
         append(content.trim().take(MAX_CONTENT_CHARS))
         if (content.trim().length > MAX_CONTENT_CHARS) append("…")
     }

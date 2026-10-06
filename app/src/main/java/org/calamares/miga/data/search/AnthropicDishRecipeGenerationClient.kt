@@ -68,7 +68,7 @@ object AnthropicDishRecipeGenerationClient : DishRecipeGenerationClient {
                         return@withContext RecipeVisionResult.Error(AiErrors.badResponse(e, text))
                     }
                     if (recipe.name.isBlank()) {
-                        RecipeVisionResult.Error(L10n.str(R.string.no_ha_podido_generar_receta))
+                        RecipeVisionResult.Error(L10n.str(R.string.couldnt_generate_recipe))
                     } else {
                         RecipeVisionResult.Success(recipe)
                     }

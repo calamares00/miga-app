@@ -72,7 +72,7 @@ class BulkImportViewModel(
         val uri = Uri.parse(photoUris[index])
         val bytes = PhotoStorage.readResizedJpegBytes(context, uri)
         if (bytes == null) {
-            updateRow(index) { it.copy(state = BulkImportRowState.Failed(L10n.str(R.string.no_pudo_leer_foto))) }
+            updateRow(index) { it.copy(state = BulkImportRowState.Failed(L10n.str(R.string.couldnt_read_photo))) }
             return
         }
         val images = listOf(VisionImageInput(bytes, "image/jpeg"))

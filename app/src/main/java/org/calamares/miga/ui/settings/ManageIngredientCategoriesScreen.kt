@@ -41,7 +41,7 @@ class ManageIngredientCategoriesViewModel(private val repository: RecipeReposito
 fun ManageIngredientCategoriesScreen(viewModel: ManageIngredientCategoriesViewModel, onBack: () -> Unit) {
     val items by viewModel.items.collectAsState()
     ManageCatalogScreen(
-        title = L10n.str(R.string.categorias_ingredientes),
+        title = L10n.str(R.string.ingredient_categories),
         items = items,
         onBack = onBack,
         onAdd = viewModel::add,

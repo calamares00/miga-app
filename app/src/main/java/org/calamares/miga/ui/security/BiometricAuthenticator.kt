@@ -32,7 +32,7 @@ object BiometricAuthenticator {
 
         val prompt = BiometricPrompt(activity, executor, callback)
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle(L10n.str(R.string.desbloquear_miga))
+            .setTitle(L10n.str(R.string.unlock_miga))
             .setAllowedAuthenticators(ALLOWED_AUTHENTICATORS)
             .build()
 

@@ -82,7 +82,7 @@ data class WipeResult(val bookCount: Int, val recipeCount: Int)
 /**
  * [onSyncChangeEnqueued] se llama justo después de encolar en el outbox uno o más cambios de una
  * conexión (ver saveRecipe/saveRecipeBook/deleteRecipe/deleteRecipeBook/linkBookToSyncConnection),
- * para que quien construye el repositorio (RecetarioApp) pueda lanzar un intento de subida
+ * para que quien construye el repositorio (MigaApp) pueda lanzar un intento de subida
  * inmediata en segundo plano sin que el guardado tenga que esperar a la red - si falla (sin red,
  * servidor caído), el outbox lo recoge igualmente en el siguiente sync manual/automático.
  */
@@ -1124,7 +1124,7 @@ class RecipeRepository(
                         name = dto.name.trim(),
                         categoryId = categoryId,
                         recipeBookId = bookId,
-                        difficulty = dto.difficulty,
+                        difficulty = Difficulty.parse(dto.difficulty).name,
                         prepTimeMinutes = dto.prepTimeMinutes,
                         cookTimeMinutes = dto.cookTimeMinutes,
                         servings = dto.servings,
@@ -1141,7 +1141,7 @@ class RecipeRepository(
                     existingRecipe.copy(
                         name = dto.name.trim(),
                         categoryId = categoryId,
-                        difficulty = dto.difficulty,
+                        difficulty = Difficulty.parse(dto.difficulty).name,
                         prepTimeMinutes = dto.prepTimeMinutes,
                         cookTimeMinutes = dto.cookTimeMinutes,
                         servings = dto.servings,
@@ -1501,7 +1501,7 @@ class RecipeRepository(
                     name = dto.name.trim(),
                     categoryId = categoryId,
                     recipeBookId = bookId,
-                    difficulty = dto.difficulty,
+                    difficulty = Difficulty.parse(dto.difficulty).name,
                     prepTimeMinutes = dto.prepTimeMinutes,
                     cookTimeMinutes = dto.cookTimeMinutes,
                     servings = dto.servings,
@@ -1520,7 +1520,7 @@ class RecipeRepository(
                     name = dto.name.trim(),
                     categoryId = categoryId,
                     recipeBookId = bookId,
-                    difficulty = dto.difficulty,
+                    difficulty = Difficulty.parse(dto.difficulty).name,
                     prepTimeMinutes = dto.prepTimeMinutes,
                     cookTimeMinutes = dto.cookTimeMinutes,
                     servings = dto.servings,
@@ -1664,7 +1664,7 @@ fun RecipeWithDetails.toDomain(): Recipe {
         name = recipe.name,
         categoryId = recipe.categoryId,
         categoryName = category?.name,
-        difficulty = runCatching { Difficulty.valueOf(recipe.difficulty) }.getOrDefault(Difficulty.MEDIA),
+        difficulty = Difficulty.parse(recipe.difficulty),
         prepTimeMinutes = recipe.prepTimeMinutes,
         cookTimeMinutes = recipe.cookTimeMinutes,
         servings = recipe.servings,

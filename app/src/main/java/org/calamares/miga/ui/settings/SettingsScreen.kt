@@ -180,7 +180,7 @@ fun SettingsSectionScreen(
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         if (uri != null) {
             viewModel.exportLibrary(context, uri)
-            scope.launch { snackbarHostState.showSnackbar(L10n.str(R.string.copia_seguridad_exportada)) }
+            scope.launch { snackbarHostState.showSnackbar(L10n.str(R.string.backup_exported)) }
         }
     }
     var pendingLibraryImport by remember { mutableStateOf<LibraryImportParseResult.Success?>(null) }
@@ -188,7 +188,7 @@ fun SettingsSectionScreen(
         if (uri != null) {
             scope.launch {
                 when (val result = viewModel.validateLibraryImport(context, uri)) {
-                    is LibraryImportParseResult.Error -> snackbarHostState.showSnackbar(L10n.str(R.string.no_pudo_importar_x, result.reason))
+                    is LibraryImportParseResult.Error -> snackbarHostState.showSnackbar(L10n.str(R.string.couldnt_import_x, result.reason))
                     is LibraryImportParseResult.Success -> pendingLibraryImport = result
                 }
             }
@@ -198,9 +198,9 @@ fun SettingsSectionScreen(
         if (uri != null) {
             scope.launch {
                 when (val result = viewModel.parseRecipeJson(context, uri)) {
-                    is RecipeImportResult.Error -> snackbarHostState.showSnackbar(L10n.str(R.string.no_pudo_importar_x, result.reason))
+                    is RecipeImportResult.Error -> snackbarHostState.showSnackbar(L10n.str(R.string.couldnt_import_x, result.reason))
                     is RecipeImportResult.Success -> when {
-                        books.isEmpty() -> snackbarHostState.showSnackbar(L10n.str(R.string.no_tienes_ningun_libro_crea))
+                        books.isEmpty() -> snackbarHostState.showSnackbar(L10n.str(R.string.dont_have_books_create_one))
                         else -> {
                             selectedBookId = books.first().id
                             pendingRecipeImport = result.recipe to result.photos
@@ -219,7 +219,7 @@ fun SettingsSectionScreen(
             LargeTopAppBar(
                 title = { Text(section.title) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                 },
                 colors = TopAppBarDefaults.largeTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
@@ -260,7 +260,7 @@ fun SettingsSectionScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 Text(
-                    L10n.str(R.string.color),
+                    L10n.str(R.string.colour),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -281,9 +281,9 @@ fun SettingsSectionScreen(
             SettingsCard(icon = Icons.Filled.Fingerprint, title = "") {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(L10n.str(R.string.bloqueo_biometrico), style = MaterialTheme.typography.bodyLarge)
+                        Text(L10n.str(R.string.biometric_lock), style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            L10n.str(R.string.pide_huella_rostro_pin_dispositivo),
+                            L10n.str(R.string.asks_devices_fingerprint_face_pin),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -297,7 +297,7 @@ fun SettingsSectionScreen(
                                 viewModel.setBiometricLockEnabled(true)
                             } else {
                                 scope.launch {
-                                    snackbarHostState.showSnackbar(L10n.str(R.string.configura_huella_rostro_pin_dispositivo))
+                                    snackbarHostState.showSnackbar(L10n.str(R.string.set_up_fingerprint_face_pin))
                                 }
                             }
                         }
@@ -307,37 +307,37 @@ fun SettingsSectionScreen(
                 }
                 SettingsSection.CONTENT -> {
             SettingsCard(icon = Icons.Filled.Tune, title = "", contentSpacing = 0.dp) {
-                ManageRow(icon = Icons.Filled.Category, label = L10n.str(R.string.categorias), onClick = onManageCategories)
+                ManageRow(icon = Icons.Filled.Category, label = L10n.str(R.string.categories), onClick = onManageCategories)
                 HorizontalDivider()
-                ManageRow(icon = Icons.Filled.Kitchen, label = L10n.str(R.string.utensilios), onClick = onManageUtensils)
+                ManageRow(icon = Icons.Filled.Kitchen, label = L10n.str(R.string.utensils), onClick = onManageUtensils)
                 HorizontalDivider()
-                ManageRow(icon = Icons.Filled.RestaurantMenu, label = L10n.str(R.string.ingredientes), onClick = onManageIngredients)
+                ManageRow(icon = Icons.Filled.RestaurantMenu, label = L10n.str(R.string.ingredients), onClick = onManageIngredients)
                 HorizontalDivider()
-                ManageRow(icon = Icons.Filled.Sell, label = L10n.str(R.string.categorias_ingredientes), onClick = onManageIngredientCategories)
+                ManageRow(icon = Icons.Filled.Sell, label = L10n.str(R.string.ingredient_categories), onClick = onManageIngredientCategories)
             }
                 }
                 SettingsSection.BACKUP -> {
             SettingsCard(icon = Icons.Filled.Backup, title = "", contentSpacing = 0.dp) {
                 ManageRow(
                     icon = Icons.Filled.Backup,
-                    label = L10n.str(R.string.exportar_toda_app),
-                    summary = L10n.str(R.string.guarda_libros_recetas_fotos_archivo),
+                    label = L10n.str(R.string.export_whole_app),
+                    summary = L10n.str(R.string.saves_books_recipes_photos_zip),
                     chevron = false,
-                    onClick = { exportLauncher.launch("recetarios_backup.zip") }
+                    onClick = { exportLauncher.launch("miga_backup.zip") }
                 )
                 HorizontalDivider()
                 ManageRow(
                     icon = Icons.Filled.Restore,
-                    label = L10n.str(R.string.importar_copia_seguridad),
-                    summary = L10n.str(R.string.restaura_desde_zip_json_puedes),
+                    label = L10n.str(R.string.import_backup),
+                    summary = L10n.str(R.string.restore_zip_json_delete_current),
                     chevron = false,
                     onClick = { importLauncher.launch(BACKUP_MIME_TYPES) }
                 )
                 HorizontalDivider()
                 ManageRow(
                     icon = Icons.Filled.Add,
-                    label = L10n.str(R.string.importar_receta),
-                    summary = L10n.str(R.string.anade_receta_suelta_uno_libros),
+                    label = L10n.str(R.string.import_recipe),
+                    summary = L10n.str(R.string.add_single_recipe_one_books),
                     chevron = false,
                     onClick = { importRecipeLauncher.launch(BACKUP_MIME_TYPES) }
                 )
@@ -370,7 +370,7 @@ fun SettingsSectionScreen(
             SettingsCard(
                 icon = Icons.Filled.AutoAwesome,
                 title = "",
-                description = L10n.str(R.string.reconoce_texto_foto_receta_libro)
+                description = L10n.str(R.string.reads_text_photo_recipe_book)
             ) {
                 AiProvidersSettings(viewModel)
             }
@@ -379,16 +379,16 @@ fun SettingsSectionScreen(
                 SettingsSection.VOICE -> {
             SettingsCard(
                 icon = Icons.Filled.Mic,
-                title = L10n.str(R.string.dictado_voz),
-                description = L10n.str(R.string.idioma_reconoce_dictas_lista_compra)
+                title = L10n.str(R.string.voice_dictation),
+                description = L10n.str(R.string.language_used_recognise_what_dictate)
             ) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = DictationLanguages.label(dictationLanguage),
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text(L10n.str(R.string.idioma_dictado)) },
-                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.abrir_selector_idioma)) },
+                        label = { Text(L10n.str(R.string.dictation_language)) },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.open_language_picker)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Box(modifier = Modifier.matchParentSize().clickable { dictationMenuExpanded = true })
@@ -409,20 +409,20 @@ fun SettingsSectionScreen(
 
             SettingsCard(
                 icon = Icons.Filled.RecordVoiceOver,
-                title = L10n.str(R.string.modo_cocina),
-                description = L10n.str(R.string.voz_usada_leer_pasos_voz)
+                title = L10n.str(R.string.cooking_mode),
+                description = L10n.str(R.string.voice_used_read_steps_aloud)
             ) {
                 val voiceLabels = remember(availableVoices) { simpleVoiceLabels(availableVoices) }
                 val selectedVoiceLabel = availableVoices.firstOrNull { it.name == ttsVoiceName }
                     ?.let { voiceLabels[it.name] }
-                    ?: L10n.str(R.string.predeterminada_sistema)
+                    ?: L10n.str(R.string.system_default_2)
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = selectedVoiceLabel,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text(L10n.str(R.string.voz)) },
-                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.abrir_selector_voz)) },
+                        label = { Text(L10n.str(R.string.voice)) },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.open_voice_picker)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Box(
@@ -436,7 +436,7 @@ fun SettingsSectionScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         DropdownMenuItem(
-                            text = { Text(L10n.str(R.string.predeterminada_sistema)) },
+                            text = { Text(L10n.str(R.string.system_default_2)) },
                             onClick = { viewModel.setTtsVoiceName(null); voiceMenuExpanded = false }
                         )
                         availableVoices.forEach { voice ->
@@ -459,7 +459,7 @@ fun SettingsSectionScreen(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(L10n.str(R.string.probar_voz))
+                    Text(L10n.str(R.string.test_voice))
                 }
             }
                 }
@@ -467,22 +467,22 @@ fun SettingsSectionScreen(
             SettingsCard(
                 icon = Icons.Filled.Storefront,
                 title = "",
-                description = L10n.str(R.string.instala_libros_recetas_listos_usar)
+                description = L10n.str(R.string.install_ready_use_recipe_books)
             ) {
-                ManageRow(icon = Icons.Filled.Storefront, label = L10n.str(R.string.explorar_catalogo), onClick = onOpenPacksCatalog)
+                ManageRow(icon = Icons.Filled.Storefront, label = L10n.str(R.string.explore_catalogue), onClick = onOpenPacksCatalog)
                 var showCustomCatalog by remember { mutableStateOf(packsCatalogRepo != DEFAULT_PACKS_CATALOG) }
                 if (showCustomCatalog) {
                     OutlinedTextField(
                         // El catálogo oficial no se muestra: el campo vacío equivale a usarlo.
                         value = if (packsCatalogRepo == DEFAULT_PACKS_CATALOG) "" else packsCatalogRepo,
                         onValueChange = { viewModel.setPacksCatalogRepo(it) },
-                        label = { Text(L10n.str(R.string.catalogo_alternativo)) },
-                        placeholder = { Text(L10n.str(R.string.url_usuario_repo_github_vacio)) },
+                        label = { Text(L10n.str(R.string.alternative_catalogue)) },
+                        placeholder = { Text(L10n.str(R.string.url_github_user_repo_empty)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
-                    TextButton(onClick = { showCustomCatalog = true }) { Text(L10n.str(R.string.usar_otro_catalogo)) }
+                    TextButton(onClick = { showCustomCatalog = true }) { Text(L10n.str(R.string.use_another_catalogue)) }
                 }
             }
                 }
@@ -490,9 +490,9 @@ fun SettingsSectionScreen(
             SettingsCard(
                 icon = Icons.Filled.Sync,
                 title = "",
-                description = L10n.str(R.string.conecta_app_uno_varios_namespaces)
+                description = L10n.str(R.string.connect_app_one_more_namespaces)
             ) {
-                ManageRow(icon = Icons.Filled.Sync, label = L10n.str(R.string.gestionar_conexiones), summary = L10n.str(R.string.servidor_namespace_e_invitaciones_qr), onClick = onOpenSyncConnections)
+                ManageRow(icon = Icons.Filled.Sync, label = L10n.str(R.string.manage_connections), summary = L10n.str(R.string.server_namespace_qr_invitations), onClick = onOpenSyncConnections)
             }
                 }
             }
@@ -505,7 +505,7 @@ fun SettingsSectionScreen(
             title = { Text("Importar \"${dto.name}\"") },
             text = {
                 Column {
-                    Text(L10n.str(R.string.libro_quieres_anadir_esta_receta), modifier = Modifier.padding(bottom = 8.dp))
+                    Text(L10n.str(R.string.which_book_want_add_recipe), modifier = Modifier.padding(bottom = 8.dp))
                     books.forEach { book ->
                         Row(
                             modifier = Modifier
@@ -526,25 +526,25 @@ fun SettingsSectionScreen(
                         val bookId = selectedBookId
                         if (bookId != null) {
                             viewModel.importRecipeIntoBook(dto, photos, bookId) {
-                                scope.launch { snackbarHostState.showSnackbar(L10n.str(R.string.receta_importada)) }
+                                scope.launch { snackbarHostState.showSnackbar(L10n.str(R.string.recipe_imported)) }
                             }
                         }
                         pendingRecipeImport = null
                     },
                     enabled = selectedBookId != null
-                ) { Text(L10n.str(R.string.importar)) }
+                ) { Text(L10n.str(R.string.import)) }
             },
-            dismissButton = { TextButton(onClick = { pendingRecipeImport = null }) { Text(L10n.str(R.string.cancelar)) } }
+            dismissButton = { TextButton(onClick = { pendingRecipeImport = null }) { Text(L10n.str(R.string.cancel)) } }
         )
     }
 
     pendingLibraryImport?.let { parsed ->
         AlertDialog(
             onDismissRequest = { pendingLibraryImport = null },
-            title = { Text(L10n.str(R.string.importar_copia_seguridad)) },
+            title = { Text(L10n.str(R.string.import_backup)) },
             text = {
                 Text(
-                    L10n.str(R.string.van_importar_x_receta_s, parsed.dto.recipes.size)
+                    L10n.str(R.string.x_recipe_imported_want_delete, parsed.dto.recipes.size)
                 )
             },
             confirmButton = {
@@ -554,18 +554,18 @@ fun SettingsSectionScreen(
                     viewModel.confirmLibraryImport(context, toImport, wipeFirst = true) { message ->
                         scope.launch { snackbarHostState.showSnackbar(message) }
                     }
-                }) { Text(L10n.str(R.string.borrar_todo_e_importar), color = MaterialTheme.colorScheme.error) }
+                }) { Text(L10n.str(R.string.delete_everything_import), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
                 Row {
-                    TextButton(onClick = { pendingLibraryImport = null }) { Text(L10n.str(R.string.cancelar)) }
+                    TextButton(onClick = { pendingLibraryImport = null }) { Text(L10n.str(R.string.cancel)) }
                     TextButton(onClick = {
                         val toImport = parsed
                         pendingLibraryImport = null
                         viewModel.confirmLibraryImport(context, toImport, wipeFirst = false) { message ->
                             scope.launch { snackbarHostState.showSnackbar(message) }
                         }
-                    }) { Text(L10n.str(R.string.anadir_sin_borrar)) }
+                    }) { Text(L10n.str(R.string.add_without_deleting)) }
                 }
             }
         )
@@ -639,7 +639,7 @@ private fun ColorThemeSwatch(color: Color, selected: Boolean, contentDescription
         contentAlignment = Alignment.Center
     ) {
         if (selected) {
-            Icon(Icons.Filled.Check, contentDescription = L10n.str(R.string.seleccionado), tint = Color.White)
+            Icon(Icons.Filled.Check, contentDescription = L10n.str(R.string.selected_2), tint = Color.White)
         }
     }
 }
@@ -700,7 +700,7 @@ private fun LanguagePicker() {
                     if (activity != null) L10n.setLanguage(activity, language) else pending = null
                 }) { Text(L10n.str(R.string.language_restart_confirm)) }
             },
-            dismissButton = { TextButton(onClick = { pending = null }) { Text(L10n.str(R.string.cancelar)) } }
+            dismissButton = { TextButton(onClick = { pending = null }) { Text(L10n.str(R.string.cancel)) } }
         )
     }
 }

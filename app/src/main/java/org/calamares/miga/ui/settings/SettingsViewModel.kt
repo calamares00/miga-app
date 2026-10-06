@@ -75,11 +75,11 @@ class SettingsViewModel(
         viewModelScope.launch {
             val wipeMessage = if (wipeFirst) {
                 val result = repository.wipeUserRecipesAndBooks()
-                L10n.str(R.string.borraron_x_libro_s_x, result.bookCount, result.recipeCount)
+                L10n.str(R.string.deleted_x_book_x_recipe, result.bookCount, result.recipeCount)
             } else ""
             when (val result = RecipeExporter.importParsedLibrary(context, parsed.dto, parsed.entries, repository)) {
                 is LibraryImportResult.Success -> onMessage(wipeMessage + L10n.str(R.string.imported_n_recipes, result.count))
-                is LibraryImportResult.Error -> onMessage(L10n.str(R.string.no_pudo_importar_x, result.reason))
+                is LibraryImportResult.Error -> onMessage(L10n.str(R.string.couldnt_import_x, result.reason))
             }
         }
     }

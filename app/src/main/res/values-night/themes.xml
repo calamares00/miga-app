@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Recetario" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.Miga" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/night_background</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>

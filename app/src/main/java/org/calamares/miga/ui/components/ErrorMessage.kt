@@ -10,7 +10,7 @@ import org.calamares.miga.data.vision.GEMINI_MODELS
 import org.calamares.miga.data.vision.DEFAULT_GEMINI_MODEL
 import org.calamares.miga.data.vision.DEFAULT_ANTHROPIC_MODEL
 import org.calamares.miga.data.vision.ANTHROPIC_MODELS
-import org.calamares.miga.RecetarioApp
+import org.calamares.miga.MigaApp
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
@@ -65,7 +65,7 @@ fun ErrorMessage(reason: String, modifier: Modifier = Modifier, onRetry: (() -> 
     Column(modifier = modifier) {
         Text(ErrorDetail.summary(reason), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
         FlowRow {
-            if (onRetry != null) TextButton(onClick = onRetry) { Text(L10n.str(R.string.reintentar)) }
+            if (onRetry != null) TextButton(onClick = onRetry) { Text(L10n.str(R.string.retry)) }
             // Errores de IA (cuota, modelo caído, respuesta rara...): ofrecer probar con otro modelo.
             if (onRetry != null && ErrorDetail.isAiError(reason)) {
                 TextButton(onClick = { showModelPicker = true }) { Text(L10n.str(R.string.change_model)) }
@@ -88,7 +88,7 @@ fun ErrorMessage(reason: String, modifier: Modifier = Modifier, onRetry: (() -> 
 @Composable
 fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
-    val settings = remember { (context.applicationContext as RecetarioApp).settingsRepository }
+    val settings = remember { (context.applicationContext as MigaApp).settingsRepository }
     val scope = rememberCoroutineScope()
     val order by settings.observeProviderOrder().collectAsState(initial = VisionProviderType.entries.toList())
     val geminiKey by settings.observeGeminiApiKey().collectAsState(initial = "")
@@ -216,13 +216,13 @@ fun ErrorDetailDialog(detail: String, onDismiss: () -> Unit) {
     val clipboard = LocalClipboardManager.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(L10n.str(R.string.detalle_error)) },
+        title = { Text(L10n.str(R.string.error_details)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
                 SelectionContainer { Text(detail, style = MaterialTheme.typography.bodySmall) }
             }
         },
-        confirmButton = { TextButton(onClick = { clipboard.setText(AnnotatedString(detail)) }) { Text(L10n.str(R.string.copiar)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cerrar)) } }
+        confirmButton = { TextButton(onClick = { clipboard.setText(AnnotatedString(detail)) }) { Text(L10n.str(R.string.copy)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.close)) } }
     )
 }

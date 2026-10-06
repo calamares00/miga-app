@@ -35,7 +35,7 @@ fun PhotoSourceSheet(title: String, onCameraClick: () -> Unit, onGalleryClick: (
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(Icons.Filled.PhotoCamera, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(L10n.str(R.string.hacer_foto), modifier = Modifier.padding(start = 16.dp))
+            Text(L10n.str(R.string.take_photo), modifier = Modifier.padding(start = 16.dp))
         }
         Row(
             modifier = Modifier
@@ -45,7 +45,7 @@ fun PhotoSourceSheet(title: String, onCameraClick: () -> Unit, onGalleryClick: (
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(Icons.Filled.PhotoLibrary, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(L10n.str(R.string.elegir_galeria), modifier = Modifier.padding(start = 16.dp))
+            Text(L10n.str(R.string.choose_gallery), modifier = Modifier.padding(start = 16.dp))
         }
     }
 }

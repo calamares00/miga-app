@@ -20,7 +20,7 @@ fun RecipeVisionResultDto.toRecipeDraft(bookId: Long): RecipeDraft {
         recipeBookId = bookId,
         name = name,
         categoryName = categoryParts.firstOrNull(),
-        difficulty = runCatching { Difficulty.valueOf(difficulty) }.getOrDefault(Difficulty.MEDIA),
+        difficulty = Difficulty.parse(difficulty),
         prepTimeMinutes = prepTimeMinutes,
         cookTimeMinutes = cookTimeMinutes,
         servings = servings.coerceIn(1, 99),

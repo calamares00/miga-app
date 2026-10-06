@@ -71,7 +71,7 @@ object PacksCatalogClient {
 
     suspend fun fetchCatalog(repoPath: String): CatalogFetchResult = withContext(Dispatchers.IO) {
         if (repoPath.isBlank()) {
-            return@withContext CatalogFetchResult.Error(L10n.str(R.string.configura_catalogo_ajustes))
+            return@withContext CatalogFetchResult.Error(L10n.str(R.string.set_up_catalogue_settings))
         }
         try {
             val catalogUrl = catalogUrlFor(repoPath)
@@ -83,7 +83,7 @@ object PacksCatalogClient {
                 val responseCode = connection.responseCode
                 if (responseCode != HttpURLConnection.HTTP_OK) {
                     return@withContext CatalogFetchResult.Error(
-                        L10n.str(R.string.no_pudo_cargar_catalogo_codigo, responseCode)
+                        L10n.str(R.string.couldnt_load_catalogue_code_x, responseCode)
                     )
                 }
                 val body = connection.inputStream.bufferedReader().use { it.readText() }
@@ -102,7 +102,7 @@ object PacksCatalogClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            CatalogFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+            CatalogFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
 

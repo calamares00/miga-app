@@ -63,9 +63,9 @@ fun PacksCatalogScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(L10n.str(R.string.catalogo_packs)) },
+                title = { Text(L10n.str(R.string.pack_catalogue)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                 }
             )
         }
@@ -75,7 +75,7 @@ fun PacksCatalogScreen(
                 value = query,
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text(L10n.str(R.string.buscar_packs)) },
+                placeholder = { Text(L10n.str(R.string.search_packs)) },
                 leadingIcon = { Icon(Icons.Filled.Search, null) },
                 singleLine = true
             )
@@ -95,7 +95,7 @@ fun PacksCatalogScreen(
                                 color = MaterialTheme.colorScheme.error
                             )
                             OutlinedButton(onClick = { viewModel.refresh() }, modifier = Modifier.padding(top = 16.dp)) {
-                                Text(L10n.str(R.string.reintentar))
+                                Text(L10n.str(R.string.retry))
                             }
                         }
                     }
@@ -110,7 +110,7 @@ fun PacksCatalogScreen(
                     if (filtered.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text(
-                                if (state.items.isEmpty()) L10n.str(R.string.no_hay_ningun_pack_publicado) else L10n.str(R.string.no_hay_packs_coincidan_busqueda),
+                                if (state.items.isEmpty()) L10n.str(R.string.no_packs_have_been_published) else L10n.str(R.string.no_packs_match_search),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -164,7 +164,7 @@ private fun PackListCard(item: PackListItem, onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(text = item.entry.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
                 Text(
-                    text = L10n.str(R.string.x_x_recetas, item.entry.author, item.entry.recipeCount),
+                    text = L10n.str(R.string.x_x_recipes, item.entry.author, item.entry.recipeCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -179,13 +179,13 @@ private fun PackListCard(item: PackListItem, onClick: () -> Unit) {
                 if (item.hasUpdate) {
                     AssistChip(
                         onClick = onClick,
-                        label = { Text(L10n.str(R.string.actualizacion_disponible)) },
+                        label = { Text(L10n.str(R.string.update_available)) },
                         leadingIcon = { Icon(Icons.Filled.SystemUpdate, null, modifier = Modifier.size(16.dp)) }
                     )
                 } else if (item.isInstalled) {
                     AssistChip(
                         onClick = onClick,
-                        label = { Text(L10n.str(R.string.instalado)) },
+                        label = { Text(L10n.str(R.string.installed)) },
                         leadingIcon = { Icon(Icons.Filled.CloudDone, null, modifier = Modifier.size(16.dp)) }
                     )
                 }

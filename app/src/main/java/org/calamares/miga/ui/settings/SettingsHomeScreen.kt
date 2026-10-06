@@ -77,7 +77,7 @@ fun SettingsHomeScreen(
         contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
         topBar = {
             LargeTopAppBar(
-                title = { Text(L10n.str(R.string.ajustes)) },
+                title = { Text(L10n.str(R.string.settings)) },
                 colors = TopAppBarDefaults.largeTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     scrolledContainerColor = MaterialTheme.colorScheme.background
@@ -102,30 +102,30 @@ fun SettingsHomeScreen(
                     HomeItem(
                         SettingsSection.SECURITY.icon,
                         SettingsSection.SECURITY.title,
-                        if (biometricLockEnabled) L10n.str(R.string.bloqueo_biometrico_activado) else L10n.str(R.string.bloqueo_biometrico_desactivado)
+                        if (biometricLockEnabled) L10n.str(R.string.biometric_lock_2) else L10n.str(R.string.biometric_lock_off)
                     ) { onOpenSection(SettingsSection.SECURITY) },
-                    HomeItem(SettingsSection.VOICE.icon, SettingsSection.VOICE.title, L10n.str(R.string.dictado_x, DictationLanguages.label(dictationLanguage))) {
+                    HomeItem(SettingsSection.VOICE.icon, SettingsSection.VOICE.title, L10n.str(R.string.dictation_x, DictationLanguages.label(dictationLanguage))) {
                         onOpenSection(SettingsSection.VOICE)
                     }
                 )
             )
             HomeGroup(
                 listOf(
-                    HomeItem(SettingsSection.CONTENT.icon, SettingsSection.CONTENT.title, L10n.str(R.string.categorias_utensilios_e_ingredientes)) {
+                    HomeItem(SettingsSection.CONTENT.icon, SettingsSection.CONTENT.title, L10n.str(R.string.categories_utensils_ingredients)) {
                         onOpenSection(SettingsSection.CONTENT)
                     },
-                    HomeItem(SettingsSection.BACKUP.icon, SettingsSection.BACKUP.title, L10n.str(R.string.exportar_e_importar_libros_recetas)) {
+                    HomeItem(SettingsSection.BACKUP.icon, SettingsSection.BACKUP.title, L10n.str(R.string.export_import_books_recipes)) {
                         onOpenSection(SettingsSection.BACKUP)
                     },
-                    HomeItem(Icons.Filled.BarChart, L10n.str(R.string.estadisticas), L10n.str(R.string.recetas_favoritas_mas_cocinadas), onOpenStats)
+                    HomeItem(Icons.Filled.BarChart, L10n.str(R.string.statistics), L10n.str(R.string.recipes_favourites_most_cooked), onOpenStats)
                 )
             )
             HomeGroup(
                 listOf(
-                    HomeItem(SettingsSection.SYNC.icon, SettingsSection.SYNC.title, L10n.str(R.string.servidor_propio_libros_recetas_lista)) {
+                    HomeItem(SettingsSection.SYNC.icon, SettingsSection.SYNC.title, L10n.str(R.string.own_server_books_recipes_shopping)) {
                         onOpenSection(SettingsSection.SYNC)
                     },
-                    HomeItem(SettingsSection.PACKS.icon, SettingsSection.PACKS.title, L10n.str(R.string.libros_recetas_listos_instalar)) {
+                    HomeItem(SettingsSection.PACKS.icon, SettingsSection.PACKS.title, L10n.str(R.string.ready_install_recipe_books)) {
                         onOpenSection(SettingsSection.PACKS)
                     },
                     HomeItem(SettingsSection.AI.icon, SettingsSection.AI.title, when {
@@ -140,10 +140,10 @@ fun SettingsHomeScreen(
             HomeGroup(
                 buildList {
                     if (hasChangelog) {
-                        add(HomeItem(Icons.Filled.NewReleases, L10n.str(R.string.novedades), L10n.str(R.string.hay_nuevo_cada_version), onOpenChangelog))
+                        add(HomeItem(Icons.Filled.NewReleases, L10n.str(R.string.whats_new), L10n.str(R.string.whats_new_each_version), onOpenChangelog))
                     }
-                    add(HomeItem(Icons.Filled.HelpOutline, L10n.str(R.string.ayuda_soporte), L10n.str(R.string.preguntas_frecuentes_contacto), onHelp))
-                    add(HomeItem(Icons.Filled.Info, L10n.str(R.string.acerca), L10n.str(R.string.version_x_politica_privacidad, BuildConfig.VERSION_NAME), onAbout))
+                    add(HomeItem(Icons.Filled.HelpOutline, L10n.str(R.string.help_support), L10n.str(R.string.faq_contact), onHelp))
+                    add(HomeItem(Icons.Filled.Info, L10n.str(R.string.about), L10n.str(R.string.version_x_privacy_policy, BuildConfig.VERSION_NAME), onAbout))
                 }
             )
         }

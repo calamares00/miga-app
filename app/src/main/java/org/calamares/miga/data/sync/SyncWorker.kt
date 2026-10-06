@@ -8,7 +8,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import org.calamares.miga.RecetarioApp
+import org.calamares.miga.MigaApp
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
@@ -29,7 +29,7 @@ private const val INTERVAL_MINUTES = 15L
 class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        val app = applicationContext as RecetarioApp
+        val app = applicationContext as MigaApp
         val repository = app.repository
         val syncEngine = SyncEngine(repository)
         repository.observeSyncConnections().first().forEach { connection ->

@@ -177,10 +177,10 @@ import kotlinx.coroutines.launch
 
 /** Pestañas de la hoja "Añadir": todo lo que no es escribir/dictar/escanear vive aquí y no en menús. */
 internal enum class AddTab(val title: String) {
-    CATALOG(L10n.str(R.string.catalogo)),
-    PRODUCTS(L10n.str(R.string.productos)),
-    TEMPLATES(L10n.str(R.string.plantillas)),
-    BULK(L10n.str(R.string.varios))
+    CATALOG(L10n.str(R.string.catalogue)),
+    PRODUCTS(L10n.str(R.string.products)),
+    TEMPLATES(L10n.str(R.string.templates)),
+    BULK(L10n.str(R.string.bulk))
 }
 
 /**
@@ -224,10 +224,10 @@ internal fun ShoppingAddSheet(
                         ProductSearchContent(
                             viewModel = viewModel,
                             initialQuery = initialQuery,
-                            addDescription = L10n.str(R.string.anadir_lista),
+                            addDescription = L10n.str(R.string.add_list),
                             onAdd = { product ->
                                 viewModel.addSearchedProduct(product)
-                                onMessage(L10n.str(R.string.anadido_x, product.name))
+                                onMessage(L10n.str(R.string.added_x, product.name))
                             },
                             onSaveToTemplate = { product -> onSaveToTemplate(product.toTemplateItem()) }
                         )
@@ -237,7 +237,7 @@ internal fun ShoppingAddSheet(
                         listIsEmpty = listIsEmpty,
                         onApply = { template ->
                             viewModel.applyTemplate(template)
-                            onMessage(L10n.str(R.string.anadidos_x_articulos_x, template.items.size, template.name))
+                            onMessage(L10n.str(R.string.added_x_items_x, template.items.size, template.name))
                         },
                         onEdit = onEditTemplate,
                         onNew = onNewTemplate,
@@ -246,7 +246,7 @@ internal fun ShoppingAddSheet(
                     AddTab.BULK -> BulkContent(
                         onAdd = { text ->
                             val count = viewModel.addEntries(text)
-                            onMessage(if (count == 1) L10n.str(R.string.anadido_1_articulo) else L10n.str(R.string.anadidos_x_articulos, count))
+                            onMessage(if (count == 1) L10n.str(R.string.added_1_item) else L10n.str(R.string.added_x_items, count))
                         }
                     )
                 }
@@ -273,7 +273,7 @@ private fun CatalogContent(
 
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
-            L10n.str(R.string.toca_anadir_quitar_lista),
+            L10n.str(R.string.tap_add_remove_list),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp)
@@ -295,7 +295,7 @@ private fun CatalogContent(
         }
         if (current == null) {
             Text(
-                L10n.str(R.string.catalogo_ingredientes_esta_vacio),
+                L10n.str(R.string.ingredient_catalogue_empty),
                 modifier = Modifier.padding(16.dp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -375,7 +375,7 @@ internal fun ProductSearchContent(
             value = query,
             onValueChange = { query = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(L10n.str(R.string.buscar_open_food_facts_leche)) },
+            placeholder = { Text(L10n.str(R.string.search_open_food_facts_milk)) },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Search),
@@ -385,25 +385,25 @@ internal fun ProductSearchContent(
             FilterChip(
                 selected = spainOnly,
                 onClick = { spainOnly = !spainOnly; if (query.trim().length >= 2) viewModel.searchProducts(query, spainOnly) },
-                label = { Text(L10n.str(R.string.solo_espana)) }
+                label = { Text(L10n.str(R.string.spain_only)) }
             )
             if (query.trim().length >= 2) {
-                AssistChip(onClick = { viewModel.searchProducts(query, spainOnly) }, label = { Text(L10n.str(R.string.buscar)) })
+                AssistChip(onClick = { viewModel.searchProducts(query, spainOnly) }, label = { Text(L10n.str(R.string.search)) })
             }
         }
         when (val current = state) {
             ProductSearchState.Idle -> Text(
                 if (onSaveToTemplate != null) {
-                    L10n.str(R.string.escribe_producto_pulsa_buscar_va)
+                    L10n.str(R.string.type_product_tap_search_adds)
                 } else {
-                    L10n.str(R.string.escribe_producto_pulsa_buscar_salen)
+                    L10n.str(R.string.type_product_tap_search_most)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             ProductSearchState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                Text(L10n.str(R.string.buscando))
+                Text(L10n.str(R.string.searching))
             }
             is ProductSearchState.Error -> Text(current.reason, color = MaterialTheme.colorScheme.error)
             is ProductSearchState.Results -> if (current.products.isEmpty()) {
@@ -472,14 +472,14 @@ private fun TemplatesContent(
                     Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text("  Nueva")
                 }
-                OutlinedButton(onClick = onSaveList, enabled = !listIsEmpty) { Text(L10n.str(R.string.guardar_esta_lista)) }
+                OutlinedButton(onClick = onSaveList, enabled = !listIsEmpty) { Text(L10n.str(R.string.save_list)) }
             }
         }
-        item(key = "mine_header") { SectionLabel(L10n.str(R.string.mis_plantillas)) }
+        item(key = "mine_header") { SectionLabel(L10n.str(R.string.my_templates)) }
         if (templates.isEmpty()) {
             item(key = "mine_empty") {
                 Text(
-                    L10n.str(R.string.aun_no_tienes_plantillas_crea),
+                    L10n.str(R.string.dont_have_templates_yet_create),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 8.dp)
@@ -489,7 +489,7 @@ private fun TemplatesContent(
         items(templates, key = { "m${it.id}" }) { template ->
             TemplateRow(template = template, onApply = { onApply(template) }, onClick = { onEdit(template.id) })
         }
-        item(key = "predefined_header") { SectionLabel(L10n.str(R.string.predefinidas), top = 16.dp) }
+        item(key = "predefined_header") { SectionLabel(L10n.str(R.string.ready_made), top = 16.dp) }
         items(PredefinedShoppingLists.ALL, key = { "p${it.id}" }) { template ->
             TemplateRow(template = template, onApply = { onApply(template) }, onClick = null)
         }
@@ -512,7 +512,7 @@ private fun BulkContent(onAdd: (String) -> Unit) {
     val parsedCount = remember(bulkText) { ShoppingEntryParser.parse(bulkText).size }
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            L10n.str(R.string.escribe_pega_articulo_linea_separados),
+            L10n.str(R.string.type_paste_one_item_per),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -526,6 +526,6 @@ private fun BulkContent(onAdd: (String) -> Unit) {
             onClick = { onAdd(bulkText); bulkText = "" },
             enabled = parsedCount > 0,
             modifier = Modifier.align(Alignment.End)
-        ) { Text(if (parsedCount > 0) L10n.str(R.string.anadir_x, parsedCount) else L10n.str(R.string.anadir)) }
+        ) { Text(if (parsedCount > 0) L10n.str(R.string.add_x, parsedCount) else L10n.str(R.string.add)) }
     }
 }

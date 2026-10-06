@@ -87,28 +87,28 @@ object ProductLabels {
     }
 
     fun novaDescription(nova: Int?): String? = when (nova) {
-        1 -> L10n.str(R.string.sin_procesar_minimamente_procesado)
-        2 -> L10n.str(R.string.ingrediente_culinario_procesado)
-        3 -> L10n.str(R.string.alimento_procesado)
-        4 -> L10n.str(R.string.ultraprocesado)
+        1 -> L10n.str(R.string.unprocessed_minimally_processed)
+        2 -> L10n.str(R.string.processed_culinary_ingredient)
+        3 -> L10n.str(R.string.processed_food)
+        4 -> L10n.str(R.string.ultra_processed)
         else -> null
     }
 
     private val allergenNames = mapOf(
         "gluten" to L10n.str(R.string.gluten),
-        "milk" to L10n.str(R.string.leche),
-        "eggs" to L10n.str(R.string.huevos),
-        "nuts" to L10n.str(R.string.frutos_cascara),
-        "peanuts" to L10n.str(R.string.cacahuetes),
-        "soybeans" to L10n.str(R.string.soja),
-        "fish" to L10n.str(R.string.pescado),
-        "crustaceans" to L10n.str(R.string.crustaceos),
-        "molluscs" to L10n.str(R.string.moluscos),
-        "celery" to L10n.str(R.string.apio),
-        "mustard" to L10n.str(R.string.mostaza),
-        "sesame-seeds" to L10n.str(R.string.sesamo),
-        "sulphur-dioxide-and-sulphites" to L10n.str(R.string.sulfitos),
-        "lupin" to L10n.str(R.string.altramuces)
+        "milk" to L10n.str(R.string.milk),
+        "eggs" to L10n.str(R.string.eggs),
+        "nuts" to L10n.str(R.string.tree_nuts),
+        "peanuts" to L10n.str(R.string.peanuts),
+        "soybeans" to L10n.str(R.string.soy),
+        "fish" to L10n.str(R.string.fish),
+        "crustaceans" to L10n.str(R.string.crustaceans),
+        "molluscs" to L10n.str(R.string.molluscs),
+        "celery" to L10n.str(R.string.celery),
+        "mustard" to L10n.str(R.string.mustard),
+        "sesame-seeds" to L10n.str(R.string.sesame),
+        "sulphur-dioxide-and-sulphites" to L10n.str(R.string.sulphites),
+        "lupin" to L10n.str(R.string.lupin)
     )
 
     /** Nombre en español de un alérgeno; los desconocidos se muestran con el código legible. */
@@ -116,15 +116,15 @@ object ProductLabels {
         allergenNames[code] ?: code.replace('-', ' ').replaceFirstChar { it.uppercase() }
 
     private val labelNames = mapOf(
-        "organic" to L10n.str(R.string.ecologico),
-        "no-gluten" to L10n.str(R.string.sin_gluten),
-        "fair-trade" to L10n.str(R.string.comercio_justo),
-        "no-lactose" to L10n.str(R.string.sin_lactosa),
-        "no-added-sugar" to L10n.str(R.string.sin_azucares_anadidos),
-        "no-preservatives" to L10n.str(R.string.sin_conservantes),
-        "vegan" to L10n.str(R.string.vegano),
-        "vegetarian" to L10n.str(R.string.vegetariano),
-        "palm-oil-free" to L10n.str(R.string.sin_aceite_palma)
+        "organic" to L10n.str(R.string.organic),
+        "no-gluten" to L10n.str(R.string.gluten_free),
+        "fair-trade" to L10n.str(R.string.fair_trade),
+        "no-lactose" to L10n.str(R.string.lactose_free),
+        "no-added-sugar" to L10n.str(R.string.no_added_sugar),
+        "no-preservatives" to L10n.str(R.string.no_preservatives),
+        "vegan" to L10n.str(R.string.vegan),
+        "vegetarian" to L10n.str(R.string.vegetarian),
+        "palm-oil-free" to L10n.str(R.string.palm_oil_free)
     )
 
     /** Etiquetas positivas conocidas (etiquetas del producto + análisis de ingredientes), sin repetir y en español. */
@@ -133,13 +133,13 @@ object ProductLabels {
 
     /** Filas "nombre / valor" de la tabla nutricional por 100 g con solo los datos disponibles. */
     fun nutritionRows(info: ProductInfo): List<Pair<String, String>> = buildList {
-        info.energyKcal?.let { add(L10n.str(R.string.energia) to "${formatQuantity(it)} kcal") }
-        info.fat?.let { add(L10n.str(R.string.grasas) to "${formatQuantity(it)} g") }
-        info.saturatedFat?.let { add(L10n.str(R.string.cuales_saturadas) to "${formatQuantity(it)} g") }
-        info.carbohydrates?.let { add(L10n.str(R.string.hidratos_carbono) to "${formatQuantity(it)} g") }
-        info.sugars?.let { add(L10n.str(R.string.cuales_azucares) to "${formatQuantity(it)} g") }
-        info.fiber?.let { add(L10n.str(R.string.fibra) to "${formatQuantity(it)} g") }
-        info.proteins?.let { add(L10n.str(R.string.proteinas) to "${formatQuantity(it)} g") }
-        info.salt?.let { add(L10n.str(R.string.sal) to "${formatQuantity(it)} g") }
+        info.energyKcal?.let { add(L10n.str(R.string.energy) to "${formatQuantity(it)} kcal") }
+        info.fat?.let { add(L10n.str(R.string.fat) to "${formatQuantity(it)} g") }
+        info.saturatedFat?.let { add(L10n.str(R.string.which_saturates) to "${formatQuantity(it)} g") }
+        info.carbohydrates?.let { add(L10n.str(R.string.carbohydrate) to "${formatQuantity(it)} g") }
+        info.sugars?.let { add(L10n.str(R.string.which_sugars) to "${formatQuantity(it)} g") }
+        info.fiber?.let { add(L10n.str(R.string.fibre) to "${formatQuantity(it)} g") }
+        info.proteins?.let { add(L10n.str(R.string.protein) to "${formatQuantity(it)} g") }
+        info.salt?.let { add(L10n.str(R.string.salt) to "${formatQuantity(it)} g") }
     }
 }

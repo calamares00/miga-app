@@ -133,13 +133,13 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                             value = geminiApiKey,
                             onValueChange = { viewModel.setGeminiApiKey(it) },
                             label = L10n.str(R.string.api_key_gemini),
-                            placeholder = L10n.str(R.string.consiguela_gratis_aistudio_google_com)
+                            placeholder = L10n.str(R.string.get_one_free_aistudio_google)
                         )
                         ModelDropdownField(
-                            label = L10n.str(R.string.modelo_gemini),
+                            label = L10n.str(R.string.gemini_model),
                             models = GEMINI_MODELS,
                             current = geminiModel,
-                            customPlaceholder = L10n.str(R.string.p_ej_gemini_3_6),
+                            customPlaceholder = L10n.str(R.string.e_g_gemini_3_6),
                             onSelect = { viewModel.setGeminiModel(it) }
                         )
                     }
@@ -148,13 +148,13 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                             value = anthropicApiKey,
                             onValueChange = { viewModel.setAnthropicApiKey(it) },
                             label = L10n.str(R.string.api_key_anthropic),
-                            placeholder = L10n.str(R.string.consiguela_console_anthropic_com)
+                            placeholder = L10n.str(R.string.get_one_console_anthropic_com)
                         )
                         ModelDropdownField(
-                            label = L10n.str(R.string.modelo_claude),
+                            label = L10n.str(R.string.claude_model),
                             models = ANTHROPIC_MODELS,
                             current = anthropicModel,
-                            customPlaceholder = L10n.str(R.string.p_ej_claude_haiku_4),
+                            customPlaceholder = L10n.str(R.string.e_g_claude_haiku_4),
                             onSelect = { viewModel.setAnthropicModel(it) }
                         )
                     }
@@ -296,11 +296,11 @@ private fun ModelDropdownField(
     val isCustom = current !in models
     Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
-            value = if (isCustom) L10n.str(R.string.personalizado_2) else current,
+            value = if (isCustom) L10n.str(R.string.custom_2) else current,
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
-            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.abrir_selector_modelo)) },
+            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.open_model_picker)) },
             modifier = Modifier.fillMaxWidth()
         )
         // Capa transparente encima del campo para abrir el menú al tocar, sin que el propio
@@ -311,7 +311,7 @@ private fun ModelDropdownField(
                 DropdownMenuItem(text = { Text(modelId) }, onClick = { onSelect(modelId); menuExpanded = false })
             }
             DropdownMenuItem(
-                text = { Text(L10n.str(R.string.personalizado)) },
+                text = { Text(L10n.str(R.string.custom)) },
                 onClick = { onSelect(""); menuExpanded = false }
             )
         }
@@ -320,7 +320,7 @@ private fun ModelDropdownField(
         OutlinedTextField(
             value = current,
             onValueChange = onSelect,
-            label = { Text(L10n.str(R.string.id_modelo)) },
+            label = { Text(L10n.str(R.string.model_id)) },
             placeholder = { Text(customPlaceholder) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -336,7 +336,7 @@ private fun OpenRouterModelField(current: String, supportsImages: Boolean, onSel
             value = current,
             onValueChange = {},
             readOnly = true,
-            label = { Text(L10n.str(R.string.modelo_openrouter)) },
+            label = { Text(L10n.str(R.string.openrouter_model)) },
             placeholder = { Text(L10n.str(R.string.ai_provider_no_model)) },
             supportingText = if (current.isNotBlank()) {
                 {
@@ -348,7 +348,7 @@ private fun OpenRouterModelField(current: String, supportsImages: Boolean, onSel
                     )
                 }
             } else null,
-            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.abrir_selector_modelo)) },
+            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.open_model_picker)) },
             modifier = Modifier.fillMaxWidth()
         )
         Box(modifier = Modifier.matchParentSize().clickable { showSheet = true })
@@ -413,7 +413,7 @@ fun OpenRouterModelSheet(current: String, onPick: (id: String, supportsImages: B
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(L10n.str(R.string.openrouter_models_error), style = MaterialTheme.typography.bodyMedium)
-                TextButton(onClick = { reloadToken++ }) { Text(L10n.str(R.string.reintentar)) }
+                TextButton(onClick = { reloadToken++ }) { Text(L10n.str(R.string.retry)) }
             }
             is CatalogState.Loaded -> {
                 val filtered = current0.models.filter { model ->
@@ -472,7 +472,7 @@ fun OpenRouterModelSheet(current: String, onPick: (id: String, supportsImages: B
             OutlinedTextField(
                 value = customId,
                 onValueChange = { customId = it },
-                label = { Text(L10n.str(R.string.id_modelo)) },
+                label = { Text(L10n.str(R.string.model_id)) },
                 placeholder = { Text("vendor/model:free") },
                 singleLine = true,
                 modifier = Modifier.weight(1f)

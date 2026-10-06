@@ -4,7 +4,7 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 
 enum class RecipeListViewMode(val label: String) {
-    COMPACT(L10n.str(R.string.compacta)),
+    COMPACT(L10n.str(R.string.compact)),
     NORMAL(L10n.str(R.string.normal)),
-    GRID(L10n.str(R.string.cuadricula))
+    GRID(L10n.str(R.string.grid))
 }
