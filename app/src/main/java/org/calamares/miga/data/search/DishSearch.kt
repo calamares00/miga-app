@@ -1,12 +1,20 @@
 package org.calamares.miga.data.search
 
-import org.calamares.miga.data.ai.OpenRouterDishSearchClient
-import org.calamares.miga.data.vision.outputLanguageInstruction
-import org.calamares.miga.data.vision.VisionProviderType
 import kotlinx.serialization.Serializable
+import org.calamares.miga.data.ai.AiCandidate
+import org.calamares.miga.data.ai.AiRequest
+import org.calamares.miga.data.ai.AiText
+import org.calamares.miga.data.ai.complete
+import org.calamares.miga.data.ai.decodeAiJson
+import org.calamares.miga.data.ai.outputLanguageInstruction
+import org.calamares.miga.data.support.AiErrors
 
-/** Un plato sugerido por la búsqueda con IA: nombre, breve descripción, y origen/región si aplica
- *  (null si la búsqueda no era geográfica, p. ej. "recetas con pollo y curry"). */
+private const val SEARCH_MAX_TOKENS = 2048
+
+/**
+ * A dish suggested by the AI search. [origin] is the region it is typical of, or null when the
+ * search was not geographic (for example "chicken curry recipes").
+ */
 data class DishSuggestion(val name: String, val description: String, val origin: String?)
 
 sealed interface DishSearchResult {
@@ -14,27 +22,29 @@ sealed interface DishSearchResult {
     data class Error(val reason: String) : DishSearchResult
 }
 
-/** Busca ideas de platos a partir de una petición libre (zona/país, tipo de plato, ingrediente, o
- *  cualquier descripción) usando un LLM - son sugerencias generadas por el propio modelo a partir
- *  de su conocimiento, no una búsqueda real en la web. */
-interface DishSearchClient {
-    suspend fun searchDishes(query: String, apiKey: String, model: String): DishSearchResult
-}
-
-fun dishSearchClientFor(provider: VisionProviderType): DishSearchClient = when (provider) {
-    VisionProviderType.GEMINI -> GeminiDishSearchClient
-    VisionProviderType.ANTHROPIC -> AnthropicDishSearchClient
-    VisionProviderType.OPENROUTER -> OpenRouterDishSearchClient
-}
-
-// Forma del JSON que se le pide al LLM; compartida entre proveedores para decodificar la respuesta.
 @Serializable
 internal data class DishSuggestionDto(val name: String = "", val description: String = "", val origin: String? = null)
 
 @Serializable
 internal data class DishSearchResultDto(val dishes: List<DishSuggestionDto> = emptyList())
 
-/** Prompt shared by every provider so the format never diverges. */
+/**
+ * Suggests dishes for a free-form request (region, type of dish, ingredient...). The ideas come
+ * from the model's own knowledge; it is not a web search.
+ */
+suspend fun AiCandidate.searchDishes(query: String): DishSearchResult =
+    when (val result = complete(AiRequest(buildDishSearchPrompt(query), SEARCH_MAX_TOKENS))) {
+        is AiText.Error -> DishSearchResult.Error(result.reason)
+        is AiText.Success -> try {
+            val dto = decodeAiJson(DishSearchResultDto.serializer(), result.text)
+            DishSearchResult.Success(
+                dto.dishes.filter { it.name.isNotBlank() }.map { DishSuggestion(it.name, it.description, it.origin) }
+            )
+        } catch (e: Exception) {
+            DishSearchResult.Error(AiErrors.badResponse(e, result.text))
+        }
+    }
+
 internal fun buildDishSearchPrompt(query: String): String = """
 You are an expert in cooking and cuisines from all over the world. A user of a recipe app is
 looking for ideas with this request: "$query" (it may be a region or country, a type of dish, a

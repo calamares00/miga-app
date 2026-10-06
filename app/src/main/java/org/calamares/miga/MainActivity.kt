@@ -74,8 +74,9 @@ class MainActivity : FragmentActivity() {
                 ThemeMode.DARK -> true
             }
             val colorTheme by settingsRepository.observeColorTheme().collectAsState(initial = ColorTheme.TERRACOTTA)
-            val biometricLockEnabled by settingsRepository.observeBiometricLockEnabled().collectAsState(initial = false)
-            // null mientras se lee el ajuste (se sigue mostrando el splash para no parpadear).
+            val biometricLockEnabled by settingsRepository.observeBiometricLockEnabled().collectAsState(initial = null)
+            // These start as null while the settings load; the splash stays on screen meanwhile so
+            // neither the lock screen nor the content flashes.
             val onboardingDone by settingsRepository.observeOnboardingDone().collectAsState(initial = null)
             var welcomeDestination by remember { mutableStateOf<String?>(null) }
             var unlocked by remember { mutableStateOf(false) }
@@ -99,7 +100,7 @@ class MainActivity : FragmentActivity() {
             MigaTheme(darkTheme = darkTheme, colorTheme = colorTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     when {
-                        showSplash || onboardingDone == null -> SplashScreen()
+                        showSplash || onboardingDone == null || biometricLockEnabled == null -> SplashScreen()
                         onboardingDone == false -> WelcomeScreen(
                             packsRoute = Destinations.PACKS_CATALOG_ROUTE,
                             backupRoute = Destinations.settingsSection(SettingsSection.BACKUP.id),
@@ -108,7 +109,7 @@ class MainActivity : FragmentActivity() {
                                 scope.launch { settingsRepository.setOnboardingDone() }
                             }
                         )
-                        biometricLockEnabled && !unlocked -> LockScreen(
+                        biometricLockEnabled == true && !unlocked -> LockScreen(
                             onUnlockClick = {
                                 scope.launch {
                                     if (BiometricAuthenticator.authenticate(this@MainActivity)) unlocked = true

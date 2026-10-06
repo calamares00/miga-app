@@ -109,9 +109,9 @@ import org.calamares.miga.data.voice.DictationLanguages
 import org.calamares.miga.data.model.ColorTheme
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.ThemeMode
-import org.calamares.miga.data.vision.ANTHROPIC_MODELS
-import org.calamares.miga.data.vision.GEMINI_MODELS
-import org.calamares.miga.data.vision.VisionProviderType
+import org.calamares.miga.data.ai.ANTHROPIC_MODELS
+import org.calamares.miga.data.ai.GEMINI_MODELS
+import org.calamares.miga.data.ai.AiProvider
 import org.calamares.miga.ui.common.BACKUP_MIME_TYPES
 import org.calamares.miga.ui.security.BiometricAuthenticator
 import org.calamares.miga.ui.theme.Blue

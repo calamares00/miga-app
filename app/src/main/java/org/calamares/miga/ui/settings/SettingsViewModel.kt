@@ -21,9 +21,9 @@ import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
 import org.calamares.miga.data.repository.RecipeRepository
-import org.calamares.miga.data.vision.DEFAULT_ANTHROPIC_MODEL
-import org.calamares.miga.data.vision.DEFAULT_GEMINI_MODEL
-import org.calamares.miga.data.vision.VisionProviderType
+import org.calamares.miga.data.ai.DEFAULT_ANTHROPIC_MODEL
+import org.calamares.miga.data.ai.DEFAULT_GEMINI_MODEL
+import org.calamares.miga.data.ai.AiProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -120,17 +120,17 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setAiNutritionEnabled(enabled) }
     }
 
-    val visionProvider: StateFlow<VisionProviderType> = settingsRepository.observeVisionProvider()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), VisionProviderType.GEMINI)
+    val visionProvider: StateFlow<AiProvider> = settingsRepository.observeVisionProvider()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AiProvider.GEMINI)
 
-    fun setVisionProvider(provider: VisionProviderType) {
+    fun setVisionProvider(provider: AiProvider) {
         viewModelScope.launch { settingsRepository.setVisionProvider(provider) }
     }
 
-    val providerOrder: StateFlow<List<VisionProviderType>> = settingsRepository.observeProviderOrder()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), VisionProviderType.entries.toList())
+    val providerOrder: StateFlow<List<AiProvider>> = settingsRepository.observeProviderOrder()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AiProvider.entries.toList())
 
-    fun setProviderOrder(order: List<VisionProviderType>) {
+    fun setProviderOrder(order: List<AiProvider>) {
         viewModelScope.launch { settingsRepository.setProviderOrder(order) }
     }
 
@@ -152,7 +152,7 @@ class SettingsViewModel(
     }
 
     /** Resumen para la pantalla principal de Ajustes: proveedores con clave, en orden de prioridad. */
-    val aiProvidersSummary: StateFlow<List<VisionProviderType>> = kotlinx.coroutines.flow.combine(
+    val aiProvidersSummary: StateFlow<List<AiProvider>> = kotlinx.coroutines.flow.combine(
         settingsRepository.observeProviderOrder(),
         settingsRepository.observeGeminiApiKey(),
         settingsRepository.observeAnthropicApiKey(),
@@ -161,9 +161,9 @@ class SettingsViewModel(
     ) { order, gemini, anthropic, openRouter, openRouterModel ->
         order.filter { provider ->
             when (provider) {
-                VisionProviderType.GEMINI -> gemini.isNotBlank()
-                VisionProviderType.ANTHROPIC -> anthropic.isNotBlank()
-                VisionProviderType.OPENROUTER -> openRouter.isNotBlank() && openRouterModel.isNotBlank()
+                AiProvider.GEMINI -> gemini.isNotBlank()
+                AiProvider.ANTHROPIC -> anthropic.isNotBlank()
+                AiProvider.OPENROUTER -> openRouter.isNotBlank() && openRouterModel.isNotBlank()
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

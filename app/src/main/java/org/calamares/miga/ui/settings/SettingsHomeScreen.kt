@@ -131,7 +131,7 @@ fun SettingsHomeScreen(
                     HomeItem(SettingsSection.AI.icon, SettingsSection.AI.title, when {
                         !aiEnabled -> L10n.str(R.string.ai_disabled_summary)
                         aiProviders.isEmpty() -> L10n.str(R.string.ai_no_provider_summary)
-                        else -> aiProviders.joinToString(" → ") { it.label.substringAfter(' ') }
+                        else -> aiProviders.joinToString(" → ") { it.shortName }
                     }) {
                         onOpenSection(SettingsSection.AI)
                     }

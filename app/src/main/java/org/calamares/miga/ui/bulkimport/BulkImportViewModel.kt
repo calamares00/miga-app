@@ -16,10 +16,10 @@ import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.vision.RecipeVisionResult
-import org.calamares.miga.data.vision.VisionImageInput
-import org.calamares.miga.data.vision.VisionProviderType
+import org.calamares.miga.data.ai.AiImage
+import org.calamares.miga.data.ai.AiProvider
 import org.calamares.miga.data.vision.toRecipeDraft
-import org.calamares.miga.data.vision.visionClientFor
+import org.calamares.miga.data.vision.extractRecipe
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -75,12 +75,12 @@ class BulkImportViewModel(
             updateRow(index) { it.copy(state = BulkImportRowState.Failed(L10n.str(R.string.couldnt_read_photo))) }
             return
         }
-        val images = listOf(VisionImageInput(bytes, "image/jpeg"))
+        val images = listOf(AiImage(bytes, "image/jpeg"))
         val result = settingsRepository.runAi<RecipeVisionResult>(
             needsImages = true,
             errorOf = { (it as? RecipeVisionResult.Error)?.reason },
             error = { RecipeVisionResult.Error(it) }
-        ) { ai -> visionClientFor(ai.provider).extractRecipe(images, ai.apiKey, ai.model) }
+        ) { ai -> ai.extractRecipe(images) }
             ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
         when (result) {
             is RecipeVisionResult.Success -> {

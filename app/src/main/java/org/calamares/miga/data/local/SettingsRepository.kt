@@ -15,9 +15,9 @@ import org.calamares.miga.data.model.ColorTheme
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
-import org.calamares.miga.data.vision.DEFAULT_ANTHROPIC_MODEL
-import org.calamares.miga.data.vision.DEFAULT_GEMINI_MODEL
-import org.calamares.miga.data.vision.VisionProviderType
+import org.calamares.miga.data.ai.DEFAULT_ANTHROPIC_MODEL
+import org.calamares.miga.data.ai.DEFAULT_GEMINI_MODEL
+import org.calamares.miga.data.ai.AiProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -192,23 +192,23 @@ class SettingsRepository(private val context: Context) {
      * nuevos) se añaden al final. Si no hay orden guardado, se parte del proveedor elegido en
      * versiones anteriores ("vision_provider").
      */
-    fun observeProviderOrder(): Flow<List<VisionProviderType>> =
+    fun observeProviderOrder(): Flow<List<AiProvider>> =
         context.settingsDataStore.data.map { prefs ->
             val stored = prefs[aiProviderOrderKey]?.split(',')
-                ?.mapNotNull { name -> runCatching { VisionProviderType.valueOf(name.trim()) }.getOrNull() }
-                ?: listOfNotNull(prefs[visionProviderKey]?.let { runCatching { VisionProviderType.valueOf(it) }.getOrNull() })
-            (stored + VisionProviderType.entries).distinct()
+                ?.mapNotNull { name -> runCatching { AiProvider.valueOf(name.trim()) }.getOrNull() }
+                ?: listOfNotNull(prefs[visionProviderKey]?.let { runCatching { AiProvider.valueOf(it) }.getOrNull() })
+            (stored + AiProvider.entries).distinct()
         }
 
-    suspend fun setProviderOrder(order: List<VisionProviderType>) {
-        context.settingsDataStore.edit { prefs -> prefs[aiProviderOrderKey] = (order + VisionProviderType.entries).distinct().joinToString(",") { it.name } }
+    suspend fun setProviderOrder(order: List<AiProvider>) {
+        context.settingsDataStore.edit { prefs -> prefs[aiProviderOrderKey] = (order + AiProvider.entries).distinct().joinToString(",") { it.name } }
     }
 
     /** Proveedor de mayor prioridad. */
-    fun observeVisionProvider(): Flow<VisionProviderType> = observeProviderOrder().map { it.first() }
+    fun observeVisionProvider(): Flow<AiProvider> = observeProviderOrder().map { it.first() }
 
     /** Sube [provider] al primer puesto de la prioridad (p. ej. al elegir otro modelo tras un error). */
-    suspend fun setVisionProvider(provider: VisionProviderType) {
+    suspend fun setVisionProvider(provider: AiProvider) {
         setProviderOrder(listOf(provider) + observeProviderOrder().first())
     }
 
@@ -268,23 +268,23 @@ class SettingsRepository(private val context: Context) {
     }
 
     /** Resuelve la API key configurada para [provider] (una por proveedor, BYOK). */
-    suspend fun apiKeyFor(provider: VisionProviderType): String = when (provider) {
-        VisionProviderType.GEMINI -> observeGeminiApiKey().first()
-        VisionProviderType.ANTHROPIC -> observeAnthropicApiKey().first()
-        VisionProviderType.OPENROUTER -> observeOpenRouterApiKey().first()
+    suspend fun apiKeyFor(provider: AiProvider): String = when (provider) {
+        AiProvider.GEMINI -> observeGeminiApiKey().first()
+        AiProvider.ANTHROPIC -> observeAnthropicApiKey().first()
+        AiProvider.OPENROUTER -> observeOpenRouterApiKey().first()
     }
 
     /** Resuelve el modelo configurado para [provider]. */
-    suspend fun modelFor(provider: VisionProviderType): String = when (provider) {
-        VisionProviderType.GEMINI -> observeGeminiModel().first()
-        VisionProviderType.ANTHROPIC -> observeAnthropicModel().first()
-        VisionProviderType.OPENROUTER -> observeOpenRouterModel().first()
+    suspend fun modelFor(provider: AiProvider): String = when (provider) {
+        AiProvider.GEMINI -> observeGeminiModel().first()
+        AiProvider.ANTHROPIC -> observeAnthropicModel().first()
+        AiProvider.OPENROUTER -> observeOpenRouterModel().first()
     }
 
     /** Si el modelo configurado para [provider] puede leer imágenes (todos los de Gemini y Claude pueden). */
-    suspend fun supportsImages(provider: VisionProviderType): Boolean = when (provider) {
-        VisionProviderType.GEMINI, VisionProviderType.ANTHROPIC -> true
-        VisionProviderType.OPENROUTER -> observeOpenRouterModelImages().first()
+    suspend fun supportsImages(provider: AiProvider): Boolean = when (provider) {
+        AiProvider.GEMINI, AiProvider.ANTHROPIC -> true
+        AiProvider.OPENROUTER -> observeOpenRouterModelImages().first()
     }
 
     /** Nombre interno de la voz de Android TTS elegida para el modo cocina; null = voz por defecto del sistema. */
