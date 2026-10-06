@@ -8,6 +8,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.support.AiErrors
@@ -29,7 +31,8 @@ private const val PROVIDER_NAME = "OpenRouter"
 internal data class OpenRouterRequest(
     val model: String,
     val messages: List<OpenRouterMessage>,
-    @SerialName("max_tokens") val maxTokens: Int
+    // Opcional: si un proveedor rechaza el límite pedido, se reintenta sin él (ver complete()).
+    @SerialName("max_tokens") val maxTokens: Int? = null
 )
 
 @Serializable
@@ -61,7 +64,31 @@ internal data class OpenRouterChoice(
 internal data class OpenRouterResponseMessage(val content: String? = null)
 
 @Serializable
-internal data class OpenRouterError(val message: String? = null, val code: Int? = null)
+internal data class OpenRouterError(
+    val message: String? = null,
+    val code: Int? = null,
+    val metadata: OpenRouterErrorMetadata? = null
+)
+
+/** Cuando el fallo viene del proveedor final, OpenRouter solo dice "Provider returned error" y
+ *  deja el motivo real en `metadata.raw` (texto o JSON) junto con el nombre del proveedor. */
+@Serializable
+internal data class OpenRouterErrorMetadata(
+    val raw: JsonElement? = null,
+    @SerialName("provider_name") val providerName: String? = null
+)
+
+/** Mensaje del error con el motivo real del proveedor final, si lo hay. */
+internal fun OpenRouterError.describe(): String? {
+    val raw = metadata?.raw?.let { element ->
+        (element as? JsonPrimitive)?.takeIf { it.isString }?.content ?: element.toString()
+    }?.take(1500)
+    return listOfNotNull(
+        message,
+        metadata?.providerName?.let { "Provider: $it" },
+        raw
+    ).joinToString("\n").ifBlank { null }
+}
 
 @Serializable
 internal data class OpenRouterErrorEnvelope(val error: OpenRouterError? = null)
@@ -110,47 +137,69 @@ internal object OpenRouterChat {
                     imageUrl = OpenRouterImageUrl("data:${it.mimeType};base64," + Base64.getEncoder().encodeToString(it.bytes))
                 )
             } + OpenRouterPart(type = "text", text = prompt)
-            val requestBody = json.encodeToString(
-                OpenRouterRequest.serializer(),
-                OpenRouterRequest(model = model, messages = listOf(OpenRouterMessage(content = parts)), maxTokens = maxTokens)
-            )
-            val connection = URL(OPENROUTER_CHAT_ENDPOINT).openConnection() as HttpURLConnection
-            connection.requestMethod = "POST"
-            connection.doOutput = true
-            connection.setRequestProperty("Content-Type", "application/json")
-            connection.setRequestProperty("Authorization", "Bearer $apiKey")
-            // Atribución opcional que pide OpenRouter (aparece en sus estadísticas de apps).
-            connection.setRequestProperty("HTTP-Referer", "https://miga.calamares.org")
-            connection.setRequestProperty("X-Title", "Miga")
-            connection.connectTimeout = TIMEOUT_MILLIS
-            connection.readTimeout = TIMEOUT_MILLIS
-            try {
-                connection.outputStream.use { it.write(requestBody.toByteArray()) }
-                val responseCode = connection.responseCode
-                if (responseCode != HttpURLConnection.HTTP_OK) {
-                    val errorBody = connection.errorStream?.bufferedReader()?.use { it.readText() }
-                    val reason = errorBody?.let {
-                        runCatching { json.decodeFromString(OpenRouterErrorEnvelope.serializer(), it).error?.message }.getOrNull() ?: it.take(500)
+            val first = post(OpenRouterRequest(model = model, messages = listOf(OpenRouterMessage(content = parts)), maxTokens = maxTokens), apiKey)
+            // Un 400 suele significar que el proveedor final no acepta algún parámetro; el más
+            // habitual con los modelos gratuitos es un max_tokens mayor que su límite de salida.
+            // Se reintenta una vez sin él (el proveedor aplica su propio máximo).
+            val result = if (first is HttpOutcome.Failed && first.code == 400) {
+                post(OpenRouterRequest(model = model, messages = listOf(OpenRouterMessage(content = parts))), apiKey)
+                    .let { retry -> if (retry is HttpOutcome.Failed) first.copy(detail = listOfNotNull(first.detail, "— sin max_tokens:", retry.detail).joinToString("\n")) else retry }
+            } else {
+                first
+            }
+            when (result) {
+                is HttpOutcome.Failed -> OpenRouterText.Error(AiErrors.http(PROVIDER_NAME, result.code, result.detail))
+                is HttpOutcome.Ok -> {
+                    val response = json.decodeFromString(OpenRouterResponse.serializer(), result.body)
+                    // OpenRouter puede devolver 200 con un error del proveedor final dentro del cuerpo.
+                    val error = response.error
+                    if (error != null) {
+                        OpenRouterText.Error(AiErrors.http(PROVIDER_NAME, error.code ?: 502, error.describe()))
+                    } else {
+                        val choice = response.choices.firstOrNull()
+                        val text = choice?.message?.content?.takeIf { it.isNotBlank() }
+                        if (text != null) OpenRouterText.Success(text) else OpenRouterText.Error(describeIncomplete(choice?.finishReason))
                     }
-                    return@withContext OpenRouterText.Error(AiErrors.http(PROVIDER_NAME, responseCode, reason))
                 }
-                val body = connection.inputStream.bufferedReader().use { it.readText() }
-                val response = json.decodeFromString(OpenRouterResponse.serializer(), body)
-                // OpenRouter puede devolver 200 con un error del proveedor final dentro del cuerpo.
-                response.error?.let { error ->
-                    return@withContext OpenRouterText.Error(AiErrors.http(PROVIDER_NAME, error.code ?: 502, error.message))
-                }
-                val choice = response.choices.firstOrNull()
-                val text = choice?.message?.content?.takeIf { it.isNotBlank() }
-                    ?: return@withContext OpenRouterText.Error(describeIncomplete(choice?.finishReason))
-                OpenRouterText.Success(text)
-            } finally {
-                connection.disconnect()
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             OpenRouterText.Error(AiErrors.exception(e))
+        }
+    }
+
+    private sealed interface HttpOutcome {
+        data class Ok(val body: String) : HttpOutcome
+        data class Failed(val code: Int, val detail: String?) : HttpOutcome
+    }
+
+    private fun post(request: OpenRouterRequest, apiKey: String): HttpOutcome {
+        val requestBody = json.encodeToString(OpenRouterRequest.serializer(), request)
+        val connection = URL(OPENROUTER_CHAT_ENDPOINT).openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+        connection.doOutput = true
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Authorization", "Bearer $apiKey")
+        // Atribución opcional que pide OpenRouter (aparece en sus estadísticas de apps).
+        connection.setRequestProperty("HTTP-Referer", "https://miga.calamares.org")
+        connection.setRequestProperty("X-Title", "Miga")
+        connection.connectTimeout = TIMEOUT_MILLIS
+        connection.readTimeout = TIMEOUT_MILLIS
+        try {
+            connection.outputStream.use { it.write(requestBody.toByteArray()) }
+            val responseCode = connection.responseCode
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                val errorBody = connection.errorStream?.bufferedReader()?.use { it.readText() }
+                val detail = errorBody?.let {
+                    runCatching { json.decodeFromString(OpenRouterErrorEnvelope.serializer(), it).error?.describe() }.getOrNull()
+                        ?: it.take(1500)
+                }
+                return HttpOutcome.Failed(responseCode, detail)
+            }
+            return HttpOutcome.Ok(connection.inputStream.bufferedReader().use { it.readText() })
+        } finally {
+            connection.disconnect()
         }
     }
 
