@@ -28,7 +28,7 @@ import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -49,8 +49,8 @@ import org.calamares.miga.data.voice.DictationLanguages
 private data class HomeItem(val icon: ImageVector, val title: String, val summary: String, val onClick: () -> Unit)
 
 /**
- * Main Settings screen, styled like Google's apps: a large title that collapses on scroll and
- * groups of rows (icon, title and a summary of the current setting), each opening its own screen.
+ * Main Settings screen, styled like Google's apps: groups of rows (icon, title and a summary of the
+ * current setting), each opening its own screen.
  * "What's new" (changelog) has its own entry, separate from Help.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,15 +70,15 @@ fun SettingsHomeScreen(
     val aiEnabled by viewModel.aiEnabled.collectAsState()
     val aiProviders by viewModel.aiProvidersSummary.collectAsState()
     val dictationLanguage by viewModel.dictationLanguage.collectAsState()
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
         topBar = {
-            LargeTopAppBar(
+            TopAppBar(
                 title = { Text(L10n.str(R.string.settings)) },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     scrolledContainerColor = MaterialTheme.colorScheme.background
                 ),

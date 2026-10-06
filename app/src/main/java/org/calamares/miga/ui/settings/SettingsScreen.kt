@@ -66,7 +66,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -210,17 +209,17 @@ fun SettingsSectionScreen(
         }
     }
 
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            LargeTopAppBar(
+            TopAppBar(
                 title = { Text(section.title) },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     scrolledContainerColor = MaterialTheme.colorScheme.background
                 ),
@@ -322,7 +321,7 @@ fun SettingsSectionScreen(
                     label = L10n.str(R.string.export_whole_app),
                     summary = L10n.str(R.string.saves_books_recipes_photos_zip),
                     chevron = false,
-                    onClick = { exportLauncher.launch("miga_backup.zip") }
+                    onClick = { exportLauncher.launch(L10n.str(R.string.file_name_backup_x, java.time.LocalDate.now().toString()) + ".zip") }
                 )
                 HorizontalDivider()
                 ManageRow(
