@@ -124,7 +124,7 @@ class RecipeListViewModel(
             val book = repository.getRecipeBookOnce(bookId)
             val recipes = repository.getRecipesForBookOnce(bookId).filter { it.id in ids }
             if (recipes.isNotEmpty()) {
-                RecipeExporter.shareRecipes(context, "recetas_seleccionadas", book, recipes)
+                RecipeExporter.shareRecipes(context, L10n.str(R.string.file_name_selected_recipes), book, recipes)
             }
             _selectedIds.value = emptySet()
         }

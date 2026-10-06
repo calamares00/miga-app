@@ -795,4 +795,7 @@
     <string name="ingredient_count_many">"%1$s ingredients"</string>
     <string name="contains_x">"Contains: %1$s"</string>
     <string name="namespace_placeholder">"home"</string>
+    <string name="file_name_recipe">"recipe"</string>
+    <string name="file_name_selected_recipes">"selected_recipes"</string>
+    <string name="file_name_backup_x">"miga_backup_%1$s"</string>
 </resources>

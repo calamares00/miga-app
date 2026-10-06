@@ -497,7 +497,7 @@ object RecipeExporter {
             .trim()
             .replace(" ", "_")
             .take(60)
-            .ifBlank { "recipe" }
+            .ifBlank { L10n.str(R.string.file_name_recipe) }
 
     private fun formatShoppingListAsText(groups: List<ShoppingListGroup>): String = buildString {
         appendLine(L10n.str(R.string.shopping_list))
