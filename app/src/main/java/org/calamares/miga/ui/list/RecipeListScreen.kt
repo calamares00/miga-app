@@ -1,5 +1,15 @@
 package org.calamares.miga.ui.list
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.UnfoldLess
+import androidx.compose.material.icons.filled.UnfoldMore
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.SelectAll
 import org.calamares.miga.data.model.displayCategoryName
@@ -97,6 +107,9 @@ fun RecipeListScreen(
     val uiState by viewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
+    val collapsedCategories by viewModel.collapsedCategories.collectAsState()
+    // While searching or filtering every category is shown open, so no result is hidden.
+    val collapsingEnabled = filter.query.isBlank() && !filter.isActive
     val selectedIds by viewModel.selectedIds.collectAsState()
     val selectionMode = selectedIds.isNotEmpty()
     var showFilters by remember { mutableStateOf(false) }
@@ -187,6 +200,19 @@ fun RecipeListScreen(
                         }
                         IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = L10n.str(R.string.more_options)) }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            if (uiState.groups.size > 1) {
+                                DropdownMenuItem(
+                                    text = { Text(L10n.str(R.string.expand_all)) },
+                                    leadingIcon = { Icon(Icons.Filled.UnfoldMore, contentDescription = null) },
+                                    onClick = { showMenu = false; viewModel.expandAllCategories() }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(L10n.str(R.string.collapse_all)) },
+                                    leadingIcon = { Icon(Icons.Filled.UnfoldLess, contentDescription = null) },
+                                    onClick = { showMenu = false; viewModel.collapseAllCategories() }
+                                )
+                                HorizontalDivider()
+                            }
                             DropdownMenuItem(
                                 text = { Text(L10n.str(R.string.export_book)) },
                                 onClick = { showMenu = false; viewModel.exportBook(context) }
@@ -246,14 +272,17 @@ fun RecipeListScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     uiState.groups.forEach { group ->
+                        val collapsed = collapsingEnabled && group.categoryName in collapsedCategories
                         item(key = "header_${group.categoryName}", span = { GridItemSpan(maxLineSpan) }) {
-                            Text(
-                                text = "${displayCategoryName(group.categoryName)} (${group.recipes.size})",
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                            CategoryHeader(
+                                name = displayCategoryName(group.categoryName),
+                                count = group.recipes.size,
+                                collapsed = collapsed,
+                                enabled = collapsingEnabled,
+                                onToggle = { viewModel.toggleCategory(group.categoryName) }
                             )
                         }
-                        items(group.recipes, key = { it.id }) { recipe ->
+                        if (!collapsed) items(group.recipes, key = { it.id }) { recipe ->
                             RecipeGridCard(
                                 recipe = recipe,
                                 selectionMode = selectionMode,
@@ -274,14 +303,17 @@ fun RecipeListScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     uiState.groups.forEach { group ->
+                        val collapsed = collapsingEnabled && group.categoryName in collapsedCategories
                         item(key = "header_${group.categoryName}") {
-                            Text(
-                                text = "${displayCategoryName(group.categoryName)} (${group.recipes.size})",
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                            CategoryHeader(
+                                name = displayCategoryName(group.categoryName),
+                                count = group.recipes.size,
+                                collapsed = collapsed,
+                                enabled = collapsingEnabled,
+                                onToggle = { viewModel.toggleCategory(group.categoryName) }
                             )
                         }
-                        items(group.recipes, key = { it.id }) { recipe ->
+                        if (!collapsed) items(group.recipes, key = { it.id }) { recipe ->
                             RecipeCard(
                                 recipe = recipe,
                                 compact = viewMode == RecipeListViewMode.COMPACT,
@@ -481,4 +513,44 @@ private fun viewModeIcon(mode: RecipeListViewMode): ImageVector = when (mode) {
     RecipeListViewMode.COMPACT -> Icons.Filled.ViewHeadline
     RecipeListViewMode.NORMAL -> Icons.Filled.ViewAgenda
     RecipeListViewMode.GRID -> Icons.Filled.GridView
+}
+
+/**
+ * Category title in a book's recipe list. Tapping it collapses or expands the category; while
+ * searching or filtering ([enabled] false) every category stays open and the arrow is hidden.
+ */
+@Composable
+private fun CategoryHeader(name: String, count: Int, collapsed: Boolean, enabled: Boolean, onToggle: () -> Unit) {
+    val rotation by animateFloatAsState(if (collapsed) -90f else 0f, label = "categoryArrow")
+    val state = L10n.str(if (collapsed) R.string.collapsed else R.string.expanded)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(enabled = enabled, onClick = onToggle)
+            .semantics { if (enabled) stateDescription = state }
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = name,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f, fill = false)
+        )
+        Text(
+            text = "  $count",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        if (enabled) {
+            Icon(
+                Icons.Filled.ExpandMore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.rotate(rotation)
+            )
+        }
+    }
 }

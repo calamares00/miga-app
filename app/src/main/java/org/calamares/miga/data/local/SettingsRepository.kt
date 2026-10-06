@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import java.io.IOException
 import org.calamares.miga.data.model.ColorTheme
@@ -171,6 +172,18 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setRecipeListViewMode(mode: RecipeListViewMode) {
         context.settingsDataStore.edit { prefs -> prefs[recipeListViewModeKey] = mode.name }
+    }
+
+    private fun collapsedCategoriesKey(bookId: Long) = stringSetPreferencesKey("collapsed_categories_$bookId")
+
+    /** Categories the user has collapsed in the recipe list of book [bookId]. */
+    fun observeCollapsedCategories(bookId: Long): Flow<Set<String>> =
+        context.settingsDataStore.data.map { prefs -> prefs[collapsedCategoriesKey(bookId)].orEmpty() }
+
+    suspend fun setCollapsedCategories(bookId: Long, categories: Set<String>) {
+        context.settingsDataStore.edit { prefs ->
+            if (categories.isEmpty()) prefs.remove(collapsedCategoriesKey(bookId)) else prefs[collapsedCategoriesKey(bookId)] = categories
+        }
     }
 
     /** Book list layout, stored separately from the recipe list one. */
