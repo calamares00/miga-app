@@ -40,15 +40,15 @@ fun NewRecipeSourceSheet(
     aiEnabled: Boolean = true
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text(L10n.str(R.string.nueva_receta), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+        Text(L10n.str(R.string.new_recipe), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
         NewRecipeSourceRow(icon = Icons.Filled.Edit, label = L10n.str(R.string.manual), onClick = onManualClick)
-        NewRecipeSourceRow(icon = Icons.Filled.UploadFile, label = L10n.str(R.string.desde_archivo_json_zip), onClick = onFileClick)
+        NewRecipeSourceRow(icon = Icons.Filled.UploadFile, label = L10n.str(R.string.file_json_zip), onClick = onFileClick)
         // Foto, varias fotos, URL y búsqueda de platos dependen de la IA: se ocultan si está apagada.
         if (aiEnabled) {
-            NewRecipeSourceRow(icon = Icons.Filled.AddAPhoto, label = L10n.str(R.string.desde_imagen), onClick = onPhotoClick)
-            NewRecipeSourceRow(icon = Icons.Filled.Collections, label = L10n.str(R.string.varias_recetas_desde_imagenes), onClick = onBulkPhotoClick)
-            NewRecipeSourceRow(icon = Icons.Filled.Link, label = L10n.str(R.string.desde_url), onClick = onUrlClick)
-            NewRecipeSourceRow(icon = Icons.Filled.AutoAwesome, label = L10n.str(R.string.buscar_receta_ia), onClick = onSearchDishClick)
+            NewRecipeSourceRow(icon = Icons.Filled.AddAPhoto, label = L10n.str(R.string.image), onClick = onPhotoClick)
+            NewRecipeSourceRow(icon = Icons.Filled.Collections, label = L10n.str(R.string.several_recipes_images), onClick = onBulkPhotoClick)
+            NewRecipeSourceRow(icon = Icons.Filled.Link, label = L10n.str(R.string.url), onClick = onUrlClick)
+            NewRecipeSourceRow(icon = Icons.Filled.AutoAwesome, label = L10n.str(R.string.find_recipe_ai), onClick = onSearchDishClick)
         }
     }
 }

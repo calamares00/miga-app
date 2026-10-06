@@ -58,9 +58,9 @@ fun DishSearchScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(L10n.str(R.string.buscar_recetas_ia)) },
+                title = { Text(L10n.str(R.string.find_recipes_ai)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                 }
             )
         }
@@ -69,12 +69,12 @@ fun DishSearchScreen(
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                label = { Text(L10n.str(R.string.zona_pais_ingrediente_tipo_plato)) },
-                placeholder = { Text(L10n.str(R.string.p_ej_platos_tipicos_andalucia)) },
+                label = { Text(L10n.str(R.string.region_country_ingredient_type_dish)) },
+                placeholder = { Text(L10n.str(R.string.e_g_typical_dishes_andalusia)) },
                 singleLine = true,
                 trailingIcon = {
                     IconButton(onClick = { viewModel.search(query) }) {
-                        Icon(Icons.Filled.Search, contentDescription = L10n.str(R.string.buscar))
+                        Icon(Icons.Filled.Search, contentDescription = L10n.str(R.string.search))
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -83,7 +83,7 @@ fun DishSearchScreen(
 
             when (val current = state) {
                 DishSearchUiState.Idle -> Text(
-                    L10n.str(R.string.busca_platos_tipicos_zona_pais),
+                    L10n.str(R.string.look_typical_dishes_region_country),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -91,7 +91,7 @@ fun DishSearchScreen(
                     CircularProgressIndicator()
                 }
                 DishSearchUiState.NotConfigured -> Text(
-                    L10n.str(R.string.configura_proveedor_ia_ajustes_usar_2),
+                    L10n.str(R.string.set_up_ai_provider_settings_2),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -99,7 +99,7 @@ fun DishSearchScreen(
                 is DishSearchUiState.Loaded -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     item {
                         AiContentNotice(
-                            feature = L10n.str(R.string.buscar_receta_ia),
+                            feature = L10n.str(R.string.find_recipe_ai),
                             content = { current.dishes.joinToString("\n") { "${it.name}: ${it.description}" } }
                         )
                     }

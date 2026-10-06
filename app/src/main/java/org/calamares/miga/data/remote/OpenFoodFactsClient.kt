@@ -53,7 +53,7 @@ object OpenFoodFactsClient {
                 connection.setRequestProperty("User-Agent", "Miga/${BuildConfig.VERSION_NAME} (miga@calamares.org)")
                 val code = connection.responseCode
                 if (code == HttpURLConnection.HTTP_NOT_FOUND) return@withContext ProductLookupResult.NotFound
-                if (code != HttpURLConnection.HTTP_OK) return@withContext ProductLookupResult.Error(L10n.str(R.string.open_food_facts_respondio_codigo, code))
+                if (code != HttpURLConnection.HTTP_OK) return@withContext ProductLookupResult.Error(L10n.str(R.string.open_food_facts_responded_code, code))
                 val body = connection.inputStream.bufferedReader().use { it.readText() }
                 val product = parseProductResponse(body, barcode)
                 if (product == null) ProductLookupResult.NotFound else ProductLookupResult.Found(product)
@@ -63,7 +63,7 @@ object OpenFoodFactsClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            ProductLookupResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.no_pudo_consultar_open_food))
+            ProductLookupResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.couldnt_reach_open_food_facts))
         }
     }
 
@@ -86,7 +86,7 @@ object OpenFoodFactsClient {
                 connection.setRequestProperty("User-Agent", "Miga/${BuildConfig.VERSION_NAME} (miga@calamares.org)")
                 val code = connection.responseCode
                 if (code != HttpURLConnection.HTTP_OK) {
-                    return@withContext ProductSearchResult.Error(L10n.str(R.string.open_food_facts_respondio_codigo, code))
+                    return@withContext ProductSearchResult.Error(L10n.str(R.string.open_food_facts_responded_code, code))
                 }
                 val body = connection.inputStream.bufferedReader().use { it.readText() }
                 ProductSearchResult.Success(parseSearchResponse(body))
@@ -96,7 +96,7 @@ object OpenFoodFactsClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            ProductSearchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.no_pudo_buscar_open_food))
+            ProductSearchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.couldnt_search_open_food_facts))
         }
     }
 

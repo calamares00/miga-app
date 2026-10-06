@@ -64,7 +64,7 @@ private fun darkColorSchemeFor(colorTheme: ColorTheme): ColorScheme {
 }
 
 @Composable
-fun RecetarioTheme(
+fun MigaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     colorTheme: ColorTheme = ColorTheme.TERRACOTTA,
     content: @Composable () -> Unit
@@ -72,7 +72,7 @@ fun RecetarioTheme(
     val colorScheme = if (darkTheme) darkColorSchemeFor(colorTheme) else lightColorSchemeFor(colorTheme)
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = RecetarioTypography,
+        typography = MigaTypography,
         content = content
     )
 }

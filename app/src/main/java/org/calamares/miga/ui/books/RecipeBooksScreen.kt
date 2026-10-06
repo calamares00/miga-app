@@ -143,7 +143,7 @@ fun RecipeBooksScreen(
             ExtendedFloatingActionButton(
                 onClick = onAddBookClick,
                 icon = { Icon(Icons.Filled.Add, null) },
-                text = { Text(L10n.str(R.string.nuevo_libro)) }
+                text = { Text(L10n.str(R.string.new_book)) }
             )
         }
     ) { padding ->
@@ -151,12 +151,12 @@ fun RecipeBooksScreen(
             if (books.isEmpty()) {
                 EmptyState(
                     icon = Icons.Outlined.MenuBook,
-                    title = L10n.str(R.string.empieza_recetario),
-                    body = L10n.str(R.string.crea_libro_cada_persona_tema),
+                    title = L10n.str(R.string.start_recipe_book),
+                    body = L10n.str(R.string.create_book_each_person_theme),
                     modifier = Modifier.fillMaxSize().weight(1f)
                 ) {
-                    Button(onClick = onAddBookClick) { Text(L10n.str(R.string.crear_mi_primer_libro)) }
-                    OutlinedButton(onClick = onExplorePacks) { Text(L10n.str(R.string.explorar_packs_recetas)) }
+                    Button(onClick = onAddBookClick) { Text(L10n.str(R.string.create_my_first_book)) }
+                    OutlinedButton(onClick = onExplorePacks) { Text(L10n.str(R.string.explore_recipe_packs)) }
                 }
             } else if (viewMode == RecipeListViewMode.GRID) {
                 LazyVerticalGrid(
@@ -193,7 +193,7 @@ fun RecipeBooksScreen(
     changelogAnnouncement?.let { announcement ->
         AlertDialog(
             onDismissRequest = { viewModel.dismissChangelogAnnouncement() },
-            title = { Text(L10n.str(R.string.novedades_version_x, announcement.versionName)) },
+            title = { Text(L10n.str(R.string.whats_new_version_x, announcement.versionName)) },
             text = {
                 Column(
                     modifier = Modifier
@@ -211,7 +211,7 @@ fun RecipeBooksScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { viewModel.dismissChangelogAnnouncement() }) { Text(L10n.str(R.string.entendido)) }
+                TextButton(onClick = { viewModel.dismissChangelogAnnouncement() }) { Text(L10n.str(R.string.got)) }
             }
         )
     }
@@ -219,7 +219,7 @@ fun RecipeBooksScreen(
     crashReport?.let { report ->
         AlertDialog(
             onDismissRequest = { viewModel.dismissCrashReport() },
-            title = { Text(L10n.str(R.string.app_cerro_forma_inesperada)) },
+            title = { Text(L10n.str(R.string.app_closed_unexpectedly)) },
             text = {
                 Column(
                     modifier = Modifier
@@ -228,7 +228,7 @@ fun RecipeBooksScreen(
                         .verticalScroll(rememberScrollState())
                 ) {
                     Text(
-                        L10n.str(R.string.esto_es_guardo_ultimo_fallo),
+                        L10n.str(R.string.what_was_saved_last_crash),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
@@ -241,16 +241,16 @@ fun RecipeBooksScreen(
                 TextButton(onClick = {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_SUBJECT, L10n.str(R.string.informe_fallo_miga))
+                        putExtra(Intent.EXTRA_SUBJECT, L10n.str(R.string.crash_report_miga))
                         putExtra(Intent.EXTRA_TEXT, report)
                     }
-                    runCatching { context.startActivity(Intent.createChooser(intent, L10n.str(R.string.compartir_informe))) }
-                }) { Text(L10n.str(R.string.compartir)) }
+                    runCatching { context.startActivity(Intent.createChooser(intent, L10n.str(R.string.share_report))) }
+                }) { Text(L10n.str(R.string.share)) }
             },
             dismissButton = {
                 Row {
-                    TextButton(onClick = { clipboardManager.setText(AnnotatedString(report)) }) { Text(L10n.str(R.string.copiar)) }
-                    TextButton(onClick = { viewModel.dismissCrashReport() }) { Text(L10n.str(R.string.descartar)) }
+                    TextButton(onClick = { clipboardManager.setText(AnnotatedString(report)) }) { Text(L10n.str(R.string.copy)) }
+                    TextButton(onClick = { viewModel.dismissCrashReport() }) { Text(L10n.str(R.string.discard)) }
                 }
             }
         )
@@ -310,8 +310,8 @@ private fun RecipeBookCard(book: RecipeBookSummary, onClick: () -> Unit, onEditC
             verticalAlignment = Alignment.CenterVertically
         ) {
             when {
-                book.isPack -> BookBadge(Icons.Filled.CloudDone, L10n.str(R.string.pack_instalado))
-                book.isSynced -> BookBadge(Icons.Filled.Sync, L10n.str(R.string.sincronizado_servidor))
+                book.isPack -> BookBadge(Icons.Filled.CloudDone, L10n.str(R.string.installed_pack))
+                book.isSynced -> BookBadge(Icons.Filled.Sync, L10n.str(R.string.synced_server))
             }
             Spacer(modifier = Modifier.weight(1f))
             if (!book.isPack) {
@@ -320,7 +320,7 @@ private fun RecipeBookCard(book: RecipeBookSummary, onClick: () -> Unit, onEditC
                     modifier = Modifier.size(36.dp),
                     colors = IconButtonDefaults.iconButtonColors(containerColor = Color.Black.copy(alpha = 0.35f), contentColor = Color.White)
                 ) {
-                    Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.editar_libro), modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.edit_book), modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -393,14 +393,14 @@ private fun RecipeBookRow(book: RecipeBookSummary, compact: Boolean, onClick: ()
                     if (book.isPack) {
                         Icon(
                             Icons.Filled.CloudDone,
-                            contentDescription = L10n.str(R.string.pack_instalado),
+                            contentDescription = L10n.str(R.string.installed_pack),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
                     } else if (book.isSynced) {
                         Icon(
                             Icons.Filled.Sync,
-                            contentDescription = L10n.str(R.string.sincronizado_servidor),
+                            contentDescription = L10n.str(R.string.synced_server),
                             tint = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.size(16.dp)
                         )
@@ -421,7 +421,7 @@ private fun RecipeBookRow(book: RecipeBookSummary, compact: Boolean, onClick: ()
 
             if (!book.isPack) {
                 IconButton(onClick = onEditClick) {
-                    Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.editar_libro), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.edit_book), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

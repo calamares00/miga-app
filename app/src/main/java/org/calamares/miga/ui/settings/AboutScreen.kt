@@ -39,9 +39,9 @@ fun AboutScreen(onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(L10n.str(R.string.acerca)) },
+                title = { Text(L10n.str(R.string.about)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                 }
             )
         }
@@ -55,13 +55,13 @@ fun AboutScreen(onBack: () -> Unit) {
         ) {
             Text("Miga", style = MaterialTheme.typography.headlineSmall)
             AboutRow(L10n.str(R.string.version), "${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})")
-            AboutRow(L10n.str(R.string.tipo_build), if (BuildConfig.DEBUG) L10n.str(R.string.beta_desarrollo) else L10n.str(R.string.estable))
-            AboutRow(L10n.str(R.string.arquitectura), Build.SUPPORTED_ABIS.firstOrNull() ?: L10n.str(R.string.desconocida))
+            AboutRow(L10n.str(R.string.build_type), if (BuildConfig.DEBUG) L10n.str(R.string.beta_development) else L10n.str(R.string.stable))
+            AboutRow(L10n.str(R.string.architecture), Build.SUPPORTED_ABIS.firstOrNull() ?: L10n.str(R.string.unknown))
             OutlinedButton(onClick = {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL))
                 runCatching { context.startActivity(intent) }
             }) {
-                Text(L10n.str(R.string.politica_privacidad))
+                Text(L10n.str(R.string.privacy_policy))
             }
         }
     }

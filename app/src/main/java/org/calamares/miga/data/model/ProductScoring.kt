@@ -6,17 +6,17 @@ import kotlin.math.roundToInt
 
 /** Tramo de la puntuación (mismos cuatro niveles que usan apps de este tipo: excelente, bueno, mediocre, malo). */
 enum class ScoreTier(val label: String, val argb: Long) {
-    EXCELLENT(L10n.str(R.string.excelente), 0xFF1E9E4A),
-    GOOD(L10n.str(R.string.bueno), 0xFF8BC34A),
+    EXCELLENT(L10n.str(R.string.excellent), 0xFF1E9E4A),
+    GOOD(L10n.str(R.string.good), 0xFF8BC34A),
     MEDIOCRE(L10n.str(R.string.mediocre), 0xFFF5A623),
-    BAD(L10n.str(R.string.malo), 0xFFE53935)
+    BAD(L10n.str(R.string.poor), 0xFFE53935)
 }
 
 enum class AdditiveRisk(val label: String) {
-    NONE(L10n.str(R.string.sin_riesgo_conocido)),
-    LIMITED(L10n.str(R.string.riesgo_limitado)),
-    MODERATE(L10n.str(R.string.riesgo_moderado)),
-    HIGH(L10n.str(R.string.riesgo_alto))
+    NONE(L10n.str(R.string.no_known_risk)),
+    LIMITED(L10n.str(R.string.limited_risk)),
+    MODERATE(L10n.str(R.string.moderate_risk)),
+    HIGH(L10n.str(R.string.high_risk))
 }
 
 /**

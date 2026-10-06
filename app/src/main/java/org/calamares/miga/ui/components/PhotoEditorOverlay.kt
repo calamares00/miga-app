@@ -114,7 +114,7 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onCancel) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancelar)) }
+                    IconButton(onClick = onCancel) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel)) }
                     Row {
                         IconButton(
                             enabled = bmp != null,
@@ -122,14 +122,14 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
                                 bitmap = bitmap?.let { PhotoStorage.rotateBitmap(it, -90f) }
                                 cropRect = null
                             }
-                        ) { Icon(Icons.Filled.RotateLeft, contentDescription = L10n.str(R.string.rotar_izquierda)) }
+                        ) { Icon(Icons.Filled.RotateLeft, contentDescription = L10n.str(R.string.rotate_left)) }
                         IconButton(
                             enabled = bmp != null,
                             onClick = {
                                 bitmap = bitmap?.let { PhotoStorage.rotateBitmap(it, 90f) }
                                 cropRect = null
                             }
-                        ) { Icon(Icons.Filled.RotateRight, contentDescription = L10n.str(R.string.rotar_derecha)) }
+                        ) { Icon(Icons.Filled.RotateRight, contentDescription = L10n.str(R.string.rotate_right)) }
                     }
                     IconButton(
                         enabled = bmp != null && imageRect != null && cropRect != null,
@@ -145,7 +145,7 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
                             val cropped = Bitmap.createBitmap(bitmapNow, left, top, right - left, bottom - top)
                             onSave(PhotoStorage.saveNormalized(context, cropped))
                         }
-                    ) { Icon(Icons.Filled.Check, contentDescription = L10n.str(R.string.guardar)) }
+                    ) { Icon(Icons.Filled.Check, contentDescription = L10n.str(R.string.save)) }
                 }
 
                 Box(
@@ -158,7 +158,7 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
                 ) {
                     when {
                         loadFailed -> Text(
-                            L10n.str(R.string.no_pudo_leer_foto_2),
+                            L10n.str(R.string.couldnt_read_photo_2),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -256,7 +256,7 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
                 }
 
                 Text(
-                    L10n.str(R.string.arrastra_esquinas_ajustar_recorte),
+                    L10n.str(R.string.drag_corners_adjust_crop),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth().padding(16.dp)

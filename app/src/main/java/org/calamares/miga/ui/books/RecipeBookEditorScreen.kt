@@ -107,24 +107,24 @@ fun RecipeBookEditorScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(if (viewModel.isPack) L10n.str(R.string.pack_instalado) else if (viewModel.isEditing) L10n.str(R.string.editar_libro) else L10n.str(R.string.nuevo_libro)) },
+                title = { Text(if (viewModel.isPack) L10n.str(R.string.installed_pack) else if (viewModel.isEditing) L10n.str(R.string.edit_book) else L10n.str(R.string.new_book)) },
                 navigationIcon = {
-                    IconButton(onClick = attemptExit) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancelar)) }
+                    IconButton(onClick = attemptExit) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel)) }
                 },
                 actions = {
                     if (viewModel.isSaving || viewModel.isDeleting) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp).padding(end = 16.dp))
                     } else if (viewModel.isPack) {
                         IconButton(onClick = { showDeleteConfirm = true }) {
-                            Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.desinstalar_pack), tint = MaterialTheme.colorScheme.error)
+                            Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.uninstall_pack), tint = MaterialTheme.colorScheme.error)
                         }
                     } else {
                         if (viewModel.isEditing) {
                             IconButton(onClick = { showDeleteConfirm = true }) {
-                                Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.borrar_libro), tint = MaterialTheme.colorScheme.error)
+                                Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete_book), tint = MaterialTheme.colorScheme.error)
                             }
                         }
-                        TextButton(onClick = { viewModel.save(onSaved) }) { Text(L10n.str(R.string.guardar)) }
+                        TextButton(onClick = { viewModel.save(onSaved) }) { Text(L10n.str(R.string.save)) }
                     }
                 }
             )
@@ -161,7 +161,7 @@ fun RecipeBookEditorScreen(
                 if (cover != null) {
                     AsyncImage(
                         model = cover,
-                        contentDescription = L10n.str(R.string.portada),
+                        contentDescription = L10n.str(R.string.cover),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -172,7 +172,7 @@ fun RecipeBookEditorScreen(
                         ) {
                             Icon(
                                 Icons.Filled.AddAPhoto,
-                                contentDescription = L10n.str(R.string.cambiar_portada),
+                                contentDescription = L10n.str(R.string.change_cover),
                                 tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier
                                     .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
@@ -183,7 +183,7 @@ fun RecipeBookEditorScreen(
                 } else {
                     Icon(
                         imageVector = Icons.Filled.AddAPhoto,
-                        contentDescription = L10n.str(R.string.anadir_portada),
+                        contentDescription = L10n.str(R.string.add_cover),
                         modifier = Modifier.size(40.dp).align(Alignment.Center)
                     )
                 }
@@ -192,17 +192,17 @@ fun RecipeBookEditorScreen(
             OutlinedTextField(
                 value = viewModel.name,
                 onValueChange = { viewModel.name = it; viewModel.nameError = false },
-                label = { Text(L10n.str(R.string.nombre_libro)) },
-                placeholder = { Text(L10n.str(R.string.ej_josi_helen)) },
+                label = { Text(L10n.str(R.string.book_name)) },
+                placeholder = { Text(L10n.str(R.string.e_g_grandma_desserts)) },
                 isError = viewModel.nameError,
-                supportingText = { if (viewModel.nameError) Text(L10n.str(R.string.nombre_es_obligatorio)) },
+                supportingText = { if (viewModel.nameError) Text(L10n.str(R.string.name_required)) },
                 readOnly = viewModel.isPack,
                 modifier = Modifier.fillMaxWidth()
             )
 
             if (viewModel.isPack) {
                 Text(
-                    L10n.str(R.string.este_libro_es_pack_instalado),
+                    L10n.str(R.string.book_installed_pack_read_only),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -212,13 +212,13 @@ fun RecipeBookEditorScreen(
                 if (connectionId == null) {
                     if (availableSyncConnections.isNotEmpty()) {
                         OutlinedButton(onClick = { showLinkDialog = true }, modifier = Modifier.fillMaxWidth()) {
-                            Text(L10n.str(R.string.sincronizar))
+                            Text(L10n.str(R.string.sync_2))
                         }
                     }
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            L10n.str(R.string.sincronizado_x, connectionLabel ?: L10n.str(R.string.conexion_eliminada)),
+                            L10n.str(R.string.synced_x, connectionLabel ?: L10n.str(R.string.connection_removed)),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -230,11 +230,11 @@ fun RecipeBookEditorScreen(
                             if (viewModel.isSyncingNow) {
                                 CircularProgressIndicator(modifier = Modifier.size(18.dp))
                             } else {
-                                Text(L10n.str(R.string.sincronizar_ahora))
+                                Text(L10n.str(R.string.sync_now))
                             }
                         }
                         TextButton(onClick = { viewModel.unlinkFromSyncConnection() }, modifier = Modifier.fillMaxWidth()) {
-                            Text(L10n.str(R.string.dejar_sincronizar))
+                            Text(L10n.str(R.string.stop_syncing))
                         }
                     }
                 }
@@ -245,13 +245,13 @@ fun RecipeBookEditorScreen(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text(if (viewModel.isPack) L10n.str(R.string.desinstalar_pack) else L10n.str(R.string.eliminar_libro)) },
+            title = { Text(if (viewModel.isPack) L10n.str(R.string.uninstall_pack) else L10n.str(R.string.delete_book_2)) },
             text = {
                 Text(
                     if (viewModel.isPack) {
-                        L10n.str(R.string.seguro_quieres_desinstalar_x_borraran, viewModel.name)
+                        L10n.str(R.string.sure_want_uninstall_x_recipes, viewModel.name)
                     } else {
-                        L10n.str(R.string.seguro_quieres_eliminar_x_esta, viewModel.name)
+                        L10n.str(R.string.sure_want_delete_x_cant, viewModel.name)
                     }
                 )
             },
@@ -259,10 +259,10 @@ fun RecipeBookEditorScreen(
                 TextButton(onClick = {
                     showDeleteConfirm = false
                     viewModel.delete(onDeleted = onSaved)
-                }) { Text(if (viewModel.isPack) L10n.str(R.string.desinstalar) else L10n.str(R.string.eliminar), color = MaterialTheme.colorScheme.error) }
+                }) { Text(if (viewModel.isPack) L10n.str(R.string.uninstall) else L10n.str(R.string.delete_2), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text(L10n.str(R.string.cancelar)) }
+                TextButton(onClick = { showDeleteConfirm = false }) { Text(L10n.str(R.string.cancel)) }
             }
         )
     }
@@ -270,7 +270,7 @@ fun RecipeBookEditorScreen(
     if (showPhotoSourceSheet) {
         ModalBottomSheet(onDismissRequest = { showPhotoSourceSheet = false }, sheetState = photoSheetState) {
             PhotoSourceSheet(
-                title = L10n.str(R.string.anadir_portada),
+                title = L10n.str(R.string.add_cover),
                 onCameraClick = {
                     showPhotoSourceSheet = false
                     val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
@@ -305,7 +305,7 @@ fun RecipeBookEditorScreen(
     if (showLinkDialog) {
         AlertDialog(
             onDismissRequest = { showLinkDialog = false },
-            title = { Text(L10n.str(R.string.sincronizar)) },
+            title = { Text(L10n.str(R.string.sync_2)) },
             text = {
                 Column {
                     availableSyncConnections.forEach { connection ->
@@ -322,23 +322,23 @@ fun RecipeBookEditorScreen(
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { showLinkDialog = false }) { Text(L10n.str(R.string.cancelar)) } }
+            dismissButton = { TextButton(onClick = { showLinkDialog = false }) { Text(L10n.str(R.string.cancel)) } }
         )
     }
 
     if (showDiscardDialog) {
         AlertDialog(
             onDismissRequest = { showDiscardDialog = false },
-            title = { Text(L10n.str(R.string.descartar_cambios)) },
-            text = { Text(L10n.str(R.string.perderan_cambios_has_hecho)) },
+            title = { Text(L10n.str(R.string.discard_changes)) },
+            text = { Text(L10n.str(R.string.changes_lost)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDiscardDialog = false
                     onCancel()
-                }) { Text(L10n.str(R.string.descartar), color = MaterialTheme.colorScheme.error) }
+                }) { Text(L10n.str(R.string.discard), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDiscardDialog = false }) { Text(L10n.str(R.string.seguir_editando)) }
+                TextButton(onClick = { showDiscardDialog = false }) { Text(L10n.str(R.string.keep_editing)) }
             }
         )
     }

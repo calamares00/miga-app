@@ -42,7 +42,7 @@ class DishSearchViewModel(private val settingsRepository: SettingsRepository) : 
             _state.value = when (result) {
                 null -> DishSearchUiState.NotConfigured
                 is DishSearchResult.Success ->
-                    if (result.dishes.isEmpty()) DishSearchUiState.Error(L10n.str(R.string.no_han_encontrado_platos_esa))
+                    if (result.dishes.isEmpty()) DishSearchUiState.Error(L10n.str(R.string.no_dishes_found_search))
                     else DishSearchUiState.Loaded(result.dishes)
                 is DishSearchResult.Error -> DishSearchUiState.Error(result.reason)
             }

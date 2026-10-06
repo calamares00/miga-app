@@ -292,9 +292,9 @@ class RecipeListViewModel(
                     val recipeId = repository.saveRecipe(result.recipe.toDraft(bookId, result.photos))
                     RecipeExporter.applyHealthFromImport(repository, recipeId, result.recipe.health)
                     if (result.recipe.rating != null) repository.setRating(recipeId, result.recipe.rating)
-                    onMessage(L10n.str(R.string.receta_importada))
+                    onMessage(L10n.str(R.string.recipe_imported))
                 }
-                is RecipeImportResult.Error -> onMessage(L10n.str(R.string.no_pudo_importar_x, result.reason))
+                is RecipeImportResult.Error -> onMessage(L10n.str(R.string.couldnt_import_x, result.reason))
             }
         }
     }

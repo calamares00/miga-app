@@ -49,7 +49,7 @@ class PackDetailViewModel(
                 is CatalogFetchResult.Success -> {
                     val entry = result.packs.find { it.id == packId }
                     _uiState.value = if (entry == null) {
-                        PackDetailUiState.Error(L10n.str(R.string.este_pack_ya_no_esta))
+                        PackDetailUiState.Error(L10n.str(R.string.pack_no_longer_catalogue))
                     } else {
                         PackDetailUiState.Loaded(entry, repository.findRecipeBookByPackId(packId)?.packVersion)
                     }
@@ -65,7 +65,7 @@ class PackDetailViewModel(
             _installState.value = InstallState.Installing
             val bytes = PacksCatalogClient.downloadPackZip(state.entry.downloadUrl)
             if (bytes == null) {
-                _installState.value = InstallState.Error(L10n.str(R.string.no_pudo_descargar_pack_comprueba))
+                _installState.value = InstallState.Error(L10n.str(R.string.couldnt_download_pack_check_connection))
                 return@launch
             }
             when (val result = RecipeExporter.importPackFromBytes(context, bytes, repository, packId, state.entry.latestVersion)) {

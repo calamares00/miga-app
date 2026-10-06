@@ -91,7 +91,7 @@ fun RecipeCard(
             if (selectionMode) {
                 Icon(
                     imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                    contentDescription = if (isSelected) L10n.str(R.string.seleccionada) else L10n.str(R.string.no_seleccionada),
+                    contentDescription = if (isSelected) L10n.str(R.string.selected) else L10n.str(R.string.not_selected),
                     tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else if (!compact) {
@@ -154,7 +154,7 @@ fun RecipeCard(
                 IconButton(onClick = onToggleFavorite) {
                     Icon(
                         imageVector = if (recipe.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        contentDescription = L10n.str(R.string.favorita),
+                        contentDescription = L10n.str(R.string.favourite),
                         tint = if (recipe.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -164,18 +164,18 @@ fun RecipeCard(
                         IconButton(onClick = { showMenu = true }) {
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
-                                contentDescription = L10n.str(R.string.mas_opciones),
+                                contentDescription = L10n.str(R.string.more_options),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             DropdownMenuItem(
-                                text = { Text(L10n.str(R.string.editar)) },
+                                text = { Text(L10n.str(R.string.edit)) },
                                 leadingIcon = { Icon(Icons.Filled.Edit, null) },
                                 onClick = { showMenu = false; onEditClick() }
                             )
                             DropdownMenuItem(
-                                text = { Text(L10n.str(R.string.borrar), color = MaterialTheme.colorScheme.error) },
+                                text = { Text(L10n.str(R.string.delete), color = MaterialTheme.colorScheme.error) },
                                 leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
                                 onClick = { showMenu = false; onDeleteClick() }
                             )
@@ -239,7 +239,7 @@ fun RecipeGridCard(
                 if (selectionMode) {
                     Icon(
                         imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                        contentDescription = if (isSelected) L10n.str(R.string.seleccionada) else L10n.str(R.string.no_seleccionada),
+                        contentDescription = if (isSelected) L10n.str(R.string.selected) else L10n.str(R.string.not_selected),
                         tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
                         modifier = Modifier
                             .align(Alignment.TopStart)
@@ -249,7 +249,7 @@ fun RecipeGridCard(
                     IconButton(onClick = onToggleFavorite, modifier = Modifier.align(Alignment.TopEnd)) {
                         Icon(
                             imageVector = if (recipe.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = L10n.str(R.string.favorita),
+                            contentDescription = L10n.str(R.string.favourite),
                             tint = if (recipe.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
                         )
                     }

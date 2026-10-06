@@ -50,9 +50,9 @@ fun HelpScreen(onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(L10n.str(R.string.ayuda_soporte)) },
+                title = { Text(L10n.str(R.string.help_support)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                 }
             )
         }
@@ -67,49 +67,49 @@ fun HelpScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             HelpSection(
-                title = L10n.str(R.string.libros_recetas),
-                body = L10n.str(R.string.cada_libro_es_recetario_persona)
+                title = L10n.str(R.string.recipe_books),
+                body = L10n.str(R.string.each_book_someones_recipe_collection)
             )
             HelpSection(
-                title = L10n.str(R.string.categorias_etiquetas_utensilios),
-                body = L10n.str(R.string.recetas_agrupan_categoria_listado_puedes)
+                title = L10n.str(R.string.categories_tags_utensils),
+                body = L10n.str(R.string.recipes_grouped_category_list_add)
             )
             HelpSection(
-                title = L10n.str(R.string.ingredientes),
-                body = L10n.str(R.string.escribir_nombre_ingrediente_receta_app)
+                title = L10n.str(R.string.ingredients),
+                body = L10n.str(R.string.when_type_ingredient_name_recipe)
             )
             HelpSection(
-                title = L10n.str(R.string.modo_cocina),
-                body = L10n.str(R.string.desde_receta_pasos_pulsa_modo)
+                title = L10n.str(R.string.cooking_mode),
+                body = L10n.str(R.string.recipe_steps_tap_cooking_mode)
             )
             HelpSection(
-                title = L10n.str(R.string.exportar_e_importar),
-                body = L10n.str(R.string.desde_receta_puedes_exportarla_como)
+                title = L10n.str(R.string.export_import),
+                body = L10n.str(R.string.export_recipe_text_pdf_json)
             )
             if (aiEnabled) {
                 HelpSection(
-                    title = L10n.str(R.string.anadir_receta_foto_beta),
-                    body = L10n.str(R.string.desde_menu_libro_anadir_foto)
+                    title = L10n.str(R.string.add_recipe_photo_beta),
+                    body = L10n.str(R.string.books_menu_add_photo_reads)
                 )
             }
             HelpSection(
-                title = L10n.str(R.string.bloqueo_biometrico),
-                body = L10n.str(R.string.activalo_ajustes_seguridad_app_pida)
+                title = L10n.str(R.string.biometric_lock),
+                body = L10n.str(R.string.turn_settings_security_app_asks)
             )
 
             HorizontalDivider()
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(L10n.str(R.string.contacto), style = MaterialTheme.typography.titleMedium)
+                Text(L10n.str(R.string.contact), style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = L10n.str(R.string.has_encontrado_fallo_tienes_sugerencia),
+                    text = L10n.str(R.string.found_bug_have_suggestion_write),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 OutlinedButton(onClick = {
-                    val url = AiContentReport.targetUrl(L10n.str(R.string.soporte_miga), L10n.str(R.string.version_miga_x_2, BuildConfig.VERSION_NAME))
+                    val url = AiContentReport.targetUrl(L10n.str(R.string.miga_support), L10n.str(R.string.version_miga_x_2, BuildConfig.VERSION_NAME))
                     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-                }) { Text(L10n.str(R.string.informar_problema)) }
+                }) { Text(L10n.str(R.string.report_problem)) }
             }
         }
     }

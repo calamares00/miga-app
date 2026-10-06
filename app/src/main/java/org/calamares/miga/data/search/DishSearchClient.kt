@@ -34,23 +34,22 @@ internal data class DishSuggestionDto(val name: String = "", val description: St
 @Serializable
 internal data class DishSearchResultDto(val dishes: List<DishSuggestionDto> = emptyList())
 
-// Prompt compartido entre todos los proveedores: deben pedir exactamente el mismo formato, si no
-// divergirían al cambiar de proveedor en Ajustes.
+/** Prompt shared by every provider so the format never diverges. */
 internal fun buildDishSearchPrompt(query: String): String = """
-Eres un asistente experto en cocina y gastronomía de todo el mundo. Un usuario de una app de
-recetas busca ideas con esta petición: "$query" (puede ser una zona/país, un tipo de plato, un
-ingrediente principal, una ocasión, o cualquier descripción libre en cualquier idioma).
+You are an expert in cooking and cuisines from all over the world. A user of a recipe app is
+looking for ideas with this request: "$query" (it may be a region or country, a type of dish, a
+main ingredient, an occasion or any free description, in any language).
 
-Sugiere entre 6 y 10 platos que encajen bien con la petición. Si la petición es geográfica
-(zona/país/región), prioriza platos realmente típicos y reconocibles de ese lugar; si no lo es,
-propón ideas de recetas variadas que encajen con lo pedido.
+Suggest between 6 and 10 dishes that fit the request well. If the request is geographic (area,
+country or region), favour dishes that are truly typical and recognisable from that place;
+otherwise, suggest a varied set of recipe ideas that match the request.
 
-Devuelve ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto adicional:
+Return ONLY a JSON object with exactly this format, with no explanations or extra text:
 {
   "dishes": [
-    { "name": "string", "description": "string, 1-2 frases", "origin": "string o null" }
+    { "name": "string", "description": "string, 1-2 sentences", "origin": "string or null" }
   ]
 }
-"origin" es la zona/país/región de la que es típico el plato, o null si no aplica. No repitas
-platos y no dejes ningún "name" vacío.
+"origin" is the area, country or region the dish is typical of, or null if it does not apply.
+Do not repeat dishes and do not leave any "name" empty.
 """.trimIndent() + outputLanguageInstruction()

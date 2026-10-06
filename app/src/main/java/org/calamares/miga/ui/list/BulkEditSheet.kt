@@ -93,7 +93,7 @@ fun BulkEditSheet(
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             BulkRow(Icons.Filled.Favorite, L10n.str(R.string.bulk_favorite_on)) { done { onFavorite(true) } }
             BulkRow(Icons.Filled.FavoriteBorder, L10n.str(R.string.bulk_favorite_off)) { done { onFavorite(false) } }
-            BulkRow(Icons.Filled.Folder, L10n.str(R.string.bulk_move)) { dialog = BulkDialog.MOVE }
+            BulkRow(Icons.Filled.Folder, L10n.str(R.string.move_another_book)) { dialog = BulkDialog.MOVE }
             BulkRow(Icons.Filled.ContentCopy, L10n.str(R.string.bulk_copy)) { dialog = BulkDialog.COPY }
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             BulkRow(Icons.Filled.ShoppingCart, L10n.str(R.string.bulk_add_to_shopping)) { done(onShopping) }
@@ -128,13 +128,13 @@ fun BulkEditSheet(
             if (books.isEmpty()) {
                 AlertDialog(
                     onDismissRequest = { dialog = null },
-                    title = { Text(L10n.str(if (moving) R.string.bulk_move else R.string.bulk_copy)) },
+                    title = { Text(L10n.str(if (moving) R.string.move_another_book else R.string.bulk_copy)) },
                     text = { Text(L10n.str(R.string.bulk_no_other_books)) },
-                    confirmButton = { TextButton(onClick = { dialog = null }) { Text(L10n.str(R.string.cerrar)) } }
+                    confirmButton = { TextButton(onClick = { dialog = null }) { Text(L10n.str(R.string.close)) } }
                 )
             } else {
                 ChoiceDialog(
-                    title = L10n.str(if (moving) R.string.bulk_move else R.string.bulk_copy),
+                    title = L10n.str(if (moving) R.string.move_another_book else R.string.bulk_copy),
                     options = books.map { it.name },
                     onPick = { index -> done { if (moving) onMove(books[index].id) else onCopy(books[index].id) } },
                     onDismiss = { dialog = null }
@@ -177,7 +177,7 @@ private fun ChoiceDialog(title: String, options: List<String>, onPick: (Int) -> 
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
 }
 
@@ -190,7 +190,7 @@ private fun CategoryDialog(categories: List<String>, onPick: (String?) -> Unit, 
         text = {
             Column(modifier = Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
                 Text(
-                    L10n.str(R.string.bulk_no_category),
+                    L10n.str(R.string.uncategorized),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth().clickable { onPick(null) }.padding(vertical = 12.dp)
@@ -214,7 +214,7 @@ private fun CategoryDialog(categories: List<String>, onPick: (String?) -> Unit, 
         confirmButton = {
             TextButton(onClick = { onPick(newName.trim()) }, enabled = newName.isNotBlank()) { Text(L10n.str(R.string.bulk_apply)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
 }
 
@@ -231,7 +231,7 @@ private fun ServingsDialog(onApply: (Int, Boolean) -> Unit, onDismiss: () -> Uni
                 OutlinedTextField(
                     value = text,
                     onValueChange = { value -> text = value.filter { it.isDigit() }.take(2) },
-                    label = { Text(L10n.str(R.string.bulk_servings_label)) },
+                    label = { Text(L10n.str(R.string.servings_2)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
@@ -248,7 +248,7 @@ private fun ServingsDialog(onApply: (Int, Boolean) -> Unit, onDismiss: () -> Uni
         confirmButton = {
             TextButton(onClick = { servings?.let { onApply(it, scale) } }, enabled = servings != null) { Text(L10n.str(R.string.bulk_apply)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
 }
 
@@ -275,6 +275,6 @@ private fun SourceDialog(onApply: (String) -> Unit, onDismiss: () -> Unit) {
             }
         },
         confirmButton = { TextButton(onClick = { onApply(text) }) { Text(L10n.str(R.string.bulk_apply)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
 }

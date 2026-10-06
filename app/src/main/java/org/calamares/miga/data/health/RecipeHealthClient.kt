@@ -26,22 +26,20 @@ fun healthClientFor(provider: VisionProviderType): RecipeHealthClient = when (pr
 @Serializable
 internal data class RecipeHealthResultDto(val colorLevel: String = "YELLOW", val description: String = "")
 
-// Prompt compartido entre todos los proveedores: deben pedir exactamente el mismo criterio y
-// formato, si no divergirían al cambiar de proveedor en Ajustes.
+/** Prompt shared by every provider so the criteria and format never diverge. */
 internal fun buildHealthPrompt(ingredientsText: String, stepsText: String): String = """
-Eres un asistente que evalúa lo saludable que es una receta a partir de sus ingredientes y su
-forma de cocinado.
+You are an assistant that rates how healthy a recipe is based on its ingredients and how it is cooked.
 
-Ingredientes:
+Ingredients:
 $ingredientsText
 
-Preparación:
+Method:
 $stepsText
 
-Devuelve ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto adicional:
-{ "colorLevel": "GREEN" | "YELLOW" | "RED", "description": "string, 2-4 frases explicando por qué" }
-GREEN = receta equilibrada y saludable. YELLOW = moderada (algún exceso de grasa, azúcar o sal,
-procesados, fritos ocasionales). RED = poco saludable (frituras, mucho azúcar o grasa saturada,
-ultraprocesados, sin verdura ni proteína magra). Basa el análisis solo en lo indicado, sin inventar
-datos nutricionales exactos.
+Return ONLY a JSON object with exactly this format, with no explanations or extra text:
+{ "colorLevel": "GREEN" | "YELLOW" | "RED", "description": "string, 2-4 sentences explaining why" }
+GREEN = balanced and healthy recipe. YELLOW = moderate (some excess fat, sugar or salt, processed
+foods, occasional frying). RED = unhealthy (deep frying, lots of sugar or saturated fat,
+ultra-processed foods, no vegetables or lean protein). Base the analysis only on what is given and
+do not make up exact nutritional figures.
 """.trimIndent() + outputLanguageInstruction()

@@ -60,13 +60,13 @@ object SyncClient {
             val result = request(connection, "GET", "/sync/ping", body = null)
             when {
                 result.code == HttpURLConnection.HTTP_OK -> SyncPingResult.Success
-                result.code == HttpURLConnection.HTTP_UNAUTHORIZED -> SyncPingResult.Error(L10n.str(R.string.token_acceso_invalido_revocado))
-                else -> SyncPingResult.Error(L10n.str(R.string.servidor_respondio_codigo_x, result.code))
+                result.code == HttpURLConnection.HTTP_UNAUTHORIZED -> SyncPingResult.Error(L10n.str(R.string.invalid_revoked_access_token))
+                else -> SyncPingResult.Error(L10n.str(R.string.server_responded_code_x, result.code))
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            SyncPingResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.no_pudo_conectar_servidor))
+            SyncPingResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.couldnt_connect_server))
         }
     }
 
@@ -80,7 +80,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            SyncFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+            SyncFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
 
@@ -101,7 +101,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            SyncPushResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+            SyncPushResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
 
@@ -117,7 +117,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            SyncPushResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+            SyncPushResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
 
@@ -129,14 +129,14 @@ object SyncClient {
             if (result.code == HttpURLConnection.HTTP_CREATED || result.code == HttpURLConnection.HTTP_OK) {
                 SyncInvitationResult.Success(json.decodeFromString(InvitationDto.serializer(), result.body))
             } else if (result.code == HttpURLConnection.HTTP_NOT_FOUND || result.code == HttpURLConnection.HTTP_BAD_METHOD) {
-                SyncInvitationResult.Error(L10n.str(R.string.este_servidor_no_admite_invitaciones))
+                SyncInvitationResult.Error(L10n.str(R.string.server_doesnt_support_invitations_update))
             } else {
                 SyncInvitationResult.Error(errorMessageFor(result))
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            SyncInvitationResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+            SyncInvitationResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
 
@@ -192,7 +192,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            SyncPushResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+            SyncPushResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
 
@@ -200,15 +200,15 @@ object SyncClient {
         try {
             val result = requestBinary(connection, "GET", "/sync/recipes/$recipeUid/photos/$photoUid", timeoutMillis = PHOTO_TIMEOUT_MILLIS)
             when {
-                result == null -> PhotoDownloadResult.Error(L10n.str(R.string.sin_respuesta_servidor))
+                result == null -> PhotoDownloadResult.Error(L10n.str(R.string.no_response_server))
                 result.code == HttpURLConnection.HTTP_OK -> PhotoDownloadResult.Success(result.bytes)
                 result.code == HttpURLConnection.HTTP_NOT_FOUND -> PhotoDownloadResult.NotFound
-                else -> PhotoDownloadResult.Error(L10n.str(R.string.servidor_respondio_codigo_x, result.code))
+                else -> PhotoDownloadResult.Error(L10n.str(R.string.server_responded_code_x, result.code))
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            PhotoDownloadResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+            PhotoDownloadResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
 
@@ -234,7 +234,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            SyncPushResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.error_desconocido))
+            SyncPushResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
 
@@ -294,5 +294,5 @@ object SyncClient {
     private fun errorMessageFor(result: TextResponse): String =
         runCatching { json.decodeFromString(SyncErrorDto.serializer(), result.body).message }
             .getOrNull()
-            ?: L10n.str(R.string.servidor_respondio_codigo_x, result.code)
+            ?: L10n.str(R.string.server_responded_code_x, result.code)
 }

@@ -70,7 +70,7 @@ object AnthropicIngredientSubstitutionClient : IngredientSubstitutionClient {
                     val substitutions = resultDto.substitutions.filter { it.substitute.isNotBlank() }
                         .map { IngredientSubstitution(it.substitute, it.notes) }
                     if (substitutions.isEmpty()) {
-                        SubstitutionResult.Error(L10n.str(R.string.no_han_encontrado_sustitutos_este))
+                        SubstitutionResult.Error(L10n.str(R.string.no_substitutes_found_ingredient))
                     } else {
                         SubstitutionResult.Success(substitutions)
                     }

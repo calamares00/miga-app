@@ -256,3 +256,13 @@ val MIGRATION_16_17 = object : Migration(16, 17) {
         db.execSQL("ALTER TABLE shopping_list_items ADD COLUMN productInfo TEXT DEFAULT NULL")
     }
 }
+
+/** v17 -> v18: difficulty values renamed from Spanish (FACIL/MEDIA/DIFICIL) to EASY/MEDIUM/HARD. */
+val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "UPDATE recipes SET difficulty = CASE difficulty " +
+                "WHEN 'FACIL' THEN 'EASY' WHEN 'DIFICIL' THEN 'HARD' WHEN 'MEDIA' THEN 'MEDIUM' ELSE difficulty END"
+        )
+    }
+}

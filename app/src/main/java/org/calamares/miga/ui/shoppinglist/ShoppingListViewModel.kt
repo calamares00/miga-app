@@ -72,7 +72,7 @@ class ShoppingListViewModel(
     private val syncEngine = SyncEngine(repository)
 
     val lists: StateFlow<List<ShoppingListInfo>> = repository.observeShoppingLists()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf(ShoppingListInfo(DEFAULT_SHOPPING_LIST_UID, L10n.str(R.string.compra))))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf(ShoppingListInfo(DEFAULT_SHOPPING_LIST_UID, L10n.str(R.string.shopping))))
 
     /** Artículos pendientes de cada lista (uid -> cantidad), para mostrarlos en las pestañas de listas. */
     val listCounts: StateFlow<Map<String, Int>> = repository.observeShoppingListPendingCounts()
@@ -163,8 +163,8 @@ class ShoppingListViewModel(
                         val others = items.filter { it.uid !in knownItemUids && !it.addedBy.isNullOrBlank() && !it.addedBy.equals(me, ignoreCase = true) }
                         if (others.isNotEmpty()) {
                             val who = others.map { it.addedBy!! }.distinct()
-                            val names = if (who.size == 1) who.single() else L10n.str(R.string.varias_personas)
-                            _remoteAdditions.tryEmit(L10n.str(R.string.x_anadio_x, names, if (others.size == 1) L10n.str(R.string.n1_articulo) else L10n.str(R.string.x_articulos, others.size)))
+                            val names = if (who.size == 1) who.single() else L10n.str(R.string.several_people)
+                            _remoteAdditions.tryEmit(L10n.str(R.string.x_added_x, names, if (others.size == 1) L10n.str(R.string.n_1_item) else L10n.str(R.string.x_items, others.size)))
                         }
                     }
                     announcedListUid = listUid
@@ -230,10 +230,10 @@ class ShoppingListViewModel(
             when (val result = OpenFoodFactsClient.lookup(barcode)) {
                 is ProductLookupResult.Found -> {
                     repository.addScannedShoppingProduct(result.product.name, result.product.imageUrl, result.product.info)
-                    onResult(L10n.str(R.string.anadido_x, result.product.name))
+                    onResult(L10n.str(R.string.added_x, result.product.name))
                 }
-                ProductLookupResult.NotFound -> onResult(L10n.str(R.string.producto_no_encontrado_open_food_2, barcode))
-                is ProductLookupResult.Error -> onResult(L10n.str(R.string.no_pudo_consultar_producto_x, result.reason))
+                ProductLookupResult.NotFound -> onResult(L10n.str(R.string.product_not_found_open_food_2, barcode))
+                is ProductLookupResult.Error -> onResult(L10n.str(R.string.couldnt_look_up_product_x, result.reason))
             }
         }
     }
@@ -287,10 +287,10 @@ class ShoppingListViewModel(
             when (val result = OpenFoodFactsClient.lookup(barcode)) {
                 is ProductLookupResult.Found -> {
                     addToTemplate(templateId, result.product.toTemplateItem())
-                    onResult(L10n.str(R.string.anadido_plantilla_x, result.product.name))
+                    onResult(L10n.str(R.string.added_template_x, result.product.name))
                 }
-                ProductLookupResult.NotFound -> onResult(L10n.str(R.string.producto_no_encontrado_open_food, barcode))
-                is ProductLookupResult.Error -> onResult(L10n.str(R.string.no_pudo_consultar_producto_x, result.reason))
+                ProductLookupResult.NotFound -> onResult(L10n.str(R.string.product_not_found_open_food, barcode))
+                is ProductLookupResult.Error -> onResult(L10n.str(R.string.couldnt_look_up_product_x, result.reason))
             }
         }
     }

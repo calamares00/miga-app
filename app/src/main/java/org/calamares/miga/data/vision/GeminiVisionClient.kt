@@ -27,7 +27,7 @@ object GeminiVisionClient : RecipeVisionClient {
 
     override suspend fun extractRecipe(images: List<VisionImageInput>, apiKey: String, model: String): RecipeVisionResult =
         withContext(Dispatchers.IO) {
-            if (images.isEmpty()) return@withContext RecipeVisionResult.Error(L10n.str(R.string.no_hay_ninguna_foto_procesar))
+            if (images.isEmpty()) return@withContext RecipeVisionResult.Error(L10n.str(R.string.there_no_photos_process))
             try {
                 val requestBody = json.encodeToString(
                     GeminiRequest.serializer(),
@@ -74,7 +74,7 @@ object GeminiVisionClient : RecipeVisionClient {
                         return@withContext RecipeVisionResult.Error(AiErrors.badResponse(e, text))
                     }
                     if (recipe.name.isBlank()) {
-                        RecipeVisionResult.Error(L10n.str(R.string.no_ha_reconocido_ninguna_receta_2))
+                        RecipeVisionResult.Error(L10n.str(R.string.no_recipe_was_found_photo))
                     } else {
                         RecipeVisionResult.Success(recipe)
                     }

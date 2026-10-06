@@ -90,17 +90,17 @@ fun ManageIngredientsScreen(viewModel: ManageIngredientsViewModel, onBack: () ->
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(L10n.str(R.string.ingredientes)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) } }
+                title = { Text(L10n.str(R.string.ingredients)) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) } }
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(onClick = { showAddDialog = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text(L10n.str(R.string.anadir)) })
+            ExtendedFloatingActionButton(onClick = { showAddDialog = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text(L10n.str(R.string.add)) })
         }
     ) { padding ->
         if (items.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text(L10n.str(R.string.todavia_no_hay_ingredientes), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(L10n.str(R.string.there_no_ingredients_yet), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             LazyColumn(contentPadding = PaddingValues(vertical = 8.dp), modifier = Modifier.padding(padding)) {
@@ -117,8 +117,8 @@ fun ManageIngredientsScreen(viewModel: ManageIngredientsViewModel, onBack: () ->
                                 modifier = Modifier.padding(top = 4.dp)
                             )
                         }
-                        IconButton(onClick = { itemToRename = item }) { Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.renombrar)) }
-                        IconButton(onClick = { itemToDelete = item }) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.borrar)) }
+                        IconButton(onClick = { itemToRename = item }) { Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.rename)) }
+                        IconButton(onClick = { itemToDelete = item }) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete)) }
                     }
                     HorizontalDivider()
                 }
@@ -128,7 +128,7 @@ fun ManageIngredientsScreen(viewModel: ManageIngredientsViewModel, onBack: () ->
 
     if (showAddDialog) {
         IngredientNameDialog(
-            title = L10n.str(R.string.anadir_ingrediente),
+            title = L10n.str(R.string.add_ingredient),
             initialValue = "",
             onConfirm = { viewModel.add(it); showAddDialog = false },
             onDismiss = { showAddDialog = false }
@@ -137,7 +137,7 @@ fun ManageIngredientsScreen(viewModel: ManageIngredientsViewModel, onBack: () ->
 
     itemToRename?.let { item ->
         IngredientNameDialog(
-            title = L10n.str(R.string.renombrar),
+            title = L10n.str(R.string.rename),
             initialValue = item.name,
             onConfirm = { viewModel.rename(item, it); itemToRename = null },
             onDismiss = { itemToRename = null }
@@ -148,20 +148,20 @@ fun ManageIngredientsScreen(viewModel: ManageIngredientsViewModel, onBack: () ->
         AlertDialog(
             onDismissRequest = { itemToDelete = null },
             title = { Text("Borrar \"${item.name}\"") },
-            text = { Text(L10n.str(R.string.seguro_quieres_borrarlo_esta_accion)) },
+            text = { Text(L10n.str(R.string.sure_want_delete_cant_undone)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.delete(item); itemToDelete = null }) {
-                    Text(L10n.str(R.string.borrar), color = MaterialTheme.colorScheme.error)
+                    Text(L10n.str(R.string.delete), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { itemToDelete = null }) { Text(L10n.str(R.string.cancelar)) } }
+            dismissButton = { TextButton(onClick = { itemToDelete = null }) { Text(L10n.str(R.string.cancel)) } }
         )
     }
 
     itemForCategory?.let { item ->
         AlertDialog(
             onDismissRequest = { itemForCategory = null },
-            title = { Text(L10n.str(R.string.categoria_x, item.name)) },
+            title = { Text(L10n.str(R.string.category_x, item.name)) },
             text = {
                 Column {
                     Row(
@@ -191,7 +191,7 @@ fun ManageIngredientsScreen(viewModel: ManageIngredientsViewModel, onBack: () ->
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { itemForCategory = null }) { Text(L10n.str(R.string.cerrar)) } }
+            confirmButton = { TextButton(onClick = { itemForCategory = null }) { Text(L10n.str(R.string.close)) } }
         )
     }
 }
@@ -206,8 +206,8 @@ private fun IngredientNameDialog(title: String, initialValue: String, onConfirm:
             OutlinedTextField(value = value, onValueChange = { value = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
         },
         confirmButton = {
-            TextButton(onClick = { if (value.isNotBlank()) onConfirm(value) }) { Text(L10n.str(R.string.guardar)) }
+            TextButton(onClick = { if (value.isNotBlank()) onConfirm(value) }) { Text(L10n.str(R.string.save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
 }

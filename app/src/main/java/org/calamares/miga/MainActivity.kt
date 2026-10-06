@@ -40,11 +40,11 @@ import org.calamares.miga.data.model.ColorTheme
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.share.ShoppingIntents
 import org.calamares.miga.ui.navigation.Destinations
-import org.calamares.miga.ui.navigation.RecetarioNavHost
+import org.calamares.miga.ui.navigation.MigaNavHost
 import org.calamares.miga.ui.settings.SettingsSection
 import org.calamares.miga.ui.welcome.WelcomeScreen
 import org.calamares.miga.ui.security.BiometricAuthenticator
-import org.calamares.miga.ui.theme.RecetarioTheme
+import org.calamares.miga.ui.theme.MigaTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -65,7 +65,7 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         if (savedInstanceState == null) ShoppingIntents.handle(intent)
-        val settingsRepository = (application as RecetarioApp).settingsRepository
+        val settingsRepository = (application as MigaApp).settingsRepository
         setContent {
             val themeMode by settingsRepository.observeThemeMode().collectAsState(initial = ThemeMode.SYSTEM)
             val darkTheme = when (themeMode) {
@@ -96,7 +96,7 @@ class MainActivity : FragmentActivity() {
                 onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
             }
 
-            RecetarioTheme(darkTheme = darkTheme, colorTheme = colorTheme) {
+            MigaTheme(darkTheme = darkTheme, colorTheme = colorTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     when {
                         showSplash || onboardingDone == null -> SplashScreen()
@@ -115,7 +115,7 @@ class MainActivity : FragmentActivity() {
                                 }
                             }
                         )
-                        else -> RecetarioNavHost(initialRoute = welcomeDestination)
+                        else -> MigaNavHost(initialRoute = welcomeDestination)
                     }
                 }
             }
@@ -141,7 +141,7 @@ private fun SplashScreen() {
             modifier = Modifier.padding(top = 16.dp)
         )
         Text(
-            text = L10n.str(R.string.recetas_libros_cocina),
+            text = L10n.str(R.string.recipes_books_kitchen),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp)
@@ -164,11 +164,11 @@ private fun LockScreen(onUnlockClick: () -> Unit) {
         )
         Text("Miga", style = MaterialTheme.typography.titleLarge)
         Text(
-            text = L10n.str(R.string.desbloquea_app_continuar),
+            text = L10n.str(R.string.unlock_app_continue),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
         )
-        Button(onClick = onUnlockClick) { Text(L10n.str(R.string.desbloquear)) }
+        Button(onClick = onUnlockClick) { Text(L10n.str(R.string.unlock)) }
     }
 }

@@ -45,7 +45,7 @@ class SyncEngine(private val repository: RecipeRepository) {
 
     private suspend fun syncConnectionLocked(context: Context, connectionId: Long): SyncOutcome {
         val connection = repository.getSyncConnectionOnce(connectionId)
-            ?: return SyncOutcome.Error(L10n.str(R.string.conexion_no_encontrada))
+            ?: return SyncOutcome.Error(L10n.str(R.string.connection_not_found))
 
         val pulled = when (val fetch = SyncClient.fetchChanges(connection, connection.lastSyncedRevision)) {
             is SyncFetchResult.Error -> {

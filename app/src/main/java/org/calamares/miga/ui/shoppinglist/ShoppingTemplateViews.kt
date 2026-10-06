@@ -189,7 +189,7 @@ internal fun TemplateRow(template: ShoppingTemplate, onApply: () -> Unit, onClic
         TemplateThumb(template)
         Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
             Text(template.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            val count = if (template.items.size == 1) L10n.str(R.string.n1_articulo) else L10n.str(R.string.x_articulos, template.items.size)
+            val count = if (template.items.size == 1) L10n.str(R.string.n_1_item) else L10n.str(R.string.x_items, template.items.size)
             Text(
                 if (products > 0) L10n.str(R.string.x_x_open_food_facts, count, products) else count,
                 style = MaterialTheme.typography.bodySmall,
@@ -205,7 +205,7 @@ internal fun TemplateRow(template: ShoppingTemplate, onApply: () -> Unit, onClic
         }
         FilledTonalButton(onClick = onApply, enabled = template.items.isNotEmpty(), contentPadding = PaddingValues(horizontal = 12.dp)) {
             Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(L10n.str(R.string.anadir_2))
+            Text(L10n.str(R.string.add_2))
         }
     }
 }
@@ -239,12 +239,12 @@ internal fun TemplatePickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Filled.BookmarkAdd, contentDescription = null) },
-        title = { Text(L10n.str(R.string.guardar_plantilla_3)) },
+        title = { Text(L10n.str(R.string.save_template_4)) },
         text = {
             LazyColumn(modifier = Modifier.heightIn(max = 380.dp)) {
                 item(key = "what") {
                     Text(
-                        L10n.str(R.string.x_guardara_foto_ficha, item.name),
+                        L10n.str(R.string.x_saved_photo_details, item.name),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 8.dp)
@@ -264,7 +264,7 @@ internal fun TemplatePickerDialog(
                         Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                             Text(template.name, style = MaterialTheme.typography.bodyLarge)
                             Text(
-                                if (already) L10n.str(R.string.ya_esta_actualizara) else L10n.str(R.string.x_articulos, template.items.size),
+                                if (already) L10n.str(R.string.already_there_updated) else L10n.str(R.string.x_items, template.items.size),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -276,21 +276,21 @@ internal fun TemplatePickerDialog(
                         OutlinedTextField(
                             value = newName,
                             onValueChange = { newName = it },
-                            label = { Text(if (templates.isEmpty()) L10n.str(R.string.nombre_plantilla) else L10n.str(R.string.crea_nueva)) },
-                            placeholder = { Text(L10n.str(R.string.p_ej_compra_semanal)) },
+                            label = { Text(if (templates.isEmpty()) L10n.str(R.string.template_name) else L10n.str(R.string.create_new_one)) },
+                            placeholder = { Text(L10n.str(R.string.e_g_weekly_shop)) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { if (newName.isNotBlank()) onCreate(newName) }),
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = { onCreate(newName) }, enabled = newName.isNotBlank()) {
-                            Icon(Icons.Filled.Add, contentDescription = L10n.str(R.string.crear_plantilla))
+                            Icon(Icons.Filled.Add, contentDescription = L10n.str(R.string.create_template))
                         }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
+        confirmButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
 }
 
@@ -317,7 +317,7 @@ internal fun NameDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text(L10n.str(R.string.nombre)) },
+                    label = { Text(L10n.str(R.string.name)) },
                     placeholder = { Text(placeholder) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
@@ -327,7 +327,7 @@ internal fun NameDialog(
             }
         },
         confirmButton = { TextButton(onClick = { onConfirm(name.trim()) }, enabled = name.isNotBlank()) { Text(confirmLabel) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
 }
 
@@ -369,28 +369,28 @@ internal fun TemplateEditorSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(template.name, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
-                        if (template.items.size == 1) L10n.str(R.string.n1_articulo) else L10n.str(R.string.x_articulos, template.items.size),
+                        if (template.items.size == 1) L10n.str(R.string.n_1_item) else L10n.str(R.string.x_items, template.items.size),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(onClick = { renaming = true }) { Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.renombrar_plantilla)) }
-                IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.borrar_plantilla)) }
+                IconButton(onClick = { renaming = true }) { Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.rename_template)) }
+                IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete_template)) }
             }
 
             if (searching) {
                 TextButton(onClick = { searching = false; viewModel.clearSearch() }) {
                     Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(L10n.str(R.string.volver_plantilla))
+                    Text(L10n.str(R.string.back_template))
                 }
                 Box(modifier = Modifier.weight(1f)) {
                     ProductSearchContent(
                         viewModel = viewModel,
                         initialQuery = text.trim(),
-                        addDescription = L10n.str(R.string.anadir_plantilla),
+                        addDescription = L10n.str(R.string.add_template),
                         onAdd = { product ->
                             viewModel.addToTemplate(template.id, product.toTemplateItem())
-                            onMessage(L10n.str(R.string.anadido_x_x, template.name, product.name))
+                            onMessage(L10n.str(R.string.added_x_x, template.name, product.name))
                         },
                         onSaveToTemplate = null
                     )
@@ -400,20 +400,20 @@ internal fun TemplateEditorSheet(
                     value = text,
                     onValueChange = { text = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(L10n.str(R.string.anadir_2_kg_tomates_leche)) },
+                    placeholder = { Text(L10n.str(R.string.add_2_kg_tomatoes_milk)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { submitText() }),
                     trailingIcon = {
                         if (text.isNotBlank()) {
-                            IconButton(onClick = { submitText() }) { Icon(Icons.Filled.Add, contentDescription = L10n.str(R.string.anadir_plantilla)) }
+                            IconButton(onClick = { submitText() }) { Icon(Icons.Filled.Add, contentDescription = L10n.str(R.string.add_template)) }
                         }
                     }
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AssistChip(
                         onClick = { searching = true },
-                        label = { Text(L10n.str(R.string.buscar_open_food_facts_2)) },
+                        label = { Text(L10n.str(R.string.search_open_food_facts_2)) },
                         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp)) }
                     )
                     AssistChip(
@@ -421,19 +421,19 @@ internal fun TemplateEditorSheet(
                             scanLauncher.launch(
                                 ScanOptions().apply {
                                     setDesiredBarcodeFormats(ScanOptions.PRODUCT_CODE_TYPES)
-                                    setPrompt(L10n.str(R.string.apunta_codigo_barras_producto))
+                                    setPrompt(L10n.str(R.string.point_product_barcode))
                                     setBeepEnabled(false)
                                     setOrientationLocked(false)
                                 }
                             )
                         },
-                        label = { Text(L10n.str(R.string.escanear)) },
+                        label = { Text(L10n.str(R.string.scan)) },
                         leadingIcon = { Icon(Icons.Filled.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp)) }
                     )
                 }
                 if (template.items.isEmpty()) {
                     Text(
-                        L10n.str(R.string.plantilla_vacia_escribe_articulos_busca),
+                        L10n.str(R.string.empty_template_type_items_search),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 16.dp)
@@ -451,12 +451,12 @@ internal fun TemplateEditorSheet(
                 Button(
                     onClick = {
                         viewModel.applyTemplate(template)
-                        onMessage(L10n.str(R.string.anadidos_x_articulos_x, template.items.size, template.name))
+                        onMessage(L10n.str(R.string.added_x_items_x, template.items.size, template.name))
                         close()
                     },
                     enabled = template.items.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-                ) { Text(L10n.str(R.string.anadir_todo_lista)) }
+                ) { Text(L10n.str(R.string.add_list_2)) }
             }
         }
     }
@@ -470,10 +470,10 @@ internal fun TemplateEditorSheet(
 
     if (renaming) {
         NameDialog(
-            title = L10n.str(R.string.renombrar_plantilla),
+            title = L10n.str(R.string.rename_template),
             initial = template.name,
-            placeholder = L10n.str(R.string.p_ej_compra_semanal),
-            confirmLabel = L10n.str(R.string.guardar),
+            placeholder = L10n.str(R.string.e_g_weekly_shop),
+            confirmLabel = L10n.str(R.string.save),
             onConfirm = { viewModel.renameTemplate(template.id, it); renaming = false },
             onDismiss = { renaming = false }
         )
@@ -482,16 +482,16 @@ internal fun TemplateEditorSheet(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text(L10n.str(R.string.borrar_plantilla)) },
-            text = { Text(L10n.str(R.string.borrar_x_articulos_lista_no, template.name)) },
+            title = { Text(L10n.str(R.string.delete_template)) },
+            text = { Text(L10n.str(R.string.delete_x_items_list_wont, template.name)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
                     viewModel.deleteTemplate(template.id)
                     close()
-                }) { Text(L10n.str(R.string.borrar), color = MaterialTheme.colorScheme.error) }
+                }) { Text(L10n.str(R.string.delete), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(L10n.str(R.string.cancelar)) } }
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(L10n.str(R.string.cancel)) } }
         )
     }
 }
@@ -540,7 +540,7 @@ private fun TemplateItemRow(item: TemplateItem, onOpen: (() -> Unit)?, onRemove:
             }
         }
         IconButton(onClick = onRemove) {
-            Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.quitar_x_plantilla, item.name), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.remove_x_template, item.name), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

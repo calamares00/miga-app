@@ -34,7 +34,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import org.calamares.miga.RecetarioApp
+import org.calamares.miga.MigaApp
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.ui.bulkimport.BulkImportScreen
 import org.calamares.miga.ui.bulkimport.BulkImportViewModel
@@ -80,20 +80,20 @@ import org.calamares.miga.ui.sync.SyncConnectionsScreen
 import org.calamares.miga.ui.sync.SyncConnectionsViewModel
 
 private fun repositoryOf(context: android.content.Context): RecipeRepository =
-    (context.applicationContext as RecetarioApp).repository
+    (context.applicationContext as MigaApp).repository
 
 private data class BottomTab(val route: String, val label: String, val icon: ImageVector)
 
 private val BOTTOM_TABS = listOf(
-    BottomTab(Destinations.BOOKS_ROUTE, L10n.str(R.string.libros), Icons.Outlined.MenuBook),
-    BottomTab(Destinations.FAVORITES_ROUTE, L10n.str(R.string.favoritos), Icons.Filled.Favorite),
-    BottomTab(Destinations.SHOPPING_LIST_ROUTE, L10n.str(R.string.compra), Icons.Filled.ShoppingCart),
-    BottomTab(Destinations.SEARCH_ROUTE, L10n.str(R.string.buscar), Icons.Filled.Search),
-    BottomTab(Destinations.SETTINGS_ROUTE, L10n.str(R.string.ajustes), Icons.Filled.Settings)
+    BottomTab(Destinations.BOOKS_ROUTE, L10n.str(R.string.books), Icons.Outlined.MenuBook),
+    BottomTab(Destinations.FAVORITES_ROUTE, L10n.str(R.string.favourites_2), Icons.Filled.Favorite),
+    BottomTab(Destinations.SHOPPING_LIST_ROUTE, L10n.str(R.string.shopping), Icons.Filled.ShoppingCart),
+    BottomTab(Destinations.SEARCH_ROUTE, L10n.str(R.string.search), Icons.Filled.Search),
+    BottomTab(Destinations.SETTINGS_ROUTE, L10n.str(R.string.settings), Icons.Filled.Settings)
 )
 
 @Composable
-fun RecetarioNavHost(initialRoute: String? = null) {
+fun MigaNavHost(initialRoute: String? = null) {
     val navController = rememberNavController()
     // Destino elegido en la bienvenida (packs, restaurar copia...), encima de la pantalla principal.
     LaunchedEffect(initialRoute) {
@@ -101,7 +101,7 @@ fun RecetarioNavHost(initialRoute: String? = null) {
     }
     val context = LocalContext.current
     val repository = repositoryOf(context)
-    val settingsRepository = (context.applicationContext as RecetarioApp).settingsRepository
+    val settingsRepository = (context.applicationContext as MigaApp).settingsRepository
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
     // Texto compartido hacia Miga o botón del widget: ir a la pestaña de la compra, que consume el evento.
@@ -174,7 +174,7 @@ fun RecetarioNavHost(initialRoute: String? = null) {
                 GlobalSearchScreen(
                     viewModel = viewModel,
                     onRecipeClick = { navController.navigate(Destinations.detail(it)) },
-                    title = L10n.str(R.string.favoritas),
+                    title = L10n.str(R.string.favourites),
                     showQueryField = false
                 )
             }

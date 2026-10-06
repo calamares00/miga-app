@@ -11,7 +11,7 @@ import java.net.URI
  */
 object ServerUrlSecurity {
 
-    val INSECURE_WARNING: String get() = L10n.str(R.string.conexion_sin_cifrar_http_fuera)
+    val INSECURE_WARNING: String get() = L10n.str(R.string.unencrypted_connection_http_outside_local)
 
     /** true si [url] es http:// y su host no es de una red local/privada. */
     fun isInsecurePublic(url: String): Boolean {

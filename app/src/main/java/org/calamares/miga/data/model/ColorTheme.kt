@@ -10,11 +10,11 @@ import org.calamares.miga.R
  * lo que cambia es el acento (botones, chips seleccionados, superficie resaltada...).
  */
 enum class ColorTheme(val label: String) {
-    TERRACOTTA(L10n.str(R.string.terracota_defecto)),
-    BLUE(L10n.str(R.string.azul)),
-    GREEN(L10n.str(R.string.verde)),
-    PURPLE(L10n.str(R.string.morado)),
-    PINK(L10n.str(R.string.rosa)),
-    ORANGE(L10n.str(R.string.naranja)),
-    TEAL(L10n.str(R.string.turquesa))
+    TERRACOTTA(L10n.str(R.string.terracotta_default)),
+    BLUE(L10n.str(R.string.blue)),
+    GREEN(L10n.str(R.string.green)),
+    PURPLE(L10n.str(R.string.purple)),
+    PINK(L10n.str(R.string.pink)),
+    ORANGE(L10n.str(R.string.orange)),
+    TEAL(L10n.str(R.string.turquoise))
 }

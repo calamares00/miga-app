@@ -87,7 +87,7 @@ class RecipeEditorViewModel(
 
     var name by mutableStateOf("")
     var categoryName by mutableStateOf<String?>(null)
-    var difficulty by mutableStateOf(Difficulty.MEDIA)
+    var difficulty by mutableStateOf(Difficulty.MEDIUM)
     var prepTimeMinutesText by mutableStateOf("")
     var cookTimeMinutesText by mutableStateOf("")
     var servings by mutableIntStateOf(4)
@@ -152,7 +152,7 @@ class RecipeEditorViewModel(
             }
             val images = readable.map { it.second }
             if (images.isEmpty()) {
-                _visionState.value = VisionState.Error(L10n.str(R.string.no_pudo_leer_ninguna_fotos))
+                _visionState.value = VisionState.Error(L10n.str(R.string.couldnt_read_photos))
                 return@launch
             }
             val result = settingsRepository.runAi<RecipeVisionResult>(
@@ -248,7 +248,7 @@ class RecipeEditorViewModel(
         val categoryParts = recipe.categoryName?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
         name = recipe.name
         categoryName = categoryParts.firstOrNull()
-        difficulty = runCatching { Difficulty.valueOf(recipe.difficulty) }.getOrDefault(Difficulty.MEDIA)
+        difficulty = Difficulty.parse(recipe.difficulty)
         prepTimeMinutesText = recipe.prepTimeMinutes?.toString().orEmpty()
         cookTimeMinutesText = recipe.cookTimeMinutes?.toString().orEmpty()
         servings = recipe.servings.coerceIn(1, 99)
@@ -321,7 +321,7 @@ class RecipeEditorViewModel(
     }
 
     fun addIngredientSubGroup() {
-        ingredientGroups.add(IngredientGroupUi(name = L10n.str(R.string.nueva_sub_receta), ingredients = mutableListOf(IngredientRowUi())))
+        ingredientGroups.add(IngredientGroupUi(name = L10n.str(R.string.new_sub_recipe), ingredients = mutableListOf(IngredientRowUi())))
     }
 
     fun removeIngredientGroup(groupIndex: Int) {
@@ -358,7 +358,7 @@ class RecipeEditorViewModel(
     }
 
     fun addStepSubGroup() {
-        stepGroups.add(StepGroupUi(name = L10n.str(R.string.nueva_sub_receta), steps = mutableListOf(StepRowUi())))
+        stepGroups.add(StepGroupUi(name = L10n.str(R.string.new_sub_recipe), steps = mutableListOf(StepRowUi())))
     }
 
     fun removeStepGroup(groupIndex: Int) {

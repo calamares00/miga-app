@@ -34,12 +34,12 @@ object RecipeUrlFetcher {
             try {
                 val responseCode = connection.responseCode
                 if (responseCode != HttpURLConnection.HTTP_OK) {
-                    return@withContext UrlFetchResult.Error(L10n.str(R.string.pagina_respondio_codigo_x, responseCode))
+                    return@withContext UrlFetchResult.Error(L10n.str(R.string.page_responded_code_x, responseCode))
                 }
                 val html = connection.inputStream.bufferedReader().use { it.readText() }
                 val text = extractReadableText(html)
                 if (text.isBlank()) {
-                    UrlFetchResult.Error(L10n.str(R.string.no_pudo_extraer_texto_pagina))
+                    UrlFetchResult.Error(L10n.str(R.string.couldnt_extract_text_page))
                 } else {
                     UrlFetchResult.Success(text.take(MAX_PAGE_TEXT_CHARS))
                 }
@@ -49,7 +49,7 @@ object RecipeUrlFetcher {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            UrlFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.no_pudo_descargar_pagina))
+            UrlFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.couldnt_download_page))
         }
     }
 

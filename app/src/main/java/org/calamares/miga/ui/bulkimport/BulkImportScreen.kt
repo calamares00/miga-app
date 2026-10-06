@@ -64,10 +64,10 @@ fun BulkImportScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(L10n.str(R.string.varias_recetas_desde_imagenes)) },
+                title = { Text(L10n.str(R.string.several_recipes_images)) },
                 navigationIcon = {
                     IconButton(onClick = { if (isProcessing) showExitConfirm = true else onBack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver))
+                        Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back))
                     }
                 }
             )
@@ -76,8 +76,8 @@ fun BulkImportScreen(
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
             item {
                 AiContentNotice(
-                    feature = L10n.str(R.string.varias_recetas_desde_imagenes),
-                    content = { L10n.str(R.string.recetas_importadas_ia_desde_x, rows.size) },
+                    feature = L10n.str(R.string.several_recipes_images),
+                    content = { L10n.str(R.string.recipes_imported_ai_x_photos, rows.size) },
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
@@ -94,13 +94,13 @@ fun BulkImportScreen(
     if (showExitConfirm) {
         AlertDialog(
             onDismissRequest = { showExitConfirm = false },
-            title = { Text(L10n.str(R.string.salir_2)) },
-            text = { Text(L10n.str(R.string.aun_estan_procesando_fotos_no)) },
+            title = { Text(L10n.str(R.string.leave_2)) },
+            text = { Text(L10n.str(R.string.photos_still_being_processed_havent)) },
             confirmButton = {
-                TextButton(onClick = { showExitConfirm = false; onBack() }) { Text(L10n.str(R.string.salir)) }
+                TextButton(onClick = { showExitConfirm = false; onBack() }) { Text(L10n.str(R.string.leave)) }
             },
             dismissButton = {
-                TextButton(onClick = { showExitConfirm = false }) { Text(L10n.str(R.string.esperar)) }
+                TextButton(onClick = { showExitConfirm = false }) { Text(L10n.str(R.string.wait)) }
             }
         )
     }
@@ -127,13 +127,13 @@ private fun BulkImportRowItem(row: BulkImportRow, onClick: () -> Unit, onRetry: 
         )
         when (val state = row.state) {
             BulkImportRowState.Pending -> Text(
-                L10n.str(R.string.cola),
+                L10n.str(R.string.queued),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             BulkImportRowState.Processing -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                Text(L10n.str(R.string.procesando), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(L10n.str(R.string.processing), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             is BulkImportRowState.Success -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)

@@ -18,6 +18,7 @@ import org.calamares.miga.data.local.MIGRATION_13_14
 import org.calamares.miga.data.local.MIGRATION_14_15
 import org.calamares.miga.data.local.MIGRATION_15_16
 import org.calamares.miga.data.local.MIGRATION_16_17
+import org.calamares.miga.data.local.MIGRATION_17_18
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.repository.ShoppingContext
@@ -28,13 +29,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-class RecetarioApp : Application() {
+class MigaApp : Application() {
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
-            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17)
+            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18)
             // Red de seguridad final: si algún día hay un salto de versión sin migración
             // explícita (o un estado corrupto), no crashea, borra y empieza de cero.
             .fallbackToDestructiveMigration()
@@ -78,6 +79,6 @@ class RecetarioApp : Application() {
     /** Best-effort: si falla (sin red, servidor caído), el outbox lo recoge en el siguiente sync
      *  manual, automático al abrir la app, o periódico (ver SyncWorker) - no hace falta reintentar aquí. */
     private fun triggerBackgroundSync(connectionId: Long) {
-        applicationScope.launch { syncEngine.syncConnection(this@RecetarioApp, connectionId) }
+        applicationScope.launch { syncEngine.syncConnection(this@MigaApp, connectionId) }
     }
 }

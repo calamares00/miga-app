@@ -17,7 +17,7 @@ import kotlinx.serialization.Serializable
 data class RecipeVisionResultDto(
     val name: String,
     val categoryName: String? = null,
-    val difficulty: String = "MEDIA",
+    val difficulty: String = "MEDIUM",
     val prepTimeMinutes: Int? = null,
     val cookTimeMinutes: Int? = null,
     val servings: Int = 4,
@@ -59,60 +59,59 @@ fun visionClientFor(provider: VisionProviderType): RecipeVisionClient = when (pr
     VisionProviderType.OPENROUTER -> OpenRouterVisionClient
 }
 
-// Prompt compartido entre todos los proveedores de visión: deben pedir exactamente el mismo JSON,
-// si no divergirían al cambiar de proveedor en Ajustes.
-internal fun recipeExtractionPrompt(): String = """
-Eres un asistente que transcribe recetas de cocina a partir de una foto (de un libro, revista o
-receta manuscrita, a veces con el texto girado o en columnas). Devuelve
-ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto adicional:
-{
+/** JSON format every recipe-producing prompt asks for; decoded into [RecipeVisionResultDto]. */
+internal const val RECIPE_JSON_FORMAT = """{
   "name": "string",
-  "categoryName": "string o null",
-  "difficulty": "FACIL" | "MEDIA" | "DIFICIL",
-  "prepTimeMinutes": number o null,
-  "cookTimeMinutes": number o null,
+  "categoryName": "string or null",
+  "difficulty": "EASY" | "MEDIUM" | "HARD",
+  "prepTimeMinutes": number or null,
+  "cookTimeMinutes": number or null,
   "servings": number,
   "notes": "string",
   "source": "string",
-  "ingredientGroups": [ { "name": "string o null", "ingredients": [ { "name": "string", "quantity": number o null, "unit": "string o null" } ] } ],
-  "stepGroups": [ { "name": "string o null", "instructions": ["string", ...] } ],
+  "ingredientGroups": [ { "name": "string or null", "ingredients": [ { "name": "string", "quantity": number or null, "unit": "string or null" } ] } ],
+  "stepGroups": [ { "name": "string or null", "instructions": ["string", ...] } ],
   "tags": ["string", ...],
-  "utensils": ["string", ...],
+  "utensils": ["string", ...]
+}"""
+
+/** Prompt for transcribing a recipe from one or more photos; it also asks where the dish photos are. */
+internal fun recipeExtractionPrompt(): String = """
+You are an assistant that transcribes cooking recipes from photos (of a cookbook, a magazine or a
+handwritten recipe, sometimes with rotated text or columns).
+
+Return ONLY a JSON object with exactly this format, with no explanations or extra text:
+${RECIPE_JSON_FORMAT.dropLast(2)},
   "dishPhotos": [ { "image": number, "box": [ymin, xmin, ymax, xmax] } ]
 }
-Separa cada paso de la elaboración como una instrucción independiente del array "instructions", en
-el mismo orden en que aparecen en el texto. Si no puedes determinar algún dato, usa null (o una
-lista vacía) en vez de inventarlo. Si no reconoces ninguna receta en la imagen, deja "name" vacío.
-Si se incluyen varias imágenes en esta petición, todas son páginas o fragmentos de la MISMA
-receta (por ejemplo, fotos consecutivas de un libro de cocina); combina la información de todas
-ellas en un único resultado, en el orden en que aparecen las imágenes.
-En "dishPhotos" indica dónde hay fotografías del PLATO TERMINADO (la foto que ilustra la receta):
-"image" es el índice de la imagen empezando en 0 y "box" son las coordenadas [ymin, xmin, ymax,
-xmax] normalizadas de 0 a 1000, ajustadas a la fotografía por dentro, sin márgenes de página,
-marcos, bordes, texto, pies de foto ni números de página. Si la imagen entera es una foto del plato
-(sin texto de receta), usa la caja que encuadra el plato. No incluyas fotos de pasos intermedios,
-ingredientes sueltos, personas ni ilustraciones decorativas. Como máximo 3; si no hay ninguna,
-deja la lista vacía.
+Put each preparation step as a separate entry of the "instructions" array, in the same order as in
+the text. If you cannot determine a value, use null (or an empty list) instead of making it up. If
+there is no recognisable recipe in the image, leave "name" empty.
+When several images are included, they are all pages or fragments of the SAME recipe (for example
+consecutive photos of a cookbook); combine them into a single result, following the image order.
+In "dishPhotos" list where the photos of the FINISHED DISH are (the photo illustrating the recipe):
+"image" is the zero-based image index and "box" is [ymin, xmin, ymax, xmax] normalised from 0 to
+1000, fitted tightly inside the photo, without page margins, frames, borders, text, captions or
+page numbers. If the whole image is a photo of the dish (no recipe text), use the box framing the
+dish. Do not include photos of intermediate steps, loose ingredients, people or decorative
+illustrations. At most 3; if there are none, leave the list empty.
 """.trimIndent() + transcriptionLanguageInstruction()
 
-/**
- * Instrucción que se añade a los prompts que GENERAN texto (no a los que transcriben una receta
- * existente) para que la IA responda en el idioma de la app.
- */
-internal fun outputLanguageInstruction(): String {
-    val language = if (L10n.locale().language == "es") "español" else "inglés (English)"
-    return "\n\nEscribe todos los textos de la respuesta (nombres, descripciones, pasos, notas...) en $language."
-}
+private fun appLanguageName(): String = if (L10n.locale().language == "es") "Spanish" else "English"
+
+/** Appended to prompts that GENERATE text so the AI answers in the app language. */
+internal fun outputLanguageInstruction(): String =
+    "\n\nWrite every text in the response (names, descriptions, steps, notes...) in ${appLanguageName()}."
 
 /**
- * Instrucción para los prompts que TRANSCRIBEN una receta existente (foto, página web): la receta
- * se guarda en el idioma de la app, traduciéndola si el original está en otro idioma.
+ * Appended to prompts that TRANSCRIBE an existing recipe (photo, web page): the recipe is stored in
+ * the app language, translated if the original is in another language.
  */
 internal fun transcriptionLanguageInstruction(): String {
-    val language = if (L10n.locale().language == "es") "español" else "inglés (English)"
-    return "\n\nEscribe la receta en $language. Si el original está en otro idioma, tradúcela entera " +
-        "(nombre, categoría, ingredientes, unidades, pasos, notas, etiquetas y utensilios) de forma natural; " +
-        "si ya está en $language, transcríbela tal cual. No cambies las cantidades ni los valores de \"difficulty\"."
+    val language = appLanguageName()
+    return "\n\nWrite the recipe in $language. If the original is in another language, translate all of it " +
+        "(name, category, ingredients, units, steps, notes, tags and utensils) naturally; " +
+        "if it is already in $language, transcribe it as is. Do not change quantities or the \"difficulty\" values."
 }
 
 // Algunos proveedores envuelven el JSON en un bloque de markdown pese a pedir JSON puro; se lo

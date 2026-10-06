@@ -147,7 +147,7 @@ internal object OpenRouterChat {
             // Se reintenta una vez sin él (el proveedor aplica su propio máximo).
             val result = if (first is HttpOutcome.Failed && first.code == 400) {
                 post(OpenRouterRequest(model = model, messages = listOf(OpenRouterMessage(content = parts))), apiKey)
-                    .let { retry -> if (retry is HttpOutcome.Failed) first.copy(detail = listOfNotNull(first.detail, "— sin max_tokens:", retry.detail).joinToString("\n")) else retry }
+                    .let { retry -> if (retry is HttpOutcome.Failed) first.copy(detail = listOfNotNull(first.detail, "— retry without max_tokens:", retry.detail).joinToString("\n")) else retry }
             } else {
                 first
             }

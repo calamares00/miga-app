@@ -41,7 +41,7 @@ class ManageUtensilsViewModel(private val repository: RecipeRepository) : ViewMo
 fun ManageUtensilsScreen(viewModel: ManageUtensilsViewModel, onBack: () -> Unit) {
     val items by viewModel.items.collectAsState()
     ManageCatalogScreen(
-        title = L10n.str(R.string.utensilios),
+        title = L10n.str(R.string.utensils),
         items = items,
         onBack = onBack,
         onAdd = viewModel::add,

@@ -23,16 +23,16 @@ fun dictationCleanupClientFor(provider: VisionProviderType): DictationCleanupCli
     VisionProviderType.OPENROUTER -> OpenRouterDictationCleanupClient
 }
 
-/** Prompt compartido entre los dos proveedores, para que no diverjan. */
+/** Prompt shared by every provider so they all behave the same. */
 internal fun buildDictationCleanupPrompt(rawText: String): String = """
-    Se ha dictado por voz el siguiente paso de una receta de cocina, así que puede tener muletillas
-    ("eh", "esto", "o sea"), repeticiones, falta de puntuación o una corrección a mitad de frase
-    (p. ej. "bueno no, mejor pon..."). Reescríbelo como una única instrucción de receta clara, en
-    el mismo idioma en que se ha dictado (sin traducirlo), conservando el sentido y el orden de lo dicho, sin añadir información que no esté en
-    el texto original ni cambiar cantidades o ingredientes. Devuelve solo el texto final del paso,
-    sin comillas ni explicaciones.
+    The following step of a cooking recipe was dictated by voice, so it may contain filler words,
+    repetitions, missing punctuation or a correction halfway through a sentence (for example
+    "no wait, better put..."). Rewrite it as a single clear recipe instruction in the same language
+    it was dictated in (do not translate it), keeping the meaning and the order of what was said.
+    Do not add information that is not in the original text and do not change quantities or
+    ingredients. Return only the final text of the step, without quotes or explanations.
 
-    Texto dictado: "$rawText"
+    Dictated text: "$rawText"
 """.trimIndent()
 
 /** Quita comillas envolventes que el modelo a veces añade pese a que el prompt pide no ponerlas. */

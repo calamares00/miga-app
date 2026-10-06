@@ -90,7 +90,7 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
         if (contents != null) {
             val invite = SyncInviteCodec.decode(contents)
             if (invite == null) {
-                viewModel.postMessage(L10n.str(R.string.ese_codigo_qr_no_es_2))
+                viewModel.postMessage(L10n.str(R.string.qr_code_isnt_miga_invitation))
             } else {
                 pendingInvite = invite
             }
@@ -101,20 +101,20 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(L10n.str(R.string.servidor_sincronizacion)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) } },
+                title = { Text(L10n.str(R.string.sync_server)) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) } },
                 actions = {
                     IconButton(onClick = {
                         scanLauncher.launch(
                             ScanOptions().apply {
                                 setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                                setPrompt(L10n.str(R.string.apunta_qr_invitacion_miga))
+                                setPrompt(L10n.str(R.string.point_miga_invitation_qr_code))
                                 setBeepEnabled(false)
                                 setOrientationLocked(false)
                             }
                         )
                     }) {
-                        Icon(Icons.Filled.QrCodeScanner, contentDescription = L10n.str(R.string.anadir_conexion_qr))
+                        Icon(Icons.Filled.QrCodeScanner, contentDescription = L10n.str(R.string.add_connection_qr))
                     }
                 }
             )
@@ -124,14 +124,14 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
             ExtendedFloatingActionButton(
                 onClick = { viewModel.resetTestState(); showAddDialog = true },
                 icon = { Icon(Icons.Filled.Add, null) },
-                text = { Text(L10n.str(R.string.anadir_conexion)) }
+                text = { Text(L10n.str(R.string.add_connection)) }
             )
         }
     ) { padding ->
         if (connections.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Text(
-                    L10n.str(R.string.todavia_no_tienes_ninguna_conexion),
+                    L10n.str(R.string.dont_have_connections_yet_nadd),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -151,13 +151,13 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
                             )
                             Text(
                                 text = connection.lastSyncError?.let { "Error: $it" }
-                                    ?: if (connection.lastSyncedAt == null) L10n.str(R.string.todavia_no_sincronizada) else L10n.str(R.string.sincronizada),
+                                    ?: if (connection.lastSyncedAt == null) L10n.str(R.string.not_synced_yet) else L10n.str(R.string.synced),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (connection.lastSyncError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    L10n.str(R.string.compartir_lista_compra),
+                                    L10n.str(R.string.share_shopping_list),
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -171,14 +171,14 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
                             CircularProgressIndicator(modifier = Modifier.size(24.dp).padding(end = 8.dp))
                         } else {
                             IconButton(onClick = { viewModel.syncNow(context, connection.id) }) {
-                                Icon(Icons.Filled.Sync, contentDescription = L10n.str(R.string.sincronizar_ahora))
+                                Icon(Icons.Filled.Sync, contentDescription = L10n.str(R.string.sync_now))
                             }
                         }
                         IconButton(onClick = { viewModel.createInvite(connection) }) {
-                            Icon(Icons.Filled.QrCode2, contentDescription = L10n.str(R.string.invitar_otra_app_qr))
+                            Icon(Icons.Filled.QrCode2, contentDescription = L10n.str(R.string.invite_another_app_qr_code))
                         }
                         IconButton(onClick = { connectionToRemove = connection }) {
-                            Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.quitar_conexion))
+                            Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.remove_connection))
                         }
                     }
                     HorizontalDivider()
@@ -213,44 +213,44 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
         InviteState.Idle -> Unit
         InviteState.Loading -> AlertDialog(
             onDismissRequest = { viewModel.dismissInvite() },
-            title = { Text(L10n.str(R.string.invitar)) },
+            title = { Text(L10n.str(R.string.invite)) },
             text = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    Text(L10n.str(R.string.creando_invitacion), modifier = Modifier.padding(start = 12.dp))
+                    Text(L10n.str(R.string.creating_invitation), modifier = Modifier.padding(start = 12.dp))
                 }
             },
-            confirmButton = { TextButton(onClick = { viewModel.dismissInvite() }) { Text(L10n.str(R.string.cancelar)) } }
+            confirmButton = { TextButton(onClick = { viewModel.dismissInvite() }) { Text(L10n.str(R.string.cancel)) } }
         )
         is InviteState.Error -> AlertDialog(
             onDismissRequest = { viewModel.dismissInvite() },
-            title = { Text(L10n.str(R.string.no_pudo_invitar)) },
+            title = { Text(L10n.str(R.string.couldnt_create_invitation)) },
             text = { Text(state.reason, color = MaterialTheme.colorScheme.error) },
-            confirmButton = { TextButton(onClick = { viewModel.dismissInvite() }) { Text(L10n.str(R.string.cerrar)) } }
+            confirmButton = { TextButton(onClick = { viewModel.dismissInvite() }) { Text(L10n.str(R.string.close)) } }
         )
         is InviteState.Ready -> {
             val qrBitmap = remember(state.payload) { renderQrBitmap(state.payload, INVITE_QR_SIZE_PX) }
             AlertDialog(
                 onDismissRequest = { viewModel.dismissInvite() },
-                title = { Text(L10n.str(R.string.invitar_x, state.label)) },
+                title = { Text(L10n.str(R.string.invite_x, state.label)) },
                 text = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         if (qrBitmap != null) {
                             Image(
                                 bitmap = qrBitmap.asImageBitmap(),
-                                contentDescription = L10n.str(R.string.codigo_qr_invitacion),
+                                contentDescription = L10n.str(R.string.invitation_qr_code),
                                 modifier = Modifier.size(260.dp)
                             )
                         }
                         Text(
-                            L10n.str(R.string.otro_movil_ajustes_servidor_sincronizacion),
+                            L10n.str(R.string.other_phone_settings_sync_manage),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
                     }
                 },
-                confirmButton = { TextButton(onClick = { viewModel.dismissInvite() }) { Text(L10n.str(R.string.cerrar)) } }
+                confirmButton = { TextButton(onClick = { viewModel.dismissInvite() }) { Text(L10n.str(R.string.close)) } }
             )
         }
     }
@@ -261,15 +261,15 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
             title = { Text("Quitar \"${connection.label}\"") },
             text = {
                 Text(
-                    L10n.str(R.string.libros_sincronizaba_pasaran_ser_locales)
+                    L10n.str(R.string.books_synced_become_local_nothing)
                 )
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.removeConnection(connection.id); connectionToRemove = null }) {
-                    Text(L10n.str(R.string.quitar), color = MaterialTheme.colorScheme.error)
+                    Text(L10n.str(R.string.remove), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { connectionToRemove = null }) { Text(L10n.str(R.string.cancelar)) } }
+            dismissButton = { TextButton(onClick = { connectionToRemove = null }) { Text(L10n.str(R.string.cancel)) } }
         )
     }
 }
@@ -286,7 +286,7 @@ private fun JoinInviteDialog(
     var syncShopping by remember { mutableStateOf(true) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(L10n.str(R.string.unirse_namespace)) },
+        title = { Text(L10n.str(R.string.join_namespace)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
@@ -300,18 +300,18 @@ private fun JoinInviteDialog(
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it },
-                    label = { Text(L10n.str(R.string.nombre)) },
+                    label = { Text(L10n.str(R.string.name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = syncShopping, onCheckedChange = { syncShopping = it })
-                    Text(L10n.str(R.string.compartir_tambien_lista_compra), modifier = Modifier.padding(start = 4.dp))
+                    Text(L10n.str(R.string.also_share_shopping_list), modifier = Modifier.padding(start = 4.dp))
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onJoin(label.trim(), syncShopping) }) { Text(L10n.str(R.string.unirse)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
+        confirmButton = { TextButton(onClick = { onJoin(label.trim(), syncShopping) }) { Text(L10n.str(R.string.join)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
 }
 
@@ -330,21 +330,21 @@ private fun AddConnectionDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(L10n.str(R.string.anadir_conexion)) },
+        title = { Text(L10n.str(R.string.add_connection)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it },
-                    label = { Text(L10n.str(R.string.nombre)) },
-                    placeholder = { Text(L10n.str(R.string.p_ej_casa)) },
+                    label = { Text(L10n.str(R.string.name)) },
+                    placeholder = { Text(L10n.str(R.string.e_g_home)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = serverUrl,
                     onValueChange = { serverUrl = it },
-                    label = { Text(L10n.str(R.string.url_servidor)) },
+                    label = { Text(L10n.str(R.string.server_url)) },
                     placeholder = { Text("http://192.168.1.10:8080") },
                     singleLine = true,
                     isError = ServerUrlSecurity.isInsecurePublic(serverUrl),
@@ -364,7 +364,7 @@ private fun AddConnectionDialog(
                 OutlinedTextField(
                     value = accessToken,
                     onValueChange = { accessToken = it },
-                    label = { Text(L10n.str(R.string.token_acceso)) },
+                    label = { Text(L10n.str(R.string.access_token)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
@@ -374,7 +374,7 @@ private fun AddConnectionDialog(
                     enabled = serverUrl.isNotBlank() && namespaceId.isNotBlank() && accessToken.isNotBlank() && testState != TestConnectionState.Testing,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(L10n.str(R.string.probar_conexion))
+                    Text(L10n.str(R.string.test_connection))
                 }
                 when (val state = testState) {
                     TestConnectionState.Testing -> Row(verticalAlignment = Alignment.CenterVertically) {
@@ -383,7 +383,7 @@ private fun AddConnectionDialog(
                     }
                     TestConnectionState.Success -> Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Text(L10n.str(R.string.conexion_correcta), modifier = Modifier.padding(start = 8.dp))
+                        Text(L10n.str(R.string.connection_ok), modifier = Modifier.padding(start = 8.dp))
                     }
                     is TestConnectionState.Error -> Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.Error, contentDescription = null, tint = MaterialTheme.colorScheme.error)
@@ -394,8 +394,8 @@ private fun AddConnectionDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSave(label, serverUrl, namespaceId, accessToken) }, enabled = canSave) { Text(L10n.str(R.string.guardar)) }
+            TextButton(onClick = { onSave(label, serverUrl, namespaceId, accessToken) }, enabled = canSave) { Text(L10n.str(R.string.save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancelar)) } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
 }

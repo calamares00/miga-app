@@ -32,22 +32,20 @@ internal data class RecipeNutritionResultDto(
     val fatGrams: Double = 0.0
 )
 
-// Prompt compartido entre todos los proveedores: deben pedir exactamente el mismo criterio y
-// formato, si no divergirían al cambiar de proveedor en Ajustes.
+/** Prompt shared by every provider so the criteria and format never diverge. */
 internal fun buildNutritionPrompt(ingredientsText: String, stepsText: String, servings: Int): String = """
-Eres un asistente que estima la información nutricional aproximada de una receta a partir de sus
-ingredientes, su forma de cocinado y el número de raciones.
+You are an assistant that estimates the approximate nutritional information of a recipe from its
+ingredients, how it is cooked and the number of servings.
 
-Ingredientes (para $servings ración(es) en total):
+Ingredients (for $servings serving(s) in total):
 $ingredientsText
 
-Preparación:
+Method:
 $stepsText
 
-Devuelve ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto adicional, con la
-estimación POR RACIÓN (dividiendo el total de la receta entre $servings, no el total):
-{ "caloriesPerServing": entero, "proteinGrams": número, "carbsGrams": número, "fatGrams": número }
-Es una estimación aproximada basada en ingredientes habituales, no un análisis exacto de
-laboratorio; si algún ingrediente es ambiguo, usa una estimación razonable en vez de dejarlo en
-blanco o en cero.
+Return ONLY a JSON object with exactly this format, with no explanations or extra text, with the
+estimate PER SERVING (the recipe total divided by $servings, not the total):
+{ "caloriesPerServing": integer, "proteinGrams": number, "carbsGrams": number, "fatGrams": number }
+This is a rough estimate based on typical ingredients, not an exact lab analysis; if an ingredient
+is ambiguous, use a reasonable estimate instead of leaving it blank or at zero.
 """.trimIndent() + outputLanguageInstruction()

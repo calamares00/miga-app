@@ -68,7 +68,7 @@ object AnthropicRecipeUrlImportClient : RecipeUrlImportClient {
                         return@withContext RecipeVisionResult.Error(AiErrors.badResponse(e, text))
                     }
                     if (recipe.name.isBlank()) {
-                        RecipeVisionResult.Error(L10n.str(R.string.no_ha_reconocido_ninguna_receta))
+                        RecipeVisionResult.Error(L10n.str(R.string.no_recipe_was_found_page))
                     } else {
                         RecipeVisionResult.Success(recipe)
                     }

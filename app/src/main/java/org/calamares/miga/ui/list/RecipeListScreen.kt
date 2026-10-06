@@ -145,7 +145,7 @@ fun RecipeListScreen(
                     title = { Text(L10n.str(R.string.n_selected, selectedIds.size)) },
                     navigationIcon = {
                         IconButton(onClick = viewModel::clearSelection) {
-                            Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancelar_seleccion))
+                            Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel_selection))
                         }
                     },
                     actions = {
@@ -156,10 +156,10 @@ fun RecipeListScreen(
                             Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.bulk_edit))
                         }
                         IconButton(onClick = { viewModel.exportSelected(context) }) {
-                            Icon(Icons.Filled.FileDownload, contentDescription = L10n.str(R.string.exportar_seleccionadas))
+                            Icon(Icons.Filled.FileDownload, contentDescription = L10n.str(R.string.export_selected))
                         }
                         IconButton(onClick = { showDeleteSelectedConfirm = true }) {
-                            Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.borrar_seleccionadas))
+                            Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete_selected))
                         }
                     }
                 )
@@ -168,7 +168,7 @@ fun RecipeListScreen(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                     title = { Text(uiState.bookName) },
                     navigationIcon = {
-                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.volver)) }
+                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                     },
                     actions = {
                         Box {
@@ -185,14 +185,14 @@ fun RecipeListScreen(
                                 }
                             }
                         }
-                        IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = L10n.str(R.string.mas_opciones)) }
+                        IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = L10n.str(R.string.more_options)) }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             DropdownMenuItem(
-                                text = { Text(L10n.str(R.string.exportar_este_libro)) },
+                                text = { Text(L10n.str(R.string.export_book)) },
                                 onClick = { showMenu = false; viewModel.exportBook(context) }
                             )
                             DropdownMenuItem(
-                                text = { Text(L10n.str(R.string.exportar_este_libro_pdf)) },
+                                text = { Text(L10n.str(R.string.export_book_pdf)) },
                                 onClick = { showMenu = false; viewModel.exportBookAsPdf(context) }
                             )
                         }
@@ -202,7 +202,7 @@ fun RecipeListScreen(
         },
         floatingActionButton = {
             if (!selectionMode && !uiState.isPackBook) {
-                ExtendedFloatingActionButton(onClick = { showNewRecipeSheet = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text(L10n.str(R.string.nueva_receta)) })
+                ExtendedFloatingActionButton(onClick = { showNewRecipeSheet = true }, icon = { Icon(Icons.Filled.Add, null) }, text = { Text(L10n.str(R.string.new_recipe)) })
             }
         }
     ) { padding ->
@@ -215,13 +215,13 @@ fun RecipeListScreen(
                     value = filter.query,
                     onValueChange = viewModel::updateQuery,
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text(L10n.str(R.string.buscar_recetas_ingredientes)) },
+                    placeholder = { Text(L10n.str(R.string.search_recipes_ingredients)) },
                     leadingIcon = { Icon(Icons.Filled.Search, null) },
                     singleLine = true
                 )
                 IconButton(onClick = { showFilters = true }) {
                     BadgedBox(badge = { if (filter.isActive) Badge() }) {
-                        Icon(Icons.Filled.FilterList, contentDescription = L10n.str(R.string.filtros))
+                        Icon(Icons.Filled.FilterList, contentDescription = L10n.str(R.string.filters))
                     }
                 }
             }
@@ -230,9 +230,9 @@ fun RecipeListScreen(
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
                         text = if (uiState.totalCount == 0) {
-                            L10n.str(R.string.aun_no_tienes_recetas_pulsa)
+                            L10n.str(R.string.dont_have_recipes_yet_ntap)
                         } else {
-                            L10n.str(R.string.no_hay_recetas_coincidan_busqueda)
+                            L10n.str(R.string.no_recipes_match_search_filters)
                         },
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -339,11 +339,11 @@ fun RecipeListScreen(
         var url by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showUrlImportDialog = false },
-            title = { Text(L10n.str(R.string.importar_receta_desde_url)) },
+            title = { Text(L10n.str(R.string.import_recipe_url)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        L10n.str(R.string.pega_enlace_receta_cualquier_web),
+                        L10n.str(R.string.paste_link_recipe_website_ai),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -364,10 +364,10 @@ fun RecipeListScreen(
                         showUrlImportDialog = false
                         if (trimmedUrl.isNotBlank()) onAddRecipeFromUrl(trimmedUrl)
                     }
-                ) { Text(L10n.str(R.string.importar)) }
+                ) { Text(L10n.str(R.string.import)) }
             },
             dismissButton = {
-                TextButton(onClick = { showUrlImportDialog = false }) { Text(L10n.str(R.string.cancelar)) }
+                TextButton(onClick = { showUrlImportDialog = false }) { Text(L10n.str(R.string.cancel)) }
             }
         )
     }
@@ -375,7 +375,7 @@ fun RecipeListScreen(
     if (showPhotoSourceSheet) {
         ModalBottomSheet(onDismissRequest = { showPhotoSourceSheet = false }, sheetState = photoSheetState) {
             PhotoSourceSheet(
-                title = L10n.str(R.string.anadir_receta_foto),
+                title = L10n.str(R.string.add_recipe_photo),
                 onCameraClick = {
                     showPhotoSourceSheet = false
                     val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
@@ -393,27 +393,27 @@ fun RecipeListScreen(
     if (showAddAnotherPageDialog) {
         AlertDialog(
             onDismissRequest = { showAddAnotherPageDialog = false },
-            title = { Text(L10n.str(R.string.otra_pagina)) },
-            text = { Text(L10n.str(R.string.receta_continua_otra_foto_puedes)) },
+            title = { Text(L10n.str(R.string.another_page)) },
+            text = { Text(L10n.str(R.string.does_recipe_continue_another_photo)) },
             confirmButton = {
                 TextButton(onClick = {
                     showAddAnotherPageDialog = false
                     val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
                     pendingCameraPath = filePath
                     cameraCaptureLauncher.launch(contentUri)
-                }) { Text(L10n.str(R.string.anadir_otra_pagina)) }
+                }) { Text(L10n.str(R.string.add_another_page)) }
             },
             dismissButton = {
                 Row {
                     TextButton(onClick = {
                         showAddAnotherPageDialog = false
                         capturedPageUris.clear()
-                    }) { Text(L10n.str(R.string.cancelar)) }
+                    }) { Text(L10n.str(R.string.cancel)) }
                     TextButton(onClick = {
                         showAddAnotherPageDialog = false
                         onAddRecipeFromPhoto(capturedPageUris.toList())
                         capturedPageUris.clear()
-                    }) { Text(L10n.str(R.string.continuar)) }
+                    }) { Text(L10n.str(R.string.continue)) }
                 }
             }
         )
@@ -422,16 +422,16 @@ fun RecipeListScreen(
     recipeToDelete?.let { recipe ->
         AlertDialog(
             onDismissRequest = { recipeToDelete = null },
-            title = { Text(L10n.str(R.string.eliminar_receta)) },
-            text = { Text(L10n.str(R.string.seguro_quieres_eliminar_x_esta, recipe.name)) },
+            title = { Text(L10n.str(R.string.delete_recipe)) },
+            text = { Text(L10n.str(R.string.sure_want_delete_x_cant, recipe.name)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteRecipe(recipe.id)
                     recipeToDelete = null
-                }) { Text(L10n.str(R.string.eliminar), color = MaterialTheme.colorScheme.error) }
+                }) { Text(L10n.str(R.string.delete_2), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { recipeToDelete = null }) { Text(L10n.str(R.string.cancelar)) }
+                TextButton(onClick = { recipeToDelete = null }) { Text(L10n.str(R.string.cancel)) }
             }
         )
     }
@@ -462,16 +462,16 @@ fun RecipeListScreen(
     if (showDeleteSelectedConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteSelectedConfirm = false },
-            title = { Text(L10n.str(R.string.eliminar_recetas)) },
-            text = { Text(L10n.str(R.string.seguro_quieres_eliminar_x_recetas, selectedIds.size)) },
+            title = { Text(L10n.str(R.string.delete_recipes)) },
+            text = { Text(L10n.str(R.string.sure_want_delete_x_recipes, selectedIds.size)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteSelected()
                     showDeleteSelectedConfirm = false
-                }) { Text(L10n.str(R.string.eliminar), color = MaterialTheme.colorScheme.error) }
+                }) { Text(L10n.str(R.string.delete_2), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteSelectedConfirm = false }) { Text(L10n.str(R.string.cancelar)) }
+                TextButton(onClick = { showDeleteSelectedConfirm = false }) { Text(L10n.str(R.string.cancel)) }
             }
         )
     }
