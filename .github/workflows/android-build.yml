@@ -323,6 +323,22 @@ jobs:
           make_latest: false
           files: dist/*
 
+      # Keeps beta-latest down to the APKs just published: any other file (older version names)
+      # is deleted, so the release does not pile up old builds.
+      - name: Remove old files from beta-latest
+        if: needs.build.outputs.mode == 'dev_debug' && steps.latest.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          repo="${{ github.repository }}"
+          release_id=$(gh api "repos/$repo/releases/tags/beta-latest" --jq .id)
+          gh api --paginate "repos/$repo/releases/$release_id/assets?per_page=100" --jq '.[] | "\(.id) \(.name)"' |
+            while read -r id name; do
+              if [ ! -f "dist/$name" ]; then
+                gh api -X DELETE "repos/$repo/releases/assets/$id" && echo "Deleted $name"
+              fi
+            done
+
       # --- push to main: stable GitHub Release with everything build left in dist/ ---
       - name: Download release dist
         if: needs.build.outputs.mode == 'release'
