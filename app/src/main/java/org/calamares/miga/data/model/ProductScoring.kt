@@ -4,7 +4,7 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import kotlin.math.roundToInt
 
-/** Tramo de la puntuación (mismos cuatro niveles que usan apps de este tipo: excelente, bueno, mediocre, malo). */
+/** Score band, with the four levels these apps usually use: excellent, good, mediocre, poor. */
 enum class ScoreTier(val label: String, val argb: Long) {
     EXCELLENT(L10n.str(R.string.excellent), 0xFF1E9E4A),
     GOOD(L10n.str(R.string.good), 0xFF8BC34A),
@@ -20,9 +20,9 @@ enum class AdditiveRisk(val label: String) {
 }
 
 /**
- * Desglose de la puntuación: [nutrition] y [additives] son subnotas de 0 a 100 (pesan 60 % y 30 %),
- * [organicBonus] suma hasta 10 puntos y [cappedByRiskyAdditive] indica que un aditivo de riesgo alto
- * ha limitado la nota a 49.
+ * Score breakdown: [nutrition] and [additives] are 0-100 subscores (60 % and 30 % of the total),
+ * [organicBonus] adds up to 10 points and [cappedByRiskyAdditive] tells that a high-risk additive
+ * capped the score at 49.
  */
 data class ProductScore(
     val value: Int,
@@ -34,14 +34,16 @@ data class ProductScore(
 )
 
 /**
- * Estimación PROPIA de una puntuación de 0 a 100 a partir de los datos de Open Food Facts: 60 % calidad
- * nutricional según el Nutri-Score, 30 % aditivos y 10 % ecológico. La tabla de riesgo de aditivos es
- * una aproximación basada en clasificaciones públicas (EFSA/IARC, controversias habituales).
- * Lógica pura, sin Android.
+ * Miga's OWN 0-100 product score estimate from Open Food Facts data: 60 % nutritional quality from
+ * the Nutri-Score, 30 % additives and 10 % organic. The additive risk table approximates public
+ * classifications (EFSA/IARC and common controversies). Pure logic, no Android dependencies.
  */
 object ProductScoring {
 
-    /** Puntos del Nutri-Score (-15 mejor ... 40 peor) -> subnota 0..100, alineada con los cortes de las letras A-E. */
+    /**
+     * Nutri-Score points (-15 best ... 40 worst) to a 0-100 subscore, aligned with the A-E grade
+     * boundaries.
+     */
     private val nutritionAnchors = listOf(
         -15 to 100, -1 to 80, 0 to 79, 2 to 65, 3 to 60, 10 to 40, 11 to 38, 18 to 15, 19 to 12, 40 to 0
     )
@@ -82,17 +84,23 @@ object ProductScoring {
         else -> ScoreTier.BAD
     }
 
-    /** Subnota nutricional (0..100) o null si no hay ni puntos ni letra del Nutri-Score. */
+    /**
+     * Nutrition subscore (0-100), or null when there are neither Nutri-Score points nor a grade.
+     */
     fun nutritionSubscore(info: ProductInfo): Int? {
         info.nutriScoreValue?.let { return interpolate(it) }
         return gradeFallback[info.nutriScore?.lowercase()]
     }
 
-    /** Subnota de aditivos (0..100) y si hay alguno de riesgo alto. Sin lista de aditivos se asume que no hay ninguno. */
+    /**
+     * Additives subscore (0-100) and whether any of them is high risk. Without an additive list
+     * none are assumed.
+     */
     fun additivesSubscore(additives: List<String>?): Pair<Int, Boolean> {
         val risks = additives.orEmpty().map { additiveRisk(it) }
         if (AdditiveRisk.HIGH in risks) return 0 to true
-        // fold en vez de sumOf: con literales enteros en las ramas, sumOf es ambiguo entre sus sobrecargas (Int/Long/...).
+        // fold instead of sumOf: with integer literals in the branches sumOf is ambiguous between
+        // its overloads.
         val penalty = risks.fold(0) { total, risk ->
             total + when (risk) {
                 AdditiveRisk.MODERATE -> 25
@@ -103,7 +111,10 @@ object ProductScoring {
         return (100 - penalty).coerceAtLeast(0) to false
     }
 
-    /** null si no se puede calcular (sin Nutri-Score: p. ej. agua, o producto sin datos nutricionales). */
+    /**
+     * Null when the score cannot be computed (no Nutri-Score, for example water or products without
+     * nutrition data).
+     */
     fun compute(info: ProductInfo): ProductScore? {
         val nutrition = nutritionSubscore(info) ?: return null
         val (additives, risky) = additivesSubscore(info.additives)

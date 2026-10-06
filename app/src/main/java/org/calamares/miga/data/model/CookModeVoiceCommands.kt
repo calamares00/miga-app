@@ -1,6 +1,6 @@
 package org.calamares.miga.data.model
 
-/** Comandos de voz reconocidos en el modo cocina (ver ui/detail/CookModeOverlay.kt). */
+/** Voice commands understood in cooking mode (see ui/detail/CookModeOverlay.kt). */
 sealed interface CookVoiceCommand {
     data object NextStep : CookVoiceCommand
     data object PreviousStep : CookVoiceCommand
@@ -10,19 +10,16 @@ sealed interface CookVoiceCommand {
 }
 
 /**
- * Interpreta el texto transcrito por [org.calamares.miga.data.voice.SpeechDictation] como un comando
- * del modo cocina, por palabras clave (tolerante a variaciones de la transcripción, no exige una
- * frase exacta) en vez de por coincidencia exacta. Devuelve null si no reconoce ningún comando con
- * claridad, para no actuar sobre algo mal entendido.
+ * Turns the text transcribed by [org.calamares.miga.data.voice.SpeechDictation] into a cooking mode
+ * command by keywords, tolerating variations in the transcription. Returns null when no command is
+ * recognised clearly, so nothing happens on a misheard phrase.
  *
- * Las menciones al temporizador ("temporizador", "cuenta atrás") se resuelven aparte de
- * siguiente/anterior/repite: si el texto menciona el temporizador, un verbo de cancelación
- * (cancela, para, detén, quita...) decide si es para pararlo o para iniciarlo - así
- * "cancela el temporizador" y "pon el temporizador" no compiten por la misma palabra clave
- * "temporizador".
+ * Timer mentions are resolved first: a cancel verb said before the timer word ("stop the timer",
+ * "para el temporizador") cancels it, anything else starts it ("pon el temporizador para la
+ * pasta").
  */
 object CookModeVoiceCommands {
-    // Español e inglés: el dictado puede estar en cualquiera de los dos (Ajustes → Voz y dictado).
+    /** Spanish and English, since dictation can use either language (Settings > Voice). */
     private val nextPhrases = listOf("siguiente", "adelante", "continua", "proximo paso", "next", "forward")
     private val previousPhrases = listOf("anterior", "atras", "retrocede", "paso anterior", "previous", "back")
     private val repeatPhrases = listOf("repite", "repetir", "otra vez", "de nuevo", "repeat", "again")
@@ -31,16 +28,22 @@ object CookModeVoiceCommands {
 
     fun parse(rawText: String): CookVoiceCommand? {
         val text = normalize(rawText)
-        if (timerWords.any { text.contains(it) }) {
-            return if (cancelVerbs.any { text.contains(it) }) CookVoiceCommand.CancelTimer else CookVoiceCommand.StartTimer
+        val timerAt = timerWords.mapNotNull { indexOfPhrase(text, it) }.minOrNull()
+        if (timerAt != null) {
+            val cancelBeforeTimer = cancelVerbs.any { verb -> indexOfPhrase(text, verb)?.let { it < timerAt } == true }
+            return if (cancelBeforeTimer) CookVoiceCommand.CancelTimer else CookVoiceCommand.StartTimer
         }
         return when {
-            nextPhrases.any { text.contains(it) } -> CookVoiceCommand.NextStep
-            previousPhrases.any { text.contains(it) } -> CookVoiceCommand.PreviousStep
-            repeatPhrases.any { text.contains(it) } -> CookVoiceCommand.RepeatStep
+            nextPhrases.any { indexOfPhrase(text, it) != null } -> CookVoiceCommand.NextStep
+            previousPhrases.any { indexOfPhrase(text, it) != null } -> CookVoiceCommand.PreviousStep
+            repeatPhrases.any { indexOfPhrase(text, it) != null } -> CookVoiceCommand.RepeatStep
             else -> null
         }
     }
+
+    /** Position of [phrase] as whole words in [text] ("para" does not match "preparar"), or null. */
+    private fun indexOfPhrase(text: String, phrase: String): Int? =
+        Regex("(^|[^\\p{L}])" + Regex.escape(phrase) + "($|[^\\p{L}])").find(text)?.range?.first
 
     private fun normalize(text: String): String =
         text.lowercase().replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')

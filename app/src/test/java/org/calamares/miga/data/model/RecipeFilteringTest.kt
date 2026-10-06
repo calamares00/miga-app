@@ -50,6 +50,13 @@ class RecipeFilteringTest {
     }
 
     @Test
+    fun `query ignores accents`() {
+        val recipes = listOf(recipe(id = 1, name = "Café con leche"), recipe(id = 2, name = "Té"))
+        assertEquals(listOf(1L), recipes.applyFilter(RecipeFilter(query = "cafe")).map { it.id })
+        assertEquals(listOf(2L), recipes.applyFilter(RecipeFilter(query = "TE")).map { it.id })
+    }
+
+    @Test
     fun `query matches an ingredient name`() {
         val recipes = listOf(
             recipe(id = 1, name = "A", ingredientNames = listOf("Tomate")),

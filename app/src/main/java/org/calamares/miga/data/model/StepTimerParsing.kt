@@ -3,17 +3,16 @@ package org.calamares.miga.data.model
 private data class DurationPart(val start: Int, val end: Int, val seconds: Int)
 
 /**
- * Busca una duración expresada en texto libre (p. ej. "cocer 10 minutos", "hornear 1 hora y 15
- * minutos") y la convierte a segundos, para ofrecer un botón de temporizador en el modo cocina.
- * Devuelve null si no encuentra ninguna duración reconocible.
+ * Finds a duration in free text ("cocer 10 minutos", "bake for 1 hour and 15 minutes") and converts
+ * it to seconds so cook mode can offer a timer button. Returns null when no duration is found.
  *
- * Si un paso menciona varias unidades muy seguidas ("1 hora y 30 minutos") se suman; si las
- * menciones están lejos entre sí (un paso largo con dos duraciones distintas para cosas distintas,
- * p. ej. "deja reposar 5 minutos... y hornea 40 minutos") solo se usa la primera - es la duración
- * con la que tiene sentido arrancar un temporizador al leer el paso.
+ * Units mentioned close together ("1 hour and 30 minutes") are added up. When the mentions are far
+ * apart (a long step with two durations for different things, such as "rest 5 minutes... then bake
+ * 40 minutes") only the first one is used, since that is the timer that makes sense when reading
+ * the step.
  */
 object StepTimerParsing {
-    private val hoursRegex = Regex("""(\d+)\s*(?:horas?|hours?|hrs?|h\.)\b""", RegexOption.IGNORE_CASE)
+    private val hoursRegex = Regex("""(\d+)\s*(?:horas?|hours?|hrs?|h)\b""", RegexOption.IGNORE_CASE)
     private val minutesRegex = Regex("""(\d+)\s*(?:minutos?|minutes?|mins?\.?)\b""", RegexOption.IGNORE_CASE)
     private val secondsRegex = Regex("""(\d+)\s*(?:segundos?|seconds?|secs?\.?)\b""", RegexOption.IGNORE_CASE)
 

@@ -1,10 +1,8 @@
 package org.calamares.miga.data.model
 
 /**
- * Estimación nutricional por ración generada por IA a partir de ingredientes/pasos/raciones,
- * cacheada igual que [HealthRating] (misma huella de invalidación, ver
- * RecipeRepository.computeHealthFingerprint - depende del mismo contenido, así que reutiliza el
- * mismo mecanismo, con su propia columna independiente para poder invalidarse por separado).
+ * AI nutrition estimate per serving, cached like [HealthRating] and invalidated with the same
+ * content fingerprint, but stored in its own columns so each can be refreshed separately.
  */
 data class NutritionInfo(
     val caloriesPerServing: Int,

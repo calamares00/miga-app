@@ -6,10 +6,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 /**
- * Ficha de un producto escaneado (datos de Open Food Facts, una base de datos colaborativa: puede
- * estar incompleta o tener errores). Se guarda como JSON en el artículo de la lista de la compra y
- * viaja tal cual por la sincronización. Las listas guardan los códigos de Open Food Facts sin
- * prefijo de idioma ("gluten", "milk"...); [ProductLabels] los traduce para mostrarlos.
+ * Details of a scanned product, from Open Food Facts (a collaborative database: data may be
+ * incomplete or wrong). Stored as JSON in the shopping list item and synced as is. Allergens and
+ * labels keep the Open Food Facts codes without language prefix ("gluten", "milk"...);
+ * [ProductLabels] translates them for display.
  */
 @Serializable
 data class ProductInfo(
@@ -18,9 +18,9 @@ data class ProductInfo(
     val quantity: String? = null,
     /** "a".."e" */
     val nutriScore: String? = null,
-    /** Puntos del Nutri-Score (-15 mejor ... 40 peor), si Open Food Facts los da. */
+    /** Nutri-Score points (-15 best ... 40 worst), when Open Food Facts provides them. */
     val nutriScoreValue: Int? = null,
-    /** 1..4 (grado de procesado) */
+    /** 1..4 (processing level). */
     val nova: Int? = null,
     /** "a".."e" */
     val ecoScore: String? = null,
@@ -28,7 +28,10 @@ data class ProductInfo(
     val traces: List<String> = emptyList(),
     val labels: List<String> = emptyList(),
     val analysis: List<String> = emptyList(),
-    /** Códigos de aditivos ("e330"); null = Open Food Facts no los tiene (no es lo mismo que "ninguno"). */
+    /**
+     * Additive codes ("e330"); null means Open Food Facts has no data, which is not the same as
+     * none.
+     */
     val additives: List<String>? = null,
     val energyKcal: Double? = null,
     val fat: Double? = null,
@@ -39,7 +42,7 @@ data class ProductInfo(
     val proteins: Double? = null,
     val salt: Double? = null,
     val ingredients: String? = null,
-    /** Fotos (solo https): la frontal en grande, la de ingredientes y la de la tabla nutricional. */
+    /** Photos (https only): large front image, ingredients and nutrition table. */
     val imageUrl: String? = null,
     val ingredientsImageUrl: String? = null,
     val nutritionImageUrl: String? = null
@@ -50,21 +53,24 @@ object ProductInfoCodec {
 
     fun encode(info: ProductInfo): String = json.encodeToString(ProductInfo.serializer(), info)
 
-    /** null si [text] está vacío o no es una ficha válida (datos corruptos o de una versión futura incompatible). */
+    /**
+     * Null when [text] is empty or not a valid product (corrupted data or an incompatible future
+     * format).
+     */
     fun decode(text: String?): ProductInfo? {
         if (text.isNullOrBlank()) return null
         return try {
             json.decodeFromString(ProductInfo.serializer(), text)
         } catch (e: IllegalArgumentException) {
-            null // SerializationException es una IllegalArgumentException
+            null // SerializationException extends IllegalArgumentException.
         }
     }
 }
 
-/** Textos y colores para mostrar una [ProductInfo]. Lógica pura (sin Android). */
+/** Texts and colours to display a [ProductInfo]. Pure logic, no Android dependencies. */
 object ProductLabels {
 
-    /** Color oficial del Nutri-Score por letra (ARGB); null si no es una letra válida. */
+    /** Official Nutri-Score colour (ARGB) for a grade letter; null when it is not a valid grade. */
     fun nutriScoreArgb(grade: String?): Long? = when (grade?.lowercase()) {
         "a" -> 0xFF038141
         "b" -> 0xFF85BB2F
@@ -74,10 +80,10 @@ object ProductLabels {
         else -> null
     }
 
-    /** "A".."E" si [grade] es una letra válida del Nutri-Score o del Eco-Score, si no null. */
+    /** "A".."E" when [grade] is a valid Nutri-Score or Eco-Score letter, null otherwise. */
     fun gradeLetter(grade: String?): String? = grade?.trim()?.lowercase()?.takeIf { it.length == 1 && it[0] in 'a'..'e' }?.uppercase()
 
-    /** Color del grupo NOVA (1 = sin procesar ... 4 = ultraprocesado). */
+    /** Colour of the NOVA group (1 = unprocessed ... 4 = ultra-processed). */
     fun novaArgb(nova: Int?): Long? = when (nova) {
         1 -> 0xFF038141
         2 -> 0xFF85BB2F
@@ -111,7 +117,7 @@ object ProductLabels {
         "lupin" to L10n.str(R.string.lupin)
     )
 
-    /** Nombre en español de un alérgeno; los desconocidos se muestran con el código legible. */
+    /** Translated allergen name; unknown codes are shown in a readable form. */
     fun allergenName(code: String): String =
         allergenNames[code] ?: code.replace('-', ' ').replaceFirstChar { it.uppercase() }
 
@@ -127,11 +133,14 @@ object ProductLabels {
         "palm-oil-free" to L10n.str(R.string.palm_oil_free)
     )
 
-    /** Etiquetas positivas conocidas (etiquetas del producto + análisis de ingredientes), sin repetir y en español. */
+    /**
+     * Known positive labels (product labels and ingredient analysis), translated and without
+     * repetitions.
+     */
     fun badges(info: ProductInfo): List<String> =
         (info.labels + info.analysis).mapNotNull { labelNames[it] }.distinct()
 
-    /** Filas "nombre / valor" de la tabla nutricional por 100 g con solo los datos disponibles. */
+    /** "name / value" rows of the nutrition table per 100 g, only with the available data. */
     fun nutritionRows(info: ProductInfo): List<Pair<String, String>> = buildList {
         info.energyKcal?.let { add(L10n.str(R.string.energy) to "${formatQuantity(it)} kcal") }
         info.fat?.let { add(L10n.str(R.string.fat) to "${formatQuantity(it)} g") }

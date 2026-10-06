@@ -1,9 +1,9 @@
 package org.calamares.miga.data.model
 
-/** Modelo editable usado por la pantalla de alta/edición de recetas. */
+/** Editable recipe used by the editor and by every save operation. */
 data class RecipeDraft(
     val id: Long = 0L,
-    /** Solo se rellena al importar, para conservar el uid de la receta exportada; null = generar uno nuevo. */
+    /** Only set on import, to keep the uid of the exported recipe; null generates a new one. */
     val uid: String? = null,
     val recipeBookId: Long,
     val name: String,

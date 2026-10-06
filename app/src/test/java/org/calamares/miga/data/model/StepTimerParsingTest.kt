@@ -57,4 +57,15 @@ class StepTimerParsingTest {
         assertEquals(4500, StepTimerParsing.findTimerSeconds("Bake for 1 hour and 15 minutes"))
         assertEquals(30, StepTimerParsing.findTimerSeconds("Whisk for 30 seconds"))
     }
+
+    @Test
+    fun `abbreviated hours`() {
+        assertEquals(4800, StepTimerParsing.findTimerSeconds("Hornea 1 h. y 20 min."))
+        assertEquals(7200, StepTimerParsing.findTimerSeconds("Leave to rise for 2h"))
+    }
+
+    @Test
+    fun `a word starting with h is not an hour`() {
+        assertNull(StepTimerParsing.findTimerSeconds("Pon 2 huevos en el bol"))
+    }
 }
