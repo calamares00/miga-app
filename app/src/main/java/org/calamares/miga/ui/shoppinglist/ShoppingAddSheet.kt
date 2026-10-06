@@ -266,7 +266,7 @@ private fun CatalogContent(
             .mapValues { (_, items) -> items.map { it.name }.sortedBy { it.lowercase() } }
     }
     val categories = remember(byCategory) {
-        byCategory.keys.sortedWith(compareBy({ it == UNCATEGORIZED_INGREDIENT_LABEL || it == "Otros" }, { it.lowercase() }))
+        byCategory.keys.sortedWith(compareBy({ it == UNCATEGORIZED_INGREDIENT_LABEL || it == "Otros" || it == "Other" }, { it.lowercase() }))
     }
     var selected by remember { mutableStateOf<String?>(null) }
     val current = selected?.takeIf { it in byCategory } ?: categories.firstOrNull()

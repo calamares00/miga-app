@@ -7,7 +7,7 @@ import androidx.compose.ui.platform.LocalContext
 import org.calamares.miga.MigaApp
 import org.calamares.miga.data.voice.DictationLanguages
 
-/** Idioma del dictado por voz elegido en Ajustes (se actualiza solo si el usuario lo cambia). */
+/** Voice dictation language chosen in Settings, updated when the user changes it. */
 @Composable
 fun rememberDictationLanguage(): String {
     val context = LocalContext.current

@@ -7,8 +7,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import org.calamares.miga.MigaApp
 
-/** `true` si el interruptor global de IA (Ajustes → IA) está activado. Con él apagado no se
- *  muestra ninguna opción ni texto de IA en la app. */
+/**
+ * `true` when the global AI switch (Settings > AI) is on. With it off, no AI option or text is
+ * shown anywhere in the app.
+ */
 @Composable
 fun rememberAiEnabled(): Boolean {
     val context = LocalContext.current

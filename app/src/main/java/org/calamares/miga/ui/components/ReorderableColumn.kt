@@ -20,9 +20,9 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.zIndex
 
 /**
- * Columna (no perezosa, para listas cortas) cuyos elementos se reordenan arrastrando el
- * modificador `dragHandle` que recibe cada uno. El orden nuevo se entrega en [onReorder] al
- * soltar; mientras se arrastra se trabaja sobre una copia local para que el movimiento sea fluido.
+ * Non-lazy column (for short lists) whose items are reordered by dragging the `dragHandle` modifier
+ * each item receives. The new order is delivered to [onReorder] on release; while dragging, a local
+ * copy is used so the movement stays smooth.
  */
 @Composable
 fun <T : Any> ReorderableColumn(
@@ -90,7 +90,7 @@ fun <T : Any> ReorderableColumn(
     }
 }
 
-/** Devuelve [list] con el elemento de [from] movido a [to] (para acciones de accesibilidad). */
+/** Returns [list] with the element at [from] moved to [to] (used by accessibility actions). */
 fun <T> List<T>.moved(from: Int, to: Int): List<T> {
     if (from !in indices || to !in indices) return this
     return toMutableList().apply { add(to, removeAt(from)) }

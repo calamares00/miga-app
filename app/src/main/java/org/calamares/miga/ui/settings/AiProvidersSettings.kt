@@ -66,8 +66,8 @@ import org.calamares.miga.ui.components.ReorderableColumn
 import org.calamares.miga.ui.components.moved
 
 /**
- * Lista de proveedores de IA ordenada por prioridad. Se arrastra por el asa para cambiar el
- * orden; al tocar un proveedor se despliega su clave y su modelo.
+ * AI providers sorted by priority. Drag the handle to reorder; tap a provider to expand its key and
+ * model.
  */
 @Composable
 fun AiProvidersSettings(viewModel: SettingsViewModel) {
@@ -283,7 +283,7 @@ private fun ApiKeyField(value: String, onValueChange: (String) -> Unit, label: S
     )
 }
 
-/** Desplegable con los modelos conocidos y la opción "Personalizado" para escribir un id a mano. */
+/** Dropdown with the known models plus a "Custom" option to type an id by hand. */
 @Composable
 private fun ModelDropdownField(
     label: String,
@@ -303,8 +303,8 @@ private fun ModelDropdownField(
             trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.open_model_picker)) },
             modifier = Modifier.fillMaxWidth()
         )
-        // Capa transparente encima del campo para abrir el menú al tocar, sin que el propio
-        // TextField (de solo lectura) capture el toque y muestre el cursor.
+        // Transparent layer over the field that opens the menu on tap, so the read-only TextField
+        // does not take the tap and show a cursor.
         Box(modifier = Modifier.matchParentSize().clickable { menuExpanded = true })
         DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
             models.forEach { modelId ->
@@ -369,8 +369,8 @@ private sealed interface CatalogState {
 }
 
 /**
- * Selector de modelos de OpenRouter con el catálogo público descargado al momento: buscador,
- * filtros "Gratis" y "Lee imágenes", y la opción de escribir un id a mano.
+ * OpenRouter model picker over the public catalogue downloaded on the spot: search, "Free" and
+ * "Reads images" filters, and an option to type an id by hand.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -464,7 +464,7 @@ fun OpenRouterModelSheet(current: String, onPick: (id: String, supportsImages: B
                 }
             }
         }
-        // Id escrito a mano (modelos nuevos o que no aparezcan en el catálogo).
+        // Id typed by hand (new models or ones missing from the catalogue).
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 32.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -502,6 +502,6 @@ private fun ModelBadge(text: String, highlighted: Boolean) {
     }
 }
 
-/** Gratuito según el id (sufijo ":free") o según el catálogo ya descargado. */
+/** Free according to the id (":free" suffix) or the already downloaded catalogue. */
 internal fun isFreeModelId(id: String): Boolean =
     id.endsWith(":free") || OpenRouterModels.cached()?.firstOrNull { it.id == id }?.isFree == true

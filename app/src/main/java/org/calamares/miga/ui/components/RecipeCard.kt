@@ -50,9 +50,9 @@ import coil.compose.AsyncImage
 import org.calamares.miga.data.model.RecipeSummary
 
 /**
- * Tarjeta de receta para las vistas en lista (Normal y Compacta). [compact] oculta la foto para
- * que el título tenga más ancho y el listado sea más denso; en modo selección múltiple se
- * sustituye el hueco de la foto/icono por una casilla y se ocultan las acciones rápidas.
+ * Recipe card for the list views (Normal and Compact). [compact] hides the photo to give the title
+ * more width and make the list denser. In multi-select mode the photo slot becomes a checkbox and
+ * quick actions are hidden.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -187,7 +187,7 @@ fun RecipeCard(
     }
 }
 
-/** Tarjeta de receta para la vista en cuadrícula: foto arriba, título y datos abajo. */
+/** Recipe card for the grid view: photo on top, title and details below. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RecipeGridCard(

@@ -53,8 +53,8 @@ import org.calamares.miga.R
 import org.calamares.miga.data.support.ErrorDetail
 
 /**
- * Error en dos niveles: el resumen para el usuario y, si lo hay, un "Ver detalle" con la parte
- * técnica (respuesta del modelo, código HTTP...) que se puede copiar para reportarla.
+ * Two-level error: a summary for the user and, when present, a "Show details" section with the
+ * technical part (model answer, HTTP code...) that can be copied to report it.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -66,7 +66,7 @@ fun ErrorMessage(reason: String, modifier: Modifier = Modifier, onRetry: (() -> 
         Text(ErrorDetail.summary(reason), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
         FlowRow {
             if (onRetry != null) TextButton(onClick = onRetry) { Text(L10n.str(R.string.retry)) }
-            // Errores de IA (cuota, modelo caído, respuesta rara...): ofrecer probar con otro modelo.
+            // AI errors (quota, model down, odd answer...): offer to try another model.
             if (onRetry != null && ErrorDetail.isAiError(reason)) {
                 TextButton(onClick = { showModelPicker = true }) { Text(L10n.str(R.string.change_model)) }
             }
@@ -80,9 +80,9 @@ fun ErrorMessage(reason: String, modifier: Modifier = Modifier, onRetry: (() -> 
 }
 
 /**
- * Hoja para cambiar de modelo tras un error de IA y reintentar: muestra cada proveedor con clave
- * (en su orden de prioridad) y deja elegir un modelo en cada uno. Al pulsar "Reintentar" se
- * guardan las elecciones como predeterminadas y se repite la operación.
+ * Sheet to switch models after an AI error and retry. It lists every provider with a key, in
+ * priority order, and lets the user pick a model for each. "Retry" saves the choices as defaults
+ * and repeats the operation.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,7 +101,7 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
     LaunchedEffect(openRouterKey) {
         if (openRouterKey.isNotBlank()) OpenRouterModels.fetch()?.let { openRouterCatalog = it }
     }
-    // Modelo elegido en esta hoja para cada proveedor (sin entrada = se queda el guardado).
+    /** Model chosen in this sheet for each provider (no entry keeps the saved one). */
     val selection = remember { mutableStateMapOf<AiProvider, String>() }
 
     fun savedModel(provider: AiProvider): String = when (provider) {
@@ -121,7 +121,8 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
         return when (provider) {
             AiProvider.GEMINI -> (saved + GEMINI_MODELS).distinct()
             AiProvider.ANTHROPIC -> (saved + ANTHROPIC_MODELS).distinct()
-            // Los gratuitos del catálogo (los primeros) más el elegido; el catálogo completo, en Ajustes.
+            // The first free models of the catalogue plus the chosen one; the full catalogue is in
+            // Settings.
             AiProvider.OPENROUTER -> (saved + openRouterCatalog.filter { it.isFree }.take(15).map { it.id }).distinct()
         }
     }

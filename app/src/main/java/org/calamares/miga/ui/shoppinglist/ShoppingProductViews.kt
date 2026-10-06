@@ -355,7 +355,7 @@ internal fun ProductDetailSheet(
                 HorizontalDivider()
                 Text(L10n.str(R.string.allergens), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                 if (info.allergens.isNotEmpty()) {
-                    Text("Contiene: " + info.allergens.joinToString(", ") { ProductLabels.allergenName(it) }, style = MaterialTheme.typography.bodyMedium)
+                    Text(L10n.str(R.string.contains_x, info.allergens.joinToString(", ") { ProductLabels.allergenName(it) }), style = MaterialTheme.typography.bodyMedium)
                 }
                 if (info.traces.isNotEmpty()) {
                     Text(L10n.str(R.string.may_contain_traces) + info.traces.joinToString(", ") { ProductLabels.allergenName(it) }, style = MaterialTheme.typography.bodyMedium)

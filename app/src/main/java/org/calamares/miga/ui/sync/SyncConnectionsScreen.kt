@@ -258,7 +258,7 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
     connectionToRemove?.let { connection ->
         AlertDialog(
             onDismissRequest = { connectionToRemove = null },
-            title = { Text("Quitar \"${connection.label}\"") },
+            title = { Text(L10n.str(R.string.remove_quoted_x, connection.label)) },
             text = {
                 Text(
                     L10n.str(R.string.books_synced_become_local_nothing)
@@ -357,7 +357,7 @@ private fun AddConnectionDialog(
                     value = namespaceId,
                     onValueChange = { namespaceId = it },
                     label = { Text(L10n.str(R.string.namespace)) },
-                    placeholder = { Text("casa") },
+                    placeholder = { Text(L10n.str(R.string.namespace_placeholder)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )

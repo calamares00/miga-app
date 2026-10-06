@@ -12,7 +12,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 private const val ALLOWED_AUTHENTICATORS =
     BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
 
-/** Envuelve [BiometricPrompt] para poder usarlo desde una función suspend de Compose. */
+/** Wraps [BiometricPrompt] so it can be awaited from a suspend function. */
 object BiometricAuthenticator {
 
     fun canAuthenticate(activity: FragmentActivity): Boolean =

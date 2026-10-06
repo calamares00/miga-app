@@ -24,10 +24,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 /**
- * Contenido del selector de cómo dar de alta una receta nueva, pensado para ir dentro de un
- * `ModalBottomSheet`: a mano, desde un archivo ya exportado (JSON/ZIP, sustituye al antiguo
- * "Importar receta" del menú del libro) o a partir de una foto (sustituye a "Añadir con foto";
- * a su vez abre PhotoSourceSheet para elegir cámara o galería).
+ * Content of the "new recipe" picker, meant to go inside a `ModalBottomSheet`: create it by hand,
+ * from an exported file (JSON/ZIP) or from a photo (which opens PhotoSourceSheet to choose camera
+ * or gallery).
  */
 @Composable
 fun NewRecipeSourceSheet(
@@ -43,7 +42,7 @@ fun NewRecipeSourceSheet(
         Text(L10n.str(R.string.new_recipe), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
         NewRecipeSourceRow(icon = Icons.Filled.Edit, label = L10n.str(R.string.manual), onClick = onManualClick)
         NewRecipeSourceRow(icon = Icons.Filled.UploadFile, label = L10n.str(R.string.file_json_zip), onClick = onFileClick)
-        // Foto, varias fotos, URL y búsqueda de platos dependen de la IA: se ocultan si está apagada.
+        // Photo, multiple photos, URL and dish search need AI, so they are hidden when it is off.
         if (aiEnabled) {
             NewRecipeSourceRow(icon = Icons.Filled.AddAPhoto, label = L10n.str(R.string.image), onClick = onPhotoClick)
             NewRecipeSourceRow(icon = Icons.Filled.Collections, label = L10n.str(R.string.several_recipes_images), onClick = onBulkPhotoClick)

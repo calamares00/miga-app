@@ -72,10 +72,11 @@ object Destinations {
         "bulkImport?bookId=$bookId&photoUris=${encodeUriList(photoUris)}"
     fun dishSearch(bookId: Long): String = "dishSearch?bookId=$bookId"
 
-    // Navigation Compose no tiene un tipo de argumento de lista limpio para rutas con query args,
-    // así que varias URIs se codifican como una sola String: cada URI ya pasa por Uri.encode()
-    // (que escapa toda coma literal a %2C), así que unirlas con "," como delimitador es seguro y
-    // nunca puede confundirse con el contenido de una URI real.
+    /**
+     * Navigation Compose has no clean list argument type for query args, so several URIs travel as
+     * one String. Each URI goes through Uri.encode(), which escapes every literal comma as %2C, so
+     * joining them with "," can never be confused with a URI's content.
+     */
     private fun encodeUriList(uris: List<String>): String = uris.joinToString(",") { Uri.encode(it) }
 
     fun decodeUriList(raw: String?): List<String> =

@@ -66,8 +66,10 @@ class SettingsViewModel(
         }
     }
 
-    /** Lee y valida el archivo elegido sin escribir nada; el resultado decide si se muestra el
-     *  diálogo de "borrar antes de importar" o un error, sin haber tocado la base de datos. */
+    /**
+     * Reads and validates the chosen file without writing anything. The result decides whether the
+     * "delete before importing" dialog or an error is shown, with the database untouched.
+     */
     suspend fun validateLibraryImport(context: Context, source: Uri): LibraryImportParseResult =
         RecipeExporter.parseLibraryImport(context, source)
 
@@ -144,7 +146,7 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setOpenRouterModel(model, supportsImages) }
     }
 
-    /** Resumen para la pantalla principal de Ajustes: proveedores con clave, en orden de prioridad. */
+    /** Summary for the main Settings screen: providers with a key, in priority order. */
     val aiProvidersSummary: StateFlow<List<AiProvider>> = kotlinx.coroutines.flow.combine(
         settingsRepository.observeProviderOrder(),
         settingsRepository.observeGeminiApiKey(),

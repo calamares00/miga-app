@@ -61,9 +61,9 @@ import kotlinx.coroutines.withContext
 private enum class DragMode { NONE, MOVE, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
 
 /**
- * Editor de foto a pantalla completa: rotar en pasos de 90º y recortar con un marco de ancho y
- * alto libres (arrastrando sus esquinas, como el recorte nativo de Android) antes de guardarla
- * normalizada (JPEG recomprimido y redimensionado, ver [PhotoStorage]) en el almacenamiento interno.
+ * Full-screen photo editor: rotate in 90 degree steps and crop with a free-ratio frame (dragging
+ * its corners, like Android's own cropper) before saving it normalised (recompressed and resized
+ * JPEG, see [PhotoStorage]) to internal storage.
  */
 @Composable
 fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () -> Unit) {
@@ -93,8 +93,8 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
         null
     }
 
-    // Al cargar la foto (o al rotarla, lo que cambia sus proporciones) el marco de recorte
-    // empieza abarcando toda la imagen; el usuario lo reduce arrastrando las esquinas.
+    // When the photo loads or is rotated (which changes its proportions) the crop frame starts
+    // covering the whole image; the user shrinks it by dragging the corners.
     LaunchedEffect(imageRect) {
         if (imageRect != null) cropRect = imageRect
     }
@@ -102,8 +102,8 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
     val handleRadiusPx = with(density) { 24.dp.toPx() }
     val minCropSizePx = with(density) { 48.dp.toPx() }
 
-    // Capa a pantalla completa dentro de la propia ventana de la app (no un Dialog): así recibe los
-    // márgenes reales de las barras del sistema y no deja ver la pantalla de debajo.
+    // Full-screen layer inside the app window rather than a Dialog, so it gets the real system bar
+    // insets and never shows the screen underneath.
     BackHandler(onBack = onCancel)
     Box(modifier = Modifier.fillMaxSize()) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {

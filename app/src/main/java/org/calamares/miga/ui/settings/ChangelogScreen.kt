@@ -27,8 +27,10 @@ import org.calamares.miga.data.local.SettingsRepository
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChangelogScreen(settingsRepository: SettingsRepository, onBack: () -> Unit) {
-    // Los changelogs son ficheros de assets embebidos en el propio APK (no cambian en tiempo de
-    // ejecución), así que basta con leerlos una vez.
+    /**
+     * Changelogs are asset files bundled in the APK and never change at runtime, so reading them
+     * once is enough.
+     */
     val changelogEntries = remember {
         settingsRepository.listAvailableChangelogVersionCodes()
             .mapNotNull { versionCode -> settingsRepository.readChangelog(versionCode)?.let { versionCode to it } }

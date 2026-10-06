@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
-/** Estado vacío común: icono en círculo, título, explicación y acciones opcionales, centrado. */
+/** Shared empty state: centred icon in a circle, title, explanation and optional actions. */
 @Composable
 fun EmptyState(
     icon: ImageVector,
