@@ -1,5 +1,9 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package org.calamares.miga.data.vision
 
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.SerialName
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -20,7 +24,7 @@ internal data class AnthropicRequest(
 )
 
 @Serializable
-internal data class AnthropicMessage(val role: String = "user", val content: List<AnthropicContentBlock>)
+internal data class AnthropicMessage(@EncodeDefault val role: String = "user", val content: List<AnthropicContentBlock>)
 
 @Serializable
 internal data class AnthropicContentBlock(
@@ -31,7 +35,7 @@ internal data class AnthropicContentBlock(
 
 @Serializable
 internal data class AnthropicImageSource(
-    val type: String = "base64",
+    @EncodeDefault val type: String = "base64",
     @SerialName("media_type") val mediaType: String,
     val data: String
 )

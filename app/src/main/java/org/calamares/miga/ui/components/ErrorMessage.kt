@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.components
 
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.material3.Button
 import org.calamares.miga.data.ai.OpenRouterModels
 import kotlinx.coroutines.flow.first
 
@@ -78,8 +80,9 @@ fun ErrorMessage(reason: String, modifier: Modifier = Modifier, onRetry: (() -> 
 }
 
 /**
- * Hoja breve para cambiar de proveedor/modelo de IA y reintentar. Solo muestra los proveedores
- * con clave configurada; el modelo elegido queda guardado como predeterminado.
+ * Hoja para cambiar de modelo tras un error de IA y reintentar: muestra cada proveedor con clave
+ * (en su orden de prioridad) y deja elegir un modelo en cada uno. Al pulsar "Reintentar" se
+ * guardan las elecciones como predeterminadas y se repite la operación.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,33 +90,59 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val settings = remember { (context.applicationContext as RecetarioApp).settingsRepository }
     val scope = rememberCoroutineScope()
-    val provider by settings.observeVisionProvider().collectAsState(initial = null)
+    val order by settings.observeProviderOrder().collectAsState(initial = VisionProviderType.entries.toList())
     val geminiKey by settings.observeGeminiApiKey().collectAsState(initial = "")
     val anthropicKey by settings.observeAnthropicApiKey().collectAsState(initial = "")
+    val openRouterKey by settings.observeOpenRouterApiKey().collectAsState(initial = "")
     val geminiModel by settings.observeGeminiModel().collectAsState(initial = DEFAULT_GEMINI_MODEL)
     val anthropicModel by settings.observeAnthropicModel().collectAsState(initial = DEFAULT_ANTHROPIC_MODEL)
-    val openRouterKey by settings.observeOpenRouterApiKey().collectAsState(initial = "")
     val openRouterModel by settings.observeOpenRouterModel().collectAsState(initial = "")
     var openRouterCatalog by remember { mutableStateOf(OpenRouterModels.cached().orEmpty()) }
     LaunchedEffect(openRouterKey) {
         if (openRouterKey.isNotBlank()) OpenRouterModels.fetch()?.let { openRouterCatalog = it }
     }
+    // Modelo elegido en esta hoja para cada proveedor (sin entrada = se queda el guardado).
+    val selection = remember { mutableStateMapOf<VisionProviderType, String>() }
 
-    fun pick(newProvider: VisionProviderType, model: String) {
+    fun savedModel(provider: VisionProviderType): String = when (provider) {
+        VisionProviderType.GEMINI -> geminiModel
+        VisionProviderType.ANTHROPIC -> anthropicModel
+        VisionProviderType.OPENROUTER -> openRouterModel
+    }
+
+    fun hasKey(provider: VisionProviderType): Boolean = when (provider) {
+        VisionProviderType.GEMINI -> geminiKey.isNotBlank()
+        VisionProviderType.ANTHROPIC -> anthropicKey.isNotBlank()
+        VisionProviderType.OPENROUTER -> openRouterKey.isNotBlank()
+    }
+
+    fun modelsFor(provider: VisionProviderType): List<String> {
+        val saved = listOfNotNull(savedModel(provider).takeIf { it.isNotBlank() })
+        return when (provider) {
+            VisionProviderType.GEMINI -> (saved + GEMINI_MODELS).distinct()
+            VisionProviderType.ANTHROPIC -> (saved + ANTHROPIC_MODELS).distinct()
+            // Los gratuitos del catálogo (los primeros) más el elegido; el catálogo completo, en Ajustes.
+            VisionProviderType.OPENROUTER -> (saved + openRouterCatalog.filter { it.isFree }.take(15).map { it.id }).distinct()
+        }
+    }
+
+    fun saveAndRetry() {
         scope.launch {
-            // El proveedor elegido pasa a ser el primero de la prioridad.
-            settings.setVisionProvider(newProvider)
-            when (newProvider) {
-                VisionProviderType.GEMINI -> settings.setGeminiModel(model)
-                VisionProviderType.ANTHROPIC -> settings.setAnthropicModel(model)
-                VisionProviderType.OPENROUTER -> settings.setOpenRouterModel(
-                    model,
-                    openRouterCatalog.firstOrNull { it.id == model }?.supportsImages ?: settings.observeOpenRouterModelImages().first()
-                )
+            for ((provider, model) in selection.toMap()) {
+                when (provider) {
+                    VisionProviderType.GEMINI -> settings.setGeminiModel(model)
+                    VisionProviderType.ANTHROPIC -> settings.setAnthropicModel(model)
+                    VisionProviderType.OPENROUTER -> settings.setOpenRouterModel(
+                        model,
+                        openRouterCatalog.firstOrNull { it.id == model }?.supportsImages ?: settings.observeOpenRouterModelImages().first()
+                    )
+                }
             }
             onPicked()
         }
     }
+
+    val providers = order.filter { hasKey(it) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp)) {
@@ -126,40 +155,31 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
                     modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
                 )
             }
-            val groups = buildList {
-                if (geminiKey.isNotBlank()) add(Triple(VisionProviderType.GEMINI, (GEMINI_MODELS + geminiModel).distinct(), geminiModel))
-                if (anthropicKey.isNotBlank()) add(Triple(VisionProviderType.ANTHROPIC, (ANTHROPIC_MODELS + anthropicModel).distinct(), anthropicModel))
-                if (openRouterKey.isNotBlank()) {
-                    // Los gratuitos del catálogo (los primeros) más el elegido; el resto, en Ajustes.
-                    val free = openRouterCatalog.filter { it.isFree }.take(12).map { it.id }
-                    add(Triple(VisionProviderType.OPENROUTER, (listOfNotNull(openRouterModel.takeIf { it.isNotBlank() }) + free).distinct(), openRouterModel))
-                }
-            }
-            if (groups.isEmpty()) {
+            if (providers.isEmpty()) {
                 item {
                     Text(L10n.str(R.string.no_ai_keys), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 8.dp))
                 }
             }
-            groups.forEach { (groupProvider, models, savedModel) ->
-                item {
+            providers.forEachIndexed { index, groupProvider ->
+                item(key = "header-${groupProvider.name}") {
                     Text(
-                        groupProvider.label,
+                        "${index + 1}. ${groupProvider.label}",
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                     )
                 }
-                items(models) { model ->
-                    val isCurrent = provider == groupProvider && model == savedModel
+                items(modelsFor(groupProvider), key = { "${groupProvider.name}-$it" }) { model ->
+                    val selected = (selection[groupProvider] ?: savedModel(groupProvider)) == model
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(MaterialTheme.shapes.medium)
-                            .clickable { pick(groupProvider, model) }
+                            .clickable { selection[groupProvider] = model }
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        RadioButton(selected = isCurrent, onClick = { pick(groupProvider, model) })
+                        RadioButton(selected = selected, onClick = { selection[groupProvider] = model })
                         Text(model, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                         if (groupProvider == VisionProviderType.OPENROUTER && openRouterCatalog.any { it.id == model && it.isFree }) {
                             Text(
@@ -169,7 +189,7 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
                                 modifier = Modifier.padding(end = 8.dp)
                             )
                         }
-                        if (isCurrent) {
+                        if (model == savedModel(groupProvider)) {
                             Text(
                                 L10n.str(R.string.current_model),
                                 style = MaterialTheme.typography.labelMedium,
@@ -177,6 +197,13 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
                                 modifier = Modifier.padding(end = 8.dp)
                             )
                         }
+                    }
+                }
+            }
+            if (providers.isNotEmpty()) {
+                item {
+                    Button(onClick = { saveAndRetry() }, modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+                        Text(L10n.str(R.string.retry_with_these_models))
                     }
                 }
             }

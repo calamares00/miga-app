@@ -1,5 +1,9 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package org.calamares.miga.data.ai
 
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.EncodeDefault
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -36,7 +40,7 @@ internal data class OpenRouterRequest(
 )
 
 @Serializable
-internal data class OpenRouterMessage(val role: String = "user", val content: List<OpenRouterPart>)
+internal data class OpenRouterMessage(@EncodeDefault val role: String = "user", val content: List<OpenRouterPart>)
 
 @Serializable
 internal data class OpenRouterPart(
