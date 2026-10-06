@@ -93,8 +93,11 @@ When several images are included, they are all pages or fragments of the SAME re
 consecutive photos of a cookbook); combine them into a single result, following the image order.
 In "dishPhotos" list where the photos of the FINISHED DISH are (the photo illustrating the recipe):
 "image" is the zero-based image index and "box" is [ymin, xmin, ymax, xmax] normalised from 0 to
-1000, fitted tightly inside the photo, without page margins, frames, borders, text, captions or
-page numbers. If the whole image is a photo of the dish (no recipe text), use the box framing the
-dish. Do not include photos of intermediate steps, loose ingredients, people or decorative
-illustrations. At most 3; if there are none, leave the list empty.
+1000 (0,0 is the top-left corner of the image). Measure the box on the edges of the printed
+photograph itself, as precisely as possible: it must contain only the photograph, with no
+surrounding page, text, titles, captions, page numbers, margins, frames, ring or spiral binding,
+fingers or the table under the book. If an edge is uncertain, keep it slightly inside the photo.
+If the whole image is a photo of the dish (no recipe text), use the box framing the dish. Do not
+include photos of intermediate steps, loose ingredients, people or decorative illustrations. At
+most 3; if there are none, leave the list empty.
 """.trimIndent() + transcriptionLanguageInstruction()
