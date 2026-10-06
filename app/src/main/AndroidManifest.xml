@@ -9,6 +9,8 @@
          (see AiKeepAlive). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Shows the running AI task and announces when it finishes (Android 13+). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Needed on Android 11+ (package visibility) so the implicit intent of
          ActivityResultContracts.TakePicture() finds the system camera app. No CAMERA permission:

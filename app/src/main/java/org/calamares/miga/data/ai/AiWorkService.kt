@@ -1,5 +1,9 @@
 package org.calamares.miga.data.ai
 
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.app.Application
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -8,73 +12,170 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import org.calamares.miga.L10n
 import org.calamares.miga.MainActivity
 import org.calamares.miga.R
 
-private const val CHANNEL_ID = "ai_work"
-private const val NOTIFICATION_ID = 7301
+private const val WORK_CHANNEL_ID = "ai_work"
+private const val DONE_CHANNEL_ID = "ai_done"
+private const val WORK_NOTIFICATION_ID = 7301
+private const val DONE_NOTIFICATION_ID = 7302
 
 /**
- * Keeps AI requests alive when the user leaves the app or turns the screen off.
+ * One piece of AI work shown in the notification. [title] null means it adds nothing to show (a
+ * single request inside a larger, titled task).
+ */
+class AiTask internal constructor(val title: String?) {
+    @Volatile internal var current: Int = 0
+    @Volatile internal var total: Int = 0
+
+    /** Shows "[current] of [total]" and a progress bar in the notification. */
+    fun progress(current: Int, total: Int) {
+        this.current = current
+        this.total = total
+        AiKeepAlive.refresh()
+    }
+}
+
+/**
+ * Keeps AI requests alive when the user leaves the app or turns the screen off, and shows what is
+ * running.
  *
- * Android cuts the network of apps in the background, so a recipe being generated failed with a
- * connection error as soon as the user switched apps. While any AI work is running, a foreground
- * service with a quiet notification keeps the app in the foreground state. Work is counted, so
- * nested or parallel operations share one service, which stops when the last one finishes.
+ * Android cuts the network of apps in the background, so a recipe being generated failed as soon
+ * as the user switched apps. While any AI work is running, a foreground service with a quiet
+ * notification keeps the app in the foreground state. The notification shows the current task and
+ * its progress, and appears straight away when the app goes to the background (Android otherwise
+ * delays it by about ten seconds). Work is counted, so nested or parallel tasks share one service,
+ * which stops when the last one finishes.
  */
 object AiKeepAlive {
     private val lock = Any()
     private var appContext: Context? = null
-    private var activeCount = 0
+    private val tasks = mutableListOf<AiTask>()
     private var service: AiWorkService? = null
+    private var startedActivities = 0
 
-    fun init(context: Context) {
-        appContext = context.applicationContext
+    private val _running = MutableStateFlow(false)
+
+    /** True while any AI work runs; MainActivity uses it to ask for the notification permission. */
+    val running: StateFlow<Boolean> = _running
+
+    /** True while no activity of the app is visible. */
+    @Volatile var inBackground: Boolean = true
+        private set
+
+    fun init(app: Application) {
+        appContext = app
+        app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityStarted(activity: Activity) {
+                startedActivities++
+                if (startedActivities == 1) {
+                    inBackground = false
+                    refresh()
+                }
+            }
+
+            override fun onActivityStopped(activity: Activity) {
+                startedActivities = (startedActivities - 1).coerceAtLeast(0)
+                if (startedActivities == 0) {
+                    inBackground = true
+                    refresh()
+                }
+            }
+
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+            override fun onActivityResumed(activity: Activity) = Unit
+            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+            override fun onActivityDestroyed(activity: Activity) = Unit
+        })
     }
 
-    /** Runs [block] with the foreground service active. */
-    suspend fun <T> hold(block: suspend () -> T): T {
-        acquire()
+    /**
+     * Runs [block] with the foreground service active. A [title] (e.g. "Importing recipes") is
+     * shown in the notification; [AiTask.progress] adds a progress bar.
+     */
+    suspend fun <T> hold(title: String? = null, block: suspend AiTask.() -> T): T {
+        val task = AiTask(title)
+        acquire(task)
         try {
-            return block()
+            return task.block()
         } finally {
-            release()
+            release(task)
         }
     }
 
-    private fun acquire() {
+    /**
+     * Posts [message] as a regular notification when the app is in the background, so the user
+     * learns that a task they left running has finished. Does nothing while the app is visible.
+     */
+    @SuppressLint("MissingPermission")
+    fun announceIfInBackground(message: String) {
+        val context = appContext ?: return
+        if (!inBackground || !NotificationManagerCompat.from(context).areNotificationsEnabled()) return
+        createChannels(context)
+        val notification = NotificationCompat.Builder(context, DONE_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification_ai)
+            .setContentTitle(L10n.str(R.string.app_name))
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setContentIntent(openAppIntent(context))
+            .setAutoCancel(true)
+            .build()
+        runCatching { NotificationManagerCompat.from(context).notify(DONE_NOTIFICATION_ID, notification) }
+    }
+
+    private fun acquire(task: AiTask) {
         val context = appContext ?: return
         synchronized(lock) {
-            activeCount++
-            if (activeCount == 1 && service == null) {
+            tasks += task
+            _running.value = true
+            if (tasks.size == 1 && service == null) {
                 // Starting a foreground service is only allowed while the app is visible, which is
                 // the case when the user starts an AI operation. If it fails, the work still runs;
                 // it just has no protection in the background.
                 runCatching { ContextCompat.startForegroundService(context, Intent(context, AiWorkService::class.java)) }
+            } else {
+                service?.refresh()
             }
         }
     }
 
-    private fun release() {
+    private fun release(task: AiTask) {
         if (appContext == null) return
         synchronized(lock) {
-            activeCount = (activeCount - 1).coerceAtLeast(0)
-            if (activeCount == 0) {
+            tasks -= task
+            if (tasks.isEmpty()) {
+                _running.value = false
                 service?.finish()
                 service = null
+            } else {
+                service?.refresh()
             }
         }
+    }
+
+    internal fun refresh() {
+        synchronized(lock) { service?.refresh() }
     }
 
     /** Called by the service once it is in the foreground; it stops at once if the work is done. */
     internal fun onServiceStarted(started: AiWorkService) {
         synchronized(lock) {
-            if (activeCount == 0) started.finish() else service = started
+            if (tasks.isEmpty()) {
+                started.finish()
+            } else {
+                service = started
+                started.refresh()
+            }
         }
     }
 
@@ -83,6 +184,53 @@ object AiKeepAlive {
             if (service === stopped) service = null
         }
     }
+
+    /** Notification for the running work: the latest titled task, with its progress if any. */
+    internal fun buildWorkNotification(context: Context): Notification {
+        createChannels(context)
+        val task = synchronized(lock) { tasks.lastOrNull { it.title != null } }
+        val text = task?.title ?: L10n.str(R.string.ai_work_notification)
+        val builder = NotificationCompat.Builder(context, WORK_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification_ai)
+            .setContentTitle(L10n.str(R.string.app_name))
+            .setContentText(text)
+            .setContentIntent(openAppIntent(context))
+            .setOngoing(true)
+            .setSilent(true)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setForegroundServiceBehavior(
+                if (inBackground) NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE else NotificationCompat.FOREGROUND_SERVICE_DEFAULT
+            )
+        if (task != null && task.total > 0) {
+            builder.setContentText(text + " · " + L10n.str(R.string.ai_progress_x_of_y, task.current, task.total))
+            builder.setProgress(task.total, task.current, false)
+        } else {
+            builder.setProgress(0, 0, true)
+        }
+        return builder.build()
+    }
+
+    private fun createChannels(context: Context) {
+        val manager = context.getSystemService(NotificationManager::class.java)
+        if (manager.getNotificationChannel(WORK_CHANNEL_ID) == null) {
+            manager.createNotificationChannel(
+                NotificationChannel(WORK_CHANNEL_ID, L10n.str(R.string.ai_work_channel), NotificationManager.IMPORTANCE_LOW)
+            )
+        }
+        if (manager.getNotificationChannel(DONE_CHANNEL_ID) == null) {
+            manager.createNotificationChannel(
+                NotificationChannel(DONE_CHANNEL_ID, L10n.str(R.string.ai_done_channel), NotificationManager.IMPORTANCE_DEFAULT)
+            )
+        }
+    }
+
+    private fun openAppIntent(context: Context): PendingIntent = PendingIntent.getActivity(
+        context,
+        0,
+        Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    )
 }
 
 /** Foreground service with no work of its own; see [AiKeepAlive]. */
@@ -96,8 +244,8 @@ class AiWorkService : Service() {
         val started = runCatching {
             ServiceCompat.startForeground(
                 this,
-                NOTIFICATION_ID,
-                buildNotification(),
+                WORK_NOTIFICATION_ID,
+                AiKeepAlive.buildWorkNotification(this),
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0
             )
         }.isSuccess
@@ -115,31 +263,14 @@ class AiWorkService : Service() {
         super.onDestroy()
     }
 
+    /** Updates the notification with the current task and progress. */
+    @SuppressLint("MissingPermission")
+    internal fun refresh() {
+        runCatching { NotificationManagerCompat.from(this).notify(WORK_NOTIFICATION_ID, AiKeepAlive.buildWorkNotification(this)) }
+    }
+
     internal fun finish() {
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
-    }
-
-    private fun buildNotification() = run {
-        val manager = getSystemService(NotificationManager::class.java)
-        if (manager.getNotificationChannel(CHANNEL_ID) == null) {
-            manager.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, L10n.str(R.string.ai_work_channel), NotificationManager.IMPORTANCE_LOW)
-            )
-        }
-        val openApp = PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_ai)
-            .setContentTitle(L10n.str(R.string.ai_work_notification))
-            .setContentIntent(openApp)
-            .setOngoing(true)
-            .setSilent(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .build()
     }
 }

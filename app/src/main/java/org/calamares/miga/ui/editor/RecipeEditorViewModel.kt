@@ -4,6 +4,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import org.calamares.miga.data.local.DishPhotoCropper
 import org.calamares.miga.data.ai.aiCandidates
+import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -139,11 +140,11 @@ class RecipeEditorViewModel(
         visionStarted = true
         val appContext = context.applicationContext
         lastAiOperation = { startVisionExtraction(appContext, photoUris) }
-        viewModelScope.launch {
+        launchAiTask(L10n.str(R.string.ai_task_reading_photo)) {
             _visionState.value = VisionState.Loading
             if (settingsRepository.aiCandidates().isEmpty()) {
                 _visionState.value = VisionState.Error(L10n.str(R.string.ai_no_provider))
-                return@launch
+                return@launchAiTask
             }
             // If some pages cannot be read but others can, carry on with the readable ones; it only
             // fails when all of them fail. The source uri of every image sent is kept because the
@@ -154,7 +155,7 @@ class RecipeEditorViewModel(
             val images = readable.map { it.second }
             if (images.isEmpty()) {
                 _visionState.value = VisionState.Error(L10n.str(R.string.couldnt_read_photos))
-                return@launch
+                return@launchAiTask
             }
             val result = settingsRepository.runAi<RecipeVisionResult>(
                 needsImages = true,
@@ -186,11 +187,11 @@ class RecipeEditorViewModel(
         if (isEditing || visionStarted || dishName.isBlank()) return
         visionStarted = true
         lastAiOperation = { startDishGeneration(dishName, dishDescription, dishOrigin) }
-        viewModelScope.launch {
+        launchAiTask(L10n.str(R.string.ai_task_generating_dish_x, dishName)) {
             _visionState.value = VisionState.Loading
             if (settingsRepository.aiCandidates().isEmpty()) {
                 _visionState.value = VisionState.Error(L10n.str(R.string.ai_no_provider))
-                return@launch
+                return@launchAiTask
             }
             val dish = DishSuggestion(dishName, dishDescription, dishOrigin)
             val result = settingsRepository.runAi<RecipeVisionResult>(
@@ -216,17 +217,17 @@ class RecipeEditorViewModel(
         if (isEditing || visionStarted || url.isBlank()) return
         visionStarted = true
         lastAiOperation = { startUrlImport(url) }
-        viewModelScope.launch {
+        launchAiTask(L10n.str(R.string.ai_task_importing_web)) {
             _visionState.value = VisionState.Loading
             if (settingsRepository.aiCandidates().isEmpty()) {
                 _visionState.value = VisionState.Error(L10n.str(R.string.ai_no_provider))
-                return@launch
+                return@launchAiTask
             }
             val pageText = when (val fetchResult = RecipeUrlFetcher.fetchReadableText(url)) {
                 is UrlFetchResult.Success -> fetchResult.text
                 is UrlFetchResult.Error -> {
                     _visionState.value = VisionState.Error(fetchResult.reason)
-                    return@launch
+                    return@launchAiTask
                 }
             }
             val result = settingsRepository.runAi<RecipeVisionResult>(
@@ -241,6 +242,21 @@ class RecipeEditorViewModel(
                 }
                 is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(result.reason)
             }
+        }
+    }
+
+    /**
+     * Runs an AI operation that fills this form, showing [title] in the AI notification and, when
+     * the user has left the app meanwhile, a notification with the outcome.
+     */
+    private fun launchAiTask(title: String, block: suspend () -> Unit) = viewModelScope.launch {
+        AiKeepAlive.hold(title) { block() }
+        when (_visionState.value) {
+            VisionState.Loaded -> AiKeepAlive.announceIfInBackground(
+                L10n.str(R.string.ai_recipe_ready_x, name.ifBlank { L10n.str(R.string.untitled) })
+            )
+            is VisionState.Error -> AiKeepAlive.announceIfInBackground(L10n.str(R.string.ai_recipe_failed))
+            else -> Unit
         }
     }
 

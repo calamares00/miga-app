@@ -1,8 +1,13 @@
 package org.calamares.miga
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
@@ -33,9 +38,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.model.ColorTheme
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.share.ShoppingIntents
@@ -49,12 +56,24 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val SPLASH_MIN_DURATION_MILLIS = 1200L
+private const val PROMPTS_PREFS = "miga_prompts"
+private const val KEY_ASKED_NOTIFICATIONS = "asked_notifications"
 
 class MainActivity : FragmentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         ShoppingIntents.handle(intent)
+    }
+
+    /** True once, on Android 13+, when notifications are not allowed yet; later calls return false. */
+    private fun shouldAskNotificationPermission(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return false
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return false
+        val prefs = getSharedPreferences(PROMPTS_PREFS, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_ASKED_NOTIFICATIONS, false)) return false
+        prefs.edit().putBoolean(KEY_ASKED_NOTIFICATIONS, true).apply()
+        return true
     }
 
     override fun attachBaseContext(newBase: Context) {
@@ -87,6 +106,16 @@ class MainActivity : FragmentActivity() {
             LaunchedEffect(Unit) {
                 delay(SPLASH_MIN_DURATION_MILLIS)
                 showSplash = false
+            }
+
+            // The first time an AI task runs, ask for the notification permission (Android 13+)
+            // so its progress shows in the status bar and the user learns when it has finished.
+            val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+            val aiRunning by AiKeepAlive.running.collectAsState()
+            LaunchedEffect(aiRunning) {
+                if (aiRunning && shouldAskNotificationPermission()) {
+                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
             }
 
             DisposableEffect(lifecycleOwner) {

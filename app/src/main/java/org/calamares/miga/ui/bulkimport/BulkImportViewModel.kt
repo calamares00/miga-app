@@ -59,14 +59,21 @@ class BulkImportViewModel(
             }
             // One foreground service for the whole batch, so it is not restarted between photos
             // while the app is in the background (which Android does not allow).
-            AiKeepAlive.hold { photoUris.indices.forEach { index -> processOne(context, index) } }
+            AiKeepAlive.hold(L10n.str(R.string.ai_task_bulk_import)) {
+                photoUris.indices.forEach { index ->
+                    progress(index + 1, photoUris.size)
+                    processOne(context, index)
+                }
+            }
+            val imported = _rows.value.count { it.state is BulkImportRowState.Success }
+            AiKeepAlive.announceIfInBackground(L10n.str(R.string.ai_bulk_import_done_x_of_y, imported, photoUris.size))
         }
     }
 
     /** Retries a single failed photo without touching the other rows. */
     fun retry(context: Context, index: Int) {
         viewModelScope.launch {
-            AiKeepAlive.hold { processOne(context, index) }
+            AiKeepAlive.hold(L10n.str(R.string.ai_task_bulk_import)) { processOne(context, index) }
         }
     }
 
