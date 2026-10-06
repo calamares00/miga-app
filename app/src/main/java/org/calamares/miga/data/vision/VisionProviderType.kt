@@ -1,7 +1,8 @@
 package org.calamares.miga.data.vision
 
-/** Proveedor de LLM con visión usado para reconocer recetas a partir de una foto. */
+/** Proveedor de IA. El usuario los ordena por prioridad en Ajustes (ver [org.calamares.miga.data.ai.runAi]). */
 enum class VisionProviderType(val label: String) {
     GEMINI("Google Gemini"),
-    ANTHROPIC("Anthropic Claude")
+    ANTHROPIC("Anthropic Claude"),
+    OPENROUTER("OpenRouter")
 }

@@ -127,6 +127,47 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setVisionProvider(provider) }
     }
 
+    val providerOrder: StateFlow<List<VisionProviderType>> = settingsRepository.observeProviderOrder()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), VisionProviderType.entries.toList())
+
+    fun setProviderOrder(order: List<VisionProviderType>) {
+        viewModelScope.launch { settingsRepository.setProviderOrder(order) }
+    }
+
+    val openRouterApiKey: StateFlow<String> = settingsRepository.observeOpenRouterApiKey()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    fun setOpenRouterApiKey(apiKey: String) {
+        viewModelScope.launch { settingsRepository.setOpenRouterApiKey(apiKey) }
+    }
+
+    val openRouterModel: StateFlow<String> = settingsRepository.observeOpenRouterModel()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val openRouterModelImages: StateFlow<Boolean> = settingsRepository.observeOpenRouterModelImages()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setOpenRouterModel(model: String, supportsImages: Boolean) {
+        viewModelScope.launch { settingsRepository.setOpenRouterModel(model, supportsImages) }
+    }
+
+    /** Resumen para la pantalla principal de Ajustes: proveedores con clave, en orden de prioridad. */
+    val aiProvidersSummary: StateFlow<List<VisionProviderType>> = kotlinx.coroutines.flow.combine(
+        settingsRepository.observeProviderOrder(),
+        settingsRepository.observeGeminiApiKey(),
+        settingsRepository.observeAnthropicApiKey(),
+        settingsRepository.observeOpenRouterApiKey(),
+        settingsRepository.observeOpenRouterModel()
+    ) { order, gemini, anthropic, openRouter, openRouterModel ->
+        order.filter { provider ->
+            when (provider) {
+                VisionProviderType.GEMINI -> gemini.isNotBlank()
+                VisionProviderType.ANTHROPIC -> anthropic.isNotBlank()
+                VisionProviderType.OPENROUTER -> openRouter.isNotBlank() && openRouterModel.isNotBlank()
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val anthropicApiKey: StateFlow<String> = settingsRepository.observeAnthropicApiKey()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 

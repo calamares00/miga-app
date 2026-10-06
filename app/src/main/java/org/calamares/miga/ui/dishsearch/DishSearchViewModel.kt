@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.dishsearch
 
+import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import androidx.lifecycle.ViewModel
@@ -34,14 +35,12 @@ class DishSearchViewModel(private val settingsRepository: SettingsRepository) : 
         if (trimmed.isBlank()) return
         viewModelScope.launch {
             _state.value = DishSearchUiState.Loading
-            val provider = settingsRepository.observeVisionProvider().first()
-            val apiKey = settingsRepository.apiKeyFor(provider)
-            if (apiKey.isBlank()) {
-                _state.value = DishSearchUiState.NotConfigured
-                return@launch
-            }
-            val model = settingsRepository.modelFor(provider)
-            _state.value = when (val result = dishSearchClientFor(provider).searchDishes(trimmed, apiKey, model)) {
+            val result = settingsRepository.runAi<DishSearchResult>(
+                errorOf = { (it as? DishSearchResult.Error)?.reason },
+                error = { DishSearchResult.Error(it) }
+            ) { ai -> dishSearchClientFor(ai.provider).searchDishes(trimmed, ai.apiKey, ai.model) }
+            _state.value = when (result) {
+                null -> DishSearchUiState.NotConfigured
                 is DishSearchResult.Success ->
                     if (result.dishes.isEmpty()) DishSearchUiState.Error(L10n.str(R.string.no_han_encontrado_platos_esa))
                     else DishSearchUiState.Loaded(result.dishes)

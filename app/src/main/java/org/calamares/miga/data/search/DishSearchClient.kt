@@ -1,5 +1,6 @@
 package org.calamares.miga.data.search
 
+import org.calamares.miga.data.ai.OpenRouterDishSearchClient
 import org.calamares.miga.data.vision.outputLanguageInstruction
 import org.calamares.miga.data.vision.VisionProviderType
 import kotlinx.serialization.Serializable
@@ -23,6 +24,7 @@ interface DishSearchClient {
 fun dishSearchClientFor(provider: VisionProviderType): DishSearchClient = when (provider) {
     VisionProviderType.GEMINI -> GeminiDishSearchClient
     VisionProviderType.ANTHROPIC -> AnthropicDishSearchClient
+    VisionProviderType.OPENROUTER -> OpenRouterDishSearchClient
 }
 
 // Forma del JSON que se le pide al LLM; compartida entre proveedores para decodificar la respuesta.

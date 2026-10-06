@@ -44,7 +44,7 @@ object AiErrors {
             400 -> L10n.str(R.string.ai_error_bad_request, provider)
             401, 403 -> L10n.str(R.string.ai_error_key, provider)
             404 -> L10n.str(R.string.ai_error_model, provider)
-            429 -> L10n.str(R.string.ai_error_quota, provider)
+            402, 429 -> L10n.str(R.string.ai_error_quota, provider)
             in 500..599 -> L10n.str(R.string.ai_error_unavailable, provider)
             else -> L10n.str(R.string.ai_error_generic, provider)
         }

@@ -1,5 +1,6 @@
 package org.calamares.miga.data.search
 
+import org.calamares.miga.data.ai.OpenRouterRecipeUrlImportClient
 import org.calamares.miga.data.vision.transcriptionLanguageInstruction
 import org.calamares.miga.data.vision.RecipeVisionResult
 import org.calamares.miga.data.vision.VisionProviderType
@@ -17,6 +18,7 @@ interface RecipeUrlImportClient {
 fun recipeUrlImportClientFor(provider: VisionProviderType): RecipeUrlImportClient = when (provider) {
     VisionProviderType.GEMINI -> GeminiRecipeUrlImportClient
     VisionProviderType.ANTHROPIC -> AnthropicRecipeUrlImportClient
+    VisionProviderType.OPENROUTER -> OpenRouterRecipeUrlImportClient
 }
 
 // Prompt compartido entre todos los proveedores: pide exactamente el mismo JSON que ya usa

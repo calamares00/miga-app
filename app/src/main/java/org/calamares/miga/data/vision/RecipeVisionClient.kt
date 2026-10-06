@@ -1,5 +1,6 @@
 package org.calamares.miga.data.vision
 
+import org.calamares.miga.data.ai.OpenRouterVisionClient
 import org.calamares.miga.L10n
 import org.calamares.miga.data.export.IngredientGroupDto
 import org.calamares.miga.data.export.StepGroupDto
@@ -45,6 +46,7 @@ interface RecipeVisionClient {
 fun visionClientFor(provider: VisionProviderType): RecipeVisionClient = when (provider) {
     VisionProviderType.GEMINI -> GeminiVisionClient
     VisionProviderType.ANTHROPIC -> AnthropicVisionClient
+    VisionProviderType.OPENROUTER -> OpenRouterVisionClient
 }
 
 // Prompt compartido entre todos los proveedores de visión: deben pedir exactamente el mismo JSON,

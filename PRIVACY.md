@@ -21,7 +21,7 @@ maneja la app, adónde van y qué control tienes sobre ellos.
 Recetas, libros, fotos, categorías, etiquetas, utensilios, valoraciones, listas de la compra,
 plantillas, supermercados y ajustes se guardan **en el almacenamiento interno de tu dispositivo**.
 
-Las claves de API de Google Gemini o Anthropic que introduzcas se guardan solo en tu dispositivo y
+Las claves de API de Google Gemini, Anthropic u OpenRouter que introduzcas se guardan solo en tu dispositivo y
 se usan únicamente para llamar al proveedor que elijas.
 
 Si tienes activada la copia de seguridad de Android, el sistema puede incluir estos datos en la
@@ -46,11 +46,15 @@ Todas se inician por una acción tuya o por una función que has activado.
 
 1. **Funciones de IA (opcionales, con tu propia clave)**: importar recetas desde fotos o desde una
    página web, buscar y generar recetas de un plato, valoración de salud, estimación nutricional,
-   sustitución de ingredientes y limpieza del texto dictado. Al usarlas, se envía al proveedor que
-   elijas (**Google Gemini** o **Anthropic Claude**) la foto, el texto de la página, el nombre del
-   plato o los ingredientes y pasos de la receta, según la función. El tratamiento de esos datos
-   está sujeto a las condiciones del proveedor asociadas a tu clave. Sin clave configurada no se
-   envía nada. Puedes desactivar todas las funciones de IA (o solo la valoración de salud o la
+   sustitución de ingredientes y limpieza del texto dictado. Al usarlas, se envía a los proveedores
+   que configures (**Google Gemini**, **Anthropic Claude** u **OpenRouter**, que a su vez lo reenvía
+   al proveedor del modelo que elijas) la foto, el texto de la página, el nombre del plato o los
+   ingredientes y pasos de la receta, según la función. Se usan en el orden de prioridad que
+   elijas: si uno falla o no puede leer imágenes, se envía la misma petición al siguiente. El
+   tratamiento de esos datos está sujeto a las condiciones de cada proveedor asociadas a tu clave
+   (algunos modelos gratuitos de OpenRouter pueden usar las peticiones para entrenar). Sin clave
+   configurada no se envía nada. La lista de modelos de OpenRouter se descarga de su catálogo
+   público, sin enviar datos tuyos. Puedes desactivar todas las funciones de IA (o solo la valoración de salud o la
    estimación nutricional automáticas) en Ajustes → Inteligencia artificial. El contenido generado
    con IA se marca en la app, puede contener errores y se puede reportar.
 2. **Open Food Facts**: al escanear un código de barras o buscar un producto por nombre se envía

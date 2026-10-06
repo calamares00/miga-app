@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.components
 
+import org.calamares.miga.data.ai.OpenRouterModels
+import kotlinx.coroutines.flow.first
+
 import org.calamares.miga.data.vision.VisionProviderType
 import org.calamares.miga.data.vision.GEMINI_MODELS
 import org.calamares.miga.data.vision.DEFAULT_GEMINI_MODEL
@@ -34,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -88,11 +92,25 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
     val anthropicKey by settings.observeAnthropicApiKey().collectAsState(initial = "")
     val geminiModel by settings.observeGeminiModel().collectAsState(initial = DEFAULT_GEMINI_MODEL)
     val anthropicModel by settings.observeAnthropicModel().collectAsState(initial = DEFAULT_ANTHROPIC_MODEL)
+    val openRouterKey by settings.observeOpenRouterApiKey().collectAsState(initial = "")
+    val openRouterModel by settings.observeOpenRouterModel().collectAsState(initial = "")
+    var openRouterCatalog by remember { mutableStateOf(OpenRouterModels.cached().orEmpty()) }
+    LaunchedEffect(openRouterKey) {
+        if (openRouterKey.isNotBlank()) OpenRouterModels.fetch()?.let { openRouterCatalog = it }
+    }
 
     fun pick(newProvider: VisionProviderType, model: String) {
         scope.launch {
+            // El proveedor elegido pasa a ser el primero de la prioridad.
             settings.setVisionProvider(newProvider)
-            if (newProvider == VisionProviderType.GEMINI) settings.setGeminiModel(model) else settings.setAnthropicModel(model)
+            when (newProvider) {
+                VisionProviderType.GEMINI -> settings.setGeminiModel(model)
+                VisionProviderType.ANTHROPIC -> settings.setAnthropicModel(model)
+                VisionProviderType.OPENROUTER -> settings.setOpenRouterModel(
+                    model,
+                    openRouterCatalog.firstOrNull { it.id == model }?.supportsImages ?: settings.observeOpenRouterModelImages().first()
+                )
+            }
             onPicked()
         }
     }
@@ -111,6 +129,11 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
             val groups = buildList {
                 if (geminiKey.isNotBlank()) add(Triple(VisionProviderType.GEMINI, (GEMINI_MODELS + geminiModel).distinct(), geminiModel))
                 if (anthropicKey.isNotBlank()) add(Triple(VisionProviderType.ANTHROPIC, (ANTHROPIC_MODELS + anthropicModel).distinct(), anthropicModel))
+                if (openRouterKey.isNotBlank()) {
+                    // Los gratuitos del catálogo (los primeros) más el elegido; el resto, en Ajustes.
+                    val free = openRouterCatalog.filter { it.isFree }.take(12).map { it.id }
+                    add(Triple(VisionProviderType.OPENROUTER, (listOfNotNull(openRouterModel.takeIf { it.isNotBlank() }) + free).distinct(), openRouterModel))
+                }
             }
             if (groups.isEmpty()) {
                 item {
@@ -138,6 +161,14 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
                     ) {
                         RadioButton(selected = isCurrent, onClick = { pick(groupProvider, model) })
                         Text(model, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                        if (groupProvider == VisionProviderType.OPENROUTER && openRouterCatalog.any { it.id == model && it.isFree }) {
+                            Text(
+                                L10n.str(R.string.ai_free),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        }
                         if (isCurrent) {
                             Text(
                                 L10n.str(R.string.current_model),

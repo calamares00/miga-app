@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.data.ai.aiCandidates
+import org.calamares.miga.data.ai.runAi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.calamares.miga.data.health.RecipeHealthResult
@@ -78,9 +80,7 @@ class RecipeDetailViewModel(
                 return@launch
             }
             val current = recipe.filterNotNull().first()
-            val provider = settingsRepository.observeVisionProvider().first()
-            val apiKey = settingsRepository.apiKeyFor(provider)
-            if (apiKey.isBlank()) {
+            if (settingsRepository.aiCandidates().isEmpty()) {
                 _healthState.value = HealthState.NotConfigured
                 return@launch
             }
@@ -89,7 +89,6 @@ class RecipeDetailViewModel(
                 return@launch
             }
             _healthState.value = HealthState.Loading
-            val model = settingsRepository.modelFor(provider)
             val ingredientsText = current.ingredientGroups.joinToString("\n") { group ->
                 val header = group.name?.let { "$it:\n" }.orEmpty()
                 header + group.ingredients.joinToString("\n") { "- ${formatIngredient(it, 1.0)}" }
@@ -98,7 +97,12 @@ class RecipeDetailViewModel(
                 val header = group.name?.let { "$it:\n" }.orEmpty()
                 header + group.instructions.joinToString("\n") { "- $it" }
             }
-            when (val result = healthClientFor(provider).analyzeHealthiness(ingredientsText, stepsText, apiKey, model)) {
+            val result = settingsRepository.runAi<RecipeHealthResult>(
+                errorOf = { (it as? RecipeHealthResult.Error)?.reason },
+                error = { RecipeHealthResult.Error(it) }
+            ) { ai -> healthClientFor(ai.provider).analyzeHealthiness(ingredientsText, stepsText, ai.apiKey, ai.model) }
+            when (result) {
+                null -> _healthState.value = HealthState.NotConfigured
                 is RecipeHealthResult.Success -> {
                     val fingerprint = repository.computeHealthFingerprint(current.ingredientGroups, current.stepGroups)
                     repository.saveHealthRating(current.id, result.colorLevel, result.description, fingerprint, System.currentTimeMillis())
@@ -128,9 +132,7 @@ class RecipeDetailViewModel(
                 return@launch
             }
             val current = recipe.filterNotNull().first()
-            val provider = settingsRepository.observeVisionProvider().first()
-            val apiKey = settingsRepository.apiKeyFor(provider)
-            if (apiKey.isBlank()) {
+            if (settingsRepository.aiCandidates().isEmpty()) {
                 _nutritionState.value = NutritionState.NotConfigured
                 return@launch
             }
@@ -139,7 +141,6 @@ class RecipeDetailViewModel(
                 return@launch
             }
             _nutritionState.value = NutritionState.Loading
-            val model = settingsRepository.modelFor(provider)
             val ingredientsText = current.ingredientGroups.joinToString("\n") { group ->
                 val header = group.name?.let { "$it:\n" }.orEmpty()
                 header + group.ingredients.joinToString("\n") { "- ${formatIngredient(it, 1.0)}" }
@@ -148,10 +149,12 @@ class RecipeDetailViewModel(
                 val header = group.name?.let { "$it:\n" }.orEmpty()
                 header + group.instructions.joinToString("\n") { "- $it" }
             }
-            when (
-                val result = nutritionClientFor(provider)
-                    .analyzeNutrition(ingredientsText, stepsText, current.servings, apiKey, model)
-            ) {
+            val result = settingsRepository.runAi<RecipeNutritionResult>(
+                errorOf = { (it as? RecipeNutritionResult.Error)?.reason },
+                error = { RecipeNutritionResult.Error(it) }
+            ) { ai -> nutritionClientFor(ai.provider).analyzeNutrition(ingredientsText, stepsText, current.servings, ai.apiKey, ai.model) }
+            when (result) {
+                null -> _nutritionState.value = NutritionState.NotConfigured
                 is RecipeNutritionResult.Success -> {
                     val fingerprint = repository.computeNutritionFingerprint(current.ingredientGroups, current.stepGroups)
                     repository.saveNutritionInfo(
@@ -179,14 +182,12 @@ class RecipeDetailViewModel(
         viewModelScope.launch {
             _substitutionDialogState.value = SubstitutionDialogState.Loading(ingredientName)
             val current = recipe.filterNotNull().first()
-            val provider = settingsRepository.observeVisionProvider().first()
-            val apiKey = settingsRepository.apiKeyFor(provider)
-            if (apiKey.isBlank()) {
-                _substitutionDialogState.value = SubstitutionDialogState.NotConfigured(ingredientName)
-                return@launch
-            }
-            val model = settingsRepository.modelFor(provider)
-            when (val result = substitutionClientFor(provider).suggestSubstitutes(ingredientName, current.name, apiKey, model)) {
+            val result = settingsRepository.runAi<SubstitutionResult>(
+                errorOf = { (it as? SubstitutionResult.Error)?.reason },
+                error = { SubstitutionResult.Error(it) }
+            ) { ai -> substitutionClientFor(ai.provider).suggestSubstitutes(ingredientName, current.name, ai.apiKey, ai.model) }
+            when (result) {
+                null -> _substitutionDialogState.value = SubstitutionDialogState.NotConfigured(ingredientName)
                 is SubstitutionResult.Success ->
                     _substitutionDialogState.value = SubstitutionDialogState.Loaded(ingredientName, result.substitutions)
                 is SubstitutionResult.Error ->

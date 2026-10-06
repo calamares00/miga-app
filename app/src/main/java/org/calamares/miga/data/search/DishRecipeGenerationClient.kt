@@ -1,5 +1,6 @@
 package org.calamares.miga.data.search
 
+import org.calamares.miga.data.ai.OpenRouterDishRecipeGenerationClient
 import org.calamares.miga.data.vision.outputLanguageInstruction
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -17,6 +18,7 @@ interface DishRecipeGenerationClient {
 fun dishRecipeGenerationClientFor(provider: VisionProviderType): DishRecipeGenerationClient = when (provider) {
     VisionProviderType.GEMINI -> GeminiDishRecipeGenerationClient
     VisionProviderType.ANTHROPIC -> AnthropicDishRecipeGenerationClient
+    VisionProviderType.OPENROUTER -> OpenRouterDishRecipeGenerationClient
 }
 
 // Prompt compartido entre todos los proveedores: pide exactamente el mismo JSON que ya usa

@@ -1,6 +1,9 @@
 package org.calamares.miga.data.vision
 
 import kotlinx.serialization.SerialName
+import org.calamares.miga.L10n
+import org.calamares.miga.R
+import org.calamares.miga.data.support.ErrorDetail
 import kotlinx.serialization.Serializable
 
 /**
@@ -49,9 +52,11 @@ internal data class AnthropicErrorDetail(val message: String? = null)
 // (normalmente por el límite de max_tokens) o la petición fue rechazada por política de
 // contenido. Compartida entre AnthropicVisionClient y AnthropicHealthClient, mismo espíritu que
 // describeGeminiIncompleteResponse.
-internal fun describeAnthropicIncompleteResponse(stopReason: String?): String = when (stopReason) {
-    "max_tokens" -> "Claude cortó la respuesta antes de terminar (demasiado larga). Prueba con menos fotos a la vez o una foto más sencilla."
-    "refusal" -> "Claude rechazó la petición por su política de contenido."
-    null -> "Claude no devolvió ningún resultado."
-    else -> "Claude no completó la respuesta (motivo: $stopReason)."
-}
+internal fun describeAnthropicIncompleteResponse(stopReason: String?): String = ErrorDetail.markAsAi(
+    when (stopReason) {
+        "max_tokens" -> L10n.str(R.string.ai_incomplete_too_long, "Claude")
+        "refusal" -> L10n.str(R.string.ai_incomplete_refused, "Claude")
+        null -> L10n.str(R.string.ai_incomplete_empty, "Claude")
+        else -> L10n.str(R.string.ai_incomplete_other, "Claude", stopReason)
+    }
+)
