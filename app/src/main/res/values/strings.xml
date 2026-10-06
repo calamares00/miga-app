@@ -201,7 +201,7 @@
     <string name="desconocida">"Unknown"</string>
     <string name="desde_archivo_json_zip">"From a file (JSON/ZIP)"</string>
     <string name="desde_imagen">"From an image"</string>
-    <string name="desde_menu_libro_anadir_foto">"From a book's menu, \"Add from photo\" reads the text in a photo (camera or gallery) with AI and fills in the editor so you only have to review it before saving. It needs an internet connection and your own AI API key, set in Settings → Import with AI; without it no photo is sent anywhere."</string>
+    <string name="desde_menu_libro_anadir_foto">"From a book's menu, \"Add from photo\" reads the text in a photo (camera or gallery) with AI and fills in the editor so you only have to review it before saving. It needs an internet connection and your own AI API key, set in Settings → Artificial intelligence; without it no photo is sent anywhere."</string>
     <string name="desde_receta_pasos_pulsa_modo">"In a recipe with steps, tap \"Cooking mode\" to see them full screen, one by one, without the screen turning off while you cook."</string>
     <string name="desde_receta_puedes_exportarla_como">"You can export a recipe as text, PDF or JSON, or a whole book from its menu. And from Settings you can create or restore a full backup."</string>
     <string name="desde_url">"From a URL"</string>
@@ -328,7 +328,7 @@
     <string name="idioma_reconoce_dictas_lista_compra">"Language used to recognise what you dictate (shopping list, recipe steps and cooking mode). Voice commands in cooking mode work in Spanish and English."</string>
     <string name="importar">"Import"</string>
     <string name="importar_copia_seguridad">"Import backup"</string>
-    <string name="importar_ia">"Import with AI"</string>
+    <string name="importar_ia">"Artificial intelligence"</string>
     <string name="importar_receta">"Import recipe"</string>
     <string name="importar_receta_desde_url">"Import recipe from a URL"</string>
     <string name="imported_n_recipes">"%1$s recipes imported"</string>
@@ -734,6 +734,13 @@
     <string name="change_model">"Change model"</string>
     <string name="change_model_title">"Try another model"</string>
     <string name="change_model_body">"Pick a model and Miga will try again. It's also saved as your default in Settings."</string>
-    <string name="no_ai_keys">"Add an API key in Settings → Import with AI to use other models."</string>
+    <string name="no_ai_keys">"Add an API key in Settings → Artificial intelligence to use other models."</string>
     <string name="current_model">"current"</string>
+    <string name="ai_enabled_title">"Use artificial intelligence"</string>
+    <string name="ai_enabled_desc">"Turn it off to hide every AI feature: importing from photos or links, recipe search, health rating, nutrition and substitutes."</string>
+    <string name="ai_health_title">"Automatic health rating"</string>
+    <string name="ai_health_desc">"Rates how healthy a recipe is from its ingredients when you open it."</string>
+    <string name="ai_nutrition_title">"Automatic nutrition estimate"</string>
+    <string name="ai_nutrition_desc">"Estimates calories and macros per serving when you open a recipe."</string>
+    <string name="ai_disabled_summary">"Disabled"</string>
 </resources>

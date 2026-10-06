@@ -1,6 +1,6 @@
 Primera versión pública de Miga.
 • Libros de recetas con fotos, subrecetas, raciones ajustables y modo cocina paso a paso con temporizadores y control por voz.
 • Lista de la compra por categorías y pasillos del súper, con varias listas, plantillas, dictado y escáner de productos (Open Food Facts).
-• Importa recetas desde fotos o páginas web con IA, usando tu propia clave.
+• IA opcional con tu clave: importa recetas de fotos o webs, traducidas a tu idioma.
 • Copias de seguridad, packs de recetas y sincronización con tu propio servidor.
 • Disponible en español e inglés.

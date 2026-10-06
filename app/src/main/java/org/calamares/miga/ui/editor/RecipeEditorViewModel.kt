@@ -322,7 +322,7 @@ class RecipeEditorViewModel(
         viewModelScope.launch {
             val provider = settingsRepository.observeVisionProvider().first()
             val apiKey = settingsRepository.apiKeyFor(provider)
-            if (apiKey.isBlank()) {
+            if (apiKey.isBlank() || !settingsRepository.observeAiEnabled().first()) {
                 row.text = rawText
                 row.isTranscribing = false
                 return@launch

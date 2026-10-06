@@ -35,7 +35,7 @@ object GeminiVisionClient : RecipeVisionClient {
                         contents = listOf(
                             GeminiContent(
                                 parts = images.map { GeminiPart(inlineData = GeminiInlineData(it.mimeType, Base64.getEncoder().encodeToString(it.bytes))) } +
-                                    GeminiPart(text = RECIPE_EXTRACTION_PROMPT)
+                                    GeminiPart(text = recipeExtractionPrompt())
                             )
                         ),
                         generationConfig = GeminiGenerationConfig()

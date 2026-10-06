@@ -1,5 +1,6 @@
 package org.calamares.miga.data.search
 
+import org.calamares.miga.data.vision.transcriptionLanguageInstruction
 import org.calamares.miga.data.vision.RecipeVisionResult
 import org.calamares.miga.data.vision.VisionProviderType
 
@@ -19,7 +20,7 @@ fun recipeUrlImportClientFor(provider: VisionProviderType): RecipeUrlImportClien
 }
 
 // Prompt compartido entre todos los proveedores: pide exactamente el mismo JSON que ya usa
-// RECIPE_EXTRACTION_PROMPT/buildDishRecipePrompt (mismo RecipeVisionResultDto), para no tener el
+// recipeExtractionPrompt()/buildDishRecipePrompt (mismo RecipeVisionResultDto), para no tener el
 // formato duplicado en varios sitios con riesgo de que diverjan; solo cambia la instrucción de
 // partida (interpretar el texto de una página en vez de una foto o generar desde cero).
 internal fun buildUrlImportPrompt(url: String, pageText: String): String = """
@@ -48,8 +49,7 @@ Devuelve ÚNICAMENTE un JSON con este formato exacto, sin explicaciones ni texto
   "tags": ["string", ...],
   "utensils": ["string", ...]
 }
-Respeta el idioma original de la receta: transcríbela tal cual, sin traducirla. Si el texto no
-contiene ninguna receta reconocible, deja "name" vacío. En "source" pon la URL
+Si el texto no contiene ninguna receta reconocible, deja "name" vacío. En "source" pon la URL
 original ($url). Si no puedes determinar algún dato, usa null (o una lista vacía) en vez de
 inventarlo al azar.
-""".trimIndent()
+""".trimIndent() + transcriptionLanguageInstruction()
