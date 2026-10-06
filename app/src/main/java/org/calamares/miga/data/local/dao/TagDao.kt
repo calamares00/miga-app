@@ -16,7 +16,7 @@ interface TagDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(tag: TagEntity): Long
 
-    @Query("SELECT * FROM tags WHERE name = :name LIMIT 1")
+    @Query("SELECT * FROM tags WHERE name = :name COLLATE NOCASE LIMIT 1")
     suspend fun findByName(name: String): TagEntity?
 
     @Delete

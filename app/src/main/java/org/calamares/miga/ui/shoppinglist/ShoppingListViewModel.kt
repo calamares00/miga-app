@@ -164,7 +164,7 @@ class ShoppingListViewModel(
                     if (announcedListUid == listUid) {
                         val others = items.filter { it.uid !in knownItemUids && !it.addedBy.isNullOrBlank() && !it.addedBy.equals(me, ignoreCase = true) }
                         if (others.isNotEmpty()) {
-                            val who = others.map { it.addedBy!! }.distinct()
+                            val who = others.mapNotNull { it.addedBy }.distinct()
                             val names = if (who.size == 1) who.single() else L10n.str(R.string.several_people)
                             _remoteAdditions.tryEmit(L10n.str(R.string.x_added_x, names, if (others.size == 1) L10n.str(R.string.n_1_item) else L10n.str(R.string.x_items, others.size)))
                         }

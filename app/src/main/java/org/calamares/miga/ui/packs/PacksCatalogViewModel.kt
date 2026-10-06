@@ -46,8 +46,8 @@ class PacksCatalogViewModel(
                 is CatalogFetchResult.Error -> _uiState.value = CatalogUiState.Error(result.reason)
                 is CatalogFetchResult.Success -> {
                     val installedVersionByPackId = repository.observeRecipeBooks().first()
-                        .filter { it.isPack }
-                        .associate { it.packId!! to (it.packVersion ?: 0) }
+                        .mapNotNull { book -> book.packId?.let { it to (book.packVersion ?: 0) } }
+                        .toMap()
                     val items = result.packs.map { entry -> PackListItem(entry, installedVersionByPackId[entry.id]) }
                     _uiState.value = CatalogUiState.Loaded(items)
                 }

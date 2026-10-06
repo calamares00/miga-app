@@ -367,7 +367,7 @@ class RecipeRepository(
 
     suspend fun addCategory(name: String) {
         val trimmed = name.trim()
-        if (trimmed.isNotEmpty()) categoryDao.insert(CategoryEntity(name = trimmed))
+        if (trimmed.isNotEmpty()) resolveCategoryId(trimmed)
     }
 
     suspend fun renameCategory(id: Long, newName: String) {
@@ -396,7 +396,7 @@ class RecipeRepository(
 
     suspend fun addUtensil(name: String) {
         val trimmed = name.trim()
-        if (trimmed.isNotEmpty()) utensilDao.insert(UtensilEntity(name = trimmed))
+        if (trimmed.isNotEmpty()) resolveUtensilId(trimmed)
     }
 
     suspend fun renameUtensil(id: Long, newName: String) {
@@ -431,7 +431,7 @@ class RecipeRepository(
 
     suspend fun addTag(name: String) {
         val trimmed = name.trim()
-        if (trimmed.isNotEmpty()) tagDao.insert(TagEntity(name = trimmed))
+        if (trimmed.isNotEmpty()) resolveTagId(trimmed)
     }
 
     // --- Ingredient catalogue (autocomplete) ---
@@ -509,8 +509,7 @@ class RecipeRepository(
 
     private suspend fun resolveIngredientCategoryId(name: String): Long {
         ingredientCategoryDao.findByName(name)?.let { return it.id }
-        ingredientCategoryDao.insert(IngredientCategoryEntity(name = name))
-        return ingredientCategoryDao.findByName(name)!!.id
+        return ingredientCategoryDao.insert(IngredientCategoryEntity(name = name))
     }
 
     // --- Shopping list ---
@@ -584,7 +583,7 @@ class RecipeRepository(
                 val existing = if (ingredient.quantity != null) shoppingListDao.findMergeable(listUid, normalized, trimmedUnit) else null
                 if (existing != null) {
                     shoppingListDao.update(
-                        existing.copy(quantity = existing.quantity!! + ingredient.quantity!!, updatedAt = now, updatedBy = author, syncDirty = true)
+                        existing.copy(quantity = (existing.quantity ?: 0.0) + (ingredient.quantity ?: 0.0), updatedAt = now, updatedBy = author, syncDirty = true)
                     )
                 } else {
                     shoppingListDao.insert(
@@ -1677,22 +1676,19 @@ class RecipeRepository(
     private suspend fun resolveCategoryId(name: String): Long {
         val trimmed = name.trim()
         categoryDao.findByName(trimmed)?.let { return it.id }
-        categoryDao.insert(CategoryEntity(name = trimmed))
-        return categoryDao.findByName(trimmed)!!.id
+        return categoryDao.insert(CategoryEntity(name = trimmed))
     }
 
     private suspend fun resolveTagId(name: String): Long {
         val trimmed = name.trim()
         tagDao.findByName(trimmed)?.let { return it.id }
-        tagDao.insert(TagEntity(name = trimmed))
-        return tagDao.findByName(trimmed)!!.id
+        return tagDao.insert(TagEntity(name = trimmed))
     }
 
     private suspend fun resolveUtensilId(name: String): Long {
         val trimmed = name.trim()
         utensilDao.findByName(trimmed)?.let { return it.id }
-        utensilDao.insert(UtensilEntity(name = trimmed))
-        return utensilDao.findByName(trimmed)!!.id
+        return utensilDao.insert(UtensilEntity(name = trimmed))
     }
 }
 

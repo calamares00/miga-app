@@ -513,7 +513,6 @@
     <string name="faq_contact">"Preguntas frecuentes y contacto"</string>
     <string name="prep_min">"Prep. (min)"</string>
     <string name="method">"Preparación"</string>
-    <string name="method_2">"PREPARACIÓN"</string>
     <string name="test_connection">"Probar conexión"</string>
     <string name="test_voice">"Probar voz"</string>
     <string name="processing">"Procesando…"</string>
@@ -537,7 +536,6 @@
     <string name="remove_sub_recipe">"Quitar sub-receta"</string>
     <string name="remove_x">"Quitar %1$s"</string>
     <string name="remove_x_template">"Quitar %1$s de la plantilla"</string>
-    <string name="servings">" · Raciones: "</string>
     <string name="servings_2">"Raciones"</string>
     <string name="servings_x">" · Raciones: %1$s"</string>
     <string name="does_recipe_continue_another_photo">"¿La receta continúa en otra foto? Puedes seguir añadiendo páginas o continuar con las que ya tienes."</string>

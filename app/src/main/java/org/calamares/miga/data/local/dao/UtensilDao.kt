@@ -17,7 +17,7 @@ interface UtensilDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(utensil: UtensilEntity): Long
 
-    @Query("SELECT * FROM utensils WHERE name = :name LIMIT 1")
+    @Query("SELECT * FROM utensils WHERE name = :name COLLATE NOCASE LIMIT 1")
     suspend fun findByName(name: String): UtensilEntity?
 
     @Query("SELECT * FROM utensils WHERE id = :id")
