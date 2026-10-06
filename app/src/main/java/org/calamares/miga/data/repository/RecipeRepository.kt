@@ -1,6 +1,8 @@
 package org.calamares.miga.data.repository
 
 import androidx.room.withTransaction
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.data.export.IngredientDto
 import org.calamares.miga.data.export.IngredientGroupDto
 import org.calamares.miga.data.export.RecipeExportDto
@@ -73,18 +75,19 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 
-/** Se lanza al intentar borrar un libro de recetas que todavía tiene recetas dentro. */
+/** Thrown when trying to delete a recipe book that still contains recipes. */
 class RecipeBookNotEmptyException(val recipeCount: Int) : Exception()
 
-/** Resultado de [RecipeRepository.wipeUserRecipesAndBooks]. */
+/** Result of [RecipeRepository.wipeUserRecipesAndBooks]. */
 data class WipeResult(val bookCount: Int, val recipeCount: Int)
 
 /**
- * [onSyncChangeEnqueued] se llama justo después de encolar en el outbox uno o más cambios de una
- * conexión (ver saveRecipe/saveRecipeBook/deleteRecipe/deleteRecipeBook/linkBookToSyncConnection),
- * para que quien construye el repositorio (MigaApp) pueda lanzar un intento de subida
- * inmediata en segundo plano sin que el guardado tenga que esperar a la red - si falla (sin red,
- * servidor caído), el outbox lo recoge igualmente en el siguiente sync manual/automático.
+ * Single source of truth for the app data.
+ *
+ * [onSyncChangeEnqueued] is called right after one or more changes of a connection are queued in
+ * the sync outbox (see saveRecipe, saveRecipeBook, deleteRecipe, deleteRecipeBook and
+ * linkBookToSyncConnection). It lets MigaApp start an immediate background upload without making
+ * the save wait for the network; if that fails, the outbox is picked up by the next sync anyway.
  */
 class RecipeRepository(
     private val db: AppDatabase,
@@ -110,7 +113,7 @@ class RecipeRepository(
     fun observeRecipesForBook(bookId: Long): Flow<List<Recipe>> =
         recipeDao.observeAllWithDetailsForBook(bookId).map { list -> list.map { it.toDomain() } }
 
-    /** Todas las recetas de todos los libros, usado en la búsqueda global desde la página principal. */
+    /** Every recipe in every book, used by the global search. */
     fun observeAllRecipes(): Flow<List<Recipe>> =
         recipeDao.observeAllWithDetails().map { list -> list.map { it.toDomain() } }
 
@@ -134,7 +137,7 @@ class RecipeRepository(
         recipeDao.setFavorite(id, favorite)
     }
 
-    /** [rating] entre 1 y 5, o null para quitar la valoración. */
+    /** [rating] from 1 to 5, or null to clear the rating. */
     suspend fun setRating(id: Long, rating: Int?) {
         recipeDao.setRating(id, rating)
     }
@@ -143,7 +146,9 @@ class RecipeRepository(
         recipeDao.incrementTimesCooked(id)
     }
 
-    /** No-op si la receta pertenece a un libro-pack (ver [RecipeBook.isPack]): son de solo lectura. */
+    /**
+     * No-op when the recipe belongs to a pack book (see [RecipeBook.isPack]), which is read-only.
+     */
     suspend fun deleteRecipe(id: Long) {
         val recipe = recipeDao.getRecipeOnce(id) ?: return
         val book = recipeBookDao.getOnce(recipe.recipeBookId) ?: return
@@ -155,13 +160,16 @@ class RecipeRepository(
         }
     }
 
-    /** No-op si [newBookId] es un libro-pack: no se puede añadir contenido a uno (moverlo FUERA de un pack sí está permitido). */
+    /**
+     * No-op when [newBookId] is a pack book, since content cannot be added to one. Moving a recipe
+     * out of a pack is allowed.
+     */
     suspend fun moveRecipeToBook(recipeId: Long, newBookId: Long) {
         if (recipeBookDao.getOnce(newBookId)?.packId != null) return
         recipeDao.updateRecipeBook(recipeId, newBookId)
     }
 
-    /** Defensa en profundidad equivalente a la de [saveRecipeBook]: no-op si el libro destino es un pack. */
+    /** Same safeguard as [saveRecipeBook]: no-op when the target book is a pack. */
     suspend fun saveRecipe(draft: RecipeDraft): Long {
         var syncedConnectionId: Long? = null
         val recipeId = db.withTransaction {
@@ -193,10 +201,9 @@ class RecipeRepository(
                 )
             } else {
                 val existing = recipeDao.getRecipeOnce(draft.id)
-                // Si los ingredientes o pasos han cambiado desde el último análisis de salud, la
-                // valoración cacheada ya no es válida para el contenido nuevo: se limpia para que se
-                // vuelva a calcular la próxima vez que se abra la receta. Si no han cambiado, se
-                // conserva tal cual (edición de notas/raciones/fotos/etc. no invalida nada).
+                // If the ingredients or steps changed since the last health analysis, the cached
+                // rating no longer applies and is cleared so it is recalculated the next time the
+                // recipe is opened. Editing anything else (notes, servings, photos...) keeps it.
                 val newFingerprint = computeHealthFingerprint(draft.ingredientGroups, draft.stepGroups)
                 val keepHealth = existing != null && existing.healthFingerprint == newFingerprint
                 recipeDao.updateRecipe(
@@ -220,8 +227,8 @@ class RecipeRepository(
                         healthDescription = if (keepHealth) existing?.healthDescription else null,
                         healthFingerprint = if (keepHealth) existing?.healthFingerprint else null,
                         healthAnalyzedAt = if (keepHealth) existing?.healthAnalyzedAt else null,
-                        // La estimación nutricional depende del mismo contenido (ingredientes+pasos),
-                        // así que se invalida con el mismo criterio que la valoración de salud.
+                        // The nutrition estimate depends on the same content, so it is invalidated
+                        // with the same rule.
                         nutritionCalories = if (keepHealth) existing?.nutritionCalories else null,
                         nutritionProteinGrams = if (keepHealth) existing?.nutritionProteinGrams else null,
                         nutritionCarbsGrams = if (keepHealth) existing?.nutritionCarbsGrams else null,
@@ -234,7 +241,7 @@ class RecipeRepository(
                 draft.id
             }
 
-            // Ingredientes: se reescriben por completo en cada guardado.
+            // Ingredients are rewritten on every save.
             recipeDao.deleteIngredients(recipeId)
             var ingredientPosition = 0
             val ingredientEntities = draft.ingredientGroups.flatMap { group ->
@@ -256,7 +263,7 @@ class RecipeRepository(
                 }
             }
 
-            // Pasos: se reescriben por completo en cada guardado.
+            // Steps are rewritten on every save.
             recipeDao.deleteSteps(recipeId)
             var stepPosition = 0
             val stepEntities = draft.stepGroups.flatMap { group ->
@@ -271,8 +278,8 @@ class RecipeRepository(
             }
             if (stepEntities.isNotEmpty()) recipeDao.insertSteps(stepEntities)
 
-            // Fotos: se reescriben por completo, pero conservando el uid de las que ya existían (por
-            // uri) para que el motor de sincronización no las trate como fotos nuevas en cada guardado.
+            // Photos are rewritten too, but existing ones (matched by uri) keep their uid so the
+            // sync engine does not treat them as new photos on every save.
             val existingPhotos = recipeDao.getPhotosOnce(recipeId)
             val existingUidByUri = existingPhotos.associate { it.uri to it.uid }
             recipeDao.deletePhotos(recipeId)
@@ -294,7 +301,7 @@ class RecipeRepository(
                 recipeDao.insertTagCrossRefs(tagIds.map { RecipeTagCrossRef(recipeId, it) })
             }
 
-            // Utensilios
+            // Utensils
             recipeDao.deleteUtensilCrossRefs(recipeId)
             val utensilIds = draft.utensilNames.filter { it.isNotBlank() }.map { resolveUtensilId(it) }
             if (utensilIds.isNotEmpty()) {
@@ -304,10 +311,10 @@ class RecipeRepository(
             targetBook?.syncConnectionId?.let { connectionId ->
                 recipeDao.getRecipeOnce(recipeId)?.let { saved ->
                     enqueueSyncChange(connectionId, SyncEntityType.RECIPE, saved.uid, SyncChangeType.UPSERT)
-                    // Fotos añadidas/quitadas en este guardado (no las que ya estaban, esas no cambian):
-                    // el borrado de una foto suelta no pasa por deleteRecipe (que sí cascada en el
-                    // servidor), así que hace falta encolarlo aparte, con el uid de la receta como
-                    // parentUid porque la fila de la foto ya no existe para poder consultarlo después.
+                    // Photos added or removed in this save. Removing a single photo does not go
+                    // through deleteRecipe (which cascades on the server), so it is queued
+                    // separately, with the recipe uid as parentUid because the photo row will no
+                    // longer exist.
                     val oldUids = existingPhotos.mapNotNull { it.uid }.toSet()
                     val newUids = newPhotoEntities.mapNotNull { it.uid }.toSet()
                     (newUids - oldUids).forEach { photoUid ->
@@ -343,19 +350,20 @@ class RecipeRepository(
     }
 
     /**
-     * Huella de [ingredientGroups]+[stepGroups]: si cambia respecto a la guardada junto a una
-     * valoración de salud, esa valoración ya no es válida para el contenido actual de la receta.
-     * Delegado a [HealthFingerprint] (función pura, con sus propios tests unitarios).
+     * Fingerprint of [ingredientGroups] and [stepGroups]. When it differs from the one stored with
+     * a health rating, that rating no longer matches the recipe. See [HealthFingerprint].
      */
     fun computeHealthFingerprint(ingredientGroups: List<IngredientGroup>, stepGroups: List<StepGroup>): String =
         HealthFingerprint.compute(ingredientGroups, stepGroups)
 
-    /** Misma huella que [computeHealthFingerprint] (depende del mismo contenido); nombre propio
-     *  para que su uso en el análisis nutricional se lea con claridad en el sitio que la llama. */
+    /**
+     * Same fingerprint as [computeHealthFingerprint] (it depends on the same content), named
+     * separately so nutrition call sites read clearly.
+     */
     fun computeNutritionFingerprint(ingredientGroups: List<IngredientGroup>, stepGroups: List<StepGroup>): String =
         HealthFingerprint.compute(ingredientGroups, stepGroups)
 
-    // --- Categorías ---
+    // --- Categories ---
 
     suspend fun addCategory(name: String) {
         val trimmed = name.trim()
@@ -374,7 +382,7 @@ class RecipeRepository(
 
     suspend fun countRecipesUsingCategory(id: Long): Int = categoryDao.countRecipesUsing(id)
 
-    /** Crea el catálogo inicial de categorías si la base de datos está vacía. */
+    /** Creates the default categories when the database has none. */
     suspend fun seedDefaultCategoriesIfEmpty(language: String = "es") {
         val names = if (language == "es") listOf("Postres", "Cremas", "Pastas") else listOf("Desserts", "Soups", "Pasta")
         names.forEach { name ->
@@ -384,7 +392,7 @@ class RecipeRepository(
         }
     }
 
-    // --- Utensilios ---
+    // --- Utensils ---
 
     suspend fun addUtensil(name: String) {
         val trimmed = name.trim()
@@ -403,7 +411,7 @@ class RecipeRepository(
 
     suspend fun countRecipesUsingUtensil(id: Long): Int = utensilDao.countRecipesUsing(id)
 
-    /** Crea el catálogo inicial de utensilios habituales si la base de datos está vacía. */
+    /** Creates the default utensils when the database has none. */
     suspend fun seedDefaultUtensilsIfEmpty(language: String = "es") {
         val defaults = if (language == "es") listOf(
             "Horno", "Microondas", "Sartén", "Olla", "Batidora", "Robot de cocina",
@@ -419,14 +427,14 @@ class RecipeRepository(
         }
     }
 
-    // --- Etiquetas ---
+    // --- Tags ---
 
     suspend fun addTag(name: String) {
         val trimmed = name.trim()
         if (trimmed.isNotEmpty()) tagDao.insert(TagEntity(name = trimmed))
     }
 
-    // --- Catálogo de ingredientes (autocompletado) ---
+    // --- Ingredient catalogue (autocomplete) ---
 
     suspend fun addIngredientName(name: String) {
         val trimmed = name.trim()
@@ -444,7 +452,7 @@ class RecipeRepository(
         ingredientCatalogDao.delete(IngredientCatalogEntity(id = id, name = ""))
     }
 
-    /** Fila del catálogo de ingredientes con el nombre de su categoría ya resuelto para la UI. */
+    /** Ingredient catalogue rows with their category name already resolved for the UI. */
     fun observeIngredientCatalogWithCategory(): Flow<List<IngredientCatalogItem>> =
         combine(ingredientCatalogDao.observeAll(), ingredientCategoryDao.observeAll()) { ingredients, categories ->
             val namesById = categories.associateBy({ it.id }, { it.name })
@@ -462,7 +470,7 @@ class RecipeRepository(
         ingredientCatalogDao.updateCategory(id, categoryId)
     }
 
-    // --- Categorías de ingredientes (distintas de las categorías de receta) ---
+    // --- Ingredient categories (not the same as recipe categories) ---
 
     fun observeIngredientCategories(): Flow<List<IngredientCategoryEntity>> = ingredientCategoryDao.observeAll()
 
@@ -484,9 +492,9 @@ class RecipeRepository(
     suspend fun countIngredientsUsingCategory(id: Long): Int = ingredientCategoryDao.countIngredientsUsing(id)
 
     /**
-     * Añade el catálogo base de ingredientes con categoría (ver IngredientCatalogSeed). Los
-     * ingredientes que el usuario ya tuviera creados NO se tocan ni se recategorizan: solo se
-     * insertan los nombres que todavía no existan, así que se puede llamar en cada arranque.
+     * Adds the base ingredient catalogue with categories (see IngredientCatalogSeed). Ingredients
+     * the user already has are not touched or recategorised; only missing names are inserted, so it
+     * is safe to call on every start.
      */
     suspend fun seedIngredientCatalogDefaults(language: String = "es") {
         IngredientCatalogSeed.forLanguage(language).forEach { (categoryName, names) ->
@@ -505,19 +513,24 @@ class RecipeRepository(
         return ingredientCategoryDao.findByName(name)!!.id
     }
 
-    // --- Lista de la compra ---
+    // --- Shopping list ---
 
     private suspend fun currentShoppingListUid(): String = shoppingContext.listUid.first()
 
-    /** Nombre con el que se firman los cambios, o null si el usuario no ha indicado ninguno. */
+    /** Name used to sign changes, or null when the user has not set one. */
     private suspend fun currentShoppingAuthor(): String? = shoppingContext.author.first().trim().takeIf { it.isNotEmpty() }
 
-    /** Lista actual agrupada por categoría de ingrediente (ver ingredient_categories); sin categoría al final. */
+    /**
+     * Current list grouped by ingredient category (see ingredient_categories), uncategorized last.
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
     fun observeShoppingList(): Flow<List<ShoppingListGroup>> =
         shoppingContext.listUid.flatMapLatest { listUid -> observeShoppingGroups(listUid) }
 
-    /** Igual que [observeShoppingList] pero acompañada del uid de la lista a la que pertenece cada emisión (sin desfases al cambiar de lista). */
+    /**
+     * Like [observeShoppingList], but each emission comes with the uid of its list, so switching
+     * lists never mixes data.
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
     fun observeShoppingListSnapshots(): Flow<Pair<String, List<ShoppingListGroup>>> =
         shoppingContext.listUid.flatMapLatest { listUid -> observeShoppingGroups(listUid).map { listUid to it } }
@@ -549,8 +562,9 @@ class RecipeRepository(
         }
 
     /**
-     * Añade ingredientes (de una receta, o de varias) a la lista actual, fusionando por nombre
-     * normalizado + unidad cuando ambos lados tienen cantidad; si no, inserta una fila nueva.
+     * Adds ingredients (from one or several recipes) to the current list. An entry is merged with
+     * an existing one with the same normalised name and unit when both have a quantity; otherwise a
+     * new row is inserted.
      */
     suspend fun addIngredientsToShoppingList(ingredients: List<Ingredient>, recordHistory: Boolean = false) {
         addIngredientsToShoppingListInTransaction(ingredients, recordHistory)
@@ -604,7 +618,10 @@ class RecipeRepository(
         }
     }
 
-    /** Artículos escritos, dictados o importados por el usuario: como los de receta, pero además alimentan el historial de sugerencias. */
+    /**
+     * Items typed, dictated or imported by the user. Same as recipe ingredients, but they also feed
+     * the suggestion history.
+     */
     suspend fun addShoppingListEntries(ingredients: List<Ingredient>) {
         addIngredientsToShoppingList(ingredients, recordHistory = true)
     }
@@ -612,7 +629,7 @@ class RecipeRepository(
     fun observeShoppingHistory(): Flow<List<ShoppingSuggestion>> =
         shoppingHistoryDao.observeAll().map { list -> list.map { ShoppingSuggestion(it.name, it.lastQuantity, it.lastUnit, it.uses) } }
 
-    /** Reinserta un artículo quitado por error (deshacer); no fusiona con filas existentes. */
+    /** Re-inserts an item removed by mistake (undo) without merging it with existing rows. */
     suspend fun restoreShoppingListItem(item: ShoppingListItem) {
         val author = currentShoppingAuthor()
         shoppingListDao.insert(
@@ -634,12 +651,17 @@ class RecipeRepository(
         notifyShoppingListChanged()
     }
 
-    /** Artículo manual sin receta de origen (p.ej. "papel de aluminio"); pasa por la misma fusión que los de receta. */
+    /**
+     * Manual item without a source recipe (e.g. "aluminium foil"), merged like recipe ingredients.
+     */
     suspend fun addManualShoppingListItem(name: String, quantity: Double?, unit: String?) {
         addShoppingListEntries(listOf(Ingredient(name, quantity, unit)))
     }
 
-    /** Producto escaneado (con foto): si ya hay un artículo pendiente con ese nombre solo se le añade la foto. */
+    /**
+     * Scanned product with a photo. If a pending item with the same name already exists, only the
+     * photo is added to it.
+     */
     suspend fun addScannedShoppingProduct(name: String, imageUrl: String?, info: ProductInfo?, quantity: Double? = null, unit: String? = null) {
         val infoJson = info?.let { ProductInfoCodec.encode(it) }
         val trimmed = name.trim()
@@ -694,19 +716,19 @@ class RecipeRepository(
         notifyShoppingListChanged()
     }
 
-    // --- Varias listas de la compra ---
+    // --- Multiple shopping lists ---
 
-    /** La lista por defecto (siempre la primera) y las adicionales del usuario. */
+    /** The default list (always first) followed by the user's extra lists. */
     fun observeShoppingLists(): Flow<List<ShoppingListInfo>> =
         shoppingListsDao.observeAll().map { rows ->
             listOf(ShoppingListInfo(DEFAULT_SHOPPING_LIST_UID, DEFAULT_SHOPPING_LIST_NAME)) + rows.map { ShoppingListInfo(it.uid, it.name) }
         }
 
-    /** Artículos pendientes (sin marcar) por lista, para mostrarlos en el selector de listas; las listas vacías no salen. */
+    /** Pending (unchecked) item count per list, for the list picker. Empty lists are omitted. */
     fun observeShoppingListPendingCounts(): Flow<Map<String, Int>> =
         shoppingListDao.observePendingCounts().map { rows -> rows.associate { it.listUid to it.pending } }
 
-    /** Crea una lista adicional y devuelve su uid (null si el nombre está vacío). */
+    /** Creates an extra list and returns its uid, or null when the name is blank. */
     suspend fun createShoppingList(name: String): String? {
         val trimmed = name.trim().take(60)
         if (trimmed.isEmpty()) return null
@@ -725,7 +747,9 @@ class RecipeRepository(
         notifyShoppingListChanged()
     }
 
-    /** Borra una lista adicional con todos sus artículos (tombstones, para que otras apps también la borren). */
+    /**
+     * Deletes an extra list and all its items, leaving tombstones so other devices delete them too.
+     */
     suspend fun deleteShoppingList(uid: String) {
         if (uid == DEFAULT_SHOPPING_LIST_UID) return
         val existing = shoppingListsDao.findByUid(uid) ?: return
@@ -737,14 +761,14 @@ class RecipeRepository(
         notifyShoppingListChanged()
     }
 
-    // --- Supermercados (orden de pasillos) ---
+    // --- Stores (aisle order) ---
 
     fun observeShoppingStores(): Flow<List<ShoppingStore>> =
         shoppingStoreDao.observeAll().map { list ->
             list.map { ShoppingStore(it.id, it.name, it.color, it.aisleOrder.split("\n").map(String::trim).filter(String::isNotEmpty)) }
         }
 
-    /** Crea ([store].id == 0) o actualiza una tienda; devuelve su id. */
+    /** Creates ([store].id == 0) or updates a store and returns its id. */
     suspend fun saveShoppingStore(store: ShoppingStore): Long {
         val name = store.name.trim()
         if (name.isEmpty()) return store.id
@@ -759,21 +783,21 @@ class RecipeRepository(
 
     suspend fun deleteShoppingStore(id: Long) = shoppingStoreDao.delete(id)
 
-    // --- Plantillas de lista ---
+    // --- List templates ---
 
     fun observeShoppingTemplates(): Flow<List<ShoppingTemplate>> =
         shoppingTemplateDao.observeAll().map { list ->
             list.map { ShoppingTemplate(it.id, it.name, ShoppingTemplateCodec.decode(it.body, ShoppingListShareCodec::fromLines)) }
         }
 
-    /** Crea una plantilla (puede estar vacía) y devuelve su id, o null si el nombre está vacío. */
+    /** Creates a template (possibly empty) and returns its id, or null when the name is blank. */
     suspend fun saveShoppingTemplate(name: String, items: List<TemplateItem>): Long? {
         if (name.isBlank()) return null
         val body = ShoppingTemplateCodec.encode(items)
         return shoppingTemplateDao.insert(ShoppingTemplateEntity(name = name.trim(), body = body, createdAt = System.currentTimeMillis()))
     }
 
-    /** Cambia los artículos de una plantilla del usuario aplicando [transform] a los actuales. */
+    /** Replaces the items of a user template with [transform] applied to the current ones. */
     suspend fun updateShoppingTemplateItems(id: Long, transform: (List<TemplateItem>) -> List<TemplateItem>) {
         db.withTransaction {
             val entity = shoppingTemplateDao.get(id) ?: return@withTransaction
@@ -787,7 +811,7 @@ class RecipeRepository(
         shoppingTemplateDao.rename(id, name.trim())
     }
 
-    /** Añade a la lista actual los artículos de una plantilla; los productos llegan con su foto y su ficha. */
+    /** Adds a template's items to the current list. Products keep their photo and product sheet. */
     suspend fun applyShoppingTemplate(items: List<TemplateItem>) {
         val (products, plain) = items.partition { it.isProduct }
         if (plain.isNotEmpty()) addShoppingListEntries(plain.map { Ingredient(it.name, it.quantity, it.unit) })
@@ -801,7 +825,9 @@ class RecipeRepository(
         notifyShoppingListChanged()
     }
 
-    /** Borrado lógico (tombstone): así, si la lista está compartida, el borrado también llega a las demás apps. */
+    /**
+     * Soft delete (tombstone), so the deletion also reaches other devices when the list is shared.
+     */
     suspend fun deleteShoppingListItem(id: Long) {
         shoppingListDao.softDelete(id, System.currentTimeMillis())
         notifyShoppingListChanged()
@@ -817,15 +843,21 @@ class RecipeRepository(
         notifyShoppingListChanged()
     }
 
-    // --- Listas de la compra compartidas (sincronización) ---
+    // --- Shared shopping lists (sync) ---
 
-    /** Si hay una conexión que comparte las listas, pide una subida en segundo plano (mismo mecanismo que el outbox de libros). */
+    /**
+     * If a connection shares the lists, requests a background upload (same mechanism as the book
+     * outbox).
+     */
     private suspend fun notifyShoppingListChanged() {
         syncConnectionDao.getShoppingSyncConnection()?.let { onSyncChangeEnqueued(it.id) }
         purgeShoppingTombstonesIfNotShared()
     }
 
-    /** Sin conexión que las comparta, los tombstones no sirven para nada: se limpian en cuanto se crean. */
+    /**
+     * Without a connection sharing the lists, tombstones are useless, so they are purged right
+     * away.
+     */
     private suspend fun purgeShoppingTombstonesIfNotShared() {
         if (syncConnectionDao.getShoppingSyncConnection() == null) {
             shoppingListDao.purgeAllTombstones()
@@ -833,14 +865,14 @@ class RecipeRepository(
         }
     }
 
-    /** Id de la conexión que comparte las listas de la compra, o null si ninguna. */
+    /** Id of the connection that shares the shopping lists, or null when there is none. */
     suspend fun getShoppingSyncConnectionId(): Long? = syncConnectionDao.getShoppingSyncConnection()?.id
 
     /**
-     * Activa (o desactiva, con null) la compartición de las listas de la compra a través de la
-     * conexión [connectionId]; como mucho una conexión a la vez. Al activar, todos los artículos y
-     * listas actuales se marcan para subir y la próxima sincronización baja además todo lo del
-     * servidor (los artículos de ambos lados se combinan, sin fusionar duplicados).
+     * Enables shopping list sharing through [connectionId], or disables it with null. At most one
+     * connection shares at a time. When enabled, every current item and list is marked for upload
+     * and the next sync also downloads everything on the server; items from both sides are combined
+     * without merging duplicates.
      */
     suspend fun setShoppingSyncConnection(connectionId: Long?) {
         db.withTransaction {
@@ -861,7 +893,7 @@ class RecipeRepository(
 
     suspend fun markShoppingInitialPullDone(connectionId: Long) = syncConnectionDao.markShoppingPulled(connectionId)
 
-    /** Cambios locales de las listas pendientes de subir (incluye tombstones: deletedAt != null). */
+    /** Local list changes waiting to be uploaded, including tombstones (deletedAt != null). */
     suspend fun getDirtyShoppingLists(): List<ShoppingListSyncDto> =
         shoppingListsDao.getDirty().map { ShoppingListSyncDto(uid = it.uid, name = it.name, updatedAt = it.updatedAt, deletedAt = it.deletedAt) }
 
@@ -870,7 +902,7 @@ class RecipeRepository(
         shoppingListsDao.purgeSyncedTombstones()
     }
 
-    /** Cambios locales de artículos pendientes de subir (incluye tombstones: deletedAt != null). */
+    /** Local item changes waiting to be uploaded, including tombstones (deletedAt != null). */
     suspend fun getDirtyShoppingItems(): List<ShoppingItemSyncDto> =
         shoppingListDao.getDirty().map { entity ->
             ShoppingItemSyncDto(
@@ -889,13 +921,19 @@ class RecipeRepository(
             )
         }
 
-    /** Tras subir con éxito: limpia la marca (si la fila no cambió entretanto) y descarta el tombstone ya subido. */
+    /**
+     * After a successful upload: clears the dirty flag (unless the row changed meanwhile) and drops
+     * the uploaded tombstone.
+     */
     suspend fun markShoppingItemSynced(uid: String, updatedAt: Long) = db.withTransaction {
         shoppingListDao.markSynced(uid, updatedAt)
         shoppingListDao.purgeSyncedTombstones()
     }
 
-    /** Aplica listas bajadas del servidor con "última escritura gana"; borrar una lista borra también sus artículos locales. */
+    /**
+     * Applies lists downloaded from the server with last-write-wins. Deleting a list also deletes
+     * its local items.
+     */
     suspend fun applyRemoteShoppingLists(lists: List<ShoppingListSyncDto>) = db.withTransaction {
         lists.forEach { dto ->
             if (dto.uid == DEFAULT_SHOPPING_LIST_UID) return@forEach
@@ -916,8 +954,10 @@ class RecipeRepository(
         }
     }
 
-    /** Aplica artículos bajados del servidor con "última escritura gana" por updatedAt: un cambio local
-     *  todavía sin subir y más reciente que el remoto se conserva (se subirá y ganará en el servidor). */
+    /**
+     * Applies items downloaded from the server with last-write-wins by updatedAt. A newer local
+     * change that has not been uploaded yet is kept; it will be uploaded and win on the server.
+     */
     suspend fun applyRemoteShoppingItems(items: List<ShoppingItemSyncDto>) = db.withTransaction {
         items.forEach { dto ->
             val local = shoppingListDao.findByUid(dto.uid)
@@ -929,7 +969,7 @@ class RecipeRepository(
             val name = dto.name.trim()
             if (name.isEmpty()) return@forEach
             val listUid = dto.listId.ifBlank { DEFAULT_SHOPPING_LIST_UID }
-            // Un artículo de una lista que aquí no existe (ya borrada) no se guarda: quedaría huérfano.
+            // An item of a list that no longer exists here is dropped; it would be orphaned.
             if (listUid != DEFAULT_SHOPPING_LIST_UID && shoppingListsDao.findByUid(listUid) == null) return@forEach
             val entity = ShoppingListItemEntity(
                 id = local?.id ?: 0,
@@ -953,7 +993,7 @@ class RecipeRepository(
         }
     }
 
-    // --- Libros de recetas ---
+    // --- Recipe books ---
 
     fun observeRecipeBooks(): Flow<List<RecipeBookSummary>> =
         recipeBookDao.observeAllWithCounts().map { list ->
@@ -971,7 +1011,7 @@ class RecipeRepository(
     suspend fun getRecipeBookOnce(id: Long): RecipeBook? =
         recipeBookDao.getOnce(id)?.toDomain()
 
-    /** Todos los libros, usados al exportar toda la app (para incluir sus portadas en el ZIP). */
+    /** Every book, used when exporting the whole library (to include the covers in the ZIP). */
     suspend fun getAllRecipeBooksOnce(): List<RecipeBook> =
         recipeBookDao.observeAllWithCounts().first().map { it.book.toDomain() }
 
@@ -979,9 +1019,8 @@ class RecipeRepository(
         recipeBookDao.findByPackId(packId)?.toDomain()
 
     /**
-     * Defensa en profundidad: un libro-pack es de solo lectura (ver [RecipeBook.isPack]); la UI ya
-     * bloquea su edición, pero si algo la saltase esto evita que se sobrescriba sin querer en vez
-     * de fallar de forma confusa. No-op silencioso, igual que pide el plan de la feature.
+     * Safeguard: pack books are read-only (see [RecipeBook.isPack]). The UI already blocks editing
+     * them; this keeps a pack from being overwritten if anything bypasses it.
      */
     suspend fun saveRecipeBook(draft: RecipeBookDraft): Long {
         if (draft.id != 0L && recipeBookDao.getOnce(draft.id)?.packId != null) return draft.id
@@ -1018,7 +1057,7 @@ class RecipeRepository(
         }
     }
 
-    /** Lanza [RecipeBookNotEmptyException] si el libro todavía contiene recetas. */
+    /** Throws [RecipeBookNotEmptyException] when the book still contains recipes. */
     suspend fun deleteRecipeBook(id: Long) {
         val count = recipeBookDao.countRecipes(id)
         if (count > 0) throw RecipeBookNotEmptyException(count)
@@ -1031,9 +1070,8 @@ class RecipeRepository(
     }
 
     /**
-     * Borra todos los libros propios del usuario (no los packs instalados, de solo lectura) junto
-     * con sus recetas y las fotos asociadas (portadas de libro + fotos de receta). Pensado para
-     * dejar la app en estado limpio justo antes de importar una copia de seguridad completa.
+     * Deletes all of the user's own books (not installed read-only packs) together with their
+     * recipes, covers and recipe photos. Used to start clean right before restoring a full backup.
      */
     suspend fun wipeUserRecipesAndBooks(): WipeResult {
         val ownBooks = getAllRecipeBooksOnce().filter { !it.isPack }
@@ -1052,12 +1090,11 @@ class RecipeRepository(
     }
 
     /**
-     * Usado al importar una copia de seguridad: busca un libro por nombre o lo crea si no existe.
-     * [uid]/[coverPhotoUri] solo se usan al crear un libro nuevo; si ya existe uno con ese nombre
-     * se reutiliza tal cual, sin tocar su portada (igual que con la recategorización de ingredientes).
+     * Used when importing a backup: finds a book by name or creates it. [uid] and [coverPhotoUri]
+     * only apply to a new book; an existing book with that name is reused as is, cover included.
      */
     suspend fun getOrCreateRecipeBookIdByName(name: String, uid: String? = null, coverPhotoUri: String? = null): Long {
-        val trimmed = name.trim().ifBlank { "Sin nombre" }
+        val trimmed = name.trim().ifBlank { L10n.str(R.string.untitled) }
         recipeBookDao.findByName(trimmed)?.let { return it.id }
         return recipeBookDao.insert(
             RecipeBookEntity(
@@ -1069,14 +1106,14 @@ class RecipeRepository(
         )
     }
 
-    // --- Packs de recetas descargables ---
+    // --- Downloadable recipe packs ---
 
     /**
-     * Instala o actualiza un pack: busca el libro por [packId] (nunca por nombre, para no chocar
-     * con un libro propio homónimo); crea o actualiza sus recetas por [RecipeExportDto.uid]
-     * (conservando isFavorite/timesCooked/createdAt si ya existían) y borra las que ya no estén
-     * en esta versión. A diferencia de [saveRecipe]/[saveRecipeBook] no pasa por sus guardas de
-     * solo-lectura: esta es la única vía legítima de escribir en un libro-pack.
+     * Installs or updates a pack. The book is found by [packId] (never by name, so it never clashes
+     * with a user book of the same name). Recipes are created or updated by [RecipeExportDto.uid],
+     * keeping isFavorite, timesCooked and createdAt, and those missing from this version are
+     * deleted. Unlike [saveRecipe] and [saveRecipeBook] it skips the read-only checks: this is the
+     * only legitimate way to write to a pack book.
      */
     suspend fun installOrUpdatePack(
         packId: String,
@@ -1113,9 +1150,9 @@ class RecipeRepository(
 
         recipes.forEach { dto ->
             val categoryId = dto.categoryName?.takeIf { it.isNotBlank() }?.let { resolveCategoryId(it) }
-            // Solo cuenta como "ya existía" si sigue en este mismo libro: si el usuario la movió a
-            // otro libro (acción permitida en una receta de pack), la próxima actualización crea
-            // una copia nueva en el pack en vez de tocar la que el usuario movió.
+            // A recipe only counts as existing if it is still in this book. If the user moved it to
+            // another book (allowed for pack recipes), the next update creates a new copy in the
+            // pack instead of touching the moved one.
             val existingRecipe = recipeDao.findByUid(dto.uid)?.takeIf { it.recipeBookId == bookId }
             val recipeId = if (existingRecipe == null) {
                 recipeDao.insertRecipe(
@@ -1211,20 +1248,23 @@ class RecipeRepository(
             }
         }
 
-        // El pack manda en su propio contenido: una receta que ya no está en esta versión se borra.
+        // The pack owns its content: a recipe that is not in this version is deleted.
         val currentUids = recipes.map { it.uid }
         if (currentUids.isEmpty()) recipeDao.deleteAllForBook(bookId) else recipeDao.deleteRecipesNotInUidSet(bookId, currentUids)
 
         bookId
     }
 
-    /** Desinstala un pack: borra sus recetas y el libro sin pasar por el guard de [deleteRecipeBook] (que bloquearía siempre un libro no vacío). */
+    /**
+     * Uninstalls a pack: deletes its recipes and the book, bypassing the non-empty check of
+     * [deleteRecipeBook].
+     */
     suspend fun uninstallPack(bookId: Long) = db.withTransaction {
         recipeDao.deleteAllForBook(bookId)
         recipeBookDao.delete(bookId)
     }
 
-    // --- Servidor de sincronización (namespaces self-hosted) ---
+    // --- Sync server (self-hosted namespaces) ---
 
     fun observeSyncConnections(): Flow<List<SyncConnection>> =
         syncConnectionDao.observeAll().map { list -> list.map { it.toDomain() } }
@@ -1242,8 +1282,10 @@ class RecipeRepository(
             )
         )
 
-    /** Quita la conexión: sus libros pasan a ser locales (no se borra nada de su contenido) y se
-     *  descarta cualquier cambio pendiente de subir para ella. */
+    /**
+     * Removes the connection. Its books become local (no content is deleted) and any pending upload
+     * for it is discarded.
+     */
     suspend fun removeSyncConnection(id: Long) = db.withTransaction {
         recipeBookDao.clearSyncConnection(id)
         pendingSyncChangeDao.clearAllForConnection(id)
@@ -1256,8 +1298,10 @@ class RecipeRepository(
 
     suspend fun markSyncError(connectionId: Long, reason: String) = syncConnectionDao.markError(connectionId, reason)
 
-    /** Vincula un libro propio existente a una conexión: pasa a sincronizarse (lectura-escritura,
-     *  no de solo lectura como un pack) y se encola para subirse entero (con fotos) en el próximo sync. */
+    /**
+     * Links an existing user book to a connection. It is synced read-write (unlike a pack) and
+     * queued for a full upload, photos included, on the next sync.
+     */
     suspend fun linkBookToSyncConnection(bookId: Long, connectionId: Long) {
         val linked = db.withTransaction {
             val book = recipeBookDao.getOnce(bookId) ?: return@withTransaction false
@@ -1268,16 +1312,17 @@ class RecipeRepository(
         if (linked) onSyncChangeEnqueued(connectionId)
     }
 
-    /** Encola de nuevo el libro completo (metadato + todas sus recetas + todas sus fotos) para
-     *  subir a [connectionId]. Debe llamarse siempre dentro de una transacción ya abierta (de ahí
-     *  "Locked"): la usan tanto [linkBookToSyncConnection] (dentro de su propia transacción) como
-     *  [enqueueFullBookResync]/[enqueueFullConnectionResync] (que abren la suya). No se llama nunca
-     *  desde el sync automático/periódico: reencolar TODO el contenido en cada ciclo sería caro en
-     *  batería/red - ver en su lugar [org.calamares.miga.data.sync.SyncEngine.pushRecipePhotosIfPresent],
-     *  que autocura fotos sin subir de forma barata en cada push de receta. */
+    /**
+     * Queues the whole book again (metadata, every recipe and every photo) for upload to
+     * [connectionId]. Must run inside an open transaction, hence "Locked"; it is used by
+     * [linkBookToSyncConnection], [enqueueFullBookResync] and [enqueueFullConnectionResync]. It is
+     * never called from automatic or periodic sync, since re-queueing everything each time would
+     * waste battery and data; [org.calamares.miga.data.sync.SyncEngine.pushRecipePhotosIfPresent]
+     * heals missing photos cheaply instead.
+     */
     private suspend fun enqueueBookResyncLocked(bookId: Long, connectionId: Long) {
         val book = recipeBookDao.getOnce(bookId) ?: return
-        recipeDao.backfillPhotoUids() // sin uid, las fotos anteriores a la sincronización se saltarían más abajo
+        recipeDao.backfillPhotoUids() // without a uid, photos older than sync would be skipped below
         enqueueSyncChange(connectionId, SyncEntityType.BOOK, book.uid, SyncChangeType.UPSERT)
         recipeDao.getAllWithDetailsForBookOnce(bookId).forEach { details ->
             enqueueSyncChange(connectionId, SyncEntityType.RECIPE, details.recipe.uid, SyncChangeType.UPSERT)
@@ -1289,17 +1334,20 @@ class RecipeRepository(
         }
     }
 
-    /** Fuerza un reenvío completo (libro + recetas + fotos) de un libro ya vinculado, sin esperar a
-     *  que cambie nada. Usado por el botón manual "Sincronizar ahora" del editor de un libro: repara
-     *  libros que se vincularon antes de que las fotos de sus recetas se encolaran también (ver
-     *  [enqueueBookResyncLocked]). No se usa desde el sync automático/periódico. */
+    /**
+     * Forces a full re-upload (book, recipes and photos) of an already linked book. Used by the
+     * manual "Sync now" button in the book editor to repair books linked before their photos were
+     * queued too (see [enqueueBookResyncLocked]).
+     */
     suspend fun enqueueFullBookResync(bookId: Long, connectionId: Long) {
         db.withTransaction { enqueueBookResyncLocked(bookId, connectionId) }
         onSyncChangeEnqueued(connectionId)
     }
 
-    /** Igual que [enqueueFullBookResync] pero para todos los libros vinculados a [connectionId] de
-     *  golpe. Usado por el botón manual "Sincronizar ahora" a nivel de conexión. */
+    /**
+     * Like [enqueueFullBookResync], for every book linked to [connectionId] at once. Used by the
+     * connection's manual "Sync now" button.
+     */
     suspend fun enqueueFullConnectionResync(connectionId: Long) {
         val books = recipeBookDao.findBySyncConnectionId(connectionId)
         if (books.isEmpty()) return
@@ -1307,21 +1355,26 @@ class RecipeRepository(
         onSyncChangeEnqueued(connectionId)
     }
 
-    /** Pone el cursor de la conexión a 0: la próxima sincronización vuelve a bajar todo el contenido del
-     *  servidor (idempotente: lo que ya está al día no cambia) y recupera lo que se perdió, p. ej. fotos
-     *  cuya descarga falló en una sincronización anterior. Usado por los botones manuales "Sincronizar ahora". */
+    /**
+     * Resets the connection cursor to 0 so the next sync downloads all server content again. This
+     * is idempotent and recovers anything missed, such as photos whose download failed. Used by the
+     * manual "Sync now" buttons.
+     */
     suspend fun resetSyncCursor(connectionId: Long) = syncConnectionDao.resetCursor(connectionId)
 
-    /** Asigna uid a las fotos antiguas que no lo tengan (ver [RecipeDao.backfillPhotoUids]); se llama al arrancar la app. */
+    /**
+     * Assigns a uid to old photos that lack one (see [RecipeDao.backfillPhotoUids]). Called on app
+     * start.
+     */
     suspend fun ensurePhotoUids() = recipeDao.backfillPhotoUids()
 
-    /** Deja de sincronizar un libro: pasa a ser local, sin borrar nada de su contenido ni del servidor. */
+    /** Stops syncing a book. It becomes local; nothing is deleted locally or on the server. */
     suspend fun unlinkBookFromSyncConnection(bookId: Long) {
         val book = recipeBookDao.getOnce(bookId) ?: return
         recipeBookDao.update(book.copy(syncConnectionId = null))
     }
 
-    // --- Outbox: encolar cambios locales pendientes de subir ---
+    // --- Outbox: queue local changes for upload ---
 
     private suspend fun enqueueSyncChange(
         connectionId: Long,
@@ -1347,7 +1400,7 @@ class RecipeRepository(
 
     suspend fun clearPendingSyncChange(id: Long) = pendingSyncChangeDao.clear(id)
 
-    // --- Construir el DTO de sincronización de un libro/receta local (para subirlo) ---
+    // --- Build the sync DTO of a local book or recipe (for upload) ---
 
     suspend fun getRecipeBookSyncDto(bookId: Long): BookSyncDto? {
         val book = recipeBookDao.getOnce(bookId) ?: return null
@@ -1359,7 +1412,10 @@ class RecipeRepository(
         return getRecipeBookSyncDto(book.id)
     }
 
-    /** Usado para subir la portada de un libro (ver [SyncEngine.pushBookCoverIfPresent]); null si el libro no tiene. */
+    /**
+     * Used to upload a book cover (see [SyncEngine.pushBookCoverIfPresent]); null when the book has
+     * none.
+     */
     suspend fun getRecipeBookCoverUri(bookUid: String): String? = recipeBookDao.findByUid(bookUid)?.coverPhotoUri
 
     suspend fun getRecipeSyncDtoByUid(uid: String): RecipeSyncDto? {
@@ -1394,7 +1450,7 @@ class RecipeRepository(
         )
     }
 
-    /** Datos necesarios para subir una foto suelta ya existente localmente (ver [SyncEngine.pushPhotoChange]). */
+    /** What is needed to upload a single local photo (see [SyncEngine.pushPhotoChange]). */
     data class PhotoPushInfo(val uri: String, val recipeUid: String, val isCover: Boolean, val position: Int)
 
     suspend fun getPhotoPushInfo(photoUid: String): PhotoPushInfo? {
@@ -1403,12 +1459,13 @@ class RecipeRepository(
         return PhotoPushInfo(photo.uri, recipe.uid, photo.isCover, photo.position)
     }
 
-    /** Todas las fotos actuales de una receta, listas para subir (ver
-     *  [SyncEngine.pushRecipePhotosIfPresent], mismo side effect que ya hace
-     *  [SyncEngine.pushBookCoverIfPresent] con la portada de un libro). Ignora las fotos sin `uid`
-     *  (dato nullable heredado de la migración, no debería darse en fotos creadas después de ella). */
+    /**
+     * Every current photo of a recipe, ready to upload (see
+     * [SyncEngine.pushRecipePhotosIfPresent]). Photos without a `uid` (a nullable column from the
+     * migration that newer photos always fill in) are skipped.
+     */
     suspend fun getRecipePhotosForPush(recipeUid: String): List<Pair<String, PhotoPushInfo>> {
-        recipeDao.backfillPhotoUids() // autocura fotos antiguas sin uid, que de otro modo nunca se subirían
+        recipeDao.backfillPhotoUids() // heals old photos without a uid, which would otherwise never be uploaded
         val recipe = recipeDao.findByUid(recipeUid) ?: return emptyList()
         return recipeDao.getPhotosOnce(recipe.id).mapNotNull { photo ->
             val uid = photo.uid ?: return@mapNotNull null
@@ -1416,18 +1473,23 @@ class RecipeRepository(
         }
     }
 
-    /** Usado antes de descargar una foto remota, para no descargarla (y guardar un fichero
-     *  huérfano) si ya existe localmente con ese uid. */
+    /**
+     * Used before downloading a remote photo, so it is not downloaded (leaving an orphan file) when
+     * it already exists locally.
+     */
     suspend fun hasLocalPhoto(photoUid: String): Boolean = recipeDao.findPhotoByUid(photoUid) != null
 
-    // --- Aplicar cambios recibidos del servidor (usado por SyncEngine) ---
-    // Los libros se procesan en dos pasadas (altas primero, bajas al final) para no chocar con la
-    // restricción de clave foránea RESTRICT de recipes.recipeBookId: una receta sincronizada nueva
-    // necesita que su libro ya exista localmente, y un libro no se puede borrar mientras todavía
-    // tenga recetas locales (por eso las recetas también se procesan antes que los borrados de libro).
+    // --- Applying changes received from the server (used by SyncEngine) ---
+    //
+    // Books are processed in two passes, upserts first and deletions last, because of the RESTRICT
+    // foreign key on recipes.recipeBookId: a new synced recipe needs its book to exist locally, and
+    // a book cannot be deleted while it still has local recipes (which is also why recipes are
+    // processed before book deletions).
 
-    /** Devuelve el id local del libro tras aplicar el alta/edición, o null si se ha ignorado (la
-     *  copia local era más reciente, o es un tombstone). */
+    /**
+     * Returns the local book id after applying the upsert, or null when it was ignored (the local
+     * copy was newer, or it is a tombstone).
+     */
     suspend fun applyRemoteBookUpsert(connectionId: Long, dto: BookSyncDto): Long? = db.withTransaction {
         if (dto.deletedAt != null) return@withTransaction null
         val existing = recipeBookDao.findByUid(dto.uid)
@@ -1457,11 +1519,11 @@ class RecipeRepository(
         recipeBookDao.delete(existing.id)
     }
 
-    /** Igual que [applyRemoteBookDeletion] pero para un tombstone de "desvinculado"
-     *  ([BookSyncDto.unlinked]): el libro y todas sus recetas/fotos se CONSERVAN tal cual - solo se
-     *  corta el vínculo de sincronización (pasa a ser un libro local normal, editable, ya no
-     *  gestionado por [SyncEngine]). Las recetas/fotos cascadas desde este libro no necesitan su
-     *  propia función: como no se borran, no hay nada que aplicar sobre ellas. */
+    /**
+     * Like [applyRemoteBookDeletion], for an "unlinked" tombstone ([BookSyncDto.unlinked]). The
+     * book and all its recipes and photos are kept; only the sync link is cut, so it becomes a
+     * normal editable local book no longer managed by [SyncEngine].
+     */
     suspend fun applyRemoteBookUnlink(dto: BookSyncDto) = db.withTransaction {
         if (dto.deletedAt == null) return@withTransaction
         val existing = recipeBookDao.findByUid(dto.uid) ?: return@withTransaction
@@ -1470,10 +1532,9 @@ class RecipeRepository(
     }
 
     /**
-     * Aplica la portada de libro ya descargada (ver [SyncEngine]): [localUri] es la ruta donde el
-     * motor de sincronización ya ha guardado sus bytes con [PhotoStorage]. Sin comparación de
-     * "última escritura gana" propia (ya se decidió al aplicar el libro que la contiene); devuelve
-     * el uri del fichero anterior (si había uno distinto) para que el motor lo borre y no quede huérfano.
+     * Applies a book cover that [SyncEngine] has already downloaded and stored at [localUri]. No
+     * last-write-wins check of its own (that was decided when applying the book). Returns the
+     * previous file uri, if different, so the engine can delete it.
      */
     suspend fun applyRemoteBookCover(bookId: Long, localUri: String): String? {
         val book = recipeBookDao.getOnce(bookId) ?: return null
@@ -1583,10 +1644,9 @@ class RecipeRepository(
     }
 
     /**
-     * Aplica el alta/edición de una foto suelta ya descargada (ver [SyncEngine]): [localUri] es la
-     * ruta donde el motor de sincronización ya ha guardado sus bytes con [PhotoStorage]. Sin
-     * comparación de "última escritura gana" (las fotos no se editan en el sitio, solo se añaden o
-     * se quitan): si ya existe una fila local con ese uid, se deja tal cual salvo posición/portada.
+     * Applies a single photo that [SyncEngine] has already downloaded and stored at [localUri]. No
+     * last-write-wins check, since photos are only added or removed, never edited in place: an
+     * existing row with that uid only gets its position and cover flag updated.
      */
     suspend fun applyRemotePhotoUpsert(dto: PhotoMetaDto, localUri: String): Boolean {
         if (dto.deletedAt != null) return false
@@ -1602,8 +1662,11 @@ class RecipeRepository(
         return true
     }
 
-    /** Borra la fila local de una foto ya borrada en el servidor y devuelve su [RecipePhotoEntity.uri]
-     *  para que el motor de sincronización borre también el fichero físico; null si no había nada que borrar. */
+    /**
+     * Deletes the local row of a photo deleted on the server and returns its
+     * [RecipePhotoEntity.uri] so the sync engine can delete the file; null when there was nothing
+     * to delete.
+     */
     suspend fun applyRemotePhotoDeletion(dto: PhotoMetaDto): String? {
         if (dto.deletedAt == null) return null
         val existing = recipeDao.findPhotoByUid(dto.uid) ?: return null
@@ -1635,8 +1698,10 @@ class RecipeRepository(
 
 fun RecipeBookEntity.toDomain() = RecipeBook(id, uid, name, coverPhotoUri, packId, packVersion, syncConnectionId)
 
-// El fallback "?: accessToken" es a propósito: decrypt devuelve null (no lanza) si la fila es de
-// antes de cifrar el token, y en ese caso el valor en claro que ya había sigue siendo válido tal cual.
+/**
+ * The "?: accessToken" fallback is deliberate: decrypt returns null (it does not throw) for rows
+ * stored before the token was encrypted, and in that case the plain value is still valid.
+ */
 fun SyncConnectionEntity.toDomain(): SyncConnection {
     val decryptedToken = TokenCipher.decrypt(accessToken) ?: accessToken
     return SyncConnection(id, label, serverUrl, namespaceId, decryptedToken, lastSyncedRevision, lastSyncedAt, lastSyncError, syncShopping, shoppingPulled)
