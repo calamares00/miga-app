@@ -22,7 +22,7 @@ class SyncInviteCodecTest {
     fun `foreign or corrupt text is rejected`() {
         assertNull(SyncInviteCodec.decode("https://example.com"))
         assertNull(SyncInviteCodec.decode(SyncInviteCodec.PREFIX + "no-es-base64-válido!!"))
-        assertNull(SyncInviteCodec.decode(SyncInviteCodec.PREFIX + "e30")) // "{}" en base64 url-safe: faltan campos
+        assertNull(SyncInviteCodec.decode(SyncInviteCodec.PREFIX + "e30")) // "{}" in URL-safe base64: missing fields
     }
 
     @Test

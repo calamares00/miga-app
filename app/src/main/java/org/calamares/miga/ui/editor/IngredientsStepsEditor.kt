@@ -150,8 +150,10 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
     val context = LocalContext.current
     val speechAvailable = remember { SpeechDictation.isAvailable(context) }
     val dictationLanguage = org.calamares.miga.ui.components.rememberDictationLanguage()
-    // Solo puede haber una grabación activa a la vez (un único SpeechRecognizer); se destruye al
-    // terminar (éxito, error o cancelación) y también si la pantalla se abandona a mitad.
+    /**
+     * Only one recording can be active at a time (a single SpeechRecognizer). It is destroyed when
+     * finished (success, error or cancel) and also when the screen is left midway.
+     */
     var activeRecognizer by remember { mutableStateOf<SpeechRecognizer?>(null) }
     var recordingRow by remember { mutableStateOf<StepRowUi?>(null) }
     var pendingPermissionRow by remember { mutableStateOf<StepRowUi?>(null) }

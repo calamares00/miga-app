@@ -175,7 +175,10 @@ import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Pestañas de la hoja "Añadir": todo lo que no es escribir/dictar/escanear vive aquí y no en menús. */
+/**
+ * Tabs of the "Add" sheet: everything other than typing, dictating or scanning lives here instead
+ * of in menus.
+ */
 internal enum class AddTab(val title: String) {
     CATALOG(L10n.str(R.string.catalogue)),
     PRODUCTS(L10n.str(R.string.products)),
@@ -184,8 +187,8 @@ internal enum class AddTab(val title: String) {
 }
 
 /**
- * Hoja única para añadir artículos: catálogo táctil, búsqueda en Open Food Facts (con "guardar en
- * plantilla"), plantillas (predefinidas y propias) y pegar varios de golpe.
+ * Single sheet for adding items: tappable catalogue, Open Food Facts search (with "save to
+ * template"), templates (predefined and the user's) and pasting several items at once.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -344,8 +347,8 @@ private fun CatalogContent(
 }
 
 /**
- * Búsqueda por nombre en Open Food Facts. Tocar un resultado abre su ficha; el botón (+) lo añade
- * ([onAdd]) y el marcador lo guarda en una plantilla ([onSaveToTemplate], si se ofrece).
+ * Open Food Facts search by name. Tapping a result opens its product sheet; the (+) button adds it
+ * ([onAdd]) and the bookmark saves it to a template ([onSaveToTemplate], when offered).
  */
 @Composable
 internal fun ProductSearchContent(

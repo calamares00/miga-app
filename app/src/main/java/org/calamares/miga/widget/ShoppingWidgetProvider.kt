@@ -10,7 +10,7 @@ import org.calamares.miga.MainActivity
 import org.calamares.miga.R
 import org.calamares.miga.data.share.ShoppingIntents
 
-/** Widget de la pantalla de inicio: un toque abre la lista de la compra con el campo de añadir listo. */
+/** Home screen widget: one tap opens the shopping list with the add field ready. */
 class ShoppingWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {

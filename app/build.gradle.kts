@@ -13,10 +13,10 @@ android {
         applicationId = "org.calamares.miga"
         minSdk = 26
         targetSdk = 36
-        // versionCode sube en cada commit (Play exige que crezca siempre). versionName es la versión
-        // pública y solo cambia al publicar una nueva versión (1.0.0, 1.0.1, 1.1.0...), con su nota
-        // de versión en assets/changelogs y fastlane/.../changelogs (<versionCode>.txt).
-        versionCode = 113
+        // versionCode goes up on every commit (Play requires it to always grow). versionName is the
+        // public version and only changes when a new version is released (1.0.0, 1.0.1, 1.1.0...),
+        // with release notes in assets/changelogs and fastlane/.../changelogs (<versionCode>.txt).
+        versionCode = 114
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -25,17 +25,19 @@ android {
         }
     }
 
-    // Firma de release: se lee de variables de entorno (nunca de valores fijos en el repo,
-    // a diferencia del keystore de debug). En local, sin esas variables, el build "release"
-    // simplemente sale sin firmar; en CI se rellenan desde secretos de GitHub Actions solo
-    // cuando existen, así que el workflow no se rompe mientras no se hayan configurado.
+    /**
+     * Release signing is read from environment variables, never from values in the repository
+     * (unlike the debug keystore). Locally, without them, the release build is simply unsigned; CI
+     * fills them from GitHub Actions secrets only when they exist, so the workflow keeps working
+     * before they are configured.
+     */
     val releaseKeystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
 
     signingConfigs {
         getByName("debug") {
-            // Keystore de debug fijo y compartido (versionado en el repo) para que todos los
-            // APKs debug —también los generados por CI en runners nuevos cada vez— queden
-            // firmados igual y se puedan instalar como actualización sin desinstalar antes.
+            // Fixed debug keystore shared through the repository, so every debug APK (including
+            // those built by CI on fresh runners) has the same signature and installs as an update
+            // without uninstalling first.
             storeFile = file("../debug.keystore")
             storePassword = "android"
             keyAlias = "androiddebugkey"
@@ -51,9 +53,9 @@ android {
         }
     }
 
-    // APK independiente por arquitectura (más ligeros) + uno universal, al estilo de las
-    // releases de Obtainium. Solo afecta a los APK (assemble*); el AAB de bundleRelease para
-    // Play Store no se ve afectado, ya que Play hace su propio reparto por ABI internamente.
+    // One APK per ABI (smaller) plus a universal one, like Obtainium-style releases. This only
+    // affects APKs (assemble*); the bundleRelease AAB for the Play Store is unaffected, since Play
+    // splits by ABI itself.
     splits {
         abi {
             isEnable = true

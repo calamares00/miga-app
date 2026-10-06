@@ -72,9 +72,10 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import org.calamares.miga.ui.components.FilterSheetContent
 
-// Candidatas a chip de filtro dietético rápido - solo se muestran las que de verdad existan como
-// etiqueta ya creada por el usuario (comparación sin distinguir mayúsculas/minúsculas), para no
-// inventar una taxonomía nueva por encima del sistema de etiquetas ya existente.
+/**
+ * Candidates for the quick dietary filter chips. Only those that already exist as a user tag
+ * (case-insensitive) are shown, so no new taxonomy is invented on top of tags.
+ */
 private val DIETARY_QUICK_TAGS = listOf(
     "Vegano", "Vegetariano", "Sin gluten", "Sin lactosa", "Sin azúcar", "Bajo en calorías",
     "Vegan", "Vegetarian", "Gluten-free", "Gluten free", "Lactose-free", "Dairy-free", "Sugar-free", "Low calorie"
@@ -98,7 +99,7 @@ fun GlobalSearchScreen(
         DIETARY_QUICK_TAGS.mapNotNull { candidate -> uiState.availableTags.firstOrNull { it.equals(candidate, ignoreCase = true) } }
     }
 
-    // En Favoritas "solo favoritas" va implícito: no cuenta como filtro aplicado.
+    /** In Favourites, "only favourites" is implicit and does not count as an applied filter. */
     val filtersApplied = if (showQueryField) filter.isActive else filter.copy(onlyFavorites = false).isActive
     val filterButton: @Composable () -> Unit = {
         IconButton(onClick = { showFilters = true }) {

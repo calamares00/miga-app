@@ -12,9 +12,9 @@ class DishPhotoCropperTest {
     fun `invalid boxes are discarded`() {
         val boxes = validDishBoxes(
             listOf(
-                DishPhotoDto(image = 5, box = listOf(0, 0, 500, 500)), // imagen inexistente
-                DishPhotoDto(image = 0, box = listOf(0, 0, 500)), // faltan coordenadas
-                DishPhotoDto(image = 0, box = listOf(100, 100, 120, 120)), // diminuta
+                DishPhotoDto(image = 5, box = listOf(0, 0, 500, 500)), // missing image
+                DishPhotoDto(image = 0, box = listOf(0, 0, 500)), // missing coordinates
+                DishPhotoDto(image = 0, box = listOf(100, 100, 120, 120)), // tiny
                 DishPhotoDto(image = 0, box = listOf(100, 200, 600, 900))
             ),
             imageCount = 1
@@ -49,7 +49,7 @@ class DishPhotoCropperTest {
     fun `uniform margins are trimmed and textured content is kept`() {
         val w = 40
         val h = 40
-        // Imagen con 4 filas/columnas de margen blanco liso alrededor de un contenido "con textura".
+        // Image with a 4-pixel plain white margin around "textured" content.
         val luminance = IntArray(w * h) { i ->
             val x = i % w
             val y = i / w

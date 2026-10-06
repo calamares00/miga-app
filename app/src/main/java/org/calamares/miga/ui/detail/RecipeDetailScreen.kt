@@ -147,7 +147,10 @@ fun RecipeDetailScreen(
     var showMoveDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
-    // La barra superior pasa de transparente (sobre la foto) a sólida al desplazarse bajo la foto.
+    /**
+     * The top bar turns from transparent (over the photo) to solid once the content scrolls under
+     * the photo.
+     */
     val headerScrolled by remember { derivedStateOf { scrollState.value > with(density) { (HEADER_HEIGHT - 96.dp).toPx() } } }
 
     LaunchedEffect(Unit) { viewModel.fetchHealthinessIfNeeded() }
@@ -191,7 +194,7 @@ fun RecipeDetailScreen(
                 )
             }
 
-            // Barra superior superpuesta a la foto.
+            // Top bar drawn over the photo.
             val barColor by animateColorAsState(
                 if (headerScrolled || current?.coverPhotoUri == null) MaterialTheme.colorScheme.surface else Color.Transparent,
                 label = "detailBar"
@@ -374,7 +377,7 @@ private fun SubstitutionDialogState.ingredientNameOrNull(): String? = when (this
 
 private val HEADER_HEIGHT = 300.dp
 
-/** Botón de la barra superior: sobre la foto lleva un círculo translúcido para leerse sobre cualquier imagen. */
+/** Top bar button: over the photo it gets a translucent circle so it reads on any image. */
 @Composable
 private fun HeaderIconButton(onPhoto: Boolean, onClick: () -> Unit, content: @Composable () -> Unit) {
     val container = if (onPhoto) Color.Black.copy(alpha = 0.35f) else Color.Transparent
@@ -417,7 +420,7 @@ private fun RecipeDetailContent(
         }
 
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            // Título
+            // Title
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 recipe.categoryName?.let {
                     Text(displayCategoryName(it).uppercase(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
@@ -436,7 +439,7 @@ private fun RecipeDetailContent(
                 }
             }
 
-            // Datos clave
+            // Key facts
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
                 recipe.prepTimeMinutes?.let { FactTile(Icons.Outlined.Timer, L10n.str(R.string.prep_short), L10n.str(R.string.minutes_short, it), Modifier.weight(1f)) }
                 recipe.cookTimeMinutes?.let { FactTile(Icons.Outlined.LocalFireDepartment, L10n.str(R.string.cook_short), L10n.str(R.string.minutes_short, it), Modifier.weight(1f)) }
@@ -444,7 +447,7 @@ private fun RecipeDetailContent(
                 FactTile(Icons.Outlined.BarChart, L10n.str(R.string.difficulty), recipe.difficulty.label, Modifier.weight(1f))
             }
 
-            // Ingredientes
+            // Ingredients
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(L10n.str(R.string.ingredients), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
@@ -497,7 +500,7 @@ private fun RecipeDetailContent(
                 }
             }
 
-            // Preparación
+            // Steps
             if (recipe.stepGroups.any { it.instructions.isNotEmpty() }) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(L10n.str(R.string.method), style = MaterialTheme.typography.titleLarge)
@@ -523,7 +526,7 @@ private fun RecipeDetailContent(
                 }
             }
 
-            // Salud y nutrición (IA)
+            // Health and nutrition (AI)
             if (healthState != HealthState.Idle || nutritionState != NutritionState.Idle) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(L10n.str(R.string.health_and_nutrition), style = MaterialTheme.typography.titleLarge)
@@ -537,7 +540,7 @@ private fun RecipeDetailContent(
                 }
             }
 
-            // Más información
+            // More information
             if (recipe.utensils.isNotEmpty() || recipe.tags.isNotEmpty() || recipe.notes.isNotBlank() || recipe.source.isNotBlank()) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (recipe.utensils.isNotEmpty()) {
@@ -642,7 +645,7 @@ private fun LoadingRow() {
     }
 }
 
-/** Foto(s) de cabecera a sangre, deslizables si hay varias, con degradado inferior. */
+/** Full-bleed header photo(s), swipeable when there are several, with a bottom gradient. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PhotoHeader(recipe: Recipe) {
@@ -705,7 +708,7 @@ private fun GroupTitle(name: String) {
     Text(name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 4.dp))
 }
 
-/** Contenedor redondeado como los grupos de Ajustes. */
+/** Rounded container like the Settings groups. */
 @Composable
 private fun RoundedGroup(contentPadding: androidx.compose.ui.unit.Dp = 0.dp, content: @Composable () -> Unit) {
     Column(

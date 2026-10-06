@@ -176,7 +176,7 @@ import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Insignia del Nutri-Score: la letra sobre su color oficial (texto oscuro sobre el amarillo y el verde claro). */
+/** Nutri-Score badge: the letter on its official colour (dark text on yellow and light green). */
 @Composable
 internal fun NutriScoreBadge(letter: String, large: Boolean) {
     val argb = ProductLabels.nutriScoreArgb(letter) ?: return
@@ -198,7 +198,7 @@ internal fun NutriScoreBadge(letter: String, large: Boolean) {
     }
 }
 
-/** Ficha de un producto escaneado: foto grande, puntuaciones, alérgenos, nutrición por 100 g e ingredientes. */
+/** Scanned product sheet: large photo, scores, allergens, nutrition per 100 g and ingredients. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ProductDetailSheet(
@@ -456,7 +456,7 @@ internal fun SearchResultRow(
     }
 }
 
-/** Nota de 0 a 100 sobre el color de su tramo (excelente, bueno, mediocre, malo). */
+/** Score from 0 to 100 on the colour of its band (excellent, good, poor, bad). */
 @Composable
 internal fun ScoreChip(score: ProductScore, large: Boolean) {
     val darkText = score.tier == org.calamares.miga.data.model.ScoreTier.GOOD || score.tier == org.calamares.miga.data.model.ScoreTier.MEDIOCRE

@@ -10,8 +10,8 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  # Se ejecuta siempre (cualquier push, PR o modo manual), independientemente de lo que se vaya a
-  # construir o publicar después - un test roto bloquea el resto igual que un fallo de compilación.
+  # Always runs (any push, PR or manual run), whatever is built or published afterwards: a
+  # broken test blocks the rest just like a compile error.
   test:
     name: Tests
     runs-on: ubuntu-latest
@@ -37,8 +37,8 @@ jobs:
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
-      # Nombre de artefacto único por rama+commit; no depende del "modo" (eso es cosa de build/
-      # publish), solo necesita identificar de forma legible de qué ejecución viene.
+      # Artifact name unique per branch and commit. It does not depend on the mode (that belongs to
+      # build/publish); it only needs to identify the run in a readable way.
       - name: Compute artifact name suffix
         id: ref
         if: always()
@@ -55,12 +55,12 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # Compila (y, según la rama, empaqueta) la app. El "modo" decide qué se construye exactamente:
-  # release: push directo a main (normalmente tras fusionar un PR) -> build completo firmado.
-  # pr_check: pull request hacia main -> solo comprobaciones (lint + compilar), nada que publicar.
-  # dev_debug: push a cualquier otra rama, o ejecución manual -> solo un APK debug rápido.
-  # Los ficheros listos para publicar quedan en dist/ y se suben como artefacto para que el job
-  # publish (que corre en un runner distinto) pueda descargarlos sin tener que reconstruirlos.
+  # Compiles (and, depending on the branch, packages) the app. The mode decides what is built:
+  # release: direct push to main (usually after merging a PR) -> full signed build.
+  # pr_check: pull request to main -> checks only (lint + compile), nothing to publish.
+  # dev_debug: push to any other branch, or a manual run -> a quick debug APK only.
+  # Files ready to publish are left in dist/ and uploaded as an artifact so the publish job
+  # (which runs on another runner) can download them without rebuilding.
   build:
     name: Build
     needs: test
@@ -80,9 +80,9 @@ jobs:
           VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      # release: push directo a main (normalmente tras fusionar un PR) -> build completo + Release.
-      # pr_check: pull request hacia main -> solo comprobaciones (lint + compilar), no se publica nada.
-      # dev_debug: push a cualquier otra rama, o ejecución manual -> solo un APK debug rápido.
+      # release: direct push to main (usually after merging a PR) -> full build + Release.
+      # pr_check: pull request to main -> checks only (lint + compile), nothing is published.
+      # dev_debug: push to any other branch, or a manual run -> a quick debug APK only.
       - name: Determine build mode
         id: mode
         run: |
@@ -93,8 +93,8 @@ jobs:
           else
             echo "mode=dev_debug" >> "$GITHUB_OUTPUT"
           fi
-          # Los nombres de artefacto de GitHub Actions no admiten "/", que sí es válido en un
-          # nombre de rama (ej. "setup/initial-import"); se sustituye por "-".
+          # GitHub Actions artifact names do not allow "/", which is valid in a branch name
+          # (e.g. "setup/initial-import"), so it is replaced with "-".
           echo "safe_ref=$(echo '${{ github.ref_name }}' | tr '/' '-')" >> "$GITHUB_OUTPUT"
           echo "short_sha=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
 
@@ -113,15 +113,15 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      # En cualquier rama que NO vaya a hacer un build "release" de verdad (que ya compila con
-      # isMinifyEnabled=true más abajo), se valida aquí que assembleRelease sigue compilando con
-      # R8, para que una regla de ProGuard rota se detecte en esa misma rama y no solo al fusionar.
-      # Sale sin firmar (no hay secretos de keystore en este paso) y no se publica en ningún sitio.
-      - name: Build release APK (validar minificación con R8)
+      # On any branch that will not run a real release build (which already compiles with
+      # isMinifyEnabled=true below), check here that assembleRelease still compiles with R8, so a
+      # broken ProGuard rule is caught on that branch and not only after merging.
+      # The output is unsigned (no keystore secrets in this step) and is not published.
+      - name: Build release APK (check R8 minification)
         if: steps.mode.outputs.mode != 'release'
         run: ./gradlew :app:assembleRelease --stacktrace
 
-      # --- pull request hacia main: lint + compilación de comprobación ---
+      # --- pull request to main: lint + check compilation ---
       - name: Lint (pull request)
         if: steps.mode.outputs.mode == 'pr_check'
         run: ./gradlew :app:lintDebug --stacktrace
@@ -139,7 +139,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      # --- push a una rama que no es main (o ejecución manual): solo un APK debug ---
+      # --- push to a branch other than main (or a manual run): debug APK only ---
       - name: Build debug APK (rama de desarrollo)
         if: steps.mode.outputs.mode == 'dev_debug'
         run: ./gradlew :app:assembleDebug --stacktrace
@@ -153,9 +153,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      # Prepara además una copia renombrada en dist/ (mismo criterio de nombre que usará el
-      # Release del canal beta en el job publish) y la sube como artefacto propio, para que
-      # publish no tenga que reconstruir nada.
+      # Also puts a renamed copy in dist/ (same naming as the beta Release in the publish job) and
+      # uploads it as its own artifact, so publish does not have to rebuild anything.
       - name: Normalize debug APK names (canal beta)
         if: steps.mode.outputs.mode == 'dev_debug'
         run: |
@@ -181,10 +180,10 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      # --- push a main: build completo (debug + release por ABI + AAB) ---
-      # El keystore de release nunca vive en el repo (a diferencia de debug.keystore): se lee de
-      # 4 secretos de GitHub Actions. Mientras no existan, el build release sale sin firmar sin
-      # romper el CI, y el job publish marca la Release resultante como pre-release.
+      # --- push to main: full build (debug + release per ABI + AAB) ---
+      # The release keystore never lives in the repository (unlike debug.keystore): it is read from
+      # 4 GitHub Actions secrets. Until they exist the release build is unsigned without breaking CI,
+      # and the publish job marks the resulting Release as a pre-release.
       - name: Decode release keystore
         if: steps.mode.outputs.mode == 'release'
         env:
@@ -241,9 +240,9 @@ jobs:
           rename_apks debug
           rename_apks release
 
-          # A diferencia de las APK, Gradle no añade "-unsigned" al nombre del AAB cuando no hay
-          # signingConfig, así que la firma real se decide por si existe el keystore de release
-          # (RELEASE_KEYSTORE_PATH, heredado del paso anterior), no por el nombre del fichero.
+          # Unlike APKs, Gradle does not add "-unsigned" to the AAB name when there is no
+          # signingConfig, so whether it is signed is decided by the release keystore being present
+          # (RELEASE_KEYSTORE_PATH, inherited from the previous step), not by the file name.
           aab_suffix=""
           if [ -z "${RELEASE_KEYSTORE_PATH:-}" ]; then
             aab_suffix="-unsigned"
@@ -268,9 +267,9 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  # No hay nada que publicar en un pull request (mode == pr_check): el job entero se salta y se ve
-  # como "skipped" en los checks, en vez de un "success" vacío. Descarga el dist/ que ya dejó
-  # preparado el job build (no reconstruye nada) y lo sube a una Release de GitHub.
+  # Nothing to publish for a pull request (mode == pr_check): the whole job is skipped and shows
+  # as "skipped" in the checks instead of an empty success. It downloads the dist/ prepared by
+  # the build job (nothing is rebuilt) and uploads it to a GitHub Release.
   publish:
     name: Publish
     needs: build
@@ -279,10 +278,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      # Además del artefacto de la propia ejecución (subido por build), se publica/actualiza una
-      # única Release "beta-latest" (para probar builds de desarrollo instalando el APK a mano)
-      # con el APK debug más reciente de cualquier rama de desarrollo. El tag es fijo a propósito:
-      # cada push la sobrescribe, no se acumulan releases.
+      # Besides this run's own artifact (uploaded by build), a single "beta-latest" Release is
+      # published or updated (to test development builds by installing the APK by hand) with the
+      # latest debug APK from any development branch. The tag is fixed on purpose: every push
+      # overwrites it, so releases do not pile up.
       - name: Download beta dist
         if: needs.build.outputs.mode == 'dev_debug'
         uses: actions/download-artifact@v4
@@ -304,7 +303,7 @@ jobs:
           make_latest: false
           files: dist/*
 
-      # --- push a main: Release estable en GitHub con todo lo que build dejó en dist/ ---
+      # --- push to main: stable GitHub Release with everything build left in dist/ ---
       - name: Download release dist
         if: needs.build.outputs.mode == 'release'
         uses: actions/download-artifact@v4

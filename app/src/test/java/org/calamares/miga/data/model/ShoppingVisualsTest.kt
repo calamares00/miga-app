@@ -33,7 +33,7 @@ class ShoppingVisualsTest {
 
     @Test
     fun `short keywords do not match inside other words`() {
-        // "sal" no debe casar con "salmón", ni "te" con "tomate"
+        // "sal" must not match "salmón", nor "te" match "tomate"
         assertEquals("🐟", ShoppingVisuals.itemEmoji("Salmón", "Pescados"))
         assertNotEquals("🍵", ShoppingVisuals.itemEmoji("Tomate triturado", "Conservas"))
     }

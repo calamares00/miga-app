@@ -39,7 +39,9 @@ class RecipeBooksViewModel(
     private val _changelogAnnouncement = MutableStateFlow<ChangelogAnnouncement?>(null)
     val changelogAnnouncement: StateFlow<ChangelogAnnouncement?> = _changelogAnnouncement
 
-    /** Informe del último fallo no capturado (ver CrashReporter), si lo hay; solo local, nada se envía. */
+    /**
+     * Report of the last uncaught crash (see CrashReporter), if any. Local only; nothing is sent.
+     */
     private val _crashReport = MutableStateFlow(CrashReporter.pendingReport())
     val crashReport: StateFlow<String?> = _crashReport
 
@@ -53,9 +55,9 @@ class RecipeBooksViewModel(
             val lastSeen = settingsRepository.observeLastSeenVersionCode().first()
             val current = BuildConfig.VERSION_CODE
             if (lastSeen == 0) {
-                // Primera vez que corre esta lógica (instalación nueva, o actualización desde una
-                // versión anterior a que existiera el changelog en la app): no hay nada que
-                // mostrar todavía, solo se empieza a registrar la versión vista a partir de ahora.
+                // First run of this logic (fresh install, or update from a version without the
+                // in-app changelog): nothing to show yet, just start recording the last seen
+                // version.
                 settingsRepository.setLastSeenVersionCode(current)
             } else if (lastSeen < current) {
                 val entries = (lastSeen + 1..current).flatMap { code ->
@@ -73,12 +75,11 @@ class RecipeBooksViewModel(
         }
     }
 
-    /** Sincroniza automáticamente todas las conexiones configuradas (ver Ajustes → Servidor de
-     *  sincronización) al abrir la app, en el mismo sitio que se hacía la comprobación inicial de
-     *  arriba (versión e historial) - así los cambios de otras apps Miga conectadas al mismo namespace llegan sin que el
-     *  usuario tenga que sincronizar a mano. Solo una vez por instancia de este ViewModel (que
-     *  persiste mientras la pestaña de libros siga viva) para no repetir el sync en cada
-     *  recomposición o cambio de pestaña. */
+    /**
+     * Syncs every configured connection when the app opens, so changes from other devices on the
+     * same namespace arrive without a manual sync. Runs once per ViewModel instance (which lives as
+     * long as the books tab) to avoid syncing on every recomposition or tab switch.
+     */
     fun syncAllOnOpen(context: Context) {
         if (autoSyncStarted) return
         autoSyncStarted = true

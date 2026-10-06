@@ -238,7 +238,8 @@ internal fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImag
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.background)
                 .toggleable(value = item.checked, role = Role.Checkbox, onValueChange = onCheckedChange)
-                // En modo tienda quitar es un gesto (deslizar): se ofrece también como acción accesible.
+                // In store mode removing is a gesture (swipe), so it is also offered as an
+                // accessibility action.
                 .semantics { customActions = listOf(CustomAccessibilityAction(L10n.str(R.string.remove_x, item.name)) { onDelete(); true }) }
                 .padding(vertical = if (shopMode) 12.dp else 6.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -308,7 +309,7 @@ internal fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImag
             SwipeToDismissBoxValue.EndToStart -> currentOnDelete.value()
             SwipeToDismissBoxValue.Settled -> Unit
         }
-        false // la fila vuelve a su sitio; si cambia de sección, Compose la recoloca sola
+        false // the row springs back; if it changes section, Compose moves it
     })
     SwipeToDismissBox(
         state = swipeState,
@@ -413,7 +414,7 @@ internal fun StoreEditorSheet(
     }
 }
 
-/** "Añadido por Ana" / "Marcado por Luis" si lo hizo otra persona (no uno mismo) y consta quién fue. */
+/** "Added by Ana" / "Checked by Luis" when someone else did it and their name is known. */
 internal fun authorNote(item: ShoppingListItem, me: String): String? {
     val by = (if (item.checked) item.updatedBy else item.addedBy)?.takeIf { it.isNotBlank() } ?: return null
     if (by.equals(me.trim(), ignoreCase = true)) return null

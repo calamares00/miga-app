@@ -47,7 +47,7 @@ class BulkImportViewModel(
 
     private var started = false
 
-    /** Procesa todas las fotos en orden, una por una. Llamar una sola vez, desde la pantalla. */
+    /** Processes every photo in order, one at a time. Call it once, from the screen. */
     fun start(context: Context) {
         if (started) return
         started = true
@@ -60,7 +60,7 @@ class BulkImportViewModel(
         }
     }
 
-    /** Reintenta una única foto que falló, sin tocar las demás filas. */
+    /** Retries a single failed photo without touching the other rows. */
     fun retry(context: Context, index: Int) {
         viewModelScope.launch {
             processOne(context, index)

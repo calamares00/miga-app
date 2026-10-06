@@ -49,9 +49,9 @@ import org.calamares.miga.data.model.RecipeBookSummary
 private enum class BulkDialog { CATEGORY, DIFFICULTY, SERVINGS, SOURCE, MOVE, COPY }
 
 /**
- * Acciones en bloque sobre las recetas seleccionadas de un libro. Las que necesitan un valor
- * (categoría, dificultad, raciones, fuente, libro destino) lo piden en un diálogo; al aplicar se
- * cierra todo y la pantalla muestra el resultado.
+ * Bulk actions on the selected recipes of a book. Actions that need a value (category, difficulty,
+ * servings, source, target book) ask for it in a dialog; applying closes everything and the screen
+ * shows the result.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -159,7 +159,7 @@ private fun BulkRow(icon: ImageVector, label: String, onClick: () -> Unit) {
     }
 }
 
-/** Lista de opciones; tocar una la aplica. */
+/** List of options; tapping one applies it. */
 @Composable
 private fun ChoiceDialog(title: String, options: List<String>, onPick: (Int) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(

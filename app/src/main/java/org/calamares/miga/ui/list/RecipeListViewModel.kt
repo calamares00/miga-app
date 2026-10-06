@@ -60,7 +60,10 @@ data class RecipeListUiState(
     val availableTags: List<String> = emptyList(),
     val availableUtensils: List<String> = emptyList(),
     val availableIngredients: List<String> = emptyList(),
-    /** Libro instalado desde un pack (ver RecipeBook.isPack): solo lectura, sin añadir/editar/borrar recetas. */
+    /**
+     * Book installed from a pack (see RecipeBook.isPack): read-only, recipes cannot be added,
+     * edited or deleted.
+     */
     val isPackBook: Boolean = false
 )
 
@@ -127,13 +130,13 @@ class RecipeListViewModel(
         }
     }
 
-    // --- Edición en bloque de las recetas seleccionadas ---
+    // --- Bulk editing of the selected recipes ---
 
     fun selectAll() {
         _selectedIds.value = uiState.value.groups.flatMap { group -> group.recipes.map { it.id } }.toSet()
     }
 
-    /** Libros a los que se pueden mover o copiar recetas: todos menos este y los packs (solo lectura). */
+    /** Books recipes can be moved or copied to: all except this one and packs (read-only). */
     val targetBooks: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
         .map { books -> books.filter { it.id != bookId && !it.isPack } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -142,7 +145,10 @@ class RecipeListViewModel(
         .map { categories -> categories.map { it.name } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    /** Si se puede ofrecer "Recalcular salud y nutrición": IA activada y al menos una de las dos. */
+    /**
+     * Whether "Recalculate health and nutrition" can be offered: AI on and at least one of the two
+     * enabled.
+     */
     val aiRecalculationAvailable: StateFlow<Boolean> = combine(
         settingsRepository.observeAiHealthEnabled(),
         settingsRepository.observeAiNutritionEnabled()
@@ -155,7 +161,10 @@ class RecipeListViewModel(
         return repository.getRecipesForBookOnce(bookId).filter { it.id in ids }
     }
 
-    /** Aplica [transform] a cada receta seleccionada y la guarda por el camino normal (sincronización incluida). */
+    /**
+     * Applies [transform] to every selected recipe and saves it through the normal path (sync
+     * included).
+     */
     private fun updateSelected(onMessage: (String) -> Unit, transform: (RecipeDraft) -> RecipeDraft) {
         viewModelScope.launch {
             val recipes = takeSelectedRecipes()
@@ -170,7 +179,10 @@ class RecipeListViewModel(
     fun bulkSetDifficulty(difficulty: Difficulty, onMessage: (String) -> Unit) =
         updateSelected(onMessage) { it.copy(difficulty = difficulty) }
 
-    /** Cambia las raciones; con [scaleIngredients] reescala las cantidades para que la receta siga cuadrando. */
+    /**
+     * Changes the servings. With [scaleIngredients] the quantities are rescaled so the recipe still
+     * adds up.
+     */
     fun bulkSetServings(servings: Int, scaleIngredients: Boolean, onMessage: (String) -> Unit) =
         updateSelected(onMessage) { draft ->
             val factor = servings.toDouble() / draft.servings.coerceAtLeast(1)
@@ -201,8 +213,10 @@ class RecipeListViewModel(
         }
     }
 
-    /** Copia las recetas a otro libro como recetas nuevas, con sus propias copias de las fotos
-     *  (para que borrar una no deje a la otra sin foto). */
+    /**
+     * Copies the recipes to another book as new recipes with their own photo copies, so deleting
+     * one never leaves the other without a photo.
+     */
     fun bulkCopyTo(context: Context, targetBookId: Long, onMessage: (String) -> Unit) {
         val appContext = context.applicationContext
         viewModelScope.launch {
@@ -229,7 +243,10 @@ class RecipeListViewModel(
         }
     }
 
-    /** Vuelve a calcular con IA la valoración de salud y/o la nutrición (según Ajustes) de las seleccionadas. */
+    /**
+     * Recalculates with AI the health rating and/or nutrition (as enabled in Settings) of the
+     * selected recipes.
+     */
     fun bulkRecalculateAi(onMessage: (String) -> Unit) {
         viewModelScope.launch {
             val recipes = takeSelectedRecipes()
@@ -379,5 +396,5 @@ class RecipeListViewModel(
     }
 }
 
-/** Redondea una cantidad reescalada a algo razonable para una receta (2 decimales como mucho). */
+/** Rounds a rescaled quantity to something sensible for a recipe (at most 2 decimals). */
 internal fun roundQuantity(value: Double): Double = kotlin.math.round(value * 100) / 100

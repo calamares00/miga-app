@@ -174,7 +174,10 @@ import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Fila de plantilla: miniaturas, nombre, resumen y botón para volcarla a la lista. [onClick] null = no editable. */
+/**
+ * Template row: thumbnails, name, summary and a button to add it to the list. A null [onClick]
+ * means it cannot be edited.
+ */
 @Composable
 internal fun TemplateRow(template: ShoppingTemplate, onApply: () -> Unit, onClick: (() -> Unit)?) {
     val products = template.items.count { it.isProduct }
@@ -226,7 +229,7 @@ private fun TemplateThumb(template: ShoppingTemplate) {
     }
 }
 
-/** Elegir en qué plantilla guardar [item] (o crear una nueva con él). */
+/** Pick the template to save [item] to, or create a new one with it. */
 @Composable
 internal fun TemplatePickerDialog(
     item: TemplateItem,
@@ -294,7 +297,7 @@ internal fun TemplatePickerDialog(
     )
 }
 
-/** Diálogo de un campo para nombrar algo (plantilla, lista…). */
+/** Single-field dialog to name something (template, list...). */
 @Composable
 internal fun NameDialog(
     title: String,
@@ -332,8 +335,8 @@ internal fun NameDialog(
 }
 
 /**
- * Editor de una plantilla propia: renombrar, quitar artículos y añadir escribiendo, buscando en
- * Open Food Facts o escaneando el código de barras.
+ * Editor of a user template: rename, remove items and add more by typing, searching Open Food Facts
+ * or scanning a barcode.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -29,11 +29,10 @@ private const val MAX_CATEGORY_ENTRIES = 8
 private const val MAX_MOST_COOKED_ENTRIES = 5
 
 /**
- * Estadísticas calculadas en memoria a partir de lo que ya carga [RecipeRepository.getAllRecipesOnce]/
- * [RecipeRepository.getAllRecipeBooksOnce] (sin nuevas queries agregadas en Room) - no hay
- * histórico de "cuándo se cocinó cada vez" en el modelo de datos (solo un contador,
- * [org.calamares.miga.data.model.Recipe.timesCooked]), así que no se calcula una racha de días, solo
- * un ranking de recetas más cocinadas.
+ * Statistics computed in memory from [RecipeRepository.getAllRecipesOnce] and
+ * [RecipeRepository.getAllRecipeBooksOnce], without extra aggregate queries. The data model has no
+ * cooking history (only the [org.calamares.miga.data.model.Recipe.timesCooked] counter), so there
+ * is no streak, only a ranking of the most cooked recipes.
  */
 class StatsViewModel(private val repository: RecipeRepository) : ViewModel() {
 

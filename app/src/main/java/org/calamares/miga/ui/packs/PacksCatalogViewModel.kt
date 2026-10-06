@@ -12,7 +12,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-/** [installedVersion] es la versión ya instalada localmente de este pack (ver RecipeBook.packVersion). */
+/**
+ * [installedVersion] is the locally installed version of this pack (see RecipeBook.packVersion).
+ */
 data class PackListItem(val entry: PackEntryDto, val installedVersion: Int?) {
     val isInstalled: Boolean get() = installedVersion != null
     val hasUpdate: Boolean get() = installedVersion != null && entry.latestVersion > installedVersion

@@ -120,18 +120,20 @@ class RecipeEditorViewModel(
     val visionState: StateFlow<VisionState> = _visionState
     private var visionStarted = false
 
-    /** Última operación de IA lanzada (foto, plato o URL), para poder reintentarla tras un error. */
+    /** Last AI operation started (photo, dish or URL), so it can be retried after an error. */
     private var lastAiOperation: (() -> Unit)? = null
 
-    /** Reintenta la última operación de IA (p. ej. tras cambiar de modelo desde el aviso de error). */
+    /** Retries the last AI operation (e.g. after switching models from the error notice). */
     fun retryAi() {
         val operation = lastAiOperation ?: return
         visionStarted = false
         operation()
     }
 
-    /** Reconoce una receta a partir de una o varias fotos (páginas de la misma receta) y precarga
-     *  este formulario con el resultado combinado. */
+    /**
+     * Recognises a recipe from one or more photos (pages of the same recipe) and pre-fills this
+     * form with the combined result.
+     */
     fun startVisionExtraction(context: Context, photoUris: List<Uri>) {
         if (isEditing || visionStarted || photoUris.isEmpty()) return
         visionStarted = true
@@ -143,10 +145,9 @@ class RecipeEditorViewModel(
                 _visionState.value = VisionState.Error(L10n.str(R.string.ai_no_provider))
                 return@launch
             }
-            // Si alguna página falla al leerse pero otras sí, seguimos con las que se pudieron
-            // leer; solo es un error bloqueante si fallan todas.
-            // Se guarda de qué uri sale cada imagen enviada: los índices de "dishPhotos" de la IA
-            // se refieren a las imágenes enviadas, no a todas las elegidas.
+            // If some pages cannot be read but others can, carry on with the readable ones; it only
+            // fails when all of them fail. The source uri of every image sent is kept because the
+            // AI's "dishPhotos" indices refer to the images sent, not to every image picked.
             val readable = photoUris.mapNotNull { uri ->
                 PhotoStorage.readResizedJpegBytes(context, uri)?.let { uri to AiImage(it, "image/jpeg") }
             }
@@ -164,7 +165,7 @@ class RecipeEditorViewModel(
             when (result) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
-                    // Fotos del plato localizadas por la IA: recortadas, limpias y añadidas a la ficha.
+                    // Dish photos located by the AI: cropped, cleaned up and added to the recipe.
                     val dishPhotoUris = withContext(Dispatchers.IO) {
                         DishPhotoCropper.extract(appContext, readable.map { it.first }, result.recipe.dishPhotos)
                     }
@@ -176,10 +177,11 @@ class RecipeEditorViewModel(
         }
     }
 
-    /** Genera una receta completa a partir de un plato elegido en el buscador con IA (ver
-     *  DishSearchScreen) y precarga este formulario con el resultado - mismo mecanismo que
-     *  [startVisionExtraction] (comparte el guard [visionStarted] y el estado [visionState]), pero
-     *  a partir de un nombre/descripción de plato en vez de una foto. */
+    /**
+     * Generates a full recipe from a dish picked in the AI dish search (see DishSearchScreen) and
+     * pre-fills this form. Same mechanism as [startVisionExtraction] (shares the [visionStarted]
+     * guard and [visionState]), starting from a dish name and description instead of a photo.
+     */
     fun startDishGeneration(dishName: String, dishDescription: String, dishOrigin: String?) {
         if (isEditing || visionStarted || dishName.isBlank()) return
         visionStarted = true
@@ -206,9 +208,10 @@ class RecipeEditorViewModel(
         }
     }
 
-    /** Importa una receta a partir del texto legible de una página web ([RecipeUrlFetcher]) y
-     *  precarga este formulario con el resultado - mismo mecanismo que [startVisionExtraction] y
-     *  [startDishGeneration] (comparte el guard [visionStarted] y el estado [visionState]). */
+    /**
+     * Imports a recipe from the readable text of a web page ([RecipeUrlFetcher]) and pre-fills this
+     * form. Same mechanism as [startVisionExtraction] and [startDishGeneration].
+     */
     fun startUrlImport(url: String) {
         if (isEditing || visionStarted || url.isBlank()) return
         visionStarted = true
@@ -242,9 +245,9 @@ class RecipeEditorViewModel(
     }
 
     private fun applyVisionResult(recipe: RecipeVisionResultDto) {
-        // Algunos libros titulan la sección con varias categorías juntas separadas por coma
-        // (p.ej. "Arroz, legumbres, patatas y pasta"); solo la primera se usa como categoría de
-        // la receta (el modelo de datos admite una sola) y el resto se añaden como etiquetas.
+        // Some books title a section with several comma-separated categories ("Rice, pulses,
+        // potatoes and pasta"). Only the first one becomes the recipe category (the data model
+        // allows one) and the rest become tags.
         val categoryParts = recipe.categoryName?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
         name = recipe.name
         categoryName = categoryParts.firstOrNull()
@@ -308,10 +311,12 @@ class RecipeEditorViewModel(
         utensils = selectedUtensils.toList()
     )
 
-    /** Se comprueba al intentar salir del editor (botón atrás o icono de cancelar) para avisar antes de perder cambios. */
+    /**
+     * Checked when leaving the editor (back button or cancel icon) to warn before losing changes.
+     */
     fun hasUnsavedChanges(): Boolean = initialSnapshot?.let { it != snapshot() } ?: false
 
-    // --- Ingredientes ---
+    // --- Ingredients ---
     fun addIngredientRow(groupIndex: Int) {
         ingredientGroups.getOrNull(groupIndex)?.ingredients?.add(IngredientRowUi())
     }
@@ -328,15 +333,17 @@ class RecipeEditorViewModel(
         if (ingredientGroups.size > 1) ingredientGroups.removeAt(groupIndex)
     }
 
-    // --- Pasos ---
+    // --- Steps ---
     fun addStepRow(groupIndex: Int) {
         stepGroups.getOrNull(groupIndex)?.steps?.add(StepRowUi())
     }
 
-    /** Limpia (quita muletillas, puntúa) el texto dictado por voz de [row] con el proveedor de IA
-     *  ya configurado en Ajustes, y lo deja en [StepRowUi.text]. Si no hay API key configurada o
-     *  falla la llamada, usa el texto dictado tal cual en vez de perderlo - la limpieza con IA es
-     *  una mejora sobre el dictado, no un requisito para poder usarlo. */
+    /**
+     * Tidies up the dictated text of [row] (removes filler words, adds punctuation) with the
+     * configured AI provider and stores it in [StepRowUi.text]. Without an API key, or if the call
+     * fails, the raw dictated text is used instead of being lost: the AI cleanup improves dictation
+     * but is not required for it.
+     */
     fun cleanUpDictatedText(row: StepRowUi, rawText: String) {
         row.isTranscribing = true
         viewModelScope.launch {
@@ -365,7 +372,7 @@ class RecipeEditorViewModel(
         if (stepGroups.size > 1) stepGroups.removeAt(groupIndex)
     }
 
-    // --- Fotos ---
+    // --- Photos ---
     fun addPhoto(uri: String) {
         photos.add(PhotoUi(uri, isCover = photos.isEmpty()))
     }
@@ -384,7 +391,7 @@ class RecipeEditorViewModel(
         photo.uri = newUri
     }
 
-    // --- Tags / utensilios ---
+    // --- Tags and utensils ---
     fun toggleTag(name: String) {
         if (selectedTags.contains(name)) selectedTags.remove(name) else selectedTags.add(name)
     }
