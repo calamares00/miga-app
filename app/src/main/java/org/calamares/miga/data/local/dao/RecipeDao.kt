@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.Flow
 interface RecipeDao {
 
     @Transaction
-    @Query("SELECT * FROM recipes ORDER BY name ASC")
+    @Query("SELECT * FROM recipes ORDER BY name COLLATE NOCASE ASC")
     fun observeAllWithDetails(): Flow<List<RecipeWithDetails>>
 
     @Transaction
@@ -26,7 +26,7 @@ interface RecipeDao {
     fun observeWithDetails(id: Long): Flow<RecipeWithDetails?>
 
     @Transaction
-    @Query("SELECT * FROM recipes WHERE recipeBookId = :bookId ORDER BY name ASC")
+    @Query("SELECT * FROM recipes WHERE recipeBookId = :bookId ORDER BY name COLLATE NOCASE ASC")
     fun observeAllWithDetailsForBook(bookId: Long): Flow<List<RecipeWithDetails>>
 
     @Transaction
@@ -34,7 +34,7 @@ interface RecipeDao {
     suspend fun getAllWithDetailsOnce(): List<RecipeWithDetails>
 
     @Transaction
-    @Query("SELECT * FROM recipes WHERE recipeBookId = :bookId ORDER BY name ASC")
+    @Query("SELECT * FROM recipes WHERE recipeBookId = :bookId ORDER BY name COLLATE NOCASE ASC")
     suspend fun getAllWithDetailsForBookOnce(bookId: Long): List<RecipeWithDetails>
 
     @Query("UPDATE recipes SET recipeBookId = :newBookId WHERE id = :id")
@@ -67,8 +67,10 @@ interface RecipeDao {
     @Query("DELETE FROM recipe_photos WHERE recipeId = :recipeId")
     suspend fun deletePhotos(recipeId: Long)
 
-    /** Usado antes de borrar+reinsertar las fotos de una receta al guardarla, para conservar el
-     *  uid de las fotos que ya existían (mismo uri) en vez de generarles uno nuevo cada vez. */
+    /**
+     * Read before deleting and reinserting a recipe's photos on save, so photos that already
+     * existed (same uri) keep their uid.
+     */
     @Query("SELECT * FROM recipe_photos WHERE recipeId = :recipeId")
     suspend fun getPhotosOnce(recipeId: Long): List<RecipePhotoEntity>
 
@@ -112,9 +114,8 @@ interface RecipeDao {
     suspend fun deleteRecipesNotInUidSet(bookId: Long, keepUids: List<String>)
 
     /**
-     * Da identidad (uid) a las fotos que no la tienen: las creadas antes de que existiera la
-     * sincronización (migración v7 -> v8, que añadió la columna a NULL). Sin uid una foto no se
-     * puede subir ni diferenciar en el servidor. Idempotente.
+     * Gives a uid to photos created before sync existed (the v7 -> v8 migration added the column as
+     * NULL); without it a photo cannot be uploaded. Idempotent.
      */
     @Query("UPDATE recipe_photos SET uid = lower(hex(randomblob(16))) WHERE uid IS NULL")
     suspend fun backfillPhotoUids()

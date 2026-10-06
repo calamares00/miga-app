@@ -1,24 +1,12 @@
 package org.calamares.miga.data.export
 
-import org.calamares.miga.L10n
-import org.calamares.miga.R
-import kotlinx.coroutines.flow.first
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
-import org.calamares.miga.data.local.PhotoStorage
-import org.calamares.miga.data.model.HealthColorLevel
-import org.calamares.miga.data.model.Recipe
-import org.calamares.miga.data.model.RecipeBook
-import org.calamares.miga.data.model.RecipePhoto
-import org.calamares.miga.data.model.ShoppingListGroup
-import org.calamares.miga.data.model.ShoppingStore
-import org.calamares.miga.data.model.ShoppingTemplate
-import org.calamares.miga.data.model.formatQuantity
-import org.calamares.miga.data.repository.RecipeRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -28,13 +16,31 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
+import org.calamares.miga.L10n
+import org.calamares.miga.R
+import org.calamares.miga.data.local.PhotoStorage
+import org.calamares.miga.data.model.HealthColorLevel
+import org.calamares.miga.data.model.Recipe
+import org.calamares.miga.data.model.RecipeBook
+import org.calamares.miga.data.model.RecipePhoto
+import org.calamares.miga.data.model.ShoppingListGroup
+import org.calamares.miga.data.model.ShoppingStore
+import org.calamares.miga.data.model.ShoppingTemplate
+import org.calamares.miga.data.model.displayCategoryName
+import org.calamares.miga.data.model.formatIngredientText
+import org.calamares.miga.data.model.formatQuantity
+import org.calamares.miga.data.repository.RecipeRepository
+import java.io.BufferedInputStream
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.InputStream
 import java.io.OutputStream
 import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+
+private const val MANIFEST = "manifest.json"
 
 sealed interface RecipeImportResult {
     data class Success(val recipe: RecipeExportDto, val photos: List<RecipePhoto> = emptyList()) : RecipeImportResult
@@ -47,7 +53,8 @@ sealed interface LibraryImportResult {
 }
 
 sealed interface LibraryImportParseResult {
-    data class Success(val dto: LibraryExportDto, val entries: Map<String, ByteArray>) : LibraryImportParseResult
+    /** A validated backup. Photos are not read yet: they are streamed from [source] on import. */
+    data class Success(val dto: LibraryExportDto, val source: Uri, val isZip: Boolean) : LibraryImportParseResult
     data class Error(val reason: String) : LibraryImportParseResult
 }
 
@@ -56,42 +63,45 @@ sealed interface PackImportResult {
     data class Error(val reason: String) : PackImportResult
 }
 
+/**
+ * Import and export of recipes, books and full backups (JSON or ZIP with photos), plus sharing as
+ * text and PDF.
+ *
+ * ZIP layout: `manifest.json` (a [RecipeExportDto] or a [LibraryExportDto]), book covers in
+ * `books/<uid>/` and recipe photos in `recipes/<uid>/`.
+ */
 object RecipeExporter {
 
     private val json = Json {
         prettyPrint = true
         ignoreUnknownKeys = true
-        // Sin esto, un campo cuyo valor coincide con su default (p.ej. "version" recién creado)
-        // no se escribiría en el JSON de salida, y el importador lo trataría como si faltase.
+        // Otherwise fields equal to their default (such as "version") would be left out of the file.
         encodeDefaults = true
     }
 
     /**
-     * Migraciones del JSON de una receta individual, indexadas por versión de origen: el
-     * elemento en la posición N transforma un JSON en versión N a versión N+1. Un archivo sin
-     * clave "version" (todo lo exportado antes de que existiera este mecanismo) se trata como
-     * versión 0.
+     * Migrations of a single recipe JSON, indexed by source version: entry N turns version N into
+     * version N + 1. Most steps only added optional fields with a default, so they do nothing.
      */
     private val recipeMigrations: List<(JsonObject) -> JsonObject> = listOf(
-        { obj -> obj }, // v0 -> v1: el "esquema v0" ya tenía los mismos campos, no-op.
-        { obj -> addUidIfMissing(obj) }, // v1 -> v2: añade "uid" (las fotos ya tienen valor por defecto).
-        { obj -> obj }, // v2 -> v3: "health" es opcional con default null, no hace falta generar nada.
-        { obj -> obj }, // v3 -> v4: "nutrition" es opcional con default null, no hace falta generar nada.
-        { obj -> obj } // v4 -> v5: "rating" es opcional con default null, no hace falta generar nada.
+        { obj -> obj },
+        { obj -> addUidIfMissing(obj) }, // v1 -> v2 added "uid".
+        { obj -> obj },
+        { obj -> obj },
+        { obj -> obj }
     )
 
-    /** Igual que [recipeMigrations] pero para la copia de seguridad completa ([LibraryExportDto]). */
+    /** Same as [recipeMigrations] for a full backup ([LibraryExportDto]). */
     private val libraryMigrations: List<(JsonObject) -> JsonObject> = listOf(
-        { obj -> obj }, // v0 -> v1
+        { obj -> obj },
         { obj ->
-            // v1 -> v2: cada receta anidada en "recipes" también necesita su propio "uid".
+            // v1 -> v2: every nested recipe needs its own "uid".
             val recipesArray = obj["recipes"] as? JsonArray ?: JsonArray(emptyList())
-            val migratedRecipes = JsonArray(recipesArray.map { addUidIfMissing(it.jsonObject) })
-            JsonObject(obj + ("recipes" to migratedRecipes))
+            JsonObject(obj + ("recipes" to JsonArray(recipesArray.map { addUidIfMissing(it.jsonObject) })))
         },
-        { obj -> obj }, // v2 -> v3: "health" es opcional con default null, no hace falta generar nada.
-        { obj -> obj }, // v3 -> v4: "nutrition" es opcional con default null, no hace falta generar nada.
-        { obj -> obj } // v4 -> v5: "rating" es opcional con default null, no hace falta generar nada.
+        { obj -> obj },
+        { obj -> obj },
+        { obj -> obj }
     )
 
     private fun addUidIfMissing(obj: JsonObject): JsonObject =
@@ -125,7 +135,7 @@ object RecipeExporter {
         context.startActivity(Intent.createChooser(intent, L10n.str(R.string.share_list)))
     }
 
-    /** Exporta una receta: ZIP con sus fotos si tiene alguna, si no un .json plano como hasta ahora. */
+    /** Exports one recipe: a ZIP when it has photos, a plain JSON file otherwise. */
     fun shareRecipe(context: Context, recipe: Recipe) {
         val content = json.encodeToString(recipe.toExportDto())
         if (recipe.photos.isEmpty()) {
@@ -138,8 +148,7 @@ object RecipeExporter {
         }
     }
 
-    /** Genera y comparte el PDF de una receta. `suspend` porque, al incluir sus fotos, decodificar
-     *  bitmaps es trabajo de CPU/E-S que no debe bloquear el hilo principal. */
+    /** Renders and shares a recipe as PDF; suspending because decoding the photos is slow I/O. */
     suspend fun shareAsPdf(context: Context, recipe: Recipe) = withContext(Dispatchers.IO) {
         val document = PdfRecipeRenderer.render(recipe)
         val file = File(exportsDir(context), sanitizeFileName(recipe.name) + ".pdf")
@@ -148,13 +157,12 @@ object RecipeExporter {
         shareFile(context, file, "application/pdf")
     }
 
-    /** Exporta un libro completo: ZIP si el libro o alguna receta tienen foto, si no un .json plano. */
+    /** Exports a whole book: a ZIP when the book or any recipe has photos, a plain JSON otherwise. */
     fun shareBook(context: Context, book: RecipeBook, recipes: List<Recipe>) {
         shareRecipes(context, book.name, book, recipes)
     }
 
-    /** Genera y comparte el PDF de un libro entero (portada, índice por categoría y recetas). Ver
-     *  [shareAsPdf] sobre por qué es `suspend`. */
+    /** Renders and shares a whole book as PDF (cover, contents by category and recipes). */
     suspend fun shareBookAsPdf(context: Context, book: RecipeBook, recipes: List<Recipe>) = withContext(Dispatchers.IO) {
         val document = PdfRecipeRenderer.renderBook(book.name, book.coverPhotoUri, recipes)
         val file = File(exportsDir(context), sanitizeFileName(book.name) + ".pdf")
@@ -163,7 +171,7 @@ object RecipeExporter {
         shareFile(context, file, "application/pdf")
     }
 
-    /** Comparte un subconjunto arbitrario de recetas (selección múltiple), con la portada de [book] si se indica. */
+    /** Shares any set of recipes (multi-selection), including the cover of [book] when given. */
     fun shareRecipes(context: Context, fileName: String, book: RecipeBook?, recipes: List<Recipe>) {
         val dto = LibraryExportDto(
             exportedAt = System.currentTimeMillis(),
@@ -176,13 +184,12 @@ object RecipeExporter {
             val file = writeExportFile(context, sanitizeFileName(fileName) + ".json", content)
             shareFile(context, file, "application/json")
         } else {
-            val photoSources = photoSourcesFor(book, recipes)
-            val file = writeZipFile(context, sanitizeFileName(fileName) + ".zip", content, photoSources)
+            val file = writeZipFile(context, sanitizeFileName(fileName) + ".zip", content, photoSourcesFor(book, recipes))
             shareFile(context, file, "application/zip")
         }
     }
 
-    /** Copia de seguridad de toda la app: siempre en ZIP (con o sin fotos) para no tener que decidir el formato al elegir dónde guardarla. */
+    /** Full backup of the app, always as a ZIP so the format does not depend on the content. */
     suspend fun exportLibrary(
         context: Context,
         destination: Uri,
@@ -207,23 +214,19 @@ object RecipeExporter {
         }
     }
 
-    /** Importa una receta individual exportada (ver [shareRecipe]): .json plano o .zip con fotos, migrando esquemas antiguos. */
+    /** Imports a single exported recipe (see [shareRecipe]): plain JSON or ZIP with photos. */
     suspend fun importRecipe(context: Context, source: Uri): RecipeImportResult = withContext(Dispatchers.IO) {
         try {
-            val bytes = context.contentResolver.openInputStream(source)?.use { it.readBytes() }
+            val manifest = readManifest(context, source)
                 ?: return@withContext RecipeImportResult.Error(L10n.str(R.string.couldnt_open_file))
-            val isZip = isZip(bytes)
-            val entries = if (isZip) readZipEntries(bytes) else emptyMap<String, ByteArray>()
-            val manifestText = if (isZip) {
-                entries["manifest.json"]?.toString(Charsets.UTF_8)
-                    ?: return@withContext RecipeImportResult.Error(L10n.str(R.string.zip_file_doesnt_contain_manifest))
-            } else {
-                bytes.toString(Charsets.UTF_8)
-            }
-            val migrated = migrateJson(manifestText, recipeMigrations, CURRENT_RECIPE_SCHEMA_VERSION)
-            val dto = json.decodeFromJsonElement(RecipeExportDto.serializer(), migrated)
-            val photos = resolvePhotos(context, dto.uid, dto.photos, entries)
-            RecipeImportResult.Success(dto, photos)
+            val text = manifest.text
+                ?: return@withContext RecipeImportResult.Error(L10n.str(R.string.zip_file_doesnt_contain_manifest))
+            val dto = json.decodeFromJsonElement(
+                RecipeExportDto.serializer(),
+                migrateJson(text, recipeMigrations, CURRENT_RECIPE_SCHEMA_VERSION)
+            )
+            val extracted = if (manifest.isZip) extractZipPhotos(context, source, photoPaths(listOf(dto))) else emptyMap()
+            RecipeImportResult.Success(dto, resolvePhotos(dto.uid, dto.photos, extracted))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -231,22 +234,18 @@ object RecipeExporter {
         }
     }
 
-    /** Lee y valida un backup (.json plano o .zip con fotos) sin escribir nada en la base de datos. */
+    /** Reads and validates a backup (JSON or ZIP) without writing anything to the database. */
     suspend fun parseLibraryImport(context: Context, source: Uri): LibraryImportParseResult = withContext(Dispatchers.IO) {
         try {
-            val bytes = context.contentResolver.openInputStream(source)?.use { it.readBytes() }
+            val manifest = readManifest(context, source)
                 ?: return@withContext LibraryImportParseResult.Error(L10n.str(R.string.couldnt_open_file))
-            val isZip = isZip(bytes)
-            val entries = if (isZip) readZipEntries(bytes) else emptyMap<String, ByteArray>()
-            val manifestText = if (isZip) {
-                entries["manifest.json"]?.toString(Charsets.UTF_8)
-                    ?: return@withContext LibraryImportParseResult.Error(L10n.str(R.string.zip_file_doesnt_contain_manifest))
-            } else {
-                bytes.toString(Charsets.UTF_8)
-            }
-            val migrated = migrateJson(manifestText, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
-            val dto = json.decodeFromJsonElement(LibraryExportDto.serializer(), migrated)
-            LibraryImportParseResult.Success(dto, entries)
+            val text = manifest.text
+                ?: return@withContext LibraryImportParseResult.Error(L10n.str(R.string.zip_file_doesnt_contain_manifest))
+            val dto = json.decodeFromJsonElement(
+                LibraryExportDto.serializer(),
+                migrateJson(text, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
+            )
+            LibraryImportParseResult.Success(dto, source, manifest.isZip)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -254,32 +253,38 @@ object RecipeExporter {
         }
     }
 
-    /** Escribe en la base de datos un backup ya parseado y validado por [parseLibraryImport]. */
-    suspend fun importParsedLibrary(context: Context, dto: LibraryExportDto, entries: Map<String, ByteArray>, repository: RecipeRepository): LibraryImportResult = withContext(Dispatchers.IO) {
+    /** Writes a backup already validated by [parseLibraryImport] into the database. */
+    suspend fun importParsedLibrary(
+        context: Context,
+        parsed: LibraryImportParseResult.Success,
+        repository: RecipeRepository
+    ): LibraryImportResult = withContext(Dispatchers.IO) {
         try {
+            val dto = parsed.dto
+            val wantedPaths = photoPaths(dto.recipes) + dto.books.mapNotNull { book ->
+                book.coverPhotoFileName?.let { "books/${book.uid}/$it" }
+            }
+            val extracted = if (parsed.isZip) extractZipPhotos(context, parsed.source, wantedPaths) else emptyMap()
+            fun coverOf(book: BookExportDto?): String? =
+                book?.coverPhotoFileName?.let { extracted["books/${book.uid}/$it"] }
+
             val bookIdsByName = mutableMapOf<String, Long>()
             dto.recipes.forEach { recipeDto ->
                 val bookId = bookIdsByName.getOrPut(recipeDto.recipeBookName) {
                     val bookMeta = dto.books.find { it.name == recipeDto.recipeBookName }
-                    val coverUri = bookMeta?.coverPhotoFileName?.let { fileName ->
-                        entries["books/${bookMeta.uid}/$fileName"]?.let { PhotoStorage.copyBytesToInternalStorage(context, it) }
-                    }
-                    repository.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName, bookMeta?.uid, coverUri)
+                    repository.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName, bookMeta?.uid, coverOf(bookMeta))
                 }
-                val photos = resolvePhotos(context, recipeDto.uid, recipeDto.photos, entries)
+                val photos = resolvePhotos(recipeDto.uid, recipeDto.photos, extracted)
                 val recipeId = repository.saveRecipe(recipeDto.toDraft(bookId, photos))
                 applyHealthFromImport(repository, recipeId, recipeDto.health)
                 applyNutritionFromImport(repository, recipeId, recipeDto.nutrition)
                 if (recipeDto.rating != null) repository.setRating(recipeId, recipeDto.rating)
             }
-            // Libros sin recetas: también se restauran (antes solo se creaban al importar sus recetas).
+            // Books without recipes are restored too.
             dto.books.filter { it.name !in bookIdsByName }.forEach { bookMeta ->
-                val coverUri = bookMeta.coverPhotoFileName?.let { fileName ->
-                    entries["books/${bookMeta.uid}/$fileName"]?.let { PhotoStorage.copyBytesToInternalStorage(context, it) }
-                }
-                bookIdsByName[bookMeta.name] = repository.getOrCreateRecipeBookIdByName(bookMeta.name, bookMeta.uid, coverUri)
+                bookIdsByName[bookMeta.name] = repository.getOrCreateRecipeBookIdByName(bookMeta.name, bookMeta.uid, coverOf(bookMeta))
             }
-            // Plantillas y supermercados: se añaden los que no existan ya con ese nombre.
+            // Templates and supermarkets are only added when there is none with the same name.
             val existingTemplates = repository.observeShoppingTemplates().first().map { it.name.trim().lowercase() }.toSet()
             dto.shoppingTemplates.filter { it.name.trim().lowercase() !in existingTemplates }.forEach {
                 repository.saveShoppingTemplate(it.name, it.items)
@@ -297,11 +302,9 @@ object RecipeExporter {
     }
 
     /**
-     * Instala o actualiza un pack descargado del catálogo (ver PacksCatalogClient): mismo formato
-     * ZIP que genera [shareBook] (manifest.json + books/<uid>/ + recipes/<uid>/), pero en vez de
-     * resolver el libro por nombre y siempre insertar (como [importLibrary]) usa
-     * [RecipeRepository.installOrUpdatePack], que identifica el libro por [packId] y actualiza
-     * en el sitio si ya estaba instalado.
+     * Installs or updates a pack downloaded from the catalogue (see PacksCatalogClient). Same ZIP
+     * format as [shareBook], but the book is identified by [packId] and updated in place by
+     * [RecipeRepository.installOrUpdatePack] instead of being matched by name.
      */
     suspend fun importPackFromBytes(
         context: Context,
@@ -312,27 +315,26 @@ object RecipeExporter {
     ): PackImportResult = withContext(Dispatchers.IO) {
         try {
             if (!isZip(zipBytes)) return@withContext PackImportResult.Error(L10n.str(R.string.downloaded_file_isnt_valid_zip))
-            val entries = readZipEntries(zipBytes)
-            val manifestText = entries["manifest.json"]?.toString(Charsets.UTF_8)
+            val manifestText = ZipInputStream(ByteArrayInputStream(zipBytes)).use { readManifestEntry(it) }
                 ?: return@withContext PackImportResult.Error(L10n.str(R.string.pack_doesnt_contain_manifest_json))
-            val migrated = migrateJson(manifestText, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
-            val dto = json.decodeFromJsonElement(LibraryExportDto.serializer(), migrated)
+            val dto = json.decodeFromJsonElement(
+                LibraryExportDto.serializer(),
+                migrateJson(manifestText, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
+            )
             val bookMeta = dto.books.firstOrNull()
                 ?: return@withContext PackImportResult.Error(L10n.str(R.string.pack_doesnt_include_book_details))
-            val bookCoverUri = bookMeta.coverPhotoFileName?.let { fileName ->
-                entries["books/${bookMeta.uid}/$fileName"]?.let { PhotoStorage.copyBytesToInternalStorage(context, it) }
-            }
-            val photosByUid = dto.recipes.associate { recipeDto ->
-                recipeDto.uid to resolvePhotos(context, recipeDto.uid, recipeDto.photos, entries)
+            val coverPath = bookMeta.coverPhotoFileName?.let { "books/${bookMeta.uid}/$it" }
+            val extracted = ZipInputStream(ByteArrayInputStream(zipBytes)).use { zip ->
+                extractEntries(context, zip, photoPaths(dto.recipes) + listOfNotNull(coverPath))
             }
             val bookId = repository.installOrUpdatePack(
                 packId = packId,
                 packVersion = packVersion,
                 bookName = bookMeta.name,
                 bookUid = bookMeta.uid,
-                bookCoverUri = bookCoverUri,
+                bookCoverUri = coverPath?.let { extracted[it] },
                 recipes = dto.recipes,
-                photosByUid = photosByUid
+                photosByUid = dto.recipes.associate { it.uid to resolvePhotos(it.uid, it.photos, extracted) }
             )
             PackImportResult.Success(bookId)
         } catch (e: CancellationException) {
@@ -340,6 +342,27 @@ object RecipeExporter {
         } catch (e: Exception) {
             PackImportResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
+    }
+
+    /** Stores the AI health rating included in an imported recipe, if any. */
+    suspend fun applyHealthFromImport(repository: RecipeRepository, recipeId: Long, health: RecipeHealthDto?) {
+        if (health == null) return
+        val colorLevel = runCatching { HealthColorLevel.valueOf(health.colorLevel) }.getOrDefault(HealthColorLevel.YELLOW)
+        repository.saveHealthRating(recipeId, colorLevel, health.description, health.fingerprint, health.analyzedAt)
+    }
+
+    /** Stores the AI nutrition estimate included in an imported recipe, if any. */
+    suspend fun applyNutritionFromImport(repository: RecipeRepository, recipeId: Long, nutrition: RecipeNutritionDto?) {
+        if (nutrition == null) return
+        repository.saveNutritionInfo(
+            recipeId,
+            nutrition.caloriesPerServing,
+            nutrition.proteinGrams,
+            nutrition.carbsGrams,
+            nutrition.fatGrams,
+            nutrition.fingerprint,
+            nutrition.analyzedAt
+        )
     }
 
     private fun bookExportDto(book: RecipeBook) = BookExportDto(
@@ -354,57 +377,85 @@ object RecipeExporter {
         return bookCover + recipePhotos
     }
 
-    private fun resolvePhotos(context: Context, recipeUid: String, photoDtos: List<PhotoExportDto>, entries: Map<String, ByteArray>): List<RecipePhoto> =
+    private fun photoPaths(recipes: List<RecipeExportDto>): List<String> =
+        recipes.flatMap { recipe -> recipe.photos.map { "recipes/${recipe.uid}/${it.fileName}" } }
+
+    /** Maps the photos of a recipe to the files extracted from the ZIP, skipping missing ones. */
+    private fun resolvePhotos(recipeUid: String, photoDtos: List<PhotoExportDto>, extracted: Map<String, String>): List<RecipePhoto> =
         photoDtos.mapNotNull { photoDto ->
-            val bytes = entries["recipes/$recipeUid/${photoDto.fileName}"] ?: return@mapNotNull null
-            val uri = PhotoStorage.copyBytesToInternalStorage(context, bytes) ?: return@mapNotNull null
-            RecipePhoto(uri = uri, isCover = photoDto.isCover)
+            extracted["recipes/$recipeUid/${photoDto.fileName}"]?.let { RecipePhoto(uri = it, isCover = photoDto.isCover) }
         }
 
-    /** Aplica la valoración de salud embebida en una receta importada, si tenía alguna. */
-    suspend fun applyHealthFromImport(repository: RecipeRepository, recipeId: Long, health: RecipeHealthDto?) {
-        if (health == null) return
-        val colorLevel = runCatching { HealthColorLevel.valueOf(health.colorLevel) }.getOrDefault(HealthColorLevel.YELLOW)
-        repository.saveHealthRating(recipeId, colorLevel, health.description, health.fingerprint, health.analyzedAt)
+    private class Manifest(val text: String?, val isZip: Boolean)
+
+    /** Reads the JSON of a plain file, or the manifest of a ZIP, streaming instead of loading the whole file. */
+    private fun readManifest(context: Context, source: Uri): Manifest? {
+        val input = context.contentResolver.openInputStream(source) ?: return null
+        return BufferedInputStream(input).use { buffered ->
+            buffered.mark(4)
+            val signature = ByteArray(2)
+            val read = buffered.read(signature)
+            buffered.reset()
+            if (read == 2 && isZip(signature)) {
+                Manifest(ZipInputStream(buffered).let { readManifestEntry(it) }, isZip = true)
+            } else {
+                Manifest(buffered.readBytes().toString(Charsets.UTF_8), isZip = false)
+            }
+        }
     }
 
-    /** Aplica la estimación nutricional embebida en una receta importada, si tenía alguna. */
-    suspend fun applyNutritionFromImport(repository: RecipeRepository, recipeId: Long, nutrition: RecipeNutritionDto?) {
-        if (nutrition == null) return
-        repository.saveNutritionInfo(
-            recipeId,
-            nutrition.caloriesPerServing,
-            nutrition.proteinGrams,
-            nutrition.carbsGrams,
-            nutrition.fatGrams,
-            nutrition.fingerprint,
-            nutrition.analyzedAt
-        )
+    private fun readManifestEntry(zip: ZipInputStream): String? {
+        var entry = zip.nextEntry
+        while (entry != null) {
+            if (!entry.isDirectory && entry.name == MANIFEST) return zip.readBytes().toString(Charsets.UTF_8)
+            entry = zip.nextEntry
+        }
+        return null
+    }
+
+    /** Streams the ZIP at [source] and copies the entries in [wanted] to internal storage. */
+    private fun extractZipPhotos(context: Context, source: Uri, wanted: Collection<String>): Map<String, String> {
+        if (wanted.isEmpty()) return emptyMap()
+        val input = context.contentResolver.openInputStream(source) ?: return emptyMap()
+        return ZipInputStream(BufferedInputStream(input)).use { extractEntries(context, it, wanted) }
+    }
+
+    /**
+     * Copies the entries listed in [wanted] to internal storage and returns their new uris by ZIP
+     * path. Entry names are only used as map keys, never as file paths, so a malicious ZIP cannot
+     * write outside the photos folder.
+     */
+    private fun extractEntries(context: Context, zip: ZipInputStream, wanted: Collection<String>): Map<String, String> {
+        val wantedSet = wanted.toSet()
+        val result = mutableMapOf<String, String>()
+        var entry = zip.nextEntry
+        while (entry != null) {
+            val name = entry.name
+            if (!entry.isDirectory && name in wantedSet) {
+                PhotoStorage.copyStreamToInternalStorage(context, NonClosingInputStream(zip))?.let { result[name] = it }
+            }
+            entry = zip.nextEntry
+        }
+        return result
+    }
+
+    /** Lets a ZIP entry be copied with `use {}` helpers without closing the whole ZipInputStream. */
+    private class NonClosingInputStream(private val delegate: InputStream) : InputStream() {
+        override fun read(): Int = delegate.read()
+        override fun read(b: ByteArray, off: Int, len: Int): Int = delegate.read(b, off, len)
+        override fun close() = Unit
     }
 
     private fun isZip(bytes: ByteArray): Boolean =
         bytes.size >= 2 && bytes[0] == 0x50.toByte() && bytes[1] == 0x4B.toByte()
 
-    private fun readZipEntries(bytes: ByteArray): Map<String, ByteArray> {
-        val entries = mutableMapOf<String, ByteArray>()
-        ZipInputStream(ByteArrayInputStream(bytes)).use { zip ->
-            var entry = zip.nextEntry
-            while (entry != null) {
-                if (!entry.isDirectory) entries[entry.name] = zip.readBytes()
-                zip.closeEntry()
-                entry = zip.nextEntry
-            }
-        }
-        return entries
-    }
-
     private fun writeZipToStream(context: Context, output: OutputStream, manifestJson: String, photoSources: List<Pair<String, String>>) {
         ZipOutputStream(output).use { zip ->
-            zip.putNextEntry(ZipEntry("manifest.json"))
+            zip.putNextEntry(ZipEntry(MANIFEST))
             zip.write(manifestJson.toByteArray())
             zip.closeEntry()
             photoSources.forEach { (path, sourceUri) ->
-                // Una foto que ya no existe (borrada fuera de la app) no debe abortar la copia entera.
+                // A photo deleted outside the app must not abort the whole export.
                 val input = runCatching { context.contentResolver.openInputStream(Uri.parse(sourceUri)) }.getOrNull()
                 input?.use {
                     zip.putNextEntry(ZipEntry(path))
@@ -436,20 +487,25 @@ object RecipeExporter {
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, L10n.str(R.string.share_recipe)))
+        context.startActivity(Intent.createChooser(intent, L10n.str(R.string.share)))
     }
 
+    /** Keeps letters (accents included), digits, dashes and underscores; spaces become underscores. */
     private fun sanitizeFileName(name: String): String =
-        name.trim().ifBlank { "receta" }.replace(Regex("[^A-Za-z0-9-_ ]"), "").replace(" ", "_").take(60)
+        name.trim()
+            .replace(Regex("[^\\p{L}\\p{N}_ -]"), "")
+            .trim()
+            .replace(" ", "_")
+            .take(60)
+            .ifBlank { "recipe" }
 
     private fun formatShoppingListAsText(groups: List<ShoppingListGroup>): String = buildString {
         appendLine(L10n.str(R.string.shopping_list))
         groups.forEach { group ->
             appendLine()
-            appendLine(group.categoryName.uppercase())
+            appendLine(displayCategoryName(group.categoryName).uppercase())
             group.items.forEach { item ->
-                val prefix = if (item.checked) "[x] " else "[ ] "
-                append(prefix)
+                append(if (item.checked) "[x] " else "[ ] ")
                 appendLine(listOfNotNull(item.quantity?.let { formatQuantity(it) }, item.unit, item.name).joinToString(" "))
             }
         }
@@ -462,20 +518,17 @@ object RecipeExporter {
         recipe.categoryName?.let { append(" · ").append(it) }
         recipe.totalTimeMinutes?.let { append(" · ").append(it).append(" min") }
         appendLine(L10n.str(R.string.servings_x, recipe.servings))
-        if (recipe.utensils.isNotEmpty()) appendLine("Utensilios: ${recipe.utensils.joinToString(", ")}")
+        if (recipe.utensils.isNotEmpty()) appendLine(L10n.str(R.string.utensils) + ": " + recipe.utensils.joinToString(", "))
         appendLine()
-        appendLine("INGREDIENTES")
+        appendLine(L10n.str(R.string.ingredients).uppercase())
         recipe.ingredientGroups.forEach { group ->
             if (group.ingredients.isNotEmpty()) {
                 if (group.name != null) appendLine(group.name.uppercase())
-                group.ingredients.forEach { ingredient ->
-                    val qty = ingredient.quantity?.let { formatQuantity(it) }
-                    appendLine("- " + listOfNotNull(qty, ingredient.unit, ingredient.name).joinToString(" "))
-                }
+                group.ingredients.forEach { appendLine("- " + formatIngredientText(it.name, it.quantity, it.unit)) }
             }
         }
         appendLine()
-        appendLine(L10n.str(R.string.method_2))
+        appendLine(L10n.str(R.string.method).uppercase())
         recipe.stepGroups.forEach { group ->
             if (group.instructions.isNotEmpty()) {
                 if (group.name != null) appendLine(group.name.uppercase())
@@ -484,12 +537,12 @@ object RecipeExporter {
         }
         if (recipe.notes.isNotBlank()) {
             appendLine()
-            appendLine("NOTAS")
+            appendLine(L10n.str(R.string.notes).uppercase())
             appendLine(recipe.notes)
         }
         if (recipe.source.isNotBlank()) {
             appendLine()
-            appendLine("Origen: ${recipe.source}")
+            appendLine(L10n.str(R.string.source) + ": " + recipe.source)
         }
     }
 }

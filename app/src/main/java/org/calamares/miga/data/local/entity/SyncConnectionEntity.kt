@@ -3,26 +3,26 @@ package org.calamares.miga.data.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-/** Una conexión a un namespace de un servidor de sincronización self-hosted (ver miga-server).
- *  La app puede tener varias a la vez (p. ej. "Casa" y "Cuadrilla de amigos", posiblemente en
- *  servidores distintos); cada libro sincronizado referencia una de estas filas por [id]. */
+/**
+ * Connection to a namespace of a self-hosted sync server (see miga-server). There can be several at
+ * once, possibly on different servers; every synced book references one by [id].
+ */
 @Entity(tableName = "sync_connections")
 data class SyncConnectionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    /** Nombre elegido por el usuario para reconocer la conexión en Ajustes (p. ej. "Casa"). */
+    /** Name chosen by the user to recognise the connection in Settings (for example "Home"). */
     val label: String,
     val serverUrl: String,
     val namespaceId: String,
-    /** Token de acceso al namespace (BYOK, igual de sensible que las API key de Gemini/Anthropic
-     *  ya guardadas hoy en DataStore sin cifrado adicional - misma limitación conocida). */
+    /** Namespace access token, stored encrypted with TokenCipher. */
     val accessToken: String,
-    /** Cursor de sincronización: última revisión del namespace ya aplicada localmente. */
+    /** Sync cursor: last namespace revision already applied locally. */
     val lastSyncedRevision: Long = 0,
     val lastSyncedAt: Long? = null,
     val lastSyncError: String? = null,
-    /** true si esta conexión comparte además la lista de la compra (como mucho una conexión a la vez). */
+    /** Whether this connection also shares the shopping list (at most one connection does). */
     val syncShopping: Boolean = false,
-    /** true cuando, tras activar [syncShopping], ya se ha bajado la lista completa del servidor. */
+    /** Whether the full list was already downloaded after enabling [syncShopping]. */
     val shoppingPulled: Boolean = false,
     val createdAt: Long
 )

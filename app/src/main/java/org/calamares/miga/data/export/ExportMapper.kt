@@ -36,9 +36,9 @@ fun Recipe.toExportDto() = RecipeExportDto(
 )
 
 /**
- * [recipeBookId] debe resolverse antes (buscar/crear el libro por [RecipeExportDto.recipeBookName]).
- * [photos] son las fotos ya copiadas al almacenamiento interno del dispositivo (extraídas del ZIP
- * de importación, si lo había); vacío si se importó un .json plano sin fotos.
+ * Converts an imported recipe into a draft for [recipeBookId], which must already be resolved from
+ * [RecipeExportDto.recipeBookName]. [photos] are the photos already copied to internal storage
+ * (empty for a plain JSON import).
  */
 fun RecipeExportDto.toDraft(recipeBookId: Long, photos: List<RecipePhoto> = emptyList()) = RecipeDraft(
     id = 0L,

@@ -1,6 +1,10 @@
 package org.calamares.miga.data.model
 
-const val UNCATEGORIZED_CATEGORY_LABEL = "Sin categoría"
+import org.calamares.miga.L10n
+import org.calamares.miga.R
+
+/** Group name used for recipes without a category, in the current app language. */
+val UNCATEGORIZED_CATEGORY_LABEL: String get() = L10n.str(R.string.uncategorized)
 
 /**
  * Filtra y ordena [this] según [filter]; usado tanto en la lista de un libro como en la

@@ -24,7 +24,10 @@ interface ShoppingListsDao {
     @Query("SELECT * FROM shopping_lists WHERE syncDirty = 1 ORDER BY updatedAt ASC")
     suspend fun getDirty(): List<ShoppingListEntity>
 
-    /** Solo limpia la marca si la lista no ha vuelto a cambiar mientras se subía (mismo updatedAt). */
+    /**
+     * Only clears the flag if the list did not change again while it was being uploaded (same
+     * updatedAt).
+     */
     @Query("UPDATE shopping_lists SET syncDirty = 0 WHERE uid = :uid AND updatedAt = :updatedAt")
     suspend fun markSynced(uid: String, updatedAt: Long)
 

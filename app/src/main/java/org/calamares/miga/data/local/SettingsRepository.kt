@@ -76,7 +76,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[colorThemeKey] = colorTheme.name }
     }
 
-    /** Lista de la compra en la que se está trabajando; "main" = la lista por defecto. */
+    /** Shopping list currently open; "main" is the default list. */
     fun observeShoppingListUid(): Flow<String> =
         context.settingsDataStore.data.map { prefs -> prefs[shoppingListUidKey] ?: "main" }
 
@@ -84,7 +84,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[shoppingListUidKey] = uid }
     }
 
-    /** Nombre con el que se firman los cambios en una lista compartida (vacío = sin firma). */
+    /** Name used to sign changes in a shared list (empty means unsigned). */
     fun observeShoppingAuthor(): Flow<String> =
         context.settingsDataStore.data.map { prefs -> prefs[shoppingAuthorKey].orEmpty() }
 
@@ -92,7 +92,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[shoppingAuthorKey] = name.trim().take(60) }
     }
 
-    /** Supermercado elegido para ordenar la lista de la compra por sus pasillos; 0 = ninguno. */
+    /** Supermarket used to sort the shopping list by its aisles; 0 means none. */
     fun observeShoppingStoreId(): Flow<Long> =
         context.settingsDataStore.data.map { prefs -> prefs[shoppingStoreKey] ?: 0L }
 
@@ -100,7 +100,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[shoppingStoreKey] = id }
     }
 
-    /** Por defecto desactivado: mostrar las fotos de producto de la lista de la compra descarga imágenes de Open Food Facts. */
+    /** Off by default: showing product photos downloads images from Open Food Facts. */
     fun observeShoppingImagesEnabled(): Flow<Boolean> =
         context.settingsDataStore.data.map { prefs -> prefs[shoppingImagesKey] ?: false }
 
@@ -109,9 +109,9 @@ class SettingsRepository(private val context: Context) {
     }
 
     /**
-     * Idioma ("es" o "en") del catálogo inicial (utensilios, categorías, ingredientes). Se fija en la
-     * primera ejecución según el idioma de la app y no cambia después, para que cambiar de idioma no
-     * duplique los datos ya creados.
+     * Language ("es" or "en") of the initial catalogue (utensils, categories, ingredients). Fixed
+     * on the first run from the app language and never changed afterwards, so switching languages
+     * does not duplicate data.
      */
     suspend fun seedLanguage(current: String): String {
         val stored = context.settingsDataStore.data.first()[seedLanguageKey]
@@ -121,7 +121,7 @@ class SettingsRepository(private val context: Context) {
         return chosen
     }
 
-    /** true cuando ya se ha visto (o saltado) la bienvenida de la primera ejecución. */
+    /** True once the first-run welcome has been seen or skipped. */
     fun observeOnboardingDone(): Flow<Boolean> =
         context.settingsDataStore.data.map { prefs -> prefs[onboardingDoneKey] ?: false }
 
@@ -129,14 +129,14 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[onboardingDoneKey] = true }
     }
 
-    /** Interruptor global de IA: si está apagado, la app no muestra ni usa ninguna función de IA. */
+    /** Global AI switch: when off, no AI feature is shown or used. */
     fun observeAiEnabled(): Flow<Boolean> = context.settingsDataStore.data.map { prefs -> prefs[aiEnabledKey] ?: true }
 
     suspend fun setAiEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[aiEnabledKey] = enabled }
     }
 
-    /** Valoración automática de salud al abrir una receta (solo con la IA global activada). */
+    /** Automatic health rating when opening a recipe (only with AI enabled). */
     fun observeAiHealthEnabled(): Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
         (prefs[aiEnabledKey] ?: true) && (prefs[aiHealthEnabledKey] ?: true)
     }
@@ -145,7 +145,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[aiHealthEnabledKey] = enabled }
     }
 
-    /** Estimación nutricional automática al abrir una receta (solo con la IA global activada). */
+    /** Automatic nutrition estimate when opening a recipe (only with AI enabled). */
     fun observeAiNutritionEnabled(): Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
         (prefs[aiEnabledKey] ?: true) && (prefs[aiNutritionEnabledKey] ?: true)
     }
@@ -161,8 +161,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[biometricLockKey] = enabled }
     }
 
-    /** Por defecto activado: comprobar si hay una versión nueva cada vez que se abre la app. */
-    /** Vista de la lista de recetas: se guarda de forma global (no por libro), como el tema. */
+    /** Recipe list layout, stored globally (not per book) like the theme. */
     fun observeRecipeListViewMode(): Flow<RecipeListViewMode> =
         context.settingsDataStore.data.map { prefs ->
             prefs[recipeListViewModeKey]?.let { stored ->
@@ -174,7 +173,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[recipeListViewModeKey] = mode.name }
     }
 
-    /** Vista de la lista de libros; guardada aparte de la de recetas (misma escala COMPACT/NORMAL/GRID). */
+    /** Book list layout, stored separately from the recipe list one. */
     fun observeRecipeBookListViewMode(): Flow<RecipeListViewMode> =
         context.settingsDataStore.data.map { prefs ->
             prefs[recipeBookListViewModeKey]?.let { stored ->
@@ -187,10 +186,9 @@ class SettingsRepository(private val context: Context) {
     }
 
     /**
-     * Orden de prioridad de los proveedores de IA (el primero se prueba antes). Siempre contiene
-     * todos los proveedores; los que no estén guardados (instalaciones antiguas o proveedores
-     * nuevos) se añaden al final. Si no hay orden guardado, se parte del proveedor elegido en
-     * versiones anteriores ("vision_provider").
+     * Priority order of the AI providers (the first one is tried first). It always contains every
+     * provider: missing ones (older installs, new providers) are appended. Without a stored order,
+     * the provider chosen in older versions ("vision_provider") goes first.
      */
     fun observeProviderOrder(): Flow<List<AiProvider>> =
         context.settingsDataStore.data.map { prefs ->
@@ -204,15 +202,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[aiProviderOrderKey] = (order + AiProvider.entries).distinct().joinToString(",") { it.name } }
     }
 
-    /** Proveedor de mayor prioridad. */
-    fun observeVisionProvider(): Flow<AiProvider> = observeProviderOrder().map { it.first() }
-
-    /** Sube [provider] al primer puesto de la prioridad (p. ej. al elegir otro modelo tras un error). */
-    suspend fun setVisionProvider(provider: AiProvider) {
-        setProviderOrder(listOf(provider) + observeProviderOrder().first())
-    }
-
-    /** API key de Gemini introducida por el propio usuario (BYOK); vacía si no se ha configurado. */
+    /** Gemini API key entered by the user; empty when not configured. */
     fun observeGeminiApiKey(): Flow<String> =
         context.settingsDataStore.data.map { prefs -> prefs[geminiApiKeyKey].orEmpty() }
 
@@ -220,7 +210,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[geminiApiKeyKey] = apiKey.trim() }
     }
 
-    /** Id del modelo de Gemini a usar (ver `data/vision/GeminiModels.kt`); uno de la lista o uno escrito a mano. */
+    /** Gemini model id, from GEMINI_MODELS or typed by hand. */
     fun observeGeminiModel(): Flow<String> =
         context.settingsDataStore.data.map { prefs -> prefs[geminiModelKey] ?: DEFAULT_GEMINI_MODEL }
 
@@ -228,7 +218,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[geminiModelKey] = model.trim() }
     }
 
-    /** API key de Anthropic (Claude) introducida por el propio usuario (BYOK); vacía si no se ha configurado. */
+    /** Anthropic (Claude) API key entered by the user; empty when not configured. */
     fun observeAnthropicApiKey(): Flow<String> =
         context.settingsDataStore.data.map { prefs -> prefs[anthropicApiKeyKey].orEmpty() }
 
@@ -236,7 +226,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[anthropicApiKeyKey] = apiKey.trim() }
     }
 
-    /** Id del modelo de Claude a usar (ver `data/vision/AnthropicModels.kt`); uno de la lista o uno escrito a mano. */
+    /** Claude model id, from ANTHROPIC_MODELS or typed by hand. */
     fun observeAnthropicModel(): Flow<String> =
         context.settingsDataStore.data.map { prefs -> prefs[anthropicModelKey] ?: DEFAULT_ANTHROPIC_MODEL }
 
@@ -244,7 +234,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[anthropicModelKey] = model.trim() }
     }
 
-    /** API key de OpenRouter introducida por el propio usuario (BYOK); vacía si no se ha configurado. */
+    /** OpenRouter API key entered by the user; empty when not configured. */
     fun observeOpenRouterApiKey(): Flow<String> =
         context.settingsDataStore.data.map { prefs -> prefs[openRouterApiKeyKey].orEmpty() }
 
@@ -252,11 +242,13 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[openRouterApiKeyKey] = apiKey.trim() }
     }
 
-    /** Id del modelo de OpenRouter (p. ej. "vendor/modelo:free"); vacío hasta que el usuario elige uno. */
+    /** OpenRouter model id (for example "vendor/model:free"); empty until the user picks one. */
     fun observeOpenRouterModel(): Flow<String> =
         context.settingsDataStore.data.map { prefs -> prefs[openRouterModelKey].orEmpty() }
 
-    /** Si el modelo de OpenRouter elegido acepta imágenes (se guarda al elegirlo del catálogo). */
+    /**
+     * Whether the chosen OpenRouter model accepts images (stored when picked from the catalogue).
+     */
     fun observeOpenRouterModelImages(): Flow<Boolean> =
         context.settingsDataStore.data.map { prefs -> prefs[openRouterModelImagesKey] ?: true }
 
@@ -267,27 +259,30 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    /** Resuelve la API key configurada para [provider] (una por proveedor, BYOK). */
+    /** API key configured for [provider]. */
     suspend fun apiKeyFor(provider: AiProvider): String = when (provider) {
         AiProvider.GEMINI -> observeGeminiApiKey().first()
         AiProvider.ANTHROPIC -> observeAnthropicApiKey().first()
         AiProvider.OPENROUTER -> observeOpenRouterApiKey().first()
     }
 
-    /** Resuelve el modelo configurado para [provider]. */
+    /** Model configured for [provider]. */
     suspend fun modelFor(provider: AiProvider): String = when (provider) {
         AiProvider.GEMINI -> observeGeminiModel().first()
         AiProvider.ANTHROPIC -> observeAnthropicModel().first()
         AiProvider.OPENROUTER -> observeOpenRouterModel().first()
     }
 
-    /** Si el modelo configurado para [provider] puede leer imágenes (todos los de Gemini y Claude pueden). */
+    /**
+     * Whether the model configured for [provider] can read images; every Gemini and Claude model
+     * can.
+     */
     suspend fun supportsImages(provider: AiProvider): Boolean = when (provider) {
         AiProvider.GEMINI, AiProvider.ANTHROPIC -> true
         AiProvider.OPENROUTER -> observeOpenRouterModelImages().first()
     }
 
-    /** Nombre interno de la voz de Android TTS elegida para el modo cocina; null = voz por defecto del sistema. */
+    /** Android text-to-speech voice for cooking mode; null means the system default voice. */
     fun observeTtsVoiceName(): Flow<String?> =
         context.settingsDataStore.data.map { prefs -> prefs[ttsVoiceNameKey] }
 
@@ -297,7 +292,7 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    /** Idioma del dictado por voz (etiqueta BCP-47, ver DictationLanguages); español de España por defecto. */
+    /** Voice dictation language as a BCP-47 tag (see DictationLanguages). */
     fun observeDictationLanguage(): Flow<String> =
         context.settingsDataStore.data.map { prefs -> prefs[dictationLanguageKey] ?: DictationLanguages.DEFAULT }
 
@@ -305,7 +300,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[dictationLanguageKey] = tag }
     }
 
-    /** Último versionCode instalado del que ya se mostró el changelog; 0 si aún no se ha registrado ninguno. */
+    /** Last version code whose release notes were already shown; 0 when none. */
     fun observeLastSeenVersionCode(): Flow<Int> =
         context.settingsDataStore.data.map { prefs -> prefs[lastSeenVersionCodeKey] ?: 0 }
 
@@ -313,7 +308,7 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[lastSeenVersionCodeKey] = versionCode }
     }
 
-    /** Repositorio de GitHub ("owner/repo") del catálogo de packs de recetas; editable en Ajustes. */
+    /** GitHub repository ("owner/repo") of the recipe pack catalogue; editable in Settings. */
     fun observePacksCatalogRepo(): Flow<String> =
         context.settingsDataStore.data.map { prefs -> prefs[packsCatalogRepoKey]?.takeIf { it.isNotBlank() } ?: DEFAULT_PACKS_CATALOG }
 
@@ -321,8 +316,10 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[packsCatalogRepoKey] = repo.trim() }
     }
 
-    /** Texto breve de novedades de [versionCode] embebido en `assets/changelogs/`, o null si no existe. */
-    /** Nota de la versión en el idioma de la app (assets/changelogs-en para inglés), o en español si no hay traducción. */
+    /**
+     * Release notes of [versionCode] in the app language (assets/changelogs-en for English),
+     * falling back to Spanish when there is no translation.
+     */
     fun readChangelog(versionCode: Int): String? =
         readAsset("${L10n.str(R.string.changelog_assets_dir)}/$versionCode.txt") ?: readAsset("changelogs/$versionCode.txt")
 
@@ -334,11 +331,10 @@ class SettingsRepository(private val context: Context) {
         null
     }
 
-    /** Todos los versionCode con changelog embebido en el APK actual, de más reciente a más
-     *  antiguo. Es el mismo historial tanto en beta como en estable: cada build (beta o release)
-     *  lleva embebidos los changelogs de todas las versiones hasta esa, así que en un build beta
-     *  se ve el detalle de cada beta intermedia, y en un build release se ve cada versión que ha
-     *  ido saliendo. Usado por la pantalla de Ayuda para mostrar el historial completo. */
+    /**
+     * Every version code with release notes bundled in this APK, newest first. Used by the help
+     * screen to show the full history.
+     */
     fun listAvailableChangelogVersionCodes(): List<Int> = try {
         context.assets.list("changelogs")
             ?.mapNotNull { it.removeSuffix(".txt").toIntOrNull() }

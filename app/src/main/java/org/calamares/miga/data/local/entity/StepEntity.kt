@@ -20,9 +20,12 @@ import androidx.room.PrimaryKey
 data class StepEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val recipeId: Long,
-    /** Null groupName = paso de la receta principal. Un nombre agrupa pasos de una sub-receta (p.ej. "Salsa de tomate"). */
+    /**
+     * Null for the main recipe; a name groups the steps of a sub-recipe (for example "Tomato
+     * sauce").
+     */
     val groupName: String?,
-    /** Orden dentro de su grupo, empezando en 1. */
+    /** Position inside its group, starting at 1. */
     val position: Int,
     val instruction: String
 )

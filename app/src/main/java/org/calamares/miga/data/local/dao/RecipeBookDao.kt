@@ -20,7 +20,7 @@ interface RecipeBookDao {
         """
         SELECT b.*, (SELECT COUNT(*) FROM recipes r WHERE r.recipeBookId = b.id) AS recipeCount
         FROM recipe_books b
-        ORDER BY b.name ASC
+        ORDER BY b.name COLLATE NOCASE ASC
         """
     )
     fun observeAllWithCounts(): Flow<List<RecipeBookWithCount>>
@@ -52,12 +52,13 @@ interface RecipeBookDao {
     @Query("DELETE FROM recipe_books WHERE id = :id")
     suspend fun delete(id: Long)
 
-    /** Usado al quitar una conexión de sincronización: sus libros pasan a ser locales, sin borrar
-     *  nada de su contenido. */
+    /**
+     * Used when a sync connection is removed: its books become local without losing any content.
+     */
     @Query("UPDATE recipe_books SET syncConnectionId = NULL WHERE syncConnectionId = :syncConnectionId")
     suspend fun clearSyncConnection(syncConnectionId: Long)
 
-    /** Usado por el "Sincronizar ahora" a nivel de conexión, para reencolar todos sus libros. */
+    /** Used by the connection-level "Sync now" to queue all its books again. */
     @Query("SELECT * FROM recipe_books WHERE syncConnectionId = :syncConnectionId")
     suspend fun findBySyncConnectionId(syncConnectionId: Long): List<RecipeBookEntity>
 }

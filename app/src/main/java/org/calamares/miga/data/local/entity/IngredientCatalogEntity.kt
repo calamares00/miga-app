@@ -5,7 +5,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/** Catálogo de nombres de ingrediente usados, para sugerir autocompletado al editar recetas. */
+/** Catalogue of ingredient names used so far, for autocompletion in the recipe editor. */
 @Entity(
     tableName = "ingredient_catalog",
     foreignKeys = [

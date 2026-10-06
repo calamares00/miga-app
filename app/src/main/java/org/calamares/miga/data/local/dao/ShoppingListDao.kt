@@ -7,14 +7,14 @@ import androidx.room.Update
 import org.calamares.miga.data.local.entity.ShoppingListItemEntity
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Todas las lecturas de la lista visible excluyen las filas con [ShoppingListItemEntity.deletedAt]
- * (tombstones pendientes de subir al servidor). Toda escritura local marca la fila como
- * "syncDirty" con un updatedAt nuevo; ver RecipeRepository para la lógica de sincronización.
- */
-/** Cuántos artículos pendientes (sin marcar) tiene una lista. */
+/** Number of unchecked items in a list. */
 data class ShoppingListPendingCount(val listUid: String, val pending: Int)
 
+/**
+ * Shopping list items. Every read of the visible list excludes rows with
+ * [ShoppingListItemEntity.deletedAt] (tombstones waiting to be uploaded), and every local write
+ * marks the row as syncDirty with a new updatedAt. See RecipeRepository for the sync logic.
+ */
 @Dao
 interface ShoppingListDao {
 
@@ -25,14 +25,14 @@ interface ShoppingListDao {
     fun observePendingCounts(): Flow<List<ShoppingListPendingCount>>
 
     /**
-     * Fila fusionable: mismo nombre normalizado + misma unidad (incluye null=null, por eso se usa
-     * el operador SQLite "IS", null-safe, en vez de "=") + cantidad no nula (la de la fila y la
-     * que se va a sumar se comprueban aparte, en el repositorio).
+     * A row an addition can be merged into: same normalised name and same unit (SQLite's null-safe
+     * IS also matches null with null) and a non-null quantity. The quantity being added is checked
+     * by the repository.
      */
     @Query("SELECT * FROM shopping_list_items WHERE deletedAt IS NULL AND listUid = :listUid AND normalizedName = :normalizedName AND unit IS :unit AND quantity IS NOT NULL LIMIT 1")
     suspend fun findMergeable(listUid: String, normalizedName: String, unit: String?): ShoppingListItemEntity?
 
-    /** Artículo todavía en la lista (sin tombstone) con ese nombre normalizado, marcado o no. */
+    /** Live item (no tombstone) with that normalised name, checked or not. */
     @Query("SELECT * FROM shopping_list_items WHERE deletedAt IS NULL AND listUid = :listUid AND normalizedName = :normalizedName LIMIT 1")
     suspend fun findLiveByName(listUid: String, normalizedName: String): ShoppingListItemEntity?
 
@@ -54,11 +54,12 @@ interface ShoppingListDao {
     @Query("UPDATE shopping_list_items SET deletedAt = :now, updatedAt = :now, syncDirty = 1 WHERE deletedAt IS NULL AND listUid = :listUid AND checked = 1")
     suspend fun softDeleteChecked(listUid: String, now: Long)
 
-    /** Borra del todo los artículos de una lista que otra app ha eliminado (sin tombstone propio: ya viene del servidor). */
+    /**
+     * Hard-deletes the items of a list removed on another device (the deletion already comes from
+     * the server).
+     */
     @Query("DELETE FROM shopping_list_items WHERE listUid = :listUid")
     suspend fun deleteByListUid(listUid: String)
-
-    // --- Sincronización ---
 
     @Query("SELECT * FROM shopping_list_items WHERE uid = :uid")
     suspend fun findByUid(uid: String): ShoppingListItemEntity?
@@ -66,14 +67,17 @@ interface ShoppingListDao {
     @Query("SELECT * FROM shopping_list_items WHERE syncDirty = 1 ORDER BY updatedAt ASC")
     suspend fun getDirty(): List<ShoppingListItemEntity>
 
-    /** Solo limpia la marca si la fila no ha vuelto a cambiar mientras se subía (mismo updatedAt). */
+    /**
+     * Only clears the flag if the row did not change again while it was being uploaded (same
+     * updatedAt).
+     */
     @Query("UPDATE shopping_list_items SET syncDirty = 0 WHERE uid = :uid AND updatedAt = :updatedAt")
     suspend fun markSynced(uid: String, updatedAt: Long)
 
     @Query("DELETE FROM shopping_list_items WHERE uid = :uid")
     suspend fun deleteByUid(uid: String)
 
-    /** Tombstones ya subidos (o sin sincronización activa): no hace falta conservarlos. */
+    /** Tombstones already uploaded (or without active sync) no longer need to be kept. */
     @Query("DELETE FROM shopping_list_items WHERE deletedAt IS NOT NULL AND syncDirty = 0")
     suspend fun purgeSyncedTombstones()
 

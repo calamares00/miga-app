@@ -27,21 +27,26 @@ class QuantityFormattingTest {
 
     @Test
     fun `formatIngredientText joins quantity, unit and name with de`() {
-        assertEquals("2 tazas de harina", formatIngredientText("harina", 2.0, "tazas"))
+        assertEquals("2 tazas de harina", formatIngredientText("harina", 2.0, "tazas", language = "es"))
     }
 
     @Test
     fun `formatIngredientText omits the de separator when there is no unit`() {
-        assertEquals("3 huevos", formatIngredientText("huevos", 3.0, null))
+        assertEquals("3 huevos", formatIngredientText("huevos", 3.0, null, language = "es"))
     }
 
     @Test
     fun `formatIngredientText omits the de separator when unit is blank`() {
-        assertEquals("3 huevos", formatIngredientText("huevos", 3.0, "  "))
+        assertEquals("3 huevos", formatIngredientText("huevos", 3.0, "  ", language = "es"))
     }
 
     @Test
     fun `formatIngredientText applies the scale factor`() {
-        assertEquals("4 tazas de harina", formatIngredientText("harina", 2.0, "tazas", scale = 2.0))
+        assertEquals("4 tazas de harina", formatIngredientText("harina", 2.0, "tazas", scale = 2.0, language = "es"))
+    }
+
+    @Test
+    fun `formatIngredientText uses no connector in English`() {
+        assertEquals("2 cups flour", formatIngredientText("flour", 2.0, "cups", language = "en"))
     }
 }
