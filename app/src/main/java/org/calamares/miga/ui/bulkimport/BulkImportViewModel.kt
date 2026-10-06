@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.bulkimport
 
+import org.calamares.miga.data.ai.aiCandidates
+import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.content.Context
@@ -46,32 +48,22 @@ class BulkImportViewModel(
         if (started) return
         started = true
         viewModelScope.launch {
-            val provider = settingsRepository.observeVisionProvider().first()
-            val apiKey = settingsRepository.apiKeyFor(provider)
-            if (apiKey.isBlank()) {
-                _rows.update { rows -> rows.map { it.copy(state = BulkImportRowState.Failed(L10n.str(R.string.configura_api_key_x_ajustes, provider.label))) } }
+            if (settingsRepository.aiCandidates().isEmpty()) {
+                _rows.update { rows -> rows.map { it.copy(state = BulkImportRowState.Failed(L10n.str(R.string.ai_no_provider))) } }
                 return@launch
             }
-            val model = settingsRepository.modelFor(provider)
-            photoUris.indices.forEach { index -> processOne(context, index, apiKey, provider, model) }
+            photoUris.indices.forEach { index -> processOne(context, index) }
         }
     }
 
     /** Reintenta una única foto que falló, sin tocar las demás filas. */
     fun retry(context: Context, index: Int) {
         viewModelScope.launch {
-            val provider = settingsRepository.observeVisionProvider().first()
-            val apiKey = settingsRepository.apiKeyFor(provider)
-            if (apiKey.isBlank()) {
-                updateRow(index) { it.copy(state = BulkImportRowState.Failed(L10n.str(R.string.configura_api_key_x_ajustes, provider.label))) }
-                return@launch
-            }
-            val model = settingsRepository.modelFor(provider)
-            processOne(context, index, apiKey, provider, model)
+            processOne(context, index)
         }
     }
 
-    private suspend fun processOne(context: Context, index: Int, apiKey: String, provider: VisionProviderType, model: String) {
+    private suspend fun processOne(context: Context, index: Int) {
         updateRow(index) { it.copy(state = BulkImportRowState.Processing) }
         val uri = Uri.parse(photoUris[index])
         val bytes = PhotoStorage.readResizedJpegBytes(context, uri)
@@ -79,7 +71,14 @@ class BulkImportViewModel(
             updateRow(index) { it.copy(state = BulkImportRowState.Failed(L10n.str(R.string.no_pudo_leer_foto))) }
             return
         }
-        when (val result = visionClientFor(provider).extractRecipe(listOf(VisionImageInput(bytes, "image/jpeg")), apiKey, model)) {
+        val images = listOf(VisionImageInput(bytes, "image/jpeg"))
+        val result = settingsRepository.runAi<RecipeVisionResult>(
+            needsImages = true,
+            errorOf = { (it as? RecipeVisionResult.Error)?.reason },
+            error = { RecipeVisionResult.Error(it) }
+        ) { ai -> visionClientFor(ai.provider).extractRecipe(images, ai.apiKey, ai.model) }
+            ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
+        when (result) {
             is RecipeVisionResult.Success -> {
                 val draft = result.recipe.toRecipeDraft(bookId)
                 val id = repository.saveRecipe(draft)

@@ -1,5 +1,6 @@
 package org.calamares.miga.data.dictation
 
+import org.calamares.miga.data.ai.OpenRouterDictationCleanupClient
 import org.calamares.miga.data.vision.VisionProviderType
 
 sealed interface DictationCleanupResult {
@@ -19,6 +20,7 @@ interface DictationCleanupClient {
 fun dictationCleanupClientFor(provider: VisionProviderType): DictationCleanupClient = when (provider) {
     VisionProviderType.GEMINI -> GeminiDictationCleanupClient
     VisionProviderType.ANTHROPIC -> AnthropicDictationCleanupClient
+    VisionProviderType.OPENROUTER -> OpenRouterDictationCleanupClient
 }
 
 /** Prompt compartido entre los dos proveedores, para que no diverjan. */

@@ -1,5 +1,6 @@
 package org.calamares.miga.data.health
 
+import org.calamares.miga.data.ai.OpenRouterHealthClient
 import org.calamares.miga.data.vision.outputLanguageInstruction
 import org.calamares.miga.data.model.HealthColorLevel
 import org.calamares.miga.data.vision.VisionProviderType
@@ -18,6 +19,7 @@ interface RecipeHealthClient {
 fun healthClientFor(provider: VisionProviderType): RecipeHealthClient = when (provider) {
     VisionProviderType.GEMINI -> GeminiHealthClient
     VisionProviderType.ANTHROPIC -> AnthropicHealthClient
+    VisionProviderType.OPENROUTER -> OpenRouterHealthClient
 }
 
 // Forma del JSON que se le pide al LLM; compartida entre proveedores para decodificar la respuesta.

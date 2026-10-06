@@ -21,7 +21,7 @@ IMPORT AND SHARE
 • Share the list as text or with a QR code.
 
 OPTIONAL AI FEATURES
-With your own Google Gemini or Anthropic Claude key: create recipes from a photo or a web page, find recipes for a dish, estimate nutrition and a health rating, or find ingredient substitutes. They're only enabled if you add your key; generated content is labelled and can be reported.
+With your own Google Gemini, Anthropic Claude or OpenRouter key (free models included): create recipes from a photo or a web page, find recipes for a dish, estimate nutrition and a health rating, or find ingredient substitutes. They're only enabled if you add your key; generated content is labelled and can be reported.
 
 SYNC WITH YOUR OWN SERVER
 Want to share books and the shopping list with your family? Connect Miga to a server you host yourself (miga-server) and invite others with a QR code.

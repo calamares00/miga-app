@@ -1,6 +1,6 @@
 First public release of Miga.
 • Recipe books with photos, sub-recipes, adjustable servings and a step-by-step cooking mode with timers and voice control.
 • Shopping list sorted by category and supermarket aisle, with several lists, templates, dictation and a product scanner (Open Food Facts).
-• Optional AI with your own key: import recipes from photos or websites, translated into your language.
+• Optional AI (Gemini, Claude or free OpenRouter models): recipes from photos or websites.
 • Backups, recipe packs and syncing with your own server.
 • Available in English and Spanish.

@@ -145,19 +145,12 @@ fun SettingsSectionScreen(
     val colorTheme by viewModel.colorTheme.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
     val books by viewModel.books.collectAsState()
-    val geminiApiKey by viewModel.geminiApiKey.collectAsState()
     val packsCatalogRepo by viewModel.packsCatalogRepo.collectAsState()
-    val geminiModel by viewModel.geminiModel.collectAsState()
-    var modelMenuExpanded by remember { mutableStateOf(false) }
     var dictationMenuExpanded by remember { mutableStateOf(false) }
     val dictationLanguage by viewModel.dictationLanguage.collectAsState()
-    val visionProvider by viewModel.visionProvider.collectAsState()
     val aiEnabled by viewModel.aiEnabled.collectAsState()
     val aiHealthEnabled by viewModel.aiHealthEnabled.collectAsState()
     val aiNutritionEnabled by viewModel.aiNutritionEnabled.collectAsState()
-    val anthropicApiKey by viewModel.anthropicApiKey.collectAsState()
-    val anthropicModel by viewModel.anthropicModel.collectAsState()
-    var anthropicModelMenuExpanded by remember { mutableStateOf(false) }
     val ttsVoiceName by viewModel.ttsVoiceName.collectAsState()
     var voiceMenuExpanded by remember { mutableStateOf(false) }
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
@@ -379,140 +372,7 @@ fun SettingsSectionScreen(
                 title = "",
                 description = L10n.str(R.string.reconoce_texto_foto_receta_libro)
             ) {
-                VisionProviderType.entries.forEach { provider ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { viewModel.setVisionProvider(provider) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(selected = visionProvider == provider, onClick = { viewModel.setVisionProvider(provider) })
-                        Text(provider.label, modifier = Modifier.padding(start = 8.dp))
-                    }
-                }
-
-                if (visionProvider == VisionProviderType.GEMINI) {
-                    OutlinedTextField(
-                        value = geminiApiKey,
-                        onValueChange = { viewModel.setGeminiApiKey(it) },
-                        label = { Text(L10n.str(R.string.api_key_gemini)) },
-                        placeholder = { Text(L10n.str(R.string.consiguela_gratis_aistudio_google_com)) },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    val isCustomModel = geminiModel !in GEMINI_MODELS
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        OutlinedTextField(
-                            value = if (isCustomModel) L10n.str(R.string.personalizado_2) else geminiModel,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(L10n.str(R.string.modelo_gemini)) },
-                            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.abrir_selector_modelo)) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        // Capa transparente encima del campo para abrir el menú al tocar, sin que el
-                        // propio TextField (de solo lectura) capture el toque y muestre el cursor.
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .clickable { modelMenuExpanded = true }
-                        )
-                        DropdownMenu(
-                            expanded = modelMenuExpanded,
-                            onDismissRequest = { modelMenuExpanded = false },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            GEMINI_MODELS.forEach { modelId ->
-                                DropdownMenuItem(
-                                    text = { Text(modelId) },
-                                    onClick = {
-                                        viewModel.setGeminiModel(modelId)
-                                        modelMenuExpanded = false
-                                    }
-                                )
-                            }
-                            DropdownMenuItem(
-                                text = { Text(L10n.str(R.string.personalizado)) },
-                                onClick = {
-                                    viewModel.setGeminiModel("")
-                                    modelMenuExpanded = false
-                                }
-                            )
-                        }
-                    }
-                    if (isCustomModel) {
-                        OutlinedTextField(
-                            value = geminiModel,
-                            onValueChange = { viewModel.setGeminiModel(it) },
-                            label = { Text(L10n.str(R.string.id_modelo)) },
-                            placeholder = { Text(L10n.str(R.string.p_ej_gemini_3_6)) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                } else {
-                    OutlinedTextField(
-                        value = anthropicApiKey,
-                        onValueChange = { viewModel.setAnthropicApiKey(it) },
-                        label = { Text(L10n.str(R.string.api_key_anthropic)) },
-                        placeholder = { Text(L10n.str(R.string.consiguela_console_anthropic_com)) },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    val isCustomAnthropicModel = anthropicModel !in ANTHROPIC_MODELS
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        OutlinedTextField(
-                            value = if (isCustomAnthropicModel) L10n.str(R.string.personalizado_2) else anthropicModel,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(L10n.str(R.string.modelo_claude)) },
-                            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.abrir_selector_modelo)) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .clickable { anthropicModelMenuExpanded = true }
-                        )
-                        DropdownMenu(
-                            expanded = anthropicModelMenuExpanded,
-                            onDismissRequest = { anthropicModelMenuExpanded = false },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            ANTHROPIC_MODELS.forEach { modelId ->
-                                DropdownMenuItem(
-                                    text = { Text(modelId) },
-                                    onClick = {
-                                        viewModel.setAnthropicModel(modelId)
-                                        anthropicModelMenuExpanded = false
-                                    }
-                                )
-                            }
-                            DropdownMenuItem(
-                                text = { Text(L10n.str(R.string.personalizado)) },
-                                onClick = {
-                                    viewModel.setAnthropicModel("")
-                                    anthropicModelMenuExpanded = false
-                                }
-                            )
-                        }
-                    }
-                    if (isCustomAnthropicModel) {
-                        OutlinedTextField(
-                            value = anthropicModel,
-                            onValueChange = { viewModel.setAnthropicModel(it) },
-                            label = { Text(L10n.str(R.string.id_modelo)) },
-                            placeholder = { Text(L10n.str(R.string.p_ej_claude_haiku_4)) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
+                AiProvidersSettings(viewModel)
             }
             }
                 }

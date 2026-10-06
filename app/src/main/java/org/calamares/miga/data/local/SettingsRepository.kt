@@ -45,6 +45,10 @@ class SettingsRepository(private val context: Context) {
     private val geminiModelKey = stringPreferencesKey("gemini_model")
     private val anthropicApiKeyKey = stringPreferencesKey("anthropic_api_key")
     private val anthropicModelKey = stringPreferencesKey("anthropic_model")
+    private val openRouterApiKeyKey = stringPreferencesKey("openrouter_api_key")
+    private val openRouterModelKey = stringPreferencesKey("openrouter_model")
+    private val openRouterModelImagesKey = booleanPreferencesKey("openrouter_model_images")
+    private val aiProviderOrderKey = stringPreferencesKey("ai_provider_order")
     private val ttsVoiceNameKey = stringPreferencesKey("tts_voice_name")
     private val dictationLanguageKey = stringPreferencesKey("dictation_language")
     private val lastSeenVersionCodeKey = intPreferencesKey("last_seen_version_code")
@@ -182,16 +186,30 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[recipeBookListViewModeKey] = mode.name }
     }
 
-    /** Proveedor de LLM usado para reconocer recetas a partir de una foto (ver `data/vision`). */
-    fun observeVisionProvider(): Flow<VisionProviderType> =
+    /**
+     * Orden de prioridad de los proveedores de IA (el primero se prueba antes). Siempre contiene
+     * todos los proveedores; los que no estén guardados (instalaciones antiguas o proveedores
+     * nuevos) se añaden al final. Si no hay orden guardado, se parte del proveedor elegido en
+     * versiones anteriores ("vision_provider").
+     */
+    fun observeProviderOrder(): Flow<List<VisionProviderType>> =
         context.settingsDataStore.data.map { prefs ->
-            prefs[visionProviderKey]?.let { stored ->
-                runCatching { VisionProviderType.valueOf(stored) }.getOrDefault(VisionProviderType.GEMINI)
-            } ?: VisionProviderType.GEMINI
+            val stored = prefs[aiProviderOrderKey]?.split(',')
+                ?.mapNotNull { name -> runCatching { VisionProviderType.valueOf(name.trim()) }.getOrNull() }
+                ?: listOfNotNull(prefs[visionProviderKey]?.let { runCatching { VisionProviderType.valueOf(it) }.getOrNull() })
+            (stored + VisionProviderType.entries).distinct()
         }
 
+    suspend fun setProviderOrder(order: List<VisionProviderType>) {
+        context.settingsDataStore.edit { prefs -> prefs[aiProviderOrderKey] = (order + VisionProviderType.entries).distinct().joinToString(",") { it.name } }
+    }
+
+    /** Proveedor de mayor prioridad. */
+    fun observeVisionProvider(): Flow<VisionProviderType> = observeProviderOrder().map { it.first() }
+
+    /** Sube [provider] al primer puesto de la prioridad (p. ej. al elegir otro modelo tras un error). */
     suspend fun setVisionProvider(provider: VisionProviderType) {
-        context.settingsDataStore.edit { prefs -> prefs[visionProviderKey] = provider.name }
+        setProviderOrder(listOf(provider) + observeProviderOrder().first())
     }
 
     /** API key de Gemini introducida por el propio usuario (BYOK); vacía si no se ha configurado. */
@@ -226,16 +244,47 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[anthropicModelKey] = model.trim() }
     }
 
+    /** API key de OpenRouter introducida por el propio usuario (BYOK); vacía si no se ha configurado. */
+    fun observeOpenRouterApiKey(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[openRouterApiKeyKey].orEmpty() }
+
+    suspend fun setOpenRouterApiKey(apiKey: String) {
+        context.settingsDataStore.edit { prefs -> prefs[openRouterApiKeyKey] = apiKey.trim() }
+    }
+
+    /** Id del modelo de OpenRouter (p. ej. "vendor/modelo:free"); vacío hasta que el usuario elige uno. */
+    fun observeOpenRouterModel(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[openRouterModelKey].orEmpty() }
+
+    /** Si el modelo de OpenRouter elegido acepta imágenes (se guarda al elegirlo del catálogo). */
+    fun observeOpenRouterModelImages(): Flow<Boolean> =
+        context.settingsDataStore.data.map { prefs -> prefs[openRouterModelImagesKey] ?: true }
+
+    suspend fun setOpenRouterModel(model: String, supportsImages: Boolean) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[openRouterModelKey] = model.trim()
+            prefs[openRouterModelImagesKey] = supportsImages
+        }
+    }
+
     /** Resuelve la API key configurada para [provider] (una por proveedor, BYOK). */
     suspend fun apiKeyFor(provider: VisionProviderType): String = when (provider) {
         VisionProviderType.GEMINI -> observeGeminiApiKey().first()
         VisionProviderType.ANTHROPIC -> observeAnthropicApiKey().first()
+        VisionProviderType.OPENROUTER -> observeOpenRouterApiKey().first()
     }
 
     /** Resuelve el modelo configurado para [provider]. */
     suspend fun modelFor(provider: VisionProviderType): String = when (provider) {
         VisionProviderType.GEMINI -> observeGeminiModel().first()
         VisionProviderType.ANTHROPIC -> observeAnthropicModel().first()
+        VisionProviderType.OPENROUTER -> observeOpenRouterModel().first()
+    }
+
+    /** Si el modelo configurado para [provider] puede leer imágenes (todos los de Gemini y Claude pueden). */
+    suspend fun supportsImages(provider: VisionProviderType): Boolean = when (provider) {
+        VisionProviderType.GEMINI, VisionProviderType.ANTHROPIC -> true
+        VisionProviderType.OPENROUTER -> observeOpenRouterModelImages().first()
     }
 
     /** Nombre interno de la voz de Android TTS elegida para el modo cocina; null = voz por defecto del sistema. */

@@ -1,5 +1,6 @@
 package org.calamares.miga.data.nutrition
 
+import org.calamares.miga.data.ai.OpenRouterNutritionClient
 import org.calamares.miga.data.vision.outputLanguageInstruction
 import org.calamares.miga.data.vision.VisionProviderType
 import kotlinx.serialization.Serializable
@@ -19,6 +20,7 @@ interface RecipeNutritionClient {
 fun nutritionClientFor(provider: VisionProviderType): RecipeNutritionClient = when (provider) {
     VisionProviderType.GEMINI -> GeminiNutritionClient
     VisionProviderType.ANTHROPIC -> AnthropicNutritionClient
+    VisionProviderType.OPENROUTER -> OpenRouterNutritionClient
 }
 
 // Forma del JSON que se le pide al LLM; compartida entre proveedores para decodificar la respuesta.

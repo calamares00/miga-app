@@ -39,7 +39,7 @@ Tipos de datos (marcar como **compartidos**, **no recopilados por el desarrollad
   lo comparta manualmente.
 - **Identificadores, ubicación, contactos, datos financieros, salud**: no.
 
-Nota: los envíos a Gemini/Anthropic usan la clave de API del propio usuario; Google Play los
+Nota: los envíos a Gemini/Anthropic/OpenRouter usan la clave de API del propio usuario; Google Play los
 considera "compartir" igualmente, por eso se declaran.
 
 ## Contenido generado con IA

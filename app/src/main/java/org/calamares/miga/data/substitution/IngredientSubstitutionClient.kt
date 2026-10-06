@@ -1,5 +1,6 @@
 package org.calamares.miga.data.substitution
 
+import org.calamares.miga.data.ai.OpenRouterIngredientSubstitutionClient
 import org.calamares.miga.data.vision.outputLanguageInstruction
 import org.calamares.miga.data.vision.VisionProviderType
 import kotlinx.serialization.Serializable
@@ -23,6 +24,7 @@ interface IngredientSubstitutionClient {
 fun substitutionClientFor(provider: VisionProviderType): IngredientSubstitutionClient = when (provider) {
     VisionProviderType.GEMINI -> GeminiIngredientSubstitutionClient
     VisionProviderType.ANTHROPIC -> AnthropicIngredientSubstitutionClient
+    VisionProviderType.OPENROUTER -> OpenRouterIngredientSubstitutionClient
 }
 
 // Forma del JSON que se le pide al LLM; compartida entre proveedores para decodificar la respuesta.

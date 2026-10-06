@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.data.ai.aiCandidates
+import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.content.Context
@@ -134,10 +136,8 @@ class RecipeEditorViewModel(
         lastAiOperation = { startVisionExtraction(appContext, photoUris) }
         viewModelScope.launch {
             _visionState.value = VisionState.Loading
-            val provider = settingsRepository.observeVisionProvider().first()
-            val apiKey = settingsRepository.apiKeyFor(provider)
-            if (apiKey.isBlank()) {
-                _visionState.value = VisionState.Error(L10n.str(R.string.configura_api_key_x_ajustes, provider.label))
+            if (settingsRepository.aiCandidates().isEmpty()) {
+                _visionState.value = VisionState.Error(L10n.str(R.string.ai_no_provider))
                 return@launch
             }
             // Si alguna página falla al leerse pero otras sí, seguimos con las que se pudieron
@@ -149,8 +149,13 @@ class RecipeEditorViewModel(
                 _visionState.value = VisionState.Error(L10n.str(R.string.no_pudo_leer_ninguna_fotos))
                 return@launch
             }
-            val model = settingsRepository.modelFor(provider)
-            when (val result = visionClientFor(provider).extractRecipe(images, apiKey, model)) {
+            val result = settingsRepository.runAi<RecipeVisionResult>(
+                needsImages = true,
+                errorOf = { (it as? RecipeVisionResult.Error)?.reason },
+                error = { RecipeVisionResult.Error(it) }
+            ) { ai -> visionClientFor(ai.provider).extractRecipe(images, ai.apiKey, ai.model) }
+                ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
+            when (result) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
                     _visionState.value = VisionState.Loaded
@@ -170,15 +175,17 @@ class RecipeEditorViewModel(
         lastAiOperation = { startDishGeneration(dishName, dishDescription, dishOrigin) }
         viewModelScope.launch {
             _visionState.value = VisionState.Loading
-            val provider = settingsRepository.observeVisionProvider().first()
-            val apiKey = settingsRepository.apiKeyFor(provider)
-            if (apiKey.isBlank()) {
-                _visionState.value = VisionState.Error(L10n.str(R.string.configura_api_key_x_ajustes, provider.label))
+            if (settingsRepository.aiCandidates().isEmpty()) {
+                _visionState.value = VisionState.Error(L10n.str(R.string.ai_no_provider))
                 return@launch
             }
-            val model = settingsRepository.modelFor(provider)
             val dish = DishSuggestion(dishName, dishDescription, dishOrigin)
-            when (val result = dishRecipeGenerationClientFor(provider).generateRecipe(dish, apiKey, model)) {
+            val result = settingsRepository.runAi<RecipeVisionResult>(
+                errorOf = { (it as? RecipeVisionResult.Error)?.reason },
+                error = { RecipeVisionResult.Error(it) }
+            ) { ai -> dishRecipeGenerationClientFor(ai.provider).generateRecipe(dish, ai.apiKey, ai.model) }
+                ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
+            when (result) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
                     _visionState.value = VisionState.Loaded
@@ -197,10 +204,8 @@ class RecipeEditorViewModel(
         lastAiOperation = { startUrlImport(url) }
         viewModelScope.launch {
             _visionState.value = VisionState.Loading
-            val provider = settingsRepository.observeVisionProvider().first()
-            val apiKey = settingsRepository.apiKeyFor(provider)
-            if (apiKey.isBlank()) {
-                _visionState.value = VisionState.Error(L10n.str(R.string.configura_api_key_x_ajustes, provider.label))
+            if (settingsRepository.aiCandidates().isEmpty()) {
+                _visionState.value = VisionState.Error(L10n.str(R.string.ai_no_provider))
                 return@launch
             }
             val pageText = when (val fetchResult = RecipeUrlFetcher.fetchReadableText(url)) {
@@ -210,8 +215,12 @@ class RecipeEditorViewModel(
                     return@launch
                 }
             }
-            val model = settingsRepository.modelFor(provider)
-            when (val result = recipeUrlImportClientFor(provider).importFromUrl(url, pageText, apiKey, model)) {
+            val result = settingsRepository.runAi<RecipeVisionResult>(
+                errorOf = { (it as? RecipeVisionResult.Error)?.reason },
+                error = { RecipeVisionResult.Error(it) }
+            ) { ai -> recipeUrlImportClientFor(ai.provider).importFromUrl(url, pageText, ai.apiKey, ai.model) }
+                ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
+            when (result) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
                     _visionState.value = VisionState.Loaded
@@ -320,18 +329,15 @@ class RecipeEditorViewModel(
     fun cleanUpDictatedText(row: StepRowUi, rawText: String) {
         row.isTranscribing = true
         viewModelScope.launch {
-            val provider = settingsRepository.observeVisionProvider().first()
-            val apiKey = settingsRepository.apiKeyFor(provider)
-            if (apiKey.isBlank() || !settingsRepository.observeAiEnabled().first()) {
-                row.text = rawText
-                row.isTranscribing = false
-                return@launch
+            val result = if (settingsRepository.observeAiEnabled().first()) {
+                settingsRepository.runAi<DictationCleanupResult>(
+                    errorOf = { (it as? DictationCleanupResult.Error)?.reason },
+                    error = { DictationCleanupResult.Error(it) }
+                ) { ai -> dictationCleanupClientFor(ai.provider).cleanUp(rawText, ai.apiKey, ai.model) }
+            } else {
+                null
             }
-            val model = settingsRepository.modelFor(provider)
-            when (val result = dictationCleanupClientFor(provider).cleanUp(rawText, apiKey, model)) {
-                is DictationCleanupResult.Success -> row.text = result.text
-                is DictationCleanupResult.Error -> row.text = rawText
-            }
+            row.text = (result as? DictationCleanupResult.Success)?.text ?: rawText
             row.isTranscribing = false
         }
     }
