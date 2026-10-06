@@ -54,7 +54,7 @@ class ProductScoringTest {
 
     @Test
     fun `moderate and limited additives subtract from the additives subscore`() {
-        // e407 moderado (-25) + e471 limitado (-10)
+        // e407 moderate (-25) + e471 limited (-10)
         assertEquals(65, ProductScoring.additivesSubscore(listOf("e407", "e471")).first)
         assertEquals(100, ProductScoring.additivesSubscore(listOf("e330")).first)
         assertEquals(100, ProductScoring.additivesSubscore(null).first)

@@ -39,9 +39,10 @@ sealed interface NutritionState {
     data class Error(val reason: String) : NutritionState
 }
 
-/** Estado del diálogo de "sustituir ingrediente" (ver RecipeDetailScreen). A diferencia de
- *  [HealthState]/[NutritionState], no se cachea nada - cada [ingredientName] dispara una consulta
- *  nueva sin guardar de un análisis anterior. */
+/**
+ * State of the "substitute ingredient" dialog (see RecipeDetailScreen). Unlike [HealthState] and
+ * [NutritionState] nothing is cached: every [ingredientName] triggers a new request.
+ */
 sealed interface SubstitutionDialogState {
     data object Hidden : SubstitutionDialogState
     data class Loading(val ingredientName: String) : SubstitutionDialogState
@@ -69,12 +70,15 @@ class RecipeDetailViewModel(
     val healthState: StateFlow<HealthState> = _healthState
     private var healthCheckStarted = false
 
-    /** Si hay Gemini configurado y no hay ya una valoración vigente, la analiza y la cachea. */
+    /**
+     * When AI is available and there is no valid rating yet, analyses the recipe and caches the
+     * result.
+     */
     fun fetchHealthinessIfNeeded() {
         if (healthCheckStarted) return
         healthCheckStarted = true
         viewModelScope.launch {
-            // Desactivada en Ajustes (o la IA entera): no se analiza ni se muestra nada.
+            // Turned off in Settings (or AI is off entirely): nothing is analysed or shown.
             if (!settingsRepository.observeAiHealthEnabled().first()) {
                 _healthState.value = HealthState.Idle
                 return@launch
@@ -122,7 +126,10 @@ class RecipeDetailViewModel(
     val nutritionState: StateFlow<NutritionState> = _nutritionState
     private var nutritionCheckStarted = false
 
-    /** Si hay un proveedor de IA configurado y no hay ya una estimación vigente, la analiza y la cachea. */
+    /**
+     * When AI is available and there is no valid estimate yet, analyses the recipe and caches the
+     * result.
+     */
     fun fetchNutritionIfNeeded() {
         if (nutritionCheckStarted) return
         nutritionCheckStarted = true
@@ -176,8 +183,10 @@ class RecipeDetailViewModel(
     private val _substitutionDialogState = MutableStateFlow<SubstitutionDialogState>(SubstitutionDialogState.Hidden)
     val substitutionDialogState: StateFlow<SubstitutionDialogState> = _substitutionDialogState
 
-    /** Consulta sustitutos con IA para [ingredientName], sin caché - cada llamada es una consulta
-     *  nueva. Abre el diálogo de resultado (ver RecipeDetailScreen). */
+    /**
+     * Asks the AI for substitutes for [ingredientName], without caching. Opens the result dialog
+     * (see RecipeDetailScreen).
+     */
     fun findSubstitutesFor(ingredientName: String) {
         viewModelScope.launch {
             _substitutionDialogState.value = SubstitutionDialogState.Loading(ingredientName)
@@ -205,7 +214,7 @@ class RecipeDetailViewModel(
         viewModelScope.launch { repository.toggleFavorite(current.id, !current.isFavorite) }
     }
 
-    /** Toca la misma estrella ya puesta para quitar la valoración. */
+    /** Tapping the star that is already set clears the rating. */
     fun setRating(stars: Int) {
         val current = recipe.value ?: return
         val newRating = if (current.rating == stars) null else stars

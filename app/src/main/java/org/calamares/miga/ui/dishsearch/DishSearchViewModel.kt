@@ -22,9 +22,11 @@ sealed interface DishSearchUiState {
     data class Error(val reason: String) : DishSearchUiState
 }
 
-/** Sugiere platos con IA a partir de una petición libre (zona/país, tipo de plato, ingrediente...);
- *  la generación de la receta completa del plato elegido ocurre después, ya en el editor (ver
- *  RecipeEditorViewModel.startDishGeneration), reutilizando su mecanismo de precarga. */
+/**
+ * Suggests dishes with AI from a free request (region, kind of dish, ingredient...). The full
+ * recipe of the chosen dish is generated later in the editor (see
+ * RecipeEditorViewModel.startDishGeneration).
+ */
 class DishSearchViewModel(private val settingsRepository: SettingsRepository) : ViewModel() {
 
     private val _state = MutableStateFlow<DishSearchUiState>(DishSearchUiState.Idle)

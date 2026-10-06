@@ -30,7 +30,10 @@ sealed interface TestConnectionState {
 sealed interface InviteState {
     data object Idle : InviteState
     data object Loading : InviteState
-    /** [payload] es el texto del QR (ver SyncInviteCodec); [label] es el nombre de la conexión desde la que se invita. */
+    /**
+     * [payload] is the QR text (see SyncInviteCodec); [label] is the name of the inviting
+     * connection.
+     */
     data class Ready(val label: String, val payload: String) : InviteState
     data class Error(val reason: String) : InviteState
 }
@@ -45,12 +48,14 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
     private val _syncingConnectionIds = MutableStateFlow<Set<Long>>(emptySet())
     val syncingConnectionIds: StateFlow<Set<Long>> = _syncingConnectionIds
 
-    /** Resultado (éxito/error) ya queda reflejado en la propia conexión, vía [connections]
-     *  (lastSyncedAt/lastSyncError); esto solo controla el indicador de progreso. */
+    /**
+     * The result (success or error) is reflected on the connection itself through [connections]
+     * (lastSyncedAt/lastSyncError); this only drives the progress indicator.
+     */
     fun syncNow(context: Context, connectionId: Long) {
         viewModelScope.launch {
             _syncingConnectionIds.value = _syncingConnectionIds.value + connectionId
-            repository.resetSyncCursor(connectionId) // reparación manual: vuelve a bajar todo, recupera fotos que se perdieron
+            repository.resetSyncCursor(connectionId) // manual repair: download everything again to recover lost photos
             repository.enqueueFullConnectionResync(connectionId)
             syncEngine.syncConnection(context, connectionId)
             _syncingConnectionIds.value = _syncingConnectionIds.value - connectionId
@@ -60,7 +65,7 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
     private val _inviteState = MutableStateFlow<InviteState>(InviteState.Idle)
     val inviteState: StateFlow<InviteState> = _inviteState
 
-    /** Mensaje puntual para mostrar en un snackbar (resultado de unirse por QR, etc.). */
+    /** One-off message for a snackbar (result of joining by QR, etc.). */
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message
 
@@ -72,7 +77,7 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
         _message.value = null
     }
 
-    /** Pide al servidor un token nuevo del namespace y lo deja listo para mostrarlo como QR. */
+    /** Asks the server for a new namespace token and gets it ready to show as a QR code. */
     fun createInvite(connection: SyncConnection) {
         viewModelScope.launch {
             _inviteState.value = InviteState.Loading
@@ -91,15 +96,20 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
         _inviteState.value = InviteState.Idle
     }
 
-    /** Activa/desactiva compartir la lista de la compra a través de [connectionId] (como mucho una conexión a la vez). */
+    /**
+     * Turns shopping list sharing through [connectionId] on or off (at most one connection at a
+     * time).
+     */
     fun setShoppingSync(connectionId: Long, enabled: Boolean) {
         viewModelScope.launch {
             repository.setShoppingSyncConnection(if (enabled) connectionId else null)
         }
     }
 
-    /** Une esta app a un namespace a partir de una invitación escaneada: comprueba la conexión,
-     *  la guarda y sincroniza (con la lista de la compra compartida si [syncShopping]). */
+    /**
+     * Joins this device to a namespace from a scanned invite: tests the connection, saves it and
+     * syncs (including the shared shopping list when [syncShopping]).
+     */
     fun joinFromInvite(context: Context, invite: SyncInvite, label: String, syncShopping: Boolean) {
         viewModelScope.launch {
             val candidate = SyncConnection(
@@ -133,7 +143,7 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
         _testState.value = TestConnectionState.Idle
     }
 
-    /** Prueba una conexión sin guardarla todavía; usado por el diálogo de "Añadir conexión". */
+    /** Tests a connection without saving it yet; used by the "Add connection" dialog. */
     fun testConnection(serverUrl: String, namespaceId: String, accessToken: String) {
         viewModelScope.launch {
             _testState.value = TestConnectionState.Testing

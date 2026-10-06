@@ -8,7 +8,10 @@ import com.google.zxing.WriterException
 import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 
-/** Dibuja [text] como QR (negro sobre blanco, para que cualquier lector lo detecte); null si no cabe en un QR. */
+/**
+ * Draws [text] as a QR code (black on white so any reader detects it); null when it does not fit in
+ * a QR code.
+ */
 fun renderQrBitmap(text: String, sizePx: Int): Bitmap? = try {
     val hints = mapOf(
         EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.M,

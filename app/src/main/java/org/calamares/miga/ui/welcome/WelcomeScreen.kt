@@ -65,12 +65,12 @@ private val PAGES = listOf(
     )
 )
 
-/** Destino que se abre al terminar la bienvenida (null = pantalla principal). */
+/** Destination opened when the welcome flow ends (null for the main screen). */
 typealias WelcomeDestination = String?
 
 /**
- * Bienvenida de la primera ejecución: tres páginas deslizables y, al final, empezar desde cero,
- * explorar packs de recetas o restaurar una copia de seguridad. [onFinish] recibe la ruta a abrir.
+ * First-run welcome: three swipeable pages and, at the end, start from scratch, explore recipe
+ * packs or restore a backup. [onFinish] receives the route to open.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

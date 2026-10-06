@@ -43,7 +43,7 @@ private data class FilterOptions(
 
 class GlobalSearchViewModel(
     private val repository: RecipeRepository,
-    /** true en la pestaña Favoritas: "solo favoritas" es fijo y limpiar filtros no lo quita. */
+    /** True on the Favourites tab: "only favourites" is fixed and clearing filters keeps it. */
     private val initialOnlyFavorites: Boolean = false
 ) : ViewModel() {
 
@@ -108,7 +108,9 @@ class GlobalSearchViewModel(
         _selectedIds.value = emptySet()
     }
 
-    /** Añade los ingredientes de todas las recetas seleccionadas a la lista de la compra y sale de selección. */
+    /**
+     * Adds the ingredients of every selected recipe to the shopping list and leaves selection mode.
+     */
     fun addSelectedToShoppingList() {
         viewModelScope.launch {
             val ids = _selectedIds.value

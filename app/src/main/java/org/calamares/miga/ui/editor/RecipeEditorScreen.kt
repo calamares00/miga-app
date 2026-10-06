@@ -562,7 +562,7 @@ internal fun Section(title: String, content: @Composable () -> Unit) {
     }
 }
 
-/** Bloque del editor con el estilo de los grupos de Ajustes: contenedor redondeado y título con icono. */
+/** Editor section styled like the Settings groups: rounded container and a title with an icon. */
 @Composable
 private fun EditorCard(title: String?, icon: ImageVector?, content: @Composable ColumnScope.() -> Unit) {
     Column(

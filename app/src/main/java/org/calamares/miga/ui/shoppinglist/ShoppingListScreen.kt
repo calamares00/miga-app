@@ -181,9 +181,9 @@ private const val CART_KEY = "__cart__"
 private const val SHARED_SYNC_INTERVAL_MILLIS = 20_000L
 
 /**
- * Lista de la compra. Arriba solo lo que se usa a diario (escribir, dictar, escanear y el botón
- * "Explorar" que abre catálogo, Open Food Facts, plantillas y añadir varios en una sola hoja); el
- * título cambia de lista y el menú se queda en compartir, supermercados, fotos y vaciar.
+ * Shopping list. The top area only holds what is used daily (type, dictate, scan and an "Explore"
+ * button that opens the catalogue, Open Food Facts, templates and bulk add in one sheet). The title
+ * switches lists and the menu keeps share, stores, photos and clear.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -254,7 +254,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
         scope.launch { snackbarHostState.showSnackbar(message) }
     }
 
-    // Con una hoja abierta la snackbar queda tapada: entonces se avisa con un toast.
+    /** An open sheet covers the snackbar, so a toast is used instead. */
     fun announce(message: String) {
         if (addSheetTab != null || editingTemplateId != null || productDetail != null) Toast.makeText(context, message, Toast.LENGTH_SHORT).show() else showMessage(message)
     }
@@ -266,8 +266,10 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
 
     DisposableEffect(Unit) { onDispose { recognizer?.destroy() } }
 
-    // Mientras la pantalla está visible, trae los cambios de otras personas cada pocos segundos
-    // (el sync periódico en segundo plano es de 15 minutos); sin conexión compartida no hace nada.
+    /**
+     * While the screen is visible, pull other people's changes every few seconds (the periodic
+     * background sync runs every 15 minutes). Does nothing without a shared connection.
+     */
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -278,12 +280,12 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
         }
     }
 
-    // Avisos de lo que otras personas añaden a la lista compartida.
+    // Notices about items other people add to the shared list.
     LaunchedEffect(Unit) {
         viewModel.remoteAdditions.collect { message -> snackbarHostState.showSnackbar(message) }
     }
 
-    // Texto compartido hacia Miga o botón del widget (ver ShoppingIntents).
+    // Text shared to Miga or the widget button (see ShoppingIntents).
     LaunchedEffect(intentEvent) {
         when (val event = intentEvent) {
             is ShoppingIntentEvent.SharedText -> {
@@ -293,9 +295,9 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
             }
             ShoppingIntentEvent.QuickAdd -> {
                 shopMode = false
-                delay(200) // da tiempo a que el campo de añadir vuelva a componerse
+                delay(200) // gives the add field time to be composed again
                 runCatching { quickAddFocus.requestFocus() }
-                ShoppingIntents.consume() // al final: consumirlo antes cancelaría esta corrutina (cambia la clave)
+                ShoppingIntents.consume() // last: consuming it earlier would cancel this coroutine (the key changes)
             }
             null -> Unit
         }
@@ -969,7 +971,7 @@ private fun ShareOption(icon: androidx.compose.ui.graphics.vector.ImageVector, t
     }
 }
 
-/** Cambiar de lista, crear, renombrar o borrar listas y poner el nombre con el que se firman los cambios. */
+/** Switch, create, rename or delete lists, and set the name used to sign changes. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ShoppingListsSheet(

@@ -161,7 +161,7 @@ fun RecipeBooksScreen(
             } else if (viewMode == RecipeListViewMode.GRID) {
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(150.dp),
-                    // Abajo deja hueco para que el botón "Nuevo libro" no tape la última fila.
+                    // Bottom padding so the "New book" button does not cover the last row.
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -282,7 +282,7 @@ private fun RecipeBookCard(book: RecipeBookSummary, onClick: () -> Unit, onEditC
                 modifier = Modifier.size(56.dp).align(Alignment.Center).padding(bottom = 24.dp)
             )
         }
-        // Degradado inferior para leer el título sobre cualquier portada.
+        // Bottom gradient so the title reads over any cover.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -337,7 +337,7 @@ private fun BookBadge(icon: ImageVector, description: String) {
     }
 }
 
-/** Fondo para libros sin portada: un degradado con un color estable según el nombre. */
+/** Background for books without a cover: a gradient with a stable colour derived from the name. */
 private fun bookPlaceholderBrush(name: String): Brush {
     val palette = listOf(0xFFC1633D, 0xFF3E8EB5, 0xFF5C9E4B, 0xFF8E6BB5, 0xFFD1709F, 0xFFD9962B, 0xFF3FA39B)
     val base = Color(palette[Math.floorMod(name.hashCode(), palette.size)])
@@ -350,7 +350,7 @@ private fun bookViewModeIcon(mode: RecipeListViewMode): ImageVector = when (mode
     RecipeListViewMode.GRID -> Icons.Filled.GridView
 }
 
-/** Fila de libro para las vistas Normal y Compacta (paralelo a RecipeCard). */
+/** Book row for the Normal and Compact views (counterpart of RecipeCard). */
 @Composable
 private fun RecipeBookRow(book: RecipeBookSummary, compact: Boolean, onClick: () -> Unit, onEditClick: () -> Unit) {
     Card(

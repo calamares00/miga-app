@@ -58,7 +58,10 @@ class PackDetailViewModel(
         }
     }
 
-    /** Descarga e instala (o actualiza) este pack; en éxito navega al libro instalado vía [onInstalled]. */
+    /**
+     * Downloads and installs (or updates) this pack; on success [onInstalled] opens the installed
+     * book.
+     */
     fun install(context: Context, onInstalled: (Long) -> Unit) {
         val state = _uiState.value as? PackDetailUiState.Loaded ?: return
         viewModelScope.launch {

@@ -24,11 +24,13 @@ class IngredientGroupUi(name: String? = null, ingredients: List<IngredientRowUi>
 
 class StepRowUi(text: String = "") {
     var text by mutableStateOf(text)
-    /** true mientras se graba el dictado por voz de este paso (ver StepsEditor/SpeechDictation). */
+    /**
+     * True while voice dictation for this step is recording (see StepsEditor and SpeechDictation).
+     */
     var isRecording by mutableStateOf(false)
-    /** true mientras el texto ya dictado se limpia con IA antes de insertarse en [text]. */
+    /** True while the dictated text is being tidied up by the AI before going into [text]. */
     var isTranscribing by mutableStateOf(false)
-    /** Motivo del último fallo de dictado (ej. "No se ha entendido nada"), o null si no hay ninguno. */
+    /** Reason of the last dictation failure (e.g. "Didn't catch that"), or null. */
     var dictationError by mutableStateOf<String?>(null)
 }
 
@@ -49,13 +51,13 @@ fun IngredientGroup.toUi() = IngredientGroupUi(
 
 fun StepGroup.toUi() = StepGroupUi(name = name, steps = instructions.map { StepRowUi(it) })
 
-/** Igual que [IngredientGroup.toUi] pero a partir del DTO que devuelve el reconocimiento por foto. */
+/** Like [IngredientGroup.toUi], from the DTO returned by photo recognition. */
 fun IngredientGroupDto.toUi() = IngredientGroupUi(
     name = name,
     ingredients = ingredients.map { IngredientRowUi(it.name, it.quantity?.let { q -> formatEditorQuantity(q) } ?: "", it.unit.orEmpty()) }
 )
 
-/** Igual que [StepGroup.toUi] pero a partir del DTO que devuelve el reconocimiento por foto. */
+/** Like [StepGroup.toUi], from the DTO returned by photo recognition. */
 fun StepGroupDto.toUi() = StepGroupUi(name = name, steps = instructions.map { StepRowUi(it) })
 
 fun IngredientGroupUi.toDomain(): IngredientGroup = IngredientGroup(

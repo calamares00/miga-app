@@ -38,7 +38,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/** Estado de la búsqueda de productos en Open Food Facts. */
+/** State of the Open Food Facts product search. */
 sealed interface ProductSearchState {
     data object Idle : ProductSearchState
     data object Loading : ProductSearchState
@@ -74,14 +74,14 @@ class ShoppingListViewModel(
     val lists: StateFlow<List<ShoppingListInfo>> = repository.observeShoppingLists()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf(ShoppingListInfo(DEFAULT_SHOPPING_LIST_UID, L10n.str(R.string.shopping))))
 
-    /** Artículos pendientes de cada lista (uid -> cantidad), para mostrarlos en las pestañas de listas. */
+    /** Pending items per list (uid to count), shown on the list tabs. */
     val listCounts: StateFlow<Map<String, Int>> = repository.observeShoppingListPendingCounts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     private val _searchState = MutableStateFlow<ProductSearchState>(ProductSearchState.Idle)
     val searchState: StateFlow<ProductSearchState> = _searchState
 
-    /** Busca productos por nombre en Open Food Facts (solo al enviar la búsqueda, no en cada tecla). */
+    /** Searches products by name in Open Food Facts (only on submit, not on every keystroke). */
     fun searchProducts(query: String, spainOnly: Boolean) {
         if (query.trim().length < 2) {
             _searchState.value = ProductSearchState.Idle
@@ -100,7 +100,9 @@ class ShoppingListViewModel(
         _searchState.value = ProductSearchState.Idle
     }
 
-    /** Añade a la lista actual un producto elegido en la búsqueda (con su foto y su ficha). */
+    /**
+     * Adds a product picked from the search to the current list, with its photo and product sheet.
+     */
     fun addSearchedProduct(product: ScannedProduct) {
         viewModelScope.launch { repository.addScannedShoppingProduct(product.name, product.imageUrl, product.info) }
     }
@@ -108,7 +110,7 @@ class ShoppingListViewModel(
     val selectedListUid: StateFlow<String> = settingsRepository.observeShoppingListUid()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_SHOPPING_LIST_UID)
 
-    /** Nombre con el que se firman los cambios en una lista compartida (vacío = sin firma). */
+    /** Name used to sign changes on a shared list (empty for none). */
     val author: StateFlow<String> = settingsRepository.observeShoppingAuthor()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
@@ -137,15 +139,15 @@ class ShoppingListViewModel(
         viewModelScope.launch { settingsRepository.setShoppingAuthor(name) }
     }
 
-    /** Sincroniza ahora la conexión que comparte las listas (si hay una); la pantalla lo repite mientras está visible. */
+    /** Syncs the connection that shares the lists, if any. The screen repeats it while visible. */
     suspend fun syncSharedListsOnce(context: Context) {
         val connectionId = repository.getShoppingSyncConnectionId() ?: return
         syncEngine.syncConnection(context, connectionId)
     }
 
     /**
-     * Avisos de "Ana añadió 2 artículos" cuando llegan artículos nuevos de otra persona (por sync) a la
-     * lista que se está viendo. La primera carga de cada lista no avisa (todo sería "nuevo").
+     * "Ana added 2 items" notices when new items from someone else arrive (via sync) in the list
+     * being viewed. The first load of each list does not notify, since everything would be new.
      */
     private val _remoteAdditions = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val remoteAdditions: SharedFlow<String> = _remoteAdditions.asSharedFlow()
@@ -179,11 +181,11 @@ class ShoppingListViewModel(
     val selectedStoreId: StateFlow<Long> = settingsRepository.observeShoppingStoreId()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
-    /** La tienda elegida (null si no hay ninguna o fue borrada). */
+    /** The selected store (null when there is none or it was deleted). */
     val selectedStore: StateFlow<ShoppingStore?> = combine(stores, selectedStoreId) { list, id -> list.firstOrNull { it.id == id } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    /** Nombres de las categorías de ingredientes, para completar el orden de pasillos al editar una tienda. */
+    /** Ingredient category names, used to complete the aisle order when editing a store. */
     val ingredientCategoryNames: StateFlow<List<String>> = repository.observeIngredientCategories()
         .map { list -> list.map { it.name } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -211,8 +213,8 @@ class ShoppingListViewModel(
     }
 
     /**
-     * Casilla del catálogo táctil: si [name] ya está pendiente en la lista lo quita (con tombstone,
-     * como cualquier borrado) y si no lo añade sin cantidad.
+     * Tappable catalogue checkbox: if [name] is already pending it is removed (with a tombstone,
+     * like any deletion), otherwise it is added without a quantity.
      */
     fun toggleCatalogItem(name: String) {
         val key = name.trim().lowercase()
@@ -224,7 +226,10 @@ class ShoppingListViewModel(
         }
     }
 
-    /** Busca [barcode] en Open Food Facts y, si existe, lo añade con su foto; [onResult] recibe el mensaje a mostrar. */
+    /**
+     * Looks up [barcode] in Open Food Facts and, if found, adds it with its photo. [onResult]
+     * receives the message to show.
+     */
     fun addScannedProduct(barcode: String, onResult: (String) -> Unit) {
         viewModelScope.launch {
             when (val result = OpenFoodFactsClient.lookup(barcode)) {
@@ -238,14 +243,14 @@ class ShoppingListViewModel(
         }
     }
 
-    /** Guarda la lista actual (con fotos y fichas de los productos) como plantilla nueva. */
+    /** Saves the current list (with product photos and sheets) as a new template. */
     fun saveTemplate(name: String) {
         val items = groups.value.flatMap { it.items }.map { TemplateItem(it.name, it.quantity, it.unit, it.imageUrl, it.productInfo) }
         if (items.isEmpty() || name.isBlank()) return
         viewModelScope.launch { repository.saveShoppingTemplate(name, items) }
     }
 
-    /** Crea una plantilla vacía (o con [first]) y devuelve su id por [onCreated]. */
+    /** Creates an empty template (or one holding [first]) and passes its id to [onCreated]. */
     fun createTemplate(name: String, first: TemplateItem? = null, onCreated: (Long) -> Unit = {}) {
         if (name.isBlank()) return
         viewModelScope.launch {
@@ -257,7 +262,10 @@ class ShoppingListViewModel(
         viewModelScope.launch { repository.updateShoppingTemplateItems(templateId) { ShoppingTemplateCodec.upsert(it, item) } }
     }
 
-    /** Añade a la plantilla lo escrito a mano ("2 kg tomates, leche"); devuelve cuántos artículos. */
+    /**
+     * Adds typed text ("2 kg tomatoes, milk") to the template and returns the number of items
+     * added.
+     */
     fun addTextToTemplate(templateId: Long, text: String): Int {
         val entries = ShoppingEntryParser.parse(text)
         if (entries.isEmpty()) return 0
@@ -281,7 +289,10 @@ class ShoppingListViewModel(
         viewModelScope.launch { repository.renameShoppingTemplate(templateId, name) }
     }
 
-    /** Busca el código en Open Food Facts y lo guarda en la plantilla; [onResult] recibe el mensaje a mostrar. */
+    /**
+     * Looks up the barcode in Open Food Facts and saves it to the template. [onResult] receives the
+     * message to show.
+     */
     fun addScannedProductToTemplate(templateId: Long, barcode: String, onResult: (String) -> Unit) {
         viewModelScope.launch {
             when (val result = OpenFoodFactsClient.lookup(barcode)) {
@@ -307,7 +318,7 @@ class ShoppingListViewModel(
         viewModelScope.launch { repository.setShoppingListItemChecked(id, checked) }
     }
 
-    /** [onDeleted] se llama una vez quitado, para ofrecer "Deshacer" con [restoreItem]. */
+    /** [onDeleted] is called once removed, to offer "Undo" through [restoreItem]. */
     fun deleteItem(item: ShoppingListItem, onDeleted: () -> Unit) {
         viewModelScope.launch {
             repository.deleteShoppingListItem(item.id)
@@ -319,7 +330,9 @@ class ShoppingListViewModel(
         viewModelScope.launch { repository.restoreShoppingListItem(item) }
     }
 
-    /** Interpreta [text] (uno o varios artículos, con cantidad/unidad) y los añade; devuelve cuántos. */
+    /**
+     * Parses [text] (one or more items, with quantity and unit), adds them and returns how many.
+     */
     fun addEntries(text: String, splitOnY: Boolean = false): Int {
         val entries = ShoppingEntryParser.parse(text, splitOnY)
         addParsedEntries(entries)
@@ -333,14 +346,17 @@ class ShoppingListViewModel(
         }
     }
 
-    /** Añade una sugerencia; lo ya escrito ([typed]) manda sobre lo recordado del historial. */
+    /**
+     * Adds a suggestion. What the user typed ([typed]) takes precedence over what the history
+     * remembers.
+     */
     fun addSuggestion(suggestion: ShoppingSuggestion, typed: ParsedShoppingEntry?) {
         val quantity = typed?.quantity ?: suggestion.quantity
         val unit = typed?.unit ?: if (typed?.quantity == null) suggestion.unit else null
         addParsedEntries(listOf(ParsedShoppingEntry(suggestion.name, quantity, unit)))
     }
 
-    /** Artículos pendientes (sin marcar), tal cual se comparten por QR. */
+    /** Pending (unchecked) items, as shared by QR code. */
     fun pendingEntries(): List<ParsedShoppingEntry> =
         groups.value.flatMap { it.items }.filter { !it.checked }.map { ParsedShoppingEntry(it.name, it.quantity, it.unit) }
 
@@ -357,8 +373,8 @@ class ShoppingListViewModel(
     }
 }
 
-/** Producto de Open Food Facts como artículo de plantilla (con foto y ficha). */
+/** Open Food Facts product as a template item (with photo and product sheet). */
 fun ScannedProduct.toTemplateItem(): TemplateItem = TemplateItem(name = name, imageUrl = imageUrl, info = info)
 
-/** Artículo de la lista con producto de Open Food Facts como artículo de plantilla. */
+/** List item with an Open Food Facts product as a template item. */
 fun ShoppingListItem.toTemplateItem(): TemplateItem = TemplateItem(name, quantity, unit, imageUrl, productInfo)

@@ -40,10 +40,10 @@ import androidx.compose.ui.unit.dp
 import org.calamares.miga.data.search.DishSuggestion
 
 /**
- * Buscador de ideas de recetas con IA: el usuario describe una zona/país, un tipo de plato o
- * cualquier petición libre, y recibe una lista de platos sugeridos. Elegir uno navega al editor
- * precargado con la receta completa generada por IA (ver RecipeEditorViewModel.startDishGeneration),
- * mismo patrón que "Desde imagen" - se revisa/edita antes de guardar, no se guarda directamente.
+ * AI recipe idea search: the user describes a region or country, a kind of dish or any free request
+ * and gets a list of suggested dishes. Picking one opens the editor pre-filled with the full
+ * AI-generated recipe (see RecipeEditorViewModel.startDishGeneration), like "From photo": it is
+ * reviewed before saving, never saved directly.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

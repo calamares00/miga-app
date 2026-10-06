@@ -43,12 +43,14 @@ class RecipeBookEditorViewModel(
     var isDeleting by mutableStateOf(false)
         private set
     var deleteError by mutableStateOf<String?>(null)
-    /** Libro instalado desde un pack (ver RecipeBook.isPack): de solo lectura, sin Guardar, solo desinstalar. */
+    /** Book installed from a pack (see RecipeBook.isPack): read-only, no Save, only uninstall. */
     var isPack by mutableStateOf(false)
         private set
 
-    /** Conexión de sincronización a la que pertenece este libro; null = libro local. A diferencia
-     *  de un pack, sigue siendo totalmente editable. */
+    /**
+     * Sync connection this book belongs to; null for a local book. Unlike a pack it stays fully
+     * editable.
+     */
     var syncConnectionId by mutableStateOf<Long?>(null)
         private set
     val availableSyncConnections: StateFlow<List<SyncConnection>> = repository.observeSyncConnections()
@@ -76,7 +78,9 @@ class RecipeBookEditorViewModel(
         }
     }
 
-    /** Se comprueba al intentar salir del editor (botón atrás o icono de cancelar) para avisar antes de perder cambios. */
+    /**
+     * Checked when leaving the editor (back button or cancel icon) to warn before losing changes.
+     */
     fun hasUnsavedChanges(): Boolean = initialSnapshot?.let { it != BookSnapshot(name, coverPhotoUri) } ?: false
 
     fun save(onSaved: () -> Unit) {
@@ -117,8 +121,10 @@ class RecipeBookEditorViewModel(
         }
     }
 
-    /** Vincula este libro a una conexión: pasa a sincronizarse (lectura-escritura) con las demás
-     *  apps conectadas al mismo namespace. */
+    /**
+     * Links this book to a connection so it syncs (read-write) with the other devices on the same
+     * namespace.
+     */
     fun linkToSyncConnection(connectionId: Long) {
         if (!isEditing || isPack) return
         viewModelScope.launch {
@@ -127,7 +133,7 @@ class RecipeBookEditorViewModel(
         }
     }
 
-    /** Deja de sincronizar: el libro pasa a ser local, sin borrar nada de su contenido ni del servidor. */
+    /** Stops syncing: the book becomes local and nothing is deleted locally or on the server. */
     fun unlinkFromSyncConnection() {
         if (!isEditing) return
         viewModelScope.launch {
@@ -141,7 +147,7 @@ class RecipeBookEditorViewModel(
         viewModelScope.launch {
             isSyncingNow = true
             syncNowError = null
-            repository.resetSyncCursor(connectionId) // reparación manual: vuelve a bajar todo, recupera fotos que se perdieron
+            repository.resetSyncCursor(connectionId) // manual repair: download everything again to recover lost photos
             repository.enqueueFullBookResync(bookId, connectionId)
             when (val outcome = syncEngine.syncConnection(context, connectionId)) {
                 is SyncOutcome.Error -> syncNowError = outcome.reason

@@ -74,9 +74,11 @@ private data class CookStep(val groupName: String?, val stepNumberInGroup: Int, 
 private fun Recipe.flattenSteps(): List<CookStep> =
     stepGroups.flatMap { group -> group.instructions.mapIndexed { idx, instruction -> CookStep(group.name, idx + 1, instruction) } }
 
-/** Temporizador activo del modo cocina: a qué paso pertenece (índice dentro de [CookStep], no de
- *  página) y cuántos segundos tenía al arrancar. [startToken] cambia en cada pulsación de "Iniciar"
- *  (incluso reiniciando el mismo paso) para que LaunchedEffect siempre relance la cuenta atrás. */
+/**
+ * Active cook mode timer: the step it belongs to (index in [CookStep], not the page) and its
+ * starting seconds. [startToken] changes on every "Start" tap, even when restarting the same step,
+ * so LaunchedEffect always restarts the countdown.
+ */
 private data class ActiveTimer(val stepIndex: Int, val totalSeconds: Int, val startToken: Int)
 
 private fun formatTimer(seconds: Int): String = "%d:%02d".format(seconds / 60, seconds % 60)
@@ -102,9 +104,10 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
     var isListeningForCommand by remember { mutableStateOf(false) }
     var voiceFeedback by remember { mutableStateOf<String?>(null) }
 
-    // Se calculan aquí (en vez de solo dentro de la rama que pinta el paso) porque también los
-    // necesita executeVoiceCommand, que puede recibir un comando de temporizador/repetir estando
-    // en cualquier punto de la composición.
+    /**
+     * Computed here rather than only in the branch that draws the step because executeVoiceCommand
+     * needs them too, and it can receive a timer or repeat command at any point.
+     */
     val currentStepIndex = pageIndex - (if (hasIngredients) 1 else 0)
     val currentStep = steps.getOrNull(currentStepIndex)
     val currentDetectedSeconds = remember(currentStep?.instruction) { currentStep?.let { StepTimerParsing.findTimerSeconds(it.instruction) } }
@@ -149,7 +152,9 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
         pageIndex = index
     }
 
-    /** Ejecuta un comando ya reconocido y devuelve el texto de estado a mostrar junto al micro. */
+    /**
+     * Runs an already recognised command and returns the status text shown next to the microphone.
+     */
     fun executeVoiceCommand(command: CookVoiceCommand): String = when (command) {
         CookVoiceCommand.NextStep ->
             if (pageIndex < totalPages - 1) { goToPage(pageIndex + 1); L10n.str(R.string.next_step) } else L10n.str(R.string.youre_already_last_step)
@@ -207,12 +212,12 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
         if (granted) beginListeningForCommand() else voiceCommandPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
     }
 
-    // Capa a pantalla completa dentro de la propia ventana de la app (no un Dialog): así recibe los
-    // márgenes reales de las barras del sistema y no deja ver la pantalla de debajo.
+    // Full-screen layer inside the app window rather than a Dialog, so it gets the real system bar
+    // insets and never shows the screen underneath.
     BackHandler(onBack = onClose)
     Box(modifier = Modifier.fillMaxSize()) {
-        // Desde Android 15/16 las ventanas a pantalla completa se dibujan bajo las barras del sistema:
-        // se respetan aquí para que los botones de abajo no queden tapados por la navegación.
+        // Since Android 15 full-screen windows draw under the system bars, so the insets are
+        // applied here to keep the bottom buttons clear of the navigation bar.
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
             if (totalPages == 0) {

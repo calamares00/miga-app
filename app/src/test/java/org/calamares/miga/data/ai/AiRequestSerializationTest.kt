@@ -5,7 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Los campos con valor por defecto que exige la API (role, tipo de imagen...) deben enviarse. */
+/** Fields with a default value that the APIs require (role, image type...) must be sent. */
 class AiRequestSerializationTest {
 
     private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
