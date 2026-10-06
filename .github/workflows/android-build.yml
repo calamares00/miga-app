@@ -332,12 +332,14 @@ jobs:
         run: |
           repo="${{ github.repository }}"
           release_id=$(gh api "repos/$repo/releases/tags/beta-latest" --jq .id)
-          gh api --paginate "repos/$repo/releases/$release_id/assets?per_page=100" --jq '.[] | "\(.id) \(.name)"' |
-            while read -r id name; do
-              if [ ! -f "dist/$name" ]; then
-                gh api -X DELETE "repos/$repo/releases/assets/$id" && echo "Deleted $name"
-              fi
-            done
+          # The full list is read before deleting anything: deleting while paging shifts the pages
+          # and skips files.
+          assets=$(gh api --paginate "repos/$repo/releases/$release_id/assets?per_page=100" --jq '.[] | "\(.id) \(.name)"')
+          echo "$assets" | while read -r id name; do
+            if [ -n "$id" ] && [ ! -f "dist/$name" ]; then
+              gh api -X DELETE "repos/$repo/releases/assets/$id" && echo "Deleted $name"
+            fi
+          done
 
       # --- push to main: stable GitHub Release with everything build left in dist/ ---
       - name: Download release dist
