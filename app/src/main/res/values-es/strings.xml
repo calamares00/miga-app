@@ -293,6 +293,8 @@
     <string name="front">"Frontal"</string>
     <string name="tree_nuts">"Frutos de cáscara"</string>
     <string name="feature_x">"Función: %1$s"</string>
+    <string name="report_reason_x">"Motivo: %1$s"</string>
+    <string name="report_comment_x">"Comentario: %1$s"</string>
     <string name="ai_generated_may_contain_mistakes">"Generado con IA · puede contener errores"</string>
     <string name="generating_recipe_ai">"Generando la receta con IA..."</string>
     <string name="manage_connections">"Gestionar conexiones"</string>

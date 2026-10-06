@@ -7,14 +7,15 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
 /**
- * Mensajes de error con dos partes: un resumen corto para el usuario y, opcionalmente, el detalle
- * técnico (respuesta del modelo, código HTTP...) que solo se muestra con "Ver detalle". Las dos
- * partes viajan en el mismo String, separadas por [SEPARATOR], para no cambiar los tipos de
- * resultado de todos los clientes.
+ * Error messages with two parts: a short summary for the user and an optional technical detail
+ * (model answer, HTTP code...) that is only shown under "Show details". Both parts travel in the
+ * same String, separated by [SEPARATOR], so result types stay plain strings.
  */
 object ErrorDetail {
     private const val SEPARATOR = "\u001F"
-    /** Marca al inicio: el error viene de un proveedor de IA y tiene sentido ofrecer cambiar de modelo. */
+    /**
+     * Leading mark: the error comes from an AI provider, so offering a different model makes sense.
+     */
     private const val AI_MARK = "\u001E"
 
     fun withDetail(summary: String, detail: String?): String =
@@ -29,16 +30,16 @@ object ErrorDetail {
     fun detail(reason: String): String? = reason.substringAfter(SEPARATOR, "").takeIf { it.isNotBlank() }
 }
 
-/** Errores de los proveedores de IA traducidos a mensajes comprensibles. */
+/** AI provider errors turned into readable messages. */
 object AiErrors {
 
-    /** La IA respondió, pero no con el JSON esperado. */
+    /** The AI answered, but not with the expected JSON. */
     fun badResponse(error: Throwable, modelText: String): String {
         val technical = error.message?.substringBefore("\nJSON input:") ?: error::class.simpleName.orEmpty()
         return ErrorDetail.markAsAi(ErrorDetail.withDetail(L10n.str(R.string.ai_error_bad_response), "$technical\n\n$modelText"))
     }
 
-    /** Respuesta HTTP no correcta de [provider] (Gemini, Claude...). */
+    /** Unsuccessful HTTP response from [provider] (Gemini, Claude...). */
     fun http(provider: String, code: Int, providerMessage: String?): String {
         val summary = when (code) {
             400 -> L10n.str(R.string.ai_error_bad_request, provider)
@@ -51,7 +52,7 @@ object AiErrors {
         return ErrorDetail.markAsAi(ErrorDetail.withDetail(summary, "HTTP $code" + (providerMessage?.let { "\n$it" } ?: "")))
     }
 
-    /** Fallo de red o inesperado al llamar a la IA. */
+    /** Network or unexpected failure while calling the AI. */
     fun exception(error: Throwable): String {
         val summary = when (error) {
             is UnknownHostException, is SocketTimeoutException -> L10n.str(R.string.ai_error_network)

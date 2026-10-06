@@ -18,28 +18,26 @@ sealed interface SyncOutcome {
 }
 
 /**
- * Coordina la sincronización de una conexión: baja los cambios del servidor desde la última
- * revisión conocida (aplicando "última escritura gana" por `updatedAt`, ver
- * [RecipeRepository.applyRemoteBookUpsert]/[RecipeRepository.applyRemoteRecipeUpsert]) y sube el
- * outbox de cambios locales pendientes, resolviendo cualquier 409 con la copia del servidor.
+ * Runs the sync of one connection.
  *
- * Los libros se aplican en dos pasadas (altas antes que las recetas, bajas después) para no
- * chocar con la restricción de clave foránea de `recipes.recipeBookId` - ver el comentario en
- * [RecipeRepository] junto a esas funciones. Las fotos (de receta y la portada de cada libro) se
- * aplican después de las recetas (para que la receta a la que pertenecen ya exista localmente) y
- * antes de las bajas de libro.
+ * It first downloads the server changes since the last known revision, applying last-write-wins by
+ * `updatedAt` (see [RecipeRepository.applyRemoteBookUpsert] and
+ * [RecipeRepository.applyRemoteRecipeUpsert]). Book upserts are applied before recipes and book
+ * deletions after them, so the foreign key on `recipes.recipeBookId` always holds. Photos and book
+ * covers are applied after recipes, so their recipe already exists locally.
  *
- * Si la conexión comparte la lista de la compra ([SyncConnection.syncShopping]), esa lista viaja
- * por el mismo camino: sus artículos llegan en la misma respuesta de cambios y los locales
- * pendientes ("syncDirty") se suben después, ver [syncShoppingList].
+ * Then it uploads the outbox of pending local changes, resolving any 409 with the server copy. When
+ * the connection shares the shopping list ([SyncConnection.syncShopping]), its items arrive in the
+ * same changes response and local pending items are uploaded afterwards (see [syncShoppingList]).
  *
- * Necesita un [Context] únicamente para guardar/borrar el fichero físico de una foto (o portada)
- * descargada o borrada (ver [PhotoStorage]), siguiendo el mismo convenio del resto de la app de
- * pasar el Context a la función en vez de guardarlo en una clase que no es un componente Android.
+ * A [Context] is only needed to store or delete photo files (see [PhotoStorage]).
  */
 class SyncEngine(private val repository: RecipeRepository) {
 
-    /** Una sola sincronización a la vez en toda la app: los disparos automáticos (al guardar, al abrir, periódico) pueden solaparse. */
+    /**
+     * Only one sync at a time in the whole app: automatic triggers (on save, on open, periodic) can
+     * overlap.
+     */
     suspend fun syncConnection(context: Context, connectionId: Long): SyncOutcome =
         syncLock.withLock { syncConnectionLocked(context, connectionId) }
 
@@ -55,8 +53,9 @@ class SyncEngine(private val repository: RecipeRepository) {
             is SyncFetchResult.Success -> {
                 val failedPhotoRevisions = applyChanges(context, connection, fetch.changes)
                 if (connection.syncShopping) applyRemoteShopping(fetch.changes)
-                // Si alguna foto no se pudo bajar por un fallo transitorio, el cursor no pasa de ella: la próxima
-                // sincronización la reintenta (lo ya aplicado es idempotente) en vez de perderla para siempre.
+                // If a photo could not be downloaded because of a transient failure the cursor does
+                // not move past it, so the next sync retries it (applying changes is idempotent)
+                // instead of losing it.
                 repository.markSyncSuccess(connectionId, SyncCursor.next(fetch.changes.latestRevision, failedPhotoRevisions))
                 fetch.changes.books.size + fetch.changes.recipes.size + fetch.changes.photos.size
             }
@@ -75,22 +74,23 @@ class SyncEngine(private val repository: RecipeRepository) {
         return SyncOutcome.Success(pulled, pushed)
     }
 
-    /** Las listas se aplican antes que los artículos: un artículo de una lista nueva necesita que su lista ya exista aquí. */
+    /** Lists are applied before items: an item of a new list needs that list to exist locally. */
     private suspend fun applyRemoteShopping(changes: ChangesResponseDto) {
         repository.applyRemoteShoppingLists(changes.shoppingLists)
         repository.applyRemoteShoppingItems(changes.shoppingItems)
     }
 
     /**
-     * Listas de la compra compartidas: la primera vez tras activarla baja la lista completa del
-     * servidor (el cursor normal ya pasó de sus revisiones), y después sube los cambios locales
-     * pendientes. Un 409 se resuelve con la copia del servidor (última escritura gana); un fallo de
-     * red deja lo pendiente marcado para el próximo sync. Devuelve cuántos artículos se subieron.
+     * Shared shopping lists. The first time after enabling it, the whole list is downloaded from
+     * the server (the regular cursor has already moved past its revisions); afterwards pending
+     * local changes are uploaded. A 409 is resolved with the server copy (last write wins) and a
+     * network failure keeps the changes pending for the next sync. Returns how many items were
+     * uploaded.
      */
     private suspend fun syncShoppingList(connection: SyncConnection): Int {
         if (!connection.shoppingPulled) {
             if (connection.lastSyncedRevision == 0L) {
-                repository.markShoppingInitialPullDone(connection.id) // el pull normal ya fue desde el principio
+                repository.markShoppingInitialPullDone(connection.id) // the regular pull already started from scratch
             } else when (val full = SyncClient.fetchChanges(connection, 0)) {
                 is SyncFetchResult.Error -> {
                     repository.markSyncError(connection.id, full.reason)
@@ -103,7 +103,7 @@ class SyncEngine(private val repository: RecipeRepository) {
             }
         }
         var pushed = 0
-        // Primero las listas (un artículo de una lista nueva necesita que el servidor ya la conozca).
+        // Lists first: an item of a new list needs the server to know that list.
         for (list in repository.getDirtyShoppingLists()) {
             val result = if (list.deletedAt != null) {
                 SyncClient.deleteShoppingList(connection, list.uid, list.updatedAt)
@@ -143,18 +143,20 @@ class SyncEngine(private val repository: RecipeRepository) {
         return pushed
     }
 
-    /** Aplica los cambios bajados y devuelve las revisiones de las fotos que no se pudieron descargar por un fallo transitorio. */
+    /**
+     * Applies downloaded changes and returns the revisions of photos that could not be downloaded
+     * because of a transient failure.
+     */
     private suspend fun applyChanges(context: Context, connection: SyncConnection, changes: ChangesResponseDto): List<Long> {
         val failedPhotoRevisions = mutableListOf<Long>()
         changes.books.filter { it.deletedAt == null }.forEach { dto ->
             val bookId = repository.applyRemoteBookUpsert(connection.id, dto)
             if (bookId != null) applyBookCoverIfPresent(context, connection, bookId, dto)
         }
-        // Un tombstone "desvinculado" (dto.unlinked, ver SyncDtos.kt) no debe borrar nada local:
-        // la fila cascada de una receta/foto bajo un libro desvinculado se ignora del todo (el
-        // libro se queda con su syncConnectionId a null más abajo, la receta/foto no necesita
-        // ningún cambio propio porque nunca tuvo vínculo de sync individual, solo el heredado de
-        // pertenecer a un libro sincronizado).
+        // An "unlinked" tombstone (dto.unlinked, see SyncDtos.kt) must not delete anything locally.
+        // Recipe and photo rows cascaded from an unlinked book are ignored: the book itself gets
+        // its syncConnectionId cleared below, and its recipes and photos only had the link
+        // inherited from that book.
         changes.recipes.forEach { dto ->
             when {
                 dto.unlinked -> Unit
@@ -171,8 +173,9 @@ class SyncEngine(private val repository: RecipeRepository) {
                         val localUri = PhotoStorage.copyBytesToInternalStorage(context, download.bytes)
                         if (localUri != null && !repository.applyRemotePhotoUpsert(dto, localUri)) PhotoStorage.deleteFile(localUri)
                     }
-                    // El servidor conoce la foto pero no tiene sus bytes (quien la subió aún no los envió): llegará
-                    // como un cambio nuevo cuando se suba, no hace falta retener el cursor.
+                    // The server knows the photo but not its bytes yet (the uploader has not sent
+                    // them). It will arrive as a new change once uploaded, so the cursor does not
+                    // need to wait.
                     PhotoDownloadResult.NotFound -> Unit
                     is PhotoDownloadResult.Error -> failedPhotoRevisions.add(dto.revision)
                 }
@@ -184,8 +187,10 @@ class SyncEngine(private val repository: RecipeRepository) {
         return failedPhotoRevisions
     }
 
-    /** true si se ha resuelto (subido con éxito, o se ha aplicado un conflicto) y puede quitarse
-     *  del outbox; false si hay que reintentarlo en el próximo sync (fallo de red/servidor). */
+    /**
+     * Returns true when the change is resolved (uploaded, or a conflict was applied) and can leave
+     * the outbox; false when it must be retried on the next sync (network or server failure).
+     */
     private suspend fun pushOne(context: Context, connection: SyncConnection, change: PendingSyncChangeEntity): Boolean {
         val entityType = runCatching { SyncEntityType.valueOf(change.entityType) }.getOrNull() ?: return true
         val changeType = runCatching { SyncChangeType.valueOf(change.changeType) }.getOrNull() ?: return true
@@ -206,7 +211,7 @@ class SyncEngine(private val repository: RecipeRepository) {
             SyncChangeType.UPSERT -> {
                 val dto = repository.getRecipeBookSyncDtoByUid(uid)
                 if (dto == null) {
-                    true // ya no existe localmente (se borró después de encolar la subida): nada que hacer
+                    true // No longer exists locally (deleted after the upload was queued): nothing to do
                 } else {
                     when (val result = SyncClient.pushBook(connection, dto)) {
                         is SyncPushResult.Applied -> {
@@ -220,16 +225,20 @@ class SyncEngine(private val repository: RecipeRepository) {
             }
         }
 
-    /** Best-effort: si falla la subida de la portada, el texto del libro ya se ha subido igualmente
-     *  y no se reintenta por separado (no hay una fila propia en el outbox solo para la portada). */
+    /**
+     * Best effort: if the cover upload fails, the book text has already been uploaded and the cover
+     * is not retried separately (it has no outbox row of its own).
+     */
     private suspend fun pushBookCoverIfPresent(connection: SyncConnection, bookUid: String) {
         val coverUri = repository.getRecipeBookCoverUri(bookUid) ?: return
         val bytes = PhotoStorage.readBytes(coverUri) ?: return
         SyncClient.uploadBookCover(connection, bookUid, bytes)
     }
 
-    /** Descarga y aplica la portada de un libro remoto recién dado de alta/editado, borrando el
-     *  fichero físico anterior (si había uno distinto) para no dejarlo huérfano. */
+    /**
+     * Downloads and applies the cover of a remote book that was just created or edited, deleting
+     * the previous file (if different) so it is not left orphaned.
+     */
     private suspend fun applyBookCoverIfPresent(context: Context, connection: SyncConnection, bookId: Long, dto: BookSyncDto) {
         if (!dto.hasCoverPhoto) return
         val bytes = SyncClient.downloadBookCover(connection, dto.uid) ?: return
@@ -262,12 +271,12 @@ class SyncEngine(private val repository: RecipeRepository) {
             }
         }
 
-    /** Best-effort, mismo patrón que [pushBookCoverIfPresent]: reenvía cada foto actual de la
-     *  receta en cada subida con éxito de la receta, para autocurar fotos que quedaron sin subir
-     *  por cualquier motivo (p. ej. un libro vinculado a una conexión antes de que
-     *  [RecipeRepository.linkBookToSyncConnection] empezara a encolarlas también). Si falla la
-     *  subida de alguna foto, la receta ya se ha subido igualmente y esa foto se reintentará en el
-     *  siguiente push de la receta. */
+    /**
+     * Best effort, same pattern as [pushBookCoverIfPresent]: every successful recipe upload
+     * re-sends its current photos. This heals photos that were never uploaded for any reason, such
+     * as a book linked before [RecipeRepository.linkBookToSyncConnection] queued them. A failed
+     * photo is retried on the recipe's next upload.
+     */
     private suspend fun pushRecipePhotosIfPresent(connection: SyncConnection, recipeUid: String) {
         repository.getRecipePhotosForPush(recipeUid).forEach { (photoUid, info) ->
             val bytes = PhotoStorage.readBytes(info.uri) ?: return@forEach
@@ -277,10 +286,11 @@ class SyncEngine(private val repository: RecipeRepository) {
         }
     }
 
-    /** Para un borrado, [PendingSyncChangeEntity.parentUid] es la única forma de saber a qué
-     *  receta pertenecía la foto: su fila local ya no existe (se borró junto con el resto de fotos
-     *  de la receta al guardarla, ver [RecipeRepository.saveRecipe]). Para un alta, en cambio, la
-     *  fila todavía existe y se consulta con [RecipeRepository.getPhotoPushInfo]. */
+    /**
+     * For a deletion, [PendingSyncChangeEntity.parentUid] is the only way to know which recipe the
+     * photo belonged to, because its local row is already gone (see [RecipeRepository.saveRecipe]).
+     * For an upsert the row still exists and is read with [RecipeRepository.getPhotoPushInfo].
+     */
     private suspend fun pushPhotoChange(context: Context, connection: SyncConnection, change: PendingSyncChangeEntity, changeType: SyncChangeType): Boolean =
         when (changeType) {
             SyncChangeType.DELETE -> {
@@ -299,7 +309,7 @@ class SyncEngine(private val repository: RecipeRepository) {
                 val info = repository.getPhotoPushInfo(change.uid)
                 val bytes = info?.let { PhotoStorage.readBytes(it.uri) }
                 if (info == null || bytes == null) {
-                    true // ya no existe localmente (se borró después de encolar la subida): nada que hacer
+                    true // No longer exists locally (deleted after the upload was queued): nothing to do
                 } else {
                     val result = SyncClient.uploadPhoto(
                         connection, info.recipeUid, change.uid, bytes, "image/jpeg", info.isCover, info.position, System.currentTimeMillis()
@@ -313,10 +323,11 @@ class SyncEngine(private val repository: RecipeRepository) {
             }
         }
 
-    /** [BookSyncDto.deletedAt] decide si es un alta/edición o un tombstone; las dos funciones se
-     *  autoprotegen (cada una ignora el caso que no le corresponde), así que llamar a ambas es
-     *  seguro y evita duplicar esa comprobación aquí. [BookSyncDto.unlinked] decide, dentro de un
-     *  tombstone, si además hay que borrar el contenido local o solo cortar el vínculo de sync. */
+    /**
+     * [BookSyncDto.deletedAt] tells an upsert from a tombstone. Both repository functions ignore
+     * the case that is not theirs, so calling both is safe. Within a tombstone,
+     * [BookSyncDto.unlinked] decides whether local content is deleted or only the sync link is cut.
+     */
     private suspend fun applyServerBookCopy(context: Context, connection: SyncConnection, copy: BookSyncDto) {
         val bookId = repository.applyRemoteBookUpsert(connection.id, copy)
         if (bookId != null) applyBookCoverIfPresent(context, connection, bookId, copy)
@@ -328,8 +339,10 @@ class SyncEngine(private val repository: RecipeRepository) {
         if (!copy.unlinked) repository.applyRemoteRecipeDeletion(copy)
     }
 
-    /** Igual que [applyServerBookCopy]/[applyServerRecipeCopy], pero una foto en conflicto necesita
-     *  además descargarse (o borrarse) físicamente, no solo aplicar su metadato. */
+    /**
+     * Like [applyServerBookCopy] and [applyServerRecipeCopy], but a conflicting photo also has to
+     * be downloaded or deleted on disk, not only its metadata.
+     */
     private suspend fun applyServerPhotoCopy(context: Context, connection: SyncConnection, copy: PhotoMetaDto) {
         if (copy.unlinked) {
             return

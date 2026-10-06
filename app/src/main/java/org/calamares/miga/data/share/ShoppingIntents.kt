@@ -4,19 +4,19 @@ import android.content.Intent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-/** Algo que otra app o el widget le pide a la lista de la compra. */
+/** A request for the shopping list coming from another app or from the widget. */
 sealed interface ShoppingIntentEvent {
-    /** Texto compartido hacia Miga desde otra app (notas, mensajes...): se interpreta como artículos. */
+    /** Text shared to Miga from another app (notes, messages...), parsed as items. */
     data class SharedText(val text: String) : ShoppingIntentEvent
 
-    /** Abrir la lista con el campo de añadir listo para escribir (botón del widget). */
+    /** Open the list with the add field ready to type (widget button). */
     data object QuickAdd : ShoppingIntentEvent
 }
 
 /**
- * Buzón entre MainActivity (que recibe los intents) y la pantalla de la lista de la compra. El
- * evento se queda guardado hasta que la pantalla lo consume, así no se pierde si la app arranca
- * bloqueada por la huella o la pantalla aún no está compuesta.
+ * Mailbox between MainActivity, which receives the intents, and the shopping list screen. The event
+ * is kept until the screen consumes it, so it is not lost when the app starts behind the biometric
+ * lock or the screen is not composed yet.
  */
 object ShoppingIntents {
 
@@ -26,7 +26,9 @@ object ShoppingIntents {
     private val _event = MutableStateFlow<ShoppingIntentEvent?>(null)
     val event: StateFlow<ShoppingIntentEvent?> = _event
 
-    /** true si [intent] era para la lista de la compra y se ha guardado como evento. */
+    /**
+     * Returns true when [intent] was meant for the shopping list and has been stored as an event.
+     */
     fun handle(intent: Intent?): Boolean {
         intent ?: return false
         when {
