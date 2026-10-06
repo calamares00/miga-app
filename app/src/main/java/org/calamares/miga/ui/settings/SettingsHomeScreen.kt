@@ -49,9 +49,9 @@ import org.calamares.miga.data.voice.DictationLanguages
 private data class HomeItem(val icon: ImageVector, val title: String, val summary: String, val onClick: () -> Unit)
 
 /**
- * Pantalla principal de Ajustes, al estilo de los ajustes de las apps de Google: un título grande
- * que se pliega al hacer scroll y grupos de filas (icono, título y resumen de lo configurado) que
- * abren cada una su propia pantalla. Las "Novedades" (changelog) son una entrada propia, aparte de Ayuda.
+ * Main Settings screen, styled like Google's apps: a large title that collapses on scroll and
+ * groups of rows (icon, title and a summary of the current setting), each opening its own screen.
+ * "What's new" (changelog) has its own entry, separate from Help.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -150,7 +150,7 @@ fun SettingsHomeScreen(
     }
 }
 
-/** Un grupo de filas dentro de un contenedor redondeado, con separadores finos entre ellas. */
+/** A group of rows inside a rounded container with thin dividers between them. */
 @Composable
 private fun HomeGroup(items: List<HomeItem>) {
     Column(

@@ -325,7 +325,7 @@ fun RecipeDetailScreen(
     if (substitutionDialogState != SubstitutionDialogState.Hidden) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissSubstitutionDialog() },
-            title = { Text("Sustituir \"${substitutionDialogState.ingredientNameOrNull().orEmpty()}\"") },
+            title = { Text(L10n.str(R.string.substitute_x, substitutionDialogState.ingredientNameOrNull().orEmpty())) },
             text = {
                 when (val state = substitutionDialogState) {
                     is SubstitutionDialogState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {

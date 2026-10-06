@@ -36,9 +36,9 @@ import org.calamares.miga.data.support.AiContentReport
 import org.calamares.miga.data.support.AiReportReason
 
 /**
- * Aviso "Generado con IA" con botón para reportar el contenido (requisito de Google Play para apps
- * con IA generativa). [feature] nombra la función ("Importar receta", "Nutrición"...) y [content]
- * devuelve, al reportar, el texto generado que se adjunta al reporte.
+ * "Generated with AI" notice with a button to report the content (Google Play requirement for
+ * generative AI apps). [feature] names the feature ("Import recipe", "Nutrition"...) and [content]
+ * returns the generated text attached to the report.
  */
 @Composable
 fun AiContentNotice(feature: String, content: () -> String, modifier: Modifier = Modifier) {

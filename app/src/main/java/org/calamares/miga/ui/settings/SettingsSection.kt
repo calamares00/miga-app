@@ -15,8 +15,8 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
- * Categorías de Ajustes que abren su propia pantalla (la pantalla principal de Ajustes solo lista
- * estas categorías, al estilo de los ajustes de las apps de Google). [id] es el argumento de la ruta.
+ * Settings categories, each opening its own screen; the main Settings screen only lists them. [id]
+ * is the route argument.
  */
 enum class SettingsSection(val id: String, val title: String, val icon: ImageVector) {
     APPEARANCE("appearance", L10n.str(R.string.appearance), Icons.Filled.Palette),
@@ -29,7 +29,7 @@ enum class SettingsSection(val id: String, val title: String, val icon: ImageVec
     SYNC("sync", L10n.str(R.string.sync), Icons.Filled.Sync);
 
     companion object {
-        /** La sección con ese [id]; si no existe (ruta corrupta), la primera. */
+        /** The section with that [id], or the first one when it does not exist (corrupt route). */
         fun fromId(id: String?): SettingsSection = entries.firstOrNull { it.id == id } ?: APPEARANCE
     }
 }

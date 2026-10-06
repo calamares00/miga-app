@@ -789,4 +789,11 @@
     <string name="bulk_ai_done_n">"Salud y nutrición actualizadas en %1$d recetas"</string>
     <string name="bulk_ai_done_with_errors">"Análisis terminado en %1$d recetas, con %2$d errores"</string>
     <string name="untitled">"Sin nombre"</string>
+    <string name="delete_quoted_x">"Borrar \"%1$s\""</string>
+    <string name="import_quoted_x">"Importar \"%1$s\""</string>
+    <string name="remove_quoted_x">"Quitar \"%1$s\""</string>
+    <string name="ingredient_count_one">"1 ingrediente"</string>
+    <string name="ingredient_count_many">"%1$s ingredientes"</string>
+    <string name="contains_x">"Contiene: %1$s"</string>
+    <string name="namespace_placeholder">"casa"</string>
 </resources>

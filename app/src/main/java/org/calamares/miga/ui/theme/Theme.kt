@@ -9,8 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import org.calamares.miga.data.model.ColorTheme
 
-/** Acento (y su variante suave) de un [ColorTheme] - lo único que cambia entre temas de color; el
- *  resto de la paleta (neutros cálidos/oscuros, Sage como secundario) se mantiene fijo. */
+/**
+ * Accent and soft accent of a [ColorTheme], the only thing that changes between colour themes; the
+ * rest of the palette (warm neutrals, Sage as secondary) stays fixed.
+ */
 private data class AccentPalette(val accent: Color, val accentSoft: Color)
 
 private fun accentPaletteFor(colorTheme: ColorTheme): AccentPalette = when (colorTheme) {

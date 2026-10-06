@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.stats
 
+import org.calamares.miga.R
+import org.calamares.miga.L10n
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.calamares.miga.data.model.Difficulty
@@ -48,7 +50,7 @@ class StatsViewModel(private val repository: RecipeRepository) : ViewModel() {
                 .filter { it.count > 0 }
 
             val byCategory = recipes
-                .groupBy { it.categoryName?.takeIf { name -> name.isNotBlank() } ?: "Sin categoría" }
+                .groupBy { it.categoryName?.takeIf { name -> name.isNotBlank() } ?: L10n.str(R.string.uncategorized) }
                 .map { (name, group) -> CountEntry(name, group.size) }
                 .sortedByDescending { it.count }
                 .take(MAX_CATEGORY_ENTRIES)

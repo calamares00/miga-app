@@ -47,6 +47,6 @@ fun ManageIngredientCategoriesScreen(viewModel: ManageIngredientCategoriesViewMo
         onAdd = viewModel::add,
         onRename = viewModel::rename,
         onDelete = viewModel::delete,
-        usageLabel = { count -> if (count == 1) "1 ingrediente" else "$count ingredientes" }
+        usageLabel = { count -> if (count == 1) L10n.str(R.string.ingredient_count_one) else L10n.str(R.string.ingredient_count_many, count) }
     )
 }

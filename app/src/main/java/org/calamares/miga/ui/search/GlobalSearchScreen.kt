@@ -75,7 +75,10 @@ import org.calamares.miga.ui.components.FilterSheetContent
 // Candidatas a chip de filtro dietético rápido - solo se muestran las que de verdad existan como
 // etiqueta ya creada por el usuario (comparación sin distinguir mayúsculas/minúsculas), para no
 // inventar una taxonomía nueva por encima del sistema de etiquetas ya existente.
-private val DIETARY_QUICK_TAGS = listOf("Vegano", "Vegetariano", "Sin gluten", "Sin lactosa", "Sin azúcar", "Bajo en calorías")
+private val DIETARY_QUICK_TAGS = listOf(
+    "Vegano", "Vegetariano", "Sin gluten", "Sin lactosa", "Sin azúcar", "Bajo en calorías",
+    "Vegan", "Vegetarian", "Gluten-free", "Gluten free", "Lactose-free", "Dairy-free", "Sugar-free", "Low calorie"
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

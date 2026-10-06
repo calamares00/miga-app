@@ -95,7 +95,8 @@ private val BOTTOM_TABS = listOf(
 @Composable
 fun MigaNavHost(initialRoute: String? = null) {
     val navController = rememberNavController()
-    // Destino elegido en la bienvenida (packs, restaurar copia...), encima de la pantalla principal.
+    // Destination chosen on the welcome screen (packs, restore a backup...), opened on top of the
+    // main screen.
     LaunchedEffect(initialRoute) {
         if (initialRoute != null) runCatching { navController.navigate(initialRoute) }
     }
@@ -104,7 +105,9 @@ fun MigaNavHost(initialRoute: String? = null) {
     val settingsRepository = (context.applicationContext as MigaApp).settingsRepository
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
-    // Texto compartido hacia Miga o botón del widget: ir a la pestaña de la compra, que consume el evento.
+    /**
+     * Text shared to Miga or the widget button: go to the shopping tab, which consumes the event.
+     */
     val shoppingEvent by ShoppingIntents.event.collectAsState()
     LaunchedEffect(shoppingEvent) {
         if (shoppingEvent != null) {

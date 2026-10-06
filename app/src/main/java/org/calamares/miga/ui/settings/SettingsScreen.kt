@@ -125,8 +125,7 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 
 /**
- * Pantalla de una categoría de Ajustes (ver [SettingsSection]); la pantalla principal es [SettingsHomeScreen].
- * Cada categoría reúne las opciones que antes estaban apiladas en tarjetas dentro de una sola pantalla.
+ * Screen of one Settings category (see [SettingsSection]); the main screen is [SettingsHomeScreen].
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -239,7 +238,7 @@ fun SettingsSectionScreen(
         ) {
             when (section) {
                 SettingsSection.APPEARANCE -> {
-            SettingsCard(icon = Icons.Filled.Palette, title = "") {
+            SettingsCard(title = "") {
                 ThemeMode.entries.forEach { mode ->
                     Row(
                         modifier = Modifier
@@ -278,7 +277,7 @@ fun SettingsSectionScreen(
             }
                 }
                 SettingsSection.SECURITY -> {
-            SettingsCard(icon = Icons.Filled.Fingerprint, title = "") {
+            SettingsCard(title = "") {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(L10n.str(R.string.biometric_lock), style = MaterialTheme.typography.bodyLarge)
@@ -306,7 +305,7 @@ fun SettingsSectionScreen(
             }
                 }
                 SettingsSection.CONTENT -> {
-            SettingsCard(icon = Icons.Filled.Tune, title = "", contentSpacing = 0.dp) {
+            SettingsCard(title = "", contentSpacing = 0.dp) {
                 ManageRow(icon = Icons.Filled.Category, label = L10n.str(R.string.categories), onClick = onManageCategories)
                 HorizontalDivider()
                 ManageRow(icon = Icons.Filled.Kitchen, label = L10n.str(R.string.utensils), onClick = onManageUtensils)
@@ -317,7 +316,7 @@ fun SettingsSectionScreen(
             }
                 }
                 SettingsSection.BACKUP -> {
-            SettingsCard(icon = Icons.Filled.Backup, title = "", contentSpacing = 0.dp) {
+            SettingsCard(title = "", contentSpacing = 0.dp) {
                 ManageRow(
                     icon = Icons.Filled.Backup,
                     label = L10n.str(R.string.export_whole_app),
@@ -344,7 +343,7 @@ fun SettingsSectionScreen(
             }
                 }
                 SettingsSection.AI -> {
-            SettingsCard(icon = Icons.Filled.AutoAwesome, title = "") {
+            SettingsCard(title = "") {
                 AiSwitchRow(
                     title = L10n.str(R.string.ai_enabled_title),
                     subtitle = L10n.str(R.string.ai_enabled_desc),
@@ -368,7 +367,6 @@ fun SettingsSectionScreen(
             }
             if (aiEnabled) {
             SettingsCard(
-                icon = Icons.Filled.AutoAwesome,
                 title = "",
                 description = L10n.str(R.string.reads_text_photo_recipe_book)
             ) {
@@ -378,7 +376,6 @@ fun SettingsSectionScreen(
                 }
                 SettingsSection.VOICE -> {
             SettingsCard(
-                icon = Icons.Filled.Mic,
                 title = L10n.str(R.string.voice_dictation),
                 description = L10n.str(R.string.language_used_recognise_what_dictate)
             ) {
@@ -408,7 +405,6 @@ fun SettingsSectionScreen(
             }
 
             SettingsCard(
-                icon = Icons.Filled.RecordVoiceOver,
                 title = L10n.str(R.string.cooking_mode),
                 description = L10n.str(R.string.voice_used_read_steps_aloud)
             ) {
@@ -452,7 +448,8 @@ fun SettingsSectionScreen(
                         val engine = tts ?: return@OutlinedButton
                         val chosen = availableVoices.firstOrNull { it.name == ttsVoiceName }
                         if (chosen != null) engine.setVoice(chosen) else engine.setLanguage(L10n.locale())
-                        // La frase de prueba va en el idioma de la voz elegida (si no, en el de la app).
+                        // The sample sentence uses the chosen voice's language, or the app language
+                        // when none is chosen.
                         val language = (chosen?.locale ?: L10n.locale()).language
                         val sample = if (language == "es") "Añade dos cucharadas de aceite de oliva." else "Add two tablespoons of olive oil."
                         engine.speak(sample, TextToSpeech.QUEUE_FLUSH, null, "voice_preview")
@@ -465,7 +462,6 @@ fun SettingsSectionScreen(
                 }
                 SettingsSection.PACKS -> {
             SettingsCard(
-                icon = Icons.Filled.Storefront,
                 title = "",
                 description = L10n.str(R.string.install_ready_use_recipe_books)
             ) {
@@ -473,7 +469,7 @@ fun SettingsSectionScreen(
                 var showCustomCatalog by remember { mutableStateOf(packsCatalogRepo != DEFAULT_PACKS_CATALOG) }
                 if (showCustomCatalog) {
                     OutlinedTextField(
-                        // El catálogo oficial no se muestra: el campo vacío equivale a usarlo.
+                        // The official catalogue is not shown: an empty field means using it.
                         value = if (packsCatalogRepo == DEFAULT_PACKS_CATALOG) "" else packsCatalogRepo,
                         onValueChange = { viewModel.setPacksCatalogRepo(it) },
                         label = { Text(L10n.str(R.string.alternative_catalogue)) },
@@ -488,7 +484,6 @@ fun SettingsSectionScreen(
                 }
                 SettingsSection.SYNC -> {
             SettingsCard(
-                icon = Icons.Filled.Sync,
                 title = "",
                 description = L10n.str(R.string.connect_app_one_more_namespaces)
             ) {
@@ -502,7 +497,7 @@ fun SettingsSectionScreen(
     pendingRecipeImport?.let { (dto, photos) ->
         AlertDialog(
             onDismissRequest = { pendingRecipeImport = null },
-            title = { Text("Importar \"${dto.name}\"") },
+            title = { Text(L10n.str(R.string.import_quoted_x, dto.name)) },
             text = {
                 Column {
                     Text(L10n.str(R.string.which_book_want_add_recipe), modifier = Modifier.padding(bottom = 8.dp))
@@ -587,14 +582,12 @@ private fun AiSwitchRow(title: String, subtitle: String, checked: Boolean, onChe
 }
 
 /**
- * Grupo de opciones dentro de la pantalla de una categoría: sin tarjeta ni icono (el icono y el título
- * de la categoría ya están en la barra superior), con un encabezado opcional en el color primario
- * (se omite si [title] está vacío) y una descripción opcional. [icon] ya no se dibuja; se conserva
- * para no tocar las llamadas existentes.
+ * Group of options inside a category screen: no card or icon (the category icon and title are
+ * already in the top bar), with an optional header in the primary colour (omitted when [title] is
+ * empty) and an optional description.
  */
 @Composable
 private fun SettingsCard(
-    icon: ImageVector,
     title: String,
     description: String? = null,
     contentSpacing: Dp = 12.dp,
@@ -666,7 +659,7 @@ private fun ManageRow(icon: ImageVector, label: String, onClick: () -> Unit, sum
     }
 }
 
-/** Idioma de la interfaz: el del sistema, español o inglés. Cambiarlo reinicia la app. */
+/** UI language: system default, Spanish or English. Changing it restarts the app. */
 @Composable
 private fun LanguagePicker() {
     val context = LocalContext.current
@@ -705,7 +698,7 @@ private fun LanguagePicker() {
     }
 }
 
-// Los nombres de idioma se muestran en su propio idioma, como en los ajustes de Android.
+/** Language names are shown in their own language, as in Android's settings. */
 private fun languageLabel(language: AppLanguage): String = when (language) {
     AppLanguage.SYSTEM -> L10n.str(R.string.language_system)
     AppLanguage.SPANISH -> "Español"
@@ -718,7 +711,10 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     else -> null
 }
 
-/** Nombres cortos para las voces ("Español (España) · Voz 1", con "sin conexión"/"en línea" solo si hace falta distinguir). */
+/**
+ * Short voice names ("Español (España) · Voice 1"), adding "offline"/"online" only when needed to
+ * tell them apart.
+ */
 private fun simpleVoiceLabels(voices: List<Voice>): Map<String, String> {
     val labels = mutableMapOf<String, String>()
     voices.groupBy { it.locale.toString() }.forEach { (_, group) ->

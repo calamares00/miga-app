@@ -113,7 +113,7 @@ fun ManageIngredientsScreen(viewModel: ManageIngredientsViewModel, onBack: () ->
                             Text(item.name, style = MaterialTheme.typography.bodyLarge)
                             AssistChip(
                                 onClick = { itemForCategory = item },
-                                label = { Text(item.categoryName ?: "Sin categoría") },
+                                label = { Text(item.categoryName ?: L10n.str(R.string.uncategorized)) },
                                 modifier = Modifier.padding(top = 4.dp)
                             )
                         }
@@ -147,7 +147,7 @@ fun ManageIngredientsScreen(viewModel: ManageIngredientsViewModel, onBack: () ->
     itemToDelete?.let { item ->
         AlertDialog(
             onDismissRequest = { itemToDelete = null },
-            title = { Text("Borrar \"${item.name}\"") },
+            title = { Text(L10n.str(R.string.delete_quoted_x, item.name)) },
             text = { Text(L10n.str(R.string.sure_want_delete_cant_undone)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.delete(item); itemToDelete = null }) {
@@ -172,7 +172,7 @@ fun ManageIngredientsScreen(viewModel: ManageIngredientsViewModel, onBack: () ->
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(selected = item.categoryId == null, onClick = { viewModel.changeCategory(item, null); itemForCategory = null })
-                        Text("Sin categoría", modifier = Modifier.padding(start = 8.dp))
+                        Text(L10n.str(R.string.uncategorized), modifier = Modifier.padding(start = 8.dp))
                     }
                     categories.forEach { category ->
                         Row(

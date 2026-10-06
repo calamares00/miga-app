@@ -48,7 +48,7 @@ fun ManageCatalogScreen(
     onAdd: (String) -> Unit,
     onRename: (CatalogItem, String) -> Unit,
     onDelete: (CatalogItem) -> Unit,
-    usageLabel: (Int) -> String = { count -> if (count == 1) "1 receta" else "$count recetas" }
+    usageLabel: (Int) -> String = { count -> if (count == 1) L10n.str(R.string.recipe_count_one) else L10n.str(R.string.recipe_count_many, count) }
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var itemToRename by remember { mutableStateOf<CatalogItem?>(null) }
@@ -117,7 +117,7 @@ fun ManageCatalogScreen(
     itemToDelete?.let { item ->
         AlertDialog(
             onDismissRequest = { itemToDelete = null },
-            title = { Text("Borrar \"${item.name}\"") },
+            title = { Text(L10n.str(R.string.delete_quoted_x, item.name)) },
             text = { Text(L10n.str(R.string.sure_want_delete_cant_undone)) },
             confirmButton = {
                 TextButton(onClick = { onDelete(item); itemToDelete = null }) {

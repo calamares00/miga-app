@@ -173,7 +173,7 @@ fun RecipeListScreen(
                     actions = {
                         Box {
                             IconButton(onClick = { showViewModeMenu = true }) {
-                                Icon(viewModeIcon(viewMode), contentDescription = "Vista: ${viewMode.label}")
+                                Icon(viewModeIcon(viewMode), contentDescription = L10n.str(R.string.view_x, viewMode.label))
                             }
                             DropdownMenu(expanded = showViewModeMenu, onDismissRequest = { showViewModeMenu = false }) {
                                 RecipeListViewMode.entries.forEach { mode ->
