@@ -56,7 +56,7 @@ ingredient "$ingredientName" (because they do not have it, cannot eat it or want
 Suggest between 2 and 4 reasonable substitutes for that ingredient IN THE CONTEXT of this specific
 recipe (the same substitute may not work the same in a sponge cake as in a savoury sauce).
 
-Return ONLY a JSON object with exactly this format, with no explanations or extra text:
+Return ONLY a compact JSON object (no indentation or line breaks) with exactly this format, with no explanations or extra text:
 {
   "substitutions": [
     { "substitute": "string, name of the substitute", "notes": "string, 1 sentence: ratio and what changes (flavour, texture...)" }

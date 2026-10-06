@@ -47,7 +47,7 @@ $ingredientsText
 Method:
 $stepsText
 
-Return ONLY a JSON object with exactly this format, with no explanations or extra text, with the
+Return ONLY a compact JSON object (no indentation or line breaks) with exactly this format, with no explanations or extra text, with the
 estimate PER SERVING (the recipe total divided by $servings, not the total):
 { "caloriesPerServing": integer, "proteinGrams": number, "carbsGrams": number, "fatGrams": number }
 This is a rough estimate based on typical ingredients, not an exact lab analysis; if an ingredient

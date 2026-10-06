@@ -43,9 +43,16 @@ suspend fun <T> SettingsRepository.runAi(
 
     val failures = mutableListOf<Pair<AiCandidate, String>>()
     for (candidate in usable) {
-        val result = call(candidate)
-        val reason = errorOf(result) ?: return result
+        var result = call(candidate)
+        var reason = errorOf(result) ?: return result
         if (!ErrorDetail.isAiError(reason)) return result
+        // An answer that is not valid JSON is often a one-off (a cut or malformed answer), so the
+        // same model gets a second chance before moving on to the next provider.
+        if (ErrorDetail.summary(reason) == L10n.str(R.string.ai_error_bad_response)) {
+            result = call(candidate)
+            reason = errorOf(result) ?: return result
+            if (!ErrorDetail.isAiError(reason)) return result
+        }
         failures += candidate to reason
     }
     if (failures.size == 1) return error(failures.single().second)

@@ -83,7 +83,12 @@ internal object AnthropicTransport : AiTransport {
             }
             val decoded = aiJson.decodeFromString(AnthropicResponse.serializer(), response.body)
             val text = decoded.content.firstOrNull { it.type == "text" }?.text
-            if (text.isNullOrBlank()) AiText.Error(describeIncomplete(decoded.stopReason)) else AiText.Success(text)
+            // An answer cut off by the output limit is unusable (half a JSON), so it counts as a failure.
+            if (text.isNullOrBlank() || decoded.stopReason == "max_tokens") {
+                AiText.Error(describeIncomplete(decoded.stopReason))
+            } else {
+                AiText.Success(text)
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

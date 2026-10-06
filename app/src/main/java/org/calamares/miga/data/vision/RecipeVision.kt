@@ -82,7 +82,7 @@ internal fun recipeExtractionPrompt(): String = """
 You are an assistant that transcribes cooking recipes from photos (of a cookbook, a magazine or a
 handwritten recipe, sometimes with rotated text or columns).
 
-Return ONLY a JSON object with exactly this format, with no explanations or extra text:
+Return ONLY a compact JSON object (no indentation or line breaks) with exactly this format, with no explanations or extra text:
 ${RECIPE_JSON_FORMAT.dropLast(2)},
   "dishPhotos": [ { "image": number, "box": [ymin, xmin, ymax, xmax] } ]
 }

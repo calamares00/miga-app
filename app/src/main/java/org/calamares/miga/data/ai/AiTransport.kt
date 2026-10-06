@@ -1,7 +1,17 @@
 package org.calamares.miga.data.ai
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.StructureKind
+import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -48,9 +58,80 @@ suspend fun AiCandidate.complete(request: AiRequest): AiText =
  */
 internal val aiJson = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
-/** Decodes the JSON object contained in a model answer, ignoring any text around it. */
-internal fun <T> decodeAiJson(serializer: KSerializer<T>, text: String): T =
-    aiJson.decodeFromString(serializer, extractJsonObject(text))
+/**
+ * Decodes the JSON object contained in a model answer, ignoring any text around it.
+ *
+ * Values are first adapted to the types [serializer] expects, because models do not always follow
+ * the format: decimals in whole-number fields ("prepTimeMinutes": 1.25), numbers sent as text
+ * ("quantity": "1/2"), a number where a text is expected or a nullable field left out.
+ */
+internal fun <T> decodeAiJson(serializer: KSerializer<T>, text: String): T {
+    val tree = aiJson.parseToJsonElement(extractJsonObject(text))
+    return aiJson.decodeFromJsonElement(serializer, coerceToDescriptor(tree, serializer.descriptor))
+}
+
+/** Rewrites [element] so its primitive values match the kinds described by [descriptor]. */
+@OptIn(ExperimentalSerializationApi::class)
+internal fun coerceToDescriptor(element: JsonElement, descriptor: SerialDescriptor): JsonElement =
+    when (descriptor.kind) {
+        StructureKind.CLASS, StructureKind.OBJECT -> (element as? JsonObject)?.let { obj ->
+            val fields = obj.mapValues { (key, value) ->
+                val index = descriptor.getElementIndex(key)
+                if (index == CompositeDecoder.UNKNOWN_NAME) value else coerceToDescriptor(value, descriptor.getElementDescriptor(index))
+            }.toMutableMap()
+            // A nullable field without a default that the model left out is read as null.
+            for (index in 0 until descriptor.elementsCount) {
+                val name = descriptor.getElementName(index)
+                if (name !in fields && descriptor.getElementDescriptor(index).isNullable && !descriptor.isElementOptional(index)) {
+                    fields[name] = JsonNull
+                }
+            }
+            JsonObject(fields)
+        } ?: element
+        StructureKind.LIST -> (element as? JsonArray)?.let { array ->
+            JsonArray(array.map { coerceToDescriptor(it, descriptor.getElementDescriptor(0)) })
+        } ?: element
+        PrimitiveKind.INT, PrimitiveKind.LONG, PrimitiveKind.SHORT, PrimitiveKind.BYTE ->
+            coerceNumber(element, descriptor) { value -> JsonPrimitive(Math.round(value)) }
+        PrimitiveKind.DOUBLE, PrimitiveKind.FLOAT ->
+            coerceNumber(element, descriptor) { value -> JsonPrimitive(value) }
+        PrimitiveKind.STRING -> (element as? JsonPrimitive)?.takeIf { !it.isString && element !is JsonNull }
+            ?.let { JsonPrimitive(it.content) } ?: element
+        else -> element
+    }
+
+/**
+ * Turns a numeric value sent as a decimal or as text into [build]'s number. Text that is not a
+ * number becomes null when the field allows it and is left untouched otherwise.
+ */
+@OptIn(ExperimentalSerializationApi::class)
+private fun coerceNumber(element: JsonElement, descriptor: SerialDescriptor, build: (Double) -> JsonPrimitive): JsonElement {
+    val primitive = element as? JsonPrimitive ?: return element
+    if (primitive is JsonNull) return element
+    val value = parseLooseNumber(primitive.content)
+    return when {
+        value != null && value.isFinite() -> build(value)
+        descriptor.isNullable -> JsonNull
+        else -> element
+    }
+}
+
+/** Parses "12", "1.5", "1,5", "1/2" or "1 1/2"; null for anything else. */
+internal fun parseLooseNumber(text: String): Double? {
+    val trimmed = text.trim().replace(',', '.')
+    trimmed.toDoubleOrNull()?.let { return it }
+    val mixed = Regex("""^(\d+)\s+(\d+)/(\d+)$""").matchEntire(trimmed)
+    if (mixed != null) {
+        val (whole, numerator, denominator) = mixed.destructured
+        if (denominator.toDouble() != 0.0) return whole.toDouble() + numerator.toDouble() / denominator.toDouble()
+    }
+    val fraction = Regex("""^(\d+(?:\.\d+)?)/(\d+(?:\.\d+)?)$""").matchEntire(trimmed)
+    if (fraction != null) {
+        val (numerator, denominator) = fraction.destructured
+        if (denominator.toDouble() != 0.0) return numerator.toDouble() / denominator.toDouble()
+    }
+    return null
+}
 
 /**
  * Returns the outermost `{...}` block of [raw]. Models sometimes wrap the JSON in Markdown fences
