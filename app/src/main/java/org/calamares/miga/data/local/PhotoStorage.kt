@@ -75,6 +75,29 @@ object PhotoStorage {
         return downscaleIfNeeded(upright, MAX_PHOTO_DIMENSION)
     }
 
+    /**
+     * Decodifica una imagen enderezada (EXIF) con su lado mayor como mucho [maxDimension]
+     * (aproximado: usa inSampleSize para no cargar en memoria fotos de 50 MP a tamaño completo).
+     * Mantiene la proporción, así que coordenadas normalizadas sobre la versión enviada a la IA
+     * valen igual aquí.
+     */
+    fun loadUprightSampled(context: Context, uri: Uri, maxDimension: Int): Bitmap? {
+        return try {
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+            var sample = 1
+            while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= maxDimension) sample *= 2
+            val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
+                ?: return null
+            rotateBitmap(decoded, readExifRotationDegrees(bytes))
+        } catch (e: Exception) {
+            null
+        } catch (e: OutOfMemoryError) {
+            null
+        }
+    }
+
     /** Decodifica una imagen y corrige su orientación EXIF, sin reducir aún su tamaño. */
     private fun decodeUpright(context: Context, uri: Uri): Bitmap? {
         return try {

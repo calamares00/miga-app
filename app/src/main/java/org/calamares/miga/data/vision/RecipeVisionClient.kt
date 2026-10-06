@@ -26,8 +26,18 @@ data class RecipeVisionResultDto(
     val ingredientGroups: List<IngredientGroupDto> = emptyList(),
     val stepGroups: List<StepGroupDto> = emptyList(),
     val tags: List<String> = emptyList(),
-    val utensils: List<String> = emptyList()
+    val utensils: List<String> = emptyList(),
+    /** Fotos del plato terminado encontradas en las imágenes (solo al importar desde fotos). */
+    val dishPhotos: List<DishPhotoDto> = emptyList()
 )
+
+/**
+ * Zona de una de las imágenes enviadas donde aparece una fotografía del plato: [image] es el
+ * índice de la imagen (empezando en 0) y [box] es `[ymin, xmin, ymax, xmax]` normalizado de 0 a
+ * 1000 (la convención nativa de Gemini para detección de objetos).
+ */
+@Serializable
+data class DishPhotoDto(val image: Int = 0, val box: List<Int> = emptyList())
 
 sealed interface RecipeVisionResult {
     data class Success(val recipe: RecipeVisionResultDto) : RecipeVisionResult
@@ -67,7 +77,8 @@ receta manuscrita, a veces con el texto girado o en columnas). Devuelve
   "ingredientGroups": [ { "name": "string o null", "ingredients": [ { "name": "string", "quantity": number o null, "unit": "string o null" } ] } ],
   "stepGroups": [ { "name": "string o null", "instructions": ["string", ...] } ],
   "tags": ["string", ...],
-  "utensils": ["string", ...]
+  "utensils": ["string", ...],
+  "dishPhotos": [ { "image": number, "box": [ymin, xmin, ymax, xmax] } ]
 }
 Separa cada paso de la elaboración como una instrucción independiente del array "instructions", en
 el mismo orden en que aparecen en el texto. Si no puedes determinar algún dato, usa null (o una
@@ -75,6 +86,13 @@ lista vacía) en vez de inventarlo. Si no reconoces ninguna receta en la imagen,
 Si se incluyen varias imágenes en esta petición, todas son páginas o fragmentos de la MISMA
 receta (por ejemplo, fotos consecutivas de un libro de cocina); combina la información de todas
 ellas en un único resultado, en el orden en que aparecen las imágenes.
+En "dishPhotos" indica dónde hay fotografías del PLATO TERMINADO (la foto que ilustra la receta):
+"image" es el índice de la imagen empezando en 0 y "box" son las coordenadas [ymin, xmin, ymax,
+xmax] normalizadas de 0 a 1000, ajustadas a la fotografía por dentro, sin márgenes de página,
+marcos, bordes, texto, pies de foto ni números de página. Si la imagen entera es una foto del plato
+(sin texto de receta), usa la caja que encuadra el plato. No incluyas fotos de pasos intermedios,
+ingredientes sueltos, personas ni ilustraciones decorativas. Como máximo 3; si no hay ninguna,
+deja la lista vacía.
 """.trimIndent() + transcriptionLanguageInstruction()
 
 /**

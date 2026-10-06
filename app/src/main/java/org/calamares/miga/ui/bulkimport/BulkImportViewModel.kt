@@ -1,5 +1,9 @@
 package org.calamares.miga.ui.bulkimport
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import org.calamares.miga.data.model.RecipePhoto
+import org.calamares.miga.data.local.DishPhotoCropper
 import org.calamares.miga.data.ai.aiCandidates
 import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.L10n
@@ -80,7 +84,11 @@ class BulkImportViewModel(
             ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
         when (result) {
             is RecipeVisionResult.Success -> {
+                val dishPhotoUris = withContext(Dispatchers.IO) {
+                    DishPhotoCropper.extract(context.applicationContext, listOf(uri), result.recipe.dishPhotos)
+                }
                 val draft = result.recipe.toRecipeDraft(bookId)
+                    .copy(photos = dishPhotoUris.mapIndexed { i, photoUri -> RecipePhoto(photoUri, isCover = i == 0) })
                 val id = repository.saveRecipe(draft)
                 updateRow(index) { it.copy(state = BulkImportRowState.Success(id, draft.name)) }
             }

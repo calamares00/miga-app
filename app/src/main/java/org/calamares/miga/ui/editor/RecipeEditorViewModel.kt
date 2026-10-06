@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.editor
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import org.calamares.miga.data.local.DishPhotoCropper
 import org.calamares.miga.data.ai.aiCandidates
 import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.L10n
@@ -142,9 +145,12 @@ class RecipeEditorViewModel(
             }
             // Si alguna página falla al leerse pero otras sí, seguimos con las que se pudieron
             // leer; solo es un error bloqueante si fallan todas.
-            val images = photoUris.mapNotNull { uri ->
-                PhotoStorage.readResizedJpegBytes(context, uri)?.let { VisionImageInput(it, "image/jpeg") }
+            // Se guarda de qué uri sale cada imagen enviada: los índices de "dishPhotos" de la IA
+            // se refieren a las imágenes enviadas, no a todas las elegidas.
+            val readable = photoUris.mapNotNull { uri ->
+                PhotoStorage.readResizedJpegBytes(context, uri)?.let { uri to VisionImageInput(it, "image/jpeg") }
             }
+            val images = readable.map { it.second }
             if (images.isEmpty()) {
                 _visionState.value = VisionState.Error(L10n.str(R.string.no_pudo_leer_ninguna_fotos))
                 return@launch
@@ -158,6 +164,11 @@ class RecipeEditorViewModel(
             when (result) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
+                    // Fotos del plato localizadas por la IA: recortadas, limpias y añadidas a la ficha.
+                    val dishPhotoUris = withContext(Dispatchers.IO) {
+                        DishPhotoCropper.extract(appContext, readable.map { it.first }, result.recipe.dishPhotos)
+                    }
+                    dishPhotoUris.forEach { addPhoto(it) }
                     _visionState.value = VisionState.Loaded
                 }
                 is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(result.reason)
