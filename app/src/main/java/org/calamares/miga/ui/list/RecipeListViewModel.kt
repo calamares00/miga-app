@@ -21,6 +21,7 @@ import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.formatIngredientText
 import org.calamares.miga.data.model.toDraft
 import org.calamares.miga.data.local.PhotoStorage
+import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.ai.aiCandidates
 import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.data.health.RecipeHealthResult
@@ -258,40 +259,42 @@ class RecipeListViewModel(
             val doNutrition = settingsRepository.observeAiNutritionEnabled().first()
             onMessage(L10n.str(R.string.bulk_ai_started_n, recipes.size))
             var failed = 0
-            recipes.forEach { recipe ->
-                val ingredientsText = recipe.ingredientGroups.joinToString("\n") { group ->
-                    group.name?.let { "$it:\n" }.orEmpty() + group.ingredients.joinToString("\n") {
-                        "- " + formatIngredientText(it.name, it.quantity, it.unit)
+            AiKeepAlive.hold {
+                recipes.forEach { recipe ->
+                    val ingredientsText = recipe.ingredientGroups.joinToString("\n") { group ->
+                        group.name?.let { "$it:\n" }.orEmpty() + group.ingredients.joinToString("\n") {
+                            "- " + formatIngredientText(it.name, it.quantity, it.unit)
+                        }
                     }
-                }
-                val stepsText = recipe.stepGroups.joinToString("\n") { group ->
-                    group.name?.let { "$it:\n" }.orEmpty() + group.instructions.joinToString("\n") { "- $it" }
-                }
-                if (doHealth) {
-                    val result = settingsRepository.runAi<RecipeHealthResult>(
-                        errorOf = { (it as? RecipeHealthResult.Error)?.reason },
-                        error = { RecipeHealthResult.Error(it) }
-                    ) { ai -> ai.analyzeHealthiness(ingredientsText, stepsText) }
-                    if (result is RecipeHealthResult.Success) {
-                        val fingerprint = repository.computeHealthFingerprint(recipe.ingredientGroups, recipe.stepGroups)
-                        repository.saveHealthRating(recipe.id, result.colorLevel, result.description, fingerprint, System.currentTimeMillis())
-                    } else {
-                        failed++
+                    val stepsText = recipe.stepGroups.joinToString("\n") { group ->
+                        group.name?.let { "$it:\n" }.orEmpty() + group.instructions.joinToString("\n") { "- $it" }
                     }
-                }
-                if (doNutrition) {
-                    val result = settingsRepository.runAi<RecipeNutritionResult>(
-                        errorOf = { (it as? RecipeNutritionResult.Error)?.reason },
-                        error = { RecipeNutritionResult.Error(it) }
-                    ) { ai -> ai.analyzeNutrition(ingredientsText, stepsText, recipe.servings) }
-                    if (result is RecipeNutritionResult.Success) {
-                        val fingerprint = repository.computeNutritionFingerprint(recipe.ingredientGroups, recipe.stepGroups)
-                        repository.saveNutritionInfo(
-                            recipe.id, result.caloriesPerServing, result.proteinGrams, result.carbsGrams, result.fatGrams,
-                            fingerprint, System.currentTimeMillis()
-                        )
-                    } else {
-                        failed++
+                    if (doHealth) {
+                        val result = settingsRepository.runAi<RecipeHealthResult>(
+                            errorOf = { (it as? RecipeHealthResult.Error)?.reason },
+                            error = { RecipeHealthResult.Error(it) }
+                        ) { ai -> ai.analyzeHealthiness(ingredientsText, stepsText) }
+                        if (result is RecipeHealthResult.Success) {
+                            val fingerprint = repository.computeHealthFingerprint(recipe.ingredientGroups, recipe.stepGroups)
+                            repository.saveHealthRating(recipe.id, result.colorLevel, result.description, fingerprint, System.currentTimeMillis())
+                        } else {
+                            failed++
+                        }
+                    }
+                    if (doNutrition) {
+                        val result = settingsRepository.runAi<RecipeNutritionResult>(
+                            errorOf = { (it as? RecipeNutritionResult.Error)?.reason },
+                            error = { RecipeNutritionResult.Error(it) }
+                        ) { ai -> ai.analyzeNutrition(ingredientsText, stepsText, recipe.servings) }
+                        if (result is RecipeNutritionResult.Success) {
+                            val fingerprint = repository.computeNutritionFingerprint(recipe.ingredientGroups, recipe.stepGroups)
+                            repository.saveNutritionInfo(
+                                recipe.id, result.caloriesPerServing, result.proteinGrams, result.carbsGrams, result.fatGrams,
+                                fingerprint, System.currentTimeMillis()
+                            )
+                        } else {
+                            failed++
+                        }
                     }
                 }
             }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.app.Application
 import androidx.room.Room
 import org.calamares.miga.crash.CrashReporter
+import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.local.AppDatabase
 import org.calamares.miga.data.local.MIGRATION_4_5
 import org.calamares.miga.data.local.MIGRATION_5_6
@@ -66,6 +67,7 @@ class MigaApp : Application() {
         L10n.init(this)
         // Installed first so that a crash during the rest of the startup is also captured.
         CrashReporter.install(this)
+        AiKeepAlive.init(this)
         applicationScope.launch {
             repository.ensurePhotoUids()
             val seedLanguage = settingsRepository.seedLanguage(L10n.locale().language)

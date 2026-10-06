@@ -1,14 +1,13 @@
 # Add project specific ProGuard rules here.
 
-# Trazas de pila legibles a partir de logcat/reportes copiados por el usuario (la app ya tiene un
-# diálogo para copiar el error completo de la IA): se mantienen los números de línea, pero se
-# oculta el nombre real del fichero fuente.
+# Readable stack traces from logcat or reports copied by the user: line numbers are kept and the
+# real source file name is hidden.
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
 
-# kotlinx.serialization: los serializadores se generan en tiempo de compilación (sin reflexión),
-# pero R8 puede eliminar por "no usados" el companion/objeto que expone serializer() si nada más
-# lo referencia directamente. Reglas oficiales del proyecto:
+# kotlinx.serialization: serializers are generated at compile time (no reflection), but R8 may
+# remove the companion or object exposing serializer() as unused when nothing else references it.
+# Official rules of the project:
 # https://github.com/Kotlin/kotlinx.serialization/blob/master/rules/common.pro
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.AnnotationsKt

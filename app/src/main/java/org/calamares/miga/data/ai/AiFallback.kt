@@ -1,10 +1,13 @@
 package org.calamares.miga.data.ai
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.support.ErrorDetail
+
+private const val NETWORK_RETRY_DELAY_MILLIS = 3000L
 
 /** A provider that is ready to use: it has both an API key and a model. */
 data class AiCandidate(val provider: AiProvider, val apiKey: String, val model: String)
@@ -42,19 +45,25 @@ suspend fun <T> SettingsRepository.runAi(
     if (usable.isEmpty()) return error(L10n.str(R.string.ai_no_image_provider))
 
     val failures = mutableListOf<Pair<AiCandidate, String>>()
-    for (candidate in usable) {
-        var result = call(candidate)
-        var reason = errorOf(result) ?: return result
-        if (!ErrorDetail.isAiError(reason)) return result
-        // An answer that is not valid JSON is often a one-off (a cut or malformed answer), so the
-        // same model gets a second chance before moving on to the next provider.
-        if (ErrorDetail.summary(reason) == L10n.str(R.string.ai_error_bad_response)) {
-            result = call(candidate)
-            reason = errorOf(result) ?: return result
-            if (!ErrorDetail.isAiError(reason)) return result
+    AiKeepAlive.hold {
+        for (candidate in usable) {
+            var result = call(candidate)
+            var reason = errorOf(result) ?: return@hold result
+            if (!ErrorDetail.isAiError(reason)) return@hold result
+            // An unreadable answer (cut or malformed) is often a one-off, and a network error may
+            // come from switching between Wi-Fi and mobile data: the same model gets a second
+            // chance before moving on to the next provider.
+            val summary = ErrorDetail.summary(reason)
+            if (summary == L10n.str(R.string.ai_error_bad_response) || summary == L10n.str(R.string.ai_error_network)) {
+                if (summary == L10n.str(R.string.ai_error_network)) delay(NETWORK_RETRY_DELAY_MILLIS)
+                result = call(candidate)
+                reason = errorOf(result) ?: return@hold result
+                if (!ErrorDetail.isAiError(reason)) return@hold result
+            }
+            failures += candidate to reason
         }
-        failures += candidate to reason
-    }
+        null
+    }?.let { return it }
     if (failures.size == 1) return error(failures.single().second)
     val detail = failures.joinToString("\n\n") { (candidate, reason) ->
         "— ${candidate.provider.label} · ${candidate.model}\n${ErrorDetail.summary(reason)}" +
