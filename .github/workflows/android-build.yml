@@ -277,20 +277,40 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    # Publishes run one at a time: two pushes in a row used to publish at the same moment and the
+    # older build could end up overwriting the newer one.
+    concurrency:
+      group: publish-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       # Besides this run's own artifact (uploaded by build), a single "beta-latest" Release is
       # published or updated (to test development builds by installing the APK by hand) with the
       # latest debug APK from any development branch. The tag is fixed on purpose: every push
       # overwrites it, so releases do not pile up.
-      - name: Download beta dist
+      # A run whose commit is no longer the branch head must not replace a newer build.
+      - name: Check this is the latest commit of the branch
+        id: latest
         if: needs.build.outputs.mode == 'dev_debug'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          head=$(gh api "repos/${{ github.repository }}/commits/${{ github.ref_name }}" --jq .sha || echo "")
+          if [ -z "$head" ] || [ "$head" = "${{ github.sha }}" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "The branch already points to $head; beta-latest is left as it is."
+          fi
+
+      - name: Download beta dist
+        if: needs.build.outputs.mode == 'dev_debug' && steps.latest.outputs.publish == 'true'
         uses: actions/download-artifact@v4
         with:
           name: miga-beta-dist-${{ needs.build.outputs.safe_ref }}
           path: dist
 
       - name: Publish beta-latest Release
-        if: needs.build.outputs.mode == 'dev_debug'
+        if: needs.build.outputs.mode == 'dev_debug' && steps.latest.outputs.publish == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: beta-latest
