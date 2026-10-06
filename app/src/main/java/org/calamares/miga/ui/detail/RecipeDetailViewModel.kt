@@ -5,16 +5,16 @@ import org.calamares.miga.data.ai.runAi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.calamares.miga.data.health.RecipeHealthResult
-import org.calamares.miga.data.health.healthClientFor
+import org.calamares.miga.data.health.analyzeHealthiness
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.nutrition.RecipeNutritionResult
-import org.calamares.miga.data.nutrition.nutritionClientFor
+import org.calamares.miga.data.nutrition.analyzeNutrition
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.substitution.IngredientSubstitution
 import org.calamares.miga.data.substitution.SubstitutionResult
-import org.calamares.miga.data.substitution.substitutionClientFor
+import org.calamares.miga.data.substitution.suggestSubstitutes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -100,7 +100,7 @@ class RecipeDetailViewModel(
             val result = settingsRepository.runAi<RecipeHealthResult>(
                 errorOf = { (it as? RecipeHealthResult.Error)?.reason },
                 error = { RecipeHealthResult.Error(it) }
-            ) { ai -> healthClientFor(ai.provider).analyzeHealthiness(ingredientsText, stepsText, ai.apiKey, ai.model) }
+            ) { ai -> ai.analyzeHealthiness(ingredientsText, stepsText) }
             when (result) {
                 null -> _healthState.value = HealthState.NotConfigured
                 is RecipeHealthResult.Success -> {
@@ -152,7 +152,7 @@ class RecipeDetailViewModel(
             val result = settingsRepository.runAi<RecipeNutritionResult>(
                 errorOf = { (it as? RecipeNutritionResult.Error)?.reason },
                 error = { RecipeNutritionResult.Error(it) }
-            ) { ai -> nutritionClientFor(ai.provider).analyzeNutrition(ingredientsText, stepsText, current.servings, ai.apiKey, ai.model) }
+            ) { ai -> ai.analyzeNutrition(ingredientsText, stepsText, current.servings) }
             when (result) {
                 null -> _nutritionState.value = NutritionState.NotConfigured
                 is RecipeNutritionResult.Success -> {
@@ -185,7 +185,7 @@ class RecipeDetailViewModel(
             val result = settingsRepository.runAi<SubstitutionResult>(
                 errorOf = { (it as? SubstitutionResult.Error)?.reason },
                 error = { SubstitutionResult.Error(it) }
-            ) { ai -> substitutionClientFor(ai.provider).suggestSubstitutes(ingredientName, current.name, ai.apiKey, ai.model) }
+            ) { ai -> ai.suggestSubstitutes(ingredientName, current.name) }
             when (result) {
                 null -> _substitutionDialogState.value = SubstitutionDialogState.NotConfigured(ingredientName)
                 is SubstitutionResult.Success ->

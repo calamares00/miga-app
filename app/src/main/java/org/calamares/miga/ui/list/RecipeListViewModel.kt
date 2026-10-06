@@ -24,9 +24,9 @@ import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.ai.aiCandidates
 import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.data.health.RecipeHealthResult
-import org.calamares.miga.data.health.healthClientFor
+import org.calamares.miga.data.health.analyzeHealthiness
 import org.calamares.miga.data.nutrition.RecipeNutritionResult
-import org.calamares.miga.data.nutrition.nutritionClientFor
+import org.calamares.miga.data.nutrition.analyzeNutrition
 import org.calamares.miga.data.model.RecipeFilter
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.data.model.RecipeSummary
@@ -254,7 +254,7 @@ class RecipeListViewModel(
                     val result = settingsRepository.runAi<RecipeHealthResult>(
                         errorOf = { (it as? RecipeHealthResult.Error)?.reason },
                         error = { RecipeHealthResult.Error(it) }
-                    ) { ai -> healthClientFor(ai.provider).analyzeHealthiness(ingredientsText, stepsText, ai.apiKey, ai.model) }
+                    ) { ai -> ai.analyzeHealthiness(ingredientsText, stepsText) }
                     if (result is RecipeHealthResult.Success) {
                         val fingerprint = repository.computeHealthFingerprint(recipe.ingredientGroups, recipe.stepGroups)
                         repository.saveHealthRating(recipe.id, result.colorLevel, result.description, fingerprint, System.currentTimeMillis())
@@ -266,7 +266,7 @@ class RecipeListViewModel(
                     val result = settingsRepository.runAi<RecipeNutritionResult>(
                         errorOf = { (it as? RecipeNutritionResult.Error)?.reason },
                         error = { RecipeNutritionResult.Error(it) }
-                    ) { ai -> nutritionClientFor(ai.provider).analyzeNutrition(ingredientsText, stepsText, recipe.servings, ai.apiKey, ai.model) }
+                    ) { ai -> ai.analyzeNutrition(ingredientsText, stepsText, recipe.servings) }
                     if (result is RecipeNutritionResult.Success) {
                         val fingerprint = repository.computeNutritionFingerprint(recipe.ingredientGroups, recipe.stepGroups)
                         repository.saveNutritionInfo(

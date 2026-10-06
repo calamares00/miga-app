@@ -36,16 +36,16 @@ class MigaApp : Application() {
     val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
             .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18)
-            // Red de seguridad final: si algún día hay un salto de versión sin migración
-            // explícita (o un estado corrupto), no crashea, borra y empieza de cero.
-            .fallbackToDestructiveMigration()
+            // Only databases older than the first migration may be wiped; a missing migration for a
+            // newer version fails loudly instead of silently deleting the user's recipes.
+            .fallbackToDestructiveMigrationFrom(1, 2, 3)
             .build()
     }
 
-    // El callback dispara una subida en segundo plano justo al encolar un cambio (ver
-    // RecipeRepository/triggerBackgroundSync) - complementa el sync automático al abrir la app y
-    // el periódico de SyncWorker, para que los cambios propios lleguen a las demás apps Miga sin
-    // esperar a ninguno de los otros dos disparadores.
+    /**
+     * Every locally queued sync change triggers an immediate background upload, on top of the sync
+     * on app start and the periodic SyncWorker, so changes reach other devices quickly.
+     */
     val repository: RecipeRepository by lazy {
         RecipeRepository(
             database,
@@ -64,7 +64,7 @@ class MigaApp : Application() {
     override fun onCreate() {
         super.onCreate()
         L10n.init(this)
-        // Lo antes posible, para que un fallo durante el resto del arranque también quede recogido.
+        // Installed first so that a crash during the rest of the startup is also captured.
         CrashReporter.install(this)
         applicationScope.launch {
             repository.ensurePhotoUids()
@@ -76,8 +76,10 @@ class MigaApp : Application() {
         SyncWorker.enqueuePeriodic(this)
     }
 
-    /** Best-effort: si falla (sin red, servidor caído), el outbox lo recoge en el siguiente sync
-     *  manual, automático al abrir la app, o periódico (ver SyncWorker) - no hace falta reintentar aquí. */
+    /**
+     * Best effort: if it fails (offline, server down) the outbox is retried by the next manual,
+     * on-start or periodic sync.
+     */
     private fun triggerBackgroundSync(connectionId: Long) {
         applicationScope.launch { syncEngine.syncConnection(this@MigaApp, connectionId) }
     }

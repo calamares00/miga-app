@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.search.DishSearchResult
 import org.calamares.miga.data.search.DishSuggestion
-import org.calamares.miga.data.search.dishSearchClientFor
+import org.calamares.miga.data.search.searchDishes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -38,7 +38,7 @@ class DishSearchViewModel(private val settingsRepository: SettingsRepository) : 
             val result = settingsRepository.runAi<DishSearchResult>(
                 errorOf = { (it as? DishSearchResult.Error)?.reason },
                 error = { DishSearchResult.Error(it) }
-            ) { ai -> dishSearchClientFor(ai.provider).searchDishes(trimmed, ai.apiKey, ai.model) }
+            ) { ai -> ai.searchDishes(trimmed) }
             _state.value = when (result) {
                 null -> DishSearchUiState.NotConfigured
                 is DishSearchResult.Success ->

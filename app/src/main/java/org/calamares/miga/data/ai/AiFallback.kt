@@ -5,12 +5,11 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.support.ErrorDetail
-import org.calamares.miga.data.vision.VisionProviderType
 
-/** Un proveedor listo para usar: tiene clave y modelo. */
-data class AiCandidate(val provider: VisionProviderType, val apiKey: String, val model: String)
+/** A provider that is ready to use: it has both an API key and a model. */
+data class AiCandidate(val provider: AiProvider, val apiKey: String, val model: String)
 
-/** Proveedores con clave y modelo, en el orden de prioridad elegido en Ajustes. */
+/** Configured providers, in the priority order chosen in Settings. */
 suspend fun SettingsRepository.aiCandidates(): List<AiCandidate> =
     observeProviderOrder().first().mapNotNull { provider ->
         val key = apiKeyFor(provider)
@@ -19,16 +18,17 @@ suspend fun SettingsRepository.aiCandidates(): List<AiCandidate> =
     }
 
 /**
- * Ejecuta una función de IA probando los proveedores configurados en orden de prioridad:
- * si uno falla por un error del proveedor (cuota, clave, red, respuesta no válida...) se pasa al
- * siguiente. Los resultados "normales" (p. ej. "no se ha reconocido ninguna receta") no provocan
- * reintento, porque otro modelo diría lo mismo.
+ * Runs an AI operation trying the configured providers in priority order.
  *
- * - [needsImages]: se saltan los proveedores cuyo modelo no puede leer imágenes.
- * - [errorOf]: extrae el motivo si [T] es un error, o null si es un éxito.
- * - [error]: construye un [T] de error (para "ningún proveedor lee imágenes" o el resumen final).
+ * When a provider fails with a provider error (quota, key, network, unreadable answer...) the next
+ * one is tried. Regular results such as "no recipe was found" are returned as they are, because
+ * another model would most likely say the same.
  *
- * Devuelve null si no hay ningún proveedor configurado.
+ * @param needsImages skips providers whose model cannot read images.
+ * @param errorOf returns the error reason when [T] is an error, or null when it is a success.
+ * @param error builds an error [T], used when no provider can read images and for the final
+ *   summary when every provider failed.
+ * @return the first non-provider-error result, or null when no provider is configured.
  */
 suspend fun <T> SettingsRepository.runAi(
     needsImages: Boolean = false,

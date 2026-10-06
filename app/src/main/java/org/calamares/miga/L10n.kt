@@ -10,7 +10,7 @@ import androidx.annotation.StringRes
 import java.util.Locale
 import kotlin.system.exitProcess
 
-/** Idioma de la interfaz elegido en Ajustes. [tag] null = el del sistema. */
+/** UI language chosen in Settings. A null [tag] means "follow the system language". */
 enum class AppLanguage(val tag: String?) {
     SYSTEM(null),
     SPANISH("es"),
@@ -22,11 +22,12 @@ enum class AppLanguage(val tag: String?) {
 }
 
 /**
- * Textos de la app en el idioma elegido. Todos los textos visibles viven en strings.xml (inglés por
- * defecto en values/, español en values-es/) y se leen con [str], que funciona en cualquier sitio
- * (composables, ViewModels, clientes de red...). El idioma se guarda en SharedPreferences para poder
- * leerlo de forma síncrona al arrancar; al cambiarlo se reinicia la app ([restart]) para que todo,
- * incluidos los textos ya calculados en enums y objetos, salga en el idioma nuevo.
+ * Access to the app texts in the chosen language.
+ *
+ * Every visible text lives in strings.xml (English in values/, Spanish in values-es/) and is read
+ * through [str], which works anywhere: composables, ViewModels or network clients. The language is
+ * stored in SharedPreferences so it can be read synchronously at startup. Changing it restarts the
+ * process so that texts already computed in enums and objects are rebuilt in the new language.
  */
 object L10n {
     private const val PREFS = "miga_locale"
@@ -35,7 +36,7 @@ object L10n {
     private lateinit var app: Context
     private var forcedResources: Resources? = null
 
-    /** Llamar lo antes posible (Application.attachBaseContext). */
+    /** Must be called as early as possible (Application.attachBaseContext). */
     fun init(context: Context) {
         app = context.applicationContext ?: context
         forcedResources = language(context).tag?.let { localized(context, Locale.forLanguageTag(it)).resources }
@@ -44,23 +45,27 @@ object L10n {
     fun language(context: Context): AppLanguage =
         AppLanguage.fromTag(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_LANGUAGE, null))
 
-    /** Guarda el idioma y reinicia la app para aplicarlo. */
+    /** Stores the language and restarts the app to apply it. */
     fun setLanguage(activity: Activity, language: AppLanguage) {
         activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_LANGUAGE, language.tag).commit()
         restart(activity)
     }
 
-    /** Contexto con el idioma elegido aplicado (para Activity.attachBaseContext); sin cambios si es el del sistema. */
+    /**
+     * Returns [base] with the chosen language applied (for Activity.attachBaseContext), or [base]
+     * itself when following the system.
+     */
     fun wrap(base: Context): Context {
         val tag = language(base).tag ?: return base
         return localized(base, Locale.forLanguageTag(tag))
     }
 
-    /** Idioma efectivo de la app (el elegido en Ajustes o el del sistema). */
+    /** Effective app locale: the one chosen in Settings or the system one. */
     fun locale(): Locale = Locale.getDefault()
 
     fun str(@StringRes id: Int, vararg args: Any?): String {
-        // Tests JVM (sin Android): texto estable a partir del id para poder comparar resultados.
+        // Plain JVM tests have no Android context: return a stable text built from the id so
+        // results can still be compared.
         if (!::app.isInitialized) return "#$id" + args.joinToString(prefix = if (args.isEmpty()) "" else ":", separator = ",")
         val res = resources()
         return if (args.isEmpty()) res.getString(id) else res.getString(id, *args)

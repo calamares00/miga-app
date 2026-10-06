@@ -59,9 +59,9 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.ai.OpenRouterModel
 import org.calamares.miga.data.ai.OpenRouterModels
-import org.calamares.miga.data.vision.ANTHROPIC_MODELS
-import org.calamares.miga.data.vision.GEMINI_MODELS
-import org.calamares.miga.data.vision.VisionProviderType
+import org.calamares.miga.data.ai.ANTHROPIC_MODELS
+import org.calamares.miga.data.ai.GEMINI_MODELS
+import org.calamares.miga.data.ai.AiProvider
 import org.calamares.miga.ui.components.ReorderableColumn
 import org.calamares.miga.ui.components.moved
 
@@ -79,7 +79,7 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
     val openRouterApiKey by viewModel.openRouterApiKey.collectAsState()
     val openRouterModel by viewModel.openRouterModel.collectAsState()
     val openRouterModelImages by viewModel.openRouterModelImages.collectAsState()
-    var expanded by rememberSaveable { mutableStateOf<VisionProviderType?>(null) }
+    var expanded by rememberSaveable { mutableStateOf<AiProvider?>(null) }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
@@ -96,11 +96,11 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
         )
         ReorderableColumn(items = order, onReorder = { viewModel.setProviderOrder(it) }) { provider, index, dragHandle, isDragging ->
             val status = when (provider) {
-                VisionProviderType.GEMINI ->
+                AiProvider.GEMINI ->
                     if (geminiApiKey.isBlank()) L10n.str(R.string.ai_provider_no_key) else geminiModel
-                VisionProviderType.ANTHROPIC ->
+                AiProvider.ANTHROPIC ->
                     if (anthropicApiKey.isBlank()) L10n.str(R.string.ai_provider_no_key) else anthropicModel
-                VisionProviderType.OPENROUTER -> when {
+                AiProvider.OPENROUTER -> when {
                     openRouterApiKey.isBlank() -> L10n.str(R.string.ai_provider_no_key)
                     openRouterModel.isBlank() -> L10n.str(R.string.ai_provider_no_model)
                     else -> buildList {
@@ -111,9 +111,9 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                 }
             }
             val active = when (provider) {
-                VisionProviderType.GEMINI -> geminiApiKey.isNotBlank()
-                VisionProviderType.ANTHROPIC -> anthropicApiKey.isNotBlank()
-                VisionProviderType.OPENROUTER -> openRouterApiKey.isNotBlank() && openRouterModel.isNotBlank()
+                AiProvider.GEMINI -> geminiApiKey.isNotBlank()
+                AiProvider.ANTHROPIC -> anthropicApiKey.isNotBlank()
+                AiProvider.OPENROUTER -> openRouterApiKey.isNotBlank() && openRouterModel.isNotBlank()
             }
             ProviderRow(
                 provider = provider,
@@ -128,7 +128,7 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                 onMoveDown = if (index < order.lastIndex) ({ viewModel.setProviderOrder(order.moved(index, index + 1)) }) else null
             ) {
                 when (provider) {
-                    VisionProviderType.GEMINI -> {
+                    AiProvider.GEMINI -> {
                         ApiKeyField(
                             value = geminiApiKey,
                             onValueChange = { viewModel.setGeminiApiKey(it) },
@@ -143,7 +143,7 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                             onSelect = { viewModel.setGeminiModel(it) }
                         )
                     }
-                    VisionProviderType.ANTHROPIC -> {
+                    AiProvider.ANTHROPIC -> {
                         ApiKeyField(
                             value = anthropicApiKey,
                             onValueChange = { viewModel.setAnthropicApiKey(it) },
@@ -158,7 +158,7 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                             onSelect = { viewModel.setAnthropicModel(it) }
                         )
                     }
-                    VisionProviderType.OPENROUTER -> {
+                    AiProvider.OPENROUTER -> {
                         ApiKeyField(
                             value = openRouterApiKey,
                             onValueChange = { viewModel.setOpenRouterApiKey(it) },
@@ -184,7 +184,7 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
 
 @Composable
 private fun ProviderRow(
-    provider: VisionProviderType,
+    provider: AiProvider,
     position: Int,
     status: String,
     active: Boolean,

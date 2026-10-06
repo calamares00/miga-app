@@ -1,11 +1,6 @@
 package org.calamares.miga.data.ai
 
 import kotlinx.serialization.json.Json
-import org.calamares.miga.data.vision.AnthropicContentBlock
-import org.calamares.miga.data.vision.AnthropicImageSource
-import org.calamares.miga.data.vision.AnthropicMessage
-import org.calamares.miga.data.vision.AnthropicRequest
-import org.calamares.miga.data.vision.GeminiGenerationConfig
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

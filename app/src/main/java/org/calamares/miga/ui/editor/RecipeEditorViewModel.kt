@@ -17,7 +17,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import org.calamares.miga.data.dictation.DictationCleanupResult
-import org.calamares.miga.data.dictation.dictationCleanupClientFor
+import org.calamares.miga.data.dictation.cleanUpDictation
 import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.Difficulty
@@ -26,12 +26,12 @@ import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.search.DishSuggestion
 import org.calamares.miga.data.search.RecipeUrlFetcher
 import org.calamares.miga.data.search.UrlFetchResult
-import org.calamares.miga.data.search.dishRecipeGenerationClientFor
-import org.calamares.miga.data.search.recipeUrlImportClientFor
+import org.calamares.miga.data.search.generateRecipe
+import org.calamares.miga.data.search.importRecipeFromPage
 import org.calamares.miga.data.vision.RecipeVisionResult
 import org.calamares.miga.data.vision.RecipeVisionResultDto
-import org.calamares.miga.data.vision.VisionImageInput
-import org.calamares.miga.data.vision.visionClientFor
+import org.calamares.miga.data.ai.AiImage
+import org.calamares.miga.data.vision.extractRecipe
 import org.calamares.miga.ui.navigation.Destinations
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -148,7 +148,7 @@ class RecipeEditorViewModel(
             // Se guarda de qué uri sale cada imagen enviada: los índices de "dishPhotos" de la IA
             // se refieren a las imágenes enviadas, no a todas las elegidas.
             val readable = photoUris.mapNotNull { uri ->
-                PhotoStorage.readResizedJpegBytes(context, uri)?.let { uri to VisionImageInput(it, "image/jpeg") }
+                PhotoStorage.readResizedJpegBytes(context, uri)?.let { uri to AiImage(it, "image/jpeg") }
             }
             val images = readable.map { it.second }
             if (images.isEmpty()) {
@@ -159,7 +159,7 @@ class RecipeEditorViewModel(
                 needsImages = true,
                 errorOf = { (it as? RecipeVisionResult.Error)?.reason },
                 error = { RecipeVisionResult.Error(it) }
-            ) { ai -> visionClientFor(ai.provider).extractRecipe(images, ai.apiKey, ai.model) }
+            ) { ai -> ai.extractRecipe(images) }
                 ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
             when (result) {
                 is RecipeVisionResult.Success -> {
@@ -194,7 +194,7 @@ class RecipeEditorViewModel(
             val result = settingsRepository.runAi<RecipeVisionResult>(
                 errorOf = { (it as? RecipeVisionResult.Error)?.reason },
                 error = { RecipeVisionResult.Error(it) }
-            ) { ai -> dishRecipeGenerationClientFor(ai.provider).generateRecipe(dish, ai.apiKey, ai.model) }
+            ) { ai -> ai.generateRecipe(dish) }
                 ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
             when (result) {
                 is RecipeVisionResult.Success -> {
@@ -229,7 +229,7 @@ class RecipeEditorViewModel(
             val result = settingsRepository.runAi<RecipeVisionResult>(
                 errorOf = { (it as? RecipeVisionResult.Error)?.reason },
                 error = { RecipeVisionResult.Error(it) }
-            ) { ai -> recipeUrlImportClientFor(ai.provider).importFromUrl(url, pageText, ai.apiKey, ai.model) }
+            ) { ai -> ai.importRecipeFromPage(url, pageText) }
                 ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
             when (result) {
                 is RecipeVisionResult.Success -> {
@@ -344,7 +344,7 @@ class RecipeEditorViewModel(
                 settingsRepository.runAi<DictationCleanupResult>(
                     errorOf = { (it as? DictationCleanupResult.Error)?.reason },
                     error = { DictationCleanupResult.Error(it) }
-                ) { ai -> dictationCleanupClientFor(ai.provider).cleanUp(rawText, ai.apiKey, ai.model) }
+                ) { ai -> ai.cleanUpDictation(rawText) }
             } else {
                 null
             }

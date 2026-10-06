@@ -12,10 +12,11 @@ import java.util.Locale
 import kotlin.system.exitProcess
 
 /**
- * Informe de fallos totalmente local: si la app crashea, se guarda un informe de texto en el
- * almacenamiento interno del dispositivo. Al reabrir la app se ofrece verlo, copiarlo o
- * compartirlo manualmente (ver RecipeBooksScreen), pero nada se envía a ningún sitio de forma
- * automática — sin SDK de terceros, sin cuenta, sin servidor propio. Ver PRIVACY.md.
+ * Fully local crash reporting.
+ *
+ * When the app crashes a plain text report is written to internal storage. On the next start the
+ * user can view, copy or share it manually (see RecipeBooksScreen); nothing is ever sent
+ * automatically. No third-party SDK, account or server is involved (see PRIVACY.md).
  */
 object CrashReporter {
 
@@ -29,8 +30,7 @@ object CrashReporter {
             try {
                 writeReport(thread, throwable)
             } catch (e: Exception) {
-                // Si ni siquiera se puede escribir el informe, no debe impedir que la app termine
-                // con normalidad (o con el manejador anterior, si lo había).
+                // Failing to write the report must not prevent the app from terminating normally.
             }
             if (previousHandler != null) {
                 previousHandler.uncaughtException(thread, throwable)
@@ -44,23 +44,23 @@ object CrashReporter {
     private fun writeReport(thread: Thread, throwable: Throwable) {
         val report = buildString {
             appendLine("Miga ${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})")
-            appendLine("Fecha: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}")
-            appendLine("Dispositivo: ${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
-            appendLine("Hilo: ${thread.name}")
+            appendLine("Date: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}")
+            appendLine("Device: ${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
+            appendLine("Thread: ${thread.name}")
             appendLine()
             append(Log.getStackTraceString(throwable))
         }
         File(appContext.filesDir, FILE_NAME).writeText(report)
     }
 
-    /** Informe del último fallo no capturado, si lo hay y todavía no se ha descartado. */
+    /** Report of the last uncaught crash, if there is one that has not been dismissed yet. */
     fun pendingReport(): String? {
         if (!::appContext.isInitialized) return null
         val file = File(appContext.filesDir, FILE_NAME)
         return if (file.exists()) file.readText() else null
     }
 
-    /** Marca el informe como revisado borrándolo; se llama al cerrarlo, se comparta o no. */
+    /** Marks the report as reviewed by deleting it; called when it is closed, shared or not. */
     fun dismiss() {
         if (::appContext.isInitialized) File(appContext.filesDir, FILE_NAME).delete()
     }
