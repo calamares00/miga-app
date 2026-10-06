@@ -1,5 +1,9 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package org.calamares.miga.data.vision
 
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.EncodeDefault
 import org.calamares.miga.data.support.ErrorDetail
 import org.calamares.miga.R
 import org.calamares.miga.L10n
@@ -31,7 +35,7 @@ internal data class GeminiInlineData(
 )
 
 @Serializable
-internal data class GeminiGenerationConfig(val responseMimeType: String = "application/json")
+internal data class GeminiGenerationConfig(@EncodeDefault val responseMimeType: String = "application/json")
 
 @Serializable
 internal data class GeminiResponse(

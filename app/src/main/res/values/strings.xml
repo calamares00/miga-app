@@ -733,7 +733,7 @@
     <string name="gemini_empty">"Gemini didn't return any result."</string>
     <string name="change_model">"Change model"</string>
     <string name="change_model_title">"Try another model"</string>
-    <string name="change_model_body">"Pick a model and Miga will try again. It's also saved as your default in Settings."</string>
+    <string name="change_model_body">"Pick a model for each provider and tap Retry. They're tried in the priority order set in Settings, and your choices are saved as defaults."</string>
     <string name="no_ai_keys">"Add an API key in Settings → Artificial intelligence to use other models."</string>
     <string name="current_model">"current"</string>
     <string name="ai_enabled_title">"Use artificial intelligence"</string>
@@ -771,4 +771,5 @@
     <string name="openrouter_models_error">"Couldn't load the OpenRouter model list. Check your connection."</string>
     <string name="openrouter_no_models_match">"No models match these filters."</string>
     <string name="use_model">"Use"</string>
+    <string name="retry_with_these_models">"Retry with these models"</string>
 </resources>
