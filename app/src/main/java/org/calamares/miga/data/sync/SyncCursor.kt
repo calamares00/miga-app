@@ -1,12 +1,12 @@
 package org.calamares.miga.data.sync
 
-/** Lógica pura (sin Android) del cursor de sincronización de bajada. */
+/** Pure logic for the download sync cursor. */
 object SyncCursor {
 
     /**
-     * Siguiente cursor tras aplicar cambios hasta [latestRevision]. Si alguna foto falló por un error
-     * transitorio ([failedPhotoRevisions]), el cursor se queda justo antes de la primera para que la
-     * próxima sincronización la vuelva a pedir; nunca avanza más allá de [latestRevision] ni baja de 0.
+     * Next cursor after applying changes up to [latestRevision]. When a photo failed with a
+     * transient error ([failedPhotoRevisions]) the cursor stops just before the first one so the
+     * next sync asks for it again. It never goes past [latestRevision] or below 0.
      */
     fun next(latestRevision: Long, failedPhotoRevisions: List<Long>): Long {
         val earliestFailure = failedPhotoRevisions.minOrNull() ?: return latestRevision

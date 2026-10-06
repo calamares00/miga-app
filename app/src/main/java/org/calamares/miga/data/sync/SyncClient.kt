@@ -22,7 +22,10 @@ sealed interface SyncInvitationResult {
     data class Error(val reason: String) : SyncInvitationResult
 }
 
-/** Resultado de bajar una foto: los bytes, "no existe en el servidor" (permanente) o un fallo transitorio (red, timeout, 5xx) que merece reintento. */
+/**
+ * Result of downloading a photo: its bytes, "not on the server" (permanent), or a transient failure
+ * (network, timeout, 5xx) worth retrying.
+ */
 sealed interface PhotoDownloadResult {
     class Success(val bytes: ByteArray) : PhotoDownloadResult
     data object NotFound : PhotoDownloadResult
@@ -34,9 +37,11 @@ sealed interface SyncFetchResult {
     data class Error(val reason: String) : SyncFetchResult
 }
 
-/** Resultado de subir (o borrar) un libro/receta/foto: aplicado con éxito (nueva revisión), en
- *  conflicto (el servidor tenía una versión más reciente, se devuelve tal cual para aplicarla
- *  localmente), o un error de red/servidor. */
+/**
+ * Result of uploading or deleting a book, recipe or photo: applied (new revision), conflict (the
+ * server had a newer version, returned as is so it can be applied locally) or a network/server
+ * error.
+ */
 sealed interface SyncPushResult<T> {
     data class Applied<T>(val revision: Long) : SyncPushResult<T>
     data class Conflict<T>(val serverCopy: T) : SyncPushResult<T>
@@ -47,9 +52,8 @@ private const val TIMEOUT_MILLIS = 8000
 private const val PHOTO_TIMEOUT_MILLIS = 30000
 
 /**
- * Cliente HTTP del servidor de sincronización self-hosted (ver miga-server). Mismo estilo que
- * PacksCatalogClient: HttpURLConnection crudo + kotlinx.serialization, sin
- * librería de red nueva, sin reintentos.
+ * HTTP client for the self-hosted sync server (see miga-server). Uses HttpURLConnection and
+ * kotlinx.serialization, without retries.
  */
 object SyncClient {
 
@@ -105,7 +109,10 @@ object SyncClient {
         }
     }
 
-    /** Un 404 (el servidor nunca llegó a conocer ese artículo) cuenta como borrado aplicado: no hay nada que borrar allí. */
+    /**
+     * A 404 (the server never knew the item) counts as an applied deletion: there is nothing to
+     * delete there.
+     */
     suspend fun deleteShoppingItem(connection: SyncConnection, uid: String, at: Long): SyncPushResult<ShoppingItemSyncDto> = withContext(Dispatchers.IO) {
         try {
             val result = request(connection, "DELETE", "/sync/shopping/$uid?at=$at", body = null)
@@ -121,7 +128,10 @@ object SyncClient {
         }
     }
 
-    /** Pide al servidor un token nuevo del mismo namespace para invitar a otra app (ver SyncInviteCodec). */
+    /**
+     * Asks the server for a new token for the same namespace to invite another device (see
+     * SyncInviteCodec).
+     */
     suspend fun createInvitation(connection: SyncConnection, label: String): SyncInvitationResult = withContext(Dispatchers.IO) {
         try {
             val body = json.encodeToString(CreateInvitationRequest.serializer(), CreateInvitationRequest(label)).toByteArray()

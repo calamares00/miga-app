@@ -16,25 +16,25 @@ sealed interface DictationResult {
 }
 
 /**
- * Envoltorio fino sobre el reconocimiento de voz nativo de Android: graba y transcribe en el
- * propio dispositivo, sin coste ni llamada de red - el texto en bruto resultante se limpia
- * después con el proveedor de IA configurado (ver DictationCleanupClient), pero la transcripción
- * en sí no depende de ningún proveedor, así que funciona igual sea cual sea el elegido.
+ * Thin wrapper over Android's built-in speech recognition. Transcription does not depend on the AI
+ * provider; the raw text can be tidied up afterwards with the AI (see cleanUpDictation).
  */
 object SpeechDictation {
 
     fun isAvailable(context: Context): Boolean = SpeechRecognizer.isRecognitionAvailable(context)
 
     /**
-     * Empieza a escuchar en [languageTag] (p. ej. "es-ES") y llama a [onResult] una única vez, al terminar (éxito o error). El
-     * [SpeechRecognizer] devuelto sigue vivo hasta que se llame a [SpeechRecognizer.destroy] -
-     * quien llama es responsable de eso (ver DisposableEffect en la pantalla que lo usa).
+     * Starts listening in [languageTag] (e.g. "es-ES") and calls [onResult] exactly once when done,
+     * with a result or an error. The returned [SpeechRecognizer] stays alive until
+     * [SpeechRecognizer.destroy] is called, which is the caller's job (see the DisposableEffect in
+     * the screen that uses it).
      */
     fun startListening(context: Context, languageTag: String, onResult: (DictationResult) -> Unit): SpeechRecognizer {
         val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            // El idioma lo elige el usuario en Ajustes: si se dejara el del sistema, un móvil en inglés dictaría en inglés.
+            // The language comes from Settings; with the system default an English phone would
+            // always dictate in English.
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.forLanguageTag(languageTag).toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
         }

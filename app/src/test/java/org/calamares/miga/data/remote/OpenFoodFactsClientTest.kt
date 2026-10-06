@@ -11,9 +11,17 @@ class OpenFoodFactsClientTest {
     @Test
     fun `spanish name wins over the generic one and the small front image is used`() {
         val body = """{"status":1,"product":{"product_name":"Whole milk","product_name_es":"Leche entera","image_front_small_url":"https://images.openfoodfacts.org/a.jpg"}}"""
-        val product = OpenFoodFactsClient.parseProductResponse(body, "8410000000000")
+        val product = OpenFoodFactsClient.parseProductResponse(body, "8410000000000", language = "es")
         assertEquals("Leche entera", product?.name)
         assertEquals("https://images.openfoodfacts.org/a.jpg", product?.imageUrl)
+    }
+
+    @Test
+    fun `english app uses the english or generic name`() {
+        val body = """{"status":1,"product":{"product_name":"Leche entera","product_name_en":"Whole milk","product_name_es":"Leche entera"}}"""
+        assertEquals("Whole milk", OpenFoodFactsClient.parseProductResponse(body, "8410000000000", language = "en")?.name)
+        val noEnglish = """{"status":1,"product":{"product_name":"Leche entera","product_name_es":"Leche"}}"""
+        assertEquals("Leche entera", OpenFoodFactsClient.parseProductResponse(noEnglish, "8410000000000", language = "en")?.name)
     }
 
     @Test
@@ -61,7 +69,7 @@ class OpenFoodFactsClientTest {
               "image_nutrition_url":"https://img/nutri.jpg"
             }}
         """.trimIndent()
-        val product = OpenFoodFactsClient.parseProductResponse(body, "8410000000000")!!
+        val product = OpenFoodFactsClient.parseProductResponse(body, "8410000000000", language = "es")!!
         val info = product.info
         assertEquals("https://img/small.jpg", product.imageUrl)
         assertEquals("https://img/front.jpg", info.imageUrl)
@@ -97,7 +105,7 @@ class OpenFoodFactsClientTest {
               {"code":"8410000000017","product_name":"  "}
             ]}
         """.trimIndent()
-        val results = OpenFoodFactsClient.parseSearchResponse(body)
+        val results = OpenFoodFactsClient.parseSearchResponse(body, language = "es")
         assertEquals(1, results.size)
         assertEquals("Leche entera", results.single().name)
         assertEquals("8410000000000", results.single().barcode)

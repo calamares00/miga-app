@@ -34,9 +34,8 @@ private const val OFF_BASE = "https://world.openfoodfacts.org/api/v2/product"
 private const val TIMEOUT_MILLIS = 8000
 
 /**
- * Busca un producto por su código de barras en Open Food Facts (base de datos abierta y colaborativa;
- * sin cuenta ni clave). Solo se llama cuando el usuario escanea un código a propósito. Mismo estilo
- * que PacksCatalogClient: HttpURLConnection + kotlinx.serialization.
+ * Looks up products in Open Food Facts, an open collaborative database that needs no account or
+ * key. It is only called when the user scans a barcode or searches on purpose.
  */
 object OpenFoodFactsClient {
 
@@ -49,7 +48,7 @@ object OpenFoodFactsClient {
             try {
                 connection.connectTimeout = TIMEOUT_MILLIS
                 connection.readTimeout = TIMEOUT_MILLIS
-                // Open Food Facts pide identificar a la app en el User-Agent.
+                // Open Food Facts asks apps to identify themselves in the User-Agent.
                 connection.setRequestProperty("User-Agent", "Miga/${BuildConfig.VERSION_NAME} (miga@calamares.org)")
                 val code = connection.responseCode
                 if (code == HttpURLConnection.HTTP_NOT_FOUND) return@withContext ProductLookupResult.NotFound
@@ -68,9 +67,9 @@ object OpenFoodFactsClient {
     }
 
     /**
-     * Busca productos por nombre (p. ej. "leche", "galletas digestive"), los más escaneados primero.
-     * Open Food Facts pide no lanzar búsquedas en cada pulsación de tecla: se llama solo al enviar.
-     * Con [spainOnly] solo salen productos que se venden en España.
+     * Searches products by name ("milk", "digestive biscuits"), most scanned first. Open Food Facts
+     * asks clients not to search on every keystroke, so this is only called on submit. With
+     * [spainOnly] only products sold in Spain are returned.
      */
     suspend fun search(query: String, spainOnly: Boolean): ProductSearchResult = withContext(Dispatchers.IO) {
         val trimmed = query.trim()
@@ -78,7 +77,7 @@ object OpenFoodFactsClient {
         try {
             val encoded = URLEncoder.encode(trimmed, "UTF-8")
             val countryFilter = if (spainOnly) "&tagtype_0=countries&tag_contains_0=contains&tag_0=spain" else ""
-            val url = "https://world.openfoodfacts.org/cgi/search.pl?search_terms=$encoded&search_simple=1&action=process&json=1&page_size=$SEARCH_PAGE_SIZE&sort_by=unique_scans_n&lc=es$countryFilter&fields=code,$PRODUCT_FIELDS"
+            val url = "https://world.openfoodfacts.org/cgi/search.pl?search_terms=$encoded&search_simple=1&action=process&json=1&page_size=$SEARCH_PAGE_SIZE&sort_by=unique_scans_n&lc=${productLanguage()}$countryFilter&fields=code,$PRODUCT_FIELDS"
             val connection = URL(url).openConnection() as HttpURLConnection
             try {
                 connection.connectTimeout = SEARCH_TIMEOUT_MILLIS
@@ -100,40 +99,50 @@ object OpenFoodFactsClient {
         }
     }
 
-    /** Productos de una respuesta de búsqueda; se saltan los que no tienen código de barras válido o nombre. */
-    internal fun parseSearchResponse(body: String): List<ScannedProduct> {
+    /** Products in a search response, skipping those without a valid barcode or name. */
+    internal fun parseSearchResponse(body: String, language: String = productLanguage()): List<ScannedProduct> {
         val products = json.parseToJsonElement(body).jsonObject["products"] as? JsonArray ?: return emptyList()
         return products.mapNotNull { element ->
             val product = element as? JsonObject ?: return@mapNotNull null
             val code = (product["code"] as? JsonPrimitive)?.contentOrNull?.trim().orEmpty()
-            if (!isValidBarcode(code)) null else parseProductObject(product, code)
+            if (!isValidBarcode(code)) null else parseProductObject(product, code, language)
         }
     }
 
-    /** Solo dígitos, 8 a 14 (EAN-8, UPC-A, EAN-13, GTIN-14): evita construir una URL con texto arbitrario. */
+    /**
+     * Digits only, 8 to 14 of them (EAN-8, UPC-A, EAN-13, GTIN-14), so no arbitrary text ends up in
+     * a URL.
+     */
+    /** Language used for product names and ingredients: the app language when it is Spanish, English otherwise. */
+    private fun productLanguage(): String = if (L10n.locale().language == "es") "es" else "en"
+
     internal fun isValidBarcode(barcode: String): Boolean = barcode.length in 8..14 && barcode.all { it in '0'..'9' }
 
-    /** null si el producto no existe o no tiene ningún nombre aprovechable. */
-    internal fun parseProductResponse(body: String, barcode: String): ScannedProduct? {
+    /** Returns null when the product does not exist or has no usable name. */
+    internal fun parseProductResponse(body: String, barcode: String, language: String = productLanguage()): ScannedProduct? {
         val root = json.parseToJsonElement(body).jsonObject
         val status = (root["status"] as? JsonPrimitive)?.contentOrNull
         if (status == "0") return null
         val product = root["product"] as? JsonObject ?: return null
-        return parseProductObject(product, barcode)
+        return parseProductObject(product, barcode, language)
     }
 
-    /** Ficha de un objeto "product" de Open Food Facts (de una consulta por código o de una búsqueda). */
-    internal fun parseProductObject(product: JsonObject, barcode: String): ScannedProduct? {
+    /**
+     * Builds a product from an Open Food Facts "product" object (from a barcode lookup or a
+     * search).
+     */
+    internal fun parseProductObject(product: JsonObject, barcode: String, language: String = productLanguage()): ScannedProduct? {
         fun text(key: String): String? = (product[key] as? JsonPrimitive)?.contentOrNull?.trim()?.takeIf { it.isNotEmpty() }
         fun https(key: String): String? = text(key)?.takeIf { it.startsWith("https://") }
-        /** Etiquetas tipo "en:gluten" -> "gluten" (se descarta el prefijo de idioma). */
+        // Tags such as "en:gluten" become "gluten" (the language prefix is dropped).
         fun tags(key: String): List<String> = (product[key] as? JsonArray).orEmpty()
             .mapNotNull { (it as? JsonPrimitive)?.contentOrNull?.substringAfter(':')?.trim()?.takeIf { tag -> tag.isNotEmpty() } }
         val nutriments = product["nutriments"] as? JsonObject
         fun nutrient(key: String): Double? = (nutriments?.get(key) as? JsonPrimitive)?.contentOrNull?.toDoubleOrNull()
 
         val brand = text("brands")?.substringBefore(',')?.trim()?.takeIf { it.isNotEmpty() }
-        val name = text("product_name_es") ?: text("product_name") ?: text("generic_name_es") ?: brand ?: return null
+        val name = text("product_name_$language") ?: text("product_name") ?: text("generic_name_$language") ?: text("generic_name")
+            ?: brand ?: return null
         val smallImage = https("image_front_small_url") ?: https("image_small_url")
         val info = ProductInfo(
             barcode = barcode,
@@ -156,7 +165,7 @@ object OpenFoodFactsClient {
             fiber = nutrient("fiber_100g"),
             proteins = nutrient("proteins_100g"),
             salt = nutrient("salt_100g"),
-            ingredients = (text("ingredients_text_es") ?: text("ingredients_text"))?.take(MAX_INGREDIENTS_CHARS),
+            ingredients = (text("ingredients_text_$language") ?: text("ingredients_text"))?.take(MAX_INGREDIENTS_CHARS),
             imageUrl = https("image_front_url") ?: smallImage,
             ingredientsImageUrl = https("image_ingredients_url"),
             nutritionImageUrl = https("image_nutrition_url")
@@ -167,6 +176,6 @@ object OpenFoodFactsClient {
 
 private const val SEARCH_PAGE_SIZE = 20
 private const val SEARCH_TIMEOUT_MILLIS = 15000
-private const val PRODUCT_FIELDS = "product_name,product_name_es,generic_name_es,brands,quantity,nutriscore_grade,nutriscore_score,additives_tags,nova_group,ecoscore_grade,allergens_tags,traces_tags,labels_tags,ingredients_analysis_tags,nutriments,ingredients_text_es,ingredients_text,image_front_url,image_front_small_url,image_small_url,image_ingredients_url,image_nutrition_url"
+private const val PRODUCT_FIELDS = "product_name,product_name_es,product_name_en,generic_name,generic_name_es,generic_name_en,brands,quantity,nutriscore_grade,nutriscore_score,additives_tags,nova_group,ecoscore_grade,allergens_tags,traces_tags,labels_tags,ingredients_analysis_tags,nutriments,ingredients_text_es,ingredients_text_en,ingredients_text,image_front_url,image_front_small_url,image_small_url,image_ingredients_url,image_nutrition_url"
 private const val MAX_TAGS = 40
 private const val MAX_INGREDIENTS_CHARS = 1500

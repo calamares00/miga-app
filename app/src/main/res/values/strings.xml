@@ -294,6 +294,8 @@
     <string name="front">"Front"</string>
     <string name="tree_nuts">"Tree nuts"</string>
     <string name="feature_x">"Feature: %1$s"</string>
+    <string name="report_reason_x">"Reason: %1$s"</string>
+    <string name="report_comment_x">"Comment: %1$s"</string>
     <string name="ai_generated_may_contain_mistakes">"AI-generated · may contain mistakes"</string>
     <string name="generating_recipe_ai">"Generating the recipe with AI..."</string>
     <string name="manage_connections">"Manage connections"</string>

@@ -7,6 +7,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
@@ -36,26 +38,29 @@ sealed interface CatalogFetchResult {
     data class Error(val reason: String) : CatalogFetchResult
 }
 
-/** Catálogo oficial de packs; el usuario puede usar otro en Ajustes (una URL o un repositorio "usuario/repo" de GitHub). */
+/**
+ * Official packs catalogue. Users can pick another one in Settings (a URL or a GitHub "user/repo").
+ */
 const val DEFAULT_PACKS_CATALOG = "https://miga.calamares.org/packs/catalog.json"
 
 private const val TIMEOUT_MILLIS = 8000
-// Descargar un ZIP de recetas con fotos puede tardar más que la simple lectura del catálogo.
+/** Downloading a recipe ZIP with photos can take longer than reading the catalogue. */
 private const val DOWNLOAD_TIMEOUT_MILLIS = 30000
+private const val MAX_PACK_BYTES = 50L * 1024 * 1024
 
 /**
- * Cliente del catálogo de packs de recetas descargables: un catalog.json con un ZIP por pack. El
- * catálogo puede estar en una web (URL, por defecto [DEFAULT_PACKS_CATALOG]) o en un repositorio de
- * GitHub ("usuario/repo", servido vía raw.githubusercontent.com). Las URLs de portada y descarga del
- * catálogo pueden ser relativas a él. HttpURLConnection crudo + kotlinx.serialization.
+ * Client for the catalogue of downloadable recipe packs: a catalog.json with one ZIP per pack. The
+ * catalogue can live on a website (a URL, [DEFAULT_PACKS_CATALOG] by default) or in a GitHub
+ * repository ("user/repo", served through raw.githubusercontent.com). Cover and download URLs may
+ * be relative to the catalogue.
  */
 object PacksCatalogClient {
 
     private val json = Json { ignoreUnknownKeys = true }
 
     /**
-     * URL del catalog.json para [source]: una URL (si no acaba en .json se le añade /catalog.json)
-     * o un repositorio de GitHub "usuario/repo".
+     * catalog.json URL for [source]: a URL ("/catalog.json" is appended unless it ends in .json) or
+     * a GitHub "user/repo".
      */
     fun catalogUrlFor(source: String): String {
         val trimmed = source.trim()
@@ -65,7 +70,7 @@ object PacksCatalogClient {
         return "https://raw.githubusercontent.com/${trimmed.trim('/')}/main/catalog.json"
     }
 
-    /** Resuelve [ref] (absoluta o relativa, p. ej. "zips/pack.zip") respecto a la URL del catálogo. */
+    /** Resolves [ref], absolute or relative ("zips/pack.zip"), against the catalogue URL. */
     fun resolveUrl(catalogUrl: String, ref: String): String =
         runCatching { URI(catalogUrl).resolve(ref.trim()).toString() }.getOrDefault(ref)
 
@@ -106,7 +111,10 @@ object PacksCatalogClient {
         }
     }
 
-    /** Descarga los bytes del ZIP de un pack ([PackEntryDto.downloadUrl]); null si falla. */
+    /**
+     * Downloads a pack ZIP ([PackEntryDto.downloadUrl]). Returns null on failure or when it exceeds
+     * [MAX_PACK_BYTES].
+     */
     suspend fun downloadPackZip(url: String): ByteArray? = withContext(Dispatchers.IO) {
         try {
             val connection = URL(url).openConnection() as HttpURLConnection
@@ -115,7 +123,8 @@ object PacksCatalogClient {
             connection.readTimeout = DOWNLOAD_TIMEOUT_MILLIS
             try {
                 if (connection.responseCode != HttpURLConnection.HTTP_OK) return@withContext null
-                connection.inputStream.use { it.readBytes() }
+                if (connection.contentLengthLong > MAX_PACK_BYTES) return@withContext null
+                connection.inputStream.use { input -> readAtMost(input, MAX_PACK_BYTES) }
             } finally {
                 connection.disconnect()
             }
@@ -123,6 +132,18 @@ object PacksCatalogClient {
             throw e
         } catch (e: Exception) {
             null
+        }
+    }
+
+    /** Reads the whole stream, or returns null when it is longer than [limit] bytes. */
+    private fun readAtMost(input: InputStream, limit: Long): ByteArray? {
+        val out = ByteArrayOutputStream()
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) return out.toByteArray()
+            if (out.size() + read > limit) return null
+            out.write(buffer, 0, read)
         }
     }
 }

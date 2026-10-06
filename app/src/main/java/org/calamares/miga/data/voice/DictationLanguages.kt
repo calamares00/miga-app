@@ -2,13 +2,13 @@ package org.calamares.miga.data.voice
 
 import org.calamares.miga.L10n
 
-/** Idiomas ofrecidos para el dictado por voz (etiqueta BCP-47 + nombre en español). */
+/** Languages offered for voice dictation: BCP-47 tag and the language's own name. */
 object DictationLanguages {
 
     /**
-     * Por defecto, el idioma de la app: español de España si la app está en español, inglés (de EE. UU.
-     * si el móvil está en esa región, si no del Reino Unido) en cualquier otro caso. El usuario puede
-     * elegir otro en Ajustes → Voz y dictado.
+     * Defaults to the app language: Spanish (Spain) when the app is in Spanish, otherwise English
+     * (US when the phone is set to that region, UK otherwise). Users can choose another one in
+     * Settings > Voice and dictation.
      */
     val DEFAULT: String
         get() {

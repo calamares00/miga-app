@@ -9,9 +9,8 @@ import java.util.zip.Deflater
 import java.util.zip.Inflater
 
 /**
- * Serializa una lista de la compra como un texto compacto (líneas "cantidad<TAB>unidad<TAB>nombre",
- * comprimidas con deflate y en base64 url-safe) para llevarla dentro de un QR, sin necesidad de
- * servidor ni cuenta. Lógica pura, sin Android.
+ * Serialises a shopping list as compact text ("quantity<TAB>unit<TAB>name" lines, deflated and
+ * encoded as URL-safe base64) so it fits in a QR code, with no server or account. Pure logic.
  */
 object ShoppingListShareCodec {
 
@@ -19,7 +18,9 @@ object ShoppingListShareCodec {
     private const val MAX_ENTRIES = 500
     private const val MAX_DECOMPRESSED_BYTES = 64 * 1024
 
-    /** Un artículo por línea ("cantidad<TAB>unidad<TAB>nombre"); también sirve para guardar plantillas. */
+    /**
+     * One item per line ("quantity<TAB>unit<TAB>name"). Also used by the legacy template format.
+     */
     fun toLines(entries: List<ParsedShoppingEntry>): String = entries
         .filter { it.name.isNotBlank() }
         .take(MAX_ENTRIES)
@@ -44,7 +45,7 @@ object ShoppingListShareCodec {
         return PREFIX + Base64.getUrlEncoder().withoutPadding().encodeToString(deflate(text.toByteArray(Charsets.UTF_8)))
     }
 
-    /** null si [text] no es una lista de Miga válida (otro QR cualquiera, datos corruptos...). */
+    /** Returns null when [text] is not a valid Miga list (some other QR code, corrupt data...). */
     fun decode(text: String): List<ParsedShoppingEntry>? {
         if (!text.startsWith(PREFIX)) return null
         val compressed = try {

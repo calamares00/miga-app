@@ -5,10 +5,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 /**
- * Lo que el repositorio necesita saber del usuario para escribir en la lista de la compra: en qué
- * lista está trabajando ahora ([listUid]) y con qué nombre firma sus cambios en una lista
- * compartida ([author], vacío = sin firma). Vienen de los ajustes (DataStore), que el repositorio
- * no conoce directamente.
+ * What the repository needs to know about the user to write to the shopping list: the list
+ * currently in use ([listUid]) and the name used to sign changes on a shared list ([author], empty
+ * for none). Both come from the settings DataStore, which the repository does not access directly.
  */
 class ShoppingContext(val listUid: Flow<String>, val author: Flow<String>) {
     companion object {

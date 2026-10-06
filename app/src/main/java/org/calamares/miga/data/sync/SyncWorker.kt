@@ -16,15 +16,11 @@ private const val UNIQUE_WORK_NAME = "miga_periodic_sync"
 private const val INTERVAL_MINUTES = 15L
 
 /**
- * Sincroniza en segundo plano, periódicamente, todas las conexiones configuradas (ver Ajustes →
- * Servidor de sincronización). Complementa la subida inmediata al guardar (best-effort, ver
- * RecipeRepository.onSyncChangeEnqueued) y la sincronización automática al abrir la app
- * (RecipeBooksViewModel): esas dos cubren "yo cambié algo", esta cubre "otra app cambió algo
- * mientras esta app estaba en segundo plano", para que llegue sin que el usuario tenga que volver
- * a abrir la pantalla de libros.
- *
- * Si no hay ninguna conexión configurada simplemente no hace nada (vuelve enseguida sin tráfico de
- * red), así que es seguro encolar este trabajo siempre, sin condicionarlo a que exista alguna.
+ * Periodically syncs every configured connection in the background (Settings > Sync server). It
+ * complements the immediate upload on save (see RecipeRepository.onSyncChangeEnqueued) and the
+ * automatic sync when the app opens (RecipeBooksViewModel): those cover local changes, this one
+ * brings in changes made on other devices while the app is in the background. With no connection
+ * configured it returns at once without network traffic, so it is always safe to enqueue.
  */
 class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 

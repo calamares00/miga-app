@@ -5,12 +5,10 @@ import org.calamares.miga.data.export.StepGroupDto
 import kotlinx.serialization.Serializable
 
 /**
- * DTOs del protocolo de sincronización con miga-server - mismo shape que los DTOs del servidor
- * (ver Dtos.kt en ese repo). Reutiliza [IngredientGroupDto]/[StepGroupDto] de
- * `data/export/ExportDto.kt` (idéntica forma, sin campos de sincronización) en vez de
- * duplicarlos; a diferencia de [org.calamares.miga.data.export.RecipeExportDto] (que deliberadamente
- * no lleva marcas de tiempo), estos sí las llevan porque son necesarias para "última escritura
- * gana" y para el cursor de sincronización.
+ * DTOs of the sync protocol with miga-server; same shape as the server's DTOs (see Dtos.kt in that
+ * repository). They reuse [IngredientGroupDto] and [StepGroupDto] from the export format. Unlike
+ * [org.calamares.miga.data.export.RecipeExportDto], they carry timestamps, needed for
+ * last-write-wins and for the sync cursor.
  */
 @Serializable
 data class BookSyncDto(
@@ -19,8 +17,10 @@ data class BookSyncDto(
     val hasCoverPhoto: Boolean = false,
     val updatedAt: Long,
     val deletedAt: Long? = null,
-    /** true si esto es un tombstone de "desvinculado" (admin, desde /ui) y no de "borrado" real:
-     *  ver [SyncEngine.applyChanges] - solo tiene sentido cuando [deletedAt] != null. */
+    /**
+     * True when this tombstone means "unlinked" (by an admin from the web UI) rather than really
+     * deleted; see [SyncEngine.applyChanges]. Only meaningful when [deletedAt] is set.
+     */
     val unlinked: Boolean = false,
     val revision: Long = 0
 )
@@ -38,8 +38,10 @@ data class RecipeSyncDto(
     val notes: String = "",
     val source: String = "",
     val isFavorite: Boolean = false,
-    /** Valoración personal (1-5), null = sin valorar. Compartida entre los dispositivos de este
-     *  mismo namespace, igual limitación que isFavorite (no es "por persona"). */
+    /**
+     * Personal rating (1-5), null when not rated. Shared by every device in the namespace, like
+     * isFavorite (not per person).
+     */
     val rating: Int? = null,
     val ingredientGroups: List<IngredientGroupDto> = emptyList(),
     val stepGroups: List<StepGroupDto> = emptyList(),
@@ -47,7 +49,7 @@ data class RecipeSyncDto(
     val utensils: List<String> = emptyList(),
     val updatedAt: Long,
     val deletedAt: Long? = null,
-    /** Ver [BookSyncDto.unlinked]. */
+    /** See [BookSyncDto.unlinked]. */
     val unlinked: Boolean = false,
     val revision: Long = 0
 )
@@ -61,12 +63,12 @@ data class PhotoMetaDto(
     val contentType: String,
     val updatedAt: Long,
     val deletedAt: Long? = null,
-    /** Ver [BookSyncDto.unlinked]. */
+    /** See [BookSyncDto.unlinked]. */
     val unlinked: Boolean = false,
     val revision: Long = 0
 )
 
-/** Artículo de la lista de la compra compartida (ver miga-server, ShoppingItems). */
+/** Item of the shared shopping list (see ShoppingItems in miga-server). */
 @Serializable
 data class ShoppingItemSyncDto(
     val uid: String,
@@ -76,7 +78,7 @@ data class ShoppingItemSyncDto(
     val unit: String? = null,
     val checked: Boolean = false,
     val imageUrl: String? = null,
-    /** JSON de ProductInfo (ver data/model/ProductInfo.kt); el servidor lo trata como texto opaco. */
+    /** ProductInfo as JSON (see data/model/ProductInfo.kt); the server treats it as opaque text. */
     val productInfo: String? = null,
     val addedBy: String? = null,
     val updatedBy: String? = null,
@@ -85,7 +87,7 @@ data class ShoppingItemSyncDto(
     val revision: Long = 0
 )
 
-/** Lista de la compra adicional (la lista "main" por defecto no tiene fila ni DTO). */
+/** An extra shopping list. The default "main" list has no row and no DTO. */
 @Serializable
 data class ShoppingListSyncDto(
     val uid: String,
@@ -108,7 +110,9 @@ data class ChangesResponseDto(
 @Serializable
 data class CreateInvitationRequest(val label: String)
 
-/** Respuesta de POST /sync/invitations: un token nuevo del mismo namespace para invitar a otra app. */
+/**
+ * Response of POST /sync/invitations: a new token for the same namespace to invite another device.
+ */
 @Serializable
 data class InvitationDto(val namespaceId: String, val tokenId: String, val token: String, val label: String, val createdAt: Long)
 

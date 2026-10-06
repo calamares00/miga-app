@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.Base64
 
-/** Lo necesario para unirse a un namespace de un servidor de sincronización desde otra app. */
+/** Everything needed to join a sync server namespace from another device. */
 @Serializable
 data class SyncInvite(
     @SerialName("u") val serverUrl: String,
@@ -15,10 +15,10 @@ data class SyncInvite(
 )
 
 /**
- * Serializa una invitación a un namespace (URL del servidor + namespace + token de acceso nuevo)
- * como texto para un QR: prefijo propio + JSON compacto en base64 url-safe. Quien tenga este QR
- * puede leer y escribir en el namespace, así que se muestra solo al pulsar "Invitar" y el token
- * es uno nuevo (revocable por separado en el servidor). Lógica pura, sin Android.
+ * Serialises a namespace invite (server URL, namespace and a new access token) as QR text: a custom
+ * prefix plus compact JSON in URL-safe base64. Whoever holds the QR can read and write the
+ * namespace, so it is only shown after tapping "Invite" and always carries a new token that can be
+ * revoked separately on the server. Pure logic.
  */
 object SyncInviteCodec {
 
@@ -31,7 +31,10 @@ object SyncInviteCodec {
             json.encodeToString(SyncInvite.serializer(), invite).toByteArray(Charsets.UTF_8)
         )
 
-    /** null si [text] no es una invitación de Miga válida (otro QR cualquiera, datos corruptos, campos vacíos...). */
+    /**
+     * Returns null when [text] is not a valid Miga invite (some other QR code, corrupt data, empty
+     * fields...).
+     */
     fun decode(text: String): SyncInvite? {
         if (!text.startsWith(PREFIX)) return null
         return try {
@@ -40,7 +43,7 @@ object SyncInviteCodec {
             val validUrl = invite.serverUrl.startsWith("http://") || invite.serverUrl.startsWith("https://")
             if (!validUrl || invite.namespaceId.isBlank() || invite.token.isBlank()) null else invite
         } catch (e: IllegalArgumentException) {
-            null // base64 inválido o JSON malformado/incompleto (SerializationException es una IllegalArgumentException)
+            null // Invalid base64 or malformed JSON (SerializationException is an IllegalArgumentException).
         }
     }
 }
