@@ -167,7 +167,7 @@
     <string name="get_one_free_aistudio_google">"Consíguela gratis en aistudio.google.com"</string>
     <string name="contact">"Contacto"</string>
     <string name="generated_content">"Contenido generado:"</string>
-    <string name="continue">"Continuar"</string>
+    <string name="continue_action">"Continuar"</string>
     <string name="backup">"Copia de seguridad"</string>
     <string name="backup_exported">"Copia de seguridad exportada"</string>
     <string name="copy">"Copiar"</string>
@@ -320,7 +320,7 @@
     <string name="model_id">"Id del modelo"</string>
     <string name="dictation_language">"Idioma del dictado"</string>
     <string name="language_used_recognise_what_dictate">"Idioma en el que se reconoce lo que dictas (lista de la compra, pasos de receta y modo cocina). Si tu móvil está en otro idioma, elige aquí español."</string>
-    <string name="import">"Importar"</string>
+    <string name="import_action">"Importar"</string>
     <string name="import_backup">"Importar copia de seguridad"</string>
     <string name="artificial_intelligence">"Inteligencia artificial"</string>
     <string name="import_recipe">"Importar receta"</string>

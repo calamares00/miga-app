@@ -168,7 +168,7 @@
     <string name="get_one_free_aistudio_google">"Get one for free at aistudio.google.com"</string>
     <string name="contact">"Contact"</string>
     <string name="generated_content">"Generated content:"</string>
-    <string name="continue">"Continue"</string>
+    <string name="continue_action">"Continue"</string>
     <string name="backup">"Backup"</string>
     <string name="backup_exported">"Backup exported"</string>
     <string name="copy">"Copy"</string>
@@ -321,7 +321,7 @@
     <string name="model_id">"Model ID"</string>
     <string name="dictation_language">"Dictation language"</string>
     <string name="language_used_recognise_what_dictate">"Language used to recognise what you dictate (shopping list, recipe steps and cooking mode). Voice commands in cooking mode work in Spanish and English."</string>
-    <string name="import">"Import"</string>
+    <string name="import_action">"Import"</string>
     <string name="import_backup">"Import backup"</string>
     <string name="artificial_intelligence">"Artificial intelligence"</string>
     <string name="import_recipe">"Import recipe"</string>

@@ -364,7 +364,7 @@ fun RecipeListScreen(
                         showUrlImportDialog = false
                         if (trimmedUrl.isNotBlank()) onAddRecipeFromUrl(trimmedUrl)
                     }
-                ) { Text(L10n.str(R.string.import)) }
+                ) { Text(L10n.str(R.string.import_action)) }
             },
             dismissButton = {
                 TextButton(onClick = { showUrlImportDialog = false }) { Text(L10n.str(R.string.cancel)) }
@@ -413,7 +413,7 @@ fun RecipeListScreen(
                         showAddAnotherPageDialog = false
                         onAddRecipeFromPhoto(capturedPageUris.toList())
                         capturedPageUris.clear()
-                    }) { Text(L10n.str(R.string.continue)) }
+                    }) { Text(L10n.str(R.string.continue_action)) }
                 }
             }
         )

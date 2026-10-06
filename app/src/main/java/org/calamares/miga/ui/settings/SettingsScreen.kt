@@ -532,7 +532,7 @@ fun SettingsSectionScreen(
                         pendingRecipeImport = null
                     },
                     enabled = selectedBookId != null
-                ) { Text(L10n.str(R.string.import)) }
+                ) { Text(L10n.str(R.string.import_action)) }
             },
             dismissButton = { TextButton(onClick = { pendingRecipeImport = null }) { Text(L10n.str(R.string.cancel)) } }
         )
