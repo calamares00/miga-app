@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Generado a partir de los textos de la app; ver L10n.kt. -->
+<!-- UI texts, read through L10n.str (see L10n.kt). -->
 <resources>
     <string name="changelog_assets_dir">changelogs-en</string>
     <string name="app_name" translatable="false">Miga</string>
@@ -798,4 +798,6 @@
     <string name="file_name_recipe">"recipe"</string>
     <string name="file_name_selected_recipes">"selected_recipes"</string>
     <string name="file_name_backup_x">"miga_backup_%1$s"</string>
+    <string name="ai_work_channel">"AI tasks"</string>
+    <string name="ai_work_notification">"Working with AI…"</string>
 </resources>

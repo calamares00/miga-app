@@ -17,6 +17,7 @@ import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.vision.RecipeVisionResult
 import org.calamares.miga.data.ai.AiImage
+import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.ai.AiProvider
 import org.calamares.miga.data.vision.toRecipeDraft
 import org.calamares.miga.data.vision.extractRecipe
@@ -56,14 +57,16 @@ class BulkImportViewModel(
                 _rows.update { rows -> rows.map { it.copy(state = BulkImportRowState.Failed(L10n.str(R.string.ai_no_provider))) } }
                 return@launch
             }
-            photoUris.indices.forEach { index -> processOne(context, index) }
+            // One foreground service for the whole batch, so it is not restarted between photos
+            // while the app is in the background (which Android does not allow).
+            AiKeepAlive.hold { photoUris.indices.forEach { index -> processOne(context, index) } }
         }
     }
 
     /** Retries a single failed photo without touching the other rows. */
     fun retry(context: Context, index: Int) {
         viewModelScope.launch {
-            processOne(context, index)
+            AiKeepAlive.hold { processOne(context, index) }
         }
     }
 

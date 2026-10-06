@@ -2,15 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Para dictar un paso de receta por voz (SpeechRecognizer). Primer permiso "peligroso" de
-         la app: cámara/galería delegan en apps del sistema y no lo necesitan, pero grabar audio
-         en el propio proceso sí requiere concesión explícita en tiempo de ejecución. -->
+    <!-- Voice dictation of recipe steps (SpeechRecognizer). Camera and gallery go through system
+         apps and need no permission, but recording audio in-process needs a runtime grant. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Foreground service that keeps AI requests running while the app is in the background
+         (see AiKeepAlive). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
-    <!-- Necesario en Android 11+ (restricciones de visibilidad de paquetes) para que el intent
-         implícito de ActivityResultContracts.TakePicture() encuentre la app de cámara del
-         sistema al añadir una receta con foto. No se declara el permiso CAMERA: la propia app
-         de cámara es la que accede al hardware, esta app solo recibe el archivo resultante. -->
+    <!-- Needed on Android 11+ (package visibility) so the implicit intent of
+         ActivityResultContracts.TakePicture() finds the system camera app. No CAMERA permission:
+         the camera app uses the hardware and this app only receives the resulting file. -->
     <queries>
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
@@ -37,7 +39,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Compartir texto desde otras apps (notas, mensajes...) -> artículos de la lista de la compra. -->
+            <!-- Text shared from other apps (notes, messages...) becomes shopping list items. -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -55,6 +57,11 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/shopping_widget_info" />
         </receiver>
+
+        <service
+            android:name=".data.ai.AiWorkService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

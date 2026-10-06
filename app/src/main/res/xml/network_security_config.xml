@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Permite tráfico HTTP sin cifrar (no solo HTTPS) para el servidor de sincronización
-    self-hosted: es habitual que viva en una LAN doméstica (http://192.168.x.x:puerto) sin TLS.
-    El resto de servicios de la app (Gemini, Anthropic, GitHub) siguen siendo HTTPS y no se ven
-    afectados por este cambio.
+    Allows plain HTTP (not only HTTPS) for the self-hosted sync server, which usually lives on a
+    home network (http://192.168.x.x:port) without TLS. Every other service the app uses (AI
+    providers, Open Food Facts, recipe packs) is HTTPS anyway.
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="true">
