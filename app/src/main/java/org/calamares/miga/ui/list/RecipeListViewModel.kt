@@ -14,6 +14,19 @@ import org.calamares.miga.data.local.entity.CategoryEntity
 import org.calamares.miga.data.local.entity.TagEntity
 import org.calamares.miga.data.local.entity.UtensilEntity
 import org.calamares.miga.data.model.Recipe
+import org.calamares.miga.data.model.Difficulty
+import org.calamares.miga.data.model.RecipeBookSummary
+import org.calamares.miga.data.model.RecipeDraft
+import org.calamares.miga.data.model.RecipePhoto
+import org.calamares.miga.data.model.formatIngredientText
+import org.calamares.miga.data.model.toDraft
+import org.calamares.miga.data.local.PhotoStorage
+import org.calamares.miga.data.ai.aiCandidates
+import org.calamares.miga.data.ai.runAi
+import org.calamares.miga.data.health.RecipeHealthResult
+import org.calamares.miga.data.health.healthClientFor
+import org.calamares.miga.data.nutrition.RecipeNutritionResult
+import org.calamares.miga.data.nutrition.nutritionClientFor
 import org.calamares.miga.data.model.RecipeFilter
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.data.model.RecipeSummary
@@ -25,6 +38,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -107,6 +124,164 @@ class RecipeListViewModel(
                 RecipeExporter.shareRecipes(context, "recetas_seleccionadas", book, recipes)
             }
             _selectedIds.value = emptySet()
+        }
+    }
+
+    // --- Edición en bloque de las recetas seleccionadas ---
+
+    fun selectAll() {
+        _selectedIds.value = uiState.value.groups.flatMap { group -> group.recipes.map { it.id } }.toSet()
+    }
+
+    /** Libros a los que se pueden mover o copiar recetas: todos menos este y los packs (solo lectura). */
+    val targetBooks: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
+        .map { books -> books.filter { it.id != bookId && !it.isPack } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val categoryNames: StateFlow<List<String>> = repository.observeCategories()
+        .map { categories -> categories.map { it.name } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Si se puede ofrecer "Recalcular salud y nutrición": IA activada y al menos una de las dos. */
+    val aiRecalculationAvailable: StateFlow<Boolean> = combine(
+        settingsRepository.observeAiHealthEnabled(),
+        settingsRepository.observeAiNutritionEnabled()
+    ) { health, nutrition -> health || nutrition }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    private suspend fun takeSelectedRecipes(): List<Recipe> {
+        val ids = _selectedIds.value
+        _selectedIds.value = emptySet()
+        return repository.getRecipesForBookOnce(bookId).filter { it.id in ids }
+    }
+
+    /** Aplica [transform] a cada receta seleccionada y la guarda por el camino normal (sincronización incluida). */
+    private fun updateSelected(onMessage: (String) -> Unit, transform: (RecipeDraft) -> RecipeDraft) {
+        viewModelScope.launch {
+            val recipes = takeSelectedRecipes()
+            recipes.forEach { repository.saveRecipe(transform(it.toDraft())) }
+            onMessage(L10n.str(R.string.bulk_updated_n, recipes.size))
+        }
+    }
+
+    fun bulkSetCategory(categoryName: String?, onMessage: (String) -> Unit) =
+        updateSelected(onMessage) { it.copy(categoryName = categoryName?.trim()?.takeIf { name -> name.isNotEmpty() }) }
+
+    fun bulkSetDifficulty(difficulty: Difficulty, onMessage: (String) -> Unit) =
+        updateSelected(onMessage) { it.copy(difficulty = difficulty) }
+
+    /** Cambia las raciones; con [scaleIngredients] reescala las cantidades para que la receta siga cuadrando. */
+    fun bulkSetServings(servings: Int, scaleIngredients: Boolean, onMessage: (String) -> Unit) =
+        updateSelected(onMessage) { draft ->
+            val factor = servings.toDouble() / draft.servings.coerceAtLeast(1)
+            draft.copy(
+                servings = servings,
+                ingredientGroups = if (!scaleIngredients || factor == 1.0) draft.ingredientGroups else draft.ingredientGroups.map { group ->
+                    group.copy(ingredients = group.ingredients.map { ingredient -> ingredient.copy(quantity = ingredient.quantity?.let { roundQuantity(it * factor) }) })
+                }
+            )
+        }
+
+    fun bulkSetSource(source: String, onMessage: (String) -> Unit) =
+        updateSelected(onMessage) { it.copy(source = source.trim()) }
+
+    fun bulkSetFavorite(favorite: Boolean, onMessage: (String) -> Unit) {
+        viewModelScope.launch {
+            val recipes = takeSelectedRecipes()
+            recipes.forEach { repository.toggleFavorite(it.id, favorite) }
+            onMessage(L10n.str(R.string.bulk_updated_n, recipes.size))
+        }
+    }
+
+    fun bulkMoveTo(targetBookId: Long, onMessage: (String) -> Unit) {
+        viewModelScope.launch {
+            val recipes = takeSelectedRecipes()
+            recipes.forEach { repository.moveRecipeToBook(it.id, targetBookId) }
+            onMessage(L10n.str(R.string.bulk_moved_n, recipes.size))
+        }
+    }
+
+    /** Copia las recetas a otro libro como recetas nuevas, con sus propias copias de las fotos
+     *  (para que borrar una no deje a la otra sin foto). */
+    fun bulkCopyTo(context: Context, targetBookId: Long, onMessage: (String) -> Unit) {
+        val appContext = context.applicationContext
+        viewModelScope.launch {
+            val recipes = takeSelectedRecipes()
+            recipes.forEach { recipe ->
+                val photos = withContext(Dispatchers.IO) {
+                    recipe.photos.mapNotNull { photo ->
+                        PhotoStorage.readBytes(photo.uri)
+                            ?.let { bytes -> PhotoStorage.copyBytesToInternalStorage(appContext, bytes) }
+                            ?.let { RecipePhoto(it, photo.isCover) }
+                    }
+                }
+                repository.saveRecipe(recipe.toDraft().copy(id = 0L, uid = null, recipeBookId = targetBookId, photos = photos))
+            }
+            onMessage(L10n.str(R.string.bulk_copied_n, recipes.size))
+        }
+    }
+
+    fun bulkAddToShoppingList(onMessage: (String) -> Unit) {
+        viewModelScope.launch {
+            val recipes = takeSelectedRecipes()
+            repository.addIngredientsToShoppingList(recipes.flatMap { recipe -> recipe.ingredientGroups.flatMap { it.ingredients } })
+            onMessage(L10n.str(R.string.bulk_added_to_shopping_n, recipes.size))
+        }
+    }
+
+    /** Vuelve a calcular con IA la valoración de salud y/o la nutrición (según Ajustes) de las seleccionadas. */
+    fun bulkRecalculateAi(onMessage: (String) -> Unit) {
+        viewModelScope.launch {
+            val recipes = takeSelectedRecipes()
+            if (settingsRepository.aiCandidates().isEmpty()) {
+                onMessage(L10n.str(R.string.ai_no_provider))
+                return@launch
+            }
+            val doHealth = settingsRepository.observeAiHealthEnabled().first()
+            val doNutrition = settingsRepository.observeAiNutritionEnabled().first()
+            onMessage(L10n.str(R.string.bulk_ai_started_n, recipes.size))
+            var failed = 0
+            recipes.forEach { recipe ->
+                val ingredientsText = recipe.ingredientGroups.joinToString("\n") { group ->
+                    group.name?.let { "$it:\n" }.orEmpty() + group.ingredients.joinToString("\n") {
+                        "- " + formatIngredientText(it.name, it.quantity, it.unit)
+                    }
+                }
+                val stepsText = recipe.stepGroups.joinToString("\n") { group ->
+                    group.name?.let { "$it:\n" }.orEmpty() + group.instructions.joinToString("\n") { "- $it" }
+                }
+                if (doHealth) {
+                    val result = settingsRepository.runAi<RecipeHealthResult>(
+                        errorOf = { (it as? RecipeHealthResult.Error)?.reason },
+                        error = { RecipeHealthResult.Error(it) }
+                    ) { ai -> healthClientFor(ai.provider).analyzeHealthiness(ingredientsText, stepsText, ai.apiKey, ai.model) }
+                    if (result is RecipeHealthResult.Success) {
+                        val fingerprint = repository.computeHealthFingerprint(recipe.ingredientGroups, recipe.stepGroups)
+                        repository.saveHealthRating(recipe.id, result.colorLevel, result.description, fingerprint, System.currentTimeMillis())
+                    } else {
+                        failed++
+                    }
+                }
+                if (doNutrition) {
+                    val result = settingsRepository.runAi<RecipeNutritionResult>(
+                        errorOf = { (it as? RecipeNutritionResult.Error)?.reason },
+                        error = { RecipeNutritionResult.Error(it) }
+                    ) { ai -> nutritionClientFor(ai.provider).analyzeNutrition(ingredientsText, stepsText, recipe.servings, ai.apiKey, ai.model) }
+                    if (result is RecipeNutritionResult.Success) {
+                        val fingerprint = repository.computeNutritionFingerprint(recipe.ingredientGroups, recipe.stepGroups)
+                        repository.saveNutritionInfo(
+                            recipe.id, result.caloriesPerServing, result.proteinGrams, result.carbsGrams, result.fatGrams,
+                            fingerprint, System.currentTimeMillis()
+                        )
+                    } else {
+                        failed++
+                    }
+                }
+            }
+            onMessage(
+                if (failed == 0) L10n.str(R.string.bulk_ai_done_n, recipes.size)
+                else L10n.str(R.string.bulk_ai_done_with_errors, recipes.size, failed)
+            )
         }
     }
 
@@ -203,3 +378,6 @@ class RecipeListViewModel(
             .map { (category, recipesInGroup) -> RecipeGroup(category, recipesInGroup.map { it.toSummary() }) }
     }
 }
+
+/** Redondea una cantidad reescalada a algo razonable para una receta (2 decimales como mucho). */
+internal fun roundQuantity(value: Double): Double = kotlin.math.round(value * 100) / 100
