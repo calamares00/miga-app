@@ -259,8 +259,9 @@ class RecipeListViewModel(
             val doNutrition = settingsRepository.observeAiNutritionEnabled().first()
             onMessage(L10n.str(R.string.bulk_ai_started_n, recipes.size))
             var failed = 0
-            AiKeepAlive.hold {
-                recipes.forEach { recipe ->
+            AiKeepAlive.hold(L10n.str(R.string.ai_task_bulk_analysis)) {
+                recipes.forEachIndexed { index, recipe ->
+                    progress(index + 1, recipes.size)
                     val ingredientsText = recipe.ingredientGroups.joinToString("\n") { group ->
                         group.name?.let { "$it:\n" }.orEmpty() + group.ingredients.joinToString("\n") {
                             "- " + formatIngredientText(it.name, it.quantity, it.unit)
@@ -298,10 +299,13 @@ class RecipeListViewModel(
                     }
                 }
             }
-            onMessage(
-                if (failed == 0) L10n.str(R.string.bulk_ai_done_n, recipes.size)
-                else L10n.str(R.string.bulk_ai_done_with_errors, recipes.size, failed)
-            )
+            val summary = if (failed == 0) {
+                L10n.str(R.string.bulk_ai_done_n, recipes.size)
+            } else {
+                L10n.str(R.string.bulk_ai_done_with_errors, recipes.size, failed)
+            }
+            onMessage(summary)
+            AiKeepAlive.announceIfInBackground(summary)
         }
     }
 

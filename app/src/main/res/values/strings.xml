@@ -800,4 +800,14 @@
     <string name="file_name_backup_x">"miga_backup_%1$s"</string>
     <string name="ai_work_channel">"AI tasks"</string>
     <string name="ai_work_notification">"Working with AI…"</string>
+    <string name="ai_task_reading_photo">"Reading the recipe from the photo…"</string>
+    <string name="ai_task_generating_dish_x">"Generating recipe: %1$s"</string>
+    <string name="ai_task_importing_web">"Importing the recipe from the web…"</string>
+    <string name="ai_task_bulk_import">"Importing recipes"</string>
+    <string name="ai_task_bulk_analysis">"Analysing recipes"</string>
+    <string name="ai_progress_x_of_y">"%1$d of %2$d"</string>
+    <string name="ai_done_channel">"Finished AI tasks"</string>
+    <string name="ai_recipe_ready_x">"Recipe ready to review: %1$s"</string>
+    <string name="ai_recipe_failed">"The recipe could not be generated. Open Miga to see why."</string>
+    <string name="ai_bulk_import_done_x_of_y">"Import finished: %1$d of %2$d recipes"</string>
 </resources>
