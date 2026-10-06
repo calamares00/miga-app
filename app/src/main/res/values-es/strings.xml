@@ -809,4 +809,8 @@
     <string name="ai_recipe_ready_x">"Receta lista para revisar: %1$s"</string>
     <string name="ai_recipe_failed">"No se pudo generar la receta. Abre Miga para ver el motivo."</string>
     <string name="ai_bulk_import_done_x_of_y">"Importación terminada: %1$d de %2$d recetas"</string>
+    <string name="expand_all">"Expandir todo"</string>
+    <string name="collapse_all">"Contraer todo"</string>
+    <string name="collapsed">"Contraída"</string>
+    <string name="expanded">"Desplegada"</string>
 </resources>

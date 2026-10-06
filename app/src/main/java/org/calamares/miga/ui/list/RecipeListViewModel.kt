@@ -97,6 +97,23 @@ class RecipeListViewModel(
         viewModelScope.launch { settingsRepository.setRecipeListViewMode(mode) }
     }
 
+    /** Categories collapsed by the user in this book, remembered between sessions. */
+    val collapsedCategories: StateFlow<Set<String>> = settingsRepository.observeCollapsedCategories(bookId)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
+
+    fun toggleCategory(categoryName: String) {
+        val current = collapsedCategories.value
+        setCollapsed(if (categoryName in current) current - categoryName else current + categoryName)
+    }
+
+    fun collapseAllCategories() = setCollapsed(uiState.value.groups.map { it.categoryName }.toSet())
+
+    fun expandAllCategories() = setCollapsed(emptySet())
+
+    private fun setCollapsed(categories: Set<String>) {
+        viewModelScope.launch { settingsRepository.setCollapsedCategories(bookId, categories) }
+    }
+
     private val _selectedIds = MutableStateFlow<Set<Long>>(emptySet())
     val selectedIds: StateFlow<Set<Long>> = _selectedIds
 
