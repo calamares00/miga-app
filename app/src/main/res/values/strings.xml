@@ -514,7 +514,6 @@
     <string name="faq_contact">"FAQ and contact"</string>
     <string name="prep_min">"Prep (min)"</string>
     <string name="method">"Method"</string>
-    <string name="method_2">"METHOD"</string>
     <string name="test_connection">"Test connection"</string>
     <string name="test_voice">"Test voice"</string>
     <string name="processing">"Processing…"</string>
@@ -538,7 +537,6 @@
     <string name="remove_sub_recipe">"Remove sub-recipe"</string>
     <string name="remove_x">"Remove %1$s"</string>
     <string name="remove_x_template">"Remove %1$s from the template"</string>
-    <string name="servings">" · Servings: "</string>
     <string name="servings_2">"Servings"</string>
     <string name="servings_x">" · Servings: %1$s"</string>
     <string name="does_recipe_continue_another_photo">"Does the recipe continue in another photo? You can keep adding pages or continue with the ones you have."</string>

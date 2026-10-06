@@ -312,9 +312,9 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                                 }
                             }
                         }
-                    } else {
+                    } else if (currentStep != null) {
                         val stepIndex = currentStepIndex
-                        val step = currentStep!!
+                        val step = currentStep
                         val detectedSeconds = currentDetectedSeconds
                         if (step.groupName != null) {
                             Text(
