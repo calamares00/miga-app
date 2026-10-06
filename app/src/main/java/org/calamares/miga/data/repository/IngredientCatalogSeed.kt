@@ -1,9 +1,12 @@
 package org.calamares.miga.data.repository
 
-/** Catálogo base de ingredientes agrupados por categoría, usado para poblar el catálogo. */
+/** Base ingredient catalogue grouped by category, used to populate the catalogue. */
 object IngredientCatalogSeed {
 
-    /** Catálogo en [language] ("es" o "en"); el idioma se fija en la primera ejecución (ver SettingsRepository.seedLanguage). */
+    /**
+     * Catalogue in [language] ("es" or "en"). The language is fixed on first run (see
+     * SettingsRepository.seedLanguage).
+     */
     fun forLanguage(language: String): List<Pair<String, List<String>>> =
         if (language == "es") DEFAULT_INGREDIENTS else IngredientCatalogSeedEn.DEFAULT_INGREDIENTS
 

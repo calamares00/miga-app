@@ -25,11 +25,11 @@ interface ShoppingListDao {
     fun observePendingCounts(): Flow<List<ShoppingListPendingCount>>
 
     /**
-     * A row an addition can be merged into: same normalised name and same unit (SQLite's null-safe
-     * IS also matches null with null) and a non-null quantity. The quantity being added is checked
-     * by the repository.
+     * A row an addition can be merged into: still pending (not checked), same normalised name and
+     * same unit (SQLite's null-safe IS also matches null with null) and a non-null quantity. The
+     * quantity being added is checked by the repository.
      */
-    @Query("SELECT * FROM shopping_list_items WHERE deletedAt IS NULL AND listUid = :listUid AND normalizedName = :normalizedName AND unit IS :unit AND quantity IS NOT NULL LIMIT 1")
+    @Query("SELECT * FROM shopping_list_items WHERE deletedAt IS NULL AND checked = 0 AND listUid = :listUid AND normalizedName = :normalizedName AND unit IS :unit AND quantity IS NOT NULL LIMIT 1")
     suspend fun findMergeable(listUid: String, normalizedName: String, unit: String?): ShoppingListItemEntity?
 
     /** Live item (no tombstone) with that normalised name, checked or not. */

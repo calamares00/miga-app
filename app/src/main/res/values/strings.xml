@@ -789,4 +789,5 @@
     <string name="bulk_ai_started_n">"Analyzing %1$d recipes with AI…"</string>
     <string name="bulk_ai_done_n">"Health and nutrition updated for %1$d recipes"</string>
     <string name="bulk_ai_done_with_errors">"Analysis finished for %1$d recipes, with %2$d errors"</string>
+    <string name="untitled">"Untitled"</string>
 </resources>
