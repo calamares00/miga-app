@@ -25,17 +25,17 @@ suspend fun SettingsRepository.aiCandidates(): List<AiCandidate> =
  * reintento, porque otro modelo diría lo mismo.
  *
  * - [needsImages]: se saltan los proveedores cuyo modelo no puede leer imágenes.
- * - [errorOf]: extrae el motivo si [R] es un error, o null si es un éxito.
- * - [error]: construye un [R] de error (para "ningún proveedor lee imágenes" o el resumen final).
+ * - [errorOf]: extrae el motivo si [T] es un error, o null si es un éxito.
+ * - [error]: construye un [T] de error (para "ningún proveedor lee imágenes" o el resumen final).
  *
  * Devuelve null si no hay ningún proveedor configurado.
  */
-suspend fun <R> SettingsRepository.runAi(
+suspend fun <T> SettingsRepository.runAi(
     needsImages: Boolean = false,
-    errorOf: (R) -> String?,
-    error: (String) -> R,
-    call: suspend (AiCandidate) -> R
-): R? {
+    errorOf: (T) -> String?,
+    error: (String) -> T,
+    call: suspend (AiCandidate) -> T
+): T? {
     val configured = aiCandidates()
     if (configured.isEmpty()) return null
     val usable = if (needsImages) configured.filter { supportsImages(it.provider) } else configured
