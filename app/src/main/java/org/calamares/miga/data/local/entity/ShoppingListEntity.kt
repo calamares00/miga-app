@@ -6,9 +6,9 @@ import androidx.room.PrimaryKey
 import java.util.UUID
 
 /**
- * Lista de la compra adicional (Casa, Fiesta...); la lista por defecto ("main") no tiene fila.
- * Mismos campos de sincronización que los artículos: [updatedAt] para "última escritura gana",
- * [deletedAt] como tombstone y [syncDirty] para lo que falta por subir.
+ * Additional shopping list (Home, Party...); the default list ("main") has no row. Same sync fields
+ * as the items: [updatedAt] for last write wins, [deletedAt] as a tombstone and [syncDirty] for
+ * what is left to upload.
  */
 @Entity(tableName = "shopping_lists", indices = [Index(value = ["uid"], unique = true)])
 data class ShoppingListEntity(

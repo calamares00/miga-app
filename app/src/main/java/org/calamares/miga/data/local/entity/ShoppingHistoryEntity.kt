@@ -4,9 +4,9 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * Historial de artículos que el usuario ha añadido a mano a la lista de la compra (una fila por
- * nombre normalizado). Sobrevive a vaciar la lista y alimenta las sugerencias al escribir y los
- * chips de "frecuentes": nombre tal como lo escribió, última cantidad/unidad y cuántas veces.
+ * History of items the user typed into the shopping list, one row per normalised name. It survives
+ * clearing the list and feeds the suggestions: name as typed, last quantity and unit and how many
+ * times it was used.
  */
 @Entity(tableName = "shopping_history")
 data class ShoppingHistoryEntity(

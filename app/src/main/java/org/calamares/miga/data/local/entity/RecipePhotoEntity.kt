@@ -23,8 +23,9 @@ data class RecipePhotoEntity(
     val uri: String,
     val position: Int,
     val isCover: Boolean,
-    /** Identificador estable (UUID), usado por el motor de sincronización para subir/bajar/borrar
-     *  esta foto de forma individual. Nullable por retrocompatibilidad de la migración (las fotos
-     *  ya existentes se rellenan con un uid al migrar); toda foto nueva lo lleva desde el alta. */
+    /**
+     * Stable identifier (UUID) used by sync to upload, download and delete this photo on its own.
+     * Nullable only because of the v7 -> v8 migration; every new photo gets one.
+     */
     val uid: String? = null
 )

@@ -9,26 +9,27 @@ enum class SyncEntityType { BOOK, RECIPE, PHOTO }
 enum class SyncChangeType { UPSERT, DELETE }
 
 /**
- * "Outbox" de sincronización: una fila por cada libro/receta/foto de un libro sincronizado que
- * se ha creado, editado o borrado localmente y todavía no se ha confirmado subida al servidor.
- * Se inserta en los mismos sitios donde ya se guarda/borra localmente (saveRecipe,
- * saveRecipeBook, deleteRecipe, deleteRecipeBook) y se borra en cuanto el motor de
- * sincronización confirma la subida - sobrevive a que la app se cierre o esté sin red mientras
- * tanto, a diferencia de un simple reintento en memoria.
+ * Sync outbox: one row per book, recipe or photo of a synced book that was created, edited or
+ * deleted locally and whose upload is not confirmed yet. Rows are written where the local change is
+ * saved (saveRecipe, saveRecipeBook, deleteRecipe, deleteRecipeBook) and removed once the sync
+ * engine confirms the upload, so pending changes survive the app being closed or offline.
  */
 @Entity(tableName = "pending_sync_changes", indices = [Index("syncConnectionId")])
 data class PendingSyncChangeEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val syncConnectionId: Long,
-    /** Guardado como [SyncEntityType.name] - mismo patrón que el resto de enums de la app
-     *  (ej. RecipeEntity.difficulty), sin TypeConverters. */
+    /**
+     * Stored as [SyncEntityType.name], like every other enum in the database, without
+     * TypeConverters.
+     */
     val entityType: String,
     val uid: String,
-    /** Guardado como [SyncChangeType.name]. */
+    /** Stored as [SyncChangeType.name]. */
     val changeType: String,
     val createdAt: Long,
-    /** Solo para [SyncEntityType.PHOTO]: uid de la receta a la que pertenece la foto - necesario
-     *  para poder subir un borrado aunque la fila local de la foto ya no exista (se borra junto
-     *  con el resto de fotos de la receta al guardarla). Null en el resto de casos. */
+    /**
+     * Only for [SyncEntityType.PHOTO]: uid of the recipe the photo belongs to, needed to upload a
+     * deletion after the photo row is gone. Null otherwise.
+     */
     val parentUid: String? = null
 )

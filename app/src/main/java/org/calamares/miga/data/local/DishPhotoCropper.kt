@@ -10,20 +10,22 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
-// Resolución a la que se carga el original para recortar (más que la enviada a la IA, para que
-// la foto resultante se vea bien en la ficha; luego saveNormalized la deja en 1600 px).
+/**
+ * Resolution of the original loaded for cropping: higher than what is sent to the AI so the photo
+ * looks good in the recipe (saveNormalized later caps it at 1600 px).
+ */
 private const val MAX_SOURCE_DIMENSION = 2400
 private const val MAX_DISH_PHOTOS = 3
-// Lado de la miniatura sobre la que se buscan los bordes uniformes (rápido y suficiente).
+/** Size of the thumbnail used to look for uniform borders; small enough to be fast. */
 private const val ANALYSIS_DIMENSION = 400
-// Recorte hacia dentro de la caja de la IA para no arrastrar líneas de marco ni el filo del papel.
+/** Inward margin applied to the AI box so frame lines and the paper edge are not included. */
 private const val INSET_FRACTION = 0.015f
-// Proporción ancho/alto permitida; fuera de ella se recorta centrado el lado largo.
+/** Allowed width/height ratio; longer photos are center-cropped along their long side. */
 private const val MIN_ASPECT = 0.6f
 private const val MAX_ASPECT = 1.8f
 private const val MIN_RESULT_SIDE = 160
 
-/** Caja normalizada (0..1) sobre la imagen [image]. */
+/** Normalised (0..1) box on image number [image]. */
 internal data class NormalizedBox(val image: Int, val top: Float, val left: Float, val bottom: Float, val right: Float) {
     val width get() = right - left
     val height get() = bottom - top
@@ -31,29 +33,33 @@ internal data class NormalizedBox(val image: Int, val top: Float, val left: Floa
 }
 
 /**
- * Recorta las fotos del plato que la IA ha localizado en las imágenes de una receta, las limpia
- * (sin márgenes ni bordes uniformes, centradas) y las guarda como fotos de la app.
+ * Crops the dish photos the AI located in a recipe's images, cleans them (no margins or uniform
+ * borders, centered) and stores them as app photos.
  */
 object DishPhotoCropper {
 
-    /** Devuelve las uris ("file://...") de las fotos guardadas, en el orden de la IA. */
+    /** Returns the uris ("file://...") of the saved photos, in the order given by the AI. */
     fun extract(context: Context, sources: List<Uri>, dishPhotos: List<DishPhotoDto>): List<String> {
         val boxes = validDishBoxes(dishPhotos, sources.size)
         if (boxes.isEmpty()) return emptyList()
-        val loaded = mutableMapOf<Int, Bitmap?>()
-        return boxes.mapNotNull { box ->
-            val source = loaded.getOrPut(box.image) {
-                PhotoStorage.loadUprightSampled(context, sources[box.image], MAX_SOURCE_DIMENSION)
-            } ?: return@mapNotNull null
-            val cleaned = runCatching { cleanCrop(source, box) }.getOrNull() ?: return@mapNotNull null
-            runCatching { PhotoStorage.saveNormalized(context, cleaned) }.getOrNull()
+        // One source image is decoded at a time and dropped before the next, since every decoded
+        // image can take tens of megabytes.
+        val saved = mutableMapOf<NormalizedBox, String>()
+        boxes.groupBy { it.image }.forEach { (imageIndex, imageBoxes) ->
+            val source = PhotoStorage.loadUprightSampled(context, sources[imageIndex], MAX_SOURCE_DIMENSION) ?: return@forEach
+            imageBoxes.forEach { box ->
+                runCatching { cleanCrop(source, box) }.getOrNull()
+                    ?.let { cleaned -> runCatching { PhotoStorage.saveNormalized(context, cleaned) }.getOrNull() }
+                    ?.let { uri -> saved[box] = uri }
+            }
         }
+        return boxes.mapNotNull { saved[it] }
     }
 
     private fun cleanCrop(source: Bitmap, box: NormalizedBox): Bitmap? {
         val w = source.width
         val h = source.height
-        // Caja de la IA en píxeles, encogida un poco hacia dentro.
+        // AI box in pixels, shrunk slightly inwards.
         var left = box.left * w
         var top = box.top * h
         var right = box.right * w
@@ -67,7 +73,7 @@ object DishPhotoCropper {
         val ch = (bottom.roundToInt() - y).coerceIn(1, h - y)
         val crop = Bitmap.createBitmap(source, x, y, cw, ch)
 
-        // Bordes uniformes (margen blanco, marco, sombra lisa) buscados en una miniatura.
+        // Uniform borders (white margin, frame, flat shadow) are detected on a thumbnail.
         val scale = min(1f, ANALYSIS_DIMENSION.toFloat() / max(cw, ch))
         val aw = (cw * scale).roundToInt().coerceAtLeast(1)
         val ah = (ch * scale).roundToInt().coerceAtLeast(1)
@@ -85,7 +91,7 @@ object DishPhotoCropper {
         var th = ch - ty - (trim[2] / scale).roundToInt()
         if (tw < MIN_RESULT_SIDE || th < MIN_RESULT_SIDE) { tx = 0; ty = 0; tw = cw; th = ch }
 
-        // Centrado: si es muy alargada, se recorta el lado largo por el centro.
+        // Center-crop the long side when the photo is too elongated.
         val aspect = tw.toFloat() / th
         if (aspect > MAX_ASPECT) {
             val newW = (th * MAX_ASPECT).roundToInt()
@@ -100,8 +106,8 @@ object DishPhotoCropper {
 }
 
 /**
- * Filtra y normaliza las cajas devueltas por la IA: descarta índices o coordenadas inválidas,
- * cajas diminutas y duplicadas (mucho solape sobre la misma imagen), y se queda con un máximo.
+ * Validates and normalises the boxes returned by the AI: drops invalid indexes or coordinates, tiny
+ * boxes and duplicates (heavy overlap on the same image), and keeps at most [MAX_DISH_PHOTOS].
  */
 internal fun validDishBoxes(dishPhotos: List<DishPhotoDto>, imageCount: Int): List<NormalizedBox> {
     val candidates = dishPhotos.mapNotNull { dto ->
@@ -128,9 +134,9 @@ internal fun intersectionOverUnion(a: NormalizedBox, b: NormalizedBox): Float {
 }
 
 /**
- * Cuántas filas/columnas uniformes (casi sin variación de luminancia: margen de papel, marco,
- * fondo liso) hay en cada borde de una imagen [w]x[h] dada como luminancias 0..255, hasta
- * [maxFraction] por lado. Devuelve `[top, left, bottom, right]`.
+ * Counts the uniform rows and columns (almost no luminance variation: paper margin, frame, plain
+ * background) on each edge of a [w]x[h] image given as 0..255 luminances, up to [maxFraction] per
+ * side. Returns `[top, left, bottom, right]`.
  */
 internal fun uniformEdgeTrim(luminance: IntArray, w: Int, h: Int, maxFraction: Float = 0.15f, maxStdDev: Double = 12.0): IntArray {
     fun stdDev(values: IntArray): Double {

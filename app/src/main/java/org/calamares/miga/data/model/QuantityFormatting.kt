@@ -1,26 +1,28 @@
 package org.calamares.miga.data.model
 
+import org.calamares.miga.L10n
 import kotlin.math.roundToInt
 
 /**
- * Formato compartido de cantidad+unidad+nombre. Usado en la receta (RecipeDetailScreen,
- * CookModeOverlay, vía el wrapper interno de ui/detail/IngredientFormatting.kt), al exportar a
- * texto (RecipeExporter) y en la lista de la compra (ShoppingListScreen). Antes había dos copias
- * divergentes de esta lógica (una sin el redondeo de [formatQuantity]); unificado aquí.
+ * Formats an ingredient as "quantity unit name", scaled by [scale]. Shared by the recipe screens,
+ * text and PDF export and the shopping list.
+ *
+ * Spanish joins unit and name with "de" ("2 tazas de harina") but only when there is a unit
+ * ("3 huevos", not "3 de huevos"); English needs no connector ("2 cups flour").
  */
-fun formatIngredientText(name: String, quantity: Double?, unit: String?, scale: Double = 1.0): String {
-    val quantityPart = quantity?.let { formatQuantity(it * scale) }
-    return buildString {
-        if (quantityPart != null) {
-            append(quantityPart)
-            // "de" solo tiene sentido pegado a una unidad ("2 tazas de harina"); sin unidad,
-            // "3 de huevos" queda mal - se pone directamente "3 huevos".
-            if (!unit.isNullOrBlank()) append(" $unit de ") else append(" ")
-        }
-        append(name)
-    }
+fun formatIngredientText(
+    name: String,
+    quantity: Double?,
+    unit: String?,
+    scale: Double = 1.0,
+    language: String = L10n.locale().language
+): String {
+    val quantityPart = quantity?.let { formatQuantity(it * scale) } ?: return name
+    val connector = if (language == "es") " de " else " "
+    return if (unit.isNullOrBlank()) "$quantityPart $name" else "$quantityPart $unit$connector$name"
 }
 
+/** Rounds to two decimals and drops trailing zeros: 2.0 -> "2", 2.50 -> "2.5", 0.333 -> "0.33". */
 fun formatQuantity(value: Double): String {
     val rounded = (value * 100).roundToInt() / 100.0
     return if (rounded == rounded.toLong().toDouble()) {

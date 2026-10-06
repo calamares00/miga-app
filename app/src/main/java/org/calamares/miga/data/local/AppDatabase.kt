@@ -58,11 +58,10 @@ import org.calamares.miga.data.local.entity.UtensilEntity
         SyncConnectionEntity::class,
         PendingSyncChangeEntity::class
     ],
-    // El JSON de esquema de Room solo sirve para MigrationTestHelper (pruebas automáticas de
-    // migración); las migraciones manuales de Migrations.kt funcionan igual sin él. Se mantiene
-    // desactivado porque compilar debug+release a la vez (como hace CI) provoca que
-    // kspDebugKotlin y kspReleaseKotlin escriban al mismo fichero en paralelo, dando el error
-    // intermitente "Empty schema file".
+    // The Room schema JSON is only needed by MigrationTestHelper; the manual migrations in
+    // Migrations.kt work without it. It stays disabled because building debug and release together
+    // (as CI does) makes both KSP tasks write the same file in parallel, causing intermittent
+    // "Empty schema file" errors.
     version = 18,
     exportSchema = false
 )

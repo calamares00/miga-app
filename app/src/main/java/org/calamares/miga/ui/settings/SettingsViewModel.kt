@@ -77,7 +77,7 @@ class SettingsViewModel(
                 val result = repository.wipeUserRecipesAndBooks()
                 L10n.str(R.string.deleted_x_book_x_recipe, result.bookCount, result.recipeCount)
             } else ""
-            when (val result = RecipeExporter.importParsedLibrary(context, parsed.dto, parsed.entries, repository)) {
+            when (val result = RecipeExporter.importParsedLibrary(context, parsed, repository)) {
                 is LibraryImportResult.Success -> onMessage(wipeMessage + L10n.str(R.string.imported_n_recipes, result.count))
                 is LibraryImportResult.Error -> onMessage(L10n.str(R.string.couldnt_import_x, result.reason))
             }
@@ -118,13 +118,6 @@ class SettingsViewModel(
 
     fun setAiNutritionEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setAiNutritionEnabled(enabled) }
-    }
-
-    val visionProvider: StateFlow<AiProvider> = settingsRepository.observeVisionProvider()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AiProvider.GEMINI)
-
-    fun setVisionProvider(provider: AiProvider) {
-        viewModelScope.launch { settingsRepository.setVisionProvider(provider) }
     }
 
     val providerOrder: StateFlow<List<AiProvider>> = settingsRepository.observeProviderOrder()

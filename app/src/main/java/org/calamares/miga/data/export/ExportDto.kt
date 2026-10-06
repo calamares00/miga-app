@@ -4,19 +4,13 @@ import kotlinx.serialization.Serializable
 import org.calamares.miga.data.model.TemplateItem
 
 /**
- * Versión del esquema de cada JSON exportado. Un archivo sin la clave "version" (todo lo
- * exportado antes de que existiera este campo) se trata como versión 0; ver
- * [RecipeExporter] para las migraciones que llevan un JSON antiguo hasta la versión actual.
+ * Schema version of every exported JSON. Files without a "version" key (exported before it existed)
+ * are treated as version 0; RecipeExporter migrates old files up to the current version.
  *
- * v1 -> v2: se añaden "uid" (receta/libro) y "photos"/"books" para poder llevar las fotos en
- * el ZIP de exportación (ver [RecipeExporter]).
- * v2 -> v3: se añade "health" (valoración de salud con IA), opcional con default null; un JSON
- * v2 sin esa clave ya se interpreta bien gracias a ignoreUnknownKeys/el default, no hace falta
- * generar nada en la migración.
- * v3 -> v4: se añade "nutrition" (estimación nutricional con IA), igual de opcional que "health",
- * mismo motivo: no hace falta generar nada en la migración.
- * v4 -> v5: se añade "rating" (valoración personal 1-5 estrellas), opcional con default null,
- * mismo motivo que "health"/"nutrition": no hace falta generar nada en la migración.
+ * v1 -> v2: "uid" (recipe and book) and "photos"/"books" so the ZIP can carry the photos. v2 -> v3:
+ * optional "health" (AI health rating). v3 -> v4: optional "nutrition" (AI nutrition estimate). v4
+ * -> v5: optional "rating" (personal 1-5 stars). Optional fields default to null, so older files
+ * need no migration step for them.
  */
 const val CURRENT_RECIPE_SCHEMA_VERSION = 5
 const val CURRENT_LIBRARY_SCHEMA_VERSION = 5
@@ -27,9 +21,9 @@ data class LibraryExportDto(
     val exportedAt: Long,
     val books: List<BookExportDto> = emptyList(),
     val recipes: List<RecipeExportDto>,
-    /** Plantillas de la lista de la compra (opcional: las copias anteriores no lo traen). */
+    /** Shopping list templates (absent in older backups). */
     val shoppingTemplates: List<TemplateBackupDto> = emptyList(),
-    /** Supermercados con su orden de pasillos (opcional, igual que [shoppingTemplates]). */
+    /** Supermarkets and their aisle order (absent in older backups). */
     val shoppingStores: List<StoreBackupDto> = emptyList()
 )
 
@@ -39,12 +33,14 @@ data class TemplateBackupDto(val name: String, val items: List<TemplateItem> = e
 @Serializable
 data class StoreBackupDto(val name: String, val argb: Long, val aisleOrder: List<String> = emptyList())
 
-/** Metadatos de un libro incluidos junto a sus recetas al exportar un libro o toda la app. */
+/** Book metadata exported together with its recipes when exporting a book or the whole library. */
 @Serializable
 data class BookExportDto(
     val uid: String,
     val name: String,
-    /** Nombre del fichero de portada dentro de "books/<uid>/" en el ZIP, o null si no tiene. */
+    /**
+     * File name of the cover inside "books/<uid>/" in the ZIP, or null when the book has no cover.
+     */
     val coverPhotoFileName: String? = null
 )
 
@@ -66,13 +62,13 @@ data class RecipeExportDto(
     val stepGroups: List<StepGroupDto>,
     val tags: List<String>,
     val utensils: List<String>,
-    /** Fotos de la receta; los ficheros correspondientes viven en "recipes/<uid>/" dentro del ZIP. */
+    /** Recipe photos; the files live in "recipes/<uid>/" inside the ZIP. */
     val photos: List<PhotoExportDto> = emptyList(),
-    /** Valoración de salud con IA cacheada (ver HealthRating); null si nunca se ha analizado. */
+    /** Cached AI health rating; null when the recipe was never analysed. */
     val health: RecipeHealthDto? = null,
-    /** Estimación nutricional con IA cacheada (ver NutritionInfo); null si nunca se ha analizado. */
+    /** Cached AI nutrition estimate; null when the recipe was never analysed. */
     val nutrition: RecipeNutritionDto? = null,
-    /** Valoración personal (1-5 estrellas); null si no se ha valorado. */
+    /** Personal rating from 1 to 5 stars; null when not rated. */
     val rating: Int? = null
 )
 

@@ -11,25 +11,26 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
 import java.util.UUID
 import kotlin.math.roundToInt
 
-// Lado mayor al que se reduce cualquier foto guardada por la app (portada de libro, foto de
-// receta) para que no ocupen más espacio del necesario; una foto de móvil normal (10-50 MP) puede
-// pesar varios MB, y en esta app solo se ven en miniaturas o a pantalla completa en un móvil.
+/**
+ * Longest side of every photo stored by the app (book covers, recipe photos). Phone photos of 10-50
+ * MP weigh several MB and are only ever shown as thumbnails or full screen on a phone.
+ */
 private const val MAX_PHOTO_DIMENSION = 1600
 private const val JPEG_QUALITY = 85
 
-// Límite de resolución y calidad específico para las fotos que se envían a un LLM de visión (no
-// las que se guardan para verse en la app): el coste en tokens de la API de Gemini depende del
-// número de "tiles" en los que se divide la imagen según su resolución (no del color), así que no
-// interesa enviarla a más tamaño del necesario para leer el texto. 1280px de lado mayor es de
-// sobra para reconocer letra impresa o manuscrita de una foto de libro de cocina tomada con un
-// móvil normal, aunque el original sea 4K o más.
+/**
+ * Size and quality of the photos sent to an AI model (not the ones stored for display). Gemini
+ * charges tokens per image tile, which depends on resolution, so images are not sent larger than
+ * needed to read the text; 1280 px is plenty for printed or handwritten text in a cookbook photo.
+ */
 private const val MAX_VISION_DIMENSION = 1280
 private const val VISION_JPEG_QUALITY = 80
 
-/** Copia una imagen elegida por el usuario al almacenamiento interno de la app para que persista. */
+/** Stores and reads the photos kept by the app in internal storage (`files/photos`). */
 object PhotoStorage {
 
     fun copyToInternalStorage(context: Context, source: Uri): String? {
@@ -45,7 +46,7 @@ object PhotoStorage {
         }
     }
 
-    /** Igual que [copyToInternalStorage] pero a partir de bytes ya en memoria (foto extraída de un ZIP importado). */
+    /** Same as [copyToInternalStorage] for bytes already in memory. */
     fun copyBytesToInternalStorage(context: Context, bytes: ByteArray): String? {
         return try {
             val dir = File(context.filesDir, "photos").apply { mkdirs() }
@@ -57,10 +58,22 @@ object PhotoStorage {
         }
     }
 
+    /** Same as [copyBytesToInternalStorage] but streaming from [input], for large ZIP entries. */
+    fun copyStreamToInternalStorage(context: Context, input: InputStream): String? {
+        return try {
+            val dir = File(context.filesDir, "photos").apply { mkdirs() }
+            val destination = File(dir, "${UUID.randomUUID()}.jpg")
+            destination.outputStream().use { output -> input.copyTo(output) }
+            "file://${destination.absolutePath}"
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     /**
-     * Crea un fichero vacío en el almacenamiento interno para que la app de cámara del sistema
-     * escriba la foto ahí. Devuelve el `content://` (vía FileProvider, necesario para pasárselo a
-     * la cámara) y el `file://` con el que luego se referencia la foto igual que cualquier otra.
+     * Creates an empty file in internal storage for the system camera app to write into. Returns
+     * the `content://` uri (through FileProvider, needed by the camera) and the `file://` uri used
+     * to reference the photo like any other.
      */
     fun createCaptureTarget(context: Context): Pair<Uri, String> {
         val dir = File(context.filesDir, "photos").apply { mkdirs() }
@@ -69,17 +82,19 @@ object PhotoStorage {
         return contentUri to "file://${destination.absolutePath}"
     }
 
-    /** Carga una imagen para editarla: corrige su orientación EXIF y la reduce a un tamaño manejable. */
+    /**
+     * Loads an image for editing: EXIF orientation corrected and downscaled to a manageable size.
+     */
     fun loadBitmap(context: Context, uri: Uri): Bitmap? {
-        val upright = decodeUpright(context, uri) ?: return null
+        val upright = loadUprightSampled(context, uri, MAX_PHOTO_DIMENSION) ?: return null
         return downscaleIfNeeded(upright, MAX_PHOTO_DIMENSION)
     }
 
     /**
-     * Decodifica una imagen enderezada (EXIF) con su lado mayor como mucho [maxDimension]
-     * (aproximado: usa inSampleSize para no cargar en memoria fotos de 50 MP a tamaño completo).
-     * Mantiene la proporción, así que coordenadas normalizadas sobre la versión enviada a la IA
-     * valen igual aquí.
+     * Decodes an image with its EXIF orientation applied and its longest side roughly
+     * [maxDimension] or more (subsampled with inSampleSize so a 50 MP photo is never decoded at
+     * full size). The aspect ratio is kept, so coordinates normalised on the copy sent to the AI
+     * also apply here.
      */
     fun loadUprightSampled(context: Context, uri: Uri, maxDimension: Int): Bitmap? {
         return try {
@@ -94,18 +109,6 @@ object PhotoStorage {
         } catch (e: Exception) {
             null
         } catch (e: OutOfMemoryError) {
-            null
-        }
-    }
-
-    /** Decodifica una imagen y corrige su orientación EXIF, sin reducir aún su tamaño. */
-    private fun decodeUpright(context: Context, uri: Uri): Bitmap? {
-        return try {
-            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
-            val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
-            val rotationDegrees = readExifRotationDegrees(bytes)
-            if (rotationDegrees != 0f) rotateBitmap(decoded, rotationDegrees) else decoded
-        } catch (e: Exception) {
             null
         }
     }
@@ -140,11 +143,13 @@ object PhotoStorage {
         return Bitmap.createScaledBitmap(bitmap, width, height, true)
     }
 
-    /** Lee una foto, la endereza y la reduce, y devuelve sus bytes JPEG listos para enviar a un
-     *  LLM de visión, sin escribirla a disco. Optimizada para minimizar tokens/peso de subida
-     *  (ver [MAX_VISION_DIMENSION]), no para verse bien en la app. */
+    /**
+     * Reads, straightens and downscales a photo and returns JPEG bytes ready to send to an AI
+     * model, without writing to disk. Optimised for upload size (see [MAX_VISION_DIMENSION]), not
+     * for display.
+     */
     fun readResizedJpegBytes(context: Context, uri: Uri): ByteArray? {
-        val upright = decodeUpright(context, uri) ?: return null
+        val upright = loadUprightSampled(context, uri, MAX_VISION_DIMENSION) ?: return null
         val resized = downscaleIfNeeded(upright, MAX_VISION_DIMENSION)
         return ByteArrayOutputStream().use { out ->
             resized.compress(Bitmap.CompressFormat.JPEG, VISION_JPEG_QUALITY, out)
@@ -152,7 +157,7 @@ object PhotoStorage {
         }
     }
 
-    /** Guarda [bitmap] como JPEG en el almacenamiento interno, reduciéndolo si hiciera falta. */
+    /** Stores [bitmap] as a JPEG in internal storage, downscaled when needed. */
     fun saveNormalized(context: Context, bitmap: Bitmap): String {
         val normalized = downscaleIfNeeded(bitmap, MAX_PHOTO_DIMENSION)
         val dir = File(context.filesDir, "photos").apply { mkdirs() }
@@ -161,14 +166,17 @@ object PhotoStorage {
         return "file://${destination.absolutePath}"
     }
 
-    /** Borra el fichero físico referenciado por una uri "file://..." ya guardada por esta app (foto
-     *  de receta o portada de libro). No falla si el fichero ya no existe. */
+    /**
+     * Deletes the file behind a "file://..." uri stored by the app. Does nothing if it no longer
+     * exists.
+     */
     fun deleteFile(uri: String) {
         runCatching { File(Uri.parse(uri).path ?: return@runCatching).delete() }
     }
 
-    /** Lee los bytes crudos de una foto ya guardada por esta app (uri "file://..."); usado para
-     *  subirla tal cual al servidor de sincronización, sin necesitar Context (ruta ya absoluta). */
+    /**
+     * Raw bytes of a photo stored by the app ("file://..."), used to upload it to the sync server.
+     */
     fun readBytes(uri: String): ByteArray? =
         runCatching { File(Uri.parse(uri).path ?: return null).readBytes() }.getOrNull()
 }

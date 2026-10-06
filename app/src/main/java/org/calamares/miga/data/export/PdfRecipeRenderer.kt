@@ -1,8 +1,5 @@
 package org.calamares.miga.data.export
 
-import org.calamares.miga.data.model.displayCategoryName
-import org.calamares.miga.L10n
-import org.calamares.miga.R
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -13,14 +10,17 @@ import android.net.Uri
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
+import android.text.TextUtils
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.UNCATEGORIZED_CATEGORY_LABEL
+import org.calamares.miga.data.model.formatIngredientText
 import java.io.File
 import kotlin.math.min
 
-// Mismo diseño que el generador de PDF del servidor (miga-server, PdfBox) - cualquier cambio aquí
-// (tamaños, márgenes, orden de secciones) debe reflejarse también allí para que "exportar a PDF"
-// se vea igual desde la app y desde /ui.
+// Same layout as the PDF generator of miga-server (PdfBox): keep sizes, margins and section order
+// in sync so a PDF looks the same whether it is exported from the app or from the server UI.
 private const val PAGE_WIDTH = 595
 private const val PAGE_HEIGHT = 842
 private const val MARGIN = 40f
@@ -34,7 +34,7 @@ private const val THUMBS_PER_ROW = 4
 private const val THUMB_GAP = 10f
 private const val COVER_IMAGE_BOX = 300f
 
-private const val ACCENT_COLOR = 0xFFC1633D.toInt() // Terracota, mismo tono que ui/theme/Color.kt
+private const val ACCENT_COLOR = 0xFFC1633D.toInt() // Terracotta, same as ui/theme/Color.kt
 private const val MUTED_COLOR = 0xFF6B6055.toInt()
 private const val RULE_COLOR = 0xFFE0D8CE.toInt()
 
@@ -55,20 +55,26 @@ private class Paints {
     val rule = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = RULE_COLOR; strokeWidth = 0.75f }
 }
 
-/** Una unidad de contenido a maquetar: cada una sabe medir su propia altura sin necesitar un
- *  Canvas, para poder calcular en qué página cae todo (ver [layoutItems]) antes de dibujar nada. */
+/**
+ * A unit of content to lay out. Every item can measure its own height without a Canvas, so the
+ * page of every item is known (see [PdfRecipeRenderer.layoutItems]) before anything is drawn.
+ * Images only keep their uri and size: bitmaps are decoded right before drawing and are not kept
+ * by the items, so exporting a large book does not hold every photo in memory at once. They are
+ * not recycled explicitly because the page canvas may still reference them until finishPage().
+ */
 private sealed interface Item {
     val spacingBefore: Float
 
     data class Text(val text: String, val paint: TextPaint, override val spacingBefore: Float, val forceNewPage: Boolean = false) : Item
-    data class Image(val bitmap: Bitmap, override val spacingBefore: Float) : Item
-    data class ThumbRow(val bitmaps: List<Bitmap>, override val spacingBefore: Float) : Item
+    data class Image(val uri: String, val width: Int, val height: Int, override val spacingBefore: Float) : Item
+    data class ThumbRow(val uris: List<String>, override val spacingBefore: Float) : Item
     data class TocCategory(val name: String, override val spacingBefore: Float) : Item
     data class TocRecipe(val name: String, val page: Int, override val spacingBefore: Float) : Item
 }
 
 private class PlacedItem(val item: Item, val page: Int, val y: Float)
 
+/** Renders a recipe, or a whole book with cover and table of contents, as an A4 PDF. */
 object PdfRecipeRenderer {
 
     fun render(recipe: Recipe): PdfDocument {
@@ -89,16 +95,14 @@ object PdfRecipeRenderer {
     }
 
     /**
-     * Genera el PDF de un libro entero: portada con su imagen, índice agrupado por categoría (con
-     * número de página real de cada receta) y las recetas ordenadas igual que en el índice.
+     * Renders a whole book: a cover, a table of contents grouped by category with the real page of
+     * every recipe, and the recipes in the same order.
      *
-     * Necesita dos pasadas porque el número de página de cada receta en el índice no se conoce
-     * hasta haber maquetado (sin dibujar aún) todo el contenido que va antes: primero se maqueta
-     * el propio índice con páginas "de mentira" solo para saber cuántas páginas de índice hacen
-     * falta (su alto no depende del número que se acabe imprimiendo, solo del texto), luego se
-     * maqueta el contenido real a partir de ahí para saber en qué página empieza cada receta, y
-     * solo entonces se vuelve a maquetar el índice ya con esos números reales antes de dibujar
-     * nada en el documento final.
+     * The table of contents needs the page where each recipe starts, which is only known after
+     * laying out everything before it. So it is laid out three times: first with dummy numbers to
+     * learn how many pages it takes (its height does not depend on the numbers), then the content
+     * is laid out after it to find each recipe's first page, and finally the table is laid out
+     * again with the real numbers.
      */
     fun renderBook(bookName: String, coverPhotoUri: String?, recipes: List<Recipe>): PdfDocument {
         val paints = Paints()
@@ -122,11 +126,10 @@ object PdfRecipeRenderer {
 
         val document = PdfDocument()
 
-        run {
-            val page = document.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create())
-            drawCoverPage(page.canvas, paints, bookName, coverPhotoUri?.let { loadScaledBitmap(it, COVER_IMAGE_BOX.toInt() * 2) }, ordered.size)
-            document.finishPage(page)
-        }
+        val coverPage = document.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create())
+        val coverBitmap = coverPhotoUri?.let { loadScaledBitmap(it, COVER_IMAGE_BOX.toInt() * 2) }
+        drawCoverPage(coverPage.canvas, paints, bookName, coverBitmap, ordered.size)
+        document.finishPage(coverPage)
 
         val tocByLocalPage = tocPlaced.groupBy { it.page }
         for (localPage in 1..tocPageCount) {
@@ -150,12 +153,13 @@ object PdfRecipeRenderer {
         return document
     }
 
-    /** Recetas ordenadas por categoría (alfabética, sin categoría al final) y, dentro de cada
-     *  categoría, por nombre - mismo orden para el índice y para las páginas de contenido. */
-    private fun groupedByCategory(recipes: List<Recipe>): List<Recipe> =
-        recipes.groupBy { it.categoryName?.takeIf { name -> name.isNotBlank() } ?: UNCATEGORIZED_CATEGORY_LABEL }
-            .toSortedMap(compareBy { if (it == UNCATEGORIZED_CATEGORY_LABEL) "￿" else it.lowercase() })
+    /** Recipes sorted by category (alphabetically, uncategorized last) and then by name. */
+    private fun groupedByCategory(recipes: List<Recipe>): List<Recipe> {
+        val uncategorized = UNCATEGORIZED_CATEGORY_LABEL
+        return recipes.groupBy { it.categoryName?.takeIf { name -> name.isNotBlank() } ?: uncategorized }
+            .toSortedMap(compareBy { if (it == uncategorized) "￿" else it.lowercase() })
             .flatMap { (_, group) -> group.sortedBy { it.name.lowercase() } }
+    }
 
     private fun buildTocItems(ordered: List<Recipe>, paints: Paints, pageNumberFor: (Recipe) -> Int): List<Item> {
         val items = mutableListOf<Item>()
@@ -164,7 +168,7 @@ object PdfRecipeRenderer {
         ordered.forEach { recipe ->
             val category = recipe.categoryName?.takeIf { it.isNotBlank() } ?: UNCATEGORIZED_CATEGORY_LABEL
             if (category != lastCategory) {
-                items += Item.TocCategory(displayCategoryName(category), if (lastCategory == null) 20f else 16f)
+                items += Item.TocCategory(category, if (lastCategory == null) 20f else 16f)
                 lastCategory = category
             }
             items += Item.TocRecipe(recipe.name, pageNumberFor(recipe), 8f)
@@ -180,27 +184,24 @@ object PdfRecipeRenderer {
             append(recipe.difficulty.label)
             recipe.categoryName?.let { append(" · ").append(it) }
             recipe.totalTimeMinutes?.let { append(" · ").append(it).append(" min") }
-            append(L10n.str(R.string.servings)).append(recipe.servings)
+            append(L10n.str(R.string.servings_x, recipe.servings))
         }
         items += Item.Text(meta, paints.meta, 6f)
 
         val coverUri = recipe.coverPhotoUri
         if (coverUri != null) {
-            loadScaledBitmap(coverUri, CONTENT_WIDTH * 2)?.let { items += Item.Image(it, 12f) }
+            imageSize(coverUri)?.let { (width, height) -> items += Item.Image(coverUri, width, height, 12f) }
         }
-        val extraUris = recipe.photos.map { it.uri }.filterNot { it == coverUri }
-        if (extraUris.isNotEmpty()) {
-            val thumbs = extraUris.mapNotNull { loadScaledBitmap(it, (THUMB_SIZE * 2).toInt()) }
-            thumbs.chunked(THUMBS_PER_ROW).forEachIndexed { index, row ->
-                items += Item.ThumbRow(row, if (index == 0) 10f else THUMB_GAP)
-            }
+        val extraUris = recipe.photos.map { it.uri }.filter { it != coverUri && imageSize(it) != null }
+        extraUris.chunked(THUMBS_PER_ROW).forEachIndexed { index, row ->
+            items += Item.ThumbRow(row, if (index == 0) 10f else THUMB_GAP)
         }
 
         if (recipe.utensils.isNotEmpty()) {
-            items += Item.Text("Utensilios: " + recipe.utensils.joinToString(", "), paints.body, 10f)
+            items += Item.Text(L10n.str(R.string.utensils) + ": " + recipe.utensils.joinToString(", "), paints.body, 10f)
         }
         if (recipe.tags.isNotEmpty()) {
-            items += Item.Text("Etiquetas: " + recipe.tags.joinToString(", "), paints.body, 4f)
+            items += Item.Text(L10n.str(R.string.tags) + ": " + recipe.tags.joinToString(", "), paints.body, 4f)
         }
 
         items += Item.Text(L10n.str(R.string.ingredients), paints.header, 18f)
@@ -208,9 +209,8 @@ object PdfRecipeRenderer {
             if (group.ingredients.isNotEmpty()) {
                 if (group.name != null) items += Item.Text(group.name, paints.subHeader, 10f)
                 group.ingredients.forEach { ingredient ->
-                    val qty = ingredient.quantity?.let { q -> if (q == q.toLong().toDouble()) q.toLong().toString() else q.toString() }
-                    val line = "•  " + listOfNotNull(qty, ingredient.unit).joinToString(" ") + (if (qty != null) " " else "") + ingredient.name
-                    items += Item.Text(line.replace("  ", " "), paints.body, 4f)
+                    val line = "• " + formatIngredientText(ingredient.name, ingredient.quantity, ingredient.unit)
+                    items += Item.Text(line, paints.body, 4f)
                 }
             }
         }
@@ -230,14 +230,16 @@ object PdfRecipeRenderer {
             items += Item.Text(recipe.notes, paints.body, 4f)
         }
         if (recipe.source.isNotBlank()) {
-            items += Item.Text("Origen: " + recipe.source, paints.body, 10f)
+            items += Item.Text(L10n.str(R.string.source) + ": " + recipe.source, paints.body, 10f)
         }
 
         return items
     }
 
-    /** Maqueta [items] en páginas de [CONTENT_WIDTH]×alto disponible sin tocar ningún Canvas -
-     *  puro cálculo, reutilizado tanto para medir (índice) como para el dibujado final. */
+    /**
+     * Assigns a page and a vertical position to every item without touching a Canvas; used both to
+     * measure (table of contents) and for the final drawing.
+     */
     private fun layoutItems(items: List<Item>, startPage: Int, paints: Paints): List<PlacedItem> {
         val placed = mutableListOf<PlacedItem>()
         var page = startPage
@@ -259,7 +261,7 @@ object PdfRecipeRenderer {
 
     private fun measuredHeight(item: Item, paints: Paints): Float = when (item) {
         is Item.Text -> textLayout(item.text, item.paint).height.toFloat()
-        is Item.Image -> imageDrawSize(item.bitmap).second
+        is Item.Image -> imageDrawSize(item.width, item.height).second
         is Item.ThumbRow -> THUMB_SIZE
         is Item.TocCategory -> singleLineHeight(paints.tocCategory)
         is Item.TocRecipe -> singleLineHeight(paints.tocEntry)
@@ -273,11 +275,12 @@ object PdfRecipeRenderer {
             .setLineSpacing(1f, 1.15f)
             .build()
 
-    private fun imageDrawSize(bitmap: Bitmap): Pair<Float, Float> {
-        val naturalHeight = CONTENT_WIDTH.toFloat() * bitmap.height / bitmap.width
-        val height = min(naturalHeight, MAX_HERO_IMAGE_HEIGHT)
-        val width = if (height < naturalHeight) height * bitmap.width / bitmap.height else CONTENT_WIDTH.toFloat()
-        return width to height
+    /** Size of a full-width image, capped at [MAX_HERO_IMAGE_HEIGHT] while keeping its aspect ratio. */
+    private fun imageDrawSize(width: Int, height: Int): Pair<Float, Float> {
+        val naturalHeight = CONTENT_WIDTH.toFloat() * height / width
+        val drawHeight = min(naturalHeight, MAX_HERO_IMAGE_HEIGHT)
+        val drawWidth = if (drawHeight < naturalHeight) drawHeight * width / height else CONTENT_WIDTH.toFloat()
+        return drawWidth to drawHeight
     }
 
     private fun drawItem(canvas: Canvas, item: Item, y: Float, paints: Paints) {
@@ -290,14 +293,17 @@ object PdfRecipeRenderer {
                 canvas.restore()
             }
             is Item.Image -> {
-                val (w, h) = imageDrawSize(item.bitmap)
+                val bitmap = loadScaledBitmap(item.uri, CONTENT_WIDTH * 2) ?: return
+                val (w, h) = imageDrawSize(item.width, item.height)
                 val left = MARGIN + (CONTENT_WIDTH - w) / 2f
-                canvas.drawBitmap(item.bitmap, null, RectF(left, y, left + w, y + h), null)
+                canvas.drawBitmap(bitmap, null, RectF(left, y, left + w, y + h), null)
             }
             is Item.ThumbRow -> {
                 var x = MARGIN
-                item.bitmaps.forEach { bitmap ->
-                    canvas.drawBitmap(centerCropSquare(bitmap, THUMB_SIZE.toInt()), x, y, null)
+                item.uris.forEach { uri ->
+                    loadScaledBitmap(uri, (THUMB_SIZE * 2).toInt())?.let { bitmap ->
+                        canvas.drawBitmap(centerCropSquare(bitmap, THUMB_SIZE.toInt()), x, y, null)
+                    }
                     x += THUMB_SIZE + THUMB_GAP
                 }
             }
@@ -308,12 +314,13 @@ object PdfRecipeRenderer {
         }
     }
 
+    /** One table-of-contents line: name, dot leaders and the page number aligned to the right. */
     private fun drawTocRow(canvas: Canvas, name: String, pageNumber: Int, y: Float, paints: Paints) {
         val baseline = y - paints.tocEntry.ascent()
         val pageText = pageNumber.toString()
         val numWidth = paints.tocPageNum.measureText(pageText)
         val availableForName = CONTENT_WIDTH - numWidth - 16f
-        val ellipsized = android.text.TextUtils.ellipsize(name, paints.tocEntry, availableForName, android.text.TextUtils.TruncateAt.END).toString()
+        val ellipsized = TextUtils.ellipsize(name, paints.tocEntry, availableForName, TextUtils.TruncateAt.END).toString()
         canvas.drawText(ellipsized, MARGIN, baseline, paints.tocEntry)
         val nameWidth = paints.tocEntry.measureText(ellipsized)
         val dotsStart = MARGIN + nameWidth + 4f
@@ -348,7 +355,7 @@ object PdfRecipeRenderer {
         titleLayout.draw(canvas)
         canvas.restore()
         y += titleLayout.height + 12f
-        val subtitle = if (recipeCount == 1) "1 receta" else "$recipeCount recetas"
+        val subtitle = if (recipeCount == 1) L10n.str(R.string.recipe_count_one) else L10n.str(R.string.recipe_count_many, recipeCount)
         canvas.drawText(subtitle, PAGE_WIDTH / 2f, y, paints.coverSubtitle)
     }
 
@@ -360,17 +367,23 @@ object PdfRecipeRenderer {
         canvas.drawText(L10n.str(R.string.miga_page_x_x, pageNum, totalPages), PAGE_WIDTH / 2f, PAGE_HEIGHT - MARGIN + 14f, paints.footer)
     }
 
-    /** Decodifica una foto ya guardada por la app (uri "file://...") reduciéndola de entrada al
-     *  tamaño que se va a necesitar, para no cargar en memoria fotos de varios MB por cada una que
-     *  aparezca en un PDF (especialmente al exportar un libro entero). */
-    private fun loadScaledBitmap(uri: String, targetWidth: Int): Bitmap? {
-        val path = runCatching { Uri.parse(uri).path }.getOrNull() ?: return null
-        if (!File(path).exists()) return null
+    private fun filePath(uri: String): String? =
+        runCatching { Uri.parse(uri).path }.getOrNull()?.takeIf { File(it).exists() }
+
+    /** Pixel size of a stored photo without decoding it, or null when it cannot be read. */
+    private fun imageSize(uri: String): Pair<Int, Int>? {
+        val path = filePath(uri) ?: return null
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(path, bounds)
-        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        return if (bounds.outWidth > 0 && bounds.outHeight > 0) bounds.outWidth to bounds.outHeight else null
+    }
+
+    /** Decodes a stored photo ("file://...") subsampled to roughly [targetWidth] to save memory. */
+    private fun loadScaledBitmap(uri: String, targetWidth: Int): Bitmap? {
+        val path = filePath(uri) ?: return null
+        val (width, _) = imageSize(uri) ?: return null
         var sampleSize = 1
-        while (bounds.outWidth / (sampleSize * 2) >= targetWidth) sampleSize *= 2
+        while (width / (sampleSize * 2) >= targetWidth) sampleSize *= 2
         val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
         return runCatching { BitmapFactory.decodeFile(path, options) }.getOrNull()
     }
@@ -380,6 +393,8 @@ object PdfRecipeRenderer {
         val left = (bitmap.width - srcSize) / 2
         val top = (bitmap.height - srcSize) / 2
         val cropped = Bitmap.createBitmap(bitmap, left, top, srcSize, srcSize)
-        return Bitmap.createScaledBitmap(cropped, size, size, true)
+        val scaled = Bitmap.createScaledBitmap(cropped, size, size, true)
+        if (cropped !== bitmap && cropped !== scaled) cropped.recycle()
+        return scaled
     }
 }

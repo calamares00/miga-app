@@ -20,7 +20,10 @@ import androidx.room.PrimaryKey
 data class IngredientEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val recipeId: Long,
-    /** Null groupName = ingrediente de la receta principal. Un nombre agrupa ingredientes de una sub-receta (p.ej. una salsa). */
+    /**
+     * Null for the main recipe; a name groups the ingredients of a sub-recipe (for example a
+     * sauce).
+     */
     val groupName: String?,
     val position: Int,
     val name: String,

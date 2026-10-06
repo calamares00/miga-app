@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UtensilDao {
-    @Query("SELECT * FROM utensils ORDER BY name ASC")
+    @Query("SELECT * FROM utensils ORDER BY name COLLATE NOCASE ASC")
     fun observeAll(): Flow<List<UtensilEntity>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)

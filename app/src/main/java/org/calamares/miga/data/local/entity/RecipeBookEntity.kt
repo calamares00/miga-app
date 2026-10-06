@@ -6,21 +6,23 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "recipe_books")
 data class RecipeBookEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    /** Identificador estable (UUID) independiente del id local, usado en export/import. */
+    /** Stable identifier (UUID) independent of the local id, used by export/import and sync. */
     val uid: String,
     val name: String,
     val coverPhotoUri: String?,
     val createdAt: Long,
-    /** Id del pack instalado (ver PacksCatalogClient); null = libro propio del usuario, editable. */
+    /** Id of the installed pack (see PacksCatalogClient); null for a user's own editable book. */
     val packId: String? = null,
-    /** Versión del pack instalada; null si [packId] es null. */
+    /** Installed pack version; null when [packId] is null. */
     val packVersion: Int? = null,
-    /** Última modificación real (nombre o portada); usada por el motor de sincronización para
-     *  decidir qué es más reciente al comparar con la copia del servidor. Por defecto igual a
-     *  [createdAt] si no se indica (libro recién creado, nunca editado). */
+    /**
+     * Time of the last real change (name or cover), used by sync to decide which copy is newer.
+     * Defaults to [createdAt].
+     */
     val updatedAt: Long = createdAt,
-    /** Id de la conexión de sincronización (ver SyncConnectionEntity) a la que pertenece este
-     *  libro; null = libro local, no sincronizado con ningún servidor. A diferencia de [packId]
-     *  (solo lectura), un libro sincronizado es de lectura-escritura normal. */
+    /**
+     * Sync connection (see SyncConnectionEntity) the book belongs to; null for a local book. Unlike
+     * a pack, a synced book is fully editable.
+     */
     val syncConnectionId: Long? = null
 )
