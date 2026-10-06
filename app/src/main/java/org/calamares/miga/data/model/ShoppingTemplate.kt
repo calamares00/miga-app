@@ -5,8 +5,8 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
 /**
- * Artículo de una plantilla. Si viene de Open Food Facts conserva su foto y su ficha ([info]) para que,
- * al aplicar la plantilla, el producto llegue a la lista igual que si se hubiera escaneado.
+ * An item in a shopping template. Items from Open Food Facts keep their photo and product sheet
+ * ([info]) so that applying the template adds them exactly as if they had been scanned.
  */
 @Serializable
 data class TemplateItem(
@@ -25,7 +25,10 @@ data class TemplateItem(
     }
 }
 
-/** Plantilla de lista de la compra: un nombre y sus artículos; [id] > 0 si es del usuario (guardada en Room). */
+/**
+ * A shopping list template: a name and its items. User templates are stored in Room with [id] > 0;
+ * predefined ones use negative ids.
+ */
 data class ShoppingTemplate(
     val id: Long,
     val name: String,
@@ -35,9 +38,8 @@ data class ShoppingTemplate(
 }
 
 /**
- * Formato del cuerpo de una plantilla en la base de datos: JSON con la lista de [TemplateItem].
- * Las plantillas antiguas (una línea "cantidad<TAB>unidad<TAB>nombre" por artículo) se siguen leyendo
- * con [legacyDecoder]. Lógica pura, sin Android.
+ * Storage format of a template body: a JSON list of [TemplateItem]. Older templates (one
+ * "quantity<TAB>unit<TAB>name" line per item) are still read through [legacyDecoder]. Pure logic.
  */
 object ShoppingTemplateCodec {
     private const val MAX_ITEMS = 500
@@ -53,15 +55,15 @@ object ShoppingTemplateCodec {
             try {
                 return json.decodeFromString(serializer, trimmed).filter { it.name.isNotBlank() }
             } catch (e: IllegalArgumentException) {
-                // No es JSON válido: se intenta como formato antiguo.
+                // Not valid JSON: fall back to the legacy format.
             }
         }
         return legacyDecoder(body).map { TemplateItem.of(it) }
     }
 
     /**
-     * Añade [item] a [items]: si ya hay uno con el mismo nombre (sin distinguir mayúsculas) lo sustituye
-     * conservando su posición, para no duplicar el mismo producto en la plantilla.
+     * Adds [item] to [items]. An item with the same name (case-insensitive) is replaced in place so
+     * the template never lists the same product twice.
      */
     fun upsert(items: List<TemplateItem>, item: TemplateItem): List<TemplateItem> {
         val key = item.name.trim().lowercase()

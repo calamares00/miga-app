@@ -1,13 +1,16 @@
 package org.calamares.miga.data.model
 
-/** Sugerencia al añadir un artículo: viene del historial de compras (con [uses] > 0) o del catálogo de ingredientes. */
+/**
+ * Suggestion shown while adding an item. It comes from the purchase history ([uses] > 0) or from
+ * the ingredient catalogue.
+ */
 data class ShoppingSuggestion(val name: String, val quantity: Double?, val unit: String?, val uses: Int)
 
 object ShoppingSuggestions {
 
     /**
-     * Ordena las sugerencias para [query]: primero las que empiezan por lo escrito, luego las que
-     * lo contienen; a igualdad, las del historial (más usadas antes) van antes que las del catálogo.
+     * Ranks suggestions for [query]: exact matches first, then prefix matches, then substring
+     * matches. Ties favour history entries (most used first) over catalogue names.
      */
     fun rank(query: String, history: List<ShoppingSuggestion>, catalogNames: List<String>, limit: Int = 6): List<ShoppingSuggestion> {
         val needle = query.trim().lowercase()

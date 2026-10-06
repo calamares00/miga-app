@@ -7,14 +7,16 @@ import org.calamares.miga.data.model.RecipeDraft
 import org.calamares.miga.data.model.StepGroup
 
 /**
- * Convierte el resultado de reconocimiento por foto directamente en un [RecipeDraft] listo para
- * guardar, sin pasar por el estado mutable del editor (a diferencia de
- * [org.calamares.miga.ui.editor.RecipeEditorViewModel.applyVisionResult]). Usado por la importación
- * masiva, donde cada foto se guarda directamente sin revisión interactiva.
+ * Converts an image recognition result straight into a [RecipeDraft] ready to save, without going
+ * through the editor's mutable state (unlike
+ * [org.calamares.miga.ui.editor.RecipeEditorViewModel.applyVisionResult]). Used by bulk import,
+ * where each photo is saved without interactive review.
  */
 fun RecipeVisionResultDto.toRecipeDraft(bookId: Long): RecipeDraft {
-    // Misma regla que en el editor interactivo: la primera categoría de una lista separada por
-    // comas es la categoría de la receta, el resto se añaden como etiquetas.
+    /**
+     * Same rule as the interactive editor: the first entry of a comma-separated category is the
+     * recipe category and the rest become tags.
+     */
     val categoryParts = categoryName?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
     return RecipeDraft(
         recipeBookId = bookId,

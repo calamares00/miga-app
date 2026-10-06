@@ -25,7 +25,7 @@ data class Recipe(
     val utensils: List<String>,
     val healthRating: HealthRating? = null,
     val nutritionInfo: NutritionInfo? = null,
-    /** Valoración personal (1-5 estrellas); null = sin valorar. */
+    /** Personal rating from 1 to 5 stars; null when not rated. */
     val rating: Int? = null
 ) {
     val totalTimeMinutes: Int?
@@ -45,7 +45,7 @@ data class RecipePhoto(
 )
 
 data class IngredientGroup(
-    /** null = grupo principal de la receta. Un nombre indica una sub-receta (p.ej. "Salsa de tomate"). */
+    /** Null for the main recipe; a name marks a sub-recipe (for example "Tomato sauce"). */
     val name: String?,
     val ingredients: List<Ingredient>
 )
@@ -57,7 +57,7 @@ data class Ingredient(
 )
 
 data class StepGroup(
-    /** null = grupo principal de la receta. Un nombre indica una sub-receta (p.ej. "Salsa de tomate"). */
+    /** Null for the main recipe; a name marks a sub-recipe (for example "Tomato sauce"). */
     val name: String?,
     val instructions: List<String>
 )

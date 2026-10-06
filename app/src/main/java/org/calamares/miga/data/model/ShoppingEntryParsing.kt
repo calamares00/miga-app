@@ -3,9 +3,9 @@ package org.calamares.miga.data.model
 data class ParsedShoppingEntry(val name: String, val quantity: Double?, val unit: String?)
 
 /**
- * Interpreta texto libre escrito, pegado o dictado ("2 kg tomates, leche; 3 huevos") como
- * artículos de la lista de la compra: separa varios artículos y, en cada uno, detecta cantidad y
- * unidad iniciales. Lógica pura, sin Android, para poder probarla con tests unitarios.
+ * Parses free text that was typed, pasted or dictated ("2 kg tomatoes, milk; 3 eggs") into shopping
+ * list entries. It splits the text into items and detects a leading quantity and unit in each one.
+ * Pure logic, so it can be unit tested.
  */
 object ShoppingEntryParser {
 
@@ -33,7 +33,7 @@ object ShoppingEntryParser {
         "cucharada" to "cucharada", "cucharadas" to "cucharada",
         "cucharadita" to "cucharadita", "cucharaditas" to "cucharadita",
         "taza" to "taza", "tazas" to "taza",
-        // Inglés
+        // English
         "kilogram" to "kg", "kilograms" to "kg", "gram" to "g", "grams" to "g",
         "litre" to "l", "litres" to "l", "liter" to "l", "liters" to "l",
         "lb" to "lb", "lbs" to "lb", "pound" to "lb", "pounds" to "lb",
@@ -56,7 +56,10 @@ object ShoppingEntryParser {
         "unit" to "unit", "units" to "unit", "piece" to "unit", "pieces" to "unit"
     )
 
-    /** Números dichos o escritos con letra ("dos kilos de tomates", "a dozen eggs"), solo al inicio. */
+    /**
+     * Numbers written or spoken as words ("dos kilos de tomates", "a dozen eggs"). Only recognised
+     * at the start of an entry.
+     */
     private val WORD_NUMBERS: Map<String, Double> = mapOf(
         "un" to 1.0, "una" to 1.0, "uno" to 1.0, "dos" to 2.0, "tres" to 3.0, "cuatro" to 4.0, "cinco" to 5.0,
         "seis" to 6.0, "siete" to 7.0, "ocho" to 8.0, "nueve" to 9.0, "diez" to 10.0, "medio" to 0.5, "media" to 0.5,
@@ -66,11 +69,17 @@ object ShoppingEntryParser {
 
     private val NUMBER_PREFIX = Regex("""^(\d+/\d+|\d+(?:[.,]\d+)?|½|¼|¾)(\s*)(.*)$""")
 
-    // Una coma separa artículos salvo que sea un decimal ("1,5 kg"), es decir, con dígito a ambos lados.
+    /**
+     * A comma separates items unless it is a decimal separator ("1,5 kg"), i.e. it has a digit on
+     * both sides.
+     */
     private val SEPARATORS = Regex("""[\n;]+|,(?!\d)|(?<!\d),""")
     private val CONJUNCTION = Regex("""\s+(?:y|and)\s+""", RegexOption.IGNORE_CASE)
 
-    /** [splitOnY] separa también por " y "/" and " ("leche y pan"); útil al dictar, arriesgado al escribir. */
+    /**
+     * When [splitOnY] is true, items are also split on " y " / " and " ("milk and bread"). Useful
+     * for dictation, risky for typed text.
+     */
     fun parse(text: String, splitOnY: Boolean = false): List<ParsedShoppingEntry> {
         val chunks = text.split(SEPARATORS).flatMap { chunk ->
             if (splitOnY) chunk.split(CONJUNCTION) else listOf(chunk)
@@ -91,15 +100,15 @@ object ShoppingEntryParser {
         return when {
             unit != null && afterToken.isNotEmpty() -> ParsedShoppingEntry(stripLeadingDe(afterToken), quantity, unit)
             unit != null -> ParsedShoppingEntry(firstToken, quantity, null)
-            // "7up", "2x1": número pegado a una palabra que no es unidad, forma parte del nombre.
+            // "7up", "2x1": a number glued to a word that is not a unit is part of the name.
             attached -> ParsedShoppingEntry(entry, null, null)
             else -> ParsedShoppingEntry(rest, quantity, null)
         }
     }
 
     /**
-     * "dos kilos de tomates", "a dozen eggs": número con letra seguido de una unidad conocida. Sin
-     * unidad no se toca ("una lechuga" se queda tal cual: el nombre ya se entiende).
+     * "dos kilos de tomates", "a dozen eggs": a number word followed by a known unit. Without a
+     * unit the entry is left as is ("una lechuga" already reads fine).
      */
     private fun parseWordNumber(entry: String): ParsedShoppingEntry {
         val words = entry.trim().split(Regex("""\s+"""), limit = 3)

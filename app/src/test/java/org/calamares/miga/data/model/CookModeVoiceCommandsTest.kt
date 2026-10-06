@@ -58,4 +58,14 @@ class CookModeVoiceCommandsTest {
         assertEquals(CookVoiceCommand.StartTimer, CookModeVoiceCommands.parse("start the timer"))
         assertEquals(CookVoiceCommand.CancelTimer, CookModeVoiceCommands.parse("stop the timer"))
     }
+
+    @Test
+    fun `a cancel word after the timer word does not cancel it`() {
+        assertEquals(CookVoiceCommand.StartTimer, CookModeVoiceCommands.parse("pon el temporizador para la pasta"))
+    }
+
+    @Test
+    fun `keywords only match whole words`() {
+        assertNull(CookModeVoiceCommands.parse("voy a preparar la salsa"))
+    }
 }

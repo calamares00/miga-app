@@ -4,19 +4,24 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 
 /**
- * "Sin categoría" para un ingrediente de la lista de la compra sin match en el catálogo (ver
- * data/local/dao/IngredientCategoryDao.kt). Constante propia, no [UNCATEGORIZED_CATEGORY_LABEL]
- * de RecipeFiltering.kt: son dos taxonomías distintas (categoría de receta vs. de ingrediente)
- * que ya conviven hoy sin compartir constante (ManageIngredientsScreen.kt tiene el mismo literal
- * hardcodeado aparte).
+ * Stored category name for shopping items that match no catalogue ingredient (see
+ * IngredientCategoryDao). It is persisted data, so it stays in Spanish; use [displayCategoryName]
+ * to show it. It is separate from the recipe-category label in RecipeFiltering.kt because they
+ * belong to different taxonomies.
  */
 const val UNCATEGORIZED_INGREDIENT_LABEL = "Sin categoría"
 
-/** Nombre de categoría para mostrar: el de "sin categoría" se traduce; el resto son datos del usuario y se dejan tal cual. */
+/**
+ * Category name for display: the uncategorized label is translated, any other name is user data and
+ * shown as is.
+ */
 fun displayCategoryName(name: String): String =
     if (name == UNCATEGORIZED_INGREDIENT_LABEL) L10n.str(R.string.uncategorized) else name
 
-/** Uid de la lista de la compra por defecto: existe siempre, sin fila propia, y es la que usaban todos los artículos antes de poder tener varias. */
+/**
+ * Uid of the default shopping list. It always exists without its own row, and every item used it
+ * before multiple lists were supported.
+ */
 const val DEFAULT_SHOPPING_LIST_UID = "main"
 val DEFAULT_SHOPPING_LIST_NAME: String get() = L10n.str(R.string.shopping)
 
@@ -29,14 +34,14 @@ data class ShoppingListItem(
     val categoryName: String,
     val imageUrl: String? = null,
     val uid: String = "",
-    /** Quién lo añadió / quién lo marcó por última vez, si lo indicó (lista compartida); null si no consta. */
+    /** Who added the item and who last checked it on a shared list, or null when unknown. */
     val addedBy: String? = null,
     val updatedBy: String? = null,
-    /** Ficha de Open Food Facts si el artículo se añadió con el escáner. */
+    /** Open Food Facts product sheet when the item was added with the barcode scanner. */
     val productInfo: ProductInfo? = null
 )
 
-/** Una lista de la compra (la por defecto o una adicional creada por el usuario). */
+/** A shopping list: the default one or an extra list created by the user. */
 data class ShoppingListInfo(val uid: String, val name: String)
 
 data class ShoppingListGroup(

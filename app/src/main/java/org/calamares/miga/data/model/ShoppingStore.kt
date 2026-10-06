@@ -3,7 +3,10 @@ package org.calamares.miga.data.model
 import org.calamares.miga.L10n
 import java.text.Normalizer
 
-/** Supermercado del usuario: un nombre, un color y el orden en que recorre las categorías (sus pasillos). */
+/**
+ * A user's supermarket: a name, a colour and the order in which the categories (aisles) are
+ * visited.
+ */
 data class ShoppingStore(
     val id: Long,
     val name: String,
@@ -11,10 +14,12 @@ data class ShoppingStore(
     val aisleOrder: List<String>
 )
 
-/** Lógica pura (sin Android) del orden de pasillos de una tienda. */
+/** Pure logic for a store's aisle order. */
 object ShoppingAisleOrder {
 
-    /** Recorrido típico de un súper: frescos primero, congelados/bebidas/limpieza al final. */
+    /**
+     * Typical supermarket route: fresh food first, frozen food, drinks and cleaning products last.
+     */
     val TYPICAL_ORDER: List<String>
         get() = if (L10n.locale().language == "es") TYPICAL_ORDER_ES else TYPICAL_ORDER_EN
 
@@ -32,15 +37,16 @@ object ShoppingAisleOrder {
         "Nuts", "Seeds", "Drinks", "Other", UNCATEGORIZED_INGREDIENT_LABEL
     )
 
-    /** Nombres sugeridos al crear una tienda; solo texto, sin logos ni marcas. */
+    /** Names suggested when creating a store; plain text only, no logos or trademarks. */
     val SUGGESTED_NAMES = listOf("Mercadona", "Lidl", "Aldi", "Dia", "Carrefour", "Eroski", "Alcampo", "Deza")
 
-    /** Colores de acento para elegir (ARGB). */
+    /** Accent colours the user can choose from (ARGB). */
     val PALETTE = longArrayOf(0xFFC4623E, 0xFF3E8EB5, 0xFF5C9E4B, 0xFF8E6BB5, 0xFFD1709F, 0xFFD9962B, 0xFF3FA39B, 0xFF7B8794)
 
     /**
-     * Ordena los grupos según [order]: primero los que aparecen en la lista, en ese orden; después el resto
-     * alfabéticamente con "Sin categoría" al final. Con [order] vacío no toca nada.
+     * Sorts [groups] by [order]: categories present in [order] come first in that order, then the
+     * rest alphabetically with the uncategorized group last. An empty [order] leaves the list
+     * untouched.
      */
     fun sort(groups: List<ShoppingListGroup>, order: List<String>): List<ShoppingListGroup> {
         if (order.isEmpty()) return groups
@@ -54,7 +60,10 @@ object ShoppingAisleOrder {
         )
     }
 
-    /** [order] más las categorías de [allCategories] que aún no estén en él (al final), sin duplicados. */
+    /**
+     * Returns [order] followed by any category from [allCategories] not yet in it, without
+     * duplicates.
+     */
     fun complete(order: List<String>, allCategories: Collection<String>): List<String> {
         val seen = LinkedHashMap<String, String>()
         (order + allCategories + UNCATEGORIZED_INGREDIENT_LABEL).forEach { name ->
@@ -64,7 +73,10 @@ object ShoppingAisleOrder {
         return seen.values.toList()
     }
 
-    /** Intercambia el elemento [index] con su vecino en [direction] (-1 arriba, +1 abajo); sin cambios si no se puede. */
+    /**
+     * Swaps the element at [index] with its neighbour in [direction] (-1 up, +1 down). Returns
+     * [order] unchanged when that is not possible.
+     */
     fun move(order: List<String>, index: Int, direction: Int): List<String> {
         val target = index + direction
         if (index !in order.indices || target !in order.indices) return order

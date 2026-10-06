@@ -2,12 +2,12 @@ package org.calamares.miga.data.model
 
 import java.text.Normalizer
 
-/** Aspecto de una categoría de la lista de la compra: un emoji y un color de acento (ARGB). */
+/** Look of a shopping list category: an emoji and an accent colour (ARGB). */
 data class CategoryStyle(val emoji: String, val argb: Long)
 
 /**
- * Iconos y colores de la lista de la compra, sin red ni recursos: emojis del sistema y una paleta
- * fija. Lógica pura (sin Android) para poder probarla con JUnit.
+ * Shopping list icons and colours without network or resources: system emojis and a fixed palette.
+ * Pure logic so it can be unit tested.
  */
 object ShoppingVisuals {
 
@@ -33,7 +33,7 @@ object ShoppingVisuals {
         "fermentados" to CategoryStyle("🫙", 0xFF8E6BB5),
         "bebidas" to CategoryStyle("🥤", 0xFF3FA39B),
         "otros" to CategoryStyle("🛒", 0xFF7B8794),
-        // Mismas categorías con los nombres del catálogo en inglés (ver IngredientCatalogSeedEn).
+        // The same categories with the English catalogue names (see IngredientCatalogSeedEn).
         "fruit" to CategoryStyle("🍎", 0xFFE5604B),
         "vegetables" to CategoryStyle("🥦", 0xFF5C9E4B),
         "pulses" to CategoryStyle("🫘", 0xFFA67B4F),
@@ -59,7 +59,10 @@ object ShoppingVisuals {
 
     private val fallbackPalette = longArrayOf(0xFF6B8EAD, 0xFFAD6B8E, 0xFF8EAD6B, 0xFFAD8E6B, 0xFF6BAD9A, 0xFF9A6BAD)
 
-    /** Estilo de [categoryName]; las categorías creadas por el usuario reciben un color estable según su nombre. */
+    /**
+     * Style for [categoryName]. Categories created by the user get a stable colour derived from
+     * their name.
+     */
     fun categoryStyle(categoryName: String): CategoryStyle {
         val key = normalize(categoryName)
         categoryStyles[key]?.let { return it }
@@ -67,7 +70,10 @@ object ShoppingVisuals {
         return CategoryStyle("🛍️", fallbackPalette[Math.floorMod(key.hashCode(), fallbackPalette.size)])
     }
 
-    /** Palabras (sin tildes, en minúsculas) -> emoji; la primera coincidencia por palabra completa gana, así que lo más específico va antes. */
+    /**
+     * Keywords (lowercase, without accents) mapped to an emoji. The first whole-word match wins, so
+     * more specific entries go first.
+     */
     private val itemEmojis: List<Pair<List<String>, String>> = listOf(
         listOf("tomate", "tomates") to "🍅",
         listOf("leche") to "🥛",
@@ -123,7 +129,7 @@ object ShoppingVisuals {
         listOf("helado", "helados") to "🍨",
         listOf("papel", "servilletas", "servilleta") to "🧻",
         listOf("detergente", "jabon", "lejia", "fregasuelos") to "🧴",
-        // Inglés
+        // English
         listOf("tomato", "tomatoes") to "🍅",
         listOf("milk") to "🥛",
         listOf("cheese") to "🧀",
@@ -176,7 +182,10 @@ object ShoppingVisuals {
         listOf("detergent", "soap", "bleach") to "🧴"
     )
 
-    /** Emoji de un artículo: el de su palabra más reconocible o, si no hay, el de su categoría. */
+    /**
+     * Emoji for an item: the one for its most recognisable word, or its category emoji when none
+     * matches.
+     */
     fun itemEmoji(name: String, categoryName: String): String {
         val words = normalize(name).split(Regex("[^a-z0-9]+")).filter { it.isNotEmpty() }
         for ((keywords, emoji) in itemEmojis) {

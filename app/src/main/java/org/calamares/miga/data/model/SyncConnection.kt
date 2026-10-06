@@ -1,7 +1,9 @@
 package org.calamares.miga.data.model
 
-/** Una conexión configurada en Ajustes a un namespace de un servidor de sincronización
- *  self-hosted (ver miga-server). Puede haber varias a la vez. */
+/**
+ * A connection, configured in Settings, to a namespace on a self-hosted sync server (see
+ * miga-server). Several can be active at once.
+ */
 data class SyncConnection(
     val id: Long,
     val label: String,
@@ -11,7 +13,9 @@ data class SyncConnection(
     val lastSyncedRevision: Long,
     val lastSyncedAt: Long?,
     val lastSyncError: String?,
-    /** Esta conexión comparte también la lista de la compra con las demás apps del namespace. */
+    /**
+     * Whether this connection also shares the shopping list with the other apps in the namespace.
+     */
     val syncShopping: Boolean = false,
     val shoppingPulled: Boolean = false
 )

@@ -4,10 +4,9 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 
 /**
- * Tema de color (acento) de la app, independiente del modo claro/oscuro ([ThemeMode]). Los colores
- * concretos de cada uno viven en `ui/theme/Theme.kt` (esta capa se mantiene sin dependencias de
- * Compose, igual que [ThemeMode]); solo el neutro de fondo/superficie se mantiene fijo entre temas,
- * lo que cambia es el acento (botones, chips seleccionados, superficie resaltada...).
+ * Accent colour of the app, independent from light/dark mode ([ThemeMode]). The actual colours live
+ * in ui/theme/Theme.kt so this layer has no Compose dependency; only the accent changes between
+ * themes, backgrounds and surfaces stay neutral.
  */
 enum class ColorTheme(val label: String) {
     TERRACOTTA(L10n.str(R.string.terracotta_default)),

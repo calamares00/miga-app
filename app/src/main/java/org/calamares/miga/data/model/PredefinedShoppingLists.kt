@@ -3,15 +3,16 @@ package org.calamares.miga.data.model
 import org.calamares.miga.L10n
 
 /**
- * Listas de la compra típicas ya preparadas para añadir con un toque. Van dentro de la app (sin red);
- * sus [ShoppingTemplate.id] son negativos para distinguirlas de las plantillas del usuario (Room, id > 0).
+ * Ready-made shopping lists that can be added with one tap. They ship with the app; their
+ * [ShoppingTemplate.id] values are negative to tell them apart from the user's templates (Room ids
+ * are positive).
  */
 object PredefinedShoppingLists {
 
     private fun list(id: Long, name: String, items: String) =
         ShoppingTemplate(id, name, ShoppingEntryParser.parse(items).map { TemplateItem.of(it) })
 
-    /** Las listas en el idioma de la app. */
+    /** The lists in the app language. */
     val ALL: List<ShoppingTemplate>
         get() = if (L10n.locale().language == "es") SPANISH else ENGLISH
 
