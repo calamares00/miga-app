@@ -1,21 +1,21 @@
 package org.calamares.miga.ui.ideas
 
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -23,18 +23,23 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,10 +61,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -70,7 +77,10 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.ideas.IdeaRecipe
 import org.calamares.miga.data.ideas.IdeasAnswer
-import org.calamares.miga.data.ideas.IdeasPreset
+import org.calamares.miga.data.ideas.IdeasDish
+import org.calamares.miga.data.ideas.IdeasFilters
+import org.calamares.miga.data.ideas.IdeasMeal
+import org.calamares.miga.data.ideas.IdeasStyle
 import org.calamares.miga.data.ideas.NewDishIdea
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.ui.components.AiContentNotice
@@ -78,11 +88,12 @@ import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.ui.components.FormattedText
 
 /**
- * Ideas: AI recommendations based on the user's recipes. Ready-made requests (weekly menu,
- * breakfasts, seasonal...) as cards, and a question field for anything else, including cooking
- * advice. Recommended recipes open their detail; new dishes can be created with the AI.
+ * Ideas: AI recommendations based on the user's recipes. A "What do you fancy?" panel combines
+ * options (meal, style, kind of dish, utensil) into one request, and the field at the bottom takes
+ * any question, including cooking advice. Answers form a conversation; recommended recipes open
+ * their detail and new dishes can be created with the AI.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IdeasScreen(
     viewModel: IdeasViewModel,
@@ -93,8 +104,13 @@ fun IdeasScreen(
     val entries by viewModel.entries.collectAsState()
     val recipes by viewModel.recipes.collectAsState()
     val books by viewModel.targetBooks.collectAsState()
+    val filters by viewModel.filters.collectAsState()
+    val utensils by viewModel.utensilOptions.collectAsState()
     var question by remember { mutableStateOf("") }
     var dishToCreate by remember { mutableStateOf<NewDishIdea?>(null) }
+    var addingUtensil by remember { mutableStateOf(false) }
+    // The options panel folds away once there is a conversation, to leave room for the answers.
+    var optionsExpanded by rememberSaveable { mutableStateOf(true) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -108,10 +124,12 @@ fun IdeasScreen(
         if (question.isBlank() || busy) return
         viewModel.askQuestion(question)
         question = ""
+        optionsExpanded = false
     }
 
     Scaffold(
-        contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
+        // Not a bottom-bar tab: this screen keeps clear of the system navigation bar and keyboard.
+        contentWindowInsets = WindowInsets.safeDrawing,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -122,7 +140,7 @@ fun IdeasScreen(
                 },
                 actions = {
                     if (entries.isNotEmpty() && !busy) {
-                        IconButton(onClick = viewModel::clear) {
+                        IconButton(onClick = { viewModel.clear(); optionsExpanded = true }) {
                             Icon(Icons.Filled.DeleteSweep, contentDescription = L10n.str(R.string.ideas_new_conversation))
                         }
                     }
@@ -130,28 +148,33 @@ fun IdeasScreen(
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).imePadding()) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.weight(1f).fillMaxWidth(),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                item(key = "intro") {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        if (entries.isEmpty()) {
-                            Text(
-                                L10n.str(R.string.ideas_intro),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                item(key = "options") {
+                    OptionsPanel(
+                        filters = filters,
+                        utensils = utensils,
+                        expanded = optionsExpanded || entries.isEmpty(),
+                        collapsible = entries.isNotEmpty(),
+                        showIntro = entries.isEmpty(),
+                        busy = busy,
+                        onToggleExpanded = { optionsExpanded = !optionsExpanded },
+                        onMeal = viewModel::setMeal,
+                        onStyle = viewModel::toggleStyle,
+                        onDish = viewModel::toggleDish,
+                        onUtensil = viewModel::toggleUtensil,
+                        onAddUtensil = { addingUtensil = true },
+                        onClear = viewModel::clearFilters,
+                        onAsk = {
+                            viewModel.askWithFilters()
+                            optionsExpanded = false
                         }
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            IdeasPreset.entries.forEach { preset ->
-                                PresetCard(preset, enabled = !busy) { viewModel.askPreset(preset) }
-                            }
-                        }
-                    }
+                    )
                 }
                 items(entries, key = { it.id }) { entry ->
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -176,23 +199,48 @@ fun IdeasScreen(
                     }
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = question,
-                    onValueChange = { question = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text(L10n.str(R.string.ideas_ask_placeholder)) },
-                    maxLines = 4,
-                    shape = RoundedCornerShape(24.dp)
-                )
-                IconButton(onClick = ::send, enabled = question.isNotBlank() && !busy) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = L10n.str(R.string.ideas_send))
+            Surface(color = MaterialTheme.colorScheme.background, tonalElevation = 2.dp) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = question,
+                        onValueChange = { question = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text(L10n.str(R.string.ideas_ask_placeholder)) },
+                        maxLines = 4,
+                        shape = RoundedCornerShape(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    FilledIconButton(onClick = ::send, enabled = question.isNotBlank() && !busy) {
+                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = L10n.str(R.string.ideas_send))
+                    }
                 }
             }
         }
+    }
+
+    if (addingUtensil) {
+        var name by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { addingUtensil = false },
+            title = { Text(L10n.str(R.string.ideas_other_utensil)) },
+            text = {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    singleLine = true,
+                    placeholder = { Text(L10n.str(R.string.ideas_other_utensil_hint)) }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.addCustomUtensil(name); addingUtensil = false }, enabled = name.isNotBlank()) {
+                    Text(L10n.str(R.string.add))
+                }
+            },
+            dismissButton = { TextButton(onClick = { addingUtensil = false }) { Text(L10n.str(R.string.cancel)) } }
+        )
     }
 
     dishToCreate?.let { dish ->
@@ -227,14 +275,139 @@ fun IdeasScreen(
     }
 }
 
+/**
+ * "What do you fancy?" panel: groups of options that combine into one request. It folds into its
+ * header when [collapsible] (there is a conversation) and the user closes it.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun PresetCard(preset: IdeasPreset, enabled: Boolean, onClick: () -> Unit) {
-    AssistChip(
-        onClick = onClick,
-        enabled = enabled,
-        label = { Text(presetLabel(preset)) },
-        leadingIcon = { Text(presetEmoji(preset)) }
-    )
+private fun OptionsPanel(
+    filters: IdeasFilters,
+    utensils: List<String>,
+    expanded: Boolean,
+    collapsible: Boolean,
+    showIntro: Boolean,
+    busy: Boolean,
+    onToggleExpanded: () -> Unit,
+    onMeal: (IdeasMeal) -> Unit,
+    onStyle: (IdeasStyle) -> Unit,
+    onDish: (IdeasDish) -> Unit,
+    onUtensil: (String) -> Unit,
+    onAddUtensil: () -> Unit,
+    onClear: () -> Unit,
+    onAsk: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(enabled = collapsible, onClick = onToggleExpanded),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(L10n.str(R.string.ideas_what_do_you_fancy), style = MaterialTheme.typography.titleMedium)
+                    if (!expanded && !filters.isEmpty) {
+                        Text(
+                            filtersLabel(filters),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                if (collapsible) {
+                    val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "optionsArrow")
+                    Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.rotate(rotation))
+                }
+            }
+            AnimatedVisibility(visible = expanded) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.padding(top = 12.dp)) {
+                    if (showIntro) {
+                        Text(
+                            L10n.str(R.string.ideas_intro),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    OptionGroup(L10n.str(R.string.ideas_group_meal)) {
+                        IdeasMeal.entries.forEach { meal ->
+                            OptionChip("${mealEmoji(meal)}  ${mealLabel(meal)}", filters.meal == meal) { onMeal(meal) }
+                        }
+                    }
+                    OptionGroup(L10n.str(R.string.ideas_group_style)) {
+                        IdeasStyle.entries.forEach { style ->
+                            val label = if (style == IdeasStyle.SEASONAL) "${seasonEmoji()}  ${styleLabel(style)}" else styleLabel(style)
+                            OptionChip(label, style in filters.styles) { onStyle(style) }
+                        }
+                    }
+                    OptionGroup(L10n.str(R.string.ideas_group_dish)) {
+                        IdeasDish.entries.forEach { dish ->
+                            OptionChip(dishLabel(dish), dish in filters.dishes) { onDish(dish) }
+                        }
+                    }
+                    OptionGroup(L10n.str(R.string.ideas_group_utensil)) {
+                        utensils.forEach { name ->
+                            OptionChip(name, filters.utensils.any { it.equals(name, ignoreCase = true) }) { onUtensil(name) }
+                        }
+                        FilterChip(
+                            selected = false,
+                            onClick = onAddUtensil,
+                            label = { Text(L10n.str(R.string.ideas_other)) },
+                            leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            if (filters.isEmpty) L10n.str(R.string.ideas_combine_hint) else filtersLabel(filters),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (!filters.isEmpty) {
+                            TextButton(onClick = onClear) { Text(L10n.str(R.string.ideas_clear)) }
+                        }
+                    }
+                    Button(onClick = onAsk, enabled = !filters.isEmpty && !busy, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                        Icon(Icons.Filled.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(L10n.str(R.string.ideas_ask_button))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun OptionGroup(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun OptionChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    FilterChip(selected = selected, onClick = onClick, label = { Text(label) })
 }
 
 @Composable

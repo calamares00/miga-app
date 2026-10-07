@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -14,7 +15,10 @@ import org.calamares.miga.R
 import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.data.ideas.IdeasAnswer
-import org.calamares.miga.data.ideas.IdeasPreset
+import org.calamares.miga.data.ideas.IdeasDish
+import org.calamares.miga.data.ideas.IdeasFilters
+import org.calamares.miga.data.ideas.IdeasMeal
+import org.calamares.miga.data.ideas.IdeasStyle
 import org.calamares.miga.data.ideas.IdeasResult
 import org.calamares.miga.data.ideas.IdeasTurn
 import org.calamares.miga.data.ideas.askIdeas
@@ -30,12 +34,12 @@ sealed interface IdeasEntryState {
     data class Failed(val reason: String) : IdeasEntryState
 }
 
-/** A question (typed or a preset) and its answer. [label] is what the conversation shows. */
-data class IdeasEntry(val id: Int, val label: String, val question: String, val preset: IdeasPreset?, val state: IdeasEntryState)
+/** A question (typed or built from the options) and its answer. [label] is what the conversation shows. */
+data class IdeasEntry(val id: Int, val label: String, val question: String, val filters: IdeasFilters?, val state: IdeasEntryState)
 
 /**
- * AI recommendations based on the user's recipes: ready-made requests (weekly menu, breakfasts,
- * seasonal...) and free questions, kept as a conversation so follow-up questions have context.
+ * AI recommendations based on the user's recipes: options that can be combined (meal, style, kind
+ * of dish, utensil) and free questions, kept as a conversation so follow-ups have context.
  */
 class IdeasViewModel(
     private val repository: RecipeRepository,
@@ -56,7 +60,48 @@ class IdeasViewModel(
 
     private var nextId = 0
 
-    fun askPreset(preset: IdeasPreset) = ask(presetLabel(preset), "", preset)
+    private val _filters = MutableStateFlow(IdeasFilters())
+
+    /** Options chosen in the "What do you fancy?" panel. */
+    val filters: StateFlow<IdeasFilters> = _filters
+
+    /** Utensils typed by the user (e.g. "Thermomix TM31"), offered next to the saved ones. */
+    private val customUtensils = MutableStateFlow<List<String>>(emptyList())
+
+    /** Saved utensils plus the ones typed in this screen, without duplicates. */
+    val utensilOptions: StateFlow<List<String>> = combine(repository.observeUtensils(), customUtensils) { saved, custom ->
+        (saved.map { it.name } + custom).distinctBy { it.trim().lowercase() }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun setMeal(meal: IdeasMeal) = _filters.update { it.copy(meal = if (it.meal == meal) null else meal) }
+
+    fun toggleStyle(style: IdeasStyle) = _filters.update { it.copy(styles = it.styles.toggled(style)) }
+
+    fun toggleDish(dish: IdeasDish) = _filters.update { it.copy(dishes = it.dishes.toggled(dish)) }
+
+    fun toggleUtensil(name: String) = _filters.update { filters ->
+        val selected = filters.utensils.any { it.equals(name, ignoreCase = true) }
+        filters.copy(utensils = if (selected) filters.utensils.filterNot { it.equals(name, ignoreCase = true) } else filters.utensils + name)
+    }
+
+    /** Adds a utensil typed by the user and selects it. */
+    fun addCustomUtensil(name: String) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        customUtensils.update { list -> if (list.any { it.equals(trimmed, ignoreCase = true) }) list else list + trimmed }
+        if (_filters.value.utensils.none { it.equals(trimmed, ignoreCase = true) }) toggleUtensil(trimmed)
+    }
+
+    fun clearFilters() {
+        _filters.value = IdeasFilters()
+    }
+
+    /** Asks for ideas with the chosen options. */
+    fun askWithFilters() {
+        val filters = _filters.value
+        if (filters.isEmpty) return
+        ask(filtersLabel(filters), "", filters)
+    }
 
     fun askQuestion(question: String) {
         val trimmed = question.trim()
@@ -81,9 +126,9 @@ class IdeasViewModel(
         }
     }
 
-    private fun ask(label: String, question: String, preset: IdeasPreset?) {
+    private fun ask(label: String, question: String, filters: IdeasFilters?) {
         if (_entries.value.any { it.state == IdeasEntryState.Loading }) return
-        run(IdeasEntry(nextId++, label, question, preset, IdeasEntryState.Loading))
+        run(IdeasEntry(nextId++, label, question, filters, IdeasEntryState.Loading))
     }
 
     private fun run(entry: IdeasEntry) {
@@ -98,7 +143,7 @@ class IdeasViewModel(
                 settingsRepository.runAi<IdeasResult>(
                     errorOf = { (it as? IdeasResult.Error)?.reason },
                     error = { IdeasResult.Error(it) }
-                ) { ai -> ai.askIdeas(all, entry.question, entry.preset, history) }
+                ) { ai -> ai.askIdeas(all, entry.question, entry.filters, history) }
                     ?: IdeasResult.Error(L10n.str(R.string.ai_no_provider))
             }
             val state = when (result) {
@@ -113,29 +158,68 @@ class IdeasViewModel(
     }
 }
 
-fun presetLabel(preset: IdeasPreset): String = L10n.str(
-    when (preset) {
-        IdeasPreset.WEEKLY_MENU -> R.string.ideas_weekly_menu
-        IdeasPreset.BREAKFASTS -> R.string.ideas_breakfasts
-        IdeasPreset.SNACKS -> R.string.ideas_snacks
-        IdeasPreset.LIGHT_DINNERS -> R.string.ideas_light_dinners
-        IdeasPreset.RICE_DISHES -> R.string.ideas_rice_dishes
-        IdeasPreset.DESSERTS -> R.string.ideas_desserts
-        IdeasPreset.SEASONAL -> R.string.ideas_seasonal
+private fun <T> Set<T>.toggled(item: T): Set<T> = if (item in this) this - item else this + item
+
+/** Short summary of the chosen options, e.g. "Dinner · Healthy · Airfryer". */
+fun filtersLabel(filters: IdeasFilters): String =
+    (listOfNotNull(filters.meal?.let { mealLabel(it) }) + filters.styles.map { styleLabel(it) } +
+        filters.dishes.map { dishLabel(it) } + filters.utensils).joinToString(" · ")
+
+fun mealLabel(meal: IdeasMeal): String = L10n.str(
+    when (meal) {
+        IdeasMeal.WEEKLY_MENU -> R.string.ideas_weekly_menu
+        IdeasMeal.BREAKFAST -> R.string.ideas_meal_breakfast
+        IdeasMeal.LUNCH -> R.string.ideas_meal_lunch
+        IdeasMeal.SNACK -> R.string.ideas_meal_snack
+        IdeasMeal.DINNER -> R.string.ideas_meal_dinner
+        IdeasMeal.STARTER -> R.string.ideas_meal_starter
+        IdeasMeal.DESSERT -> R.string.ideas_meal_dessert
     }
 )
 
-fun presetEmoji(preset: IdeasPreset): String = when (preset) {
-    IdeasPreset.WEEKLY_MENU -> "📅"
-    IdeasPreset.BREAKFASTS -> "🥐"
-    IdeasPreset.SNACKS -> "🍪"
-    IdeasPreset.LIGHT_DINNERS -> "🥗"
-    IdeasPreset.RICE_DISHES -> "🥘"
-    IdeasPreset.DESSERTS -> "🍰"
-    IdeasPreset.SEASONAL -> when (java.time.LocalDate.now().monthValue) {
-        12, 1, 2 -> "❄️"
-        3, 4, 5 -> "🌸"
-        6, 7, 8 -> "☀️"
-        else -> "🍂"
+fun mealEmoji(meal: IdeasMeal): String = when (meal) {
+    IdeasMeal.WEEKLY_MENU -> "📅"
+    IdeasMeal.BREAKFAST -> "🥐"
+    IdeasMeal.LUNCH -> "🍲"
+    IdeasMeal.SNACK -> "🍪"
+    IdeasMeal.DINNER -> "🌙"
+    IdeasMeal.STARTER -> "🫒"
+    IdeasMeal.DESSERT -> "🍰"
+}
+
+fun styleLabel(style: IdeasStyle): String = L10n.str(
+    when (style) {
+        IdeasStyle.HEALTHY -> R.string.ideas_style_healthy
+        IdeasStyle.LIGHT -> R.string.ideas_style_light
+        IdeasStyle.QUICK -> R.string.ideas_style_quick
+        IdeasStyle.BUDGET -> R.string.ideas_style_budget
+        IdeasStyle.VEGETARIAN -> R.string.ideas_style_vegetarian
+        IdeasStyle.VEGAN -> R.string.ideas_style_vegan
+        IdeasStyle.GLUTEN_FREE -> R.string.ideas_style_gluten_free
+        IdeasStyle.KIDS -> R.string.ideas_style_kids
+        IdeasStyle.SEASONAL -> R.string.ideas_seasonal
     }
+)
+
+fun dishLabel(dish: IdeasDish): String = L10n.str(
+    when (dish) {
+        IdeasDish.RICE -> R.string.ideas_dish_rice
+        IdeasDish.PASTA -> R.string.ideas_dish_pasta
+        IdeasDish.LEGUMES -> R.string.ideas_dish_legumes
+        IdeasDish.VEGETABLES -> R.string.ideas_dish_vegetables
+        IdeasDish.FISH -> R.string.ideas_dish_fish
+        IdeasDish.MEAT -> R.string.ideas_dish_meat
+        IdeasDish.EGGS -> R.string.ideas_dish_eggs
+        IdeasDish.SOUPS -> R.string.ideas_dish_soups
+        IdeasDish.SALADS -> R.string.ideas_dish_salads
+        IdeasDish.BAKING -> R.string.ideas_dish_baking
+    }
+)
+
+/** Season emoji for the "in season" option (northern hemisphere). */
+fun seasonEmoji(): String = when (java.time.LocalDate.now().monthValue) {
+    12, 1, 2 -> "❄️"
+    3, 4, 5 -> "🌸"
+    6, 7, 8 -> "☀️"
+    else -> "🍂"
 }
