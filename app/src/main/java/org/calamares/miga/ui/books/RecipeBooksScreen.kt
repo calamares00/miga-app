@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.books
 
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.foundation.shape.CircleShape
@@ -95,9 +96,11 @@ fun RecipeBooksScreen(
     onBookClick: (Long) -> Unit,
     onAddBookClick: () -> Unit,
     onEditBookClick: (Long) -> Unit,
-    onExplorePacks: () -> Unit = {}
+    onExplorePacks: () -> Unit = {},
+    onOpenIdeas: () -> Unit = {}
 ) {
     val books by viewModel.books.collectAsState()
+    val aiReady by viewModel.aiReady.collectAsState()
     val changelogAnnouncement by viewModel.changelogAnnouncement.collectAsState()
     val crashReport by viewModel.crashReport.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
@@ -121,6 +124,11 @@ fun RecipeBooksScreen(
                 scrollBehavior = scrollBehavior,
                 title = { Text(L10n.str(R.string.my_books)) },
                 actions = {
+                    if (aiReady) {
+                        IconButton(onClick = onOpenIdeas) {
+                            Icon(Icons.Filled.AutoAwesome, contentDescription = L10n.str(R.string.ideas), tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
                     Box {
                         IconButton(onClick = { showViewModeMenu = true }) {
                             Icon(bookViewModeIcon(viewMode), contentDescription = L10n.str(R.string.view_x, viewMode.label))
