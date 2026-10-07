@@ -24,7 +24,15 @@ import org.calamares.miga.L10n
 import org.calamares.miga.MainActivity
 import org.calamares.miga.R
 
-private const val WORK_CHANNEL_ID = "ai_work"
+/**
+ * Channel of the ongoing "AI is working" notification. Its importance is DEFAULT, not LOW: many
+ * phones hide the status bar icon of silent (low importance) notifications, and the icon is how
+ * the user knows something is running in the background. The channel itself makes no sound and
+ * does not vibrate, so it stays unobtrusive. A channel's importance cannot be raised once it
+ * exists, hence the new id ("ai_work" was LOW).
+ */
+private const val WORK_CHANNEL_ID = "ai_work_visible"
+private const val OLD_WORK_CHANNEL_ID = "ai_work"
 private const val DONE_CHANNEL_ID = "ai_done"
 private const val WORK_NOTIFICATION_ID = 7301
 private const val DONE_NOTIFICATION_ID = 7302
@@ -205,9 +213,8 @@ object AiKeepAlive {
             .setContentText(status ?: L10n.str(R.string.app_name))
             .setContentIntent(openAppIntent(context))
             .setOngoing(true)
-            .setSilent(true)
             .setOnlyAlertOnce(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setForegroundServiceBehavior(
                 if (inBackground) NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE else NotificationCompat.FOREGROUND_SERVICE_DEFAULT
             )
@@ -222,10 +229,15 @@ object AiKeepAlive {
 
     private fun createChannels(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
+        manager.deleteNotificationChannel(OLD_WORK_CHANNEL_ID)
         if (manager.getNotificationChannel(WORK_CHANNEL_ID) == null) {
-            manager.createNotificationChannel(
-                NotificationChannel(WORK_CHANNEL_ID, L10n.str(R.string.ai_work_channel), NotificationManager.IMPORTANCE_LOW)
-            )
+            val channel = NotificationChannel(WORK_CHANNEL_ID, L10n.str(R.string.ai_work_channel), NotificationManager.IMPORTANCE_DEFAULT).apply {
+                setSound(null, null)
+                enableVibration(false)
+                enableLights(false)
+                setShowBadge(false)
+            }
+            manager.createNotificationChannel(channel)
         }
         if (manager.getNotificationChannel(DONE_CHANNEL_ID) == null) {
             manager.createNotificationChannel(
