@@ -88,6 +88,7 @@ import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.ui.components.AiContentNotice
 import org.calamares.miga.ui.components.AiProgressView
 import org.calamares.miga.ui.components.ErrorMessage
+import org.calamares.miga.ui.components.KeyboardResizesContent
 
 /**
  * Ideas: AI recommendations based on the user's recipes. A "What do you fancy?" panel combines
@@ -130,6 +131,7 @@ fun IdeasScreen(
         optionsExpanded = false
     }
 
+    KeyboardResizesContent()
     Scaffold(
         // Not a bottom-bar tab: this screen keeps clear of the system navigation bar and keyboard.
         contentWindowInsets = WindowInsets.safeDrawing,
