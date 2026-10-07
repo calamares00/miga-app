@@ -814,4 +814,9 @@
     <string name="collapse_all">"Collapse all"</string>
     <string name="collapsed">"Collapsed"</string>
     <string name="expanded">"Expanded"</string>
+    <string name="format_bold">"Bold"</string>
+    <string name="format_italic">"Italic"</string>
+    <string name="format_strikethrough">"Strikethrough"</string>
+    <string name="format_bullet_list">"Bulleted list"</string>
+    <string name="format_numbered_list">"Numbered list"</string>
 </resources>

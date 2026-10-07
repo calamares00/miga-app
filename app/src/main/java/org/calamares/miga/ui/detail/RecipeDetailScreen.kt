@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.ui.components.FormattedText
 import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -519,7 +520,7 @@ private fun RecipeDetailContent(
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                 }
-                                Text(instruction, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(top = 4.dp))
+                                FormattedText(instruction, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(top = 4.dp))
                             }
                         }
                     }
@@ -551,7 +552,7 @@ private fun RecipeDetailContent(
                         }
                     }
                     if (recipe.notes.isNotBlank()) {
-                        Section(title = L10n.str(R.string.notes)) { Text(recipe.notes, style = MaterialTheme.typography.bodyLarge) }
+                        Section(title = L10n.str(R.string.notes)) { FormattedText(recipe.notes, style = MaterialTheme.typography.bodyLarge) }
                     }
                     if (recipe.source.isNotBlank()) {
                         Section(title = L10n.str(R.string.source)) {

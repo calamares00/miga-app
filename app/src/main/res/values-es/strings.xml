@@ -813,4 +813,9 @@
     <string name="collapse_all">"Contraer todo"</string>
     <string name="collapsed">"Contraída"</string>
     <string name="expanded">"Desplegada"</string>
+    <string name="format_bold">"Negrita"</string>
+    <string name="format_italic">"Cursiva"</string>
+    <string name="format_strikethrough">"Tachado"</string>
+    <string name="format_bullet_list">"Lista con viñetas"</string>
+    <string name="format_numbered_list">"Lista numerada"</string>
 </resources>

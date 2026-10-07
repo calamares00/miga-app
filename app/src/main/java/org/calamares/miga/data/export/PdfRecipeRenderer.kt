@@ -1,5 +1,12 @@
 package org.calamares.miga.data.export
 
+import org.calamares.miga.data.model.RichText
+import android.graphics.Typeface
+import android.text.style.StyleSpan
+import android.text.style.StrikethroughSpan
+import android.text.style.RelativeSizeSpan
+import android.text.Spanned
+import android.text.SpannableStringBuilder
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -65,7 +72,7 @@ private class Paints {
 private sealed interface Item {
     val spacingBefore: Float
 
-    data class Text(val text: String, val paint: TextPaint, override val spacingBefore: Float, val forceNewPage: Boolean = false) : Item
+    data class Text(val text: CharSequence, val paint: TextPaint, override val spacingBefore: Float, val forceNewPage: Boolean = false) : Item
     data class Image(val uri: String, val width: Int, val height: Int, override val spacingBefore: Float) : Item
     data class ThumbRow(val uris: List<String>, override val spacingBefore: Float) : Item
     data class TocCategory(val name: String, override val spacingBefore: Float) : Item
@@ -220,14 +227,14 @@ object PdfRecipeRenderer {
             if (group.instructions.isNotEmpty()) {
                 if (group.name != null) items += Item.Text(group.name, paints.subHeader, 10f)
                 group.instructions.forEachIndexed { index, instruction ->
-                    items += Item.Text("${index + 1}. $instruction", paints.body, 6f)
+                    items += Item.Text(SpannableStringBuilder("${index + 1}. ").append(richSpanned(instruction)), paints.body, 6f)
                 }
             }
         }
 
         if (recipe.notes.isNotBlank()) {
             items += Item.Text(L10n.str(R.string.notes), paints.header, 18f)
-            items += Item.Text(recipe.notes, paints.body, 4f)
+            items += Item.Text(richSpanned(recipe.notes), paints.body, 4f)
         }
         if (recipe.source.isNotBlank()) {
             items += Item.Text(L10n.str(R.string.source) + ": " + recipe.source, paints.body, 10f)
@@ -269,7 +276,36 @@ object PdfRecipeRenderer {
 
     private fun singleLineHeight(paint: TextPaint): Float = (paint.descent() - paint.ascent()) * 1.2f
 
-    private fun textLayout(text: String, paint: TextPaint): StaticLayout =
+    /** [text] (see [RichText]) with its bold, italic and strikethrough as spans, lists with bullets. */
+    private fun richSpanned(text: String): CharSequence {
+        val builder = SpannableStringBuilder()
+        RichText.blocks(text).forEachIndexed { index, block ->
+            if (index > 0) builder.append('\n')
+            when (block.kind) {
+                RichText.LineKind.BULLET -> builder.append("•  ")
+                RichText.LineKind.NUMBERED -> builder.append("${block.number ?: 1}. ")
+                else -> Unit
+            }
+            val heading = block.kind == RichText.LineKind.HEADING
+            block.runs.forEach { run ->
+                val start = builder.length
+                builder.append(run.text)
+                val end = builder.length
+                val typeface = when {
+                    (run.bold || heading) && run.italic -> Typeface.BOLD_ITALIC
+                    run.bold || heading -> Typeface.BOLD
+                    run.italic -> Typeface.ITALIC
+                    else -> Typeface.NORMAL
+                }
+                if (typeface != Typeface.NORMAL) builder.setSpan(StyleSpan(typeface), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                if (run.strike) builder.setSpan(StrikethroughSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                if (heading) builder.setSpan(RelativeSizeSpan(1.15f), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+        }
+        return builder
+    }
+
+    private fun textLayout(text: CharSequence, paint: TextPaint): StaticLayout =
         StaticLayout.Builder.obtain(text, 0, text.length, paint, CONTENT_WIDTH)
             .setAlignment(Layout.Alignment.ALIGN_NORMAL)
             .setLineSpacing(1f, 1.15f)

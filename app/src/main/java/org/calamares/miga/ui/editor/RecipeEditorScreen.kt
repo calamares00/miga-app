@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.ui.components.RichTextField
 import org.calamares.miga.ui.components.ErrorMessage
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.ColumnScope
@@ -276,7 +277,7 @@ fun RecipeEditorScreen(
                         addDialogTitle = L10n.str(R.string.add_tag)
                     )
                 }
-                OutlinedTextField(
+                RichTextField(
                     value = viewModel.notes,
                     onValueChange = { viewModel.notes = it },
                     label = { Text(L10n.str(R.string.notes_variants)) },
