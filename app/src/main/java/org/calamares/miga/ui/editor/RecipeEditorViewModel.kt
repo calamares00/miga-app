@@ -5,6 +5,8 @@ import kotlinx.coroutines.Dispatchers
 import org.calamares.miga.data.local.DishPhotoCropper
 import org.calamares.miga.data.ai.aiCandidates
 import org.calamares.miga.data.ai.AiKeepAlive
+import org.calamares.miga.data.ai.AiProgress
+import org.calamares.miga.data.ai.AiProgressReporter
 import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -119,6 +121,10 @@ class RecipeEditorViewModel(
 
     private val _visionState = MutableStateFlow<VisionState>(VisionState.Idle)
     val visionState: StateFlow<VisionState> = _visionState
+
+    /** What the running AI operation is doing, shown while [visionState] is loading. */
+    private val _aiProgress = MutableStateFlow<AiProgress?>(null)
+    val aiProgress: StateFlow<AiProgress?> = _aiProgress
     private var visionStarted = false
 
     /** Last AI operation started (photo, dish or URL), so it can be retried after an error. */
@@ -140,7 +146,7 @@ class RecipeEditorViewModel(
         visionStarted = true
         val appContext = context.applicationContext
         lastAiOperation = { startVisionExtraction(appContext, photoUris) }
-        launchAiTask(L10n.str(R.string.ai_task_reading_photo)) {
+        launchAiTask(L10n.str(R.string.ai_task_reading_photo)) { progress ->
             _visionState.value = VisionState.Loading
             if (settingsRepository.aiCandidates().isEmpty()) {
                 _visionState.value = VisionState.Error(L10n.str(R.string.ai_no_provider))
@@ -149,6 +155,7 @@ class RecipeEditorViewModel(
             // If some pages cannot be read but others can, carry on with the readable ones; it only
             // fails when all of them fail. The source uri of every image sent is kept because the
             // AI's "dishPhotos" indices refer to the images sent, not to every image picked.
+            progress.step(L10n.str(R.string.ai_step_preparing_photos_n, photoUris.size))
             val readable = photoUris.mapNotNull { uri ->
                 PhotoStorage.readResizedJpegBytes(context, uri)?.let { uri to AiImage(it, "image/jpeg") }
             }
@@ -157,16 +164,19 @@ class RecipeEditorViewModel(
                 _visionState.value = VisionState.Error(L10n.str(R.string.couldnt_read_photos))
                 return@launchAiTask
             }
-            val result = settingsRepository.runAi<RecipeVisionResult>(
-                needsImages = true,
-                errorOf = { (it as? RecipeVisionResult.Error)?.reason },
-                error = { RecipeVisionResult.Error(it) }
-            ) { ai -> ai.extractRecipe(images) }
-                ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
+            val result = progress.withHints(photoHints()) {
+                settingsRepository.runAi<RecipeVisionResult>(
+                    needsImages = true,
+                    errorOf = { (it as? RecipeVisionResult.Error)?.reason },
+                    error = { RecipeVisionResult.Error(it) },
+                    progress = progress
+                ) { ai -> ai.extractRecipe(images) }
+            } ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
             when (result) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
                     // Dish photos located by the AI: cropped, cleaned up and added to the recipe.
+                    if (result.recipe.dishPhotos.isNotEmpty()) progress.step(L10n.str(R.string.ai_step_cropping_photo))
                     val dishPhotoUris = withContext(Dispatchers.IO) {
                         DishPhotoCropper.extract(appContext, readable.map { it.first }, result.recipe.dishPhotos)
                     }
@@ -187,18 +197,20 @@ class RecipeEditorViewModel(
         if (isEditing || visionStarted || dishName.isBlank()) return
         visionStarted = true
         lastAiOperation = { startDishGeneration(dishName, dishDescription, dishOrigin) }
-        launchAiTask(L10n.str(R.string.ai_task_generating_dish_x, dishName)) {
+        launchAiTask(L10n.str(R.string.ai_task_generating_dish_x, dishName)) { progress ->
             _visionState.value = VisionState.Loading
             if (settingsRepository.aiCandidates().isEmpty()) {
                 _visionState.value = VisionState.Error(L10n.str(R.string.ai_no_provider))
                 return@launchAiTask
             }
             val dish = DishSuggestion(dishName, dishDescription, dishOrigin)
-            val result = settingsRepository.runAi<RecipeVisionResult>(
-                errorOf = { (it as? RecipeVisionResult.Error)?.reason },
-                error = { RecipeVisionResult.Error(it) }
-            ) { ai -> ai.generateRecipe(dish) }
-                ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
+            val result = progress.withHints(generationHints()) {
+                settingsRepository.runAi<RecipeVisionResult>(
+                    errorOf = { (it as? RecipeVisionResult.Error)?.reason },
+                    error = { RecipeVisionResult.Error(it) },
+                    progress = progress
+                ) { ai -> ai.generateRecipe(dish) }
+            } ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
             when (result) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
@@ -217,12 +229,13 @@ class RecipeEditorViewModel(
         if (isEditing || visionStarted || url.isBlank()) return
         visionStarted = true
         lastAiOperation = { startUrlImport(url) }
-        launchAiTask(L10n.str(R.string.ai_task_importing_web)) {
+        launchAiTask(L10n.str(R.string.ai_task_importing_web)) { progress ->
             _visionState.value = VisionState.Loading
             if (settingsRepository.aiCandidates().isEmpty()) {
                 _visionState.value = VisionState.Error(L10n.str(R.string.ai_no_provider))
                 return@launchAiTask
             }
+            progress.step(L10n.str(R.string.ai_step_downloading_page))
             val pageText = when (val fetchResult = RecipeUrlFetcher.fetchReadableText(url)) {
                 is UrlFetchResult.Success -> fetchResult.text
                 is UrlFetchResult.Error -> {
@@ -230,11 +243,13 @@ class RecipeEditorViewModel(
                     return@launchAiTask
                 }
             }
-            val result = settingsRepository.runAi<RecipeVisionResult>(
-                errorOf = { (it as? RecipeVisionResult.Error)?.reason },
-                error = { RecipeVisionResult.Error(it) }
-            ) { ai -> ai.importRecipeFromPage(url, pageText) }
-                ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
+            val result = progress.withHints(webHints()) {
+                settingsRepository.runAi<RecipeVisionResult>(
+                    errorOf = { (it as? RecipeVisionResult.Error)?.reason },
+                    error = { RecipeVisionResult.Error(it) },
+                    progress = progress
+                ) { ai -> ai.importRecipeFromPage(url, pageText) }
+            } ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
             when (result) {
                 is RecipeVisionResult.Success -> {
                     applyVisionResult(result.recipe)
@@ -245,12 +260,39 @@ class RecipeEditorViewModel(
         }
     }
 
+    private fun photoHints() = listOf(
+        L10n.str(R.string.ai_hint_reading_text),
+        L10n.str(R.string.ai_hint_ingredients),
+        L10n.str(R.string.ai_hint_steps),
+        L10n.str(R.string.ai_hint_times),
+        L10n.str(R.string.ai_hint_dish_photo)
+    )
+
+    private fun generationHints() = listOf(
+        L10n.str(R.string.ai_hint_choosing_ingredients),
+        L10n.str(R.string.ai_hint_writing_steps),
+        L10n.str(R.string.ai_hint_times)
+    )
+
+    private fun webHints() = listOf(
+        L10n.str(R.string.ai_hint_finding_recipe_in_page),
+        L10n.str(R.string.ai_hint_ingredients),
+        L10n.str(R.string.ai_hint_steps)
+    )
+
     /**
      * Runs an AI operation that fills this form, showing [title] in the AI notification and, when
      * the user has left the app meanwhile, a notification with the outcome.
      */
-    private fun launchAiTask(title: String, block: suspend () -> Unit) = viewModelScope.launch {
-        AiKeepAlive.hold(title) { block() }
+    private fun launchAiTask(title: String, block: suspend (AiProgressReporter) -> Unit) = viewModelScope.launch {
+        AiKeepAlive.hold(title) {
+            val reporter = AiProgressReporter { progress ->
+                _aiProgress.value = progress
+                status(progress.detail ?: progress.step)
+            }
+            block(reporter)
+        }
+        _aiProgress.value = null
         when (_visionState.value) {
             VisionState.Loaded -> AiKeepAlive.announceIfInBackground(
                 L10n.str(R.string.ai_recipe_ready_x, name.ifBlank { L10n.str(R.string.untitled) })

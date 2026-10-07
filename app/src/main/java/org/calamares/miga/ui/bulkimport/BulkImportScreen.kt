@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.bulkimport
 
+import org.calamares.miga.ui.components.AiProgressView
+import org.calamares.miga.data.ai.AiProgress
 import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -20,7 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,6 +55,7 @@ fun BulkImportScreen(
 ) {
     val context = LocalContext.current
     val rows by viewModel.rows.collectAsState()
+    val progress by viewModel.aiProgress.collectAsState()
     val isProcessing = rows.any { it.state is BulkImportRowState.Pending || it.state is BulkImportRowState.Processing }
     var showExitConfirm by remember { mutableStateOf(false) }
 
@@ -84,6 +86,7 @@ fun BulkImportScreen(
             items(rows) { row ->
                 BulkImportRowItem(
                     row = row,
+                    progress = progress,
                     onClick = { (row.state as? BulkImportRowState.Success)?.let { onOpenRecipe(it.recipeId) } },
                     onRetry = { viewModel.retry(context, rows.indexOf(row)) }
                 )
@@ -107,7 +110,7 @@ fun BulkImportScreen(
 }
 
 @Composable
-private fun BulkImportRowItem(row: BulkImportRow, onClick: () -> Unit, onRetry: () -> Unit) {
+private fun BulkImportRowItem(row: BulkImportRow, progress: AiProgress?, onClick: () -> Unit, onRetry: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -131,10 +134,12 @@ private fun BulkImportRowItem(row: BulkImportRow, onClick: () -> Unit, onRetry: 
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            BulkImportRowState.Processing -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                Text(L10n.str(R.string.processing), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            BulkImportRowState.Processing -> AiProgressView(
+                progress = progress,
+                fallback = L10n.str(R.string.processing),
+                modifier = Modifier.weight(1f),
+                spinnerSize = 20.dp
+            )
             is BulkImportRowState.Success -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(state.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2)

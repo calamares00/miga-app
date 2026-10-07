@@ -13,6 +13,8 @@ import kotlinx.coroutines.launch
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.ai.AiKeepAlive
+import org.calamares.miga.data.ai.AiProgress
+import org.calamares.miga.data.ai.AiProgressReporter
 import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.data.ideas.IdeasAnswer
 import org.calamares.miga.data.ideas.IdeasDish
@@ -60,6 +62,10 @@ class IdeasViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private var nextId = 0
+
+    /** What the running request is doing (only one runs at a time). */
+    private val _progress = MutableStateFlow<AiProgress?>(null)
+    val progress: StateFlow<AiProgress?> = _progress
 
     private val _filters = MutableStateFlow(IdeasFilters())
 
@@ -141,12 +147,26 @@ class IdeasViewModel(
                 .takeWhile { it.id != entry.id }
                 .mapNotNull { previous -> (previous.state as? IdeasEntryState.Answered)?.let { IdeasTurn(previous.label, it.answer) } }
             val result = AiKeepAlive.hold(entry.label) {
-                settingsRepository.runAi<IdeasResult>(
-                    errorOf = { (it as? IdeasResult.Error)?.reason },
-                    error = { IdeasResult.Error(it) }
-                ) { ai -> ai.askIdeas(all, entry.question, entry.filters, history) }
-                    ?: IdeasResult.Error(L10n.str(R.string.ai_no_provider))
+                val reporter = AiProgressReporter { progress ->
+                    _progress.value = progress
+                    status(progress.detail ?: progress.step)
+                }
+                reporter.step(L10n.str(R.string.ai_step_reviewing_recipes_n, all.size))
+                val hints = listOf(
+                    L10n.str(R.string.ai_hint_matching_recipes),
+                    L10n.str(R.string.ai_hint_variety_season),
+                    L10n.str(R.string.ai_hint_writing_tips),
+                    L10n.str(R.string.ai_hint_new_dishes)
+                )
+                reporter.withHints(hints) {
+                    settingsRepository.runAi<IdeasResult>(
+                        errorOf = { (it as? IdeasResult.Error)?.reason },
+                        error = { IdeasResult.Error(it) },
+                        progress = reporter
+                    ) { ai -> ai.askIdeas(all, entry.question, entry.filters, history) }
+                } ?: IdeasResult.Error(L10n.str(R.string.ai_no_provider))
             }
+            _progress.value = null
             val state = when (result) {
                 is IdeasResult.Success -> IdeasEntryState.Answered(result.answer)
                 is IdeasResult.Error -> IdeasEntryState.Failed(result.reason)

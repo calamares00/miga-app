@@ -18,6 +18,8 @@ import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.vision.RecipeVisionResult
 import org.calamares.miga.data.ai.AiImage
 import org.calamares.miga.data.ai.AiKeepAlive
+import org.calamares.miga.data.ai.AiProgress
+import org.calamares.miga.data.ai.AiProgressReporter
 import org.calamares.miga.data.ai.AiProvider
 import org.calamares.miga.data.vision.toRecipeDraft
 import org.calamares.miga.data.vision.extractRecipe
@@ -42,6 +44,10 @@ class BulkImportViewModel(
     private val bookId: Long,
     private val photoUris: List<String>
 ) : ViewModel() {
+
+    /** What the photo being processed is going through right now. */
+    private val _aiProgress = MutableStateFlow<AiProgress?>(null)
+    val aiProgress: StateFlow<AiProgress?> = _aiProgress
 
     private val _rows = MutableStateFlow(photoUris.map { BulkImportRow(it, BulkImportRowState.Pending) })
     val rows: StateFlow<List<BulkImportRow>> = _rows
@@ -77,8 +83,21 @@ class BulkImportViewModel(
         }
     }
 
-    private suspend fun processOne(context: Context, index: Int) {
+    private suspend fun processOne(context: Context, index: Int) = AiKeepAlive.hold {
+        val progress = AiProgressReporter { current ->
+            _aiProgress.value = current
+            status(current.detail ?: current.step)
+        }
+        try {
+            processOne(context, index, progress)
+        } finally {
+            _aiProgress.value = null
+        }
+    }
+
+    private suspend fun processOne(context: Context, index: Int, progress: AiProgressReporter) {
         updateRow(index) { it.copy(state = BulkImportRowState.Processing) }
+        progress.step(L10n.str(R.string.ai_step_preparing_photos_n, 1))
         val uri = Uri.parse(photoUris[index])
         val bytes = PhotoStorage.readResizedJpegBytes(context, uri)
         if (bytes == null) {
@@ -86,17 +105,27 @@ class BulkImportViewModel(
             return
         }
         val images = listOf(AiImage(bytes, "image/jpeg"))
-        val result = settingsRepository.runAi<RecipeVisionResult>(
-            needsImages = true,
-            errorOf = { (it as? RecipeVisionResult.Error)?.reason },
-            error = { RecipeVisionResult.Error(it) }
-        ) { ai -> ai.extractRecipe(images) }
-            ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
+        val hints = listOf(
+            L10n.str(R.string.ai_hint_reading_text),
+            L10n.str(R.string.ai_hint_ingredients),
+            L10n.str(R.string.ai_hint_steps),
+            L10n.str(R.string.ai_hint_dish_photo)
+        )
+        val result = progress.withHints(hints) {
+            settingsRepository.runAi<RecipeVisionResult>(
+                needsImages = true,
+                errorOf = { (it as? RecipeVisionResult.Error)?.reason },
+                error = { RecipeVisionResult.Error(it) },
+                progress = progress
+            ) { ai -> ai.extractRecipe(images) }
+        } ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
         when (result) {
             is RecipeVisionResult.Success -> {
+                if (result.recipe.dishPhotos.isNotEmpty()) progress.step(L10n.str(R.string.ai_step_cropping_photo))
                 val dishPhotoUris = withContext(Dispatchers.IO) {
                     DishPhotoCropper.extract(context.applicationContext, listOf(uri), result.recipe.dishPhotos)
                 }
+                progress.step(L10n.str(R.string.ai_step_saving_recipe))
                 val draft = result.recipe.toRecipeDraft(bookId)
                     .copy(photos = dishPhotoUris.mapIndexed { i, photoUri -> RecipePhoto(photoUri, isCover = i == 0) })
                 val id = repository.saveRecipe(draft)

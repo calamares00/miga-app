@@ -36,6 +36,13 @@ private const val DONE_NOTIFICATION_ID = 7302
 class AiTask internal constructor(val title: String?) {
     @Volatile internal var current: Int = 0
     @Volatile internal var total: Int = 0
+    @Volatile internal var status: String? = null
+
+    /** Shows what is happening now ("Asking Google Gemini…") under the title of the notification. */
+    fun status(text: String?) {
+        status = text
+        AiKeepAlive.refresh()
+    }
 
     /** Shows "[current] of [total]" and a progress bar in the notification. */
     fun progress(current: Int, total: Int) {
@@ -189,11 +196,13 @@ object AiKeepAlive {
     internal fun buildWorkNotification(context: Context): Notification {
         createChannels(context)
         val task = synchronized(lock) { tasks.lastOrNull { it.title != null } }
-        val text = task?.title ?: L10n.str(R.string.ai_work_notification)
+        val title = task?.title ?: L10n.str(R.string.ai_work_notification)
+        // The latest status of any running task, nested ones included.
+        val status = synchronized(lock) { tasks.lastOrNull { it.status != null }?.status }
         val builder = NotificationCompat.Builder(context, WORK_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_ai)
-            .setContentTitle(L10n.str(R.string.app_name))
-            .setContentText(text)
+            .setContentTitle(title)
+            .setContentText(status ?: L10n.str(R.string.app_name))
             .setContentIntent(openAppIntent(context))
             .setOngoing(true)
             .setSilent(true)
@@ -203,7 +212,7 @@ object AiKeepAlive {
                 if (inBackground) NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE else NotificationCompat.FOREGROUND_SERVICE_DEFAULT
             )
         if (task != null && task.total > 0) {
-            builder.setContentText(text + " · " + L10n.str(R.string.ai_progress_x_of_y, task.current, task.total))
+            builder.setSubText(L10n.str(R.string.ai_progress_x_of_y, task.current, task.total))
             builder.setProgress(task.total, task.current, false)
         } else {
             builder.setProgress(0, 0, true)
