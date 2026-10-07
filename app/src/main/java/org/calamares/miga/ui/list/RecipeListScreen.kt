@@ -533,17 +533,19 @@ private fun CategoryHeader(name: String, count: Int, collapsed: Boolean, enabled
             .padding(vertical = 8.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = name,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.weight(1f, fill = false)
-        )
-        Text(
-            text = "  $count",
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.weight(1f))
+        // Name and count share all the free width, so the arrow always sits at the end of the row.
+        Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+            Text(
+                text = "  $count",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         if (enabled) {
             Icon(
                 Icons.Filled.ExpandMore,
