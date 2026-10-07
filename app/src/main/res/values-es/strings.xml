@@ -883,4 +883,9 @@
     <string name="search_help">"Buscar en la ayuda"</string>
     <string name="help_no_results">"No hay temas de ayuda que coincidan con la búsqueda."</string>
     <string name="help_contact_title">"¿Necesitas más ayuda?"</string>
+    <string name="cook_text_size">"Tamaño del texto"</string>
+    <string name="cook_step_x_of_y">"Paso %1$d de %2$d"</string>
+    <string name="cook_up_next_x">"A continuación: %1$s"</string>
+    <string name="cook_in_this_step">"En este paso"</string>
+    <string name="cook_ingredients_ready_x_y">"%1$d de %2$d preparados"</string>
 </resources>

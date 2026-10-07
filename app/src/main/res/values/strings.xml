@@ -884,4 +884,9 @@
     <string name="search_help">"Search help"</string>
     <string name="help_no_results">"No help topics match your search."</string>
     <string name="help_contact_title">"Need more help?"</string>
+    <string name="cook_text_size">"Text size"</string>
+    <string name="cook_step_x_of_y">"Step %1$d of %2$d"</string>
+    <string name="cook_up_next_x">"Up next: %1$s"</string>
+    <string name="cook_in_this_step">"In this step"</string>
+    <string name="cook_ingredients_ready_x_y">"%1$d of %2$d ready"</string>
 </resources>
