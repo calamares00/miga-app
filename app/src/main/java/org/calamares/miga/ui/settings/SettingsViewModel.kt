@@ -43,7 +43,7 @@ class SettingsViewModel(
     }
 
     val colorTheme: StateFlow<ColorTheme> = settingsRepository.observeColorTheme()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ColorTheme.TERRACOTTA)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ColorTheme.DEFAULT)
 
     fun setColorTheme(colorTheme: ColorTheme) {
         viewModelScope.launch { settingsRepository.setColorTheme(colorTheme) }

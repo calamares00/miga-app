@@ -628,7 +628,8 @@
     <string name="timer_cancelled">"Timer cancelled"</string>
     <string name="timer_started">"Timer started"</string>
     <string name="finish">"Finish"</string>
-    <string name="terracotta_default">"Terracotta (default)"</string>
+    <string name="garden_default">"Garden (default)"</string>
+    <string name="terracotta">"Terracotta"</string>
     <string name="prep_time">"Prep time"</string>
     <string name="build_type">"Build type"</string>
     <string name="tap_add_remove_list">"Tap to add to or remove from the list"</string>
