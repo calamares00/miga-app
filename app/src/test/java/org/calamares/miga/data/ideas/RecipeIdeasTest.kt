@@ -32,7 +32,7 @@ class RecipeIdeasTest {
             tips = listOf(" ", "Remoja las legumbres"),
             newDishes = listOf(NewDishIdeaDto("", "x"), NewDishIdeaDto("Gazpacho", "Frío"))
         )
-        val answer = dto.toAnswer(setOf(1L, 2L))
+        val answer = dto.toAnswer(mapOf(1L to "Lentejas", 2L to "Paella"))
         assertEquals("Menú", answer.title)
         assertEquals(1, answer.sections.size)
         assertEquals(listOf(IdeaRecipe(1, "Comida", null)), answer.sections.single().recipes)
@@ -82,6 +82,21 @@ class RecipeIdeasTest {
     }
 
     @Test
+    fun `recipe ids in the text become links and never reach other fields`() {
+        val dto = IdeasAnswerDto(
+            title = "Plan con la receta 1",
+            text = "Prueba las **Lentejas** (id 1) el lunes y [[99]] el martes.",
+            sections = listOf(IdeaSectionDto("Lunes", listOf(IdeaRecipeDto(1, null, "Como la receta #1, sin gluten")))),
+            tips = listOf("Congela [[2]] en raciones.")
+        )
+        val answer = dto.toAnswer(mapOf(1L to "Lentejas", 2L to "Paella"))
+        assertEquals("Prueba las **[[1]]** el lunes y el martes.", answer.text)
+        assertEquals(listOf("Congela [[2]] en raciones."), answer.tips)
+        assertEquals("Como la Lentejas, sin gluten", answer.sections.single().recipes.single().reason)
+        assertEquals("Plan con la receta 1", answer.title)
+    }
+
+    @Test
     fun `off-topic answers keep only the refusal`() {
         val dto = IdeasAnswerDto(
             offTopic = true,
@@ -91,7 +106,7 @@ class RecipeIdeasTest {
             tips = listOf("tip"),
             newDishes = listOf(NewDishIdeaDto("Plato", ""))
         )
-        val answer = dto.toAnswer(setOf(1L))
+        val answer = dto.toAnswer(mapOf(1L to "Lentejas"))
         assertTrue(answer.offTopic)
         assertEquals("Solo puedo ayudarte con cocina.", answer.text)
         assertTrue(answer.sections.isEmpty() && answer.tips.isEmpty() && answer.newDishes.isEmpty())
