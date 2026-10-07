@@ -34,7 +34,15 @@ private const val MAX_ASPECT = 1.8f
 private const val MIN_RESULT_SIDE = 160
 
 /** Normalised (0..1) box on image number [image]. */
-internal data class NormalizedBox(val image: Int, val top: Float, val left: Float, val bottom: Float, val right: Float) {
+internal data class NormalizedBox(
+    val image: Int,
+    val top: Float,
+    val left: Float,
+    val bottom: Float,
+    val right: Float,
+    /** Clockwise degrees (0, 90, 180 or 270) that turn the cropped photo upright. */
+    val rotation: Int = 0
+) {
     val width get() = right - left
     val height get() = bottom - top
     val area get() = width * height
@@ -57,7 +65,8 @@ object DishPhotoCropper {
             val source = PhotoStorage.loadUprightSampled(context, sources[imageIndex], MAX_SOURCE_DIMENSION) ?: return@forEach
             imageBoxes.forEach { box ->
                 runCatching { cleanCrop(source, box) }.getOrNull()
-                    ?.let { cleaned -> runCatching { PhotoStorage.saveNormalized(context, cleaned) }.getOrNull() }
+                    ?.let { cleaned -> PhotoStorage.rotateBitmap(cleaned, box.rotation.toFloat()) }
+                    ?.let { upright -> runCatching { PhotoStorage.saveNormalized(context, upright) }.getOrNull() }
                     ?.let { uri -> saved[box] = uri }
             }
         }
@@ -350,7 +359,7 @@ internal fun validDishBoxes(dishPhotos: List<DishPhotoDto>, imageCount: Int): Li
     val candidates = dishPhotos.mapNotNull { dto ->
         if (dto.image !in 0 until imageCount || dto.box.size != 4) return@mapNotNull null
         val (ymin, xmin, ymax, xmax) = dto.box.map { it.coerceIn(0, 1000) / 1000f }
-        val box = NormalizedBox(dto.image, min(ymin, ymax), min(xmin, xmax), max(ymin, ymax), max(xmin, xmax))
+        val box = NormalizedBox(dto.image, min(ymin, ymax), min(xmin, xmax), max(ymin, ymax), max(xmin, xmax), normalizeRotation(dto.rotation))
         box.takeIf { it.width >= 0.08f && it.height >= 0.08f && it.area >= 0.02f }
     }
     val kept = mutableListOf<NormalizedBox>()
@@ -360,6 +369,12 @@ internal fun validDishBoxes(dishPhotos: List<DishPhotoDto>, imageCount: Int): Li
         if (kept.size == MAX_DISH_PHOTOS) break
     }
     return kept
+}
+
+/** Rounds [degrees] to the nearest quarter turn in 0..270; anything else the AI sends becomes 0. */
+internal fun normalizeRotation(degrees: Int): Int {
+    if (degrees < -360 || degrees > 720) return 0
+    return Math.floorMod(Math.round(degrees / 90f) * 90, 360)
 }
 
 internal fun intersectionOverUnion(a: NormalizedBox, b: NormalizedBox): Float {

@@ -128,4 +128,11 @@ class DishPhotoCropperTest {
         assertFalse(isPlausibleRefinement(PixelRect(10, 10, 30, 30), hint))
         assertFalse(isPlausibleRefinement(PixelRect(0, 0, 60, 120), PixelRect(50, 0, 120, 120)))
     }
+
+    @Test
+    fun `rotation is rounded to a quarter turn`() {
+        assertEquals(listOf(0, 90, 180, 270, 270, 90, 0), listOf(0, 90, 180, 270, -90, 85, 1000).map { normalizeRotation(it) })
+        val box = validDishBoxes(listOf(DishPhotoDto(0, listOf(100, 100, 600, 600), rotation = 90)), 1).single()
+        assertEquals(90, box.rotation)
+    }
 }
