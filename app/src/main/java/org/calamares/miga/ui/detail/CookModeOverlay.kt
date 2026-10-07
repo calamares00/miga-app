@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.data.model.RichText
+import org.calamares.miga.ui.components.FormattedText
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.safeDrawing
@@ -163,7 +165,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
         CookVoiceCommand.RepeatStep -> {
             val instruction = currentStep?.instruction
             if (instruction != null) {
-                tts?.speak(instruction, TextToSpeech.QUEUE_FLUSH, null, "cook_step_voice")
+                tts?.speak(RichText.toPlainText(instruction), TextToSpeech.QUEUE_FLUSH, null, "cook_step_voice")
                 L10n.str(R.string.repeating_step)
             } else {
                 L10n.str(R.string.theres_no_step_repeat_here)
@@ -333,7 +335,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                             )
                             IconButton(onClick = {
                                 val engine = tts ?: return@IconButton
-                                if (engine.isSpeaking) engine.stop() else engine.speak(step.instruction, TextToSpeech.QUEUE_FLUSH, null, "cook_step")
+                                if (engine.isSpeaking) engine.stop() else engine.speak(RichText.toPlainText(step.instruction), TextToSpeech.QUEUE_FLUSH, null, "cook_step")
                             }) {
                                 Icon(
                                     Icons.Filled.VolumeUp,
@@ -343,7 +345,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(
+                        FormattedText(
                             text = step.instruction,
                             style = MaterialTheme.typography.headlineMedium,
                             modifier = Modifier.weight(1f)

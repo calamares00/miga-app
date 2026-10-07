@@ -1,5 +1,6 @@
 package org.calamares.miga.data.export
 
+import org.calamares.miga.data.model.RichText
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -532,13 +533,13 @@ object RecipeExporter {
         recipe.stepGroups.forEach { group ->
             if (group.instructions.isNotEmpty()) {
                 if (group.name != null) appendLine(group.name.uppercase())
-                group.instructions.forEachIndexed { index, instruction -> appendLine("${index + 1}. $instruction") }
+                group.instructions.forEachIndexed { index, instruction -> appendLine("${index + 1}. ${RichText.toPlainText(instruction)}") }
             }
         }
         if (recipe.notes.isNotBlank()) {
             appendLine()
             appendLine(L10n.str(R.string.notes).uppercase())
-            appendLine(recipe.notes)
+            appendLine(RichText.toPlainText(recipe.notes))
         }
         if (recipe.source.isNotBlank()) {
             appendLine()

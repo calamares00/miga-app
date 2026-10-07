@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.ui.components.RichTextField
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.Manifest
@@ -227,7 +228,7 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.padding(top = 16.dp)
                             )
-                            OutlinedTextField(
+                            RichTextField(
                                 value = row.text,
                                 onValueChange = { row.text = it },
                                 label = { Text(L10n.str(R.string.step_x, rowIndex + 1)) },
