@@ -21,6 +21,7 @@ import org.calamares.miga.data.ideas.IdeasMeal
 import org.calamares.miga.data.ideas.IdeasStyle
 import org.calamares.miga.data.ideas.IdeasResult
 import org.calamares.miga.data.ideas.IdeasTurn
+import org.calamares.miga.data.ideas.MAX_IDEAS_QUESTION_CHARS
 import org.calamares.miga.data.ideas.askIdeas
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.Recipe
@@ -104,7 +105,7 @@ class IdeasViewModel(
     }
 
     fun askQuestion(question: String) {
-        val trimmed = question.trim()
+        val trimmed = question.trim().take(MAX_IDEAS_QUESTION_CHARS)
         if (trimmed.isNotEmpty()) ask(trimmed, trimmed, null)
     }
 
