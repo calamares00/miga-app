@@ -44,6 +44,7 @@ import org.calamares.miga.ui.books.RecipeBookEditorScreen
 import org.calamares.miga.ui.books.RecipeBookEditorViewModel
 import org.calamares.miga.ui.books.RecipeBooksScreen
 import org.calamares.miga.ui.books.RecipeBooksViewModel
+import org.calamares.miga.ui.components.DocumentScreen
 import org.calamares.miga.ui.detail.RecipeDetailPager
 import org.calamares.miga.ui.detail.RecipeDetailViewModel
 import org.calamares.miga.ui.dishsearch.DishSearchScreen
@@ -494,7 +495,12 @@ fun MigaNavHost(initialRoute: String? = null) {
             }
 
             composable(Destinations.HELP_ROUTE) {
-                HelpScreen(onBack = { navController.popBackStack() })
+                val hasChangelog = remember { settingsRepository.listAvailableChangelogVersionCodes().isNotEmpty() }
+                HelpScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenPrivacy = { navController.navigate(Destinations.PRIVACY_ROUTE) },
+                    onOpenChangelog = { navController.navigate(Destinations.HELP_CHANGELOG_ROUTE) }.takeIf { hasChangelog }
+                )
             }
 
             composable(Destinations.HELP_CHANGELOG_ROUTE) {
@@ -502,7 +508,18 @@ fun MigaNavHost(initialRoute: String? = null) {
             }
 
             composable(Destinations.ABOUT_ROUTE) {
-                AboutScreen(onBack = { navController.popBackStack() })
+                AboutScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenPrivacy = { navController.navigate(Destinations.PRIVACY_ROUTE) }
+                )
+            }
+
+            composable(Destinations.PRIVACY_ROUTE) {
+                DocumentScreen(
+                    title = L10n.str(R.string.privacy_policy),
+                    assetPath = L10n.str(R.string.privacy_asset),
+                    onBack = { navController.popBackStack() }
+                )
             }
 
             composable(Destinations.MANAGE_CATEGORIES_ROUTE) {

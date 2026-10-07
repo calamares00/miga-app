@@ -8,7 +8,6 @@
     <string name="open_model_picker">"Open model picker"</string>
     <string name="open_voice_picker">"Open voice picker"</string>
     <string name="about">"About"</string>
-    <string name="turn_settings_security_app_asks">"Turn it on in Settings → Security so the app asks for your fingerprint, face or PIN every time you open it."</string>
     <string name="update_available">"Update available"</string>
     <string name="update">"Update"</string>
     <string name="additives_x">"Additives (%1$s)"</string>
@@ -43,7 +42,6 @@
     <string name="add_template">"Add to the template"</string>
     <string name="add_cover">"Add cover"</string>
     <string name="add_recipe_photo">"Add recipe from photo"</string>
-    <string name="add_recipe_photo_beta">"Add recipe from photo (beta)"</string>
     <string name="add_without_deleting">"Add without deleting"</string>
     <string name="add_sub_recipe_e_g">"Add sub-recipe (e.g. a sauce)"</string>
     <string name="add_supermarket">"Add supermarket"</string>
@@ -107,7 +105,6 @@
     <string name="find_recipes_ai">"Find recipes with AI"</string>
     <string name="search_recipes_ingredients">"Search recipes or ingredients..."</string>
     <string name="peanuts">"Peanuts"</string>
-    <string name="each_book_someones_recipe_collection">"Each book is someone's recipe collection (for example your mum's, a friend's or one per theme), with its own cover. When a book is open, new recipes are saved there by default. You can move a recipe to another book from its options menu (⋮)."</string>
     <string name="each_supermarket_keeps_own_aisle">"Each supermarket keeps its own aisle order: pick one and the list is sorted the way you walk through it."</string>
     <string name="switch_list">"Switch list"</string>
     <string name="change_cover">"Change cover"</string>
@@ -126,7 +123,6 @@
     <string name="category_2">"By category"</string>
     <string name="category_x">"Category for \"%1$s\""</string>
     <string name="categories">"Categories"</string>
-    <string name="categories_tags_utensils">"Categories, tags and utensils"</string>
     <string name="ingredient_categories">"Ingredient categories"</string>
     <string name="categories_utensils_ingredients">"Categories, utensils and ingredients"</string>
     <string name="close">"Close"</string>
@@ -166,7 +162,6 @@
     <string name="set_up_ai_provider_settings_3">"Set up an AI provider in Settings to see this."</string>
     <string name="get_one_console_anthropic_com">"Get one at console.anthropic.com"</string>
     <string name="get_one_free_aistudio_google">"Get one for free at aistudio.google.com"</string>
-    <string name="contact">"Contact"</string>
     <string name="generated_content">"Generated content:"</string>
     <string name="continue_action">"Continue"</string>
     <string name="backup">"Backup"</string>
@@ -197,9 +192,6 @@
     <string name="unknown">"Unknown"</string>
     <string name="file_json_zip">"From a file (JSON/ZIP)"</string>
     <string name="image">"From an image"</string>
-    <string name="books_menu_add_photo_reads">"From a book's menu, \"Add from photo\" reads the text in a photo (camera or gallery) with AI and fills in the editor so you only have to review it before saving. It needs an internet connection and your own AI API key, set in Settings → Artificial intelligence; without it no photo is sent anywhere."</string>
-    <string name="recipe_steps_tap_cooking_mode">"In a recipe with steps, tap \"Cooking mode\" to see them full screen, one by one, without the screen turning off while you cook."</string>
-    <string name="export_recipe_text_pdf_json">"You can export a recipe as text, PDF or JSON, or a whole book from its menu. And from Settings you can create or restore a full backup."</string>
     <string name="url">"From a URL"</string>
     <string name="undo">"Undo"</string>
     <string name="uninstall">"Uninstall"</string>
@@ -249,7 +241,6 @@
     <string name="type_paste_one_item_per">"Type or paste one item per line, or separate them with commas. You can include quantity and unit: \"2 kg tomatoes\"."</string>
     <string name="type_product_tap_search_most">"Type a product and tap search. The most scanned ones come first."</string>
     <string name="type_product_tap_search_adds">"Type a product and tap search. ⊕ adds it to the list; the bookmark saves it to a template for next time."</string>
-    <string name="when_type_ingredient_name_recipe">"When you type an ingredient name in a recipe, the app suggests the ones you've used before so you don't have to type them again."</string>
     <string name="listening_next_previous_repeat_timer">"Listening... (next, previous, repeat, timer)"</string>
     <string name="listen_step">"Listen to step"</string>
     <string name="qr_code_isnt_miga_list">"That QR code isn't a Miga list"</string>
@@ -272,7 +263,6 @@
     <string name="explore_recipe_packs">"Explore recipe packs"</string>
     <string name="export_pdf">"Export as PDF"</string>
     <string name="export_backup">"Export backup"</string>
-    <string name="export_import">"Export and import"</string>
     <string name="export_import_books_recipes">"Export and import books and recipes"</string>
     <string name="export_book">"Export this book"</string>
     <string name="export_book_pdf">"Export this book (PDF)"</string>
@@ -354,7 +344,6 @@
     <string name="milk">"Milk"</string>
     <string name="which_book_want_add_recipe">"Which book do you want to add this recipe to?"</string>
     <string name="books">"Books"</string>
-    <string name="recipe_books">"Recipe books"</string>
     <string name="ready_install_recipe_books">"Ready-to-install recipe books"</string>
     <string name="books_synced_become_local_nothing">"The books it synced will become local; nothing is deleted, they just stop syncing."</string>
     <string name="capped_49_because_contains_high">"Capped at 49 because it contains a high-risk additive."</string>
@@ -545,7 +534,6 @@
     <string name="main_recipe">"Main recipe"</string>
     <string name="family_recipe_book">"Your family recipe book"</string>
     <string name="recipes">"Recipes"</string>
-    <string name="recipes_grouped_category_list_add">"Recipes are grouped by category in the list. You can add, rename or delete categories, utensils and ingredients from Settings → Manage."</string>
     <string name="recipes_favourites_most_cooked">"Recipes, favourites and most cooked"</string>
     <string name="recipes_imported_ai_x_photos">"Recipes imported with AI from %1$s photos (review each recipe and report a specific one from its editor)."</string>
     <string name="recipes_books_kitchen">"Your recipes. Your books. Your kitchen."</string>
@@ -891,4 +879,9 @@
     <string name="ai_hint_writing_tips">"Writing some tips…"</string>
     <string name="ai_hint_new_dishes">"Thinking of new dishes…"</string>
     <string name="ai_elapsed_x">"%1$d s"</string>
+    <string name="privacy_asset">docs/privacy-en.md</string>
+    <string name="help_asset">docs/help-en.md</string>
+    <string name="search_help">"Search help"</string>
+    <string name="help_no_results">"No help topics match your search."</string>
+    <string name="help_contact_title">"Need more help?"</string>
 </resources>
