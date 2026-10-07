@@ -81,6 +81,7 @@ import org.calamares.miga.data.ideas.IdeasDish
 import org.calamares.miga.data.ideas.IdeasFilters
 import org.calamares.miga.data.ideas.IdeasMeal
 import org.calamares.miga.data.ideas.IdeasStyle
+import org.calamares.miga.data.ideas.MAX_IDEAS_QUESTION_CHARS
 import org.calamares.miga.data.ideas.NewDishIdea
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.ui.components.AiContentNotice
@@ -206,7 +207,7 @@ fun IdeasScreen(
                 ) {
                     OutlinedTextField(
                         value = question,
-                        onValueChange = { question = it },
+                        onValueChange = { question = it.take(MAX_IDEAS_QUESTION_CHARS) },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text(L10n.str(R.string.ideas_ask_placeholder)) },
                         maxLines = 4,
