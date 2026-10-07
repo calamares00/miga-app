@@ -92,7 +92,7 @@ class MainActivity : FragmentActivity() {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
             }
-            val colorTheme by settingsRepository.observeColorTheme().collectAsState(initial = ColorTheme.TERRACOTTA)
+            val colorTheme by settingsRepository.observeColorTheme().collectAsState(initial = ColorTheme.DEFAULT)
             val biometricLockEnabled by settingsRepository.observeBiometricLockEnabled().collectAsState(initial = null)
             // These start as null while the settings load; the splash stays on screen meanwhile so
             // neither the lock screen nor the content flashes.

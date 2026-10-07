@@ -69,8 +69,8 @@ class SettingsRepository(private val context: Context) {
     fun observeColorTheme(): Flow<ColorTheme> =
         context.settingsDataStore.data.map { prefs ->
             prefs[colorThemeKey]?.let { stored ->
-                runCatching { ColorTheme.valueOf(stored) }.getOrDefault(ColorTheme.TERRACOTTA)
-            } ?: ColorTheme.TERRACOTTA
+                runCatching { ColorTheme.valueOf(stored) }.getOrDefault(ColorTheme.DEFAULT)
+            } ?: ColorTheme.DEFAULT
         }
 
     suspend fun setColorTheme(colorTheme: ColorTheme) {

@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.ui.theme.accentColorFor
 import org.calamares.miga.AppLanguage
 import android.content.ContextWrapper
 import android.content.Context
@@ -113,13 +114,6 @@ import org.calamares.miga.data.ai.GEMINI_MODELS
 import org.calamares.miga.data.ai.AiProvider
 import org.calamares.miga.ui.common.BACKUP_MIME_TYPES
 import org.calamares.miga.ui.security.BiometricAuthenticator
-import org.calamares.miga.ui.theme.Blue
-import org.calamares.miga.ui.theme.Green
-import org.calamares.miga.ui.theme.Orange
-import org.calamares.miga.ui.theme.Pink
-import org.calamares.miga.ui.theme.Purple
-import org.calamares.miga.ui.theme.Teal
-import org.calamares.miga.ui.theme.Terracotta
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -266,7 +260,7 @@ fun SettingsSectionScreen(
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     ColorTheme.entries.forEach { theme ->
                         ColorThemeSwatch(
-                            color = colorForTheme(theme),
+                            color = accentColorFor(theme),
                             selected = colorTheme == theme,
                             contentDescription = theme.label,
                             onClick = { viewModel.setColorTheme(theme) }
@@ -603,16 +597,6 @@ private fun SettingsCard(
             content()
         }
     }
-}
-
-private fun colorForTheme(colorTheme: ColorTheme) = when (colorTheme) {
-    ColorTheme.TERRACOTTA -> Terracotta
-    ColorTheme.BLUE -> Blue
-    ColorTheme.GREEN -> Green
-    ColorTheme.PURPLE -> Purple
-    ColorTheme.PINK -> Pink
-    ColorTheme.ORANGE -> Orange
-    ColorTheme.TEAL -> Teal
 }
 
 @Composable
