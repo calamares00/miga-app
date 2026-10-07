@@ -3,6 +3,7 @@ package org.calamares.miga.data.local
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ColorSpace
 import android.graphics.Matrix
 import android.net.Uri
 import androidx.core.content.FileProvider
@@ -20,7 +21,7 @@ import kotlin.math.roundToInt
  * MP weigh several MB and are only ever shown as thumbnails or full screen on a phone.
  */
 private const val MAX_PHOTO_DIMENSION = 1600
-private const val JPEG_QUALITY = 85
+private const val JPEG_QUALITY = 92
 
 /**
  * Size and quality of the photos sent to an AI model (not the ones stored for display). Gemini
@@ -103,8 +104,19 @@ object PhotoStorage {
             BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
             var sample = 1
             while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= maxDimension) sample *= 2
-            val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
-                ?: return null
+            val decoded = BitmapFactory.decodeByteArray(
+                bytes,
+                0,
+                bytes.size,
+                BitmapFactory.Options().apply {
+                    inSampleSize = sample
+                    inPreferredConfig = Bitmap.Config.ARGB_8888
+                    // Phone cameras often shoot in a wider colour space (Display P3). The JPEG written
+                    // later carries no colour profile and is read as sRGB, so the colours are converted
+                    // here, by the decoder, instead of being reinterpreted and looking washed out.
+                    inPreferredColorSpace = ColorSpace.get(ColorSpace.Named.SRGB)
+                }
+            ) ?: return null
             rotateBitmap(decoded, readExifRotationDegrees(bytes))
         } catch (e: Exception) {
             null
