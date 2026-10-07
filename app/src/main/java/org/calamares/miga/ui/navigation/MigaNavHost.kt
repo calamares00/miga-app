@@ -455,7 +455,7 @@ fun MigaNavHost(initialRoute: String? = null) {
 
             composable(Destinations.STATS_ROUTE) {
                 val viewModel: StatsViewModel = viewModel(
-                    factory = viewModelFactory { initializer { StatsViewModel(repository) } }
+                    factory = viewModelFactory { initializer { StatsViewModel(repository, context.applicationContext) } }
                 )
                 StatsScreen(
                     viewModel = viewModel,
