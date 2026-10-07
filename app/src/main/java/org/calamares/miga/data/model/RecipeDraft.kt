@@ -19,7 +19,10 @@ data class RecipeDraft(
     val ingredientGroups: List<IngredientGroup>,
     val stepGroups: List<StepGroup>,
     val tagNames: List<String>,
-    val utensilNames: List<String>
+    val utensilNames: List<String>,
+    /** See Recipe.origin. */
+    val origin: String? = null,
+    val originCountry: String? = null
 )
 
 fun Recipe.toDraft() = RecipeDraft(
@@ -39,7 +42,9 @@ fun Recipe.toDraft() = RecipeDraft(
     ingredientGroups = ingredientGroups,
     stepGroups = stepGroups,
     tagNames = tags,
-    utensilNames = utensils
+    utensilNames = utensils,
+    origin = origin,
+    originCountry = originCountry
 )
 
 fun emptyRecipeDraft(recipeBookId: Long) = RecipeDraft(

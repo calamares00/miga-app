@@ -64,5 +64,9 @@ data class RecipeEntity(
      * Personal rating from 1 to 5 stars; null when not rated. Set from the recipe screen, not from
      * the editor.
      */
-    val rating: Int? = null
+    val rating: Int? = null,
+    /** Where the recipe comes from, as written by the user or the AI ("México", "Córdoba"). */
+    val origin: String? = null,
+    /** ISO 3166-1 alpha-2 code of the origin's country ("MX", "ES"), for its flag; null when unknown. */
+    val originCountry: String? = null
 )

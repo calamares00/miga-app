@@ -240,6 +240,14 @@ val MIGRATION_16_17 = object : Migration(16, 17) {
     }
 }
 
+/** v18 -> v19: where the recipe comes from (free text and country code for the flag). Nullable. */
+val MIGRATION_18_19 = object : Migration(18, 19) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE recipes ADD COLUMN origin TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE recipes ADD COLUMN originCountry TEXT DEFAULT NULL")
+    }
+}
+
 /** v17 -> v18: difficulty values renamed from Spanish (FACIL/MEDIA/DIFICIL) to EASY/MEDIUM/HARD. */
 val MIGRATION_17_18 = object : Migration(17, 18) {
     override fun migrate(db: SupportSQLiteDatabase) {

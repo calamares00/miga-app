@@ -8,6 +8,7 @@ import org.calamares.miga.data.model.Ingredient
 import org.calamares.miga.data.model.IngredientGroup
 import org.calamares.miga.data.model.KitchenEquipment
 import org.calamares.miga.data.model.RecipeDraft
+import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.StepGroup
 
 /**
@@ -45,7 +46,9 @@ fun RecipeVisionResultDto.toRecipeDraft(bookId: Long): RecipeDraft {
             StepGroup(name = group.name, instructions = group.instructions.map { it.trim() }.filter { it.isNotBlank() })
         }.ifEmpty { listOf(StepGroup(name = null, instructions = emptyList())) },
         tagNames = (tags + categoryParts.drop(1)).distinct(),
-        utensilNames = KitchenEquipment.clean(utensils, if (L10n.locale().language == "es") "es" else "en")
+        utensilNames = KitchenEquipment.clean(utensils, if (L10n.locale().language == "es") "es" else "en"),
+        origin = origin?.trim()?.ifEmpty { null },
+        originCountry = RecipeOrigin.normalizeCountry(originCountry) ?: origin?.let(RecipeOrigin::guessCountry)
     )
 }
 
@@ -77,6 +80,8 @@ fun List<RecipeVisionResultDto>.mergedIntoOne(): RecipeVisionResultDto {
         },
         tags = flatMap { it.tags }.distinctBy { it.trim().lowercase() },
         utensils = flatMap { it.utensils }.distinctBy { it.trim().lowercase() },
+        origin = firstNotNullOfOrNull { it.origin?.takeIf { origin -> origin.isNotBlank() } },
+        originCountry = firstNotNullOfOrNull { it.originCountry?.takeIf { code -> code.isNotBlank() } },
         dishPhotos = flatMap { it.dishPhotos }.take(3)
     )
 }

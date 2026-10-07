@@ -21,6 +21,7 @@ import android.text.TextUtils
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.model.Recipe
+import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.UNCATEGORIZED_CATEGORY_LABEL
 import org.calamares.miga.data.model.formatIngredientText
 import java.io.File
@@ -190,6 +191,8 @@ object PdfRecipeRenderer {
         val meta = buildString {
             append(recipe.difficulty.label)
             recipe.categoryName?.let { append(" · ").append(it) }
+            // Without the flag: emoji may not render in the PDF.
+            (recipe.origin?.takeIf { it.isNotBlank() } ?: recipe.originCountry?.let { RecipeOrigin.countryName(it) })?.let { append(" · ").append(it) }
             recipe.totalTimeMinutes?.let { append(" · ").append(it).append(" min") }
             append(L10n.str(R.string.servings_x, recipe.servings))
         }

@@ -61,6 +61,8 @@ data class RecipeListUiState(
     val availableTags: List<String> = emptyList(),
     val availableUtensils: List<String> = emptyList(),
     val availableIngredients: List<String> = emptyList(),
+    /** Country codes of the origins the recipes have, for the origin filter. */
+    val availableOrigins: List<String> = emptyList(),
     /**
      * Book installed from a pack (see RecipeBook.isPack): read-only, recipes cannot be added,
      * edited or deleted.
@@ -363,6 +365,7 @@ class RecipeListViewModel(
             availableTags = data.options.tags.map { it.name },
             availableUtensils = data.options.utensils.map { it.name },
             availableIngredients = data.options.ingredientNames,
+            availableOrigins = data.recipes.mapNotNull { it.originCountry }.distinct(),
             isPackBook = book?.isPack == true
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecipeListUiState())

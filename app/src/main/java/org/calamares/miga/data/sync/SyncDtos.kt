@@ -43,6 +43,12 @@ data class RecipeSyncDto(
      * isFavorite (not per person).
      */
     val rating: Int? = null,
+    /**
+     * Where the recipe comes from and its country code. A server that does not know these fields
+     * sends them back as null, so a null never clears what the device has (see SyncEngine).
+     */
+    val origin: String? = null,
+    val originCountry: String? = null,
     val ingredientGroups: List<IngredientGroupDto> = emptyList(),
     val stepGroups: List<StepGroupDto> = emptyList(),
     val tags: List<String> = emptyList(),

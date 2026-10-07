@@ -33,6 +33,7 @@ import org.calamares.miga.data.local.entity.SyncEntityType
 import org.calamares.miga.data.local.entity.TagEntity
 import org.calamares.miga.data.local.entity.UtensilEntity
 import org.calamares.miga.data.model.KitchenEquipment
+import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.data.model.HealthColorLevel
 import org.calamares.miga.data.model.HealthFingerprint
@@ -197,7 +198,9 @@ class RecipeRepository(
                         isFavorite = draft.isFavorite,
                         timesCooked = 0,
                         createdAt = now,
-                        updatedAt = now
+                        updatedAt = now,
+                        origin = draft.origin?.trim()?.ifEmpty { null },
+                        originCountry = RecipeOrigin.normalizeCountry(draft.originCountry)
                     )
                 )
             } else {
@@ -236,7 +239,9 @@ class RecipeRepository(
                         nutritionFatGrams = if (keepHealth) existing?.nutritionFatGrams else null,
                         nutritionFingerprint = if (keepHealth) existing?.nutritionFingerprint else null,
                         nutritionAnalyzedAt = if (keepHealth) existing?.nutritionAnalyzedAt else null,
-                        rating = existing?.rating
+                        rating = existing?.rating,
+                        origin = draft.origin?.trim()?.ifEmpty { null },
+                        originCountry = RecipeOrigin.normalizeCountry(draft.originCountry)
                     )
                 )
                 draft.id
@@ -1183,7 +1188,9 @@ class RecipeRepository(
                         isFavorite = false,
                         timesCooked = 0,
                         createdAt = now,
-                        updatedAt = now
+                        updatedAt = now,
+                        origin = dto.origin,
+                        originCountry = RecipeOrigin.normalizeCountry(dto.originCountry)
                     )
                 )
             } else {
@@ -1197,7 +1204,9 @@ class RecipeRepository(
                         servings = dto.servings,
                         notes = dto.notes,
                         source = dto.source,
-                        updatedAt = now
+                        updatedAt = now,
+                        origin = dto.origin,
+                        originCountry = RecipeOrigin.normalizeCountry(dto.originCountry)
                     )
                 )
                 existingRecipe.id
@@ -1459,7 +1468,9 @@ class RecipeRepository(
             tags = recipe.tags,
             utensils = recipe.utensils,
             updatedAt = details.recipe.updatedAt,
-            rating = recipe.rating
+            rating = recipe.rating,
+            origin = recipe.origin,
+            originCountry = recipe.originCountry
         )
     }
 
@@ -1585,7 +1596,9 @@ class RecipeRepository(
                     timesCooked = 0,
                     createdAt = dto.updatedAt,
                     updatedAt = dto.updatedAt,
-                    rating = dto.rating
+                    rating = dto.rating,
+                    origin = dto.origin,
+                    originCountry = RecipeOrigin.normalizeCountry(dto.originCountry)
                 )
             )
         } else {
@@ -1603,6 +1616,9 @@ class RecipeRepository(
                     isFavorite = dto.isFavorite,
                     updatedAt = dto.updatedAt,
                     rating = dto.rating,
+                    // A server that does not know the field returns null: keep what the device has.
+                    origin = dto.origin ?: existing.origin,
+                    originCountry = RecipeOrigin.normalizeCountry(dto.originCountry) ?: existing.originCountry,
                     healthColor = if (keepHealth) existing.healthColor else null,
                     healthDescription = if (keepHealth) existing.healthDescription else null,
                     healthFingerprint = if (keepHealth) existing.healthFingerprint else null,
@@ -1781,7 +1797,9 @@ fun RecipeWithDetails.toDomain(): Recipe {
                 analyzedAt = recipe.nutritionAnalyzedAt ?: 0L
             )
         },
-        rating = recipe.rating
+        rating = recipe.rating,
+        origin = recipe.origin,
+        originCountry = recipe.originCountry
     )
 }
 

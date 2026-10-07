@@ -2,6 +2,7 @@ package org.calamares.miga.ui.components
 
 import org.calamares.miga.L10n
 import org.calamares.miga.R
+import org.calamares.miga.data.model.RecipeOrigin
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.LocalIndication
@@ -127,6 +128,7 @@ fun RecipeCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    RecipeOrigin.flag(recipe.originCountry)?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                     Text(
                         text = recipe.difficulty.label,
                         style = MaterialTheme.typography.bodyMedium,
@@ -264,6 +266,7 @@ fun RecipeGridCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    RecipeOrigin.flag(recipe.originCountry)?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                     Text(
                         text = recipe.difficulty.label,
                         style = MaterialTheme.typography.bodySmall,

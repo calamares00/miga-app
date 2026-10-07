@@ -25,6 +25,7 @@ import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.data.model.RecipeDraft
+import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.search.DishSuggestion
@@ -92,7 +93,9 @@ private data class EditorSnapshot(
     val ingredientGroups: List<IngredientGroupSnapshot>,
     val stepGroups: List<StepGroupSnapshot>,
     val tags: List<String>,
-    val utensils: List<String>
+    val utensils: List<String>,
+    val origin: String = "",
+    val originCountry: String? = null
 )
 
 class RecipeEditorViewModel(
@@ -119,6 +122,22 @@ class RecipeEditorViewModel(
     var notes by mutableStateOf("")
     var source by mutableStateOf("")
     var isFavorite by mutableStateOf(false)
+    /** Where the recipe comes from (free text) and its country code for the flag (see RecipeOrigin). */
+    var origin by mutableStateOf("")
+    var originCountry by mutableStateOf<String?>(null)
+    /** True once the user picks a country by hand, so typing no longer changes it. */
+    private var originCountryPicked = false
+
+    /** Updates the origin text and, unless a country was picked by hand, the country it refers to. */
+    fun updateOrigin(text: String) {
+        origin = text
+        if (!originCountryPicked) originCountry = RecipeOrigin.guessCountry(text)
+    }
+
+    fun pickOriginCountry(code: String?) {
+        originCountryPicked = code != null
+        originCountry = code
+    }
 
     val photos = mutableStateListOf<PhotoUi>()
     val ingredientGroups = mutableStateListOf<IngredientGroupUi>().apply { add(IngredientGroupUi()) }
@@ -414,6 +433,8 @@ class RecipeEditorViewModel(
         stepGroups.clear(); stepGroups.addAll(recipe.stepGroups.map { it.toUi() }.ifEmpty { listOf(StepGroupUi()) })
         selectedTags.clear(); selectedTags.addAll((recipe.tags + categoryParts.drop(1)).distinct())
         selectedUtensils.clear(); selectedUtensils.addAll(recipe.utensils)
+        origin = recipe.origin?.trim().orEmpty()
+        originCountry = RecipeOrigin.normalizeCountry(recipe.originCountry) ?: RecipeOrigin.guessCountry(origin)
     }
 
     private var initialSnapshot: EditorSnapshot? = null
@@ -436,6 +457,9 @@ class RecipeEditorViewModel(
                     stepGroups.clear(); stepGroups.addAll(recipe.stepGroups.map { it.toUi() }.ifEmpty { listOf(StepGroupUi()) })
                     selectedTags.clear(); selectedTags.addAll(recipe.tags)
                     selectedUtensils.clear(); selectedUtensils.addAll(recipe.utensils)
+                    origin = recipe.origin.orEmpty()
+                    originCountry = recipe.originCountry
+                    originCountryPicked = recipe.originCountry != null
                 }
                 isLoading = false
                 initialSnapshot = snapshot()
@@ -461,7 +485,9 @@ class RecipeEditorViewModel(
         },
         stepGroups = stepGroups.map { group -> StepGroupSnapshot(group.name, group.steps.map { it.text }) },
         tags = selectedTags.toList(),
-        utensils = selectedUtensils.toList()
+        utensils = selectedUtensils.toList(),
+        origin = origin,
+        originCountry = originCountry
     )
 
     /**
@@ -586,7 +612,9 @@ class RecipeEditorViewModel(
                 ingredientGroups = ingredientGroups.map { it.toDomain() },
                 stepGroups = stepGroups.map { it.toDomain() },
                 tagNames = selectedTags.toList(),
-                utensilNames = selectedUtensils.toList()
+                utensilNames = selectedUtensils.toList(),
+                origin = origin.trim().ifEmpty { null },
+                originCountry = originCountry
             )
             val id = repository.saveRecipe(draft)
             isSaving = false

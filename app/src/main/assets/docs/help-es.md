@@ -13,6 +13,7 @@ Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo
 - **Subrecetas**: divide la receta en partes (por ejemplo "Para la salsa"), cada una con sus ingredientes y pasos.
 - **Pasos y notas** admiten formato: al escribir aparece una barra con **negrita**, *cursiva*, tachado y listas. Pulsar Intro en una lista empieza el siguiente punto.
 - **Dictado**: pulsa el micrófono para dictar los pasos en lugar de escribirlos.
+- **Origen**: de dónde es la receta (México, Córdoba, cocina tailandesa…). La bandera se pone sola cuando reconoce el país; toca el globo o la bandera para elegirlo. En Buscar puedes filtrar por origen.
 - **Raciones**: en la receta, cambia las raciones y las cantidades se recalculan solas.
 
 ## 📥 Añadir recetas de otras fuentes
