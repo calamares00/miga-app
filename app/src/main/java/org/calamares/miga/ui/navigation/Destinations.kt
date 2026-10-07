@@ -6,7 +6,7 @@ object Destinations {
     const val BOOKS_ROUTE = "books"
     const val BOOK_ROUTE = "books/{bookId}"
     const val BOOK_EDITOR_ROUTE = "bookEditor?bookId={bookId}"
-    const val DETAIL_ROUTE = "recipes/{recipeId}"
+    const val DETAIL_ROUTE = "recipes/{recipeId}?browse={browse}"
     const val EDITOR_ROUTE = "editor?recipeId={recipeId}&bookId={bookId}&sourcePhotoUris={sourcePhotoUris}" +
         "&sourceDishName={sourceDishName}&sourceDishDescription={sourceDishDescription}&sourceDishOrigin={sourceDishOrigin}" +
         "&sourceRecipeUrl={sourceRecipeUrl}"
@@ -40,13 +40,22 @@ object Destinations {
     const val ARG_SOURCE_RECIPE_URL = "sourceRecipeUrl"
     const val ARG_PACK_ID = "packId"
     const val ARG_PHOTO_URIS = "photoUris"
+    const val ARG_BROWSE_IDS = "browse"
     const val NEW_RECIPE_ID = -1L
     const val NEW_BOOK_ID = -1L
 
     fun book(bookId: Long) = "books/$bookId"
     fun packDetail(packId: String) = "packs/${Uri.encode(packId)}"
     fun bookEditor(bookId: Long = NEW_BOOK_ID) = "bookEditor?bookId=$bookId"
-    fun detail(recipeId: Long) = "recipes/$recipeId"
+    /**
+     * A recipe's detail. [browseIds] are the recipes the user can page through with a swipe, in the
+     * order of the list the recipe was opened from (a book).
+     */
+    fun detail(recipeId: Long, browseIds: List<Long> = emptyList()) =
+        if (browseIds.size > 1) "recipes/$recipeId?browse=${browseIds.joinToString(",")}" else "recipes/$recipeId"
+
+    fun decodeIdList(raw: String?): List<Long> =
+        raw?.split(",")?.mapNotNull { it.trim().toLongOrNull() }.orEmpty()
     fun settingsSection(sectionId: String) = "settings/section/$sectionId"
 
     fun editor(
