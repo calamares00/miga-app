@@ -103,7 +103,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
-import org.calamares.miga.ui.components.PhotoViewer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -135,7 +134,8 @@ fun RecipeDetailScreen(
     onBack: () -> Unit,
     onEdit: () -> Unit,
     active: Boolean = true,
-    onFullScreenChange: (Boolean) -> Unit = {}
+    onOpenCookMode: (recipe: Recipe, ttsVoiceName: String?) -> Unit,
+    onOpenPhoto: (recipe: Recipe, index: Int) -> Unit
 ) {
     val recipe by viewModel.recipe.collectAsState()
     val recipeBooks by viewModel.recipeBooks.collectAsState()
@@ -148,9 +148,6 @@ fun RecipeDetailScreen(
     val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
-    var showCookMode by remember { mutableStateOf(false) }
-    // Index of the photo open in the full-screen viewer, or null when it is closed.
-    var viewerPhotoIndex by remember { mutableStateOf<Int?>(null) }
     var showMoveDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
@@ -167,7 +164,6 @@ fun RecipeDetailScreen(
             viewModel.fetchNutritionIfNeeded()
         }
     }
-    LaunchedEffect(showCookMode, viewerPhotoIndex) { onFullScreenChange(showCookMode || viewerPhotoIndex != null) }
 
     fun addToShoppingList() {
         viewModel.addIngredientsToShoppingList()
@@ -179,7 +175,7 @@ fun RecipeDetailScreen(
         floatingActionButton = {
             if (recipe?.stepGroups?.any { it.instructions.isNotEmpty() } == true) {
                 ExtendedFloatingActionButton(
-                    onClick = { showCookMode = true },
+                    onClick = { recipe?.let { onOpenCookMode(it, ttsVoiceName) } },
                     icon = { Icon(Icons.Filled.PlayArrow, null) },
                     text = { Text(L10n.str(R.string.cooking_mode)) },
                     modifier = Modifier.navigationBarsPadding()
@@ -204,7 +200,7 @@ fun RecipeDetailScreen(
                     onSubstituteIngredient = { name: String -> viewModel.findSubstitutesFor(name) }.takeIf { aiEnabled },
                     onRatingChange = { stars -> viewModel.setRating(stars) },
                     onAddToShoppingList = { addToShoppingList() },
-                    onPhotoClick = { index -> viewerPhotoIndex = index }
+                    onPhotoClick = { index -> onOpenPhoto(current, index) }
                 )
             }
 
@@ -280,22 +276,6 @@ fun RecipeDetailScreen(
                 }
             }
         }
-    }
-
-    val recipeForViewer = recipe
-    val viewerIndex = viewerPhotoIndex
-    if (viewerIndex != null && recipeForViewer != null) {
-        PhotoViewer(
-            photos = recipeForViewer.viewablePhotos(),
-            initialIndex = viewerIndex,
-            contentDescription = recipeForViewer.name,
-            onClose = { viewerPhotoIndex = null }
-        )
-    }
-
-    val recipeForCookMode = recipe
-    if (showCookMode && recipeForCookMode != null) {
-        CookModeOverlay(recipe = recipeForCookMode, ttsVoiceName = ttsVoiceName, onClose = { showCookMode = false })
     }
 
     if (showDeleteConfirm) {
@@ -673,7 +653,7 @@ private fun LoadingRow() {
 
 /** Full-bleed header photo(s), swipeable when there are several, with a bottom gradient. */
 /** The recipe photos in display order: the cover first. */
-private fun Recipe.viewablePhotos(): List<String> =
+internal fun Recipe.viewablePhotos(): List<String> =
     photos.sortedByDescending { it.isCover }.map { it.uri }.ifEmpty { listOfNotNull(coverPhotoUri) }
 
 /** Lets scrolling left over at the first or last photo reach the parent pager. */
