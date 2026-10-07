@@ -2,8 +2,8 @@ Miga is your family recipe book and shopping list in one app: no ads, no account
 
 RECIPE BOOKS
 • Organise your recipes in books (for example, one for each family member), each with its own cover.
-• Complete recipes: ingredients with quantity and unit, steps, photos, utensils, difficulty, tags and sub-recipes (sauces, sides…).
-• Search and filter by category, tag, utensil, ingredient or difficulty, and keep favourites one tap away.
+• Complete recipes: ingredients with quantity and unit, steps, photos, equipment needed, difficulty, tags and sub-recipes (sauces, sides…).
+• Search and filter by category, tag, equipment, ingredient or difficulty, and keep favourites one tap away.
 • Cooking mode: step by step on full screen, with timers and voice control.
 • Adjust the servings and the quantities are recalculated for you.
 

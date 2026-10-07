@@ -45,7 +45,7 @@
     <string name="add_sub_recipe_e_g">"Añadir sub-receta (ej. una salsa)"</string>
     <string name="add_supermarket">"Añadir supermercado"</string>
     <string name="add_list_2">"Añadir todo a la lista"</string>
-    <string name="add_utensil">"Añadir utensilio"</string>
+    <string name="add_utensil">"Añadir equipamiento"</string>
     <string name="add_x">"Añadir %1$s"</string>
     <string name="analysing_ai">"Analizando con IA..."</string>
     <string name="previous">" Anterior"</string>
@@ -123,7 +123,7 @@
     <string name="category_x">"Categoría de \"%1$s\""</string>
     <string name="categories">"Categorías"</string>
     <string name="ingredient_categories">"Categorías de ingredientes"</string>
-    <string name="categories_utensils_ingredients">"Categorías, utensilios e ingredientes"</string>
+    <string name="categories_utensils_ingredients">"Categorías, equipamiento e ingredientes"</string>
     <string name="close">"Cerrar"</string>
     <string name="dismiss_notice">"Cerrar aviso"</string>
     <string name="close_cooking_mode">"Cerrar modo cocina"</string>
@@ -431,7 +431,7 @@
     <string name="name">"Nombre"</string>
     <string name="name_required">"El nombre es obligatorio"</string>
     <string name="name_ingredient_tag">"Nombre, ingrediente, etiqueta..."</string>
-    <string name="name_ingredient_tag_utensil_difficulty">"Por nombre, ingrediente, etiqueta, utensilio o dificultad, en todos tus libros a la vez."</string>
+    <string name="name_ingredient_tag_utensil_difficulty">"Por nombre, ingrediente, etiqueta, equipamiento o dificultad, en todos tus libros a la vez."</string>
     <string name="book_name">"Nombre del libro"</string>
     <string name="template_name">"Nombre de la plantilla"</string>
     <string name="recipe_name">"Nombre de la receta"</string>
@@ -636,8 +636,8 @@
     <string name="url_github_user_repo_empty">"URL o usuario/repo de GitHub · vacío = oficial"</string>
     <string name="use_another_catalogue">"Usar otro catálogo…"</string>
     <string name="use_template">"  Usar una plantilla"</string>
-    <string name="utensils">"Utensilios"</string>
-    <string name="utensils_needed">"Utensilios necesarios"</string>
+    <string name="utensils">"Equipamiento"</string>
+    <string name="utensils_needed">"Necesitarás"</string>
     <string name="clear_2">"Vaciar"</string>
     <string name="clear_list">"Vaciar lista"</string>
     <string name="health_rating">"Valoración de salud"</string>
@@ -851,7 +851,7 @@
     <string name="ideas_dish_salads">"Ensaladas"</string>
     <string name="ideas_dish_baking">"Repostería"</string>
     <string name="ideas_other">"Otro…"</string>
-    <string name="ideas_other_utensil">"Otro utensilio"</string>
+    <string name="ideas_other_utensil">"Otro equipamiento"</string>
     <string name="ideas_other_utensil_hint">"Ej.: Thermomix TM31"</string>
     <string name="ideas_combine_hint">"Combina opciones, por ejemplo Cena + Saludable + Airfryer."</string>
     <string name="ideas_clear">"Limpiar"</string>

@@ -2,8 +2,8 @@ Miga es el recetario de tu familia y tu lista de la compra en una sola app: sin 
 
 LIBROS DE RECETAS
 • Organiza tus recetas en libros (por ejemplo, uno por cada persona de la familia), cada uno con su portada.
-• Recetas completas: ingredientes con cantidad y unidad, pasos, fotos, utensilios, dificultad, etiquetas y subrecetas (salsas, guarniciones…).
-• Búsqueda y filtros por categoría, etiqueta, utensilio, ingrediente o dificultad, y favoritas a un toque.
+• Recetas completas: ingredientes con cantidad y unidad, pasos, fotos, equipamiento necesario, dificultad, etiquetas y subrecetas (salsas, guarniciones…).
+• Búsqueda y filtros por categoría, etiqueta, equipamiento, ingrediente o dificultad, y favoritas a un toque.
 • Modo cocina: paso a paso en pantalla completa, con temporizadores y control por voz.
 • Ajusta las raciones y las cantidades se recalculan solas.
 

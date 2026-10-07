@@ -5,7 +5,7 @@ Each book is a recipe collection with its own cover: your mum's, a friend's or o
 - Inside a book, recipes are grouped by **category**. Tap a category to collapse or expand it; the menu collapses or expands them all.
 - When a recipe is open, **swipe left or right** to go to the next or previous recipe of the book, like turning pages.
 - Long-press a recipe to **select several** and change their category, difficulty, servings or book at once, add them to the shopping list or export them.
-- The **Search** tab searches every book by name or ingredient, with filters by category, tag, utensil or difficulty. Favourites have their own tab.
+- The **Search** tab searches every book by name or ingredient, with filters by category, tag, equipment or difficulty. Favourites have their own tab.
 
 ## ✍️ Writing a recipe
 
@@ -49,7 +49,7 @@ In a recipe with steps, tap **Cooking mode** to see them one by one full screen,
 
 Tap ✨ in **My books** to ask for recommendations based on your recipes.
 
-- Combine options: meal (breakfast, dinner, weekly menu…), style (healthy, quick, seasonal…), kind of dish and utensil, even a specific model such as "Thermomix TM31".
+- Combine options: meal (breakfast, dinner, weekly menu…), style (healthy, quick, seasonal…), kind of dish and equipment (oven, air fryer…), even a specific model such as "Thermomix TM31".
 - You can also ask anything about cooking: techniques, substitutions, storage…
 - Recommended recipes appear by name and open with a tap. You can add their ingredients to the shopping list or create with AI a new dish it suggests.
 - The assistant only talks about cooking and food, and never changes anything in the app.

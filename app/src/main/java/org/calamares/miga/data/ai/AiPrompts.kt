@@ -15,7 +15,7 @@ internal const val RECIPE_JSON_FORMAT = """{
   "ingredientGroups": [ { "name": "string or null", "ingredients": [ { "name": "string", "quantity": number or null, "unit": "string or null" } ] } ],
   "stepGroups": [ { "name": "string or null", "instructions": ["string", ...] } ],
   "tags": ["string", ...],
-  "utensils": ["string", ...]
+  "utensils": ["appliance or special equipment the recipe needs (oven, air fryer, food processor, pressure cooker...); never basics every kitchen has such as knife, pot, pan, bowl or fridge", ...]
 }"""
 
 private fun appLanguageName(): String = if (L10n.locale().language == "es") "Spanish" else "English"
