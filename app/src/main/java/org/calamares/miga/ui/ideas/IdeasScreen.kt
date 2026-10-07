@@ -85,6 +85,7 @@ import org.calamares.miga.data.ideas.MAX_IDEAS_QUESTION_CHARS
 import org.calamares.miga.data.ideas.NewDishIdea
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.ui.components.AiContentNotice
+import org.calamares.miga.ui.components.AiProgressView
 import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.ui.components.FormattedText
 
@@ -107,6 +108,7 @@ fun IdeasScreen(
     val books by viewModel.targetBooks.collectAsState()
     val filters by viewModel.filters.collectAsState()
     val utensils by viewModel.utensilOptions.collectAsState()
+    val progress by viewModel.progress.collectAsState()
     var question by remember { mutableStateOf("") }
     var dishToCreate by remember { mutableStateOf<NewDishIdea?>(null) }
     var addingUtensil by remember { mutableStateOf(false) }
@@ -181,10 +183,16 @@ fun IdeasScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         QuestionBubble(entry.label)
                         when (val state = entry.state) {
-                            IdeasEntryState.Loading -> Row(verticalAlignment = Alignment.CenterVertically) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(L10n.str(R.string.ideas_thinking), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            IdeasEntryState.Loading -> Surface(
+                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                shape = RoundedCornerShape(18.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                AiProgressView(
+                                    progress = progress,
+                                    fallback = L10n.str(R.string.ideas_thinking),
+                                    modifier = Modifier.padding(16.dp)
+                                )
                             }
                             is IdeasEntryState.Failed -> ErrorMessage(state.reason, onRetry = { viewModel.retry(entry.id) })
                             is IdeasEntryState.Answered -> AnswerCard(

@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.ui.components.AiProgressView
+import androidx.compose.foundation.layout.widthIn
 import org.calamares.miga.ui.components.RichTextField
 import org.calamares.miga.ui.components.ErrorMessage
 import androidx.compose.foundation.layout.width
@@ -105,6 +107,7 @@ fun RecipeEditorScreen(
     val availableTags by viewModel.availableTags.collectAsState()
     val availableUtensils by viewModel.availableUtensils.collectAsState()
     val visionState by viewModel.visionState.collectAsState()
+    val aiProgress by viewModel.aiProgress.collectAsState()
     var visionErrorDismissed by remember { mutableStateOf(false) }
     var showVisionErrorDialog by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
@@ -313,21 +316,12 @@ fun RecipeEditorScreen(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(32.dp)
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(48.dp),
-                            strokeWidth = 4.dp
-                        )
-                        Text(
-                            L10n.str(R.string.generating_recipe_ai),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(top = 16.dp)
-                        )
-                    }
+                    AiProgressView(
+                        progress = aiProgress,
+                        fallback = L10n.str(R.string.generating_recipe_ai),
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 28.dp).widthIn(max = 320.dp),
+                        spinnerSize = 32.dp
+                    )
                 }
             }
         }

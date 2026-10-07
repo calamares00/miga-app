@@ -31,12 +31,14 @@ suspend fun SettingsRepository.aiCandidates(): List<AiCandidate> =
  * @param errorOf returns the error reason when [T] is an error, or null when it is a success.
  * @param error builds an error [T], used when no provider can read images and for the final
  *   summary when every provider failed.
+ * @param progress receives which provider is being asked, retries and fallbacks.
  * @return the first non-provider-error result, or null when no provider is configured.
  */
 suspend fun <T> SettingsRepository.runAi(
     needsImages: Boolean = false,
     errorOf: (T) -> String?,
     error: (String) -> T,
+    progress: AiProgressReporter? = null,
     call: suspend (AiCandidate) -> T
 ): T? {
     val configured = aiCandidates()
@@ -47,6 +49,11 @@ suspend fun <T> SettingsRepository.runAi(
     val failures = mutableListOf<Pair<AiCandidate, String>>()
     AiKeepAlive.hold {
         for (candidate in usable) {
+            val previous = failures.lastOrNull()?.first
+            progress?.step(
+                if (previous == null) L10n.str(R.string.ai_step_asking_x, candidate.provider.label)
+                else L10n.str(R.string.ai_step_fallback_x_y, previous.provider.label, candidate.provider.label)
+            )
             var result = call(candidate)
             var reason = errorOf(result) ?: return@hold result
             if (!ErrorDetail.isAiError(reason)) return@hold result
@@ -55,6 +62,7 @@ suspend fun <T> SettingsRepository.runAi(
             // chance before moving on to the next provider.
             val summary = ErrorDetail.summary(reason)
             if (summary == L10n.str(R.string.ai_error_bad_response) || summary == L10n.str(R.string.ai_error_network)) {
+                progress?.step(L10n.str(R.string.ai_step_retrying_x, candidate.provider.label))
                 if (summary == L10n.str(R.string.ai_error_network)) delay(NETWORK_RETRY_DELAY_MILLIS)
                 result = call(candidate)
                 reason = errorOf(result) ?: return@hold result

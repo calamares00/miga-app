@@ -869,4 +869,25 @@
     <string name="ideas_combine_hint">"Combina opciones, por ejemplo Cena + Saludable + Airfryer."</string>
     <string name="ideas_clear">"Limpiar"</string>
     <string name="ideas_ask_button">"Pedir ideas"</string>
+    <string name="ai_step_asking_x">"Consultando a %1$s…"</string>
+    <string name="ai_step_fallback_x_y">"%1$s no ha respondido; probando con %2$s…"</string>
+    <string name="ai_step_retrying_x">"Reintentando con %1$s…"</string>
+    <string name="ai_step_preparing_photos_n">"Preparando %1$d foto(s)…"</string>
+    <string name="ai_step_cropping_photo">"Recortando la foto del plato…"</string>
+    <string name="ai_step_saving_recipe">"Guardando la receta…"</string>
+    <string name="ai_step_downloading_page">"Descargando la página…"</string>
+    <string name="ai_step_reviewing_recipes_n">"Repasando tus %1$d recetas…"</string>
+    <string name="ai_hint_reading_text">"Leyendo el texto de la foto…"</string>
+    <string name="ai_hint_ingredients">"Identificando ingredientes y cantidades…"</string>
+    <string name="ai_hint_steps">"Ordenando los pasos…"</string>
+    <string name="ai_hint_times">"Calculando tiempos y raciones…"</string>
+    <string name="ai_hint_dish_photo">"Buscando la foto del plato…"</string>
+    <string name="ai_hint_choosing_ingredients">"Eligiendo los ingredientes…"</string>
+    <string name="ai_hint_writing_steps">"Redactando los pasos…"</string>
+    <string name="ai_hint_finding_recipe_in_page">"Buscando la receta en la página…"</string>
+    <string name="ai_hint_matching_recipes">"Eligiendo recetas que encajen…"</string>
+    <string name="ai_hint_variety_season">"Comprobando variedad y temporada…"</string>
+    <string name="ai_hint_writing_tips">"Redactando consejos…"</string>
+    <string name="ai_hint_new_dishes">"Pensando en platos nuevos…"</string>
+    <string name="ai_elapsed_x">"%1$d s"</string>
 </resources>
