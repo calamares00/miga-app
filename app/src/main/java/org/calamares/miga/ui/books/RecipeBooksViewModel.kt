@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.books
 
+import kotlinx.coroutines.flow.combine
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,6 +25,17 @@ class RecipeBooksViewModel(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
     private val syncEngine = SyncEngine(repository)
+
+    /** True when AI is switched on and at least one provider is configured, so Ideas can be offered. */
+    val aiReady: StateFlow<Boolean> = combine(
+        settingsRepository.observeAiEnabled(),
+        settingsRepository.observeGeminiApiKey(),
+        settingsRepository.observeAnthropicApiKey(),
+        settingsRepository.observeOpenRouterApiKey(),
+        settingsRepository.observeOpenRouterModel()
+    ) { enabled, gemini, anthropic, openRouter, openRouterModel ->
+        enabled && (gemini.isNotBlank() || anthropic.isNotBlank() || (openRouter.isNotBlank() && openRouterModel.isNotBlank()))
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
     private var autoSyncStarted = false
 
     val books: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()

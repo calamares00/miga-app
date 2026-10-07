@@ -18,6 +18,7 @@ object Destinations {
     const val PACK_DETAIL_ROUTE = "packs/{packId}"
     const val BULK_IMPORT_ROUTE = "bulkImport?bookId={bookId}&photoUris={photoUris}"
     const val DISH_SEARCH_ROUTE = "dishSearch?bookId={bookId}"
+    const val IDEAS_ROUTE = "ideas"
     const val SETTINGS_ROUTE = "settings"
     const val SETTINGS_SECTION_ROUTE = "settings/section/{section}"
     const val MANAGE_CATEGORIES_ROUTE = "settings/categories"

@@ -818,4 +818,24 @@
     <string name="format_strikethrough">"Tachado"</string>
     <string name="format_bullet_list">"Lista con viñetas"</string>
     <string name="format_numbered_list">"Lista numerada"</string>
+    <string name="ideas">"Ideas"</string>
+    <string name="ideas_intro">"Ideas a partir de tus recetas: elige una sugerencia o pregunta lo que quieras, desde qué cenar hoy hasta consejos de cocina."</string>
+    <string name="ideas_weekly_menu">"Menú semanal"</string>
+    <string name="ideas_breakfasts">"Desayunos"</string>
+    <string name="ideas_snacks">"Meriendas"</string>
+    <string name="ideas_light_dinners">"Cenas ligeras"</string>
+    <string name="ideas_rice_dishes">"Arroces"</string>
+    <string name="ideas_desserts">"Postres"</string>
+    <string name="ideas_seasonal">"De temporada"</string>
+    <string name="ideas_thinking">"Pensando…"</string>
+    <string name="ideas_ask_placeholder">"Pide recetas o consejos…"</string>
+    <string name="ideas_send">"Enviar"</string>
+    <string name="ideas_new_conversation">"Nueva conversación"</string>
+    <string name="ideas_choose_book">"¿En qué libro la guardo?"</string>
+    <string name="ideas_no_books">"Crea antes un libro de recetas."</string>
+    <string name="ideas_new_dishes">"Platos que podrías añadir"</string>
+    <string name="ideas_create">"Crear"</string>
+    <string name="ideas_add_to_shopping">"Añadir ingredientes a la compra"</string>
+    <string name="ideas_added_to_shopping_n">"Añadidos los ingredientes de %1$d recetas a la compra"</string>
+    <string name="ideas_ready_x">"Ideas listas: %1$s"</string>
 </resources>

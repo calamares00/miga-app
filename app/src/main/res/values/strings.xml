@@ -819,4 +819,24 @@
     <string name="format_strikethrough">"Strikethrough"</string>
     <string name="format_bullet_list">"Bulleted list"</string>
     <string name="format_numbered_list">"Numbered list"</string>
+    <string name="ideas">"Ideas"</string>
+    <string name="ideas_intro">"Ideas from your own recipes: pick a suggestion or ask anything, from what to cook tonight to cooking tips."</string>
+    <string name="ideas_weekly_menu">"Weekly menu"</string>
+    <string name="ideas_breakfasts">"Breakfasts"</string>
+    <string name="ideas_snacks">"Snacks"</string>
+    <string name="ideas_light_dinners">"Light dinners"</string>
+    <string name="ideas_rice_dishes">"Rice dishes"</string>
+    <string name="ideas_desserts">"Desserts"</string>
+    <string name="ideas_seasonal">"In season"</string>
+    <string name="ideas_thinking">"Thinking…"</string>
+    <string name="ideas_ask_placeholder">"Ask for recipes or tips…"</string>
+    <string name="ideas_send">"Send"</string>
+    <string name="ideas_new_conversation">"New conversation"</string>
+    <string name="ideas_choose_book">"Which book should it go in?"</string>
+    <string name="ideas_no_books">"Create a recipe book first."</string>
+    <string name="ideas_new_dishes">"Dishes you could add"</string>
+    <string name="ideas_create">"Create"</string>
+    <string name="ideas_add_to_shopping">"Add ingredients to shopping list"</string>
+    <string name="ideas_added_to_shopping_n">"Ingredients of %1$d recipes added to the shopping list"</string>
+    <string name="ideas_ready_x">"Ideas ready: %1$s"</string>
 </resources>

@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.navigation
 
+import org.calamares.miga.ui.ideas.IdeasViewModel
+import org.calamares.miga.ui.ideas.IdeasScreen
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import androidx.compose.foundation.layout.WindowInsets
@@ -156,7 +158,24 @@ fun MigaNavHost(initialRoute: String? = null) {
                     onBookClick = { navController.navigate(Destinations.book(it)) },
                     onAddBookClick = { navController.navigate(Destinations.bookEditor()) },
                     onEditBookClick = { navController.navigate(Destinations.bookEditor(it)) },
-                    onExplorePacks = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) }
+                    onExplorePacks = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) },
+                    onOpenIdeas = { navController.navigate(Destinations.IDEAS_ROUTE) }
+                )
+            }
+
+            composable(Destinations.IDEAS_ROUTE) {
+                val viewModel: IdeasViewModel = viewModel(
+                    factory = viewModelFactory { initializer { IdeasViewModel(repository, settingsRepository) } }
+                )
+                IdeasScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onRecipeClick = { navController.navigate(Destinations.detail(it)) },
+                    onCreateDish = { bookId, dish ->
+                        navController.navigate(
+                            Destinations.editor(bookId = bookId, sourceDishName = dish.name, sourceDishDescription = dish.description)
+                        )
+                    }
                 )
             }
 
