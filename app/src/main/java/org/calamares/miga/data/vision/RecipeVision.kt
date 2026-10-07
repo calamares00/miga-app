@@ -52,19 +52,56 @@ data class RecipeVisionResultDto(
 @Serializable
 data class DishPhotoDto(val image: Int = 0, val box: List<Int> = emptyList(), val rotation: Int = 0)
 
+/**
+ * What a transcription from photos returns: every complete recipe found, in reading order, and
+ * whether they belong together ([together]: parts of one dish or meant to be served together, such
+ * as a cake and its frosting) or are independent recipes that happen to share a page.
+ */
+@Serializable
+data class RecipeExtractionDto(
+    val together: Boolean = false,
+    val recipes: List<RecipeVisionResultDto> = emptyList()
+)
+
+sealed interface RecipeExtractionResult {
+    /** [recipes] is never empty. */
+    data class Success(val recipes: List<RecipeVisionResultDto>, val together: Boolean) : RecipeExtractionResult
+    data class Error(val reason: String) : RecipeExtractionResult
+}
+
 sealed interface RecipeVisionResult {
     data class Success(val recipe: RecipeVisionResultDto) : RecipeVisionResult
     data class Error(val reason: String) : RecipeVisionResult
 }
 
 /**
- * Transcribes a recipe from one or more photos. Several images are treated as pages of the same
- * recipe.
+ * Transcribes the recipes in one or more photos. Several images are treated as pages of the same
+ * content; a page can hold more than one complete recipe, and each one is returned on its own.
  */
-suspend fun AiCandidate.extractRecipe(images: List<AiImage>): RecipeVisionResult {
-    if (images.isEmpty()) return RecipeVisionResult.Error(L10n.str(R.string.there_no_photos_process))
-    val result = complete(AiRequest(recipeExtractionPrompt(), RECIPE_MAX_TOKENS, images))
-    return parseRecipeAnswer(result) { L10n.str(R.string.no_recipe_was_found_photo) }
+suspend fun AiCandidate.extractRecipes(images: List<AiImage>): RecipeExtractionResult {
+    if (images.isEmpty()) return RecipeExtractionResult.Error(L10n.str(R.string.there_no_photos_process))
+    return when (val result = complete(AiRequest(recipeExtractionPrompt(), RECIPE_MAX_TOKENS, images))) {
+        is AiText.Error -> RecipeExtractionResult.Error(result.reason)
+        is AiText.Success -> parseExtractionAnswer(result.text)
+    }
+}
+
+/**
+ * Decodes the answer of [extractRecipes]. A model that ignores the list and answers with a single
+ * recipe object is accepted too.
+ */
+internal fun parseExtractionAnswer(text: String): RecipeExtractionResult = try {
+    val extraction = decodeAiJson(RecipeExtractionDto.serializer(), text)
+    val recipes = extraction.recipes.ifEmpty {
+        runCatching { listOf(decodeAiJson(RecipeVisionResultDto.serializer(), text)) }.getOrDefault(emptyList())
+    }.filter { it.name.isNotBlank() }
+    if (recipes.isEmpty()) {
+        RecipeExtractionResult.Error(L10n.str(R.string.no_recipe_was_found_photo))
+    } else {
+        RecipeExtractionResult.Success(recipes, together = extraction.together && recipes.size > 1)
+    }
+} catch (e: Exception) {
+    RecipeExtractionResult.Error(AiErrors.badResponse(e, text))
 }
 
 /** Decodes a recipe answer; [emptyMessage] is used when the model found no recipe at all. */
@@ -84,15 +121,22 @@ You are an assistant that transcribes cooking recipes from photos (of a cookbook
 handwritten recipe, sometimes with rotated text or columns).
 
 Return ONLY a compact JSON object (no indentation or line breaks) with exactly this format, with no explanations or extra text:
-${RECIPE_JSON_FORMAT.dropLast(2)},
+{"together": true | false, "recipes": [ ${RECIPE_JSON_FORMAT.dropLast(2)},
   "dishPhotos": [ { "image": number, "box": [ymin, xmin, ymax, xmax], "rotation": 0 | 90 | 180 | 270 } ]
-}
+} ] }
+"recipes" has one entry per COMPLETE recipe in the images (its own title, ingredients and steps), in
+reading order; usually there is just one. Do not split one recipe into several: a part that belongs
+to it (a sauce, a filling, a frosting described within it) stays inside it as a named ingredient
+and step group. "together" is true when the recipes are parts of one dish or meant to be served
+together (a cake and its frosting, a main course and its side), false when they are independent
+recipes that happen to share a page; with a single recipe use false.
 Put each preparation step as a separate entry of the "instructions" array, in the same order as in
 the text. If you cannot determine a value, use null (or an empty list) instead of making it up. If
-there is no recognisable recipe in the image, leave "name" empty.
-When several images are included, they are all pages or fragments of the SAME recipe (for example
-consecutive photos of a cookbook); combine them into a single result, following the image order.
-In "dishPhotos" list where the photos of the FINISHED DISH are (the photo illustrating the recipe):
+there is no recognisable recipe in the images, return an empty "recipes" list.
+When several images are included, they are consecutive pages or fragments (for example photos of a
+cookbook): a recipe that continues from one image to the next is ONE recipe; combine its parts
+following the image order.
+In each recipe's "dishPhotos" list where the photos of the FINISHED DISH are (the photo illustrating the recipe):
 "image" is the zero-based image index and "box" is [ymin, xmin, ymax, xmax] normalised from 0 to
 1000 (0,0 is the top-left corner of the image). Measure the box on the edges of the printed
 photograph itself, as precisely as possible: it must contain only the photograph, with no

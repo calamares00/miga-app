@@ -142,7 +142,7 @@ private fun BulkImportRowItem(row: BulkImportRow, progress: AiProgress?, onClick
             )
             is BulkImportRowState.Success -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text(state.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2)
+                Text(state.name, style = MaterialTheme.typography.bodyLarge, maxLines = 3)
             }
             is BulkImportRowState.Failed -> Row(
                 modifier = Modifier.weight(1f),

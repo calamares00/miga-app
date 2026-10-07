@@ -925,4 +925,12 @@
     <string name="stats_delete_unused_photos">"Eliminar fotos sin usar"</string>
     <string name="stats_delete_unused_photos_confirm_x_y">"Se borrarán %1$d fotos (%2$s) que no pertenecen a ninguna receta ni portada. No se puede deshacer."</string>
     <string name="stats_unused_photos_deleted_x">"Fotos eliminadas: %1$d"</string>
+    <string name="ai_several_recipes_found_x">"Se han encontrado %1$d recetas"</string>
+    <string name="detected_choose">"Elige cuáles importar y cómo:"</string>
+    <string name="detected_suggest_together">"Parecen partes de un mismo plato, así que te sugerimos unirlas en una sola receta."</string>
+    <string name="detected_suggest_separately">"Parecen recetas independientes, así que te sugerimos guardar cada una por separado."</string>
+    <string name="detected_one_each">"Guardar %1$d recetas por separado"</string>
+    <string name="detected_join">"Unir en una sola receta"</string>
+    <string name="detected_import_selected">"Importar la receta elegida"</string>
+    <string name="detected_saved_x">"%1$d recetas guardadas en el libro"</string>
 </resources>
