@@ -131,7 +131,9 @@ import org.calamares.miga.data.model.displayCategoryName
 fun RecipeDetailScreen(
     viewModel: RecipeDetailViewModel,
     onBack: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
+    active: Boolean = true,
+    onCookModeChange: (Boolean) -> Unit = {}
 ) {
     val recipe by viewModel.recipe.collectAsState()
     val recipeBooks by viewModel.recipeBooks.collectAsState()
@@ -154,8 +156,14 @@ fun RecipeDetailScreen(
      */
     val headerScrolled by remember { derivedStateOf { scrollState.value > with(density) { (HEADER_HEIGHT - 96.dp).toPx() } } }
 
-    LaunchedEffect(Unit) { viewModel.fetchHealthinessIfNeeded() }
-    LaunchedEffect(Unit) { viewModel.fetchNutritionIfNeeded() }
+    // Only for the recipe on screen, not for the neighbours a swipe shows for a moment.
+    LaunchedEffect(active) {
+        if (active) {
+            viewModel.fetchHealthinessIfNeeded()
+            viewModel.fetchNutritionIfNeeded()
+        }
+    }
+    LaunchedEffect(showCookMode) { onCookModeChange(showCookMode) }
 
     fun addToShoppingList() {
         viewModel.addIngredientsToShoppingList()

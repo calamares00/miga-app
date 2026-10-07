@@ -44,7 +44,7 @@ import org.calamares.miga.ui.books.RecipeBookEditorScreen
 import org.calamares.miga.ui.books.RecipeBookEditorViewModel
 import org.calamares.miga.ui.books.RecipeBooksScreen
 import org.calamares.miga.ui.books.RecipeBooksViewModel
-import org.calamares.miga.ui.detail.RecipeDetailScreen
+import org.calamares.miga.ui.detail.RecipeDetailPager
 import org.calamares.miga.ui.detail.RecipeDetailViewModel
 import org.calamares.miga.ui.dishsearch.DishSearchScreen
 import org.calamares.miga.ui.dishsearch.DishSearchViewModel
@@ -241,7 +241,11 @@ fun MigaNavHost(initialRoute: String? = null) {
                 RecipeListScreen(
                     viewModel = viewModel,
                     onBack = { navController.popBackStack() },
-                    onRecipeClick = { navController.navigate(Destinations.detail(it)) },
+                    onRecipeClick = { id ->
+                        // The book's recipes in the order shown, to swipe to the next or previous one.
+                        val shownIds = viewModel.uiState.value.groups.flatMap { group -> group.recipes.map { it.id } }
+                        navController.navigate(Destinations.detail(id, shownIds))
+                    },
                     onEditRecipeClick = { navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = it)) },
                     onAddRecipeClick = { navController.navigate(Destinations.editor(bookId = bookId)) },
                     onAddRecipeFromPhoto = { photoUris -> navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUris = photoUris)) },
@@ -309,17 +313,30 @@ fun MigaNavHost(initialRoute: String? = null) {
 
             composable(
                 route = Destinations.DETAIL_ROUTE,
-                arguments = listOf(navArgument(Destinations.ARG_RECIPE_ID) { type = NavType.LongType })
+                arguments = listOf(
+                    navArgument(Destinations.ARG_RECIPE_ID) { type = NavType.LongType },
+                    navArgument(Destinations.ARG_BROWSE_IDS) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
             ) { backStackEntry ->
                 val recipeId = backStackEntry.arguments?.getLong(Destinations.ARG_RECIPE_ID) ?: return@composable
-                val viewModel: RecipeDetailViewModel = viewModel(
-                    key = "detail_$recipeId",
-                    factory = viewModelFactory { initializer { RecipeDetailViewModel(repository, recipeId, settingsRepository) } }
-                )
-                RecipeDetailScreen(
-                    viewModel = viewModel,
+                val browseIds = remember(backStackEntry) {
+                    Destinations.decodeIdList(backStackEntry.arguments?.getString(Destinations.ARG_BROWSE_IDS))
+                }
+                RecipeDetailPager(
+                    recipeIds = browseIds.takeIf { recipeId in it } ?: listOf(recipeId),
+                    initialRecipeId = recipeId,
+                    viewModelFor = { id ->
+                        viewModel(
+                            key = "detail_$id",
+                            factory = viewModelFactory { initializer { RecipeDetailViewModel(repository, id, settingsRepository) } }
+                        )
+                    },
                     onBack = { navController.popBackStack() },
-                    onEdit = { navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = recipeId)) }
+                    onEdit = { id -> navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = id)) }
                 )
             }
 
