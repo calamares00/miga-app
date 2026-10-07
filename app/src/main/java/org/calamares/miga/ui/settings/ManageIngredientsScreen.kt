@@ -45,6 +45,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.calamares.miga.data.local.entity.IngredientCategoryEntity
 import org.calamares.miga.data.model.IngredientCatalogItem
+import org.calamares.miga.data.repository.DefaultCatalog
 import org.calamares.miga.data.repository.RecipeRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -110,7 +111,10 @@ fun ManageIngredientsScreen(viewModel: ManageIngredientsViewModel, onBack: () ->
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(item.name, style = MaterialTheme.typography.bodyLarge)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(item.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f, fill = false))
+                                if (DefaultCatalog.isDefaultIngredient(item.name)) DefaultBadge(modifier = Modifier.padding(start = 8.dp))
+                            }
                             AssistChip(
                                 onClick = { itemForCategory = item },
                                 label = { Text(item.categoryName ?: L10n.str(R.string.uncategorized)) },

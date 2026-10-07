@@ -20,6 +20,9 @@ import org.calamares.miga.R
 import org.calamares.miga.ui.components.AiContentNotice
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.material3.Surface
+import org.calamares.miga.data.vision.NewLabels
+import androidx.compose.material.icons.filled.NewLabel
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -200,6 +203,8 @@ fun RecipeEditorScreen(
                         }
                     }
                 )
+                val toCreate = viewModel.newLabelsToCreate()
+                if (!toCreate.isEmpty) NewLabelsNotice(toCreate)
             }
 
             EditorCard(title = L10n.str(R.string.editor_basics), icon = Icons.Outlined.Info) {
@@ -337,8 +342,9 @@ fun RecipeEditorScreen(
             canSaveSeparately = viewModel.canSaveSeparately,
             onJoin = { viewModel.importDetectedTogether(it) },
             onOneEach = { selected ->
-                viewModel.importDetectedSeparately(selected) { count ->
-                    Toast.makeText(context, L10n.str(R.string.detected_saved_x, count), Toast.LENGTH_SHORT).show()
+                viewModel.importDetectedSeparately(selected) { count, created ->
+                    val message = (listOf(L10n.str(R.string.detected_saved_x, count)) + created).joinToString("\n")
+                    Toast.makeText(context, message, if (created.isEmpty()) Toast.LENGTH_SHORT else Toast.LENGTH_LONG).show()
                     onCancel()
                 }
             },
@@ -596,5 +602,32 @@ private fun EditorCard(title: String?, icon: ImageVector?, content: @Composable 
             }
         }
         content()
+    }
+}
+
+/**
+ * After an AI fill: the category and equipment that do not exist yet and will be created on saving
+ * (the AI is asked to reuse the existing ones, so these are the ones where none fitted).
+ */
+@Composable
+private fun NewLabelsNotice(labels: NewLabels) {
+    Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
+            Icon(Icons.Filled.NewLabel, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(L10n.str(R.string.new_labels_title), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                labels.category?.let {
+                    Text(L10n.str(R.string.new_labels_category_x, it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                }
+                if (labels.equipment.isNotEmpty()) {
+                    Text(
+                        L10n.str(R.string.new_labels_equipment_x, labels.equipment.joinToString(", ")),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
+        }
     }
 }

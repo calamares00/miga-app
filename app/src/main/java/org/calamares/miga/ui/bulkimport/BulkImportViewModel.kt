@@ -24,6 +24,9 @@ import org.calamares.miga.data.ai.AiProvider
 import org.calamares.miga.data.vision.toRecipeDraft
 import org.calamares.miga.data.vision.extractRecipes
 import org.calamares.miga.data.vision.mergedIntoOne
+import org.calamares.miga.data.vision.matchedTo
+import org.calamares.miga.data.vision.newLabels
+import org.calamares.miga.data.ai.KnownLabels
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -33,7 +36,8 @@ import kotlinx.coroutines.launch
 sealed interface BulkImportRowState {
     data object Pending : BulkImportRowState
     data object Processing : BulkImportRowState
-    data class Success(val recipeId: Long, val name: String) : BulkImportRowState
+    /** [note] says which categories or equipment had to be created because none fitted. */
+    data class Success(val recipeId: Long, val name: String, val note: String? = null) : BulkImportRowState
     data class Failed(val reason: String) : BulkImportRowState
 }
 
@@ -55,6 +59,9 @@ class BulkImportViewModel(
 
     private var started = false
 
+    /** The user's categories and equipment, offered to the AI and used to file the results. */
+    private var known = KnownLabels.NONE
+
     /** Processes every photo in order, one at a time. Call it once, from the screen. */
     fun start(context: Context) {
         if (started) return
@@ -64,6 +71,10 @@ class BulkImportViewModel(
                 _rows.update { rows -> rows.map { it.copy(state = BulkImportRowState.Failed(L10n.str(R.string.ai_no_provider))) } }
                 return@launch
             }
+            known = KnownLabels(
+                categories = repository.observeCategories().first().map { it.name },
+                equipment = repository.observeUtensils().first().map { it.name }
+            )
             // One foreground service for the whole batch, so it is not restarted between photos
             // while the app is in the background (which Android does not allow).
             AiKeepAlive.hold(L10n.str(R.string.ai_task_bulk_import)) {
@@ -118,13 +129,14 @@ class BulkImportViewModel(
                 errorOf = { (it as? RecipeExtractionResult.Error)?.reason },
                 error = { RecipeExtractionResult.Error(it) },
                 progress = progress
-            ) { ai -> ai.extractRecipes(images) }
+            ) { ai -> ai.extractRecipes(images, known) }
         } ?: RecipeExtractionResult.Error(L10n.str(R.string.ai_no_provider))
         when (result) {
             is RecipeExtractionResult.Success -> {
                 // No one to ask in the middle of a batch: the AI's suggestion decides whether several
                 // recipes on one photo become one recipe or one each.
-                val recipes = if (result.together) listOf(result.recipes.mergedIntoOne()) else result.recipes
+                val recipes = (if (result.together) listOf(result.recipes.mergedIntoOne()) else result.recipes).map { it.matchedTo(known) }
+                val created = mutableListOf<String>()
                 val saved = recipes.map { recipe ->
                     if (recipe.dishPhotos.isNotEmpty()) progress.step(L10n.str(R.string.ai_step_cropping_photo))
                     val dishPhotoUris = withContext(Dispatchers.IO) {
@@ -133,9 +145,26 @@ class BulkImportViewModel(
                     progress.step(L10n.str(R.string.ai_step_saving_recipe))
                     val draft = recipe.toRecipeDraft(bookId)
                         .copy(photos = dishPhotoUris.mapIndexed { i, photoUri -> RecipePhoto(photoUri, isCover = i == 0) })
-                    repository.saveRecipe(draft) to draft.name
+                    val toCreate = newLabels(draft.categoryName, draft.utensilNames, known)
+                    toCreate.category?.let { created += L10n.str(R.string.new_labels_category_x, it) }
+                    if (toCreate.equipment.isNotEmpty()) created += L10n.str(R.string.new_labels_equipment_x, toCreate.equipment.joinToString(", "))
+                    val id = repository.saveRecipe(draft)
+                    // What this recipe created is known to the next ones, so they reuse it.
+                    known = KnownLabels(
+                        categories = known.categories + listOfNotNull(toCreate.category),
+                        equipment = known.equipment + toCreate.equipment
+                    )
+                    id to draft.name
                 }
-                updateRow(index) { it.copy(state = BulkImportRowState.Success(saved.first().first, saved.joinToString(" · ") { it.second })) }
+                updateRow(index) {
+                    it.copy(
+                        state = BulkImportRowState.Success(
+                            recipeId = saved.first().first,
+                            name = saved.joinToString(" · ") { entry -> entry.second },
+                            note = created.distinct().joinToString(" · ").ifEmpty { null }
+                        )
+                    )
+                }
             }
             is RecipeExtractionResult.Error -> updateRow(index) { it.copy(state = BulkImportRowState.Failed(result.reason)) }
         }

@@ -10,6 +10,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -142,7 +143,10 @@ private fun BulkImportRowItem(row: BulkImportRow, progress: AiProgress?, onClick
             )
             is BulkImportRowState.Success -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text(state.name, style = MaterialTheme.typography.bodyLarge, maxLines = 3)
+                Column {
+                    Text(state.name, style = MaterialTheme.typography.bodyLarge, maxLines = 3)
+                    state.note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
             }
             is BulkImportRowState.Failed -> Row(
                 modifier = Modifier.weight(1f),

@@ -7,6 +7,8 @@ import org.calamares.miga.data.ai.AiCandidate
 import org.calamares.miga.data.ai.AiImage
 import org.calamares.miga.data.ai.AiRequest
 import org.calamares.miga.data.ai.AiText
+import org.calamares.miga.data.ai.KnownLabels
+import org.calamares.miga.data.ai.knownLabelsInstruction
 import org.calamares.miga.data.ai.RECIPE_JSON_FORMAT
 import org.calamares.miga.data.ai.complete
 import org.calamares.miga.data.ai.decodeAiJson
@@ -78,9 +80,9 @@ sealed interface RecipeVisionResult {
  * Transcribes the recipes in one or more photos. Several images are treated as pages of the same
  * content; a page can hold more than one complete recipe, and each one is returned on its own.
  */
-suspend fun AiCandidate.extractRecipes(images: List<AiImage>): RecipeExtractionResult {
+suspend fun AiCandidate.extractRecipes(images: List<AiImage>, known: KnownLabels = KnownLabels.NONE): RecipeExtractionResult {
     if (images.isEmpty()) return RecipeExtractionResult.Error(L10n.str(R.string.there_no_photos_process))
-    return when (val result = complete(AiRequest(recipeExtractionPrompt(), RECIPE_MAX_TOKENS, images))) {
+    return when (val result = complete(AiRequest(recipeExtractionPrompt(known), RECIPE_MAX_TOKENS, images))) {
         is AiText.Error -> RecipeExtractionResult.Error(result.reason)
         is AiText.Success -> parseExtractionAnswer(result.text)
     }
@@ -116,7 +118,7 @@ internal fun parseRecipeAnswer(result: AiText, emptyMessage: () -> String): Reci
 }
 
 /** Transcription prompt; it also asks where the photos of the finished dish are. */
-internal fun recipeExtractionPrompt(): String = """
+internal fun recipeExtractionPrompt(known: KnownLabels = KnownLabels.NONE): String = """
 You are an assistant that transcribes cooking recipes from photos (of a cookbook, a magazine or a
 handwritten recipe, sometimes with rotated text or columns).
 
@@ -149,4 +151,4 @@ most 3; if there are none, leave the list empty.
 dish the right way up, as printed on the page). Use the page text as a guide: if the text in the
 image reads sideways or upside down, the photo is rotated the same way. Use 0 when it is already
 upright.
-""".trimIndent() + transcriptionLanguageInstruction()
+""".trimIndent() + knownLabelsInstruction(known) + transcriptionLanguageInstruction()
