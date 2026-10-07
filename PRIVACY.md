@@ -70,7 +70,7 @@ Miga no está dirigida a menores de 13 años y no recopila datos que permitan co
 
 ## Cambios en esta política
 
-Los cambios se publican en este mismo documento, junto con su fecha de actualización. La versión vigente está siempre en la app (Ajustes → Acerca de → Política de privacidad) y en miga.calamares.org/privacy.
+Los cambios se publican en este mismo documento, junto con su fecha de actualización. La versión vigente es siempre la que incluye la app, en Ajustes → Acerca de → Política de privacidad.
 
 ## Contacto
 
