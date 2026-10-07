@@ -70,7 +70,7 @@ Miga is not aimed at children under 13 and collects no data that reveals the age
 
 ## Changes to this policy
 
-Changes are published in this same document, together with the date of the update. The current version is always in the app (Settings → About → Privacy policy) and at miga.calamares.org/privacy.
+Changes are published in this same document, together with the date of the update. The current version is always the one shipped with the app, in Settings → About → Privacy policy.
 
 ## Contact
 
