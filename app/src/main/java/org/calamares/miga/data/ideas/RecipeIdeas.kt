@@ -98,7 +98,8 @@ internal data class IdeasAnswerDto(
 
 /**
  * Answers [question] and/or the chosen [filters] using the user's [recipes] as the main source. Recipe ids
- * the model invents are dropped, so every recipe in the answer exists in the library.
+ * the model invents are dropped, so every recipe in the answer exists in the library, and the user
+ * never sees ids: references in the text become the recipe name.
  */
 suspend fun AiCandidate.askIdeas(
     recipes: List<Recipe>,
@@ -113,28 +114,37 @@ suspend fun AiCandidate.askIdeas(
     return when (val result = complete(AiRequest(prompt, IDEAS_MAX_TOKENS))) {
         is AiText.Error -> IdeasResult.Error(result.reason)
         is AiText.Success -> try {
-            IdeasResult.Success(decodeAiJson(IdeasAnswerDto.serializer(), result.text).toAnswer(recipes.map { it.id }.toSet()))
+            IdeasResult.Success(decodeAiJson(IdeasAnswerDto.serializer(), result.text).toAnswer(recipes.associate { it.id to it.name }))
         } catch (e: Exception) {
             IdeasResult.Error(AiErrors.badResponse(e, result.text))
         }
     }
 }
 
-internal fun IdeasAnswerDto.toAnswer(validIds: Set<Long>): IdeasAnswer = if (offTopic) {
-    // Outside the app's scope: only the refusal text is shown, never recipes or actions.
-    IdeasAnswer(title.trim(), text.trim(), emptyList(), emptyList(), emptyList(), offTopic = true)
-} else IdeasAnswer(
-    title = title.trim(),
-    text = text.trim(),
-    sections = sections.mapNotNull { section ->
-        val recipes = section.recipes
-            .filter { it.recipeId in validIds }
-            .map { IdeaRecipe(it.recipeId, it.label?.trim()?.ifBlank { null }, it.reason?.trim()?.ifBlank { null }) }
-        if (recipes.isEmpty()) null else IdeaSection(section.title.trim(), recipes)
-    },
-    tips = tips.map { it.trim() }.filter { it.isNotEmpty() },
-    newDishes = newDishes.filter { it.name.isNotBlank() }.map { NewDishIdea(it.name.trim(), it.description.trim()) }
-)
+/**
+ * The answer as shown. [names] are the library recipes by id: recipes with other ids are dropped,
+ * recipe references in [IdeasAnswerDto.text] and the tips are kept as links (see [RecipeReferences])
+ * and the other fields get the recipe name instead of any id.
+ */
+internal fun IdeasAnswerDto.toAnswer(names: Map<Long, String>): IdeasAnswer {
+    fun linked(value: String) = RecipeReferences.normalize(value.trim(), names)
+    fun plain(value: String) = RecipeReferences.toPlainText(value.trim(), names)
+    return if (offTopic) {
+        // Outside the app's scope: only the refusal text is shown, never recipes or actions.
+        IdeasAnswer(plain(title), plain(text), emptyList(), emptyList(), emptyList(), offTopic = true)
+    } else IdeasAnswer(
+        title = plain(title),
+        text = linked(text),
+        sections = sections.mapNotNull { section ->
+            val recipes = section.recipes
+                .filter { it.recipeId in names }
+                .map { IdeaRecipe(it.recipeId, it.label?.let(::plain)?.ifBlank { null }, it.reason?.let(::plain)?.ifBlank { null }) }
+            if (recipes.isEmpty()) null else IdeaSection(plain(section.title), recipes)
+        },
+        tips = tips.map(::linked).filter { it.isNotEmpty() },
+        newDishes = newDishes.filter { it.name.isNotBlank() }.map { NewDishIdea(plain(it.name), plain(it.description)) }
+    )
+}
 
 /** The recipes described to the AI: all of them, or the most relevant when there are too many. */
 internal fun selectCatalog(recipes: List<Recipe>): List<Recipe> =
@@ -256,8 +266,12 @@ internal fun buildIdeasPrompt(
     appendLine()
     appendLine(
         """
-        Answer the request. Recommend recipes FROM THE LIBRARY whenever they fit, referring to them only by their
-        exact id; never invent ids. Prefer favourites and recipes cooked before when they fit, but keep variety.
+        Answer the request. Recommend recipes FROM THE LIBRARY whenever they fit, listing them in "sections" by
+        their exact id; never invent ids. The user never sees ids: to mention a library recipe inside "text" or a
+        tip, write only [[id]] (for example "try [[12]] on Monday"), which the app shows as the recipe name with a
+        link; do not also write its name next to it. Never write ids in any other way ("id 12", "#12", "(12)")
+        and never in titles, labels, reasons or new dishes; there, use the recipe name if needed.
+        Prefer favourites and recipes cooked before when they fit, but keep variety.
         When the request is a question or asks for advice (techniques, substitutions, storage, timing...), answer
         it in "text" and add recipes only if they are relevant. When the library has nothing suitable, say so
         briefly and propose new dishes in "newDishes".

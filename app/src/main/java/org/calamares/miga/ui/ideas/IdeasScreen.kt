@@ -83,11 +83,11 @@ import org.calamares.miga.data.ideas.IdeasMeal
 import org.calamares.miga.data.ideas.IdeasStyle
 import org.calamares.miga.data.ideas.MAX_IDEAS_QUESTION_CHARS
 import org.calamares.miga.data.ideas.NewDishIdea
+import org.calamares.miga.data.ideas.RecipeReferences
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.ui.components.AiContentNotice
 import org.calamares.miga.ui.components.AiProgressView
 import org.calamares.miga.ui.components.ErrorMessage
-import org.calamares.miga.ui.components.FormattedText
 
 /**
  * Ideas: AI recommendations based on the user's recipes. A "What do you fancy?" panel combines
@@ -445,6 +445,7 @@ private fun AnswerCard(
     onCreateDish: (NewDishIdea) -> Unit,
     onAddToShopping: () -> Unit
 ) {
+    val names = remember(recipes) { recipes.mapValues { it.value.name } }
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(18.dp),
@@ -458,7 +459,7 @@ private fun AnswerCard(
                     Text(answer.title, style = MaterialTheme.typography.titleMedium)
                 }
             }
-            if (answer.text.isNotBlank()) FormattedText(answer.text, style = MaterialTheme.typography.bodyLarge)
+            if (answer.text.isNotBlank()) RecipeLinkText(answer.text, names, MaterialTheme.typography.bodyLarge, onRecipeClick)
 
             answer.sections.forEach { section ->
                 if (section.title.isNotBlank()) {
@@ -480,7 +481,7 @@ private fun AnswerCard(
                     Row(verticalAlignment = Alignment.Top) {
                         Icon(Icons.Filled.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(18.dp).padding(top = 2.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        FormattedText(tip, style = MaterialTheme.typography.bodyMedium)
+                        RecipeLinkText(tip, names, MaterialTheme.typography.bodyMedium, onRecipeClick)
                     }
                 }
             }
@@ -512,7 +513,7 @@ private fun AnswerCard(
             AiContentNotice(
                 feature = L10n.str(R.string.ideas),
                 content = {
-                    listOf(answer.title, answer.text).plus(answer.tips).plus(answer.newDishes.map { "${it.name}: ${it.description}" })
+                    listOf(answer.title, answer.text).plus(answer.tips).map { RecipeReferences.toPlainText(it, names) }.plus(answer.newDishes.map { "${it.name}: ${it.description}" })
                         .filter { it.isNotBlank() }.joinToString("\n")
                 }
             )
