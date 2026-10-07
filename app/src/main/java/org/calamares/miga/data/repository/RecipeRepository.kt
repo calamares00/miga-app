@@ -386,8 +386,7 @@ class RecipeRepository(
     /** Creates the default categories when the database has none. */
     /** Creates the default categories that are missing. Called once, on the first start. */
     suspend fun seedDefaultCategories(language: String = "es") {
-        val names = if (language == "es") listOf("Postres", "Cremas", "Pastas") else listOf("Desserts", "Soups", "Pasta")
-        names.forEach { name ->
+        DefaultCatalog.categories(language).forEach { name ->
             if (categoryDao.findByName(name) == null) {
                 categoryDao.insert(CategoryEntity(name = name))
             }

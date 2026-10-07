@@ -76,9 +76,9 @@ class MigaApp : Application() {
                 repository.normalizeUtensils(seedLanguage)
                 repository.seedDefaultUtensils(seedLanguage)
                 repository.seedDefaultCategories(seedLanguage)
+                repository.seedIngredientCatalogDefaults(seedLanguage)
                 settingsRepository.setDefaultsSetUp()
             }
-            repository.seedIngredientCatalogDefaults(seedLanguage)
         }
         SyncWorker.enqueuePeriodic(this)
     }

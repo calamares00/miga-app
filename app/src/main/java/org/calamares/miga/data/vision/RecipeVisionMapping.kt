@@ -1,6 +1,8 @@
 package org.calamares.miga.data.vision
 
 import org.calamares.miga.L10n
+import org.calamares.miga.data.ai.KnownLabels
+import org.calamares.miga.data.model.CatalogMatching
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.data.model.Ingredient
 import org.calamares.miga.data.model.IngredientGroup
@@ -76,5 +78,39 @@ fun List<RecipeVisionResultDto>.mergedIntoOne(): RecipeVisionResultDto {
         tags = flatMap { it.tags }.distinctBy { it.trim().lowercase() },
         utensils = flatMap { it.utensils }.distinctBy { it.trim().lowercase() },
         dishPhotos = flatMap { it.dishPhotos }.take(3)
+    )
+}
+
+/**
+ * This recipe with its category and equipment written as the user's existing ones when one fits
+ * ("Postre" -> "Postres", "Horno eléctrico" -> "Horno"), so saving it does not create near
+ * duplicates. The model is asked to do this already; this catches what it misses.
+ */
+fun RecipeVisionResultDto.matchedTo(known: KnownLabels): RecipeVisionResultDto {
+    val parts = categoryName?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
+    val category = parts.firstOrNull()?.let { CatalogMatching.bestMatch(it, known.categories) ?: it }
+    return copy(
+        categoryName = (listOfNotNull(category) + parts.drop(1)).joinToString(", ").ifEmpty { null },
+        utensils = utensils.map { name -> matchEquipment(name, known.equipment) }.distinctBy { KitchenEquipment.key(it) }
+    )
+}
+
+private fun matchEquipment(name: String, existing: List<String>): String {
+    val byKey = existing.associateBy { KitchenEquipment.key(it) }
+    (listOf(name) + KitchenEquipment.equivalents(name)).forEach { candidate -> byKey[KitchenEquipment.key(candidate)]?.let { return it } }
+    return CatalogMatching.bestMatch(name, existing) ?: name
+}
+
+/** What saving a recipe with [categoryName] and [equipment] would create, as it does not exist yet. */
+data class NewLabels(val category: String?, val equipment: List<String>) {
+    val isEmpty: Boolean get() = category == null && equipment.isEmpty()
+}
+
+fun newLabels(categoryName: String?, equipment: List<String>, known: KnownLabels): NewLabels {
+    val categoryKeys = known.categories.map { KitchenEquipment.key(it) }.toSet()
+    val equipmentKeys = known.equipment.map { KitchenEquipment.key(it) }.toSet()
+    return NewLabels(
+        category = categoryName?.trim()?.takeIf { it.isNotEmpty() && KitchenEquipment.key(it) !in categoryKeys },
+        equipment = equipment.map { it.trim() }.filter { it.isNotEmpty() && KitchenEquipment.key(it) !in equipmentKeys }.distinct()
     )
 }

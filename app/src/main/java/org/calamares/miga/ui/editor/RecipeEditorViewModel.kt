@@ -36,6 +36,10 @@ import org.calamares.miga.data.vision.RecipeVisionResult
 import org.calamares.miga.data.vision.RecipeVisionResultDto
 import org.calamares.miga.data.ai.AiImage
 import org.calamares.miga.data.vision.extractRecipes
+import org.calamares.miga.data.vision.matchedTo
+import org.calamares.miga.data.vision.newLabels
+import org.calamares.miga.data.vision.NewLabels
+import org.calamares.miga.data.ai.KnownLabels
 import org.calamares.miga.data.vision.mergedIntoOne
 import org.calamares.miga.data.vision.toRecipeDraft
 import org.calamares.miga.data.vision.RecipeExtractionResult
@@ -145,6 +149,18 @@ class RecipeEditorViewModel(
     val aiProgress: StateFlow<AiProgress?> = _aiProgress
     private var visionStarted = false
 
+    /**
+     * The user's categories and equipment when the AI operation started: offered to the model and
+     * used to file the result under existing ones (see matchedTo).
+     */
+    private var known = KnownLabels.NONE
+
+    /**
+     * Category and equipment of the form that do not exist yet and would be created on saving;
+     * shown after an AI fill so the user knows before saving.
+     */
+    fun newLabelsToCreate(): NewLabels = newLabels(categoryName, selectedUtensils.toList(), known)
+
     private val _detectedRecipes = MutableStateFlow<DetectedRecipes?>(null)
     val detectedRecipes: StateFlow<DetectedRecipes?> = _detectedRecipes
 
@@ -194,7 +210,7 @@ class RecipeEditorViewModel(
                     errorOf = { (it as? RecipeExtractionResult.Error)?.reason },
                     error = { RecipeExtractionResult.Error(it) },
                     progress = progress
-                ) { ai -> ai.extractRecipes(images) }
+                ) { ai -> ai.extractRecipes(images, known) }
             } ?: RecipeExtractionResult.Error(L10n.str(R.string.ai_no_provider))
             when (result) {
                 is RecipeExtractionResult.Success -> if (result.recipes.size == 1) {
@@ -231,25 +247,31 @@ class RecipeEditorViewModel(
      * Saves each of the [selected] detected recipes (indices) as its own recipe in the book, with
      * its own dish photos, and reports how many were saved.
      */
-    fun importDetectedSeparately(selected: List<Int>, onSaved: (count: Int) -> Unit) {
+    fun importDetectedSeparately(selected: List<Int>, onSaved: (count: Int, created: List<String>) -> Unit) {
         val detected = _detectedRecipes.value ?: return
         val recipes = selected.mapNotNull { detected.recipes.getOrNull(it) }.ifEmpty { return }
         if (recipes.size == 1) return importDetectedTogether(selected)
         _detectedRecipes.value = null
         _visionState.value = VisionState.Loading
         viewModelScope.launch {
+            val created = mutableListOf<String>()
             AiKeepAlive.hold(L10n.str(R.string.ai_task_reading_photo)) {
                 recipes.forEach { recipe ->
                     val dishPhotoUris = withContext(Dispatchers.IO) {
                         DishPhotoCropper.extract(detected.appContext, detected.sourceUris, recipe.dishPhotos)
                     }
-                    val draft = recipe.toRecipeDraft(bookId)
+                    val draft = recipe.matchedTo(known).toRecipeDraft(bookId)
                         .copy(photos = dishPhotoUris.mapIndexed { i, uri -> RecipePhoto(uri, isCover = i == 0) })
+                    val toCreate = newLabels(draft.categoryName, draft.utensilNames, known)
+                    toCreate.category?.let { created += L10n.str(R.string.new_labels_category_x, it) }
+                    if (toCreate.equipment.isNotEmpty()) created += L10n.str(R.string.new_labels_equipment_x, toCreate.equipment.joinToString(", "))
                     repository.saveRecipe(draft)
+                    // What this recipe created is known to the next ones, so they reuse it.
+                    known = KnownLabels(known.categories + listOfNotNull(toCreate.category), known.equipment + toCreate.equipment)
                 }
             }
             _visionState.value = VisionState.Idle
-            onSaved(recipes.size)
+            onSaved(recipes.size, created.distinct())
         }
     }
 
@@ -274,7 +296,7 @@ class RecipeEditorViewModel(
                     errorOf = { (it as? RecipeVisionResult.Error)?.reason },
                     error = { RecipeVisionResult.Error(it) },
                     progress = progress
-                ) { ai -> ai.generateRecipe(dish) }
+                ) { ai -> ai.generateRecipe(dish, known) }
             } ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
             when (result) {
                 is RecipeVisionResult.Success -> {
@@ -313,7 +335,7 @@ class RecipeEditorViewModel(
                     errorOf = { (it as? RecipeVisionResult.Error)?.reason },
                     error = { RecipeVisionResult.Error(it) },
                     progress = progress
-                ) { ai -> ai.importRecipeFromPage(url, pageText) }
+                ) { ai -> ai.importRecipeFromPage(url, pageText, known) }
             } ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
             when (result) {
                 is RecipeVisionResult.Success -> {
@@ -350,6 +372,10 @@ class RecipeEditorViewModel(
      * the user has left the app meanwhile, a notification with the outcome.
      */
     private fun launchAiTask(title: String, block: suspend (AiProgressReporter) -> Unit) = viewModelScope.launch {
+        known = KnownLabels(
+            categories = repository.observeCategories().first().map { it.name },
+            equipment = repository.observeUtensils().first().map { it.name }
+        )
         AiKeepAlive.hold(title) {
             val reporter = AiProgressReporter { progress ->
                 _aiProgress.value = progress
@@ -370,7 +396,8 @@ class RecipeEditorViewModel(
         }
     }
 
-    private fun applyVisionResult(recipe: RecipeVisionResultDto) {
+    private fun applyVisionResult(found: RecipeVisionResultDto) {
+        val recipe = found.matchedTo(known)
         // Some books title a section with several comma-separated categories ("Rice, pulses,
         // potatoes and pasta"). Only the first one becomes the recipe category (the data model
         // allows one) and the rest become tags.

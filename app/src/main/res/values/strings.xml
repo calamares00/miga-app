@@ -934,4 +934,9 @@
     <string name="detected_join">"Join into one recipe"</string>
     <string name="detected_import_selected">"Import the chosen recipe"</string>
     <string name="detected_saved_x">"%1$d recipes saved in the book"</string>
+    <string name="new_labels_title">"Saving will create:"</string>
+    <string name="new_labels_category_x">"New category: %1$s"</string>
+    <string name="new_labels_equipment_x">"New equipment: %1$s"</string>
+    <string name="default_entry">"Default"</string>
+    <string name="default_entry_hint">"created by the app when installed; you can rename or delete it."</string>
 </resources>

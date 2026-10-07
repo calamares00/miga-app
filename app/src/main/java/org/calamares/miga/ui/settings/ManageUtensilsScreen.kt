@@ -7,6 +7,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import org.calamares.miga.data.repository.DefaultCatalog
 import org.calamares.miga.data.repository.RecipeRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +20,7 @@ class ManageUtensilsViewModel(private val repository: RecipeRepository) : ViewMo
     init {
         viewModelScope.launch {
             repository.observeUtensils().collect { utensils ->
-                _items.value = utensils.map { CatalogItem(it.id, it.name, repository.countRecipesUsingUtensil(it.id)) }
+                _items.value = utensils.map { CatalogItem(it.id, it.name, repository.countRecipesUsingUtensil(it.id), DefaultCatalog.isDefaultEquipment(it.name)) }
             }
         }
     }

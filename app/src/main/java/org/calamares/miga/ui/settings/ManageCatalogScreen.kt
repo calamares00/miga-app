@@ -72,13 +72,29 @@ fun ManageCatalogScreen(
             }
         } else {
             LazyColumn(contentPadding = PaddingValues(vertical = 8.dp), modifier = Modifier.padding(padding)) {
+                if (items.any { it.isDefault }) {
+                    item(key = "defaultsHint") {
+                        Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            DefaultBadge()
+                            Text(
+                                L10n.str(R.string.default_entry_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                    }
+                }
                 items(items, key = { it.id }) { item ->
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(item.name, style = MaterialTheme.typography.bodyLarge)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(item.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f, fill = false))
+                                if (item.isDefault) DefaultBadge(modifier = Modifier.padding(start = 8.dp))
+                            }
                             if (item.usageCount != null) {
                                 Text(
                                     text = usageLabel(item.usageCount),

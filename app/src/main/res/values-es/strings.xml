@@ -933,4 +933,9 @@
     <string name="detected_join">"Unir en una sola receta"</string>
     <string name="detected_import_selected">"Importar la receta elegida"</string>
     <string name="detected_saved_x">"%1$d recetas guardadas en el libro"</string>
+    <string name="new_labels_title">"Al guardar se creará:"</string>
+    <string name="new_labels_category_x">"Categoría nueva: %1$s"</string>
+    <string name="new_labels_equipment_x">"Equipamiento nuevo: %1$s"</string>
+    <string name="default_entry">"Por defecto"</string>
+    <string name="default_entry_hint">"creado por la app al instalarse; puedes renombrarlo o borrarlo."</string>
 </resources>
