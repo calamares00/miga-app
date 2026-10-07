@@ -46,10 +46,11 @@ data class RecipeVisionResultDto(
 /**
  * Area of one of the sent images that contains a photo of the dish. [image] is the zero-based
  * image index and [box] is `[ymin, xmin, ymax, xmax]` normalised from 0 to 1000, Gemini's native
- * convention for object detection.
+ * convention for object detection. [rotation] is the clockwise turn, in degrees, that makes the
+ * cropped photo upright when the page was photographed sideways or upside down.
  */
 @Serializable
-data class DishPhotoDto(val image: Int = 0, val box: List<Int> = emptyList())
+data class DishPhotoDto(val image: Int = 0, val box: List<Int> = emptyList(), val rotation: Int = 0)
 
 sealed interface RecipeVisionResult {
     data class Success(val recipe: RecipeVisionResultDto) : RecipeVisionResult
@@ -84,7 +85,7 @@ handwritten recipe, sometimes with rotated text or columns).
 
 Return ONLY a compact JSON object (no indentation or line breaks) with exactly this format, with no explanations or extra text:
 ${RECIPE_JSON_FORMAT.dropLast(2)},
-  "dishPhotos": [ { "image": number, "box": [ymin, xmin, ymax, xmax] } ]
+  "dishPhotos": [ { "image": number, "box": [ymin, xmin, ymax, xmax], "rotation": 0 | 90 | 180 | 270 } ]
 }
 Put each preparation step as a separate entry of the "instructions" array, in the same order as in
 the text. If you cannot determine a value, use null (or an empty list) instead of making it up. If
@@ -100,4 +101,8 @@ fingers or the table under the book. If an edge is uncertain, keep it slightly i
 If the whole image is a photo of the dish (no recipe text), use the box framing the dish. Do not
 include photos of intermediate steps, loose ingredients, people or decorative illustrations. At
 most 3; if there are none, leave the list empty.
+"rotation" is how many degrees the cropped photo must be turned CLOCKWISE to look upright (the
+dish the right way up, as printed on the page). Use the page text as a guide: if the text in the
+image reads sideways or upside down, the photo is rotated the same way. Use 0 when it is already
+upright.
 """.trimIndent() + transcriptionLanguageInstruction()
