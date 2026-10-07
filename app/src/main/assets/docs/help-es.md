@@ -5,7 +5,7 @@ Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo
 - Dentro de un libro, las recetas se agrupan por **categoría**. Toca una categoría para plegarla o desplegarla; desde el menú puedes plegarlas o desplegarlas todas.
 - Al abrir una receta, **desliza a izquierda o derecha** para pasar a la siguiente o a la anterior del libro, como las páginas de un libro.
 - Mantén pulsada una receta para **seleccionar varias** y cambiarles a la vez la categoría, la dificultad, las raciones o el libro, añadirlas a la lista de la compra o exportarlas.
-- La pestaña **Buscar** busca en todos los libros por nombre o ingrediente, con filtros por categoría, etiqueta, utensilio o dificultad. Las favoritas tienen su propia pestaña.
+- La pestaña **Buscar** busca en todos los libros por nombre o ingrediente, con filtros por categoría, etiqueta, equipamiento o dificultad. Las favoritas tienen su propia pestaña.
 
 ## ✍️ Escribir una receta
 
@@ -49,7 +49,7 @@ En una receta con pasos, pulsa **Modo cocina** para verlos uno a uno en pantalla
 
 Pulsa ✨ en **Mis libros** para pedir recomendaciones basadas en tus recetas.
 
-- Combina opciones: tipo de comida (desayuno, cena, menú semanal…), estilo (saludable, rápida, de temporada…), tipo de plato y utensilio, incluso un modelo concreto como "Thermomix TM31".
+- Combina opciones: tipo de comida (desayuno, cena, menú semanal…), estilo (saludable, rápida, de temporada…), tipo de plato y equipamiento (horno, freidora de aire…), incluso un modelo concreto como "Thermomix TM31".
 - También puedes preguntar lo que quieras sobre cocina: técnicas, sustituciones, conservación…
 - Las recetas recomendadas aparecen con su nombre y se abren con un toque. Puedes añadir sus ingredientes a la lista de la compra o crear con IA un plato nuevo que te proponga.
 - El asistente solo habla de cocina y alimentación, y nunca cambia nada en la app.

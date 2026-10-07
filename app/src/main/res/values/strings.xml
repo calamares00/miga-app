@@ -46,7 +46,7 @@
     <string name="add_sub_recipe_e_g">"Add sub-recipe (e.g. a sauce)"</string>
     <string name="add_supermarket">"Add supermarket"</string>
     <string name="add_list_2">"Add all to the list"</string>
-    <string name="add_utensil">"Add utensil"</string>
+    <string name="add_utensil">"Add equipment"</string>
     <string name="add_x">"Add %1$s"</string>
     <string name="analysing_ai">"Analysing with AI..."</string>
     <string name="previous">" Previous"</string>
@@ -124,7 +124,7 @@
     <string name="category_x">"Category for \"%1$s\""</string>
     <string name="categories">"Categories"</string>
     <string name="ingredient_categories">"Ingredient categories"</string>
-    <string name="categories_utensils_ingredients">"Categories, utensils and ingredients"</string>
+    <string name="categories_utensils_ingredients">"Categories, equipment and ingredients"</string>
     <string name="close">"Close"</string>
     <string name="dismiss_notice">"Dismiss notice"</string>
     <string name="close_cooking_mode">"Close cooking mode"</string>
@@ -432,7 +432,7 @@
     <string name="name">"Name"</string>
     <string name="name_required">"A name is required"</string>
     <string name="name_ingredient_tag">"Name, ingredient, tag..."</string>
-    <string name="name_ingredient_tag_utensil_difficulty">"By name, ingredient, tag, utensil or difficulty, across all your books at once."</string>
+    <string name="name_ingredient_tag_utensil_difficulty">"By name, ingredient, tag, equipment or difficulty, across all your books at once."</string>
     <string name="book_name">"Book name"</string>
     <string name="template_name">"Template name"</string>
     <string name="recipe_name">"Recipe name"</string>
@@ -637,8 +637,8 @@
     <string name="url_github_user_repo_empty">"URL or GitHub user/repo · empty = official"</string>
     <string name="use_another_catalogue">"Use another catalogue…"</string>
     <string name="use_template">"  Use a template"</string>
-    <string name="utensils">"Utensils"</string>
-    <string name="utensils_needed">"Utensils needed"</string>
+    <string name="utensils">"Equipment"</string>
+    <string name="utensils_needed">"You will need"</string>
     <string name="clear_2">"Clear"</string>
     <string name="clear_list">"Clear list"</string>
     <string name="health_rating">"Health rating"</string>
@@ -852,7 +852,7 @@
     <string name="ideas_dish_salads">"Salads"</string>
     <string name="ideas_dish_baking">"Baking"</string>
     <string name="ideas_other">"Other…"</string>
-    <string name="ideas_other_utensil">"Other utensil"</string>
+    <string name="ideas_other_utensil">"Other equipment"</string>
     <string name="ideas_other_utensil_hint">"E.g. Thermomix TM31"</string>
     <string name="ideas_combine_hint">"Combine options, e.g. Dinner + Healthy + Air fryer."</string>
     <string name="ideas_clear">"Clear"</string>

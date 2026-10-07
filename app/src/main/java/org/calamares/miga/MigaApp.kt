@@ -71,8 +71,13 @@ class MigaApp : Application() {
         applicationScope.launch {
             repository.ensurePhotoUids()
             val seedLanguage = settingsRepository.seedLanguage(L10n.locale().language)
-            repository.seedDefaultUtensilsIfEmpty(seedLanguage)
-            repository.seedDefaultCategoriesIfEmpty(seedLanguage)
+            // Only once: what the user deletes or renames afterwards stays that way.
+            if (!settingsRepository.areDefaultsSetUp()) {
+                repository.normalizeUtensils(seedLanguage)
+                repository.seedDefaultUtensils(seedLanguage)
+                repository.seedDefaultCategories(seedLanguage)
+                settingsRepository.setDefaultsSetUp()
+            }
             repository.seedIngredientCatalogDefaults(seedLanguage)
         }
         SyncWorker.enqueuePeriodic(this)

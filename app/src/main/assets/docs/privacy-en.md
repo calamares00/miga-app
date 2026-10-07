@@ -13,7 +13,7 @@ Miga is a family recipe book and shopping list app. This document explains what 
 
 ## What data the app stores and where
 
-Recipes, books, photos, categories, tags, utensils, ratings, shopping lists, templates, supermarkets and settings are stored **in your device's internal storage**.
+Recipes, books, photos, categories, tags, kitchen equipment, ratings, shopping lists, templates, supermarkets and settings are stored **in your device's internal storage**.
 
 The Google Gemini, Anthropic or OpenRouter API keys you enter are stored only on your device and are used only to call the provider you choose.
 
@@ -38,7 +38,7 @@ All of them start from an action of yours or a feature you have turned on. None 
    - **Find a recipe with AI**: the name and description of the dish.
    - **Health rating, nutrition estimate and substitutes**: the recipe's ingredients and steps.
    - **Cleaning up dictated text**: the text you dictated.
-   - **Ideas**: a summary of your recipes (name, category, tags, time, main ingredients, utensils, whether it is a favourite and how many times you have cooked it), the options you choose, your question and the earlier questions of that conversation.
+   - **Ideas**: a summary of your recipes (name, category, tags, time, main ingredients, equipment, whether it is a favourite and how many times you have cooked it), the options you choose, your question and the earlier questions of that conversation.
 
    Providers are used in the priority order you choose: if one fails or cannot read images, the same request is sent to the next one. How that data is handled is subject to each provider's terms for your key (some free OpenRouter models may use requests for training). Without a key nothing is sent. The OpenRouter model list is downloaded from its public catalogue without sending any of your data. You can turn off all AI features, or only the automatic health rating or nutrition estimate, in Settings → Artificial intelligence. AI-generated content is labelled in the app, may contain mistakes and can be reported.
 2. **Open Food Facts.** When you scan a barcode or search for a product by name, that code or text is sent to Open Food Facts (an open database, no account) to get the product's name, photo and details. Product photos are downloaded from its servers. Open Food Facts data is licensed under the ODbL.

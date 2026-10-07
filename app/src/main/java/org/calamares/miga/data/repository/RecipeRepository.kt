@@ -32,6 +32,7 @@ import org.calamares.miga.data.local.entity.SyncConnectionEntity
 import org.calamares.miga.data.local.entity.SyncEntityType
 import org.calamares.miga.data.local.entity.TagEntity
 import org.calamares.miga.data.local.entity.UtensilEntity
+import org.calamares.miga.data.model.KitchenEquipment
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.data.model.HealthColorLevel
 import org.calamares.miga.data.model.HealthFingerprint
@@ -303,7 +304,7 @@ class RecipeRepository(
 
             // Utensils
             recipeDao.deleteUtensilCrossRefs(recipeId)
-            val utensilIds = draft.utensilNames.filter { it.isNotBlank() }.map { resolveUtensilId(it) }
+            val utensilIds = draft.utensilNames.filter { it.isNotBlank() }.map { resolveUtensilId(it) }.distinct()
             if (utensilIds.isNotEmpty()) {
                 recipeDao.insertUtensilCrossRefs(utensilIds.map { RecipeUtensilCrossRef(recipeId, it) })
             }
@@ -383,7 +384,8 @@ class RecipeRepository(
     suspend fun countRecipesUsingCategory(id: Long): Int = categoryDao.countRecipesUsing(id)
 
     /** Creates the default categories when the database has none. */
-    suspend fun seedDefaultCategoriesIfEmpty(language: String = "es") {
+    /** Creates the default categories that are missing. Called once, on the first start. */
+    suspend fun seedDefaultCategories(language: String = "es") {
         val names = if (language == "es") listOf("Postres", "Cremas", "Pastas") else listOf("Desserts", "Soups", "Pasta")
         names.forEach { name ->
             if (categoryDao.findByName(name) == null) {
@@ -411,18 +413,31 @@ class RecipeRepository(
 
     suspend fun countRecipesUsingUtensil(id: Long): Int = utensilDao.countRecipesUsing(id)
 
-    /** Creates the default utensils when the database has none. */
-    suspend fun seedDefaultUtensilsIfEmpty(language: String = "es") {
-        val defaults = if (language == "es") listOf(
-            "Horno", "Microondas", "Sartén", "Olla", "Batidora", "Robot de cocina",
-            "Thermomix", "Airfryer", "Nevera", "Congelador", "Parrilla / Plancha", "Wok", "Cuchillo"
-        ) else listOf(
-            "Oven", "Microwave", "Frying pan", "Pot", "Blender", "Food processor",
-            "Thermomix", "Air fryer", "Fridge", "Freezer", "Grill / Griddle", "Wok", "Knife"
-        )
-        defaults.forEach { name ->
-            if (utensilDao.findByName(name) == null) {
-                utensilDao.insert(UtensilEntity(name = name))
+    /** Creates the default kitchen equipment that is missing. Called once, on the first start. */
+    suspend fun seedDefaultUtensils(language: String = "es") {
+        KitchenEquipment.defaults(language).forEach { name -> resolveUtensilId(name) }
+    }
+
+    /**
+     * Brings the kitchen equipment created by older versions in line with [KitchenEquipment]:
+     * basics such as "Knife" or "Fridge" are removed (also from the recipes that had them, as they
+     * say nothing about whether a recipe can be made) and usual variants are renamed to the default
+     * name ("Airfryer" -> "Air fryer"), merging them when both exist. Called once.
+     */
+    suspend fun normalizeUtensils(language: String) {
+        utensilDao.getAllOnce().forEach { utensil ->
+            if (KitchenEquipment.isObvious(utensil.name)) {
+                utensilDao.delete(utensil)
+                return@forEach
+            }
+            val canonical = KitchenEquipment.canonical(utensil.name, language)
+            if (canonical == utensil.name) return@forEach
+            val existing = utensilDao.findByName(canonical)
+            if (existing != null && existing.id != utensil.id) {
+                utensilDao.moveRecipes(fromId = utensil.id, toId = existing.id)
+                utensilDao.delete(utensil)
+            } else {
+                utensilDao.update(utensil.copy(name = canonical))
             }
         }
     }
@@ -1227,7 +1242,7 @@ class RecipeRepository(
             if (tagIds.isNotEmpty()) recipeDao.insertTagCrossRefs(tagIds.map { RecipeTagCrossRef(recipeId, it) })
 
             recipeDao.deleteUtensilCrossRefs(recipeId)
-            val utensilIds = dto.utensils.filter { it.isNotBlank() }.map { resolveUtensilId(it) }
+            val utensilIds = KitchenEquipment.clean(dto.utensils, appLanguage()).map { resolveUtensilId(it) }.distinct()
             if (utensilIds.isNotEmpty()) recipeDao.insertUtensilCrossRefs(utensilIds.map { RecipeUtensilCrossRef(recipeId, it) })
 
             if (dto.health != null) {
@@ -1629,7 +1644,7 @@ class RecipeRepository(
         if (tagIds.isNotEmpty()) recipeDao.insertTagCrossRefs(tagIds.map { RecipeTagCrossRef(recipeId, it) })
 
         recipeDao.deleteUtensilCrossRefs(recipeId)
-        val utensilIds = dto.utensils.filter { it.isNotBlank() }.map { resolveUtensilId(it) }
+        val utensilIds = KitchenEquipment.clean(dto.utensils, appLanguage()).map { resolveUtensilId(it) }.distinct()
         if (utensilIds.isNotEmpty()) recipeDao.insertUtensilCrossRefs(utensilIds.map { RecipeUtensilCrossRef(recipeId, it) })
 
         recipeId
@@ -1685,11 +1700,20 @@ class RecipeRepository(
         return tagDao.insert(TagEntity(name = trimmed))
     }
 
+    /**
+     * Id of the equipment called [name], created if missing. A usual variant of a default
+     * ("Airfryer") resolves to the default ("Freidora de aire" or "Air fryer", whichever exists).
+     */
     private suspend fun resolveUtensilId(name: String): Long {
         val trimmed = name.trim()
         utensilDao.findByName(trimmed)?.let { return it.id }
-        return utensilDao.insert(UtensilEntity(name = trimmed))
+        KitchenEquipment.equivalents(trimmed).forEach { equivalent -> utensilDao.findByName(equivalent)?.let { return it.id } }
+        val canonical = KitchenEquipment.canonical(trimmed, appLanguage())
+        utensilDao.findByName(canonical)?.let { return it.id }
+        return utensilDao.insert(UtensilEntity(name = canonical))
     }
+
+    private fun appLanguage(): String = if (L10n.locale().language == "es") "es" else "en"
 }
 
 fun RecipeBookEntity.toDomain() = RecipeBook(id, uid, name, coverPhotoUri, packId, packVersion, syncConnectionId)

@@ -13,7 +13,7 @@ Miga es una app de recetario familiar y lista de la compra. Este documento expli
 
 ## Qué datos guarda la app y dónde
 
-Recetas, libros, fotos, categorías, etiquetas, utensilios, valoraciones, listas de la compra, plantillas, supermercados y ajustes se guardan **en el almacenamiento interno de tu dispositivo**.
+Recetas, libros, fotos, categorías, etiquetas, equipamiento de cocina, valoraciones, listas de la compra, plantillas, supermercados y ajustes se guardan **en el almacenamiento interno de tu dispositivo**.
 
 Las claves de API de Google Gemini, Anthropic u OpenRouter que introduzcas se guardan solo en tu dispositivo y se usan únicamente para llamar al proveedor que elijas.
 
@@ -38,7 +38,7 @@ Todas se inician por una acción tuya o por una función que has activado. Ningu
    - **Buscar receta con IA**: el nombre y la descripción del plato.
    - **Valoración de salud, estimación nutricional y sustitutos**: los ingredientes y pasos de la receta.
    - **Limpieza del texto dictado**: el texto que has dictado.
-   - **Ideas**: un resumen de tus recetas (nombre, categoría, etiquetas, tiempo, ingredientes principales, utensilios, si es favorita y cuántas veces la has cocinado), las opciones que elijas, tu pregunta y las preguntas anteriores de esa conversación.
+   - **Ideas**: un resumen de tus recetas (nombre, categoría, etiquetas, tiempo, ingredientes principales, equipamiento, si es favorita y cuántas veces la has cocinado), las opciones que elijas, tu pregunta y las preguntas anteriores de esa conversación.
 
    Los proveedores se usan en el orden de prioridad que elijas: si uno falla o no puede leer imágenes, se envía la misma petición al siguiente. El tratamiento de esos datos está sujeto a las condiciones de cada proveedor asociadas a tu clave (algunos modelos gratuitos de OpenRouter pueden usar las peticiones para entrenar). Sin clave configurada no se envía nada. La lista de modelos de OpenRouter se descarga de su catálogo público, sin enviar datos tuyos. Puedes desactivar todas las funciones de IA, o solo la valoración de salud o la estimación nutricional automáticas, en Ajustes → Inteligencia artificial. El contenido generado con IA se marca en la app, puede contener errores y se puede reportar.
 2. **Open Food Facts.** Al escanear un código de barras o buscar un producto por nombre se envía ese código o ese texto a Open Food Facts (base de datos abierta, sin cuenta) para obtener el nombre, la foto y la ficha del producto. Las fotos de producto se descargan de sus servidores. Datos de Open Food Facts bajo licencia ODbL.

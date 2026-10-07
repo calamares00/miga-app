@@ -35,6 +35,8 @@ class SettingsRepository(private val context: Context) {
     private val aiNutritionEnabledKey = booleanPreferencesKey("ai_nutrition_enabled")
     private val onboardingDoneKey = booleanPreferencesKey("onboarding_done")
     private val seedLanguageKey = stringPreferencesKey("seed_language")
+    /** Default kitchen equipment and categories created (and old equipment normalised) once. */
+    private val defaultsSetUpKey = booleanPreferencesKey("defaults_set_up_v2")
     private val shoppingImagesKey = booleanPreferencesKey("shopping_images_enabled")
     private val shoppingStoreKey = longPreferencesKey("shopping_store_id")
     private val shoppingListUidKey = stringPreferencesKey("shopping_list_uid")
@@ -120,6 +122,12 @@ class SettingsRepository(private val context: Context) {
         val chosen = if (current == "es") "es" else "en"
         context.settingsDataStore.edit { prefs -> prefs[seedLanguageKey] = chosen }
         return chosen
+    }
+
+    suspend fun areDefaultsSetUp(): Boolean = context.settingsDataStore.data.first()[defaultsSetUpKey] ?: false
+
+    suspend fun setDefaultsSetUp() {
+        context.settingsDataStore.edit { prefs -> prefs[defaultsSetUpKey] = true }
     }
 
     /** True once the first-run welcome has been seen or skipped. */

@@ -1,8 +1,10 @@
 package org.calamares.miga.data.vision
 
+import org.calamares.miga.L10n
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.data.model.Ingredient
 import org.calamares.miga.data.model.IngredientGroup
+import org.calamares.miga.data.model.KitchenEquipment
 import org.calamares.miga.data.model.RecipeDraft
 import org.calamares.miga.data.model.StepGroup
 
@@ -41,6 +43,6 @@ fun RecipeVisionResultDto.toRecipeDraft(bookId: Long): RecipeDraft {
             StepGroup(name = group.name, instructions = group.instructions.map { it.trim() }.filter { it.isNotBlank() })
         }.ifEmpty { listOf(StepGroup(name = null, instructions = emptyList())) },
         tagNames = (tags + categoryParts.drop(1)).distinct(),
-        utensilNames = utensils
+        utensilNames = KitchenEquipment.clean(utensils, if (L10n.locale().language == "es") "es" else "en")
     )
 }
