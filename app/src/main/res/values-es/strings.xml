@@ -293,7 +293,7 @@
     <string name="gluten">"Gluten"</string>
     <string name="fat">"Grasas"</string>
     <string name="fat_g">"Grasas (g)"</string>
-    <string name="saves_books_recipes_photos_zip">"Guarda libros, recetas y fotos en un archivo ZIP"</string>
+    <string name="saves_books_recipes_photos_zip">"Guarda libros, recetas y fotos en un archivo, si quieres protegido con contraseña"</string>
     <string name="keep_family_recipes_books_photos">"Guarda las recetas de casa en libros, con fotos, subrecetas, raciones ajustables y un modo cocina paso a paso."</string>
     <string name="saved_x">"Guardado en \"%1$s\""</string>
     <string name="x_items_list_their_photos">"Se guardan los %1$s artículos de la lista (con sus fotos y fichas) para volver a añadirlos con un toque."</string>
@@ -553,7 +553,7 @@
     <string name="report">" Reportar"</string>
     <string name="report_ai_content">"Reportar contenido de IA"</string>
     <string name="ai_content_report_x">"Reporte de contenido IA - %1$s"</string>
-    <string name="restore_zip_json_delete_current">"Restaura desde un ZIP o JSON; puedes borrar antes lo actual"</string>
+    <string name="restore_zip_json_delete_current">"Restaura una copia (ZIP, JSON o protegida con contraseña); puedes borrar antes lo actual"</string>
     <string name="restore_backup">"Restaurar una copia de seguridad"</string>
     <string name="high_risk">"riesgo alto"</string>
     <string name="limited_risk">"riesgo limitado"</string>
@@ -945,4 +945,25 @@
     <string name="origin_country_x">"País: %1$s · toca la bandera para cambiarlo"</string>
     <string name="origin_tap_flag">"Toca el globo para elegir el país y su bandera"</string>
     <string name="stats_world_cuisines">"Cocinas del mundo"</string>
+    <string name="backup_encrypted_restore_in_settings">"Es una copia de seguridad protegida con contraseña: restáurala desde Ajustes → Copia de seguridad."</string>
+    <string name="backup_damaged">"La copia de seguridad está dañada o incompleta."</string>
+    <string name="backup_exported_encrypted">"Copia de seguridad cifrada exportada"</string>
+    <string name="couldnt_export_x">"No se pudo exportar: %1$s"</string>
+    <string name="backup_protect_with_password">"Proteger con contraseña"</string>
+    <string name="backup_protect_explanation">"Cifra la copia (AES-256) para que solo pueda abrirse con tu contraseña."</string>
+    <string name="backup_password">"Contraseña"</string>
+    <string name="backup_password_min_x">"Al menos %1$d caracteres"</string>
+    <string name="backup_password_strong">"Contraseña fuerte"</string>
+    <string name="backup_password_good">"Contraseña aceptable"</string>
+    <string name="backup_password_weak">"Contraseña débil: mejor más larga o con números y símbolos"</string>
+    <string name="backup_password_repeat">"Repite la contraseña"</string>
+    <string name="backup_passwords_dont_match">"Las contraseñas no coinciden"</string>
+    <string name="backup_password_cannot_be_recovered">"Miga no guarda la contraseña en ningún sitio. Si la olvidas, no habrá forma de abrir esta copia."</string>
+    <string name="backup_create">"Crear copia"</string>
+    <string name="backup_encrypted_title">"Copia protegida"</string>
+    <string name="backup_encrypted_enter_password">"Esta copia de seguridad está cifrada. Escribe la contraseña con la que se creó."</string>
+    <string name="backup_wrong_password">"Contraseña incorrecta"</string>
+    <string name="backup_open">"Abrir"</string>
+    <string name="show_password">"Mostrar contraseña"</string>
+    <string name="hide_password">"Ocultar contraseña"</string>
 </resources>

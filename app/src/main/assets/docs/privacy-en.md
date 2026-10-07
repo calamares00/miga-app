@@ -55,6 +55,8 @@ If the app closes unexpectedly, a text report (app version, device model, Androi
 
 Exporting (JSON, ZIP, PDF), sharing recipes or lists and backups use the standard Android picker. You choose the destination; Miga does not send those files on its own.
 
+If you protect a backup with a password, it is encrypted on your device with AES-256-GCM and a key derived from the password (PBKDF2). The password is neither stored nor sent anywhere; without it nobody, the developer included, can open the backup.
+
 ## Retention and deletion
 
 Data is kept while the app is installed. You can:

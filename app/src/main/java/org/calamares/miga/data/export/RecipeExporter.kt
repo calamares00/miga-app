@@ -55,10 +55,21 @@ sealed interface LibraryImportResult {
 }
 
 sealed interface LibraryImportParseResult {
-    /** A validated backup. Photos are not read yet: they are streamed from [source] on import. */
-    data class Success(val dto: LibraryExportDto, val source: Uri, val isZip: Boolean) : LibraryImportParseResult
+    /**
+     * A validated backup. Photos are not read yet: they are streamed from [source] on import, with
+     * [password] when the backup is encrypted (kept in memory only until the import ends).
+     */
+    data class Success(val dto: LibraryExportDto, val source: Uri, val isZip: Boolean, val password: CharArray? = null) : LibraryImportParseResult {
+        override fun equals(other: Any?) = other is Success && other.source == source && other.dto == dto
+        override fun hashCode() = source.hashCode()
+    }
     data class Error(val reason: String) : LibraryImportParseResult
+    /** The backup is encrypted: ask for its password ([wrongPassword] after a failed attempt). */
+    data class NeedsPassword(val source: Uri, val wrongPassword: Boolean = false) : LibraryImportParseResult
 }
+
+/** The file is an encrypted backup and no password was given. */
+private class PasswordRequiredException : java.io.IOException("Password required")
 
 sealed interface PackImportResult {
     data class Success(val bookId: Long) : PackImportResult
@@ -191,14 +202,18 @@ object RecipeExporter {
         }
     }
 
-    /** Full backup of the app, always as a ZIP so the format does not depend on the content. */
+    /**
+     * Full backup of the app, always as a ZIP so the format does not depend on the content. With
+     * [password] the whole ZIP is encrypted (see [BackupCrypto]).
+     */
     suspend fun exportLibrary(
         context: Context,
         destination: Uri,
         books: List<RecipeBook>,
         recipes: List<Recipe>,
         templates: List<ShoppingTemplate> = emptyList(),
-        stores: List<ShoppingStore> = emptyList()
+        stores: List<ShoppingStore> = emptyList(),
+        password: CharArray? = null
     ) = withContext(Dispatchers.IO) {
         val dto = LibraryExportDto(
             exportedAt = System.currentTimeMillis(),
@@ -212,15 +227,19 @@ object RecipeExporter {
             book.coverPhotoUri?.let { listOf("books/${book.uid}/cover.jpg" to it) } ?: emptyList()
         } + recipes.flatMap { recipe -> recipe.photos.mapIndexed { index, photo -> "recipes/${recipe.uid}/$index.jpg" to photo.uri } }
         context.contentResolver.openOutputStream(destination)?.use { output ->
-            writeZipToStream(context, output, content, photoSources)
+            val target = if (password != null) BackupCrypto.encrypt(output, password) else output
+            writeZipToStream(context, target, content, photoSources)
         }
     }
 
     /** Imports a single exported recipe (see [shareRecipe]): plain JSON or ZIP with photos. */
     suspend fun importRecipe(context: Context, source: Uri): RecipeImportResult = withContext(Dispatchers.IO) {
         try {
-            val manifest = readManifest(context, source)
-                ?: return@withContext RecipeImportResult.Error(L10n.str(R.string.couldnt_open_file))
+            val manifest = try {
+                readManifest(context, source, password = null)
+            } catch (e: PasswordRequiredException) {
+                return@withContext RecipeImportResult.Error(L10n.str(R.string.backup_encrypted_restore_in_settings))
+            } ?: return@withContext RecipeImportResult.Error(L10n.str(R.string.couldnt_open_file))
             val text = manifest.text
                 ?: return@withContext RecipeImportResult.Error(L10n.str(R.string.zip_file_doesnt_contain_manifest))
             val dto = json.decodeFromJsonElement(
@@ -237,17 +256,24 @@ object RecipeExporter {
     }
 
     /** Reads and validates a backup (JSON or ZIP) without writing anything to the database. */
-    suspend fun parseLibraryImport(context: Context, source: Uri): LibraryImportParseResult = withContext(Dispatchers.IO) {
+    suspend fun parseLibraryImport(context: Context, source: Uri, password: CharArray? = null): LibraryImportParseResult = withContext(Dispatchers.IO) {
         try {
-            val manifest = readManifest(context, source)
-                ?: return@withContext LibraryImportParseResult.Error(L10n.str(R.string.couldnt_open_file))
+            val manifest = try {
+                readManifest(context, source, password)
+            } catch (e: PasswordRequiredException) {
+                return@withContext LibraryImportParseResult.NeedsPassword(source)
+            } catch (e: WrongBackupPasswordException) {
+                return@withContext LibraryImportParseResult.NeedsPassword(source, wrongPassword = true)
+            } catch (e: CorruptedBackupException) {
+                return@withContext LibraryImportParseResult.Error(L10n.str(R.string.backup_damaged))
+            } ?: return@withContext LibraryImportParseResult.Error(L10n.str(R.string.couldnt_open_file))
             val text = manifest.text
                 ?: return@withContext LibraryImportParseResult.Error(L10n.str(R.string.zip_file_doesnt_contain_manifest))
             val dto = json.decodeFromJsonElement(
                 LibraryExportDto.serializer(),
                 migrateJson(text, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
             )
-            LibraryImportParseResult.Success(dto, source, manifest.isZip)
+            LibraryImportParseResult.Success(dto, source, manifest.isZip, password)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -266,7 +292,7 @@ object RecipeExporter {
             val wantedPaths = photoPaths(dto.recipes) + dto.books.mapNotNull { book ->
                 book.coverPhotoFileName?.let { "books/${book.uid}/$it" }
             }
-            val extracted = if (parsed.isZip) extractZipPhotos(context, parsed.source, wantedPaths) else emptyMap()
+            val extracted = if (parsed.isZip) extractZipPhotos(context, parsed.source, wantedPaths, parsed.password) else emptyMap()
             fun coverOf(book: BookExportDto?): String? =
                 book?.coverPhotoFileName?.let { extracted["books/${book.uid}/$it"] }
 
@@ -390,9 +416,39 @@ object RecipeExporter {
 
     private class Manifest(val text: String?, val isZip: Boolean)
 
-    /** Reads the JSON of a plain file, or the manifest of a ZIP, streaming instead of loading the whole file. */
-    private fun readManifest(context: Context, source: Uri): Manifest? {
+    /**
+     * Opens [source] as plain content: decrypted with [password] when it is an encrypted backup
+     * (see [BackupCrypto]), as is otherwise. Throws [PasswordRequiredException] for an encrypted
+     * file without a password.
+     */
+    private fun openPlain(context: Context, source: Uri, password: CharArray?): InputStream? {
         val input = context.contentResolver.openInputStream(source) ?: return null
+        val buffered = BufferedInputStream(input)
+        buffered.mark(BackupCrypto.signatureSize)
+        val start = ByteArray(BackupCrypto.signatureSize)
+        var read = 0
+        while (read < start.size) {
+            val count = buffered.read(start, read, start.size - read)
+            if (count < 0) break
+            read += count
+        }
+        buffered.reset()
+        if (read < start.size || !BackupCrypto.isEncrypted(start)) return buffered
+        if (password == null) {
+            buffered.close()
+            throw PasswordRequiredException()
+        }
+        return try {
+            BufferedInputStream(BackupCrypto.decrypt(buffered, password))
+        } catch (e: Exception) {
+            buffered.close()
+            throw e
+        }
+    }
+
+    /** Reads the JSON of a plain file, or the manifest of a ZIP, streaming instead of loading the whole file. */
+    private fun readManifest(context: Context, source: Uri, password: CharArray?): Manifest? {
+        val input = openPlain(context, source, password) ?: return null
         return BufferedInputStream(input).use { buffered ->
             buffered.mark(4)
             val signature = ByteArray(2)
@@ -416,9 +472,9 @@ object RecipeExporter {
     }
 
     /** Streams the ZIP at [source] and copies the entries in [wanted] to internal storage. */
-    private fun extractZipPhotos(context: Context, source: Uri, wanted: Collection<String>): Map<String, String> {
+    private fun extractZipPhotos(context: Context, source: Uri, wanted: Collection<String>, password: CharArray? = null): Map<String, String> {
         if (wanted.isEmpty()) return emptyMap()
-        val input = context.contentResolver.openInputStream(source) ?: return emptyMap()
+        val input = openPlain(context, source, password) ?: return emptyMap()
         return ZipInputStream(BufferedInputStream(input)).use { extractEntries(context, it, wanted) }
     }
 

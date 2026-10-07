@@ -56,13 +56,25 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setBiometricLockEnabled(enabled) }
     }
 
-    fun exportLibrary(context: Context, destination: Uri) {
+    /**
+     * Writes the full backup to [destination], encrypted when [password] is given; the password is
+     * wiped from memory afterwards. [onDone] reports the outcome.
+     */
+    fun exportLibrary(context: Context, destination: Uri, password: CharArray?, onDone: (String) -> Unit) {
         viewModelScope.launch {
-            val allBooks = repository.getAllRecipeBooksOnce()
-            val recipes = repository.getAllRecipesOnce()
-            val templates = repository.observeShoppingTemplates().first()
-            val stores = repository.observeShoppingStores().first()
-            RecipeExporter.exportLibrary(context, destination, allBooks, recipes, templates, stores)
+            val message = try {
+                val allBooks = repository.getAllRecipeBooksOnce()
+                val recipes = repository.getAllRecipesOnce()
+                val templates = repository.observeShoppingTemplates().first()
+                val stores = repository.observeShoppingStores().first()
+                RecipeExporter.exportLibrary(context, destination, allBooks, recipes, templates, stores, password)
+                L10n.str(if (password != null) R.string.backup_exported_encrypted else R.string.backup_exported)
+            } catch (e: Exception) {
+                L10n.str(R.string.couldnt_export_x, e.message ?: e::class.simpleName.orEmpty())
+            } finally {
+                password?.fill('\u0000')
+            }
+            onDone(message)
         }
     }
 
@@ -70,8 +82,17 @@ class SettingsViewModel(
      * Reads and validates the chosen file without writing anything. The result decides whether the
      * "delete before importing" dialog or an error is shown, with the database untouched.
      */
-    suspend fun validateLibraryImport(context: Context, source: Uri): LibraryImportParseResult =
-        RecipeExporter.parseLibraryImport(context, source)
+    suspend fun validateLibraryImport(context: Context, source: Uri, password: CharArray? = null): LibraryImportParseResult {
+        val result = RecipeExporter.parseLibraryImport(context, source, password)
+        // Kept only by a successful result, which uses it to read the photos during the import.
+        if (result !is LibraryImportParseResult.Success) password?.fill('\u0000')
+        return result
+    }
+
+    /** Forgets the password of a backup the user decided not to import. */
+    fun discardLibraryImport(parsed: LibraryImportParseResult.Success) {
+        parsed.password?.fill('\u0000')
+    }
 
     fun confirmLibraryImport(context: Context, parsed: LibraryImportParseResult.Success, wipeFirst: Boolean, onMessage: (String) -> Unit) {
         viewModelScope.launch {
@@ -79,7 +100,12 @@ class SettingsViewModel(
                 val result = repository.wipeUserRecipesAndBooks()
                 L10n.str(R.string.deleted_x_book_x_recipe, result.bookCount, result.recipeCount)
             } else ""
-            when (val result = RecipeExporter.importParsedLibrary(context, parsed, repository)) {
+            val result = try {
+                RecipeExporter.importParsedLibrary(context, parsed, repository)
+            } finally {
+                parsed.password?.fill('\u0000')
+            }
+            when (result) {
                 is LibraryImportResult.Success -> onMessage(wipeMessage + L10n.str(R.string.imported_n_recipes, result.count))
                 is LibraryImportResult.Error -> onMessage(L10n.str(R.string.couldnt_import_x, result.reason))
             }
