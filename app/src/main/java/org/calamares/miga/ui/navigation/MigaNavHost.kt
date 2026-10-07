@@ -4,7 +4,10 @@ import org.calamares.miga.ui.ideas.IdeasViewModel
 import org.calamares.miga.ui.ideas.IdeasScreen
 import org.calamares.miga.L10n
 import org.calamares.miga.R
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -95,6 +98,7 @@ private val BOTTOM_TABS = listOf(
     BottomTab(Destinations.SETTINGS_ROUTE, L10n.str(R.string.settings), Icons.Filled.Settings)
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MigaNavHost(initialRoute: String? = null) {
     val navController = rememberNavController()
@@ -148,7 +152,10 @@ fun MigaNavHost(initialRoute: String? = null) {
         NavHost(
             navController = navController,
             startDestination = Destinations.BOOKS_ROUTE,
-            modifier = Modifier.padding(innerPadding)
+            // The app draws edge to edge and the window is never panned for the keyboard
+            // (adjustResize in the manifest), so every screen is lifted above it here, once.
+            // The bottom bar already covers part of that height on the tabs.
+            modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding).imePadding()
         ) {
             composable(Destinations.BOOKS_ROUTE) {
                 val viewModel: RecipeBooksViewModel = viewModel(

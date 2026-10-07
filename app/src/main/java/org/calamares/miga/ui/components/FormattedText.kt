@@ -45,8 +45,11 @@ import org.calamares.miga.R
 import org.calamares.miga.data.model.RichText
 import org.calamares.miga.data.model.RichTextEditing
 
-/** [text] (see [RichText]) as styled text: syntax removed, lists with bullets or numbers. */
-fun richAnnotatedString(text: String): AnnotatedString = buildAnnotatedString {
+/**
+ * [text] (see [RichText]) as styled text: syntax removed, lists with bullets or numbers. Bold text
+ * also takes [boldColor] when given, for places where the base style is already heavy.
+ */
+fun richAnnotatedString(text: String, boldColor: Color = Color.Unspecified): AnnotatedString = buildAnnotatedString {
     RichText.blocks(text).forEachIndexed { index, block ->
         if (index > 0) append('\n')
         when (block.kind) {
@@ -56,12 +59,13 @@ fun richAnnotatedString(text: String): AnnotatedString = buildAnnotatedString {
         }
         val heading = block.kind == RichText.LineKind.HEADING
         block.runs.forEach { run ->
-            withStyle(runStyle(run.bold, run.italic, run.strike, heading)) { append(run.text) }
+            withStyle(runStyle(run.bold, run.italic, run.strike, heading, if (run.bold) boldColor else Color.Unspecified)) { append(run.text) }
         }
     }
 }
 
-private fun runStyle(bold: Boolean, italic: Boolean, strike: Boolean, heading: Boolean = false) = SpanStyle(
+private fun runStyle(bold: Boolean, italic: Boolean, strike: Boolean, heading: Boolean = false, color: Color = Color.Unspecified) = SpanStyle(
+    color = color,
     fontWeight = if (bold || heading) FontWeight.Bold else null,
     fontStyle = if (italic) FontStyle.Italic else null,
     textDecoration = if (strike) TextDecoration.LineThrough else null,

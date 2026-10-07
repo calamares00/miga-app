@@ -13,13 +13,17 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -88,7 +92,6 @@ import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.ui.components.AiContentNotice
 import org.calamares.miga.ui.components.AiProgressView
 import org.calamares.miga.ui.components.ErrorMessage
-import org.calamares.miga.ui.components.KeyboardMovesContentOnly
 
 /**
  * Ideas: AI recommendations based on the user's recipes. A "What do you fancy?" panel combines
@@ -131,10 +134,10 @@ fun IdeasScreen(
         optionsExpanded = false
     }
 
-    KeyboardMovesContentOnly()
     Scaffold(
-        // Not a bottom-bar tab: this screen keeps clear of the system navigation bar and keyboard.
-        contentWindowInsets = WindowInsets.safeDrawing,
+        // The keyboard is handled by the NavHost; the navigation bar only by the input bar below,
+        // so it does not stay padded while the keyboard covers it.
+        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -212,7 +215,10 @@ fun IdeasScreen(
             }
             Surface(color = MaterialTheme.colorScheme.background, tonalElevation = 2.dp) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
