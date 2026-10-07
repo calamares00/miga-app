@@ -20,8 +20,27 @@ private const val MAX_INGREDIENTS_PER_RECIPE = 8
 /** Previous questions and answers sent along with a follow-up question. */
 private const val MAX_HISTORY_TURNS = 3
 
-/** Ready-made requests offered as cards on the Ideas screen. */
-enum class IdeasPreset { WEEKLY_MENU, BREAKFASTS, SNACKS, LIGHT_DINNERS, RICE_DISHES, DESSERTS, SEASONAL }
+/** Kind of meal the user is looking for; the weekly menu plans lunch and dinner for a week. */
+enum class IdeasMeal { WEEKLY_MENU, BREAKFAST, LUNCH, SNACK, DINNER, STARTER, DESSERT }
+
+/** Style constraints that can be combined. */
+enum class IdeasStyle { HEALTHY, LIGHT, QUICK, BUDGET, VEGETARIAN, VEGAN, GLUTEN_FREE, KIDS, SEASONAL }
+
+/** Kinds of dish that can be combined. */
+enum class IdeasDish { RICE, PASTA, LEGUMES, VEGETABLES, FISH, MEAT, EGGS, SOUPS, SALADS, BAKING }
+
+/**
+ * Options chosen on the Ideas screen, combined into one request ("dinner, healthy, with the air
+ * fryer"). [utensils] are free names, such as a saved utensil or a specific model ("Thermomix TM31").
+ */
+data class IdeasFilters(
+    val meal: IdeasMeal? = null,
+    val styles: Set<IdeasStyle> = emptySet(),
+    val dishes: Set<IdeasDish> = emptySet(),
+    val utensils: List<String> = emptyList()
+) {
+    val isEmpty: Boolean get() = meal == null && styles.isEmpty() && dishes.isEmpty() && utensils.isEmpty()
+}
 
 /** One recipe of the user's library the AI points to, with an optional label ("Lunch") and reason. */
 data class IdeaRecipe(val recipeId: Long, val label: String?, val reason: String?)
@@ -70,19 +89,19 @@ internal data class IdeasAnswerDto(
 )
 
 /**
- * Answers [question] (or a [preset]) using the user's [recipes] as the main source. Recipe ids
+ * Answers [question] and/or the chosen [filters] using the user's [recipes] as the main source. Recipe ids
  * the model invents are dropped, so every recipe in the answer exists in the library.
  */
 suspend fun AiCandidate.askIdeas(
     recipes: List<Recipe>,
     question: String,
-    preset: IdeasPreset?,
+    filters: IdeasFilters?,
     history: List<IdeasTurn>,
     today: LocalDate = LocalDate.now(),
     locale: Locale = Locale.getDefault()
 ): IdeasResult {
     val catalog = selectCatalog(recipes)
-    val prompt = buildIdeasPrompt(catalog, question, preset, history, today, locale)
+    val prompt = buildIdeasPrompt(catalog, question, filters, history, today, locale)
     return when (val result = complete(AiRequest(prompt, IDEAS_MAX_TOKENS))) {
         is AiText.Error -> IdeasResult.Error(result.reason)
         is AiText.Success -> try {
@@ -121,33 +140,78 @@ internal fun describeRecipe(recipe: Recipe): String = buildString {
     recipe.categoryName?.takeIf { it.isNotBlank() }?.let { append(" | category: ").append(it) }
     if (recipe.tags.isNotEmpty()) append(" | tags: ").append(recipe.tags.joinToString(", "))
     recipe.totalTimeMinutes?.let { append(" | ").append(it).append(" min") }
+    if (recipe.utensils.isNotEmpty()) append(" | utensils: ").append(recipe.utensils.joinToString(", "))
     if (recipe.isFavorite) append(" | favourite")
     if (recipe.timesCooked > 0) append(" | cooked ").append(recipe.timesCooked).append("x")
     val ingredients = recipe.ingredientGroups.flatMap { it.ingredients }.map { it.name.trim() }.filter { it.isNotEmpty() }.distinct()
     if (ingredients.isNotEmpty()) append(" | ingredients: ").append(ingredients.take(MAX_INGREDIENTS_PER_RECIPE).joinToString(", "))
 }
 
-private fun presetInstruction(preset: IdeasPreset, today: LocalDate): String = when (preset) {
-    IdeasPreset.WEEKLY_MENU ->
-        "Plan a balanced weekly menu from Monday to Sunday with lunch and dinner for each day. Use one " +
-            "section per day (title = the day) with the recipes labelled \"Lunch\" or \"Dinner\" (in the answer " +
-            "language). Vary the kind of dish (legumes, fish, meat, vegetables, rice, pasta...), avoid repeating a " +
-            "recipe and keep dinners lighter than lunches. If the library cannot cover every meal, leave the gap " +
-            "and suggest suitable dishes in \"newDishes\"."
-    IdeasPreset.BREAKFASTS -> "Suggest breakfasts."
-    IdeasPreset.SNACKS -> "Suggest afternoon snacks (merienda)."
-    IdeasPreset.LIGHT_DINNERS -> "Suggest light dinners: easy to digest, not too heavy, with vegetables, fish, eggs, soups..."
-    IdeasPreset.RICE_DISHES -> "Suggest rice dishes."
-    IdeasPreset.DESSERTS -> "Suggest desserts."
-    IdeasPreset.SEASONAL ->
-        "Suggest recipes that suit the current season (" + today.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH) +
-            "), using ingredients that are in season now and dishes that fit the weather."
-}
+/** The chosen options as an instruction for the model. */
+internal fun IdeasFilters.toInstruction(today: LocalDate): String = buildString {
+    when (meal) {
+        IdeasMeal.WEEKLY_MENU -> appendLine(
+            "Plan a balanced weekly menu from Monday to Sunday with lunch and dinner for each day. Use one " +
+                "section per day (title = the day) with the recipes labelled \"Lunch\" or \"Dinner\" (in the answer " +
+                "language). Vary the kind of dish (legumes, fish, meat, vegetables, rice, pasta...), avoid repeating a " +
+                "recipe and keep dinners lighter than lunches. If the library cannot cover every meal, leave the gap " +
+                "and suggest suitable dishes in \"newDishes\"."
+        )
+        IdeasMeal.BREAKFAST -> appendLine("Suggest breakfasts.")
+        IdeasMeal.LUNCH -> appendLine("Suggest dishes for lunch, the main meal of the day.")
+        IdeasMeal.SNACK -> appendLine("Suggest afternoon snacks (merienda).")
+        IdeasMeal.DINNER -> appendLine("Suggest dinners.")
+        IdeasMeal.STARTER -> appendLine("Suggest starters and finger food to share.")
+        IdeasMeal.DESSERT -> appendLine("Suggest desserts.")
+        null -> appendLine("Suggest recipes.")
+    }
+    if (styles.isNotEmpty()) {
+        val described = styles.map { style ->
+            when (style) {
+                IdeasStyle.HEALTHY -> "healthy and balanced"
+                IdeasStyle.LIGHT -> "light and easy to digest"
+                IdeasStyle.QUICK -> "quick (30 minutes or less in total)"
+                IdeasStyle.BUDGET -> "cheap, with affordable ingredients"
+                IdeasStyle.VEGETARIAN -> "vegetarian"
+                IdeasStyle.VEGAN -> "vegan"
+                IdeasStyle.GLUTEN_FREE -> "gluten-free"
+                IdeasStyle.KIDS -> "that children like"
+                IdeasStyle.SEASONAL -> "in season now (" + today.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH) +
+                    "), with seasonal ingredients and suited to the weather"
+            }
+        }
+        appendLine("They must be: " + described.joinToString("; ") + ".")
+    }
+    if (dishes.isNotEmpty()) {
+        val described = dishes.map { dish ->
+            when (dish) {
+                IdeasDish.RICE -> "rice dishes"
+                IdeasDish.PASTA -> "pasta"
+                IdeasDish.LEGUMES -> "legumes"
+                IdeasDish.VEGETABLES -> "vegetable dishes"
+                IdeasDish.FISH -> "fish and seafood"
+                IdeasDish.MEAT -> "meat"
+                IdeasDish.EGGS -> "egg dishes"
+                IdeasDish.SOUPS -> "soups, stews and creams"
+                IdeasDish.SALADS -> "salads"
+                IdeasDish.BAKING -> "baking and pastry"
+            }
+        }
+        appendLine("Kind of dish: " + described.joinToString(" or ") + ".")
+    }
+    if (utensils.isNotEmpty()) {
+        appendLine(
+            "They must be cooked with: " + utensils.joinToString(", ") + ". Prefer library recipes that use it; a " +
+                "library recipe that can easily be adapted is also fine if the reason says how (time, temperature, " +
+                "speed or programme for that appliance). Take into account the exact model if given."
+        )
+    }
+}.trimEnd()
 
 internal fun buildIdeasPrompt(
     catalog: List<Recipe>,
     question: String,
-    preset: IdeasPreset?,
+    filters: IdeasFilters?,
     history: List<IdeasTurn>,
     today: LocalDate,
     locale: Locale
@@ -169,7 +233,7 @@ internal fun buildIdeasPrompt(
         appendLine()
     }
     appendLine("REQUEST:")
-    preset?.let { appendLine(presetInstruction(it, today)) }
+    filters?.takeIf { !it.isEmpty }?.let { appendLine(it.toInstruction(today)) }
     if (question.isNotBlank()) appendLine(question.trim())
     appendLine()
     appendLine(

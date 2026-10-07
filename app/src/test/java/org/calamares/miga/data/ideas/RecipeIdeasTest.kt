@@ -59,9 +59,25 @@ class RecipeIdeasTest {
 
     @Test
     fun `prompt includes the library, the request and the season hint`() {
-        val prompt = buildIdeasPrompt(listOf(recipe(3, "Arroz al horno")), "", IdeasPreset.SEASONAL, emptyList(), LocalDate.of(2026, 10, 7), Locale("es", "ES"))
+        val filters = IdeasFilters(styles = setOf(IdeasStyle.SEASONAL))
+        val prompt = buildIdeasPrompt(listOf(recipe(3, "Arroz al horno")), "", filters, emptyList(), LocalDate.of(2026, 10, 7), Locale("es", "ES"))
         assertTrue(prompt.contains("3 | Arroz al horno"))
         assertTrue(prompt.contains("October"))
         assertTrue(prompt.contains("\"ES\""))
+    }
+
+    @Test
+    fun `combined filters become one instruction`() {
+        val instruction = IdeasFilters(
+            meal = IdeasMeal.DINNER,
+            styles = setOf(IdeasStyle.HEALTHY),
+            dishes = setOf(IdeasDish.FISH),
+            utensils = listOf("Airfryer", "Thermomix TM31")
+        ).toInstruction(LocalDate.of(2026, 10, 7))
+        assertTrue(instruction.contains("dinners"))
+        assertTrue(instruction.contains("healthy"))
+        assertTrue(instruction.contains("fish"))
+        assertTrue(instruction.contains("Airfryer, Thermomix TM31"))
+        assertTrue(IdeasFilters().isEmpty)
     }
 }
