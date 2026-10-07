@@ -15,14 +15,15 @@ import androidx.lifecycle.viewModelScope
 import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.repository.RecipeRepository
-import org.calamares.miga.data.vision.RecipeVisionResult
+import org.calamares.miga.data.vision.RecipeExtractionResult
 import org.calamares.miga.data.ai.AiImage
 import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.ai.AiProgress
 import org.calamares.miga.data.ai.AiProgressReporter
 import org.calamares.miga.data.ai.AiProvider
 import org.calamares.miga.data.vision.toRecipeDraft
-import org.calamares.miga.data.vision.extractRecipe
+import org.calamares.miga.data.vision.extractRecipes
+import org.calamares.miga.data.vision.mergedIntoOne
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -112,26 +113,31 @@ class BulkImportViewModel(
             L10n.str(R.string.ai_hint_dish_photo)
         )
         val result = progress.withHints(hints) {
-            settingsRepository.runAi<RecipeVisionResult>(
+            settingsRepository.runAi<RecipeExtractionResult>(
                 needsImages = true,
-                errorOf = { (it as? RecipeVisionResult.Error)?.reason },
-                error = { RecipeVisionResult.Error(it) },
+                errorOf = { (it as? RecipeExtractionResult.Error)?.reason },
+                error = { RecipeExtractionResult.Error(it) },
                 progress = progress
-            ) { ai -> ai.extractRecipe(images) }
-        } ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
+            ) { ai -> ai.extractRecipes(images) }
+        } ?: RecipeExtractionResult.Error(L10n.str(R.string.ai_no_provider))
         when (result) {
-            is RecipeVisionResult.Success -> {
-                if (result.recipe.dishPhotos.isNotEmpty()) progress.step(L10n.str(R.string.ai_step_cropping_photo))
-                val dishPhotoUris = withContext(Dispatchers.IO) {
-                    DishPhotoCropper.extract(context.applicationContext, listOf(uri), result.recipe.dishPhotos)
+            is RecipeExtractionResult.Success -> {
+                // No one to ask in the middle of a batch: the AI's suggestion decides whether several
+                // recipes on one photo become one recipe or one each.
+                val recipes = if (result.together) listOf(result.recipes.mergedIntoOne()) else result.recipes
+                val saved = recipes.map { recipe ->
+                    if (recipe.dishPhotos.isNotEmpty()) progress.step(L10n.str(R.string.ai_step_cropping_photo))
+                    val dishPhotoUris = withContext(Dispatchers.IO) {
+                        DishPhotoCropper.extract(context.applicationContext, listOf(uri), recipe.dishPhotos)
+                    }
+                    progress.step(L10n.str(R.string.ai_step_saving_recipe))
+                    val draft = recipe.toRecipeDraft(bookId)
+                        .copy(photos = dishPhotoUris.mapIndexed { i, photoUri -> RecipePhoto(photoUri, isCover = i == 0) })
+                    repository.saveRecipe(draft) to draft.name
                 }
-                progress.step(L10n.str(R.string.ai_step_saving_recipe))
-                val draft = result.recipe.toRecipeDraft(bookId)
-                    .copy(photos = dishPhotoUris.mapIndexed { i, photoUri -> RecipePhoto(photoUri, isCover = i == 0) })
-                val id = repository.saveRecipe(draft)
-                updateRow(index) { it.copy(state = BulkImportRowState.Success(id, draft.name)) }
+                updateRow(index) { it.copy(state = BulkImportRowState.Success(saved.first().first, saved.joinToString(" · ") { it.second })) }
             }
-            is RecipeVisionResult.Error -> updateRow(index) { it.copy(state = BulkImportRowState.Failed(result.reason)) }
+            is RecipeExtractionResult.Error -> updateRow(index) { it.copy(state = BulkImportRowState.Failed(result.reason)) }
         }
     }
 

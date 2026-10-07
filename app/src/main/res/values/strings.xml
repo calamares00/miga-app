@@ -926,4 +926,12 @@
     <string name="stats_delete_unused_photos">"Delete unused photos"</string>
     <string name="stats_delete_unused_photos_confirm_x_y">"%1$d photos (%2$s) that belong to no recipe or cover will be deleted. This cannot be undone."</string>
     <string name="stats_unused_photos_deleted_x">"Photos deleted: %1$d"</string>
+    <string name="ai_several_recipes_found_x">"%1$d recipes found"</string>
+    <string name="detected_choose">"Choose which ones to import and how:"</string>
+    <string name="detected_suggest_together">"They look like parts of the same dish, so we suggest joining them into one recipe."</string>
+    <string name="detected_suggest_separately">"They look like separate recipes, so we suggest saving each one on its own."</string>
+    <string name="detected_one_each">"Save %1$d separate recipes"</string>
+    <string name="detected_join">"Join into one recipe"</string>
+    <string name="detected_import_selected">"Import the chosen recipe"</string>
+    <string name="detected_saved_x">"%1$d recipes saved in the book"</string>
 </resources>

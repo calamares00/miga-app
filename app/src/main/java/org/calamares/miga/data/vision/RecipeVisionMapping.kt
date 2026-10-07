@@ -46,3 +46,35 @@ fun RecipeVisionResultDto.toRecipeDraft(bookId: Long): RecipeDraft {
         utensilNames = KitchenEquipment.clean(utensils, if (L10n.locale().language == "es") "es" else "en")
     )
 }
+
+private val DIFFICULTY_ORDER = listOf("EASY", "MEDIUM", "HARD")
+
+/**
+ * Several recipes found on the same pages joined into one: each becomes named ingredient and step
+ * groups (its own sub-groups keep their names, prefixed with the recipe when there is more than
+ * one), times are added up, and tags, equipment and dish photos are combined.
+ */
+fun List<RecipeVisionResultDto>.mergedIntoOne(): RecipeVisionResultDto {
+    if (size == 1) return first()
+    fun groupName(recipe: RecipeVisionResultDto, group: String?) = if (group.isNullOrBlank()) recipe.name else "${recipe.name}: $group"
+    fun sumOrNull(values: List<Int?>) = values.filterNotNull().takeIf { it.isNotEmpty() }?.sum()
+    return RecipeVisionResultDto(
+        name = joinToString(" · ") { it.name.trim() },
+        categoryName = firstNotNullOfOrNull { it.categoryName?.takeIf { name -> name.isNotBlank() } },
+        difficulty = maxByOrNull { DIFFICULTY_ORDER.indexOf(Difficulty.parse(it.difficulty).name) }?.difficulty ?: "MEDIUM",
+        prepTimeMinutes = sumOrNull(map { it.prepTimeMinutes }),
+        cookTimeMinutes = sumOrNull(map { it.cookTimeMinutes }),
+        servings = maxOf { it.servings },
+        notes = filter { it.notes.isNotBlank() }.joinToString("\n\n") { "${it.name}: ${it.notes.trim()}" },
+        source = map { it.source.trim() }.filter { it.isNotEmpty() }.distinct().joinToString(" · "),
+        ingredientGroups = flatMap { recipe ->
+            recipe.ingredientGroups.filter { it.ingredients.isNotEmpty() }.map { it.copy(name = groupName(recipe, it.name)) }
+        },
+        stepGroups = flatMap { recipe ->
+            recipe.stepGroups.filter { it.instructions.isNotEmpty() }.map { it.copy(name = groupName(recipe, it.name)) }
+        },
+        tags = flatMap { it.tags }.distinctBy { it.trim().lowercase() },
+        utensils = flatMap { it.utensils }.distinctBy { it.trim().lowercase() },
+        dishPhotos = flatMap { it.dishPhotos }.take(3)
+    )
+}

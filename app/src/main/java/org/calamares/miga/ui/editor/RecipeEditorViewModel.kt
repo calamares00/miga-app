@@ -25,6 +25,7 @@ import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.data.model.RecipeDraft
+import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.search.DishSuggestion
 import org.calamares.miga.data.search.RecipeUrlFetcher
@@ -34,7 +35,10 @@ import org.calamares.miga.data.search.importRecipeFromPage
 import org.calamares.miga.data.vision.RecipeVisionResult
 import org.calamares.miga.data.vision.RecipeVisionResultDto
 import org.calamares.miga.data.ai.AiImage
-import org.calamares.miga.data.vision.extractRecipe
+import org.calamares.miga.data.vision.extractRecipes
+import org.calamares.miga.data.vision.mergedIntoOne
+import org.calamares.miga.data.vision.toRecipeDraft
+import org.calamares.miga.data.vision.RecipeExtractionResult
 import org.calamares.miga.ui.navigation.Destinations
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -48,8 +52,22 @@ sealed interface VisionState {
     data object Idle : VisionState
     data object Loading : VisionState
     data object Loaded : VisionState
+    /** Several recipes were found in the photos; see [DetectedRecipes]. */
+    data object Choosing : VisionState
     data class Error(val reason: String) : VisionState
 }
+
+/**
+ * More than one complete recipe found in the photos, waiting for the user to choose between one
+ * recipe each or a single recipe joining them. [together] is the AI's suggestion; [sourceUris] are
+ * the images sent, which the dish photo boxes refer to.
+ */
+data class DetectedRecipes(
+    val recipes: List<RecipeVisionResultDto>,
+    val together: Boolean,
+    val sourceUris: List<Uri>,
+    val appContext: Context
+)
 
 private data class IngredientRowSnapshot(val name: String, val quantity: String, val unit: String)
 private data class IngredientGroupSnapshot(val name: String?, val ingredients: List<IngredientRowSnapshot>)
@@ -127,6 +145,12 @@ class RecipeEditorViewModel(
     val aiProgress: StateFlow<AiProgress?> = _aiProgress
     private var visionStarted = false
 
+    private val _detectedRecipes = MutableStateFlow<DetectedRecipes?>(null)
+    val detectedRecipes: StateFlow<DetectedRecipes?> = _detectedRecipes
+
+    /** Whether the recipes can be saved straight into a book, one each (the editor knows the book). */
+    val canSaveSeparately: Boolean get() = bookId != Destinations.NEW_BOOK_ID
+
     /** Last AI operation started (photo, dish or URL), so it can be retried after an error. */
     private var lastAiOperation: (() -> Unit)? = null
 
@@ -165,26 +189,67 @@ class RecipeEditorViewModel(
                 return@launchAiTask
             }
             val result = progress.withHints(photoHints()) {
-                settingsRepository.runAi<RecipeVisionResult>(
+                settingsRepository.runAi<RecipeExtractionResult>(
                     needsImages = true,
-                    errorOf = { (it as? RecipeVisionResult.Error)?.reason },
-                    error = { RecipeVisionResult.Error(it) },
+                    errorOf = { (it as? RecipeExtractionResult.Error)?.reason },
+                    error = { RecipeExtractionResult.Error(it) },
                     progress = progress
-                ) { ai -> ai.extractRecipe(images) }
-            } ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
+                ) { ai -> ai.extractRecipes(images) }
+            } ?: RecipeExtractionResult.Error(L10n.str(R.string.ai_no_provider))
             when (result) {
-                is RecipeVisionResult.Success -> {
-                    applyVisionResult(result.recipe)
-                    // Dish photos located by the AI: cropped, cleaned up and added to the recipe.
-                    if (result.recipe.dishPhotos.isNotEmpty()) progress.step(L10n.str(R.string.ai_step_cropping_photo))
-                    val dishPhotoUris = withContext(Dispatchers.IO) {
-                        DishPhotoCropper.extract(appContext, readable.map { it.first }, result.recipe.dishPhotos)
-                    }
-                    dishPhotoUris.forEach { addPhoto(it) }
-                    _visionState.value = VisionState.Loaded
+                is RecipeExtractionResult.Success -> if (result.recipes.size == 1) {
+                    fillFromPhotos(result.recipes.single(), appContext, readable.map { it.first }, progress)
+                } else {
+                    _detectedRecipes.value = DetectedRecipes(result.recipes, result.together, readable.map { it.first }, appContext)
+                    _visionState.value = VisionState.Choosing
                 }
-                is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(result.reason)
+                is RecipeExtractionResult.Error -> _visionState.value = VisionState.Error(result.reason)
             }
+        }
+    }
+
+    /** Fills the form with [recipe] and adds the dish photos the AI located in [sourceUris]. */
+    private suspend fun fillFromPhotos(recipe: RecipeVisionResultDto, appContext: Context, sourceUris: List<Uri>, progress: AiProgressReporter?) {
+        applyVisionResult(recipe)
+        // Dish photos located by the AI: cropped, cleaned up and added to the recipe.
+        if (recipe.dishPhotos.isNotEmpty()) progress?.step(L10n.str(R.string.ai_step_cropping_photo))
+        val dishPhotoUris = withContext(Dispatchers.IO) { DishPhotoCropper.extract(appContext, sourceUris, recipe.dishPhotos) }
+        dishPhotoUris.forEach { addPhoto(it) }
+        _visionState.value = VisionState.Loaded
+    }
+
+    /** Joins the [selected] detected recipes (indices) into this form, as one recipe. */
+    fun importDetectedTogether(selected: List<Int>) {
+        val detected = _detectedRecipes.value ?: return
+        val recipes = selected.mapNotNull { detected.recipes.getOrNull(it) }.ifEmpty { return }
+        _detectedRecipes.value = null
+        _visionState.value = VisionState.Loading
+        viewModelScope.launch { fillFromPhotos(recipes.mergedIntoOne(), detected.appContext, detected.sourceUris, null) }
+    }
+
+    /**
+     * Saves each of the [selected] detected recipes (indices) as its own recipe in the book, with
+     * its own dish photos, and reports how many were saved.
+     */
+    fun importDetectedSeparately(selected: List<Int>, onSaved: (count: Int) -> Unit) {
+        val detected = _detectedRecipes.value ?: return
+        val recipes = selected.mapNotNull { detected.recipes.getOrNull(it) }.ifEmpty { return }
+        if (recipes.size == 1) return importDetectedTogether(selected)
+        _detectedRecipes.value = null
+        _visionState.value = VisionState.Loading
+        viewModelScope.launch {
+            AiKeepAlive.hold(L10n.str(R.string.ai_task_reading_photo)) {
+                recipes.forEach { recipe ->
+                    val dishPhotoUris = withContext(Dispatchers.IO) {
+                        DishPhotoCropper.extract(detected.appContext, detected.sourceUris, recipe.dishPhotos)
+                    }
+                    val draft = recipe.toRecipeDraft(bookId)
+                        .copy(photos = dishPhotoUris.mapIndexed { i, uri -> RecipePhoto(uri, isCover = i == 0) })
+                    repository.saveRecipe(draft)
+                }
+            }
+            _visionState.value = VisionState.Idle
+            onSaved(recipes.size)
         }
     }
 
@@ -298,6 +363,9 @@ class RecipeEditorViewModel(
                 L10n.str(R.string.ai_recipe_ready_x, name.ifBlank { L10n.str(R.string.untitled) })
             )
             is VisionState.Error -> AiKeepAlive.announceIfInBackground(L10n.str(R.string.ai_recipe_failed))
+            VisionState.Choosing -> AiKeepAlive.announceIfInBackground(
+                L10n.str(R.string.ai_several_recipes_found_x, _detectedRecipes.value?.recipes?.size ?: 0)
+            )
             else -> Unit
         }
     }

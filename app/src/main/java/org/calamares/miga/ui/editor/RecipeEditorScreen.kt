@@ -19,6 +19,7 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.ui.components.AiContentNotice
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -108,6 +109,7 @@ fun RecipeEditorScreen(
     val availableUtensils by viewModel.availableUtensils.collectAsState()
     val visionState by viewModel.visionState.collectAsState()
     val aiProgress by viewModel.aiProgress.collectAsState()
+    val detectedRecipes by viewModel.detectedRecipes.collectAsState()
     var visionErrorDismissed by remember { mutableStateOf(false) }
     var showVisionErrorDialog by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
@@ -326,6 +328,22 @@ fun RecipeEditorScreen(
             }
         }
         }
+    }
+
+    detectedRecipes?.let { detected ->
+        DetectedRecipesDialog(
+            names = detected.recipes.map { it.name },
+            together = detected.together,
+            canSaveSeparately = viewModel.canSaveSeparately,
+            onJoin = { viewModel.importDetectedTogether(it) },
+            onOneEach = { selected ->
+                viewModel.importDetectedSeparately(selected) { count ->
+                    Toast.makeText(context, L10n.str(R.string.detected_saved_x, count), Toast.LENGTH_SHORT).show()
+                    onCancel()
+                }
+            },
+            onCancel = onCancel
+        )
     }
 
     if (showVisionErrorDialog && visionState is VisionState.Error) {
