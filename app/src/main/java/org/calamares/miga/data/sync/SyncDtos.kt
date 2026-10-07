@@ -25,6 +25,9 @@ data class BookSyncDto(
     val revision: Long = 0
 )
 
+/** Recipe schema this app version syncs (see [RecipeSyncDto.schema]). */
+const val RECIPE_SYNC_SCHEMA = 2
+
 @Serializable
 data class RecipeSyncDto(
     val uid: String,
@@ -43,12 +46,15 @@ data class RecipeSyncDto(
      * isFavorite (not per person).
      */
     val rating: Int? = null,
-    /**
-     * Where the recipe comes from and its country code. A server that does not know these fields
-     * sends them back as null, so a null never clears what the device has (see SyncEngine).
-     */
+    /** Where the recipe comes from and its country code (see RecipeOrigin). */
     val origin: String? = null,
     val originCountry: String? = null,
+    /**
+     * Recipe schema the sender understands: 2 with [origin]. miga-server 0.3.0 answers with 2; an
+     * older server does not know the field (it reads as 1) and sends the origin back as null, which
+     * must not clear what the device has. The app always sends [RECIPE_SYNC_SCHEMA].
+     */
+    val schema: Int = 1,
     val ingredientGroups: List<IngredientGroupDto> = emptyList(),
     val stepGroups: List<StepGroupDto> = emptyList(),
     val tags: List<String> = emptyList(),

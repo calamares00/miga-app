@@ -68,6 +68,7 @@ import org.calamares.miga.data.sync.ShoppingItemSyncDto
 import org.calamares.miga.data.sync.ShoppingListSyncDto
 import org.calamares.miga.data.sync.BookSyncDto
 import org.calamares.miga.data.sync.PhotoMetaDto
+import org.calamares.miga.data.sync.RECIPE_SYNC_SCHEMA
 import org.calamares.miga.data.sync.RecipeSyncDto
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -1470,7 +1471,8 @@ class RecipeRepository(
             updatedAt = details.recipe.updatedAt,
             rating = recipe.rating,
             origin = recipe.origin,
-            originCountry = recipe.originCountry
+            originCountry = recipe.originCountry,
+            schema = RECIPE_SYNC_SCHEMA
         )
     }
 
@@ -1616,9 +1618,13 @@ class RecipeRepository(
                     isFavorite = dto.isFavorite,
                     updatedAt = dto.updatedAt,
                     rating = dto.rating,
-                    // A server that does not know the field returns null: keep what the device has.
-                    origin = dto.origin ?: existing.origin,
-                    originCountry = RecipeOrigin.normalizeCountry(dto.originCountry) ?: existing.originCountry,
+                    // An older server does not know the fields and returns null: keep what the device has.
+                    origin = if (dto.schema >= RECIPE_SYNC_SCHEMA) dto.origin else dto.origin ?: existing.origin,
+                    originCountry = if (dto.schema >= RECIPE_SYNC_SCHEMA) {
+                        RecipeOrigin.normalizeCountry(dto.originCountry)
+                    } else {
+                        RecipeOrigin.normalizeCountry(dto.originCountry) ?: existing.originCountry
+                    },
                     healthColor = if (keepHealth) existing.healthColor else null,
                     healthDescription = if (keepHealth) existing.healthDescription else null,
                     healthFingerprint = if (keepHealth) existing.healthFingerprint else null,
