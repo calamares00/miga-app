@@ -31,7 +31,9 @@ data class GlobalSearchUiState(
     val availableCategories: List<String> = emptyList(),
     val availableTags: List<String> = emptyList(),
     val availableUtensils: List<String> = emptyList(),
-    val availableIngredients: List<String> = emptyList()
+    val availableIngredients: List<String> = emptyList(),
+    /** Country codes of the origins the recipes have, for the origin filter. */
+    val availableOrigins: List<String> = emptyList()
 )
 
 private data class FilterOptions(
@@ -68,7 +70,8 @@ class GlobalSearchViewModel(
             availableCategories = options.categories.map { it.name },
             availableTags = options.tags.map { it.name },
             availableUtensils = options.utensils.map { it.name },
-            availableIngredients = options.ingredientNames
+            availableIngredients = options.ingredientNames,
+            availableOrigins = recipes.mapNotNull { it.originCountry }.distinct()
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GlobalSearchUiState())
 

@@ -41,6 +41,9 @@ data class RecipeVisionResultDto(
     val stepGroups: List<StepGroupDto> = emptyList(),
     val tags: List<String> = emptyList(),
     val utensils: List<String> = emptyList(),
+    /** Where the recipe comes from and its country code (see RecipeOrigin); null when not clear. */
+    val origin: String? = null,
+    val originCountry: String? = null,
     /** Photos of the finished dish found in the images (only when importing from photos). */
     val dishPhotos: List<DishPhotoDto> = emptyList()
 )

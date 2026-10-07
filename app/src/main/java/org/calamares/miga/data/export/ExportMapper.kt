@@ -5,6 +5,7 @@ import org.calamares.miga.data.model.Ingredient
 import org.calamares.miga.data.model.IngredientGroup
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.RecipeDraft
+import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.StepGroup
 
@@ -32,7 +33,9 @@ fun Recipe.toExportDto() = RecipeExportDto(
     nutrition = nutritionInfo?.let {
         RecipeNutritionDto(it.caloriesPerServing, it.proteinGrams, it.carbsGrams, it.fatGrams, it.fingerprint, it.analyzedAt)
     },
-    rating = rating
+    rating = rating,
+    origin = origin,
+    originCountry = originCountry
 )
 
 /**
@@ -59,5 +62,7 @@ fun RecipeExportDto.toDraft(recipeBookId: Long, photos: List<RecipePhoto> = empt
     },
     stepGroups = stepGroups.map { dto -> StepGroup(dto.name, dto.instructions) },
     tagNames = tags,
-    utensilNames = utensils
+    utensilNames = utensils,
+    origin = origin,
+    originCountry = RecipeOrigin.normalizeCountry(originCountry)
 )

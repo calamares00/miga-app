@@ -125,6 +125,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.displayCategoryName
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -428,8 +429,19 @@ private fun RecipeDetailContent(
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             // Title
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                recipe.categoryName?.let {
-                    Text(displayCategoryName(it).uppercase(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                val originLabel = RecipeOrigin.label(recipe.origin, recipe.originCountry)
+                if (recipe.categoryName != null || originLabel != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        recipe.categoryName?.let {
+                            Text(displayCategoryName(it).uppercase(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        }
+                        if (recipe.categoryName != null && originLabel != null) {
+                            Text("  ·  ", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        originLabel?.let {
+                            Text(it, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                 }
                 Text(recipe.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
                 Row(verticalAlignment = Alignment.CenterVertically) {

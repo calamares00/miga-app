@@ -26,7 +26,10 @@ data class Recipe(
     val healthRating: HealthRating? = null,
     val nutritionInfo: NutritionInfo? = null,
     /** Personal rating from 1 to 5 stars; null when not rated. */
-    val rating: Int? = null
+    val rating: Int? = null,
+    /** Where it comes from (see RecipeOrigin): free text and the country code for the flag. */
+    val origin: String? = null,
+    val originCountry: String? = null
 ) {
     val totalTimeMinutes: Int?
         get() = if (prepTimeMinutes == null && cookTimeMinutes == null) {
@@ -74,7 +77,8 @@ data class RecipeSummary(
     val tags: List<String>,
     val utensils: List<String>,
     val createdAt: Long,
-    val prepTimeMinutes: Int?
+    val prepTimeMinutes: Int?,
+    val originCountry: String? = null
 )
 
 fun Recipe.toSummary() = RecipeSummary(
@@ -89,5 +93,6 @@ fun Recipe.toSummary() = RecipeSummary(
     tags = tags,
     utensils = utensils,
     createdAt = createdAt,
-    prepTimeMinutes = prepTimeMinutes
+    prepTimeMinutes = prepTimeMinutes,
+    originCountry = originCountry
 )

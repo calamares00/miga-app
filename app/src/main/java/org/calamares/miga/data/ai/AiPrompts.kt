@@ -15,6 +15,8 @@ internal const val RECIPE_JSON_FORMAT = """{
   "ingredientGroups": [ { "name": "string or null", "ingredients": [ { "name": "string", "quantity": number or null, "unit": "string or null" } ] } ],
   "stepGroups": [ { "name": "string or null", "instructions": ["string", ...] } ],
   "tags": ["string", ...],
+  "origin": "place or cuisine it comes from (a country, region or city such as Mexico, Córdoba or Japan), only when the recipe or its source clearly says so or it is a well-known dish of that place; otherwise null",
+  "originCountry": "ISO 3166-1 alpha-2 code of the origin's country (MX, ES, JP...) or null",
   "utensils": ["appliance or special equipment the recipe needs (oven, air fryer, food processor, pressure cooker...); never basics every kitchen has such as knife, pot, pan, bowl or fridge", ...]
 }"""
 

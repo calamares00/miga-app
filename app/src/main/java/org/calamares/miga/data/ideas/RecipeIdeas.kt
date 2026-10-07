@@ -8,6 +8,7 @@ import org.calamares.miga.data.ai.complete
 import org.calamares.miga.data.ai.decodeAiJson
 import org.calamares.miga.data.ai.outputLanguageInstruction
 import org.calamares.miga.data.model.Recipe
+import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.support.AiErrors
 import java.time.LocalDate
 import java.time.format.TextStyle
@@ -159,6 +160,8 @@ internal fun selectCatalog(recipes: List<Recipe>): List<Recipe> =
 internal fun describeRecipe(recipe: Recipe): String = buildString {
     append(recipe.id).append(" | ").append(recipe.name)
     recipe.categoryName?.takeIf { it.isNotBlank() }?.let { append(" | category: ").append(it) }
+    val origin = recipe.origin?.takeIf { it.isNotBlank() } ?: recipe.originCountry?.let { RecipeOrigin.countryName(it, java.util.Locale.ENGLISH) }
+    origin?.let { append(" | origin: ").append(it) }
     if (recipe.tags.isNotEmpty()) append(" | tags: ").append(recipe.tags.joinToString(", "))
     recipe.totalTimeMinutes?.let { append(" | ").append(it).append(" min") }
     if (recipe.utensils.isNotEmpty()) append(" | utensils: ").append(recipe.utensils.joinToString(", "))

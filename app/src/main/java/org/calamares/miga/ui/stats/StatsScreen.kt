@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
@@ -223,6 +224,9 @@ private fun LibraryContent(stats: LibraryStats, onRecipeClick: (Long) -> Unit) {
     }
     if (stats.byDifficulty.isNotEmpty()) {
         StatsCard(Icons.Filled.BarChart, L10n.str(R.string.difficulty_2)) { BarList(stats.byDifficulty) }
+    }
+    if (stats.byOrigin.isNotEmpty()) {
+        StatsCard(Icons.Filled.Public, L10n.str(R.string.stats_world_cuisines)) { BarList(stats.byOrigin) }
     }
     if (stats.topIngredients.isNotEmpty()) {
         StatsCard(Icons.Filled.Kitchen, L10n.str(R.string.stats_top_ingredients)) { BarList(stats.topIngredients) }

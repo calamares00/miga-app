@@ -22,6 +22,7 @@ import org.calamares.miga.R
 import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.model.HealthColorLevel
 import org.calamares.miga.data.model.Recipe
+import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.RecipeBook
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.ShoppingListGroup
@@ -517,6 +518,7 @@ object RecipeExporter {
         appendLine("—".repeat(recipe.name.length.coerceAtMost(40)))
         append(recipe.difficulty.label)
         recipe.categoryName?.let { append(" · ").append(it) }
+        RecipeOrigin.label(recipe.origin, recipe.originCountry)?.let { append(" · ").append(it) }
         recipe.totalTimeMinutes?.let { append(" · ").append(it).append(" min") }
         appendLine(L10n.str(R.string.servings_x, recipe.servings))
         if (recipe.utensils.isNotEmpty()) appendLine(L10n.str(R.string.utensils) + ": " + recipe.utensils.joinToString(", "))

@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.data.model.RecipeFilter
+import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.SortOption
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -39,6 +40,7 @@ fun FilterSheetContent(
     availableTags: List<String>,
     availableUtensils: List<String>,
     availableIngredients: List<String> = emptyList(),
+    availableOrigins: List<String> = emptyList(),
     onApply: (RecipeFilter) -> Unit,
     onClear: () -> Unit,
     modifier: Modifier = Modifier
@@ -48,6 +50,7 @@ fun FilterSheetContent(
     var utensils by remember(filter) { mutableStateOf(filter.utensils) }
     var tags by remember(filter) { mutableStateOf(filter.tags) }
     var ingredients by remember(filter) { mutableStateOf(filter.ingredients) }
+    var origins by remember(filter) { mutableStateOf(filter.origins) }
     var onlyFavorites by remember(filter) { mutableStateOf(filter.onlyFavorites) }
     var sortOption by remember(filter) { mutableStateOf(filter.sortOption) }
 
@@ -57,6 +60,7 @@ fun FilterSheetContent(
         utensils = utensils,
         tags = tags,
         ingredients = ingredients,
+        origins = origins,
         onlyFavorites = onlyFavorites,
         sortOption = sortOption
     )
@@ -95,6 +99,20 @@ fun FilterSheetContent(
                         onClick = { difficulties = if (difficulty in difficulties) difficulties - difficulty else difficulties + difficulty },
                         label = { Text(difficulty.label) }
                     )
+                }
+            }
+        }
+
+        if (availableOrigins.isNotEmpty()) {
+            FilterSection(title = L10n.str(R.string.origin)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    availableOrigins.sortedBy { RecipeOrigin.countryName(it) }.forEach { code ->
+                        FilterChip(
+                            selected = code in origins,
+                            onClick = { origins = if (code in origins) origins - code else origins + code },
+                            label = { Text(RecipeOrigin.label(null, code).orEmpty()) }
+                        )
+                    }
                 }
             }
         }
@@ -163,7 +181,7 @@ fun FilterSheetContent(
         TextButton(
             onClick = {
                 categoryNames = emptySet(); difficulties = emptySet()
-                utensils = emptySet(); tags = emptySet(); ingredients = emptySet(); onlyFavorites = false
+                utensils = emptySet(); tags = emptySet(); ingredients = emptySet(); origins = emptySet(); onlyFavorites = false
                 sortOption = SortOption.NAME_ASC
                 onClear()
             },

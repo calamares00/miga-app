@@ -3,6 +3,7 @@ package org.calamares.miga.data.stats
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.RecipeBook
+import org.calamares.miga.data.model.RecipeOrigin
 import java.util.Calendar
 
 /** A recipe in a ranking, with the value it is ranked by (times cooked, stars...). */
@@ -32,6 +33,8 @@ data class LibraryStats(
     val byDifficulty: List<CountEntry>,
     val topIngredients: List<CountEntry>,
     val topTags: List<CountEntry>,
+    /** Recipes per country of origin, labelled with the flag and the country name. */
+    val byOrigin: List<CountEntry>,
     val withoutPhoto: Int,
     val withoutCategory: Int,
     val withoutIngredients: Int,
@@ -99,6 +102,10 @@ object LibraryStatsCalculator {
                 .filter { it.count > 0 },
             topIngredients = mostCommon(recipes.map { recipe -> recipe.ingredientGroups.flatMap { group -> group.ingredients.map { it.name } } }, MAX_INGREDIENTS),
             topTags = mostCommon(recipes.map { it.tags }, MAX_TAGS),
+            byOrigin = recipes.mapNotNull { it.originCountry }.groupingBy { it }.eachCount()
+                .map { (code, count) -> CountEntry(RecipeOrigin.label(null, code).orEmpty(), count) }
+                .sortedByDescending { it.count }
+                .take(MAX_CATEGORIES),
             withoutPhoto = recipes.count { it.photos.isEmpty() },
             withoutCategory = recipes.count { it.categoryName.isNullOrBlank() },
             withoutIngredients = recipes.count { recipe -> recipe.ingredientGroups.all { it.ingredients.isEmpty() } },

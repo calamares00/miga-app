@@ -69,7 +69,10 @@ data class RecipeExportDto(
     /** Cached AI nutrition estimate; null when the recipe was never analysed. */
     val nutrition: RecipeNutritionDto? = null,
     /** Personal rating from 1 to 5 stars; null when not rated. */
-    val rating: Int? = null
+    val rating: Int? = null,
+    /** Where the recipe comes from and its country code (see RecipeOrigin); absent in older files. */
+    val origin: String? = null,
+    val originCountry: String? = null
 )
 
 @Serializable

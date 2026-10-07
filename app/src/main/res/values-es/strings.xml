@@ -938,4 +938,11 @@
     <string name="new_labels_equipment_x">"Equipamiento nuevo: %1$s"</string>
     <string name="default_entry">"Por defecto"</string>
     <string name="default_entry_hint">"creado por la app al instalarse; puedes renombrarlo o borrarlo."</string>
+    <string name="origin">"Origen"</string>
+    <string name="origin_hint">"Ej.: México, Córdoba, cocina tailandesa"</string>
+    <string name="origin_country">"País de origen"</string>
+    <string name="origin_no_country">"Sin país"</string>
+    <string name="origin_country_x">"País: %1$s · toca la bandera para cambiarlo"</string>
+    <string name="origin_tap_flag">"Toca el globo para elegir el país y su bandera"</string>
+    <string name="stats_world_cuisines">"Cocinas del mundo"</string>
 </resources>

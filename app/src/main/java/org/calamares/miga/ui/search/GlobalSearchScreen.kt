@@ -230,6 +230,7 @@ fun GlobalSearchScreen(
                 availableTags = uiState.availableTags,
                 availableUtensils = uiState.availableUtensils,
                 availableIngredients = uiState.availableIngredients,
+                availableOrigins = uiState.availableOrigins,
                 onApply = { newFilter -> viewModel.applyFilter(newFilter) },
                 onClear = { viewModel.clearFilters() }
             )

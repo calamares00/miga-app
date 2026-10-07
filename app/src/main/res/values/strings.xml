@@ -939,4 +939,11 @@
     <string name="new_labels_equipment_x">"New equipment: %1$s"</string>
     <string name="default_entry">"Default"</string>
     <string name="default_entry_hint">"created by the app when installed; you can rename or delete it."</string>
+    <string name="origin">"Origin"</string>
+    <string name="origin_hint">"E.g. Mexico, Córdoba, Thai cuisine"</string>
+    <string name="origin_country">"Country of origin"</string>
+    <string name="origin_no_country">"No country"</string>
+    <string name="origin_country_x">"Country: %1$s · tap the flag to change it"</string>
+    <string name="origin_tap_flag">"Tap the globe to choose the country and its flag"</string>
+    <string name="stats_world_cuisines">"World cuisines"</string>
 </resources>

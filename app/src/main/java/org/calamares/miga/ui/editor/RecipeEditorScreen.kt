@@ -20,6 +20,9 @@ import org.calamares.miga.R
 import org.calamares.miga.ui.components.AiContentNotice
 import android.net.Uri
 import android.widget.Toast
+import org.calamares.miga.ui.components.CountryPickerDialog
+import org.calamares.miga.data.model.RecipeOrigin
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.Surface
 import org.calamares.miga.data.vision.NewLabels
 import androidx.compose.material.icons.filled.NewLabel
@@ -225,6 +228,12 @@ fun RecipeEditorScreen(
                     value = viewModel.categoryName.orEmpty(),
                     suggestions = availableCategories,
                     onValueChange = { text -> viewModel.categoryName = text.takeIf { it.isNotBlank() } }
+                )
+                OriginField(
+                    value = viewModel.origin,
+                    countryCode = viewModel.originCountry,
+                    onValueChange = viewModel::updateOrigin,
+                    onPickCountry = viewModel::pickOriginCountry
                 )
             }
 
@@ -490,6 +499,43 @@ private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit, 
                 }
             }
         }
+    }
+}
+
+/**
+ * Where the recipe comes from: free text ("México", "Córdoba", "cocina tailandesa") with the flag
+ * of its country, guessed from the text or picked from the list by tapping the flag.
+ */
+@Composable
+private fun OriginField(value: String, countryCode: String?, onValueChange: (String) -> Unit, onPickCountry: (String?) -> Unit) {
+    var picking by remember { mutableStateOf(false) }
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(L10n.str(R.string.origin)) },
+        placeholder = { Text(L10n.str(R.string.origin_hint)) },
+        singleLine = true,
+        leadingIcon = {
+            IconButton(onClick = { picking = true }) {
+                val flag = RecipeOrigin.flag(countryCode)
+                if (flag != null) {
+                    Text(flag, style = MaterialTheme.typography.titleLarge)
+                } else {
+                    Icon(Icons.Filled.Public, contentDescription = L10n.str(R.string.origin_country))
+                }
+            }
+        },
+        supportingText = {
+            Text(countryCode?.let { L10n.str(R.string.origin_country_x, RecipeOrigin.countryName(it)) } ?: L10n.str(R.string.origin_tap_flag))
+        },
+        modifier = Modifier.fillMaxWidth()
+    )
+    if (picking) {
+        CountryPickerDialog(
+            selected = countryCode,
+            onPick = { code -> onPickCountry(code); picking = false },
+            onDismiss = { picking = false }
+        )
     }
 }
 

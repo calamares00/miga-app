@@ -18,7 +18,9 @@ fun List<Recipe>.applyFilter(filter: RecipeFilter): List<Recipe> {
         val matchesQuery = query.isEmpty() ||
             searchKey(recipe.name).contains(query) ||
             recipe.tags.any { searchKey(it).contains(query) } ||
-            recipe.ingredientGroups.any { group -> group.ingredients.any { searchKey(it.name).contains(query) } }
+            recipe.ingredientGroups.any { group -> group.ingredients.any { searchKey(it.name).contains(query) } } ||
+            recipe.origin?.let { searchKey(it).contains(query) } == true ||
+            recipe.originCountry?.let { code -> searchKey(RecipeOrigin.countryName(code)).contains(query) } == true
 
         val matchesCategory = filter.categoryNames.isEmpty() ||
             filter.categoryNames.contains(recipe.categoryName ?: UNCATEGORIZED_CATEGORY_LABEL)
@@ -29,8 +31,10 @@ fun List<Recipe>.applyFilter(filter: RecipeFilter): List<Recipe> {
             recipe.ingredientGroups.any { group -> group.ingredients.any { it.name.equals(wanted, ignoreCase = true) } }
         }
         val matchesFavorite = !filter.onlyFavorites || recipe.isFavorite
+        val matchesOrigin = filter.origins.isEmpty() || recipe.originCountry in filter.origins
 
-        matchesQuery && matchesCategory && matchesDifficulty && matchesUtensils && matchesTags && matchesIngredients && matchesFavorite
+        matchesQuery && matchesCategory && matchesDifficulty && matchesUtensils && matchesTags && matchesIngredients &&
+            matchesFavorite && matchesOrigin
     }
 
     return when (filter.sortOption) {

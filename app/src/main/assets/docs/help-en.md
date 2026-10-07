@@ -13,6 +13,7 @@ Each book is a recipe collection with its own cover: your mum's, a friend's or o
 - **Sub-recipes**: split the recipe into parts (for example "For the sauce"), each with its own ingredients and steps.
 - **Steps and notes** support formatting: while typing, a bar offers **bold**, *italic*, strikethrough and lists. Pressing Enter in a list starts the next item.
 - **Dictation**: tap the microphone to dictate the steps instead of typing them.
+- **Origin**: where the recipe comes from (Mexico, Córdoba, Thai cuisine…). The flag is set by itself when the country is recognised; tap the globe or the flag to choose it. In Search you can filter by origin.
 - **Servings**: in a recipe, change the servings and the quantities are recalculated.
 
 ## 📥 Adding recipes from other sources
