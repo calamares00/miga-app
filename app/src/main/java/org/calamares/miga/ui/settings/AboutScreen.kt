@@ -2,8 +2,6 @@ package org.calamares.miga.ui.settings
 
 import org.calamares.miga.L10n
 import org.calamares.miga.R
-import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,20 +20,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import org.calamares.miga.BuildConfig
 
-/**
- * Published on the Miga website (same text as PRIVACY.md at the repository root) and opened in the
- * browser rather than duplicated in the app. Google Play gets the same URL.
- */
-private const val PRIVACY_POLICY_URL = "https://miga.calamares.org/privacy"
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutScreen(onBack: () -> Unit) {
-    val context = LocalContext.current
+fun AboutScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
 
     Scaffold(
         topBar = {
@@ -59,10 +49,9 @@ fun AboutScreen(onBack: () -> Unit) {
             AboutRow(L10n.str(R.string.version), "${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})")
             AboutRow(L10n.str(R.string.build_type), if (BuildConfig.DEBUG) L10n.str(R.string.beta_development) else L10n.str(R.string.stable))
             AboutRow(L10n.str(R.string.architecture), Build.SUPPORTED_ABIS.firstOrNull() ?: L10n.str(R.string.unknown))
-            OutlinedButton(onClick = {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL))
-                runCatching { context.startActivity(intent) }
-            }) {
+            // The policy is read inside the app (assets/docs, same text as PRIVACY.md at the
+            // repository root, which is also published on the Miga website for Google Play).
+            OutlinedButton(onClick = onOpenPrivacy) {
                 Text(L10n.str(R.string.privacy_policy))
             }
         }

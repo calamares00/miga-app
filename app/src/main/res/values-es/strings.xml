@@ -7,7 +7,6 @@
     <string name="open_model_picker">"Abrir selector de modelo"</string>
     <string name="open_voice_picker">"Abrir selector de voz"</string>
     <string name="about">"Acerca de"</string>
-    <string name="turn_settings_security_app_asks">"Actívalo en Ajustes → Seguridad para que la app pida tu huella, rostro o PIN cada vez que la abras."</string>
     <string name="update_available">"Actualización disponible"</string>
     <string name="update">"Actualizar"</string>
     <string name="additives_x">"Aditivos (%1$s)"</string>
@@ -42,7 +41,6 @@
     <string name="add_template">"Añadir a la plantilla"</string>
     <string name="add_cover">"Añadir portada"</string>
     <string name="add_recipe_photo">"Añadir receta con foto"</string>
-    <string name="add_recipe_photo_beta">"Añadir receta con foto (beta)"</string>
     <string name="add_without_deleting">"Añadir sin borrar"</string>
     <string name="add_sub_recipe_e_g">"Añadir sub-receta (ej. una salsa)"</string>
     <string name="add_supermarket">"Añadir supermercado"</string>
@@ -106,7 +104,6 @@
     <string name="find_recipes_ai">"Buscar recetas con IA"</string>
     <string name="search_recipes_ingredients">"Buscar recetas o ingredientes..."</string>
     <string name="peanuts">"Cacahuetes"</string>
-    <string name="each_book_someones_recipe_collection">"Cada libro es el recetario de una persona (por ejemplo el de tu madre, el de un amigo o uno por temas), con su propia portada. Cuando tienes un libro abierto, las recetas nuevas que crees se guardan ahí por defecto. Puedes mover una receta a otro libro desde su menú de opciones (⋮)."</string>
     <string name="each_supermarket_keeps_own_aisle">"Cada supermercado guarda su orden de pasillos: al elegirlo, la lista sale ordenada como lo recorres."</string>
     <string name="switch_list">"Cambiar de lista"</string>
     <string name="change_cover">"Cambiar portada"</string>
@@ -125,7 +122,6 @@
     <string name="category_2">"Por categoría"</string>
     <string name="category_x">"Categoría de \"%1$s\""</string>
     <string name="categories">"Categorías"</string>
-    <string name="categories_tags_utensils">"Categorías, etiquetas y utensilios"</string>
     <string name="ingredient_categories">"Categorías de ingredientes"</string>
     <string name="categories_utensils_ingredients">"Categorías, utensilios e ingredientes"</string>
     <string name="close">"Cerrar"</string>
@@ -165,7 +161,6 @@
     <string name="set_up_ai_provider_settings_3">"Configura un proveedor de IA en Ajustes para ver esto."</string>
     <string name="get_one_console_anthropic_com">"Consíguela en console.anthropic.com"</string>
     <string name="get_one_free_aistudio_google">"Consíguela gratis en aistudio.google.com"</string>
-    <string name="contact">"Contacto"</string>
     <string name="generated_content">"Contenido generado:"</string>
     <string name="continue_action">"Continuar"</string>
     <string name="backup">"Copia de seguridad"</string>
@@ -196,9 +191,6 @@
     <string name="unknown">"Desconocida"</string>
     <string name="file_json_zip">"Desde archivo (JSON/ZIP)"</string>
     <string name="image">"Desde imagen"</string>
-    <string name="books_menu_add_photo_reads">"Desde el menú de un libro, \"Añadir con foto\" reconoce el texto de una foto (cámara o galería) con IA y precarga el editor para que solo tengas que revisarlo antes de guardar. Necesita conexión a internet y tu propia API key de IA, configurable en Ajustes → Inteligencia artificial; sin ella no se envía ninguna foto a ningún sitio."</string>
-    <string name="recipe_steps_tap_cooking_mode">"Desde una receta con pasos, pulsa \"Modo cocina\" para verlos en pantalla completa, uno a uno, sin que la pantalla se apague mientras cocinas."</string>
-    <string name="export_recipe_text_pdf_json">"Desde una receta puedes exportarla como texto, PDF o JSON. Desde un libro puedes exportarlo entero. Y desde Ajustes puedes hacer o restaurar una copia de seguridad completa."</string>
     <string name="url">"Desde una URL"</string>
     <string name="undo">"Deshacer"</string>
     <string name="uninstall">"Desinstalar"</string>
@@ -248,7 +240,6 @@
     <string name="type_paste_one_item_per">"Escribe o pega un artículo por línea, o separados por comas. Puedes indicar cantidad y unidad: \"2 kg tomates\"."</string>
     <string name="type_product_tap_search_most">"Escribe un producto y pulsa buscar. Salen primero los más escaneados."</string>
     <string name="type_product_tap_search_adds">"Escribe un producto y pulsa buscar. Con ⊕ va a la lista; con el marcador lo guardas en una plantilla para la próxima vez."</string>
-    <string name="when_type_ingredient_name_recipe">"Al escribir el nombre de un ingrediente en una receta, la app sugiere los que ya has usado antes para que no tengas que volver a escribirlos."</string>
     <string name="listening_next_previous_repeat_timer">"Escuchando... (siguiente, anterior, repite, temporizador)"</string>
     <string name="listen_step">"Escuchar paso"</string>
     <string name="qr_code_isnt_miga_list">"Ese código QR no es una lista de Miga"</string>
@@ -271,7 +262,6 @@
     <string name="explore_recipe_packs">"Explorar packs de recetas"</string>
     <string name="export_pdf">"Exportar como PDF"</string>
     <string name="export_backup">"Exportar copia de seguridad"</string>
-    <string name="export_import">"Exportar e importar"</string>
     <string name="export_import_books_recipes">"Exportar e importar libros y recetas"</string>
     <string name="export_book">"Exportar este libro"</string>
     <string name="export_book_pdf">"Exportar este libro (PDF)"</string>
@@ -353,7 +343,6 @@
     <string name="milk">"Leche"</string>
     <string name="which_book_want_add_recipe">"¿A qué libro quieres añadir esta receta?"</string>
     <string name="books">"Libros"</string>
-    <string name="recipe_books">"Libros de recetas"</string>
     <string name="ready_install_recipe_books">"Libros de recetas listos para instalar"</string>
     <string name="books_synced_become_local_nothing">"Los libros que sincronizaba pasarán a ser locales; no se borra nada de su contenido, solo dejan de sincronizarse."</string>
     <string name="capped_49_because_contains_high">"Limitada a 49 por contener un aditivo de riesgo alto."</string>
@@ -544,7 +533,6 @@
     <string name="main_recipe">"Receta principal"</string>
     <string name="family_recipe_book">"Tu recetario familiar"</string>
     <string name="recipes">"Recetas"</string>
-    <string name="recipes_grouped_category_list_add">"Las recetas se agrupan por categoría en el listado. Puedes añadir, renombrar o borrar categorías, utensilios e ingredientes desde Ajustes → Gestionar."</string>
     <string name="recipes_favourites_most_cooked">"Recetas, favoritas y más cocinadas"</string>
     <string name="recipes_imported_ai_x_photos">"Recetas importadas con IA desde %1$s fotos (revisa cada receta y reporta la concreta desde su editor)."</string>
     <string name="recipes_books_kitchen">"Tus recetas. Tus libros. Tu cocina."</string>
@@ -890,4 +878,9 @@
     <string name="ai_hint_writing_tips">"Redactando consejos…"</string>
     <string name="ai_hint_new_dishes">"Pensando en platos nuevos…"</string>
     <string name="ai_elapsed_x">"%1$d s"</string>
+    <string name="privacy_asset">docs/privacy-es.md</string>
+    <string name="help_asset">docs/help-es.md</string>
+    <string name="search_help">"Buscar en la ayuda"</string>
+    <string name="help_no_results">"No hay temas de ayuda que coincidan con la búsqueda."</string>
+    <string name="help_contact_title">"¿Necesitas más ayuda?"</string>
 </resources>

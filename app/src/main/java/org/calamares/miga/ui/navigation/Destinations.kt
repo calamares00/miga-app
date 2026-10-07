@@ -29,6 +29,7 @@ object Destinations {
     const val HELP_ROUTE = "help"
     const val HELP_CHANGELOG_ROUTE = "help/changelog"
     const val ABOUT_ROUTE = "about"
+    const val PRIVACY_ROUTE = "privacy"
 
     const val ARG_RECIPE_ID = "recipeId"
     const val ARG_BOOK_ID = "bookId"
