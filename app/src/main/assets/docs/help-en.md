@@ -76,7 +76,8 @@ To share books and the shopping list with your family, connect Miga to a server 
 ## 💾 Export and backups
 
 - Export a recipe as text, PDF or a Miga file from its menu (⋮), or a whole book from the book's menu.
-- In Settings → Backup you can save **everything** to a ZIP (with photos) and restore it later, on this phone or another one.
+- In Settings → Backup you can save **everything** to a file (with photos) and restore it later, on this phone or another one.
+- The backup can be **protected with a password**: it is encrypted with AES-256 and only opens with that password when restored. Miga does not store it anywhere, so if you forget it the backup cannot be recovered.
 
 ## 🔒 Privacy and security
 

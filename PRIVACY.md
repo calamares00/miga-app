@@ -55,6 +55,8 @@ Si la app se cierra de forma inesperada, se guarda un informe de texto (versión
 
 Exportar (JSON, ZIP, PDF), compartir recetas o listas y las copias de seguridad usan el selector estándar de Android. Tú eliges el destino; Miga no envía esos archivos por su cuenta.
 
+Si proteges una copia de seguridad con contraseña, se cifra en tu dispositivo con AES-256-GCM y una clave derivada de la contraseña (PBKDF2). La contraseña no se guarda ni se envía a ningún sitio; sin ella nadie, tampoco el desarrollador, puede abrir la copia.
+
 ## Conservación y borrado
 
 Los datos se conservan mientras tengas la app instalada. Puedes:

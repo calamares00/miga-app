@@ -294,7 +294,7 @@
     <string name="gluten">"Gluten"</string>
     <string name="fat">"Fat"</string>
     <string name="fat_g">"Fat (g)"</string>
-    <string name="saves_books_recipes_photos_zip">"Saves books, recipes and photos in a ZIP file"</string>
+    <string name="saves_books_recipes_photos_zip">"Saves books, recipes and photos in a file, optionally protected with a password"</string>
     <string name="keep_family_recipes_books_photos">"Keep your family recipes in books, with photos, sub-recipes, adjustable servings and a step-by-step cooking mode."</string>
     <string name="saved_x">"Saved to \"%1$s\""</string>
     <string name="x_items_list_their_photos">"The %1$s items in the list (with their photos and details) are saved so you can add them again with one tap."</string>
@@ -554,7 +554,7 @@
     <string name="report">" Report"</string>
     <string name="report_ai_content">"Report AI content"</string>
     <string name="ai_content_report_x">"AI content report - %1$s"</string>
-    <string name="restore_zip_json_delete_current">"Restore from a ZIP or JSON; you can delete your current data first"</string>
+    <string name="restore_zip_json_delete_current">"Restore a backup (ZIP, JSON or password-protected); you can delete your current data first"</string>
     <string name="restore_backup">"Restore a backup"</string>
     <string name="high_risk">"high risk"</string>
     <string name="limited_risk">"limited risk"</string>
@@ -946,4 +946,25 @@
     <string name="origin_country_x">"Country: %1$s · tap the flag to change it"</string>
     <string name="origin_tap_flag">"Tap the globe to choose the country and its flag"</string>
     <string name="stats_world_cuisines">"World cuisines"</string>
+    <string name="backup_encrypted_restore_in_settings">"This is a password-protected backup: restore it from Settings → Backup."</string>
+    <string name="backup_damaged">"The backup is damaged or incomplete."</string>
+    <string name="backup_exported_encrypted">"Encrypted backup exported"</string>
+    <string name="couldnt_export_x">"Couldn\'t export: %1$s"</string>
+    <string name="backup_protect_with_password">"Protect with a password"</string>
+    <string name="backup_protect_explanation">"Encrypts the backup (AES-256) so only your password can open it."</string>
+    <string name="backup_password">"Password"</string>
+    <string name="backup_password_min_x">"At least %1$d characters"</string>
+    <string name="backup_password_strong">"Strong password"</string>
+    <string name="backup_password_good">"Good password"</string>
+    <string name="backup_password_weak">"Weak password: longer, or with numbers and symbols, is better"</string>
+    <string name="backup_password_repeat">"Repeat the password"</string>
+    <string name="backup_passwords_dont_match">"The passwords don\'t match"</string>
+    <string name="backup_password_cannot_be_recovered">"Miga doesn\'t store the password anywhere. If you forget it, there will be no way to open this backup."</string>
+    <string name="backup_create">"Create backup"</string>
+    <string name="backup_encrypted_title">"Protected backup"</string>
+    <string name="backup_encrypted_enter_password">"This backup is encrypted. Enter the password it was created with."</string>
+    <string name="backup_wrong_password">"Wrong password"</string>
+    <string name="backup_open">"Open"</string>
+    <string name="show_password">"Show password"</string>
+    <string name="hide_password">"Hide password"</string>
 </resources>

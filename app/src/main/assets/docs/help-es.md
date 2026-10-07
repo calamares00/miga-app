@@ -76,7 +76,8 @@ Para compartir libros y la lista de la compra en familia, conecta Miga a un serv
 ## 💾 Exportar y copias de seguridad
 
 - Exporta una receta como texto, PDF o archivo de Miga desde su menú (⋮), o un libro entero desde el menú del libro.
-- En Ajustes → Copia de seguridad puedes guardar **todo** en un ZIP (con fotos) y restaurarlo más tarde, en este o en otro teléfono.
+- En Ajustes → Copia de seguridad puedes guardar **todo** en un archivo (con fotos) y restaurarlo más tarde, en este o en otro teléfono.
+- La copia puede ir **protegida con contraseña**: se cifra con AES-256 y solo se abre con esa contraseña al restaurarla. Miga no la guarda en ningún sitio, así que si la olvidas no hay forma de recuperar la copia.
 
 ## 🔒 Privacidad y seguridad
 

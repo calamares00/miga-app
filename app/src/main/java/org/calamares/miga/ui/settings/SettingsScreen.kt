@@ -169,21 +169,31 @@ fun SettingsSectionScreen(
     var pendingRecipeImport by remember { mutableStateOf<Pair<RecipeExportDto, List<RecipePhoto>>?>(null) }
     var selectedBookId by remember { mutableStateOf<Long?>(null) }
 
+    // Backup: the password chosen in ExportBackupDialog waits here while the user picks where to
+    // save the file (plain backups are .zip, encrypted ones a .migabackup only Miga can open).
+    var showExportDialog by remember { mutableStateOf(false) }
+    var exportPassword by remember { mutableStateOf<CharArray?>(null) }
+    val onExported: (String) -> Unit = { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
-        if (uri != null) {
-            viewModel.exportLibrary(context, uri)
-            scope.launch { snackbarHostState.showSnackbar(L10n.str(R.string.backup_exported)) }
-        }
+        if (uri != null) viewModel.exportLibrary(context, uri, null, onExported)
+    }
+    val encryptedExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+        val password = exportPassword
+        exportPassword = null
+        if (uri != null && password != null) viewModel.exportLibrary(context, uri, password, onExported) else password?.fill('\u0000')
     }
     var pendingLibraryImport by remember { mutableStateOf<LibraryImportParseResult.Success?>(null) }
+    var passwordPrompt by remember { mutableStateOf<LibraryImportParseResult.NeedsPassword?>(null) }
+    fun handleImportResult(result: LibraryImportParseResult) {
+        when (result) {
+            is LibraryImportParseResult.Error -> scope.launch { snackbarHostState.showSnackbar(L10n.str(R.string.couldnt_import_x, result.reason)) }
+            is LibraryImportParseResult.Success -> pendingLibraryImport = result
+            is LibraryImportParseResult.NeedsPassword -> passwordPrompt = result
+        }
+    }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            scope.launch {
-                when (val result = viewModel.validateLibraryImport(context, uri)) {
-                    is LibraryImportParseResult.Error -> snackbarHostState.showSnackbar(L10n.str(R.string.couldnt_import_x, result.reason))
-                    is LibraryImportParseResult.Success -> pendingLibraryImport = result
-                }
-            }
+            scope.launch { handleImportResult(viewModel.validateLibraryImport(context, uri)) }
         }
     }
     val importRecipeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -315,7 +325,7 @@ fun SettingsSectionScreen(
                     label = L10n.str(R.string.export_whole_app),
                     summary = L10n.str(R.string.saves_books_recipes_photos_zip),
                     chevron = false,
-                    onClick = { exportLauncher.launch(L10n.str(R.string.file_name_backup_x, java.time.LocalDate.now().toString()) + ".zip") }
+                    onClick = { showExportDialog = true }
                 )
                 HorizontalDivider()
                 ManageRow(
@@ -526,9 +536,36 @@ fun SettingsSectionScreen(
         )
     }
 
+    if (showExportDialog) {
+        ExportBackupDialog(
+            onConfirm = { password ->
+                showExportDialog = false
+                val baseName = L10n.str(R.string.file_name_backup_x, java.time.LocalDate.now().toString())
+                if (password == null) {
+                    exportLauncher.launch("$baseName.zip")
+                } else {
+                    exportPassword = password
+                    encryptedExportLauncher.launch("$baseName.migabackup")
+                }
+            },
+            onDismiss = { showExportDialog = false }
+        )
+    }
+
+    passwordPrompt?.let { prompt ->
+        BackupPasswordPromptDialog(
+            wrongPassword = prompt.wrongPassword,
+            onSubmit = { password ->
+                passwordPrompt = null
+                scope.launch { handleImportResult(viewModel.validateLibraryImport(context, prompt.source, password)) }
+            },
+            onDismiss = { passwordPrompt = null }
+        )
+    }
+
     pendingLibraryImport?.let { parsed ->
         AlertDialog(
-            onDismissRequest = { pendingLibraryImport = null },
+            onDismissRequest = { viewModel.discardLibraryImport(parsed); pendingLibraryImport = null },
             title = { Text(L10n.str(R.string.import_backup)) },
             text = {
                 Text(
@@ -546,7 +583,7 @@ fun SettingsSectionScreen(
             },
             dismissButton = {
                 Row {
-                    TextButton(onClick = { pendingLibraryImport = null }) { Text(L10n.str(R.string.cancel)) }
+                    TextButton(onClick = { viewModel.discardLibraryImport(parsed); pendingLibraryImport = null }) { Text(L10n.str(R.string.cancel)) }
                     TextButton(onClick = {
                         val toImport = parsed
                         pendingLibraryImport = null
