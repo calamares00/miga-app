@@ -10,6 +10,9 @@ import org.calamares.miga.data.ai.GEMINI_MODELS
 import org.calamares.miga.data.ai.DEFAULT_GEMINI_MODEL
 import org.calamares.miga.data.ai.DEFAULT_ANTHROPIC_MODEL
 import org.calamares.miga.data.ai.ANTHROPIC_MODELS
+import org.calamares.miga.data.ai.DEFAULT_OPENAI_MODEL
+import org.calamares.miga.data.ai.OPENAI_MODELS
+import org.calamares.miga.data.ai.ProviderModels
 import org.calamares.miga.MigaApp
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
@@ -97,6 +100,15 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
     val geminiModel by settings.observeGeminiModel().collectAsState(initial = DEFAULT_GEMINI_MODEL)
     val anthropicModel by settings.observeAnthropicModel().collectAsState(initial = DEFAULT_ANTHROPIC_MODEL)
     val openRouterModel by settings.observeOpenRouterModel().collectAsState(initial = "")
+    val openAiKey by settings.observeOpenAiApiKey().collectAsState(initial = "")
+    val openAiModel by settings.observeOpenAiModel().collectAsState(initial = DEFAULT_OPENAI_MODEL)
+    /** Models of the user's account for the providers that list them (see ProviderModels). */
+    val accountModels = remember { mutableStateMapOf<AiProvider, List<String>>() }
+    LaunchedEffect(geminiKey, anthropicKey, openAiKey) {
+        listOf(AiProvider.GEMINI to geminiKey, AiProvider.ANTHROPIC to anthropicKey, AiProvider.OPENAI to openAiKey)
+            .filter { it.second.isNotBlank() }
+            .forEach { (provider, key) -> ProviderModels.fetch(provider, key)?.let { accountModels[provider] = it } }
+    }
     var openRouterCatalog by remember { mutableStateOf(OpenRouterModels.cached().orEmpty()) }
     LaunchedEffect(openRouterKey) {
         if (openRouterKey.isNotBlank()) OpenRouterModels.fetch()?.let { openRouterCatalog = it }
@@ -108,19 +120,22 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
         AiProvider.GEMINI -> geminiModel
         AiProvider.ANTHROPIC -> anthropicModel
         AiProvider.OPENROUTER -> openRouterModel
+        AiProvider.OPENAI -> openAiModel
     }
 
     fun hasKey(provider: AiProvider): Boolean = when (provider) {
         AiProvider.GEMINI -> geminiKey.isNotBlank()
         AiProvider.ANTHROPIC -> anthropicKey.isNotBlank()
         AiProvider.OPENROUTER -> openRouterKey.isNotBlank()
+        AiProvider.OPENAI -> openAiKey.isNotBlank()
     }
 
     fun modelsFor(provider: AiProvider): List<String> {
         val saved = listOfNotNull(savedModel(provider).takeIf { it.isNotBlank() })
         return when (provider) {
-            AiProvider.GEMINI -> (saved + GEMINI_MODELS).distinct()
-            AiProvider.ANTHROPIC -> (saved + ANTHROPIC_MODELS).distinct()
+            AiProvider.GEMINI -> (saved + (accountModels[provider] ?: GEMINI_MODELS)).distinct()
+            AiProvider.ANTHROPIC -> (saved + (accountModels[provider] ?: ANTHROPIC_MODELS)).distinct()
+            AiProvider.OPENAI -> (saved + (accountModels[provider] ?: OPENAI_MODELS)).distinct()
             // The first free models of the catalogue plus the chosen one; the full catalogue is in
             // Settings.
             AiProvider.OPENROUTER -> (saved + openRouterCatalog.filter { it.isFree }.take(15).map { it.id }).distinct()
@@ -133,6 +148,7 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
                 when (provider) {
                     AiProvider.GEMINI -> settings.setGeminiModel(model)
                     AiProvider.ANTHROPIC -> settings.setAnthropicModel(model)
+                    AiProvider.OPENAI -> settings.setOpenAiModel(model)
                     AiProvider.OPENROUTER -> settings.setOpenRouterModel(
                         model,
                         openRouterCatalog.firstOrNull { it.id == model }?.supportsImages ?: settings.observeOpenRouterModelImages().first()

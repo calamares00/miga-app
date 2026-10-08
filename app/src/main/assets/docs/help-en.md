@@ -58,7 +58,7 @@ Tap ✨ in **My books** to ask for recommendations based on your recipes.
 
 ## 🤖 Artificial intelligence {ai}
 
-AI features are optional and use **your own key** for Google Gemini, Anthropic Claude or OpenRouter (which has free models). Set them up in Settings → Artificial intelligence.
+AI features are optional and use **your own key** for Google Gemini, Anthropic Claude, OpenAI or OpenRouter (which has free models). The model list loads by itself with your key. Set them up in Settings → Artificial intelligence.
 
 - If you add several providers, they are used **in the order you choose**: if one fails, the next one is tried automatically.
 - While it works, the app tells you **what it is doing** at each moment ("Reading the text in the photo…", "Reviewing your recipes…").

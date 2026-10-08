@@ -18,9 +18,12 @@ import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
 import org.calamares.miga.data.ai.DEFAULT_ANTHROPIC_MODEL
 import org.calamares.miga.data.ai.DEFAULT_GEMINI_MODEL
+import org.calamares.miga.data.ai.DEFAULT_OPENAI_MODEL
+import org.calamares.miga.data.ai.openAiModelReadsImages
 import org.calamares.miga.data.ai.AiProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 private val Context.settingsDataStore by preferencesDataStore(name = "settings")
@@ -51,6 +54,8 @@ class SettingsRepository(private val context: Context) {
     private val openRouterApiKeyKey = stringPreferencesKey("openrouter_api_key")
     private val openRouterModelKey = stringPreferencesKey("openrouter_model")
     private val openRouterModelImagesKey = booleanPreferencesKey("openrouter_model_images")
+    private val openAiApiKeyKey = stringPreferencesKey("openai_api_key")
+    private val openAiModelKey = stringPreferencesKey("openai_model")
     private val aiProviderOrderKey = stringPreferencesKey("ai_provider_order")
     private val ttsVoiceNameKey = stringPreferencesKey("tts_voice_name")
     private val dictationLanguageKey = stringPreferencesKey("dictation_language")
@@ -280,11 +285,28 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
+    /** OpenAI API key entered by the user; empty when not configured. */
+    fun observeOpenAiApiKey(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[openAiApiKeyKey].orEmpty() }
+
+    suspend fun setOpenAiApiKey(apiKey: String) {
+        context.settingsDataStore.edit { prefs -> prefs[openAiApiKeyKey] = apiKey.trim() }
+    }
+
+    /** OpenAI model id, from the account's list (see ProviderModels) or typed by hand. */
+    fun observeOpenAiModel(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[openAiModelKey] ?: DEFAULT_OPENAI_MODEL }
+
+    suspend fun setOpenAiModel(model: String) {
+        context.settingsDataStore.edit { prefs -> prefs[openAiModelKey] = model.trim() }
+    }
+
     /** API key configured for [provider]. */
     suspend fun apiKeyFor(provider: AiProvider): String = when (provider) {
         AiProvider.GEMINI -> observeGeminiApiKey().first()
         AiProvider.ANTHROPIC -> observeAnthropicApiKey().first()
         AiProvider.OPENROUTER -> observeOpenRouterApiKey().first()
+        AiProvider.OPENAI -> observeOpenAiApiKey().first()
     }
 
     /** Model configured for [provider]. */
@@ -292,7 +314,25 @@ class SettingsRepository(private val context: Context) {
         AiProvider.GEMINI -> observeGeminiModel().first()
         AiProvider.ANTHROPIC -> observeAnthropicModel().first()
         AiProvider.OPENROUTER -> observeOpenRouterModel().first()
+        AiProvider.OPENAI -> observeOpenAiModel().first()
     }
+
+    /**
+     * Providers ready to use (with a key and a model), in priority order. Used to tell whether AI
+     * can be offered at all and to summarise the configuration.
+     */
+    fun observeConfiguredProviders(): Flow<List<AiProvider>> =
+        combine(observeProviderOrder(), context.settingsDataStore.data) { order, prefs ->
+            order.filter { provider ->
+                val (key, model) = when (provider) {
+                    AiProvider.GEMINI -> prefs[geminiApiKeyKey] to (prefs[geminiModelKey] ?: DEFAULT_GEMINI_MODEL)
+                    AiProvider.ANTHROPIC -> prefs[anthropicApiKeyKey] to (prefs[anthropicModelKey] ?: DEFAULT_ANTHROPIC_MODEL)
+                    AiProvider.OPENROUTER -> prefs[openRouterApiKeyKey] to prefs[openRouterModelKey]
+                    AiProvider.OPENAI -> prefs[openAiApiKeyKey] to (prefs[openAiModelKey] ?: DEFAULT_OPENAI_MODEL)
+                }
+                !key.isNullOrBlank() && !model.isNullOrBlank()
+            }
+        }
 
     /**
      * Whether the model configured for [provider] can read images; every Gemini and Claude model
@@ -301,6 +341,7 @@ class SettingsRepository(private val context: Context) {
     suspend fun supportsImages(provider: AiProvider): Boolean = when (provider) {
         AiProvider.GEMINI, AiProvider.ANTHROPIC -> true
         AiProvider.OPENROUTER -> observeOpenRouterModelImages().first()
+        AiProvider.OPENAI -> openAiModelReadsImages(observeOpenAiModel().first())
     }
 
     /** Android text-to-speech voice for cooking mode; null means the system default voice. */

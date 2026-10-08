@@ -439,8 +439,9 @@ class RecipeListViewModel(
                 utensils = emptySet(),
                 tags = emptySet(),
                 ingredients = emptySet(),
+                origins = emptySet(),
                 onlyFavorites = false
-            )
+            ).withoutStatsConditions()
         }
     }
 

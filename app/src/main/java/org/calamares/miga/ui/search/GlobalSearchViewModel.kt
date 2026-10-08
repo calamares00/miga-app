@@ -46,10 +46,12 @@ private data class FilterOptions(
 class GlobalSearchViewModel(
     private val repository: RecipeRepository,
     /** True on the Favourites tab: "only favourites" is fixed and clearing filters keeps it. */
-    private val initialOnlyFavorites: Boolean = false
+    private val initialOnlyFavorites: Boolean = false,
+    /** Filter to start with, when opened from the statistics (see SearchRequests). */
+    initialFilter: RecipeFilter? = null
 ) : ViewModel() {
 
-    private val _filter = MutableStateFlow(RecipeFilter(onlyFavorites = initialOnlyFavorites))
+    private val _filter = MutableStateFlow(initialFilter ?: RecipeFilter(onlyFavorites = initialOnlyFavorites))
     val filter: StateFlow<RecipeFilter> = _filter
 
     private val filterOptions = combine(
@@ -91,8 +93,9 @@ class GlobalSearchViewModel(
                 utensils = emptySet(),
                 tags = emptySet(),
                 ingredients = emptySet(),
+                origins = emptySet(),
                 onlyFavorites = initialOnlyFavorites
-            )
+            ).withoutStatsConditions()
         }
     }
 

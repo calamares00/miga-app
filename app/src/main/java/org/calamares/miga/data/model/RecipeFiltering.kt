@@ -26,15 +26,22 @@ fun List<Recipe>.applyFilter(filter: RecipeFilter): List<Recipe> {
             filter.categoryNames.contains(recipe.categoryName ?: UNCATEGORIZED_CATEGORY_LABEL)
         val matchesDifficulty = filter.difficulties.isEmpty() || filter.difficulties.contains(recipe.difficulty)
         val matchesUtensils = filter.utensils.isEmpty() || filter.utensils.all { it in recipe.utensils }
-        val matchesTags = filter.tags.isEmpty() || filter.tags.all { it in recipe.tags }
+        val matchesTags = filter.tags.isEmpty() || filter.tags.all { wanted -> recipe.tags.any { it.equals(wanted, ignoreCase = true) } }
         val matchesIngredients = filter.ingredients.isEmpty() || filter.ingredients.all { wanted ->
             recipe.ingredientGroups.any { group -> group.ingredients.any { it.name.equals(wanted, ignoreCase = true) } }
         }
         val matchesFavorite = !filter.onlyFavorites || recipe.isFavorite
         val matchesOrigin = filter.origins.isEmpty() || recipe.originCountry in filter.origins
 
+        val matchesStats = (filter.bookNames.isEmpty() || recipe.recipeBookName in filter.bookNames) &&
+            filter.missing.all { it.isMissingIn(recipe) } &&
+            (filter.maxMinutes == null || recipe.totalTimeMinutes?.let { it in 1..filter.maxMinutes } == true) &&
+            (!filter.onlyCooked || recipe.timesCooked > 0) &&
+            (!filter.onlyRated || recipe.rating != null) &&
+            (filter.addedSince == null || recipe.createdAt >= filter.addedSince)
+
         matchesQuery && matchesCategory && matchesDifficulty && matchesUtensils && matchesTags && matchesIngredients &&
-            matchesFavorite && matchesOrigin
+            matchesFavorite && matchesOrigin && matchesStats
     }
 
     return when (filter.sortOption) {

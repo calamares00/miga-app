@@ -22,6 +22,10 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShortText
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -181,20 +185,23 @@ fun FileExportHost() {
                         L10n.str(R.string.export_ready_x, current.file.name, Formatter.formatShortFileSize(context, current.file.length())),
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // One under the other at full width: side by side, a long label ("Compartir")
+                    // wrapped and ended up lower than its icon on narrow screens.
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { FileExports.share(context, current); FileExports.dismiss() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            ButtonLabel(Icons.Filled.Share, L10n.str(R.string.share))
+                        }
                         OutlinedButton(
                             onClick = {
                                 val launcher = if (current.format == ExportFormat.PDF) savePdfLauncher else saveZipLauncher
                                 launcher.launch(current.file.name)
                             },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Filled.Save, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text("  " + L10n.str(R.string.save))
-                        }
-                        Button(onClick = { FileExports.share(context, current); FileExports.dismiss() }, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text("  " + L10n.str(R.string.share))
+                            ButtonLabel(Icons.Filled.Save, L10n.str(R.string.save_to_files))
                         }
                     }
                 }
@@ -210,6 +217,14 @@ fun FileExportHost() {
             confirmButton = { TextButton(onClick = { FileExports.dismiss() }) { Text(L10n.str(R.string.close)) } }
         )
     }
+}
+
+/** Icon and text of a button, centred on one line. */
+@Composable
+private fun ButtonLabel(icon: ImageVector, text: String) {
+    Icon(icon, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+    Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
+    Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
 }
 
 private fun formatIcon(format: ExportFormat): ImageVector = when (format) {

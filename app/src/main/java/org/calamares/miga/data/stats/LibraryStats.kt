@@ -1,6 +1,8 @@
 package org.calamares.miga.data.stats
 
 import org.calamares.miga.data.model.Difficulty
+import org.calamares.miga.data.model.MissingField
+import org.calamares.miga.data.model.RecipeFilter
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.RecipeBook
 import org.calamares.miga.data.model.RecipeOrigin
@@ -9,8 +11,11 @@ import java.util.Calendar
 /** A recipe in a ranking, with the value it is ranked by (times cooked, stars...). */
 data class RankedRecipe(val recipeId: Long, val name: String, val value: Int)
 
-/** A label and how many recipes have it. */
-data class CountEntry(val label: String, val count: Int)
+/**
+ * A label and how many recipes have it; [filter] lists those recipes in the search screen (null
+ * for an entry that adds up several, like "Others").
+ */
+data class CountEntry(val label: String, val count: Int, val filter: RecipeFilter? = null)
 
 /** Everything the statistics screen shows about the recipe library. */
 data class LibraryStats(
@@ -89,28 +94,38 @@ object LibraryStatsCalculator {
                 .take(MAX_RANKED)
                 .map { RankedRecipe(it.id, it.name, it.rating ?: 0) },
             byBook = recipes.groupingBy { it.recipeBookName }.eachCount()
-                .map { (name, count) -> CountEntry(name, count) }
+                .map { (name, count) -> CountEntry(name, count, RecipeFilter(bookNames = setOf(name))) }
                 .sortedByDescending { it.count }
                 .take(MAX_BOOKS),
             byCategory = topWithOthers(
                 recipes.groupingBy { it.categoryName?.takeIf { name -> name.isNotBlank() } ?: uncategorized }.eachCount(),
                 MAX_CATEGORIES,
                 others
-            ),
+            ).map { entry ->
+                when (entry.label) {
+                    others -> entry
+                    uncategorized -> entry.copy(filter = RecipeFilter(missing = setOf(MissingField.CATEGORY)))
+                    else -> entry.copy(filter = RecipeFilter(categoryNames = setOf(entry.label)))
+                }
+            },
             byDifficulty = Difficulty.entries
-                .map { difficulty -> CountEntry(difficultyLabel(difficulty), recipes.count { it.difficulty == difficulty }) }
+                .map { difficulty ->
+                    CountEntry(difficultyLabel(difficulty), recipes.count { it.difficulty == difficulty }, RecipeFilter(difficulties = setOf(difficulty)))
+                }
                 .filter { it.count > 0 },
-            topIngredients = mostCommon(recipes.map { recipe -> recipe.ingredientGroups.flatMap { group -> group.ingredients.map { it.name } } }, MAX_INGREDIENTS),
-            topTags = mostCommon(recipes.map { it.tags }, MAX_TAGS),
+            topIngredients = mostCommon(recipes.map { recipe -> recipe.ingredientGroups.flatMap { group -> group.ingredients.map { it.name } } }, MAX_INGREDIENTS)
+                .map { it.copy(filter = RecipeFilter(ingredients = setOf(it.label))) },
+            topTags = mostCommon(recipes.map { it.tags }, MAX_TAGS)
+                .map { it.copy(filter = RecipeFilter(tags = setOf(it.label))) },
             byOrigin = recipes.mapNotNull { it.originCountry }.groupingBy { it }.eachCount()
-                .map { (code, count) -> CountEntry(RecipeOrigin.label(null, code).orEmpty(), count) }
+                .map { (code, count) -> CountEntry(RecipeOrigin.label(null, code).orEmpty(), count, RecipeFilter(origins = setOf(code))) }
                 .sortedByDescending { it.count }
                 .take(MAX_CATEGORIES),
-            withoutPhoto = recipes.count { it.photos.isEmpty() },
-            withoutCategory = recipes.count { it.categoryName.isNullOrBlank() },
-            withoutIngredients = recipes.count { recipe -> recipe.ingredientGroups.all { it.ingredients.isEmpty() } },
-            withoutSteps = recipes.count { recipe -> recipe.stepGroups.all { it.instructions.isEmpty() } },
-            withoutTime = recipes.count { it.totalTimeMinutes == null || it.totalTimeMinutes == 0 }
+            withoutPhoto = recipes.count { MissingField.PHOTO.isMissingIn(it) },
+            withoutCategory = recipes.count { MissingField.CATEGORY.isMissingIn(it) },
+            withoutIngredients = recipes.count { MissingField.INGREDIENTS.isMissingIn(it) },
+            withoutSteps = recipes.count { MissingField.STEPS.isMissingIn(it) },
+            withoutTime = recipes.count { MissingField.TIME.isMissingIn(it) }
         )
     }
 
@@ -143,6 +158,16 @@ object LibraryStatsCalculator {
             .take(max)
             .map { CountEntry(labels.getValue(it.key), it.value) }
     }
+
+    /** First moment of the month of [now], to list the recipes added this month. */
+    fun startOfMonth(now: Long): Long = Calendar.getInstance().apply {
+        timeInMillis = now
+        set(Calendar.DAY_OF_MONTH, 1)
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
 
     private fun sameMonth(epochMillis: Long, now: Long): Boolean {
         val entry = Calendar.getInstance().apply { timeInMillis = epochMillis }

@@ -42,6 +42,9 @@ private const val THUMBS_PER_ROW = 4
 private const val THUMB_GAP = 10f
 private const val COVER_IMAGE_BOX = 300f
 
+/** Resolution of the photos in the PDF: sharp on a phone or printed, without bloating the file. */
+private const val IMAGE_PIXELS_PER_POINT = 1.5f
+
 private const val ACCENT_COLOR = 0xFFC1633D.toInt() // Terracotta, same as ui/theme/Color.kt
 private const val MUTED_COLOR = 0xFF6B6055.toInt()
 private const val RULE_COLOR = 0xFFE0D8CE.toInt()
@@ -147,7 +150,12 @@ object PdfRecipeRenderer {
 
         onPage(1, totalPages)
         val coverPage = document.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create())
-        val coverBitmap = coverPhotoUri?.let { loadScaledBitmap(it, COVER_IMAGE_BOX.toInt() * 2) }
+        val coverBitmap = coverPhotoUri?.let { uri ->
+            imageSize(uri)?.let { (width, height) ->
+                val scale = min(COVER_IMAGE_BOX / width, COVER_IMAGE_BOX / height)
+                loadBitmapForBox(uri, width * scale, height * scale)
+            }
+        }
         drawCoverPage(coverPage.canvas, paints, bookName, coverBitmap, ordered.size)
         document.finishPage(coverPage)
 
@@ -346,8 +354,8 @@ object PdfRecipeRenderer {
                 canvas.restore()
             }
             is Item.Image -> {
-                val bitmap = loadScaledBitmap(item.uri, CONTENT_WIDTH * 2) ?: return
                 val (w, h) = imageDrawSize(item.width, item.height)
+                val bitmap = loadBitmapForBox(item.uri, w, h) ?: return
                 val left = MARGIN + (CONTENT_WIDTH - w) / 2f
                 canvas.drawBitmap(bitmap, null, RectF(left, y, left + w, y + h), null)
             }
@@ -439,6 +447,22 @@ object PdfRecipeRenderer {
         while (width / (sampleSize * 2) >= targetWidth) sampleSize *= 2
         val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
         return runCatching { BitmapFactory.decodeFile(path, options) }.getOrNull()
+    }
+
+    /**
+     * Decodes the photo at the size it is drawn ([width] x [height] points) times
+     * [IMAGE_PIXELS_PER_POINT]. Android's PdfDocument stores bitmaps without lossy compression, so
+     * the pixels drawn decide the file size: a book whose photos were embedded at camera
+     * resolution weighed well over 100 MB.
+     */
+    private fun loadBitmapForBox(uri: String, width: Float, height: Float): Bitmap? {
+        val targetWidth = (width * IMAGE_PIXELS_PER_POINT).toInt().coerceAtLeast(1)
+        val targetHeight = (height * IMAGE_PIXELS_PER_POINT).toInt().coerceAtLeast(1)
+        val decoded = loadScaledBitmap(uri, targetWidth) ?: return null
+        if (decoded.width <= targetWidth) return decoded
+        return Bitmap.createScaledBitmap(decoded, targetWidth, targetHeight, true).also {
+            if (it !== decoded) decoded.recycle()
+        }
     }
 
     private fun centerCropSquare(bitmap: Bitmap, size: Int): Bitmap {

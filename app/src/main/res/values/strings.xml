@@ -719,7 +719,7 @@
     <string name="ai_incomplete_refused">"%1$s declined the request because of its content policy."</string>
     <string name="ai_incomplete_empty">"%1$s returned no result."</string>
     <string name="ai_incomplete_other">"%1$s didn't finish the answer (reason: %2$s)."</string>
-    <string name="ai_no_image_provider">"None of your AI providers can read images. Add a Gemini or Claude key, or pick an OpenRouter model that reads images."</string>
+    <string name="ai_no_image_provider">"None of your AI providers can read images. Add a Gemini, Claude or OpenAI key, or pick an OpenRouter model that reads images."</string>
     <string name="ai_all_providers_failed">"All AI providers failed. Last error: %1$s"</string>
     <string name="ai_no_provider">"Add an AI provider key in Settings → Artificial intelligence."</string>
     <string name="ai_no_provider_summary">"No provider set up"</string>
@@ -999,4 +999,20 @@
     <string name="import_into_this_book">"Into this book"</string>
     <string name="imported_n_recipes_into_x">"%1$d recipes imported into “%2$s”"</string>
     <string name="export_ready_x">"“%1$s” (%2$s) is ready. Save it to your files or share it."</string>
+    <string name="api_key_openai">"OpenAI API key"</string>
+    <string name="get_one_platform_openai_com">"Get one at platform.openai.com"</string>
+    <string name="openai_model">"OpenAI model"</string>
+    <string name="e_g_gpt_5_mini">"e.g. gpt-5-mini"</string>
+    <string name="ai_models_loading">"Loading the models of your account…"</string>
+    <string name="ai_models_from_account_n">"%1$d models available with your key"</string>
+    <string name="ai_models_default_list">"Default list (your account's could not be loaded)"</string>
+    <string name="see_all">"See all"</string>
+    <string name="stats_tap_to_list">"Tap a figure to see its recipes."</string>
+    <string name="search_cond_book_x">"Book: %1$s"</string>
+    <string name="search_cond_cooked">"Cooked"</string>
+    <string name="search_cond_rated">"Rated"</string>
+    <string name="search_cond_added_this_month">"Added this month"</string>
+    <string name="remove_filter_x">"Remove filter %1$s"</string>
+    <string name="close_search">"Close search"</string>
+    <string name="save_to_files">"Save to files"</string>
 </resources>

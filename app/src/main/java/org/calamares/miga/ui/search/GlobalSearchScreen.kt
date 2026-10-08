@@ -34,6 +34,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.InputChip
+import org.calamares.miga.data.model.MissingField
+import org.calamares.miga.data.model.RecipeFilter
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -88,7 +92,9 @@ fun GlobalSearchScreen(
     viewModel: GlobalSearchViewModel,
     onRecipeClick: (Long) -> Unit,
     title: String = L10n.str(R.string.search_recipes_2),
-    showQueryField: Boolean = true
+    showQueryField: Boolean = true,
+    /** Shows a back arrow: the screen was opened on top of another one (from the statistics). */
+    onBack: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
@@ -131,7 +137,12 @@ fun GlobalSearchScreen(
             } else {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                    title = { Text(title) },
+                    title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    navigationIcon = {
+                        if (onBack != null) {
+                            IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                        }
+                    },
                     actions = { if (!showQueryField) filterButton() }
                 )
             }
@@ -153,6 +164,10 @@ fun GlobalSearchScreen(
                     )
                     filterButton()
                 }
+            }
+
+            if (filter.hasStatsConditions) {
+                StatsConditionChips(filter = filter, onChange = viewModel::applyFilter)
             }
 
             if (quickDietaryTags.isNotEmpty()) {
@@ -322,6 +337,49 @@ private fun SearchResultCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+    }
+}
+
+/**
+ * The conditions that came from the statistics screen ("Without photo", a book...), which the
+ * filter sheet does not show; each chip removes its condition.
+ */
+@Composable
+private fun StatsConditionChips(filter: RecipeFilter, onChange: (RecipeFilter) -> Unit) {
+    val chips = buildList<Pair<String, RecipeFilter>> {
+        filter.bookNames.forEach { book ->
+            add(L10n.str(R.string.search_cond_book_x, book) to filter.copy(bookNames = filter.bookNames - book))
+        }
+        filter.missing.forEach { field ->
+            val label = when (field) {
+                MissingField.PHOTO -> R.string.stats_without_photo
+                MissingField.CATEGORY -> R.string.stats_without_category
+                MissingField.INGREDIENTS -> R.string.stats_without_ingredients
+                MissingField.STEPS -> R.string.stats_without_steps
+                MissingField.TIME -> R.string.stats_without_time
+            }
+            add(L10n.str(label) to filter.copy(missing = filter.missing - field))
+        }
+        filter.maxMinutes?.let { add(L10n.str(R.string.stats_quick_recipes_x, it) to filter.copy(maxMinutes = null)) }
+        if (filter.onlyCooked) add(L10n.str(R.string.search_cond_cooked) to filter.copy(onlyCooked = false))
+        if (filter.onlyRated) add(L10n.str(R.string.search_cond_rated) to filter.copy(onlyRated = false))
+        if (filter.addedSince != null) add(L10n.str(R.string.search_cond_added_this_month) to filter.copy(addedSince = null))
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        chips.forEach { (label, without) ->
+            InputChip(
+                selected = true,
+                onClick = { onChange(without) },
+                label = { Text(label) },
+                trailingIcon = { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.remove_filter_x, label), modifier = Modifier.size(18.dp)) }
+            )
         }
     }
 }

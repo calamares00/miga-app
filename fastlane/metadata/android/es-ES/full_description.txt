@@ -21,7 +21,7 @@ IMPORTAR Y COMPARTIR
 • Comparte la lista por texto o por código QR.
 
 FUNCIONES OPCIONALES CON IA
-Con tu propia clave de Google Gemini, Anthropic Claude u OpenRouter (con modelos gratuitos): crea recetas a partir de una foto o de una página web, busca recetas de un plato, estima la nutrición y la valoración de salud o encuentra sustitutos de ingredientes. Solo se activan si configuras tu clave; el contenido generado se marca como tal y se puede reportar.
+Con tu propia clave de Google Gemini, Anthropic Claude, OpenAI u OpenRouter (con modelos gratuitos): crea recetas a partir de una foto o de una página web, busca recetas de un plato, estima la nutrición y la valoración de salud o encuentra sustitutos de ingredientes. Solo se activan si configuras tu clave; el contenido generado se marca como tal y se puede reportar.
 
 SINCRONIZACIÓN CON TU PROPIO SERVIDOR
 ¿Quieres compartir libros y la lista de la compra en familia? Conecta Miga a un servidor que alojes tú mismo (miga-server) e invita a otros con un código QR.

@@ -1,5 +1,14 @@
 package org.calamares.miga.ui.list
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
@@ -73,6 +82,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -124,6 +134,17 @@ fun RecipeListScreen(
     /** Export asked for the selected recipes (true) or the whole book (false); null when not asked. */
     var exportSelectionOnly by remember { mutableStateOf<Boolean?>(null) }
     val pendingCollection by viewModel.pendingCollection.collectAsState()
+    // The search field and filters show only when asked for with the search icon (or while a
+    // search or filter is applied), so the book opens straight onto its recipes.
+    var searchOpen by rememberSaveable { mutableStateOf(false) }
+    val searchVisible = searchOpen || filter.query.isNotBlank() || filter.isActive
+    val searchFocus = remember { FocusRequester() }
+    fun closeSearch() {
+        viewModel.updateQuery("")
+        viewModel.clearFilters()
+        searchOpen = false
+    }
+    BackHandler(enabled = searchVisible && !selectionMode) { closeSearch() }
     val targetBooks by viewModel.targetBooks.collectAsState()
     var showBulkEditSheet by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
@@ -192,6 +213,11 @@ fun RecipeListScreen(
                         IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                     },
                     actions = {
+                        if (!searchVisible) {
+                            IconButton(onClick = { searchOpen = true }) {
+                                Icon(Icons.Filled.Search, contentDescription = L10n.str(R.string.search))
+                            }
+                        }
                         Box {
                             IconButton(onClick = { showViewModeMenu = true }) {
                                 Icon(viewModeIcon(viewMode), contentDescription = L10n.str(R.string.view_x, viewMode.label))
@@ -244,22 +270,31 @@ fun RecipeListScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = filter.query,
-                    onValueChange = viewModel::updateQuery,
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text(L10n.str(R.string.search_recipes_ingredients)) },
-                    leadingIcon = { Icon(Icons.Filled.Search, null) },
-                    singleLine = true
-                )
-                IconButton(onClick = { showFilters = true }) {
-                    BadgedBox(badge = { if (filter.isActive) Badge() }) {
-                        Icon(Icons.Filled.FilterList, contentDescription = L10n.str(R.string.filters))
+            AnimatedVisibility(visible = searchVisible, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = filter.query,
+                        onValueChange = viewModel::updateQuery,
+                        modifier = Modifier.weight(1f).focusRequester(searchFocus),
+                        placeholder = { Text(L10n.str(R.string.search_recipes_ingredients)) },
+                        leadingIcon = { Icon(Icons.Filled.Search, null) },
+                        singleLine = true
+                    )
+                    IconButton(onClick = { showFilters = true }) {
+                        BadgedBox(badge = { if (filter.isActive) Badge() }) {
+                            Icon(Icons.Filled.FilterList, contentDescription = L10n.str(R.string.filters))
+                        }
                     }
+                    IconButton(onClick = { closeSearch() }) {
+                        Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.close_search))
+                    }
+                }
+                // Opening the search puts the cursor in the field, with the keyboard.
+                LaunchedEffect(searchOpen) {
+                    if (searchOpen && filter.query.isEmpty()) runCatching { searchFocus.requestFocus() }
                 }
             }
 
