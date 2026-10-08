@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 android {
@@ -16,7 +17,7 @@ android {
         // versionCode goes up on every commit (Play requires it to always grow). versionName is the
         // public version and only changes when a new version is released (1.0.0, 1.0.1, 1.1.0...),
         // with release notes in assets/changelogs and fastlane/.../changelogs (<versionCode>.txt).
-        versionCode = 153
+        versionCode = 154
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -97,11 +98,28 @@ android {
         kotlinCompilerExtensionVersion = "1.5.14"
     }
 
+    // Room schemas, one JSON per database version, read by the migration tests (see room {} below).
+    sourceSets.getByName("debug").assets.srcDir("$projectDir/schemas")
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+}
+
+/**
+ * Room's Gradle plugin exports the schema of every database version to schemas/ (committed): CI
+ * checks they are, and the migration tests open old versions from them. Unlike the plain
+ * room.schemaLocation KSP option, it writes per variant and copies afterwards, so building debug
+ * and release together no longer races on the same file.
+ */
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {
@@ -134,4 +152,9 @@ dependencies {
     implementation(libs.zxing.embedded)
 
     testImplementation(libs.junit)
+    // Database migration tests (MigrationTestHelper) run on the JVM with Robolectric.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.room.testing)
 }

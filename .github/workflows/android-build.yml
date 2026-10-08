@@ -37,6 +37,19 @@ jobs:
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
+      # Every database version needs its Room schema (app/schemas) committed, or migrations to
+      # later versions cannot be tested. The build exports it; a new or changed one fails here and
+      # is printed so it can be committed.
+      - name: Room schemas committed
+        if: always()
+        run: |
+          changed=$(git ls-files --modified --others --exclude-standard app/schemas)
+          if [ -n "$changed" ]; then
+            echo "::error::Room schema not committed: $changed"
+            for f in $changed; do echo "===== $f"; cat "$f"; echo; done
+            exit 1
+          fi
+
       # Artifact name unique per branch and commit. It does not depend on the mode (that belongs to
       # build/publish); it only needs to identify the run in a readable way.
       - name: Compute artifact name suffix
