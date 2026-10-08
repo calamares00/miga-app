@@ -62,7 +62,7 @@ import org.calamares.miga.data.local.entity.UtensilEntity
     // Migrations.kt work without it. It stays disabled because building debug and release together
     // (as CI does) makes both KSP tasks write the same file in parallel, causing intermittent
     // "Empty schema file" errors.
-    version = 19,
+    version = 20,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

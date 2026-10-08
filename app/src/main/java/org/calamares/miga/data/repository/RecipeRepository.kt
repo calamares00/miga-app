@@ -1019,10 +1019,13 @@ class RecipeRepository(
             list.map {
                 RecipeBookSummary(
                     it.book.id, it.book.name, it.book.coverPhotoUri, it.recipeCount,
-                    it.book.packId, it.book.packVersion, it.book.syncConnectionId
+                    it.book.packId, it.book.packVersion, it.book.syncConnectionId, it.book.isPinned
                 )
             }
         }
+
+    /** Pins a book to the top of the list or unpins it; does not count as a change for sync. */
+    suspend fun setRecipeBookPinned(id: Long, pinned: Boolean) = recipeBookDao.setPinned(id, pinned)
 
     fun observeRecipeBook(id: Long): Flow<RecipeBook?> =
         recipeBookDao.observeOne(id).map { it?.toDomain() }
@@ -1065,7 +1068,8 @@ class RecipeRepository(
                     coverPhotoUri = draft.coverPhotoUri,
                     createdAt = existing?.createdAt ?: now,
                     updatedAt = now,
-                    syncConnectionId = existing?.syncConnectionId
+                    syncConnectionId = existing?.syncConnectionId,
+                    isPinned = existing?.isPinned ?: false
                 )
             )
             existing?.syncConnectionId?.let {
@@ -1737,7 +1741,7 @@ class RecipeRepository(
     private fun appLanguage(): String = if (L10n.locale().language == "es") "es" else "en"
 }
 
-fun RecipeBookEntity.toDomain() = RecipeBook(id, uid, name, coverPhotoUri, packId, packVersion, syncConnectionId)
+fun RecipeBookEntity.toDomain() = RecipeBook(id, uid, name, coverPhotoUri, packId, packVersion, syncConnectionId, isPinned)
 
 /**
  * The "?: accessToken" fallback is deliberate: decrypt returns null (it does not throw) for rows

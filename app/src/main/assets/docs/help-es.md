@@ -2,6 +2,7 @@
 
 Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo o uno por temas. Las recetas nuevas se guardan en el libro que tengas abierto, y puedes moverlas a otro desde su menú (⋮).
 
+- Mantén pulsado un libro para **fijarlo arriba**: los libros fijados salen los primeros, con una chincheta en la portada. También puedes fijarlo desde el menú del libro.
 - Dentro de un libro, las recetas se agrupan por **categoría**. Toca una categoría para plegarla o desplegarla; desde el menú puedes plegarlas o desplegarlas todas.
 - Al abrir una receta, **desliza a izquierda o derecha** para pasar a la siguiente o a la anterior del libro, como las páginas de un libro.
 - Mantén pulsada una receta para **seleccionar varias** y cambiarles a la vez la categoría, la dificultad, las raciones o el libro, añadirlas a la lista de la compra o exportarlas.
@@ -76,6 +77,7 @@ Para compartir libros y la lista de la compra en familia, conecta Miga a un serv
 ## 💾 Exportar y copias de seguridad
 
 - Exporta una receta como texto, PDF o archivo de Miga desde su menú (⋮), o un libro entero desde el menú del libro.
+- Al exportar a **PDF**, Miga muestra el progreso (también en una notificación, así que puedes seguir usando la app) y, cuando termina, te deja **guardarlo** en tus archivos o **compartirlo**.
 - En Ajustes → Copia de seguridad puedes guardar **todo** en un archivo (con fotos) y restaurarlo más tarde, en este o en otro teléfono.
 - La copia puede ir **protegida con contraseña**: se cifra con AES-256 y solo se abre con esa contraseña al restaurarla. Miga no la guarda en ningún sitio, así que si la olvidas no hay forma de recuperar la copia.
 

@@ -41,7 +41,7 @@ private const val DONE_NOTIFICATION_ID = 7302
  * One piece of AI work shown in the notification. [title] null means it adds nothing to show (a
  * single request inside a larger, titled task).
  */
-class AiTask internal constructor(val title: String?) {
+class AiTask internal constructor(val title: String?, internal val icon: Int = R.drawable.ic_notification_ai) {
     @Volatile internal var current: Int = 0
     @Volatile internal var total: Int = 0
     @Volatile internal var status: String? = null
@@ -116,10 +116,11 @@ object AiKeepAlive {
 
     /**
      * Runs [block] with the foreground service active. A [title] (e.g. "Importing recipes") is
-     * shown in the notification; [AiTask.progress] adds a progress bar.
+     * shown in the notification; [AiTask.progress] adds a progress bar. Other long work that must
+     * survive leaving the app (a PDF export) uses it too, with its own status bar [icon].
      */
-    suspend fun <T> hold(title: String? = null, block: suspend AiTask.() -> T): T {
-        val task = AiTask(title)
+    suspend fun <T> hold(title: String? = null, icon: Int = R.drawable.ic_notification_ai, block: suspend AiTask.() -> T): T {
+        val task = AiTask(title, icon)
         acquire(task)
         try {
             return task.block()
@@ -133,12 +134,12 @@ object AiKeepAlive {
      * learns that a task they left running has finished. Does nothing while the app is visible.
      */
     @SuppressLint("MissingPermission")
-    fun announceIfInBackground(message: String) {
+    fun announceIfInBackground(message: String, icon: Int = R.drawable.ic_notification_ai) {
         val context = appContext ?: return
         if (!inBackground || !NotificationManagerCompat.from(context).areNotificationsEnabled()) return
         createChannels(context)
         val notification = NotificationCompat.Builder(context, DONE_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_ai)
+            .setSmallIcon(icon)
             .setContentTitle(L10n.str(R.string.app_name))
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
@@ -208,7 +209,7 @@ object AiKeepAlive {
         // The latest status of any running task, nested ones included.
         val status = synchronized(lock) { tasks.lastOrNull { it.status != null }?.status }
         val builder = NotificationCompat.Builder(context, WORK_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_ai)
+            .setSmallIcon(task?.icon ?: R.drawable.ic_notification_ai)
             .setContentTitle(title)
             .setContentText(status ?: L10n.str(R.string.app_name))
             .setContentIntent(openAppIntent(context))
@@ -230,20 +231,18 @@ object AiKeepAlive {
     private fun createChannels(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.deleteNotificationChannel(OLD_WORK_CHANNEL_ID)
-        if (manager.getNotificationChannel(WORK_CHANNEL_ID) == null) {
-            val channel = NotificationChannel(WORK_CHANNEL_ID, L10n.str(R.string.ai_work_channel), NotificationManager.IMPORTANCE_DEFAULT).apply {
-                setSound(null, null)
-                enableVibration(false)
-                enableLights(false)
-                setShowBadge(false)
-            }
-            manager.createNotificationChannel(channel)
+        // Created every time: for an existing channel this only updates its name (the channels
+        // now cover PDF exports too, not just AI), never the importance or sound the user chose.
+        val channel = NotificationChannel(WORK_CHANNEL_ID, L10n.str(R.string.ai_work_channel), NotificationManager.IMPORTANCE_DEFAULT).apply {
+            setSound(null, null)
+            enableVibration(false)
+            enableLights(false)
+            setShowBadge(false)
         }
-        if (manager.getNotificationChannel(DONE_CHANNEL_ID) == null) {
-            manager.createNotificationChannel(
-                NotificationChannel(DONE_CHANNEL_ID, L10n.str(R.string.ai_done_channel), NotificationManager.IMPORTANCE_DEFAULT)
-            )
-        }
+        manager.createNotificationChannel(channel)
+        manager.createNotificationChannel(
+            NotificationChannel(DONE_CHANNEL_ID, L10n.str(R.string.ai_done_channel), NotificationManager.IMPORTANCE_DEFAULT)
+        )
     }
 
     private fun openAppIntent(context: Context): PendingIntent = PendingIntent.getActivity(

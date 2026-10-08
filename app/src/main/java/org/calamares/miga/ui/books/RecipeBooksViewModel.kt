@@ -44,6 +44,10 @@ class RecipeBooksViewModel(
     val viewMode: StateFlow<RecipeListViewMode> = settingsRepository.observeRecipeBookListViewMode()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecipeListViewMode.GRID)
 
+    fun togglePinned(book: RecipeBookSummary) {
+        viewModelScope.launch { repository.setRecipeBookPinned(book.id, !book.isPinned) }
+    }
+
     fun setViewMode(mode: RecipeListViewMode) {
         viewModelScope.launch { settingsRepository.setRecipeBookListViewMode(mode) }
     }

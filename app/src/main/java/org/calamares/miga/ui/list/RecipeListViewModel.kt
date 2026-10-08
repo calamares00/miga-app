@@ -3,6 +3,8 @@ package org.calamares.miga.ui.list
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.content.Context
+import android.widget.Toast
+import org.calamares.miga.data.export.PdfExports
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -67,7 +69,9 @@ data class RecipeListUiState(
      * Book installed from a pack (see RecipeBook.isPack): read-only, recipes cannot be added,
      * edited or deleted.
      */
-    val isPackBook: Boolean = false
+    val isPackBook: Boolean = false,
+    /** The book is pinned to the top of the books list. */
+    val isPinned: Boolean = false
 )
 
 private data class FilterOptions(
@@ -366,7 +370,8 @@ class RecipeListViewModel(
             availableUtensils = data.options.utensils.map { it.name },
             availableIngredients = data.options.ingredientNames,
             availableOrigins = data.recipes.mapNotNull { it.originCountry }.distinct(),
-            isPackBook = book?.isPack == true
+            isPackBook = book?.isPack == true,
+            isPinned = book?.isPinned == true
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecipeListUiState())
 
@@ -407,12 +412,21 @@ class RecipeListViewModel(
         }
     }
 
+    /**
+     * Starts rendering the book as PDF in [PdfExports], which outlives this screen, shows the
+     * progress and offers to save or share the file when it is ready.
+     */
     fun exportBookAsPdf(context: Context) {
         viewModelScope.launch {
             val book = repository.getRecipeBookOnce(bookId) ?: return@launch
-            val recipes = repository.getRecipesForBookOnce(bookId)
-            RecipeExporter.shareBookAsPdf(context, book, recipes)
+            if (!PdfExports.exportBook(context, book) { repository.getRecipesForBookOnce(bookId) }) {
+                Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
+            }
         }
+    }
+
+    fun togglePinned() {
+        viewModelScope.launch { repository.setRecipeBookPinned(bookId, !uiState.value.isPinned) }
     }
 
     private fun buildGroups(recipes: List<Recipe>, filter: RecipeFilter): List<RecipeGroup> {

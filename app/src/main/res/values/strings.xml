@@ -786,7 +786,7 @@
     <string name="file_name_recipe">"recipe"</string>
     <string name="file_name_selected_recipes">"selected_recipes"</string>
     <string name="file_name_backup_x">"miga_backup_%1$s"</string>
-    <string name="ai_work_channel">"AI tasks"</string>
+    <string name="ai_work_channel">"Background tasks"</string>
     <string name="ai_work_notification">"Working with AI…"</string>
     <string name="ai_task_reading_photo">"Reading the recipe from the photo…"</string>
     <string name="ai_task_generating_dish_x">"Generating recipe: %1$s"</string>
@@ -794,7 +794,7 @@
     <string name="ai_task_bulk_import">"Importing recipes"</string>
     <string name="ai_task_bulk_analysis">"Analysing recipes"</string>
     <string name="ai_progress_x_of_y">"%1$d of %2$d"</string>
-    <string name="ai_done_channel">"Finished AI tasks"</string>
+    <string name="ai_done_channel">"Finished tasks"</string>
     <string name="ai_recipe_ready_x">"Recipe ready to review: %1$s"</string>
     <string name="ai_recipe_failed">"The recipe could not be generated. Open Miga to see why."</string>
     <string name="ai_bulk_import_done_x_of_y">"Import finished: %1$d of %2$d recipes"</string>
@@ -967,4 +967,21 @@
     <string name="backup_open">"Open"</string>
     <string name="show_password">"Show password"</string>
     <string name="hide_password">"Hide password"</string>
+    <string name="pin_book">"Pin to top"</string>
+    <string name="unpin_book">"Unpin"</string>
+    <string name="pinned_book">"Pinned"</string>
+    <string name="pin_this_book">"Pin this book"</string>
+    <string name="unpin_this_book">"Unpin this book"</string>
+    <string name="pdf_exporting_x">"Exporting “%1$s” to PDF"</string>
+    <string name="pdf_preparing">"Preparing…"</string>
+    <string name="pdf_page_x_of_y">"Page %1$d of %2$d"</string>
+    <string name="pdf_ready_title">"PDF ready"</string>
+    <string name="pdf_ready_x">"“%1$s” (%2$s) is ready. Save it to your files or share it."</string>
+    <string name="pdf_ready_notification_x">"The PDF of “%1$s” is ready"</string>
+    <string name="pdf_saved">"PDF saved"</string>
+    <string name="pdf_save_failed">"Couldn\'t save the PDF"</string>
+    <string name="pdf_export_failed">"Couldn\'t create the PDF"</string>
+    <string name="hide">"Hide"</string>
+    <string name="pdf_export_running_hint">"You can keep using the app; you will be told when it is ready."</string>
+    <string name="pdf_already_running">"Another PDF is being exported; wait for it to finish"</string>
 </resources>

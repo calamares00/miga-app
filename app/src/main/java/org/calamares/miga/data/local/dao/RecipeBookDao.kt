@@ -20,7 +20,7 @@ interface RecipeBookDao {
         """
         SELECT b.*, (SELECT COUNT(*) FROM recipes r WHERE r.recipeBookId = b.id) AS recipeCount
         FROM recipe_books b
-        ORDER BY b.name COLLATE NOCASE ASC
+        ORDER BY b.isPinned DESC, b.name COLLATE NOCASE ASC
         """
     )
     fun observeAllWithCounts(): Flow<List<RecipeBookWithCount>>
@@ -48,6 +48,9 @@ interface RecipeBookDao {
 
     @Update
     suspend fun update(book: RecipeBookEntity)
+
+    @Query("UPDATE recipe_books SET isPinned = :pinned WHERE id = :id")
+    suspend fun setPinned(id: Long, pinned: Boolean)
 
     @Query("DELETE FROM recipe_books WHERE id = :id")
     suspend fun delete(id: Long)

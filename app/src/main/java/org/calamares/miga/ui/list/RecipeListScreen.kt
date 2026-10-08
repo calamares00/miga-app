@@ -35,6 +35,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -213,6 +215,12 @@ fun RecipeListScreen(
                                 )
                                 HorizontalDivider()
                             }
+                            DropdownMenuItem(
+                                text = { Text(L10n.str(if (uiState.isPinned) R.string.unpin_this_book else R.string.pin_this_book)) },
+                                leadingIcon = { Icon(if (uiState.isPinned) Icons.Outlined.PushPin else Icons.Filled.PushPin, contentDescription = null) },
+                                onClick = { showMenu = false; viewModel.togglePinned() }
+                            )
+                            HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text(L10n.str(R.string.export_book)) },
                                 onClick = { showMenu = false; viewModel.exportBook(context) }

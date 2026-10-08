@@ -24,5 +24,7 @@ data class RecipeBookEntity(
      * Sync connection (see SyncConnectionEntity) the book belongs to; null for a local book. Unlike
      * a pack, a synced book is fully editable.
      */
-    val syncConnectionId: Long? = null
+    val syncConnectionId: Long? = null,
+    /** Pinned by the user to the top of the books list; local to this device, not synced. */
+    val isPinned: Boolean = false
 )
