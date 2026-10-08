@@ -1014,4 +1014,9 @@
     <string name="remove_filter_x">"Quitar filtro %1$s"</string>
     <string name="close_search">"Cerrar búsqueda"</string>
     <string name="save_to_files">"Guardar en archivos"</string>
+    <string name="appearance_theme">"Tema"</string>
+    <string name="appearance_preview">"Vista previa"</string>
+    <string name="appearance_preview_recipe">"Tortilla de patatas"</string>
+    <string name="language_restart_hint">"Al cambiar el idioma, la app se reinicia."</string>
+    <string name="system_short">"Sistema"</string>
 </resources>
