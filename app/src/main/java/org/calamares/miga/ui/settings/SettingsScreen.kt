@@ -244,45 +244,12 @@ fun SettingsSectionScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             when (section) {
-                SettingsSection.APPEARANCE -> {
-            SettingsCard(title = "") {
-                ThemeMode.entries.forEach { mode ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { viewModel.setThemeMode(mode) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(selected = themeMode == mode, onClick = { viewModel.setThemeMode(mode) })
-                        Text(mode.label, modifier = Modifier.padding(start = 8.dp))
-                    }
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                LanguagePicker()
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                Text(
-                    L10n.str(R.string.colour),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                SettingsSection.APPEARANCE -> AppearanceSettings(
+                    themeMode = themeMode,
+                    colorTheme = colorTheme,
+                    onThemeMode = { viewModel.setThemeMode(it) },
+                    onColorTheme = { viewModel.setColorTheme(it) }
                 )
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ColorTheme.entries.forEach { theme ->
-                        ColorThemeSwatch(
-                            color = accentColorFor(theme),
-                            selected = colorTheme == theme,
-                            contentDescription = theme.label,
-                            onClick = { viewModel.setColorTheme(theme) }
-                        )
-                    }
-                }
-            }
-                }
                 SettingsSection.SECURITY -> {
             SettingsCard(title = "") {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -654,27 +621,6 @@ private fun SettingsCard(
 }
 
 @Composable
-private fun ColorThemeSwatch(color: Color, selected: Boolean, contentDescription: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(color)
-            .border(
-                width = if (selected) 2.dp else 0.dp,
-                color = MaterialTheme.colorScheme.onSurface,
-                shape = CircleShape
-            )
-            .clickable(onClickLabel = contentDescription, onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        if (selected) {
-            Icon(Icons.Filled.Check, contentDescription = L10n.str(R.string.selected_2), tint = Color.White)
-        }
-    }
-}
-
-@Composable
 private fun ManageRow(icon: ImageVector, label: String, onClick: () -> Unit, summary: String? = null, chevron: Boolean = true) {
     Row(
         modifier = Modifier
@@ -694,58 +640,6 @@ private fun ManageRow(icon: ImageVector, label: String, onClick: () -> Unit, sum
             Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-}
-
-/** UI language: system default, Spanish or English. Changing it restarts the app. */
-@Composable
-private fun LanguagePicker() {
-    val context = LocalContext.current
-    val current = remember { L10n.language(context) }
-    var pending by remember { mutableStateOf<AppLanguage?>(null) }
-    Text(
-        L10n.str(R.string.language_title),
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
-    AppLanguage.entries.forEach { language ->
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { if (language != current) pending = language }
-                .padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            RadioButton(selected = current == language, onClick = { if (language != current) pending = language })
-            Text(languageLabel(language), modifier = Modifier.padding(start = 8.dp))
-        }
-    }
-    pending?.let { language ->
-        AlertDialog(
-            onDismissRequest = { pending = null },
-            title = { Text(L10n.str(R.string.language_restart_title)) },
-            text = { Text(L10n.str(R.string.language_restart_body)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    val activity = context.findActivity()
-                    if (activity != null) L10n.setLanguage(activity, language) else pending = null
-                }) { Text(L10n.str(R.string.language_restart_confirm)) }
-            },
-            dismissButton = { TextButton(onClick = { pending = null }) { Text(L10n.str(R.string.cancel)) } }
-        )
-    }
-}
-
-/** Language names are shown in their own language, as in Android's settings. */
-private fun languageLabel(language: AppLanguage): String = when (language) {
-    AppLanguage.SYSTEM -> L10n.str(R.string.language_system)
-    AppLanguage.SPANISH -> "Español"
-    AppLanguage.ENGLISH -> "English"
-}
-
-private tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
 }
 
 /**

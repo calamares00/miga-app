@@ -29,6 +29,9 @@ private fun accentPaletteFor(colorTheme: ColorTheme): AccentPalette = when (colo
 /** Accent shown on the colour swatches in Settings. */
 fun accentColorFor(colorTheme: ColorTheme): Color = accentPaletteFor(colorTheme).accent
 
+/** Soft variant of the accent, shown with it on the colour swatches in Settings. */
+fun accentSoftColorFor(colorTheme: ColorTheme): Color = accentPaletteFor(colorTheme).accentSoft
+
 // Every role is set explicitly: the Material defaults for the ones left out (secondaryContainer,
 // surface containers...) are lilac-tinted and clash with the palette.
 private fun lightColorSchemeFor(colorTheme: ColorTheme): ColorScheme {
