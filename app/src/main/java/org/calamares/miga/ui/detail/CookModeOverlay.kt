@@ -1,5 +1,11 @@
 package org.calamares.miga.ui.detail
 
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.isActive
+import kotlin.coroutines.resume
+import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.outlined.RecordVoiceOver
+import androidx.compose.material3.LocalContentColor
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -155,6 +161,8 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
     var activeRecognizer by remember { mutableStateOf<SpeechRecognizer?>(null) }
     var isListeningForCommand by remember { mutableStateOf(false) }
     var voiceFeedback by remember { mutableStateOf<String?>(null) }
+    /** Hands-free: listens for commands continuously, so a dirty hand never has to touch the phone. */
+    var handsFree by remember { mutableStateOf(false) }
 
     var textSizeIndex by remember {
         mutableIntStateOf(cookPrefs(context).getInt(KEY_TEXT_SIZE, DEFAULT_TEXT_SIZE).coerceIn(TEXT_SIZES.indices))
@@ -263,17 +271,81 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
         }
     }
 
-    val voiceCommandPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) beginListeningForCommand()
+    /** One recognition, as a suspending call; cancelling it (leaving hands-free) stops the microphone. */
+    suspend fun listenOnce(): DictationResult = suspendCancellableCoroutine { continuation ->
+        val recognizer = SpeechDictation.startListening(context, dictationLanguage) { result ->
+            activeRecognizer?.destroy()
+            activeRecognizer = null
+            if (continuation.isActive) continuation.resume(result)
+        }
+        activeRecognizer = recognizer
+        continuation.invokeOnCancellation {
+            recognizer.destroy()
+            if (activeRecognizer === recognizer) activeRecognizer = null
+        }
     }
+
+    // Hands-free loop: listen, run the command, listen again. It waits while a step is being read
+    // aloud (the microphone would hear it) and stays quiet about silence, which is most of the time.
+    LaunchedEffect(handsFree) {
+        if (!handsFree) return@LaunchedEffect
+        voiceFeedback = L10n.str(R.string.hands_free_on)
+        while (isActive && handsFree) {
+            while (tts?.isSpeaking == true) delay(250)
+            isListeningForCommand = true
+            val result = listenOnce()
+            isListeningForCommand = false
+            when (result) {
+                is DictationResult.Success -> {
+                    val command = CookModeVoiceCommands.parse(result.text)
+                    if (command != null) voiceFeedback = executeVoiceCommand(command)
+                }
+                is DictationResult.Error -> if (!result.isSilence) {
+                    voiceFeedback = result.reason
+                    // Busy recogniser, no network...: give it a moment before trying again.
+                    delay(1500)
+                }
+            }
+            delay(200)
+        }
+    }
+
+    /** What the microphone permission was asked for: a single command or hands-free. */
+    var pendingVoiceStart by remember { mutableStateOf<Boolean?>(null) }
+    val voiceCommandPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            if (pendingVoiceStart == true) handsFree = true else beginListeningForCommand()
+        }
+        pendingVoiceStart = null
+    }
+
+    fun hasMicPermission() =
+        ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
     fun onMicClick() {
         if (isListeningForCommand) {
             activeRecognizer?.stopListening()
             return
         }
-        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-        if (granted) beginListeningForCommand() else voiceCommandPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        if (hasMicPermission()) beginListeningForCommand() else {
+            pendingVoiceStart = false
+            voiceCommandPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    fun toggleHandsFree() {
+        when {
+            handsFree -> {
+                handsFree = false
+                isListeningForCommand = false
+                voiceFeedback = L10n.str(R.string.hands_free_off)
+            }
+            hasMicPermission() -> handsFree = true
+            else -> {
+                pendingVoiceStart = true
+                voiceCommandPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            }
+        }
     }
 
     fun cycleTextSize() {
@@ -313,6 +385,15 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                         Icon(Icons.Filled.FormatSize, contentDescription = L10n.str(R.string.cook_text_size))
                     }
                     if (speechAvailable) {
+                        IconButton(onClick = { toggleHandsFree() }) {
+                            Icon(
+                                if (handsFree) Icons.Filled.RecordVoiceOver else Icons.Outlined.RecordVoiceOver,
+                                contentDescription = L10n.str(if (handsFree) R.string.hands_free_stop else R.string.hands_free_start),
+                                tint = if (handsFree) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                            )
+                        }
+                    }
+                    if (speechAvailable && !handsFree) {
                         IconButton(onClick = { onMicClick() }) {
                             if (isListeningForCommand) {
                                 Icon(Icons.Filled.Stop, contentDescription = L10n.str(R.string.stop_voice_command), tint = MaterialTheme.colorScheme.error)
@@ -325,7 +406,24 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                         Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.close_cooking_mode))
                     }
                 }
-                if (isListeningForCommand) {
+                if (handsFree) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(if (isListeningForCommand) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            voiceFeedback?.takeIf { it != L10n.str(R.string.hands_free_on) }
+                                ?.let { "$it · " + L10n.str(R.string.hands_free_short_hint) }
+                                ?: L10n.str(R.string.hands_free_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                } else if (isListeningForCommand) {
                     Text(
                         L10n.str(R.string.listening_next_previous_repeat_timer),
                         style = MaterialTheme.typography.bodySmall,

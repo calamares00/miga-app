@@ -26,7 +26,10 @@ enum class ExportFormat(val mimeType: String) {
     PDF("application/pdf"),
 
     /** A ZIP with the photos to import into Miga later: see [RecipeExporter.writeMigaFile]. */
-    MIGA_FILE("application/zip")
+    MIGA_FILE("application/zip"),
+
+    /** A picture of one recipe for social networks: see [RecipeImageCard]. */
+    IMAGE("image/jpeg")
 }
 
 /** Where an export is; see [FileExports]. */
@@ -61,11 +64,13 @@ object FileExports {
 
     val isRunning: Boolean get() = _state.value is FileExportState.Running
 
-    fun exportRecipe(context: Context, recipe: Recipe, format: ExportFormat): Boolean =
+    /** [accent] colours the image (the current theme's primary colour); unused by the other formats. */
+    fun exportRecipe(context: Context, recipe: Recipe, format: ExportFormat, accent: Int = 0xFF2F7A57.toInt()): Boolean =
         start(context, recipe.name, format) { appContext, onProgress ->
             when (format) {
                 ExportFormat.PDF -> RecipeExporter.writeRecipePdf(appContext, recipe, onProgress)
                 ExportFormat.MIGA_FILE -> RecipeExporter.writeMigaFile(appContext, recipe.name, null, listOf(recipe), singleRecipe = true, onProgress)
+                ExportFormat.IMAGE -> RecipeExporter.writeRecipeImage(appContext, recipe, accent)
             }
         }
 
@@ -75,6 +80,7 @@ object FileExports {
             when (format) {
                 ExportFormat.PDF -> RecipeExporter.writeBookPdf(appContext, book, loadRecipes(), onProgress)
                 ExportFormat.MIGA_FILE -> RecipeExporter.writeMigaFile(appContext, book.name, book, loadRecipes(), singleRecipe = false, onProgress)
+                ExportFormat.IMAGE -> error("A book is not exported as an image")
             }
         }
 
@@ -84,6 +90,7 @@ object FileExports {
             when (format) {
                 ExportFormat.PDF -> RecipeExporter.writeRecipesPdf(appContext, title, recipes, onProgress)
                 ExportFormat.MIGA_FILE -> RecipeExporter.writeMigaFile(appContext, title, book, recipes, singleRecipe = false, onProgress)
+                ExportFormat.IMAGE -> error("A selection is not exported as an image")
             }
         }
 
@@ -99,11 +106,11 @@ object FileExports {
         _state.value = FileExportState.Running(title, format)
         val notificationTitle = when (format) {
             ExportFormat.PDF -> L10n.str(R.string.pdf_exporting_x, title)
-            ExportFormat.MIGA_FILE -> L10n.str(R.string.miga_file_exporting_x, title)
+            ExportFormat.MIGA_FILE, ExportFormat.IMAGE -> L10n.str(R.string.miga_file_exporting_x, title)
         }
         val icon = when (format) {
             ExportFormat.PDF -> R.drawable.ic_notification_pdf
-            ExportFormat.MIGA_FILE -> R.drawable.ic_notification_export
+            ExportFormat.MIGA_FILE, ExportFormat.IMAGE -> R.drawable.ic_notification_export
         }
         job = scope.launch {
             try {
@@ -133,7 +140,7 @@ object FileExports {
     /** "Page 3 of 40" or "Photo 3 of 40". */
     fun progressText(format: ExportFormat, current: Int, total: Int): String = when (format) {
         ExportFormat.PDF -> L10n.str(R.string.pdf_page_x_of_y, current, total)
-        ExportFormat.MIGA_FILE -> L10n.str(R.string.export_photo_x_of_y, current, total)
+        ExportFormat.MIGA_FILE, ExportFormat.IMAGE -> L10n.str(R.string.export_photo_x_of_y, current, total)
     }
 
     fun cancel() {

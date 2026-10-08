@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
@@ -63,7 +64,9 @@ fun ExportFormatDialog(
     title: String,
     onFormat: (ExportFormat) -> Unit,
     onDismiss: () -> Unit,
-    onText: (() -> Unit)? = null
+    onText: (() -> Unit)? = null,
+    /** Offers the picture for social networks (a single recipe only). */
+    offerImage: Boolean = false
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -77,6 +80,11 @@ fun ExportFormatDialog(
                 }
                 ExportOption(Icons.Filled.Archive, L10n.str(R.string.export_format_miga), L10n.str(R.string.export_format_miga_desc)) {
                     onFormat(ExportFormat.MIGA_FILE)
+                }
+                if (offerImage) {
+                    ExportOption(Icons.Filled.Image, L10n.str(R.string.export_format_image), L10n.str(R.string.export_format_image_desc)) {
+                        onFormat(ExportFormat.IMAGE)
+                    }
                 }
                 if (onText != null) {
                     ExportOption(Icons.Filled.ShortText, L10n.str(R.string.export_format_text), L10n.str(R.string.export_format_text_desc), onText)
@@ -135,6 +143,7 @@ fun FileExportHost() {
     // One picker per type: the system file picker needs the real MIME type of the new file.
     val savePdfLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(ExportFormat.PDF.mimeType), onSaved)
     val saveZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(ExportFormat.MIGA_FILE.mimeType), onSaved)
+    val saveImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(ExportFormat.IMAGE.mimeType), onSaved)
 
     when (val current = state) {
         FileExportState.Idle -> Unit
@@ -196,7 +205,11 @@ fun FileExportHost() {
                         }
                         OutlinedButton(
                             onClick = {
-                                val launcher = if (current.format == ExportFormat.PDF) savePdfLauncher else saveZipLauncher
+                                val launcher = when (current.format) {
+                                    ExportFormat.PDF -> savePdfLauncher
+                                    ExportFormat.MIGA_FILE -> saveZipLauncher
+                                    ExportFormat.IMAGE -> saveImageLauncher
+                                }
                                 launcher.launch(current.file.name)
                             },
                             modifier = Modifier.fillMaxWidth()
@@ -230,4 +243,5 @@ private fun ButtonLabel(icon: ImageVector, text: String) {
 private fun formatIcon(format: ExportFormat): ImageVector = when (format) {
     ExportFormat.PDF -> Icons.Filled.PictureAsPdf
     ExportFormat.MIGA_FILE -> Icons.Filled.Archive
+    ExportFormat.IMAGE -> Icons.Filled.Image
 }

@@ -46,7 +46,11 @@ jobs:
           changed=$(git status --porcelain --untracked-files=all app/schemas | cut -c4-)
           if [ -n "$changed" ]; then
             echo "::error::Room schema not committed: $changed"
-            for f in $changed; do echo "===== $f"; cat "$f"; echo; done
+            # Compressed and with a checksum, so it can be copied from this log exactly.
+            for f in $changed; do
+              echo "===== $f sha256=$(sha256sum "$f" | cut -d' ' -f1)"
+              gzip -9c "$f" | base64 -w0; echo
+            done
             exit 1
           fi
 

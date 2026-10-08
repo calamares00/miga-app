@@ -221,6 +221,18 @@ class RecipeDetailViewModel(
         viewModelScope.launch { repository.setRating(current.id, newRating) }
     }
 
+    fun addJournalNote(text: String) {
+        viewModelScope.launch { repository.addRecipeNote(recipeId, text) }
+    }
+
+    fun editJournalNote(id: Long, text: String) {
+        viewModelScope.launch { repository.updateRecipeNote(id, text) }
+    }
+
+    fun deleteJournalNote(id: Long) {
+        viewModelScope.launch { repository.deleteRecipeNote(id) }
+    }
+
     fun markCooked() {
         viewModelScope.launch { repository.markCooked(recipeId) }
     }

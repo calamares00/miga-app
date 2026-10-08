@@ -120,6 +120,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -201,7 +202,14 @@ fun RecipeDetailScreen(
                     onSubstituteIngredient = { name: String -> viewModel.findSubstitutesFor(name) }.takeIf { aiEnabled },
                     onRatingChange = { stars -> viewModel.setRating(stars) },
                     onAddToShoppingList = { addToShoppingList() },
-                    onPhotoClick = { index -> onOpenPhoto(current, index) }
+                    onPhotoClick = { index -> onOpenPhoto(current, index) },
+                    journalActions = remember(viewModel) {
+                        JournalActions(
+                            onAdd = viewModel::addJournalNote,
+                            onEdit = viewModel::editJournalNote,
+                            onDelete = viewModel::deleteJournalNote
+                        )
+                    }
                 )
             }
 
@@ -289,11 +297,13 @@ fun RecipeDetailScreen(
     val recipeForMove = recipe
     if (showExportDialog) {
         recipe?.let { current ->
+            val accent = MaterialTheme.colorScheme.primary.toArgb()
             ExportFormatDialog(
                 title = current.name,
+                offerImage = true,
                 onFormat = { format ->
                     showExportDialog = false
-                    if (!FileExports.exportRecipe(context, current, format)) {
+                    if (!FileExports.exportRecipe(context, current, format, accent)) {
                         Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
                     }
                 },
@@ -412,7 +422,8 @@ private fun RecipeDetailContent(
     onSubstituteIngredient: ((String) -> Unit)?,
     onRatingChange: (Int) -> Unit,
     onAddToShoppingList: () -> Unit,
-    onPhotoClick: (Int) -> Unit
+    onPhotoClick: (Int) -> Unit,
+    journalActions: JournalActions
 ) {
     var servings by remember(recipe.id) { mutableIntStateOf(recipe.servings) }
     val checkedIngredients = remember(recipe.id) { mutableStateMapOf<String, Boolean>() }
@@ -563,6 +574,8 @@ private fun RecipeDetailContent(
                     }
                 }
             }
+
+            RecipeJournalSection(notes = recipe.journal, actions = journalActions)
 
             // More information
             if (recipe.utensils.isNotEmpty() || recipe.tags.isNotEmpty() || recipe.notes.isNotBlank() || recipe.source.isNotBlank()) {

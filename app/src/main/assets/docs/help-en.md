@@ -6,6 +6,7 @@ Each book is a recipe collection with its own cover: your mum's, a friend's or o
 - Inside a book, recipes are grouped by **category**. Tap a category to collapse or expand it; the menu collapses or expands them all.
 - When a recipe is open, **swipe left or right** to go to the next or previous recipe of the book, like turning pages.
 - Long-press a recipe to **select several** and change their category, difficulty, servings or book at once, add them to the shopping list or export them.
+- In each recipe, **My notes** keeps dated personal notes ("next time, less salt"). They do not change the recipe and go into backups and Miga files.
 - The **Search** tab searches every book by name or ingredient, with filters by category, tag, equipment or difficulty. Favourites have their own tab.
 
 ## ✍️ Writing a recipe
@@ -36,7 +37,8 @@ In a recipe with steps, tap **Cooking mode** to see them one by one full screen,
 
 - Times in a step ("simmer for 10 minutes") become one-tap **timers**.
 - The app can **read each step aloud**. Choose the voice in Settings → Voice and dictation.
-- With the **voice command** you can say "next", "previous", "repeat" or "timer" without touching the screen.
+- With the **voice command** (microphone) you can say "next", "previous", "repeat" or "timer".
+- Turn on **hands-free** (the speaking person icon) and it listens all the time: say "next" with your hands in the dough and it moves on, without touching the phone. It stops listening while it reads a step aloud; tap the icon again to turn it off.
 
 ## 🛒 Shopping list
 
@@ -79,6 +81,7 @@ To share books and the shopping list with your family, connect Miga to a server 
 - **Exporting** a recipe (from its ⋮ menu), a whole book (from the book's menu) or several selected recipes asks for the format:
   - **PDF**, to read, print or send. It cannot be imported back.
   - **Miga file (.zip)**, with the photos, to import it into Miga later, on this phone or another one.
+  - **Image** (one recipe only): a card with the photo, key facts and ingredients, ready for Instagram or WhatsApp.
   - **Text** (one recipe only), to paste into a message.
 - Miga shows the progress (in a notification too, so you can keep using the app) and, when it is done, lets you **save** the file or **share** it.
 - To import a Miga file, use **New recipe → From file** inside a book, or Settings → Backup → Import recipes or a book. If the file is a whole book, you are asked whether to add its recipes to one of your books or create it as a new book.

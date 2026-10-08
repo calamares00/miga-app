@@ -6,6 +6,7 @@ Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo
 - Dentro de un libro, las recetas se agrupan por **categoría**. Toca una categoría para plegarla o desplegarla; desde el menú puedes plegarlas o desplegarlas todas.
 - Al abrir una receta, **desliza a izquierda o derecha** para pasar a la siguiente o a la anterior del libro, como las páginas de un libro.
 - Mantén pulsada una receta para **seleccionar varias** y cambiarles a la vez la categoría, la dificultad, las raciones o el libro, añadirlas a la lista de la compra o exportarlas.
+- En cada receta, **Mis notas** guarda notas personales con fecha ("la próxima vez, menos sal"). No cambian la receta y van en las copias de seguridad y los archivos de Miga.
 - La pestaña **Buscar** busca en todos los libros por nombre o ingrediente, con filtros por categoría, etiqueta, equipamiento o dificultad. Las favoritas tienen su propia pestaña.
 
 ## ✍️ Escribir una receta
@@ -36,7 +37,8 @@ En una receta con pasos, pulsa **Modo cocina** para verlos uno a uno en pantalla
 
 - Los tiempos que aparecen en un paso ("cocer 10 minutos") se convierten en **temporizadores** de un toque.
 - La app puede **leerte cada paso en voz alta**. Elige la voz en Ajustes → Voz y dictado.
-- Con el **comando de voz** puedes decir "siguiente", "anterior", "repite" o "temporizador" sin tocar la pantalla.
+- Con el **comando de voz** (micrófono) puedes decir "siguiente", "anterior", "repite" o "temporizador".
+- Activa **manos libres** (el icono de la persona hablando) para que escuche todo el rato: dices "siguiente" con las manos en la masa y pasa de paso, sin tocar el móvil. Mientras lee un paso en voz alta deja de escuchar, y para desactivarlo vuelve a tocar el icono.
 
 ## 🛒 Lista de la compra
 
@@ -79,6 +81,7 @@ Para compartir libros y la lista de la compra en familia, conecta Miga a un serv
 - **Exportar** una receta (desde su menú ⋮), un libro entero (desde el menú del libro) o varias recetas seleccionadas te pregunta el formato:
   - **PDF**, para leer, imprimir o enviar. No se puede volver a importar.
   - **Archivo de Miga (.zip)**, con las fotos, para importarlo después en Miga, en este móvil o en otro.
+  - **Imagen** (solo una receta): una tarjeta con la foto, los datos y los ingredientes, lista para Instagram o WhatsApp.
   - **Texto** (solo una receta), para pegarlo en un mensaje.
 - Miga muestra el progreso (también en una notificación, así que puedes seguir usando la app) y, cuando termina, te deja **guardar** el archivo o **compartirlo**.
 - Para importar un archivo de Miga, usa **Nueva receta → Desde archivo** dentro de un libro, o Ajustes → Copia de seguridad → Importar recetas o un libro. Si el archivo es un libro entero, te pregunta si añadir sus recetas a un libro tuyo o crearlo como libro nuevo.

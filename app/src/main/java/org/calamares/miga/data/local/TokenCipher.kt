@@ -16,7 +16,8 @@ private const val GCM_IV_LENGTH = 12
 private const val GCM_TAG_LENGTH_BITS = 128
 
 /**
- * Encrypts the sync access token ([SyncConnectionEntity.accessToken]) at rest.
+ * Encrypts the sync access token ([SyncConnectionEntity.accessToken]) and the AI API keys (see
+ * SettingsRepository) at rest.
  *
  * The database is included in Android's automatic backup and device transfer (see
  * backup_rules.xml), which is fine for recipes but would carry the token in plain text. The AES key

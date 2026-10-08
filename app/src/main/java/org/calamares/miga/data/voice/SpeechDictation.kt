@@ -12,7 +12,12 @@ import java.util.Locale
 
 sealed interface DictationResult {
     data class Success(val text: String) : DictationResult
-    data class Error(val reason: String) : DictationResult
+    /** [code] is the SpeechRecognizer error, to tell silence apart from real failures. */
+    data class Error(val reason: String, val code: Int? = null) : DictationResult {
+        /** Nothing (or nothing understandable) was said: not worth reporting when listening continuously. */
+        val isSilence: Boolean
+            get() = code == SpeechRecognizer.ERROR_NO_MATCH || code == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
+    }
 }
 
 /**
@@ -41,11 +46,14 @@ object SpeechDictation {
         recognizer.setRecognitionListener(object : RecognitionListener {
             override fun onResults(results: Bundle) {
                 val text = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-                onResult(if (text.isNullOrBlank()) DictationResult.Error(L10n.str(R.string.didnt_catch)) else DictationResult.Success(text))
+                onResult(
+                    if (text.isNullOrBlank()) DictationResult.Error(L10n.str(R.string.didnt_catch), SpeechRecognizer.ERROR_NO_MATCH)
+                    else DictationResult.Success(text)
+                )
             }
 
             override fun onError(error: Int) {
-                onResult(DictationResult.Error(describeError(error)))
+                onResult(DictationResult.Error(describeError(error), error))
             }
 
             override fun onReadyForSpeech(params: Bundle?) {}

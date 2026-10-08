@@ -1020,4 +1020,22 @@
     <string name="appearance_preview_recipe">"Potato omelette"</string>
     <string name="language_restart_hint">"Changing the language restarts the app."</string>
     <string name="system_short">"System"</string>
+    <string name="hands_free_on">"Hands-free on"</string>
+    <string name="hands_free_off">"Hands-free off"</string>
+    <string name="hands_free_start">"Hands-free: listen all the time"</string>
+    <string name="hands_free_stop">"Turn hands-free off"</string>
+    <string name="hands_free_hint">"Hands-free: say “next”, “back”, “repeat” or “start timer”"</string>
+    <string name="hands_free_short_hint">"listening"</string>
+    <string name="journal_title">"My notes"</string>
+    <string name="journal_add">"Add"</string>
+    <string name="journal_empty">"Write down how it turned out or what you would change next time."</string>
+    <string name="see_less">"See less"</string>
+    <string name="see_all_x">"See all %1$d"</string>
+    <string name="journal_new_title">"New note"</string>
+    <string name="journal_edit_title">"Edit note"</string>
+    <string name="journal_placeholder">"For example: next time, less salt"</string>
+    <string name="export_format_image">"Image"</string>
+    <string name="export_format_image_desc">"A picture with the photo and ingredients, for Instagram or WhatsApp."</string>
+    <string name="image_card_more_x">"and %1$d more…"</string>
+    <string name="image_card_signature">"My recipe book"</string>
 </resources>

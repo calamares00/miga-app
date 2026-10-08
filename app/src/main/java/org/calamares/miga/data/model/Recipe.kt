@@ -29,7 +29,9 @@ data class Recipe(
     val rating: Int? = null,
     /** Where it comes from (see RecipeOrigin): free text and the country code for the flag. */
     val origin: String? = null,
-    val originCountry: String? = null
+    val originCountry: String? = null,
+    /** Dated personal notes, newest first (see RecipeNote). */
+    val journal: List<RecipeNote> = emptyList()
 ) {
     val totalTimeMinutes: Int?
         get() = if (prepTimeMinutes == null && cookTimeMinutes == null) {

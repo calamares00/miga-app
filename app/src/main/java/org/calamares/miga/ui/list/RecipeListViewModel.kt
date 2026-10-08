@@ -356,6 +356,7 @@ class RecipeListViewModel(
                 is RecipeImportResult.Success -> {
                     val recipeId = repository.saveRecipe(result.recipe.toDraft(bookId, result.photos))
                     RecipeExporter.applyHealthFromImport(repository, recipeId, result.recipe.health)
+                    RecipeExporter.applyJournalFromImport(repository, recipeId, result.recipe.journal)
                     if (result.recipe.rating != null) repository.setRating(recipeId, result.recipe.rating)
                     onMessage(L10n.str(R.string.recipe_imported))
                 }

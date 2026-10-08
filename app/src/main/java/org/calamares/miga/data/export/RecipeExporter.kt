@@ -226,6 +226,21 @@ object RecipeExporter {
         return file
     }
 
+    /** Draws [recipe] as a picture to share (see [RecipeImageCard]) and saves it as a JPEG. */
+    suspend fun writeRecipeImage(context: Context, recipe: Recipe, accent: Int): File = withContext(Dispatchers.IO) {
+        val bitmap = RecipeImageCard.render(context, recipe, accent)
+        val file = File(exportsDir(context), sanitizeFileName(recipe.name) + ".jpg")
+        try {
+            file.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 92, it) }
+        } catch (e: Exception) {
+            file.delete()
+            throw e
+        } finally {
+            bitmap.recycle()
+        }
+        file
+    }
+
     /** Shares an exported file (see [writeRecipePdf], [writeMigaFile]) with the system share sheet. */
     fun shareExported(context: Context, file: File, mimeType: String) = shareFile(context, file, mimeType)
 
@@ -354,6 +369,7 @@ object RecipeExporter {
                 val photos = resolvePhotos(recipeDto.uid, recipeDto.photos, extracted)
                 val recipeId = repository.saveRecipe(recipeDto.toDraft(bookId, photos))
                 applyHealthFromImport(repository, recipeId, recipeDto.health)
+                applyJournalFromImport(repository, recipeId, recipeDto.journal)
                 applyNutritionFromImport(repository, recipeId, recipeDto.nutrition)
                 if (recipeDto.rating != null) repository.setRating(recipeId, recipeDto.rating)
             }
@@ -423,6 +439,11 @@ object RecipeExporter {
     }
 
     /** Stores the AI health rating included in an imported recipe, if any. */
+    /** Restores the dated personal notes included in an imported recipe. */
+    suspend fun applyJournalFromImport(repository: RecipeRepository, recipeId: Long, journal: List<JournalNoteDto>) {
+        journal.forEach { repository.addRecipeNote(recipeId, it.text, it.createdAt) }
+    }
+
     suspend fun applyHealthFromImport(repository: RecipeRepository, recipeId: Long, health: RecipeHealthDto?) {
         if (health == null) return
         val colorLevel = runCatching { HealthColorLevel.valueOf(health.colorLevel) }.getOrDefault(HealthColorLevel.YELLOW)
