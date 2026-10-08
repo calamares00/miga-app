@@ -13,11 +13,11 @@ Miga es una app de recetario familiar y lista de la compra. Este documento expli
 
 ## Qué datos guarda la app y dónde
 
-Recetas, libros, fotos, categorías, etiquetas, equipamiento de cocina, valoraciones, listas de la compra, plantillas, supermercados y ajustes se guardan **en el almacenamiento interno de tu dispositivo**.
+Recetas, libros, fotos, notas personales, categorías, etiquetas, equipamiento de cocina, valoraciones, listas de la compra, plantillas, supermercados y ajustes se guardan **en el almacenamiento interno de tu dispositivo**.
 
-Las claves de API de Google Gemini, Anthropic, OpenAI u OpenRouter que introduzcas se guardan solo en tu dispositivo y se usan únicamente para llamar al proveedor que elijas.
+Las claves de API de Google Gemini, Anthropic, OpenAI u OpenRouter que introduzcas se guardan solo en tu dispositivo, **cifradas** con una clave del almacén seguro de Android que no sale del teléfono, y se usan únicamente para llamar al proveedor que elijas.
 
-Si tienes activada la copia de seguridad de Android, el sistema puede incluir estos datos en la copia gestionada por tu cuenta de Google, como con cualquier otra app. Miga no tiene acceso a esa copia.
+Si tienes activada la copia de seguridad de Android, el sistema puede incluir estos datos (recetas, fotos y ajustes) en la copia gestionada por tu cuenta de Google, como con cualquier otra app. Miga no tiene acceso a esa copia. Las claves de API van cifradas y no se pueden leer en otro dispositivo: al restaurar en un móvil nuevo tendrás que volver a introducirlas.
 
 ## Permisos
 

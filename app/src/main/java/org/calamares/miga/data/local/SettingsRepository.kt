@@ -28,6 +28,11 @@ import kotlinx.coroutines.flow.map
 
 private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 
+private const val ENCRYPTED_KEY_PREFIX = "enc1:"
+
+/** Decrypting through the Keystore on every settings change would be wasteful: cipher text -> key. */
+private val decryptedKeys = java.util.concurrent.ConcurrentHashMap<String, String>()
+
 class SettingsRepository(private val context: Context) {
 
     private val themeModeKey = stringPreferencesKey("theme_mode")
@@ -61,6 +66,38 @@ class SettingsRepository(private val context: Context) {
     private val dictationLanguageKey = stringPreferencesKey("dictation_language")
     private val lastSeenVersionCodeKey = intPreferencesKey("last_seen_version_code")
     private val packsCatalogRepoKey = stringPreferencesKey("packs_catalog_repo")
+
+    /**
+     * AI API keys are stored encrypted with the device Keystore key of [TokenCipher], as
+     * "enc1:" + cipher text. The settings are included in Android's backup and device transfer
+     * (see backup_rules.xml), and a key that cannot be decrypted there (another phone) reads as
+     * empty, so the user is simply asked for it again. A value without the prefix was stored before
+     * encryption existed and is used as is until [encryptStoredApiKeys] rewrites it.
+     */
+    private fun decodeApiKey(stored: String?): String = when {
+        stored.isNullOrBlank() -> ""
+        stored.startsWith(ENCRYPTED_KEY_PREFIX) -> decryptedKeys.getOrPut(stored) {
+            TokenCipher.decrypt(stored.removePrefix(ENCRYPTED_KEY_PREFIX)).orEmpty()
+        }
+        else -> stored
+    }
+
+    /** Encrypted form of [apiKey]; kept as typed if the Keystore fails, so the key is never lost. */
+    private fun encodeApiKey(apiKey: String): String {
+        val trimmed = apiKey.trim()
+        if (trimmed.isEmpty()) return ""
+        return runCatching { ENCRYPTED_KEY_PREFIX + TokenCipher.encrypt(trimmed) }.getOrDefault(trimmed)
+    }
+
+    /** Encrypts the API keys stored in plain text by earlier versions. Run once at startup. */
+    suspend fun encryptStoredApiKeys() {
+        context.settingsDataStore.edit { prefs ->
+            listOf(geminiApiKeyKey, anthropicApiKeyKey, openRouterApiKeyKey, openAiApiKeyKey).forEach { key ->
+                val stored = prefs[key]
+                if (!stored.isNullOrBlank() && !stored.startsWith(ENCRYPTED_KEY_PREFIX)) prefs[key] = encodeApiKey(stored)
+            }
+        }
+    }
 
     fun observeThemeMode(): Flow<ThemeMode> =
         context.settingsDataStore.data.map { prefs ->
@@ -230,10 +267,10 @@ class SettingsRepository(private val context: Context) {
 
     /** Gemini API key entered by the user; empty when not configured. */
     fun observeGeminiApiKey(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> prefs[geminiApiKeyKey].orEmpty() }
+        context.settingsDataStore.data.map { prefs -> decodeApiKey(prefs[geminiApiKeyKey]) }
 
     suspend fun setGeminiApiKey(apiKey: String) {
-        context.settingsDataStore.edit { prefs -> prefs[geminiApiKeyKey] = apiKey.trim() }
+        context.settingsDataStore.edit { prefs -> prefs[geminiApiKeyKey] = encodeApiKey(apiKey) }
     }
 
     /** Gemini model id, from GEMINI_MODELS or typed by hand. */
@@ -246,10 +283,10 @@ class SettingsRepository(private val context: Context) {
 
     /** Anthropic (Claude) API key entered by the user; empty when not configured. */
     fun observeAnthropicApiKey(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> prefs[anthropicApiKeyKey].orEmpty() }
+        context.settingsDataStore.data.map { prefs -> decodeApiKey(prefs[anthropicApiKeyKey]) }
 
     suspend fun setAnthropicApiKey(apiKey: String) {
-        context.settingsDataStore.edit { prefs -> prefs[anthropicApiKeyKey] = apiKey.trim() }
+        context.settingsDataStore.edit { prefs -> prefs[anthropicApiKeyKey] = encodeApiKey(apiKey) }
     }
 
     /** Claude model id, from ANTHROPIC_MODELS or typed by hand. */
@@ -262,10 +299,10 @@ class SettingsRepository(private val context: Context) {
 
     /** OpenRouter API key entered by the user; empty when not configured. */
     fun observeOpenRouterApiKey(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> prefs[openRouterApiKeyKey].orEmpty() }
+        context.settingsDataStore.data.map { prefs -> decodeApiKey(prefs[openRouterApiKeyKey]) }
 
     suspend fun setOpenRouterApiKey(apiKey: String) {
-        context.settingsDataStore.edit { prefs -> prefs[openRouterApiKeyKey] = apiKey.trim() }
+        context.settingsDataStore.edit { prefs -> prefs[openRouterApiKeyKey] = encodeApiKey(apiKey) }
     }
 
     /** OpenRouter model id (for example "vendor/model:free"); empty until the user picks one. */
@@ -287,10 +324,10 @@ class SettingsRepository(private val context: Context) {
 
     /** OpenAI API key entered by the user; empty when not configured. */
     fun observeOpenAiApiKey(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> prefs[openAiApiKeyKey].orEmpty() }
+        context.settingsDataStore.data.map { prefs -> decodeApiKey(prefs[openAiApiKeyKey]) }
 
     suspend fun setOpenAiApiKey(apiKey: String) {
-        context.settingsDataStore.edit { prefs -> prefs[openAiApiKeyKey] = apiKey.trim() }
+        context.settingsDataStore.edit { prefs -> prefs[openAiApiKeyKey] = encodeApiKey(apiKey) }
     }
 
     /** OpenAI model id, from the account's list (see ProviderModels) or typed by hand. */
@@ -325,10 +362,10 @@ class SettingsRepository(private val context: Context) {
         combine(observeProviderOrder(), context.settingsDataStore.data) { order, prefs ->
             order.filter { provider ->
                 val (key, model) = when (provider) {
-                    AiProvider.GEMINI -> prefs[geminiApiKeyKey] to (prefs[geminiModelKey] ?: DEFAULT_GEMINI_MODEL)
-                    AiProvider.ANTHROPIC -> prefs[anthropicApiKeyKey] to (prefs[anthropicModelKey] ?: DEFAULT_ANTHROPIC_MODEL)
-                    AiProvider.OPENROUTER -> prefs[openRouterApiKeyKey] to prefs[openRouterModelKey]
-                    AiProvider.OPENAI -> prefs[openAiApiKeyKey] to (prefs[openAiModelKey] ?: DEFAULT_OPENAI_MODEL)
+                    AiProvider.GEMINI -> decodeApiKey(prefs[geminiApiKeyKey]) to (prefs[geminiModelKey] ?: DEFAULT_GEMINI_MODEL)
+                    AiProvider.ANTHROPIC -> decodeApiKey(prefs[anthropicApiKeyKey]) to (prefs[anthropicModelKey] ?: DEFAULT_ANTHROPIC_MODEL)
+                    AiProvider.OPENROUTER -> decodeApiKey(prefs[openRouterApiKeyKey]) to prefs[openRouterModelKey]
+                    AiProvider.OPENAI -> decodeApiKey(prefs[openAiApiKeyKey]) to (prefs[openAiModelKey] ?: DEFAULT_OPENAI_MODEL)
                 }
                 !key.isNullOrBlank() && !model.isNullOrBlank()
             }

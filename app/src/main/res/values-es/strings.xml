@@ -1019,4 +1019,22 @@
     <string name="appearance_preview_recipe">"Tortilla de patatas"</string>
     <string name="language_restart_hint">"Al cambiar el idioma, la app se reinicia."</string>
     <string name="system_short">"Sistema"</string>
+    <string name="hands_free_on">"Manos libres activado"</string>
+    <string name="hands_free_off">"Manos libres desactivado"</string>
+    <string name="hands_free_start">"Manos libres: escuchar todo el rato"</string>
+    <string name="hands_free_stop">"Desactivar manos libres"</string>
+    <string name="hands_free_hint">"Manos libres: di «siguiente», «anterior», «repite» o «temporizador»"</string>
+    <string name="hands_free_short_hint">"escuchando"</string>
+    <string name="journal_title">"Mis notas"</string>
+    <string name="journal_add">"Añadir"</string>
+    <string name="journal_empty">"Apunta cómo te salió o qué cambiarías la próxima vez."</string>
+    <string name="see_less">"Ver menos"</string>
+    <string name="see_all_x">"Ver las %1$d"</string>
+    <string name="journal_new_title">"Nueva nota"</string>
+    <string name="journal_edit_title">"Editar nota"</string>
+    <string name="journal_placeholder">"Por ejemplo: la próxima vez, menos sal"</string>
+    <string name="export_format_image">"Imagen"</string>
+    <string name="export_format_image_desc">"Una imagen con la foto y los ingredientes, para Instagram o WhatsApp."</string>
+    <string name="image_card_more_x">"y %1$d más…"</string>
+    <string name="image_card_signature">"Mi recetario"</string>
 </resources>

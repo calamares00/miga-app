@@ -5,23 +5,8 @@ import android.app.Application
 import androidx.room.Room
 import org.calamares.miga.crash.CrashReporter
 import org.calamares.miga.data.ai.AiKeepAlive
+import org.calamares.miga.data.local.ALL_MIGRATIONS
 import org.calamares.miga.data.local.AppDatabase
-import org.calamares.miga.data.local.MIGRATION_4_5
-import org.calamares.miga.data.local.MIGRATION_5_6
-import org.calamares.miga.data.local.MIGRATION_6_7
-import org.calamares.miga.data.local.MIGRATION_7_8
-import org.calamares.miga.data.local.MIGRATION_8_9
-import org.calamares.miga.data.local.MIGRATION_9_10
-import org.calamares.miga.data.local.MIGRATION_10_11
-import org.calamares.miga.data.local.MIGRATION_11_12
-import org.calamares.miga.data.local.MIGRATION_12_13
-import org.calamares.miga.data.local.MIGRATION_13_14
-import org.calamares.miga.data.local.MIGRATION_14_15
-import org.calamares.miga.data.local.MIGRATION_15_16
-import org.calamares.miga.data.local.MIGRATION_16_17
-import org.calamares.miga.data.local.MIGRATION_17_18
-import org.calamares.miga.data.local.MIGRATION_18_19
-import org.calamares.miga.data.local.MIGRATION_19_20
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.repository.ShoppingContext
@@ -38,7 +23,7 @@ class MigaApp : Application() {
 
     val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
-            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20)
+            .addMigrations(*ALL_MIGRATIONS)
             // Only databases older than the first migration may be wiped; a missing migration for a
             // newer version fails loudly instead of silently deleting the user's recipes.
             .fallbackToDestructiveMigrationFrom(1, 2, 3)
@@ -71,6 +56,7 @@ class MigaApp : Application() {
         CrashReporter.install(this)
         AiKeepAlive.init(this)
         applicationScope.launch {
+            settingsRepository.encryptStoredApiKeys()
             repository.ensurePhotoUids()
             val seedLanguage = settingsRepository.seedLanguage(L10n.locale().language)
             // Only once: what the user deletes or renames afterwards stays that way.

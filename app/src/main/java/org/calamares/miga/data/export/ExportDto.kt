@@ -72,8 +72,13 @@ data class RecipeExportDto(
     val rating: Int? = null,
     /** Where the recipe comes from and its country code (see RecipeOrigin); absent in older files. */
     val origin: String? = null,
-    val originCountry: String? = null
+    val originCountry: String? = null,
+    /** Dated personal notes (absent in older files). */
+    val journal: List<JournalNoteDto> = emptyList()
 )
+
+@Serializable
+data class JournalNoteDto(val text: String, val createdAt: Long)
 
 @Serializable
 data class RecipeHealthDto(

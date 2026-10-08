@@ -10,6 +10,8 @@ import org.calamares.miga.data.export.StepGroupDto
 import org.calamares.miga.data.local.AppDatabase
 import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.local.TokenCipher
+import org.calamares.miga.data.local.entity.RecipeNoteEntity
+import org.calamares.miga.data.model.RecipeNote
 import org.calamares.miga.data.local.entity.CategoryEntity
 import org.calamares.miga.data.local.entity.IngredientCatalogEntity
 import org.calamares.miga.data.local.entity.IngredientCategoryEntity
@@ -112,6 +114,7 @@ class RecipeRepository(
     private val shoppingListsDao = db.shoppingListsDao()
     private val syncConnectionDao = db.syncConnectionDao()
     private val pendingSyncChangeDao = db.pendingSyncChangeDao()
+    private val recipeNoteDao = db.recipeNoteDao()
 
     fun observeRecipesForBook(bookId: Long): Flow<List<Recipe>> =
         recipeDao.observeAllWithDetailsForBook(bookId).map { list -> list.map { it.toDomain() } }
@@ -144,6 +147,26 @@ class RecipeRepository(
     suspend fun setRating(id: Long, rating: Int?) {
         recipeDao.setRating(id, rating)
     }
+
+    // --- Personal notes (journal) ---
+
+    fun observeRecipeNotes(recipeId: Long): Flow<List<RecipeNote>> =
+        recipeNoteDao.observeForRecipe(recipeId).map { notes -> notes.map { RecipeNote(it.id, it.text, it.createdAt) } }
+
+    suspend fun getRecipeNotes(recipeId: Long): List<RecipeNote> =
+        recipeNoteDao.getForRecipe(recipeId).map { RecipeNote(it.id, it.text, it.createdAt) }
+
+    suspend fun addRecipeNote(recipeId: Long, text: String, createdAt: Long = System.currentTimeMillis()) {
+        val trimmed = text.trim()
+        if (trimmed.isNotEmpty()) recipeNoteDao.insert(RecipeNoteEntity(recipeId = recipeId, text = trimmed, createdAt = createdAt))
+    }
+
+    suspend fun updateRecipeNote(id: Long, text: String) {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) recipeNoteDao.delete(id) else recipeNoteDao.updateText(id, trimmed)
+    }
+
+    suspend fun deleteRecipeNote(id: Long) = recipeNoteDao.delete(id)
 
     suspend fun markCooked(id: Long) {
         recipeDao.incrementTimesCooked(id)
@@ -1811,7 +1834,9 @@ fun RecipeWithDetails.toDomain(): Recipe {
         },
         rating = recipe.rating,
         origin = recipe.origin,
-        originCountry = recipe.originCountry
+        originCountry = recipe.originCountry,
+        journal = journal.sortedWith(compareByDescending<RecipeNoteEntity> { it.createdAt }.thenByDescending { it.id })
+            .map { RecipeNote(it.id, it.text, it.createdAt) }
     )
 }
 

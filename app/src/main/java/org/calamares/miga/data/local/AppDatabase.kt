@@ -35,6 +35,8 @@ import org.calamares.miga.data.local.entity.StepEntity
 import org.calamares.miga.data.local.entity.SyncConnectionEntity
 import org.calamares.miga.data.local.entity.TagEntity
 import org.calamares.miga.data.local.entity.UtensilEntity
+import org.calamares.miga.data.local.entity.RecipeNoteEntity
+import org.calamares.miga.data.local.dao.RecipeNoteDao
 
 @Database(
     entities = [
@@ -56,11 +58,12 @@ import org.calamares.miga.data.local.entity.UtensilEntity
         ShoppingStoreEntity::class,
         ShoppingListEntity::class,
         SyncConnectionEntity::class,
-        PendingSyncChangeEntity::class
+        PendingSyncChangeEntity::class,
+        RecipeNoteEntity::class
     ],
     // The schema of each version is exported to app/schemas by Room's Gradle plugin (see
     // app/build.gradle.kts) for the migration tests; a new version needs its JSON committed.
-    version = 20,
+    version = AppDatabase.VERSION,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -78,8 +81,12 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun shoppingListsDao(): ShoppingListsDao
     abstract fun syncConnectionDao(): SyncConnectionDao
     abstract fun pendingSyncChangeDao(): PendingSyncChangeDao
+    abstract fun recipeNoteDao(): RecipeNoteDao
 
     companion object {
         const val DATABASE_NAME = "recetario.db"
+
+        /** Current schema version; a new one needs a migration in ALL_MIGRATIONS and its schema committed. */
+        const val VERSION = 21
     }
 }
