@@ -17,7 +17,12 @@ import org.calamares.miga.ui.components.EmptyState
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
@@ -90,7 +95,7 @@ import coil.compose.AsyncImage
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipeListViewMode
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun RecipeBooksScreen(
     viewModel: RecipeBooksViewModel,
@@ -176,7 +181,20 @@ fun RecipeBooksScreen(
                     modifier = Modifier.weight(1f)
                 ) {
                     items(books, key = { it.id }) { book ->
-                        RecipeBookCard(book = book, onClick = { onBookClick(book.id) }, onEditClick = { onEditBookClick(book.id) })
+                        BookMenuHost(
+                            book,
+                            onEdit = { onEditBookClick(book.id) },
+                            onTogglePin = { viewModel.togglePinned(book) },
+                            // Pinning moves the book to the top; animate it instead of jumping.
+                            modifier = Modifier.animateItemPlacement()
+                        ) { openMenu ->
+                            RecipeBookCard(
+                                book = book,
+                                onClick = { onBookClick(book.id) },
+                                onLongClick = openMenu,
+                                onEditClick = { onEditBookClick(book.id) }
+                            )
+                        }
                     }
                 }
             } else {
@@ -186,12 +204,21 @@ fun RecipeBooksScreen(
                     modifier = Modifier.weight(1f)
                 ) {
                     items(books, key = { it.id }) { book ->
-                        RecipeBookRow(
-                            book = book,
-                            compact = viewMode == RecipeListViewMode.COMPACT,
-                            onClick = { onBookClick(book.id) },
-                            onEditClick = { onEditBookClick(book.id) }
-                        )
+                        BookMenuHost(
+                            book,
+                            onEdit = { onEditBookClick(book.id) },
+                            onTogglePin = { viewModel.togglePinned(book) },
+                            // Pinning moves the book to the top; animate it instead of jumping.
+                            modifier = Modifier.animateItemPlacement()
+                        ) { openMenu ->
+                            RecipeBookRow(
+                                book = book,
+                                compact = viewMode == RecipeListViewMode.COMPACT,
+                                onClick = { onBookClick(book.id) },
+                                onLongClick = openMenu,
+                                onEditClick = { onEditBookClick(book.id) }
+                            )
+                        }
                     }
                 }
             }
@@ -265,15 +292,74 @@ fun RecipeBooksScreen(
     }
 }
 
+/**
+ * Wraps a book with its long-press menu (pin to the top, edit). [content] gets the function that
+ * opens the menu, to call on long press.
+ */
 @Composable
-private fun RecipeBookCard(book: RecipeBookSummary, onClick: () -> Unit, onEditClick: () -> Unit) {
+private fun BookMenuHost(
+    book: RecipeBookSummary,
+    onEdit: () -> Unit,
+    onTogglePin: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable (openMenu: () -> Unit) -> Unit
+) {
+    var showMenu by remember { mutableStateOf(false) }
+    val haptics = LocalHapticFeedback.current
+    Box(modifier = modifier) {
+        content {
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            showMenu = true
+        }
+        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+            DropdownMenuItem(
+                text = { Text(L10n.str(if (book.isPinned) R.string.unpin_book else R.string.pin_book)) },
+                leadingIcon = { Icon(if (book.isPinned) Icons.Outlined.PushPin else Icons.Filled.PushPin, contentDescription = null) },
+                onClick = { showMenu = false; onTogglePin() }
+            )
+            if (!book.isPack) {
+                DropdownMenuItem(
+                    text = { Text(L10n.str(R.string.edit_book)) },
+                    leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                    onClick = { showMenu = false; onEdit() }
+                )
+            }
+        }
+    }
+}
+
+/** Pin shown on the cover of a pinned book. */
+@Composable
+private fun PinnedBadge() {
     Box(
-        modifier = Modifier
+        modifier = Modifier.size(30.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            Icons.Filled.PushPin,
+            contentDescription = L10n.str(R.string.pinned_book),
+            tint = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.size(16.dp)
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun RecipeBookCard(
+    book: RecipeBookSummary,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onEditClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
             .fillMaxWidth()
             .aspectRatio(0.72f)
             .clip(RoundedCornerShape(20.dp))
             .background(bookPlaceholderBrush(book.name))
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
     ) {
         if (book.coverPhotoUri != null) {
             AsyncImage(
@@ -315,8 +401,10 @@ private fun RecipeBookCard(book: RecipeBookSummary, onClick: () -> Unit, onEditC
         }
         Row(
             modifier = Modifier.fillMaxWidth().padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
+            if (book.isPinned) PinnedBadge()
             when {
                 book.isPack -> BookBadge(Icons.Filled.CloudDone, L10n.str(R.string.installed_pack))
                 book.isSynced -> BookBadge(Icons.Filled.Sync, L10n.str(R.string.synced_server))
@@ -359,10 +447,18 @@ private fun bookViewModeIcon(mode: RecipeListViewMode): ImageVector = when (mode
 }
 
 /** Book row for the Normal and Compact views (counterpart of RecipeCard). */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun RecipeBookRow(book: RecipeBookSummary, compact: Boolean, onClick: () -> Unit, onEditClick: () -> Unit) {
+private fun RecipeBookRow(
+    book: RecipeBookSummary,
+    compact: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onEditClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Card(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).clickable(onClick = onClick),
+        modifier = modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).combinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
     ) {
@@ -398,6 +494,14 @@ private fun RecipeBookRow(book: RecipeBookSummary, compact: Boolean, onClick: ()
 
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (book.isPinned) {
+                        Icon(
+                            Icons.Filled.PushPin,
+                            contentDescription = L10n.str(R.string.pinned_book),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                     if (book.isPack) {
                         Icon(
                             Icons.Filled.CloudDone,

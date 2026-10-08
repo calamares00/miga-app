@@ -248,6 +248,13 @@ val MIGRATION_18_19 = object : Migration(18, 19) {
     }
 }
 
+/** v19 -> v20: books can be pinned to the top of the list. */
+val MIGRATION_19_20 = object : Migration(19, 20) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE recipe_books ADD COLUMN isPinned INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
 /** v17 -> v18: difficulty values renamed from Spanish (FACIL/MEDIA/DIFICIL) to EASY/MEDIUM/HARD. */
 val MIGRATION_17_18 = object : Migration(17, 18) {
     override fun migrate(db: SupportSQLiteDatabase) {

@@ -2,6 +2,7 @@
 
 Each book is a recipe collection with its own cover: your mum's, a friend's or one per theme. New recipes are saved in the book you have open, and you can move them to another one from their menu (⋮).
 
+- Long-press a book to **pin it to the top**: pinned books come first, with a pin on their cover. You can also pin it from the book's menu.
 - Inside a book, recipes are grouped by **category**. Tap a category to collapse or expand it; the menu collapses or expands them all.
 - When a recipe is open, **swipe left or right** to go to the next or previous recipe of the book, like turning pages.
 - Long-press a recipe to **select several** and change their category, difficulty, servings or book at once, add them to the shopping list or export them.
@@ -76,6 +77,7 @@ To share books and the shopping list with your family, connect Miga to a server 
 ## 💾 Export and backups
 
 - Export a recipe as text, PDF or a Miga file from its menu (⋮), or a whole book from the book's menu.
+- When exporting to **PDF**, Miga shows the progress (in a notification too, so you can keep using the app) and, when it is done, lets you **save** it to your files or **share** it.
 - In Settings → Backup you can save **everything** to a file (with photos) and restore it later, on this phone or another one.
 - The backup can be **protected with a password**: it is encrypted with AES-256 and only opens with that password when restored. Miga does not store it anywhere, so if you forget it the backup cannot be recovered.
 

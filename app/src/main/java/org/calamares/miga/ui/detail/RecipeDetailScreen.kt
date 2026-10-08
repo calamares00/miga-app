@@ -72,7 +72,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,6 +83,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import org.calamares.miga.data.export.RecipeExporter
+import org.calamares.miga.data.export.PdfExports
 import org.calamares.miga.data.model.HealthColorLevel
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.formatQuantity
@@ -93,7 +93,6 @@ import org.calamares.miga.ui.theme.HealthGreenContainer
 import org.calamares.miga.ui.theme.HealthGreenOn
 import org.calamares.miga.ui.theme.HealthRedContainer
 import org.calamares.miga.ui.theme.HealthRedOn
-import kotlinx.coroutines.launch
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
@@ -146,7 +145,6 @@ fun RecipeDetailScreen(
     val substitutionDialogState by viewModel.substitutionDialogState.collectAsState()
     val aiEnabled = rememberAiEnabled()
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
@@ -253,7 +251,14 @@ fun RecipeDetailScreen(
                         DropdownMenuItem(
                             text = { Text(L10n.str(R.string.export_pdf)) },
                             leadingIcon = { Icon(Icons.Filled.PictureAsPdf, null) },
-                            onClick = { showMenu = false; recipe?.let { scope.launch { RecipeExporter.shareAsPdf(context, it) } } }
+                            onClick = {
+                                showMenu = false
+                                recipe?.let {
+                                    if (!PdfExports.exportRecipe(context, it)) {
+                                        Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
                         )
                         DropdownMenuItem(
                             text = { Text(L10n.str(R.string.export_backup)) },

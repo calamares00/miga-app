@@ -85,7 +85,12 @@ private class PlacedItem(val item: Item, val page: Int, val y: Float)
 /** Renders a recipe, or a whole book with cover and table of contents, as an A4 PDF. */
 object PdfRecipeRenderer {
 
-    fun render(recipe: Recipe): PdfDocument {
+    /**
+     * [onPage] is called before drawing each page with its number and the total; drawing (decoding
+     * the photos) is the slow part of a large book, so it drives the progress shown to the user,
+     * and it may throw to cancel the export.
+     */
+    fun render(recipe: Recipe, onPage: (page: Int, total: Int) -> Unit = { _, _ -> }): PdfDocument {
         val paints = Paints()
         val items = recipeItems(recipe, paints, forceNewPageForTitle = false)
         val placed = layoutItems(items, startPage = 1, paints)
@@ -93,6 +98,7 @@ object PdfRecipeRenderer {
         val document = PdfDocument()
         val byPage = placed.groupBy { it.page }
         for (pageNum in 1..totalPages) {
+            onPage(pageNum, totalPages)
             val page = document.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNum).create())
             val canvas = page.canvas
             drawHeaderFooter(canvas, paints, recipe.name, pageNum, totalPages)
@@ -112,7 +118,12 @@ object PdfRecipeRenderer {
      * is laid out after it to find each recipe's first page, and finally the table is laid out
      * again with the real numbers.
      */
-    fun renderBook(bookName: String, coverPhotoUri: String?, recipes: List<Recipe>): PdfDocument {
+    fun renderBook(
+        bookName: String,
+        coverPhotoUri: String?,
+        recipes: List<Recipe>,
+        onPage: (page: Int, total: Int) -> Unit = { _, _ -> }
+    ): PdfDocument {
         val paints = Paints()
         val ordered = groupedByCategory(recipes)
 
@@ -134,6 +145,7 @@ object PdfRecipeRenderer {
 
         val document = PdfDocument()
 
+        onPage(1, totalPages)
         val coverPage = document.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create())
         val coverBitmap = coverPhotoUri?.let { loadScaledBitmap(it, COVER_IMAGE_BOX.toInt() * 2) }
         drawCoverPage(coverPage.canvas, paints, bookName, coverBitmap, ordered.size)
@@ -142,6 +154,7 @@ object PdfRecipeRenderer {
         val tocByLocalPage = tocPlaced.groupBy { it.page }
         for (localPage in 1..tocPageCount) {
             val absolutePage = 1 + localPage
+            onPage(absolutePage, totalPages)
             val page = document.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, absolutePage).create())
             val canvas = page.canvas
             drawHeaderFooter(canvas, paints, null, absolutePage, totalPages)
@@ -151,6 +164,7 @@ object PdfRecipeRenderer {
 
         val contentByPage = contentPlaced.groupBy { it.page }
         for (pageNum in contentStartPage..totalPages) {
+            onPage(pageNum, totalPages)
             val page = document.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNum).create())
             val canvas = page.canvas
             drawHeaderFooter(canvas, paints, bookName, pageNum, totalPages)

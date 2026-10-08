@@ -161,13 +161,12 @@ object RecipeExporter {
         }
     }
 
-    /** Renders and shares a recipe as PDF; suspending because decoding the photos is slow I/O. */
-    suspend fun shareAsPdf(context: Context, recipe: Recipe) = withContext(Dispatchers.IO) {
-        val document = PdfRecipeRenderer.render(recipe)
-        val file = File(exportsDir(context), sanitizeFileName(recipe.name) + ".pdf")
-        file.outputStream().use { document.writeTo(it) }
-        document.close()
-        shareFile(context, file, "application/pdf")
+    /**
+     * Renders a recipe as PDF into the exports folder and returns the file; see [PdfExports],
+     * which then offers to save or share it.
+     */
+    suspend fun writeRecipePdf(context: Context, recipe: Recipe, onPage: (Int, Int) -> Unit): File = withContext(Dispatchers.IO) {
+        writePdf(File(exportsDir(context), sanitizeFileName(recipe.name) + ".pdf")) { PdfRecipeRenderer.render(recipe, onPage) }
     }
 
     /** Exports a whole book: a ZIP when the book or any recipe has photos, a plain JSON otherwise. */
@@ -175,14 +174,30 @@ object RecipeExporter {
         shareRecipes(context, book.name, book, recipes)
     }
 
-    /** Renders and shares a whole book as PDF (cover, contents by category and recipes). */
-    suspend fun shareBookAsPdf(context: Context, book: RecipeBook, recipes: List<Recipe>) = withContext(Dispatchers.IO) {
-        val document = PdfRecipeRenderer.renderBook(book.name, book.coverPhotoUri, recipes)
-        val file = File(exportsDir(context), sanitizeFileName(book.name) + ".pdf")
-        file.outputStream().use { document.writeTo(it) }
-        document.close()
-        shareFile(context, file, "application/pdf")
+    /** Renders a whole book as PDF (cover, contents by category and recipes); see [writeRecipePdf]. */
+    suspend fun writeBookPdf(context: Context, book: RecipeBook, recipes: List<Recipe>, onPage: (Int, Int) -> Unit): File =
+        withContext(Dispatchers.IO) {
+            writePdf(File(exportsDir(context), sanitizeFileName(book.name) + ".pdf")) {
+                PdfRecipeRenderer.renderBook(book.name, book.coverPhotoUri, recipes, onPage)
+            }
+        }
+
+    /** Writes the document [render] builds to [file]; a cancelled or failed export leaves no file behind. */
+    private fun writePdf(file: File, render: () -> android.graphics.pdf.PdfDocument): File {
+        val document = render()
+        try {
+            file.outputStream().use { document.writeTo(it) }
+        } catch (e: Exception) {
+            file.delete()
+            throw e
+        } finally {
+            document.close()
+        }
+        return file
     }
+
+    /** Shares an exported PDF (see [writeRecipePdf]) with the system share sheet. */
+    fun sharePdf(context: Context, file: File) = shareFile(context, file, "application/pdf")
 
     /** Shares any set of recipes (multi-selection), including the cover of [book] when given. */
     fun shareRecipes(context: Context, fileName: String, book: RecipeBook?, recipes: List<Recipe>) {
