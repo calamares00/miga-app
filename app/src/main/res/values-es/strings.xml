@@ -1034,7 +1034,6 @@
     <string name="journal_edit_title">"Editar nota"</string>
     <string name="journal_placeholder">"Por ejemplo: la próxima vez, menos sal"</string>
     <string name="export_format_image">"Imagen"</string>
-    <string name="export_format_image_desc">"Una imagen con la foto y los ingredientes, para Instagram o WhatsApp."</string>
-    <string name="image_card_more_x">"y %1$d más…"</string>
+    <string name="export_format_image_desc">"La receta entera en una imagen (foto, ingredientes y pasos), para Instagram o WhatsApp."</string>
     <string name="image_card_signature">"Mi recetario"</string>
 </resources>
