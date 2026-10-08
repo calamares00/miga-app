@@ -1,5 +1,6 @@
 package org.calamares.miga.data.local
 
+import android.app.Application
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -18,7 +19,9 @@ import org.robolectric.annotation.Config
  * Schemas are exported from version 20 on; older migrations are covered by the chain test.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34])
+// A plain Application: MigaApp's startup (sync scheduling with WorkManager, seeding) is not needed
+// to open a database and fails under Robolectric.
+@Config(sdk = [34], application = Application::class)
 class MigrationTest {
 
     @get:Rule
