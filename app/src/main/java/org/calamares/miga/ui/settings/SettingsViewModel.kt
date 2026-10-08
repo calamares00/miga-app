@@ -227,6 +227,16 @@ class SettingsViewModel(
     suspend fun parseRecipeJson(context: Context, source: Uri): RecipeImportResult =
         RecipeExporter.importRecipe(context, source)
 
+    /** Imports an exported book or selection into [targetBookId], or as its own book when null. */
+    fun importCollection(context: Context, collection: RecipeImportResult.Collection, targetBookId: Long?, onMessage: (String) -> Unit) {
+        viewModelScope.launch {
+            when (val result = RecipeExporter.importParsedLibrary(context, collection.parsed, repository, targetBookId)) {
+                is LibraryImportResult.Success -> onMessage(L10n.str(R.string.imported_n_recipes, result.count))
+                is LibraryImportResult.Error -> onMessage(L10n.str(R.string.couldnt_import_x, result.reason))
+            }
+        }
+    }
+
     fun importRecipeIntoBook(dto: RecipeExportDto, photos: List<RecipePhoto>, bookId: Long, onFinished: () -> Unit) {
         viewModelScope.launch {
             val recipeId = repository.saveRecipe(dto.toDraft(bookId, photos))

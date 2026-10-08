@@ -186,7 +186,9 @@ class RecipeRepository(
             val recipeId = if (draft.id == 0L) {
                 recipeDao.insertRecipe(
                     RecipeEntity(
-                        uid = draft.uid ?: UUID.randomUUID().toString(),
+                        // An imported recipe keeps its uid unless this phone already has it (a book
+                        // exported and imported again here): two recipes must never share one.
+                        uid = draft.uid?.takeIf { recipeDao.findByUid(it) == null } ?: UUID.randomUUID().toString(),
                         name = draft.name.trim(),
                         categoryId = categoryId,
                         recipeBookId = draft.recipeBookId,
@@ -1121,7 +1123,7 @@ class RecipeRepository(
         recipeBookDao.findByName(trimmed)?.let { return it.id }
         return recipeBookDao.insert(
             RecipeBookEntity(
-                uid = uid ?: UUID.randomUUID().toString(),
+                uid = uid?.takeIf { recipeBookDao.findByUid(it) == null } ?: UUID.randomUUID().toString(),
                 name = trimmed,
                 coverPhotoUri = coverPhotoUri,
                 createdAt = System.currentTimeMillis()

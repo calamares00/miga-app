@@ -76,8 +76,12 @@ To share books and the shopping list with your family, connect Miga to a server 
 
 ## 💾 Export and backups
 
-- Export a recipe as text, PDF or a Miga file from its menu (⋮), or a whole book from the book's menu.
-- When exporting to **PDF**, Miga shows the progress (in a notification too, so you can keep using the app) and, when it is done, lets you **save** it to your files or **share** it.
+- **Exporting** a recipe (from its ⋮ menu), a whole book (from the book's menu) or several selected recipes asks for the format:
+  - **PDF**, to read, print or send. It cannot be imported back.
+  - **Miga file (.zip)**, with the photos, to import it into Miga later, on this phone or another one.
+  - **Text** (one recipe only), to paste into a message.
+- Miga shows the progress (in a notification too, so you can keep using the app) and, when it is done, lets you **save** the file or **share** it.
+- To import a Miga file, use **New recipe → From file** inside a book, or Settings → Backup → Import recipes or a book. If the file is a whole book, you are asked whether to add its recipes to one of your books or create it as a new book.
 - In Settings → Backup you can save **everything** to a file (with photos) and restore it later, on this phone or another one.
 - The backup can be **protected with a password**: it is encrypted with AES-256 and only opens with that password when restored. Miga does not store it anywhere, so if you forget it the backup cannot be recovered.
 

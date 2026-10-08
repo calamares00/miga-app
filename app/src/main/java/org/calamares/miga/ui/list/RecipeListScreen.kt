@@ -85,7 +85,9 @@ import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.data.model.RecipeSummary
 import org.calamares.miga.ui.common.BACKUP_MIME_TYPES
+import org.calamares.miga.ui.components.ExportFormatDialog
 import org.calamares.miga.ui.components.FilterSheetContent
+import org.calamares.miga.ui.components.ImportRecipesDialog
 import org.calamares.miga.ui.components.NewRecipeSourceSheet
 import org.calamares.miga.ui.components.rememberAiEnabled
 import org.calamares.miga.ui.components.PhotoSourceSheet
@@ -119,6 +121,10 @@ fun RecipeListScreen(
     var showViewModeMenu by remember { mutableStateOf(false) }
     var recipeToDelete by remember { mutableStateOf<RecipeSummary?>(null) }
     var showDeleteSelectedConfirm by remember { mutableStateOf(false) }
+    /** Export asked for the selected recipes (true) or the whole book (false); null when not asked. */
+    var exportSelectionOnly by remember { mutableStateOf<Boolean?>(null) }
+    val pendingCollection by viewModel.pendingCollection.collectAsState()
+    val targetBooks by viewModel.targetBooks.collectAsState()
     var showBulkEditSheet by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
     var showNewRecipeSheet by remember { mutableStateOf(false) }
@@ -170,7 +176,7 @@ fun RecipeListScreen(
                         IconButton(onClick = { showBulkEditSheet = true }) {
                             Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.bulk_edit))
                         }
-                        IconButton(onClick = { viewModel.exportSelected(context) }) {
+                        IconButton(onClick = { exportSelectionOnly = true }) {
                             Icon(Icons.Filled.FileDownload, contentDescription = L10n.str(R.string.export_selected))
                         }
                         IconButton(onClick = { showDeleteSelectedConfirm = true }) {
@@ -222,12 +228,9 @@ fun RecipeListScreen(
                             )
                             HorizontalDivider()
                             DropdownMenuItem(
-                                text = { Text(L10n.str(R.string.export_book)) },
-                                onClick = { showMenu = false; viewModel.exportBook(context) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(L10n.str(R.string.export_book_pdf)) },
-                                onClick = { showMenu = false; viewModel.exportBookAsPdf(context) }
+                                text = { Text(L10n.str(R.string.export_book_ellipsis)) },
+                                leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
+                                onClick = { showMenu = false; exportSelectionOnly = false }
                             )
                         }
                     }
@@ -342,6 +345,30 @@ fun RecipeListScreen(
                 }
             }
         }
+    }
+
+    exportSelectionOnly?.let { selectionOnly ->
+        ExportFormatDialog(
+            title = if (selectionOnly) L10n.str(R.string.file_name_selected_recipes) else uiState.bookName,
+            onFormat = { format ->
+                exportSelectionOnly = null
+                if (selectionOnly) viewModel.exportSelected(context, format) else viewModel.exportBook(context, format)
+            },
+            onDismiss = { exportSelectionOnly = null }
+        )
+    }
+
+    pendingCollection?.let { collection ->
+        ImportRecipesDialog(
+            collection = collection,
+            // This book first and chosen by default: the file was picked from it.
+            books = listOf(viewModel.bookId to uiState.bookName) + targetBooks.map { it.id to it.name },
+            initialTarget = viewModel.bookId,
+            onConfirm = { target ->
+                viewModel.confirmCollectionImport(context, target) { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
+            },
+            onDismiss = { viewModel.dismissCollectionImport() }
+        )
     }
 
     if (showFilters) {

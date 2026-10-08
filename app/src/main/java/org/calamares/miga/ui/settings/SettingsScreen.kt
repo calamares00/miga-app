@@ -113,6 +113,7 @@ import org.calamares.miga.data.ai.ANTHROPIC_MODELS
 import org.calamares.miga.data.ai.GEMINI_MODELS
 import org.calamares.miga.data.ai.AiProvider
 import org.calamares.miga.ui.common.BACKUP_MIME_TYPES
+import org.calamares.miga.ui.components.ImportRecipesDialog
 import org.calamares.miga.ui.security.BiometricAuthenticator
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -167,6 +168,7 @@ fun SettingsSectionScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var pendingRecipeImport by remember { mutableStateOf<Pair<RecipeExportDto, List<RecipePhoto>>?>(null) }
+    var pendingCollectionImport by remember { mutableStateOf<RecipeImportResult.Collection?>(null) }
     var selectedBookId by remember { mutableStateOf<Long?>(null) }
 
     // Backup: the password chosen in ExportBackupDialog waits here while the user picks where to
@@ -201,6 +203,8 @@ fun SettingsSectionScreen(
             scope.launch {
                 when (val result = viewModel.parseRecipeJson(context, uri)) {
                     is RecipeImportResult.Error -> snackbarHostState.showSnackbar(L10n.str(R.string.couldnt_import_x, result.reason))
+                    // An exported book or selection: as a new book or into one of the user's.
+                    is RecipeImportResult.Collection -> pendingCollectionImport = result
                     is RecipeImportResult.Success -> when {
                         books.isEmpty() -> snackbarHostState.showSnackbar(L10n.str(R.string.dont_have_books_create_one))
                         else -> {
@@ -495,6 +499,19 @@ fun SettingsSectionScreen(
                 }
             }
         }
+    }
+
+    pendingCollectionImport?.let { collection ->
+        ImportRecipesDialog(
+            collection = collection,
+            books = books.filter { !it.isPack }.map { it.id to it.name },
+            initialTarget = null,
+            onConfirm = { target ->
+                pendingCollectionImport = null
+                viewModel.importCollection(context, collection, target) { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
+            },
+            onDismiss = { pendingCollectionImport = null }
+        )
     }
 
     pendingRecipeImport?.let { (dto, photos) ->

@@ -76,8 +76,12 @@ Para compartir libros y la lista de la compra en familia, conecta Miga a un serv
 
 ## 💾 Exportar y copias de seguridad
 
-- Exporta una receta como texto, PDF o archivo de Miga desde su menú (⋮), o un libro entero desde el menú del libro.
-- Al exportar a **PDF**, Miga muestra el progreso (también en una notificación, así que puedes seguir usando la app) y, cuando termina, te deja **guardarlo** en tus archivos o **compartirlo**.
+- **Exportar** una receta (desde su menú ⋮), un libro entero (desde el menú del libro) o varias recetas seleccionadas te pregunta el formato:
+  - **PDF**, para leer, imprimir o enviar. No se puede volver a importar.
+  - **Archivo de Miga (.zip)**, con las fotos, para importarlo después en Miga, en este móvil o en otro.
+  - **Texto** (solo una receta), para pegarlo en un mensaje.
+- Miga muestra el progreso (también en una notificación, así que puedes seguir usando la app) y, cuando termina, te deja **guardar** el archivo o **compartirlo**.
+- Para importar un archivo de Miga, usa **Nueva receta → Desde archivo** dentro de un libro, o Ajustes → Copia de seguridad → Importar recetas o un libro. Si el archivo es un libro entero, te pregunta si añadir sus recetas a un libro tuyo o crearlo como libro nuevo.
 - En Ajustes → Copia de seguridad puedes guardar **todo** en un archivo (con fotos) y restaurarlo más tarde, en este o en otro teléfono.
 - La copia puede ir **protegida con contraseña**: se cifra con AES-256 y solo se abre con esa contraseña al restaurarla. Miga no la guarda en ningún sitio, así que si la olvidas no hay forma de recuperar la copia.
 
