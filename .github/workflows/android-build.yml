@@ -43,7 +43,7 @@ jobs:
       - name: Room schemas committed
         if: always()
         run: |
-          changed=$(git ls-files --modified --others --exclude-standard app/schemas)
+          changed=$(git status --porcelain --untracked-files=all app/schemas | cut -c4-)
           if [ -n "$changed" ]; then
             echo "::error::Room schema not committed: $changed"
             for f in $changed; do echo "===== $f"; cat "$f"; echo; done
