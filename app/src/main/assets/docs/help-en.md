@@ -81,7 +81,7 @@ To share books and the shopping list with your family, connect Miga to a server 
 - **Exporting** a recipe (from its ⋮ menu), a whole book (from the book's menu) or several selected recipes asks for the format:
   - **PDF**, to read, print or send. It cannot be imported back.
   - **Miga file (.zip)**, with the photos, to import it into Miga later, on this phone or another one.
-  - **Image** (one recipe only): a card with the photo, key facts and ingredients, ready for Instagram or WhatsApp.
+  - **Image** (one recipe only): the whole recipe (photo, key facts, ingredients and steps) in one picture, ready for Instagram or WhatsApp.
   - **Text** (one recipe only), to paste into a message.
 - Miga shows the progress (in a notification too, so you can keep using the app) and, when it is done, lets you **save** the file or **share** it.
 - To import a Miga file, use **New recipe → From file** inside a book, or Settings → Backup → Import recipes or a book. If the file is a whole book, you are asked whether to add its recipes to one of your books or create it as a new book.
