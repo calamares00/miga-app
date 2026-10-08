@@ -58,12 +58,10 @@ import org.calamares.miga.data.local.entity.UtensilEntity
         SyncConnectionEntity::class,
         PendingSyncChangeEntity::class
     ],
-    // The Room schema JSON is only needed by MigrationTestHelper; the manual migrations in
-    // Migrations.kt work without it. It stays disabled because building debug and release together
-    // (as CI does) makes both KSP tasks write the same file in parallel, causing intermittent
-    // "Empty schema file" errors.
+    // The schema of each version is exported to app/schemas by Room's Gradle plugin (see
+    // app/build.gradle.kts) for the migration tests; a new version needs its JSON committed.
     version = 20,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun recipeDao(): RecipeDao
