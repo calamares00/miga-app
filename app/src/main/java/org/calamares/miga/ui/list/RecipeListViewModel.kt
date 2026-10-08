@@ -4,7 +4,9 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.content.Context
 import android.widget.Toast
-import org.calamares.miga.data.export.PdfExports
+import org.calamares.miga.data.export.ExportFormat
+import org.calamares.miga.data.export.FileExports
+import org.calamares.miga.data.export.LibraryImportResult
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -89,7 +91,7 @@ private data class RecipeListBase(
 
 class RecipeListViewModel(
     private val repository: RecipeRepository,
-    private val bookId: Long,
+    val bookId: Long,
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
@@ -142,13 +144,21 @@ class RecipeListViewModel(
         }
     }
 
-    fun exportSelected(context: Context) {
+    fun exportSelected(context: Context, format: ExportFormat) {
         viewModelScope.launch {
             val ids = _selectedIds.value
             val book = repository.getRecipeBookOnce(bookId)
             val recipes = repository.getRecipesForBookOnce(bookId).filter { it.id in ids }
             if (recipes.isNotEmpty()) {
-                RecipeExporter.shareRecipes(context, L10n.str(R.string.file_name_selected_recipes), book, recipes)
+                val started = if (recipes.size == 1) {
+                    FileExports.exportRecipe(context, recipes.single(), format)
+                } else {
+                    FileExports.exportSelection(context, L10n.str(R.string.file_name_selected_recipes), book, recipes, format)
+                }
+                if (!started) {
+                    Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
             }
             _selectedIds.value = emptySet()
         }
@@ -332,6 +342,14 @@ class RecipeListViewModel(
         }
     }
 
+    /** A file with several recipes waiting for the user to choose where they go (see [confirmCollectionImport]). */
+    private val _pendingCollection = MutableStateFlow<RecipeImportResult.Collection?>(null)
+    val pendingCollection: StateFlow<RecipeImportResult.Collection?> = _pendingCollection
+
+    /**
+     * Imports a Miga file: one recipe goes straight into this book; an exported book or selection
+     * asks first whether to add its recipes here, to another book or as a new book.
+     */
     fun importRecipeFile(context: Context, uri: Uri, onMessage: (String) -> Unit) {
         viewModelScope.launch {
             when (val result = RecipeExporter.importRecipe(context, uri)) {
@@ -341,8 +359,38 @@ class RecipeListViewModel(
                     if (result.recipe.rating != null) repository.setRating(recipeId, result.recipe.rating)
                     onMessage(L10n.str(R.string.recipe_imported))
                 }
+                is RecipeImportResult.Collection -> {
+                    if (result.parsed.dto.recipes.size == 1) {
+                        importCollection(context, result, bookId, onMessage)
+                    } else {
+                        _pendingCollection.value = result
+                    }
+                }
                 is RecipeImportResult.Error -> onMessage(L10n.str(R.string.couldnt_import_x, result.reason))
             }
+        }
+    }
+
+    /** [targetBookId] null imports the recipes as their own book. */
+    fun confirmCollectionImport(context: Context, targetBookId: Long?, onMessage: (String) -> Unit) {
+        val collection = _pendingCollection.value ?: return
+        _pendingCollection.value = null
+        viewModelScope.launch { importCollection(context, collection, targetBookId, onMessage) }
+    }
+
+    fun dismissCollectionImport() {
+        _pendingCollection.value = null
+    }
+
+    private suspend fun importCollection(
+        context: Context,
+        collection: RecipeImportResult.Collection,
+        targetBookId: Long?,
+        onMessage: (String) -> Unit
+    ) {
+        when (val result = RecipeExporter.importParsedLibrary(context, collection.parsed, repository, targetBookId)) {
+            is LibraryImportResult.Success -> onMessage(L10n.str(R.string.imported_n_recipes, result.count))
+            is LibraryImportResult.Error -> onMessage(L10n.str(R.string.couldnt_import_x, result.reason))
         }
     }
 
@@ -404,22 +452,14 @@ class RecipeListViewModel(
         viewModelScope.launch { repository.deleteRecipe(id) }
     }
 
-    fun exportBook(context: Context) {
-        viewModelScope.launch {
-            val book = repository.getRecipeBookOnce(bookId) ?: return@launch
-            val recipes = repository.getRecipesForBookOnce(bookId)
-            RecipeExporter.shareBook(context, book, recipes)
-        }
-    }
-
     /**
-     * Starts rendering the book as PDF in [PdfExports], which outlives this screen, shows the
+     * Starts exporting the whole book in [FileExports], which outlives this screen, shows the
      * progress and offers to save or share the file when it is ready.
      */
-    fun exportBookAsPdf(context: Context) {
+    fun exportBook(context: Context, format: ExportFormat) {
         viewModelScope.launch {
             val book = repository.getRecipeBookOnce(bookId) ?: return@launch
-            if (!PdfExports.exportBook(context, book) { repository.getRecipesForBookOnce(bookId) }) {
+            if (!FileExports.exportBook(context, book, format) { repository.getRecipesForBookOnce(bookId) }) {
                 Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
             }
         }

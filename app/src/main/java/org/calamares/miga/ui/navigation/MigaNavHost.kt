@@ -73,7 +73,7 @@ import org.calamares.miga.ui.books.RecipeBookEditorViewModel
 import org.calamares.miga.ui.books.RecipeBooksScreen
 import org.calamares.miga.ui.books.RecipeBooksViewModel
 import org.calamares.miga.ui.components.DocumentScreen
-import org.calamares.miga.ui.components.PdfExportHost
+import org.calamares.miga.ui.components.FileExportHost
 import org.calamares.miga.ui.detail.RecipeDetailPager
 import org.calamares.miga.ui.detail.RecipeDetailViewModel
 import org.calamares.miga.ui.dishsearch.DishSearchScreen
@@ -250,7 +250,7 @@ fun MigaNavHost(initialRoute: String? = null) {
                 }
             }
         }
-        PdfExportHost()
+        FileExportHost()
     }
 }
 

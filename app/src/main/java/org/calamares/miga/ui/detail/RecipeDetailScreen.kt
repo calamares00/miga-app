@@ -83,7 +83,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import org.calamares.miga.data.export.RecipeExporter
-import org.calamares.miga.data.export.PdfExports
+import org.calamares.miga.data.export.FileExports
+import org.calamares.miga.ui.components.ExportFormatDialog
 import org.calamares.miga.data.model.HealthColorLevel
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.formatQuantity
@@ -148,6 +149,7 @@ fun RecipeDetailScreen(
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
     /**
@@ -244,26 +246,9 @@ fun RecipeDetailScreen(
                             DropdownMenuItem(text = { Text(L10n.str(R.string.edit)) }, leadingIcon = { Icon(Icons.Filled.Edit, null) }, onClick = { showMenu = false; onEdit() })
                         }
                         DropdownMenuItem(
-                            text = { Text(L10n.str(R.string.share_text)) },
+                            text = { Text(L10n.str(R.string.export_ellipsis)) },
                             leadingIcon = { Icon(Icons.Filled.Share, null) },
-                            onClick = { showMenu = false; recipe?.let { RecipeExporter.shareAsText(context, it) } }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(L10n.str(R.string.export_pdf)) },
-                            leadingIcon = { Icon(Icons.Filled.PictureAsPdf, null) },
-                            onClick = {
-                                showMenu = false
-                                recipe?.let {
-                                    if (!PdfExports.exportRecipe(context, it)) {
-                                        Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(L10n.str(R.string.export_backup)) },
-                            leadingIcon = { Icon(Icons.Filled.Archive, null) },
-                            onClick = { showMenu = false; recipe?.let { RecipeExporter.shareRecipe(context, it) } }
+                            onClick = { showMenu = false; showExportDialog = true }
                         )
                         DropdownMenuItem(
                             text = { Text(L10n.str(R.string.move_another_book)) },
@@ -302,6 +287,22 @@ fun RecipeDetailScreen(
     }
 
     val recipeForMove = recipe
+    if (showExportDialog) {
+        recipe?.let { current ->
+            ExportFormatDialog(
+                title = current.name,
+                onFormat = { format ->
+                    showExportDialog = false
+                    if (!FileExports.exportRecipe(context, current, format)) {
+                        Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onText = { showExportDialog = false; RecipeExporter.shareAsText(context, current) },
+                onDismiss = { showExportDialog = false }
+            )
+        }
+    }
+
     if (showMoveDialog && recipeForMove != null) {
         val otherBooks = recipeBooks.filter { it.id != recipeForMove.recipeBookId && !it.isPack }
         AlertDialog(

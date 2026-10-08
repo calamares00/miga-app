@@ -46,6 +46,17 @@ private const val MANIFEST = "manifest.json"
 
 sealed interface RecipeImportResult {
     data class Success(val recipe: RecipeExportDto, val photos: List<RecipePhoto> = emptyList()) : RecipeImportResult
+
+    /**
+     * The file holds several recipes: an exported book or selection. Imported with
+     * [RecipeExporter.importParsedLibrary], into a book chosen by the user or as its own book.
+     */
+    data class Collection(val parsed: LibraryImportParseResult.Success) : RecipeImportResult {
+        /** Name of the book the recipes come from, when the file is a book export. */
+        val bookName: String? get() = parsed.dto.books.singleOrNull()?.name
+            ?: parsed.dto.recipes.map { it.recipeBookName }.distinct().singleOrNull()
+    }
+
     data class Error(val reason: String) : RecipeImportResult
 }
 
@@ -148,30 +159,12 @@ object RecipeExporter {
         context.startActivity(Intent.createChooser(intent, L10n.str(R.string.share_list)))
     }
 
-    /** Exports one recipe: a ZIP when it has photos, a plain JSON file otherwise. */
-    fun shareRecipe(context: Context, recipe: Recipe) {
-        val content = json.encodeToString(recipe.toExportDto())
-        if (recipe.photos.isEmpty()) {
-            val file = writeExportFile(context, sanitizeFileName(recipe.name) + ".json", content)
-            shareFile(context, file, "application/json")
-        } else {
-            val photoSources = recipe.photos.mapIndexed { index, photo -> "recipes/${recipe.uid}/$index.jpg" to photo.uri }
-            val file = writeZipFile(context, sanitizeFileName(recipe.name) + ".zip", content, photoSources)
-            shareFile(context, file, "application/zip")
-        }
-    }
-
     /**
-     * Renders a recipe as PDF into the exports folder and returns the file; see [PdfExports],
+     * Renders a recipe as PDF into the exports folder and returns the file; see [FileExports],
      * which then offers to save or share it.
      */
     suspend fun writeRecipePdf(context: Context, recipe: Recipe, onPage: (Int, Int) -> Unit): File = withContext(Dispatchers.IO) {
         writePdf(File(exportsDir(context), sanitizeFileName(recipe.name) + ".pdf")) { PdfRecipeRenderer.render(recipe, onPage) }
-    }
-
-    /** Exports a whole book: a ZIP when the book or any recipe has photos, a plain JSON otherwise. */
-    fun shareBook(context: Context, book: RecipeBook, recipes: List<Recipe>) {
-        shareRecipes(context, book.name, book, recipes)
     }
 
     /** Renders a whole book as PDF (cover, contents by category and recipes); see [writeRecipePdf]. */
@@ -181,6 +174,43 @@ object RecipeExporter {
                 PdfRecipeRenderer.renderBook(book.name, book.coverPhotoUri, recipes, onPage)
             }
         }
+
+    /**
+     * Writes recipes as a Miga file to import them later on this or another phone: always a ZIP
+     * with the photos (and the book's cover when exporting a [book]). One recipe keeps the single
+     * recipe format older versions import; several, a book or a selection, the library format,
+     * which the "From file" import of a book and the backup restore both read.
+     */
+    suspend fun writeMigaFile(
+        context: Context,
+        fileName: String,
+        book: RecipeBook?,
+        recipes: List<Recipe>,
+        singleRecipe: Boolean,
+        onPhoto: (Int, Int) -> Unit
+    ): File = withContext(Dispatchers.IO) {
+        val manifest = if (singleRecipe) {
+            json.encodeToString(recipes.single().toExportDto())
+        } else {
+            json.encodeToString(
+                LibraryExportDto(
+                    exportedAt = System.currentTimeMillis(),
+                    books = listOfNotNull(book?.let { bookExportDto(it) }),
+                    recipes = recipes.map { it.toExportDto() }
+                )
+            )
+        }
+        val file = File(exportsDir(context), sanitizeFileName(fileName) + ".zip")
+        try {
+            file.outputStream().use { output ->
+                writeZipToStream(context, output, manifest, photoSourcesFor(if (singleRecipe) null else book, recipes), onPhoto)
+            }
+        } catch (e: Exception) {
+            file.delete()
+            throw e
+        }
+        file
+    }
 
     /** Writes the document [render] builds to [file]; a cancelled or failed export leaves no file behind. */
     private fun writePdf(file: File, render: () -> android.graphics.pdf.PdfDocument): File {
@@ -196,26 +226,16 @@ object RecipeExporter {
         return file
     }
 
-    /** Shares an exported PDF (see [writeRecipePdf]) with the system share sheet. */
-    fun sharePdf(context: Context, file: File) = shareFile(context, file, "application/pdf")
+    /** Shares an exported file (see [writeRecipePdf], [writeMigaFile]) with the system share sheet. */
+    fun shareExported(context: Context, file: File, mimeType: String) = shareFile(context, file, mimeType)
 
-    /** Shares any set of recipes (multi-selection), including the cover of [book] when given. */
-    fun shareRecipes(context: Context, fileName: String, book: RecipeBook?, recipes: List<Recipe>) {
-        val dto = LibraryExportDto(
-            exportedAt = System.currentTimeMillis(),
-            books = listOfNotNull(book?.let { bookExportDto(it) }),
-            recipes = recipes.map { it.toExportDto() }
-        )
-        val content = json.encodeToString(dto)
-        val hasPhotos = (book?.coverPhotoUri != null) || recipes.any { it.photos.isNotEmpty() }
-        if (!hasPhotos) {
-            val file = writeExportFile(context, sanitizeFileName(fileName) + ".json", content)
-            shareFile(context, file, "application/json")
-        } else {
-            val file = writeZipFile(context, sanitizeFileName(fileName) + ".zip", content, photoSourcesFor(book, recipes))
-            shareFile(context, file, "application/zip")
+    /** Renders several recipes (a selection) as one PDF with contents, like a book titled [title]. */
+    suspend fun writeRecipesPdf(context: Context, title: String, recipes: List<Recipe>, onPage: (Int, Int) -> Unit): File =
+        withContext(Dispatchers.IO) {
+            writePdf(File(exportsDir(context), sanitizeFileName(title) + ".pdf")) {
+                PdfRecipeRenderer.renderBook(title, null, recipes, onPage)
+            }
         }
-    }
 
     /**
      * Full backup of the app, always as a ZIP so the format does not depend on the content. With
@@ -247,7 +267,10 @@ object RecipeExporter {
         }
     }
 
-    /** Imports a single exported recipe (see [shareRecipe]): plain JSON or ZIP with photos. */
+    /**
+     * Imports a Miga file (see [writeMigaFile]; plain JSON or ZIP with photos): one recipe, or an
+     * exported book or selection as [RecipeImportResult.Collection].
+     */
     suspend fun importRecipe(context: Context, source: Uri): RecipeImportResult = withContext(Dispatchers.IO) {
         try {
             val manifest = try {
@@ -257,6 +280,15 @@ object RecipeExporter {
             } ?: return@withContext RecipeImportResult.Error(L10n.str(R.string.couldnt_open_file))
             val text = manifest.text
                 ?: return@withContext RecipeImportResult.Error(L10n.str(R.string.zip_file_doesnt_contain_manifest))
+            // A book or a selection of recipes (see writeMigaFile) has a list of recipes.
+            if (json.parseToJsonElement(text).jsonObject.containsKey("recipes")) {
+                val library = json.decodeFromJsonElement(
+                    LibraryExportDto.serializer(),
+                    migrateJson(text, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
+                )
+                if (library.recipes.isEmpty()) return@withContext RecipeImportResult.Error(L10n.str(R.string.file_has_no_recipes))
+                return@withContext RecipeImportResult.Collection(LibraryImportParseResult.Success(library, source, manifest.isZip))
+            }
             val dto = json.decodeFromJsonElement(
                 RecipeExportDto.serializer(),
                 migrateJson(text, recipeMigrations, CURRENT_RECIPE_SCHEMA_VERSION)
@@ -300,7 +332,9 @@ object RecipeExporter {
     suspend fun importParsedLibrary(
         context: Context,
         parsed: LibraryImportParseResult.Success,
-        repository: RecipeRepository
+        repository: RecipeRepository,
+        /** Puts every recipe in this book instead of the books they came from (importing a book's file into another book). */
+        targetBookId: Long? = null
     ): LibraryImportResult = withContext(Dispatchers.IO) {
         try {
             val dto = parsed.dto
@@ -313,7 +347,7 @@ object RecipeExporter {
 
             val bookIdsByName = mutableMapOf<String, Long>()
             dto.recipes.forEach { recipeDto ->
-                val bookId = bookIdsByName.getOrPut(recipeDto.recipeBookName) {
+                val bookId = targetBookId ?: bookIdsByName.getOrPut(recipeDto.recipeBookName) {
                     val bookMeta = dto.books.find { it.name == recipeDto.recipeBookName }
                     repository.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName, bookMeta?.uid, coverOf(bookMeta))
                 }
@@ -323,6 +357,7 @@ object RecipeExporter {
                 applyNutritionFromImport(repository, recipeId, recipeDto.nutrition)
                 if (recipeDto.rating != null) repository.setRating(recipeId, recipeDto.rating)
             }
+            if (targetBookId != null) return@withContext LibraryImportResult.Success(dto.recipes.size)
             // Books without recipes are restored too.
             dto.books.filter { it.name !in bookIdsByName }.forEach { bookMeta ->
                 bookIdsByName[bookMeta.name] = repository.getOrCreateRecipeBookIdByName(bookMeta.name, bookMeta.uid, coverOf(bookMeta))
@@ -346,7 +381,7 @@ object RecipeExporter {
 
     /**
      * Installs or updates a pack downloaded from the catalogue (see PacksCatalogClient). Same ZIP
-     * format as [shareBook], but the book is identified by [packId] and updated in place by
+     * format as [writeMigaFile], but the book is identified by [packId] and updated in place by
      * [RecipeRepository.installOrUpdatePack] instead of being matched by name.
      */
     suspend fun importPackFromBytes(
@@ -522,12 +557,19 @@ object RecipeExporter {
     private fun isZip(bytes: ByteArray): Boolean =
         bytes.size >= 2 && bytes[0] == 0x50.toByte() && bytes[1] == 0x4B.toByte()
 
-    private fun writeZipToStream(context: Context, output: OutputStream, manifestJson: String, photoSources: List<Pair<String, String>>) {
+    private fun writeZipToStream(
+        context: Context,
+        output: OutputStream,
+        manifestJson: String,
+        photoSources: List<Pair<String, String>>,
+        onPhoto: (Int, Int) -> Unit = { _, _ -> }
+    ) {
         ZipOutputStream(output).use { zip ->
             zip.putNextEntry(ZipEntry(MANIFEST))
             zip.write(manifestJson.toByteArray())
             zip.closeEntry()
-            photoSources.forEach { (path, sourceUri) ->
+            photoSources.forEachIndexed { index, (path, sourceUri) ->
+                onPhoto(index + 1, photoSources.size)
                 // A photo deleted outside the app must not abort the whole export.
                 val input = runCatching { context.contentResolver.openInputStream(Uri.parse(sourceUri)) }.getOrNull()
                 input?.use {
@@ -539,19 +581,7 @@ object RecipeExporter {
         }
     }
 
-    private fun writeZipFile(context: Context, fileName: String, manifestJson: String, photoSources: List<Pair<String, String>>): File {
-        val file = File(exportsDir(context), fileName)
-        file.outputStream().use { output -> writeZipToStream(context, output, manifestJson, photoSources) }
-        return file
-    }
-
     private fun exportsDir(context: Context): File = File(context.cacheDir, "exports").apply { mkdirs() }
-
-    private fun writeExportFile(context: Context, fileName: String, content: String): File {
-        val file = File(exportsDir(context), fileName)
-        file.writeText(content)
-        return file
-    }
 
     private fun shareFile(context: Context, file: File, mimeType: String) {
         val uri: Uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
