@@ -61,6 +61,9 @@ import org.calamares.miga.data.ai.OpenRouterModel
 import org.calamares.miga.data.ai.OpenRouterModels
 import org.calamares.miga.data.ai.ANTHROPIC_MODELS
 import org.calamares.miga.data.ai.GEMINI_MODELS
+import org.calamares.miga.data.ai.OPENAI_MODELS
+import org.calamares.miga.data.ai.ProviderModels
+import kotlinx.coroutines.delay
 import org.calamares.miga.data.ai.AiProvider
 import org.calamares.miga.ui.components.ReorderableColumn
 import org.calamares.miga.ui.components.moved
@@ -79,6 +82,8 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
     val openRouterApiKey by viewModel.openRouterApiKey.collectAsState()
     val openRouterModel by viewModel.openRouterModel.collectAsState()
     val openRouterModelImages by viewModel.openRouterModelImages.collectAsState()
+    val openAiApiKey by viewModel.openAiApiKey.collectAsState()
+    val openAiModel by viewModel.openAiModel.collectAsState()
     var expanded by rememberSaveable { mutableStateOf<AiProvider?>(null) }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -109,11 +114,14 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                         if (!openRouterModelImages) add(L10n.str(R.string.ai_no_images))
                     }.joinToString(" · ")
                 }
+                AiProvider.OPENAI ->
+                    if (openAiApiKey.isBlank()) L10n.str(R.string.ai_provider_no_key) else openAiModel
             }
             val active = when (provider) {
                 AiProvider.GEMINI -> geminiApiKey.isNotBlank()
                 AiProvider.ANTHROPIC -> anthropicApiKey.isNotBlank()
                 AiProvider.OPENROUTER -> openRouterApiKey.isNotBlank() && openRouterModel.isNotBlank()
+                AiProvider.OPENAI -> openAiApiKey.isNotBlank()
             }
             ProviderRow(
                 provider = provider,
@@ -135,9 +143,11 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                             label = L10n.str(R.string.api_key_gemini),
                             placeholder = L10n.str(R.string.get_one_free_aistudio_google)
                         )
-                        ModelDropdownField(
+                        AccountModelField(
+                            provider = provider,
+                            apiKey = geminiApiKey,
                             label = L10n.str(R.string.gemini_model),
-                            models = GEMINI_MODELS,
+                            fallbackModels = GEMINI_MODELS,
                             current = geminiModel,
                             customPlaceholder = L10n.str(R.string.e_g_gemini_3_6),
                             onSelect = { viewModel.setGeminiModel(it) }
@@ -150,9 +160,11 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                             label = L10n.str(R.string.api_key_anthropic),
                             placeholder = L10n.str(R.string.get_one_console_anthropic_com)
                         )
-                        ModelDropdownField(
+                        AccountModelField(
+                            provider = provider,
+                            apiKey = anthropicApiKey,
                             label = L10n.str(R.string.claude_model),
-                            models = ANTHROPIC_MODELS,
+                            fallbackModels = ANTHROPIC_MODELS,
                             current = anthropicModel,
                             customPlaceholder = L10n.str(R.string.e_g_claude_haiku_4),
                             onSelect = { viewModel.setAnthropicModel(it) }
@@ -174,6 +186,23 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                             L10n.str(R.string.openrouter_free_note),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    AiProvider.OPENAI -> {
+                        ApiKeyField(
+                            value = openAiApiKey,
+                            onValueChange = { viewModel.setOpenAiApiKey(it) },
+                            label = L10n.str(R.string.api_key_openai),
+                            placeholder = L10n.str(R.string.get_one_platform_openai_com)
+                        )
+                        AccountModelField(
+                            provider = provider,
+                            apiKey = openAiApiKey,
+                            label = L10n.str(R.string.openai_model),
+                            fallbackModels = OPENAI_MODELS,
+                            current = openAiModel,
+                            customPlaceholder = L10n.str(R.string.e_g_gpt_5_mini),
+                            onSelect = { viewModel.setOpenAiModel(it) }
                         )
                     }
                 }
@@ -284,13 +313,55 @@ private fun ApiKeyField(value: String, onValueChange: (String) -> Unit, label: S
 }
 
 /** Dropdown with the known models plus a "Custom" option to type an id by hand. */
+/**
+ * Model picker of a provider that lists the models of the user's account (see [ProviderModels]):
+ * the list is downloaded once a key is entered, and [fallbackModels] is offered meanwhile or when
+ * it cannot be downloaded.
+ */
+@Composable
+private fun AccountModelField(
+    provider: AiProvider,
+    apiKey: String,
+    label: String,
+    fallbackModels: List<String>,
+    current: String,
+    customPlaceholder: String,
+    onSelect: (String) -> Unit
+) {
+    var accountModels by remember(provider) { mutableStateOf<List<String>?>(null) }
+    var loading by remember(provider) { mutableStateOf(false) }
+    LaunchedEffect(provider, apiKey) {
+        accountModels = null
+        if (apiKey.isBlank()) return@LaunchedEffect
+        // Wait for the user to finish typing or pasting the key.
+        delay(700)
+        loading = true
+        accountModels = ProviderModels.fetch(provider, apiKey)
+        loading = false
+    }
+    ModelDropdownField(
+        label = label,
+        models = accountModels ?: fallbackModels,
+        current = current,
+        customPlaceholder = customPlaceholder,
+        supportingText = when {
+            apiKey.isBlank() -> null
+            loading -> L10n.str(R.string.ai_models_loading)
+            accountModels != null -> L10n.str(R.string.ai_models_from_account_n, accountModels!!.size)
+            else -> L10n.str(R.string.ai_models_default_list)
+        },
+        onSelect = onSelect
+    )
+}
+
 @Composable
 private fun ModelDropdownField(
     label: String,
     models: List<String>,
     current: String,
     customPlaceholder: String,
-    onSelect: (String) -> Unit
+    onSelect: (String) -> Unit,
+    supportingText: String? = null
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     val isCustom = current !in models
@@ -300,13 +371,19 @@ private fun ModelDropdownField(
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
+            supportingText = supportingText?.let { { Text(it) } },
             trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.open_model_picker)) },
             modifier = Modifier.fillMaxWidth()
         )
         // Transparent layer over the field that opens the menu on tap, so the read-only TextField
         // does not take the tap and show a cursor.
         Box(modifier = Modifier.matchParentSize().clickable { menuExpanded = true })
-        DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false },
+            // A provider may list dozens of models.
+            modifier = Modifier.heightIn(max = 420.dp)
+        ) {
             models.forEach { modelId ->
                 DropdownMenuItem(text = { Text(modelId) }, onClick = { onSelect(modelId); menuExpanded = false })
             }

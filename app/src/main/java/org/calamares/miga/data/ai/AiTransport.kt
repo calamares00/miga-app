@@ -46,6 +46,7 @@ private fun transportFor(provider: AiProvider): AiTransport = when (provider) {
     AiProvider.GEMINI -> GeminiTransport
     AiProvider.ANTHROPIC -> AnthropicTransport
     AiProvider.OPENROUTER -> OpenRouterTransport
+    AiProvider.OPENAI -> OpenAiTransport
 }
 
 /** Runs [request] against this candidate's provider, key and model. */
@@ -160,6 +161,21 @@ internal fun postJson(url: String, body: String, headers: Map<String, String>, t
         connection.setRequestProperty("Content-Type", "application/json")
         headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
         connection.outputStream.use { it.write(body.toByteArray()) }
+        val code = connection.responseCode
+        val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+        return HttpResponse(code, stream?.bufferedReader()?.use { it.readText() }.orEmpty())
+    } finally {
+        connection.disconnect()
+    }
+}
+
+/** Blocking GET; call it from Dispatchers.IO. Network failures are thrown as IOException. */
+internal fun getJson(url: String, headers: Map<String, String>, timeoutMillis: Int): HttpResponse {
+    val connection = URL(url).openConnection() as HttpURLConnection
+    try {
+        connection.connectTimeout = timeoutMillis
+        connection.readTimeout = timeoutMillis
+        headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
         val code = connection.responseCode
         val stream = if (code in 200..299) connection.inputStream else connection.errorStream
         return HttpResponse(code, stream?.bufferedReader()?.use { it.readText() }.orEmpty())

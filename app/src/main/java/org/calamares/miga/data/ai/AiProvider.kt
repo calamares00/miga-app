@@ -7,7 +7,8 @@ package org.calamares.miga.data.ai
 enum class AiProvider(val label: String, val shortName: String) {
     GEMINI("Google Gemini", "Gemini"),
     ANTHROPIC("Anthropic Claude", "Claude"),
-    OPENROUTER("OpenRouter", "OpenRouter")
+    OPENROUTER("OpenRouter", "OpenRouter"),
+    OPENAI("OpenAI", "OpenAI")
 }
 
 /**
@@ -32,3 +33,22 @@ val ANTHROPIC_MODELS = listOf(
 )
 
 const val DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5"
+
+/**
+ * OpenAI models offered in Settings until the list of the user's account is downloaded (see
+ * [ProviderModels]); any other id can also be typed in by hand.
+ */
+val OPENAI_MODELS = listOf(
+    "gpt-5-mini",
+    "gpt-5",
+    "gpt-4.1-mini",
+    "gpt-4o-mini"
+)
+
+const val DEFAULT_OPENAI_MODEL = "gpt-5-mini"
+
+/** Whether an OpenAI model reads images: all current chat models do, except a few small reasoning ones. */
+fun openAiModelReadsImages(model: String): Boolean {
+    val id = model.lowercase()
+    return listOf("o1-mini", "o3-mini", "gpt-3.5").none { id.startsWith(it) }
+}

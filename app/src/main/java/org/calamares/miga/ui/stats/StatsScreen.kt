@@ -3,6 +3,13 @@ package org.calamares.miga.ui.stats
 import android.text.format.Formatter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.AssistChip
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ChevronRight
+import org.calamares.miga.data.model.MissingField
+import org.calamares.miga.data.model.RecipeFilter
+import org.calamares.miga.data.model.SortOption
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -90,7 +97,13 @@ private fun formatMinutes(minutes: Int): String = when {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatsScreen(viewModel: StatsViewModel, onBack: () -> Unit, onRecipeClick: (Long) -> Unit) {
+fun StatsScreen(
+    viewModel: StatsViewModel,
+    onBack: () -> Unit,
+    onRecipeClick: (Long) -> Unit,
+    /** Lists the recipes behind a figure (title, filter) in the search screen. */
+    onOpenRecipes: (String, RecipeFilter) -> Unit
+) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -131,8 +144,14 @@ fun StatsScreen(viewModel: StatsViewModel, onBack: () -> Unit, onRecipeClick: (L
                         modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp)
                     )
                 } else {
-                    Overview(stats)
-                    LibraryContent(stats, onRecipeClick)
+                    Text(
+                        L10n.str(R.string.stats_tap_to_list),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                    Overview(stats, onOpenRecipes)
+                    LibraryContent(stats, onRecipeClick, onOpenRecipes)
                 }
                 StorageCard(
                     storage = uiState.storage,
@@ -146,41 +165,63 @@ fun StatsScreen(viewModel: StatsViewModel, onBack: () -> Unit, onRecipeClick: (L
 }
 
 @Composable
-private fun Overview(stats: LibraryStats) {
+private fun Overview(stats: LibraryStats, onOpenRecipes: (String, RecipeFilter) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile(Icons.AutoMirrored.Filled.MenuBook, stats.totalRecipes, L10n.str(R.string.recipes), Modifier.weight(1f))
+            StatTile(Icons.AutoMirrored.Filled.MenuBook, stats.totalRecipes, L10n.str(R.string.recipes), Modifier.weight(1f)) {
+                onOpenRecipes(L10n.str(R.string.recipes), RecipeFilter())
+            }
             StatTile(Icons.Filled.LibraryBooks, stats.totalBooks, L10n.str(R.string.books), Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile(Icons.Filled.Favorite, stats.favorites, L10n.str(R.string.favourites), Modifier.weight(1f))
-            StatTile(Icons.Filled.Restaurant, stats.timesCookedTotal, L10n.str(R.string.stats_times_cooked), Modifier.weight(1f))
+            StatTile(Icons.Filled.Favorite, stats.favorites, L10n.str(R.string.favourites), Modifier.weight(1f)) {
+                onOpenRecipes(L10n.str(R.string.favourites), RecipeFilter(onlyFavorites = true))
+            }
+            StatTile(Icons.Filled.Restaurant, stats.timesCookedTotal, L10n.str(R.string.stats_times_cooked), Modifier.weight(1f)) {
+                onOpenRecipes(L10n.str(R.string.most_cooked_2), RecipeFilter(onlyCooked = true, sortOption = SortOption.MOST_COOKED))
+            }
         }
-        val highlights = listOfNotNull(
-            stats.addedThisMonth.takeIf { it > 0 }?.let { L10n.str(R.string.stats_added_this_month_x, it) },
-            stats.photos.takeIf { it > 0 }?.let { L10n.str(R.string.stats_photos_x, it) }
-        )
-        if (highlights.isNotEmpty()) {
-            Text(
-                highlights.joinToString("  ·  "),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            )
+        if (stats.addedThisMonth > 0 || stats.photos > 0) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (stats.addedThisMonth > 0) {
+                    val label = L10n.str(R.string.stats_added_this_month_x, stats.addedThisMonth)
+                    AssistChip(
+                        onClick = {
+                            onOpenRecipes(
+                                label,
+                                RecipeFilter(addedSince = LibraryStatsCalculator.startOfMonth(System.currentTimeMillis()), sortOption = SortOption.RECENT)
+                            )
+                        },
+                        label = { Text(label) },
+                        leadingIcon = { Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    )
+                }
+                if (stats.photos > 0) {
+                    Text(
+                        L10n.str(R.string.stats_photos_x, stats.photos),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun LibraryContent(stats: LibraryStats, onRecipeClick: (Long) -> Unit) {
+private fun LibraryContent(stats: LibraryStats, onRecipeClick: (Long) -> Unit, onOpenRecipes: (String, RecipeFilter) -> Unit) {
     val averageMinutes = stats.averageMinutes
     if (averageMinutes != null) {
         StatsCard(Icons.Filled.Schedule, L10n.str(R.string.stats_time)) {
             KeyValueRow(L10n.str(R.string.stats_average_time), formatMinutes(averageMinutes))
+            val quickLabel = L10n.str(R.string.stats_quick_recipes_x, LibraryStatsCalculator.QUICK_RECIPE_MINUTES)
             KeyValueRow(
-                L10n.str(R.string.stats_quick_recipes_x, LibraryStatsCalculator.QUICK_RECIPE_MINUTES),
-                "${stats.quickRecipes} (${stats.quickRecipes * 100 / stats.totalRecipes} %)"
+                quickLabel,
+                "${stats.quickRecipes} (${stats.quickRecipes * 100 / stats.totalRecipes} %)",
+                onClick = if (stats.quickRecipes > 0) {
+                    { onOpenRecipes(quickLabel, RecipeFilter(maxMinutes = LibraryStatsCalculator.QUICK_RECIPE_MINUTES, sortOption = SortOption.PREP_TIME)) }
+                } else null
             )
             stats.longestRecipe?.let { longest ->
                 KeyValueRow(
@@ -193,7 +234,11 @@ private fun LibraryContent(stats: LibraryStats, onRecipeClick: (Long) -> Unit) {
     }
 
     if (stats.mostCooked.isNotEmpty()) {
-        StatsCard(Icons.Filled.EmojiEvents, L10n.str(R.string.most_cooked_2)) {
+        StatsCard(
+            Icons.Filled.EmojiEvents,
+            L10n.str(R.string.most_cooked_2),
+            onSeeAll = { onOpenRecipes(L10n.str(R.string.most_cooked_2), RecipeFilter(onlyCooked = true, sortOption = SortOption.MOST_COOKED)) }
+        ) {
             stats.mostCooked.forEachIndexed { index, entry ->
                 RankedRow(index + 1, entry, L10n.str(R.string.stats_times_x, entry.value)) { onRecipeClick(entry.recipeId) }
             }
@@ -201,7 +246,11 @@ private fun LibraryContent(stats: LibraryStats, onRecipeClick: (Long) -> Unit) {
     }
 
     if (stats.topRated.isNotEmpty()) {
-        StatsCard(Icons.Filled.Star, L10n.str(R.string.stats_top_rated)) {
+        StatsCard(
+            Icons.Filled.Star,
+            L10n.str(R.string.stats_top_rated),
+            onSeeAll = { onOpenRecipes(L10n.str(R.string.stats_top_rated), RecipeFilter(onlyRated = true, sortOption = SortOption.BEST_RATED)) }
+        ) {
             stats.averageRating?.let { average ->
                 Text(
                     L10n.str(R.string.stats_average_rating_x_y, String.format(Locale.getDefault(), "%.1f", average), stats.ratedRecipes),
@@ -217,25 +266,31 @@ private fun LibraryContent(stats: LibraryStats, onRecipeClick: (Long) -> Unit) {
     }
 
     if (stats.byBook.size > 1) {
-        StatsCard(Icons.Filled.LibraryBooks, L10n.str(R.string.stats_by_book)) { BarList(stats.byBook) }
+        StatsCard(Icons.Filled.LibraryBooks, L10n.str(R.string.stats_by_book)) { BarList(stats.byBook, onOpenRecipes) }
     }
     if (stats.byCategory.isNotEmpty()) {
-        StatsCard(Icons.Filled.Category, L10n.str(R.string.category_2)) { BarList(stats.byCategory) }
+        StatsCard(Icons.Filled.Category, L10n.str(R.string.category_2)) { BarList(stats.byCategory, onOpenRecipes) }
     }
     if (stats.byDifficulty.isNotEmpty()) {
-        StatsCard(Icons.Filled.BarChart, L10n.str(R.string.difficulty_2)) { BarList(stats.byDifficulty) }
+        StatsCard(Icons.Filled.BarChart, L10n.str(R.string.difficulty_2)) { BarList(stats.byDifficulty, onOpenRecipes) }
     }
     if (stats.byOrigin.isNotEmpty()) {
-        StatsCard(Icons.Filled.Public, L10n.str(R.string.stats_world_cuisines)) { BarList(stats.byOrigin) }
+        StatsCard(Icons.Filled.Public, L10n.str(R.string.stats_world_cuisines)) { BarList(stats.byOrigin, onOpenRecipes) }
     }
     if (stats.topIngredients.isNotEmpty()) {
-        StatsCard(Icons.Filled.Kitchen, L10n.str(R.string.stats_top_ingredients)) { BarList(stats.topIngredients) }
+        StatsCard(Icons.Filled.Kitchen, L10n.str(R.string.stats_top_ingredients)) { BarList(stats.topIngredients, onOpenRecipes) }
     }
     if (stats.topTags.isNotEmpty()) {
         StatsCard(Icons.Filled.LocalOffer, L10n.str(R.string.stats_top_tags)) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 stats.topTags.forEach { tag ->
-                    Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(10.dp)) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.clip(RoundedCornerShape(10.dp)).then(
+                            tag.filter?.let { filter -> Modifier.clickable { onOpenRecipes(tag.label, filter) } } ?: Modifier
+                        )
+                    ) {
                         Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(tag.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
                             Spacer(modifier = Modifier.width(6.dp))
@@ -255,18 +310,32 @@ private fun LibraryContent(stats: LibraryStats, onRecipeClick: (Long) -> Unit) {
         if (!stats.incomplete) {
             Text(L10n.str(R.string.stats_all_complete), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
-            MissingRow(Icons.Filled.PhotoCamera, L10n.str(R.string.stats_without_photo), stats.withoutPhoto, stats.totalRecipes)
-            MissingRow(Icons.Filled.Category, L10n.str(R.string.stats_without_category), stats.withoutCategory, stats.totalRecipes)
-            MissingRow(Icons.Filled.Kitchen, L10n.str(R.string.stats_without_ingredients), stats.withoutIngredients, stats.totalRecipes)
-            MissingRow(Icons.Filled.FormatListNumbered, L10n.str(R.string.stats_without_steps), stats.withoutSteps, stats.totalRecipes)
-            MissingRow(Icons.Filled.Schedule, L10n.str(R.string.stats_without_time), stats.withoutTime, stats.totalRecipes)
+            MissingRow(Icons.Filled.PhotoCamera, L10n.str(R.string.stats_without_photo), stats.withoutPhoto, stats.totalRecipes) {
+                onOpenRecipes(L10n.str(R.string.stats_without_photo), RecipeFilter(missing = setOf(MissingField.PHOTO)))
+            }
+            MissingRow(Icons.Filled.Category, L10n.str(R.string.stats_without_category), stats.withoutCategory, stats.totalRecipes) {
+                onOpenRecipes(L10n.str(R.string.stats_without_category), RecipeFilter(missing = setOf(MissingField.CATEGORY)))
+            }
+            MissingRow(Icons.Filled.Kitchen, L10n.str(R.string.stats_without_ingredients), stats.withoutIngredients, stats.totalRecipes) {
+                onOpenRecipes(L10n.str(R.string.stats_without_ingredients), RecipeFilter(missing = setOf(MissingField.INGREDIENTS)))
+            }
+            MissingRow(Icons.Filled.FormatListNumbered, L10n.str(R.string.stats_without_steps), stats.withoutSteps, stats.totalRecipes) {
+                onOpenRecipes(L10n.str(R.string.stats_without_steps), RecipeFilter(missing = setOf(MissingField.STEPS)))
+            }
+            MissingRow(Icons.Filled.Schedule, L10n.str(R.string.stats_without_time), stats.withoutTime, stats.totalRecipes) {
+                onOpenRecipes(L10n.str(R.string.stats_without_time), RecipeFilter(missing = setOf(MissingField.TIME)))
+            }
         }
     }
 }
 
 @Composable
-private fun StatTile(icon: ImageVector, value: Int, label: String, modifier: Modifier = Modifier) {
-    Surface(modifier = modifier, color = MaterialTheme.colorScheme.surfaceContainerLow, shape = RoundedCornerShape(20.dp)) {
+private fun StatTile(icon: ImageVector, value: Int, label: String, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+    Surface(
+        modifier = modifier.clip(RoundedCornerShape(20.dp)).then(if (onClick != null && value > 0) Modifier.clickable(onClick = onClick) else Modifier),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(20.dp)
+    ) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
@@ -290,13 +359,16 @@ private fun StatTile(icon: ImageVector, value: Int, label: String, modifier: Mod
 }
 
 @Composable
-private fun StatsCard(icon: ImageVector, title: String, content: @Composable () -> Unit) {
+private fun StatsCard(icon: ImageVector, title: String, onSeeAll: (() -> Unit)? = null, content: @Composable () -> Unit) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 4.dp)) {
                 Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(10.dp))
-                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                if (onSeeAll != null) {
+                    TextButton(onClick = onSeeAll, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(L10n.str(R.string.see_all)) }
+                }
             }
             content()
         }
@@ -360,11 +432,18 @@ private fun RankedRow(position: Int, entry: RankedRecipe, value: String, onClick
 
 /** Horizontal bars, each with its label and count above, scaled to the largest count. */
 @Composable
-private fun BarList(entries: List<CountEntry>) {
+private fun BarList(entries: List<CountEntry>, onOpenRecipes: (String, RecipeFilter) -> Unit) {
     val maxCount = entries.maxOf { it.count }.coerceAtLeast(1)
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         entries.forEach { entry ->
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .then(entry.filter?.let { filter -> Modifier.clickable { onOpenRecipes(entry.label, filter) } } ?: Modifier)
+                    .padding(vertical = 3.dp)
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(entry.label, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     Text("${entry.count}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -390,13 +469,17 @@ private fun BarList(entries: List<CountEntry>) {
 }
 
 @Composable
-private fun MissingRow(icon: ImageVector, label: String, count: Int, total: Int) {
+private fun MissingRow(icon: ImageVector, label: String, count: Int, total: Int, onClick: () -> Unit) {
     if (count > 0) {
-        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick).padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(12.dp))
             Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
             Text("$count / $total", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
+            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
         }
     }
 }

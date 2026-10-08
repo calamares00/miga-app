@@ -64,8 +64,8 @@ class LibraryStatsTest {
         assertEquals(listOf("Tortilla", "Paella"), stats.mostCooked.map { it.name })
         assertEquals(listOf("Paella", "Tortilla"), stats.topRated.map { it.name })
         assertEquals(4.5, stats.averageRating!!, 0.001)
-        assertEquals(CountEntry("Sal", 3), stats.topIngredients.first())
-        assertEquals(listOf(CountEntry("Domingo", 2)), stats.topTags)
+        assertEquals(CountEntry("Sal", 3), stats.topIngredients.first().copy(filter = null))
+        assertEquals(listOf(CountEntry("Domingo", 2)), stats.topTags.map { it.copy(filter = null) })
         assertEquals(1, stats.withoutTime)
     }
 

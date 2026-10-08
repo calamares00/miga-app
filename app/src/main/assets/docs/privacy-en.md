@@ -15,7 +15,7 @@ Miga is a family recipe book and shopping list app. This document explains what 
 
 Recipes, books, photos, categories, tags, kitchen equipment, ratings, shopping lists, templates, supermarkets and settings are stored **in your device's internal storage**.
 
-The Google Gemini, Anthropic or OpenRouter API keys you enter are stored only on your device and are used only to call the provider you choose.
+The Google Gemini, Anthropic, OpenAI or OpenRouter API keys you enter are stored only on your device and are used only to call the provider you choose.
 
 If Android backup is turned on, the system may include this data in the backup managed by your Google account, as with any other app. Miga has no access to that backup.
 
@@ -32,7 +32,7 @@ If Android backup is turned on, the system may include this data in the backup m
 
 All of them start from an action of yours or a feature you have turned on. None goes through a server of the Miga developer: there is no such server.
 
-1. **AI features (optional, with your own key).** What each feature needs is sent to the provider you set up (**Google Gemini**, **Anthropic Claude** or **OpenRouter**, which in turn forwards it to the provider of the model you choose):
+1. **AI features (optional, with your own key).** What each feature needs is sent to the provider you set up (**Google Gemini**, **Anthropic Claude**, **OpenAI** or **OpenRouter**, which in turn forwards it to the provider of the model you choose):
    - **Recipes from photos**: the photos you choose. Cropping the dish photo is then done on your device.
    - **Recipes from a web page**: the text of the page.
    - **Find a recipe with AI**: the name and description of the dish.
@@ -40,7 +40,7 @@ All of them start from an action of yours or a feature you have turned on. None 
    - **Cleaning up dictated text**: the text you dictated.
    - **Ideas**: a summary of your recipes (name, category, tags, time, main ingredients, equipment, whether it is a favourite and how many times you have cooked it), the options you choose, your question and the earlier questions of that conversation.
 
-   Providers are used in the priority order you choose: if one fails or cannot read images, the same request is sent to the next one. How that data is handled is subject to each provider's terms for your key (some free OpenRouter models may use requests for training). Without a key nothing is sent. The OpenRouter model list is downloaded from its public catalogue without sending any of your data. You can turn off all AI features, or only the automatic health rating or nutrition estimate, in Settings → Artificial intelligence. AI-generated content is labelled in the app, may contain mistakes and can be reported.
+   Providers are used in the priority order you choose: if one fails or cannot read images, the same request is sent to the next one. How that data is handled is subject to each provider's terms for your key (some free OpenRouter models may use requests for training). Without a key nothing is sent. The OpenRouter model list is downloaded from its public catalogue without sending any of your data; the Gemini, Claude and OpenAI lists are requested from each provider with your key, without sending any other data. You can turn off all AI features, or only the automatic health rating or nutrition estimate, in Settings → Artificial intelligence. AI-generated content is labelled in the app, may contain mistakes and can be reported.
 2. **Open Food Facts.** When you scan a barcode or search for a product by name, that code or text is sent to Open Food Facts (an open database, no account) to get the product's name, photo and details. Product photos are downloaded from its servers. Open Food Facts data is licensed under the ODbL.
 3. **Recipe packs catalogue.** When you open the catalogue or install a pack, a public listing and the pack file are downloaded from miga.calamares.org (or from the alternative catalogue you set up). None of your data is sent.
 4. **Your own sync server (optional).** If you add a connection to a server you host yourself (miga-server), the books, recipes and photos you link and, if you turn it on, the shopping list (with the name you set as author) are sent only to that server. The app syncs when it opens, periodically in the background and every few seconds while you view a shared list. QR invitations contain the server address, the shared space and an access token: whoever scans the code can read and change that space. If the server uses http:// outside your local network, the app warns you that the connection is not encrypted.

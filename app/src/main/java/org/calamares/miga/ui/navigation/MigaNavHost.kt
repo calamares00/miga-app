@@ -88,6 +88,9 @@ import org.calamares.miga.ui.packs.PacksCatalogScreen
 import org.calamares.miga.ui.packs.PacksCatalogViewModel
 import org.calamares.miga.ui.search.GlobalSearchScreen
 import org.calamares.miga.ui.search.GlobalSearchViewModel
+import org.calamares.miga.ui.search.SearchRequest
+import org.calamares.miga.ui.search.SearchRequests
+import androidx.compose.runtime.saveable.rememberSaveable
 import org.calamares.miga.data.share.ShoppingIntents
 import org.calamares.miga.ui.shoppinglist.ShoppingListScreen
 import org.calamares.miga.ui.shoppinglist.ShoppingListViewModel
@@ -564,7 +567,27 @@ private fun NavGraphBuilder.screens(
         StatsScreen(
             viewModel = viewModel,
             onBack = { navController.popBackStack() },
-            onRecipeClick = { navController.navigate(Destinations.detail(it)) }
+            onRecipeClick = { navController.navigate(Destinations.detail(it)) },
+            onOpenRecipes = { title, filter ->
+                SearchRequests.open(SearchRequest(title, filter))
+                navController.navigate(Destinations.FILTERED_SEARCH_ROUTE)
+            }
+        )
+    }
+
+    screen(Destinations.FILTERED_SEARCH_ROUTE) {
+        // The request is only there the first time; after a configuration change the ViewModel
+        // keeps the filter and the title is restored from the saved state.
+        val request = remember { SearchRequests.take() }
+        val title = rememberSaveable { request?.title ?: L10n.str(R.string.search_recipes_2) }
+        val viewModel: GlobalSearchViewModel = viewModel(
+            factory = viewModelFactory { initializer { GlobalSearchViewModel(repository, initialFilter = request?.filter) } }
+        )
+        GlobalSearchScreen(
+            viewModel = viewModel,
+            onRecipeClick = { navController.navigate(Destinations.detail(it)) },
+            title = title,
+            onBack = { navController.popBackStack() }
         )
     }
 

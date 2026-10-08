@@ -58,7 +58,7 @@ Pulsa ✨ en **Mis libros** para pedir recomendaciones basadas en tus recetas.
 
 ## 🤖 Inteligencia artificial {ai}
 
-Las funciones de IA son opcionales y usan **tu propia clave** de Google Gemini, Anthropic Claude u OpenRouter (que tiene modelos gratuitos). Configúralas en Ajustes → Inteligencia artificial.
+Las funciones de IA son opcionales y usan **tu propia clave** de Google Gemini, Anthropic Claude, OpenAI u OpenRouter (que tiene modelos gratuitos). La lista de modelos se carga sola con tu clave. Configúralas en Ajustes → Inteligencia artificial.
 
 - Si añades varios proveedores, se usan **en el orden que elijas**: si uno falla, se prueba el siguiente automáticamente.
 - Mientras trabaja, la app te dice **qué está haciendo** en cada momento ("Leyendo el texto de la foto…", "Repasando tus recetas…").

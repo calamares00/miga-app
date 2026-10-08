@@ -14,6 +14,8 @@ object Destinations {
     const val FAVORITES_ROUTE = "favorites"
     const val SHOPPING_LIST_ROUTE = "shoppingList"
     const val STATS_ROUTE = "stats"
+    /** Search over the recipes behind a figure of the statistics; see SearchRequests. */
+    const val FILTERED_SEARCH_ROUTE = "search/filtered"
     const val PACKS_CATALOG_ROUTE = "packs"
     const val PACK_DETAIL_ROUTE = "packs/{packId}"
     const val BULK_IMPORT_ROUTE = "bulkImport?bookId={bookId}&photoUris={photoUris}"

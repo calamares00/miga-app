@@ -718,7 +718,7 @@
     <string name="ai_incomplete_refused">"%1$s rechazó la petición por su política de contenido."</string>
     <string name="ai_incomplete_empty">"%1$s no devolvió ningún resultado."</string>
     <string name="ai_incomplete_other">"%1$s no completó la respuesta (motivo: %2$s)."</string>
-    <string name="ai_no_image_provider">"Ninguno de tus proveedores de IA puede leer imágenes. Añade una clave de Gemini o Claude, o elige en OpenRouter un modelo que lea imágenes."</string>
+    <string name="ai_no_image_provider">"Ninguno de tus proveedores de IA puede leer imágenes. Añade una clave de Gemini, Claude u OpenAI, o elige en OpenRouter un modelo que lea imágenes."</string>
     <string name="ai_all_providers_failed">"Han fallado todos los proveedores de IA. Último error: %1$s"</string>
     <string name="ai_no_provider">"Añade la clave de un proveedor de IA en Ajustes → Inteligencia artificial."</string>
     <string name="ai_no_provider_summary">"Sin proveedor configurado"</string>
@@ -998,4 +998,20 @@
     <string name="import_into_this_book">"En este libro"</string>
     <string name="imported_n_recipes_into_x">"%1$d recetas importadas en «%2$s»"</string>
     <string name="export_ready_x">"«%1$s» (%2$s) está listo. Guárdalo en tus archivos o compártelo."</string>
+    <string name="api_key_openai">"API key de OpenAI"</string>
+    <string name="get_one_platform_openai_com">"Consíguela en platform.openai.com"</string>
+    <string name="openai_model">"Modelo de OpenAI"</string>
+    <string name="e_g_gpt_5_mini">"p. ej. gpt-5-mini"</string>
+    <string name="ai_models_loading">"Cargando los modelos de tu cuenta…"</string>
+    <string name="ai_models_from_account_n">"%1$d modelos disponibles con tu clave"</string>
+    <string name="ai_models_default_list">"Lista por defecto (no se pudo cargar la de tu cuenta)"</string>
+    <string name="see_all">"Ver todas"</string>
+    <string name="stats_tap_to_list">"Toca una cifra para ver sus recetas."</string>
+    <string name="search_cond_book_x">"Libro: %1$s"</string>
+    <string name="search_cond_cooked">"Cocinadas"</string>
+    <string name="search_cond_rated">"Valoradas"</string>
+    <string name="search_cond_added_this_month">"Añadidas este mes"</string>
+    <string name="remove_filter_x">"Quitar filtro %1$s"</string>
+    <string name="close_search">"Cerrar búsqueda"</string>
+    <string name="save_to_files">"Guardar en archivos"</string>
 </resources>

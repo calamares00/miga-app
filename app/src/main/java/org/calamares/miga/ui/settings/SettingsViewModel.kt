@@ -22,6 +22,7 @@ import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.ai.DEFAULT_ANTHROPIC_MODEL
+import org.calamares.miga.data.ai.DEFAULT_OPENAI_MODEL
 import org.calamares.miga.data.ai.DEFAULT_GEMINI_MODEL
 import org.calamares.miga.data.ai.AiProvider
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -173,21 +174,22 @@ class SettingsViewModel(
     }
 
     /** Summary for the main Settings screen: providers with a key, in priority order. */
-    val aiProvidersSummary: StateFlow<List<AiProvider>> = kotlinx.coroutines.flow.combine(
-        settingsRepository.observeProviderOrder(),
-        settingsRepository.observeGeminiApiKey(),
-        settingsRepository.observeAnthropicApiKey(),
-        settingsRepository.observeOpenRouterApiKey(),
-        settingsRepository.observeOpenRouterModel()
-    ) { order, gemini, anthropic, openRouter, openRouterModel ->
-        order.filter { provider ->
-            when (provider) {
-                AiProvider.GEMINI -> gemini.isNotBlank()
-                AiProvider.ANTHROPIC -> anthropic.isNotBlank()
-                AiProvider.OPENROUTER -> openRouter.isNotBlank() && openRouterModel.isNotBlank()
-            }
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val aiProvidersSummary: StateFlow<List<AiProvider>> = settingsRepository.observeConfiguredProviders()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val openAiApiKey: StateFlow<String> = settingsRepository.observeOpenAiApiKey()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    fun setOpenAiApiKey(apiKey: String) {
+        viewModelScope.launch { settingsRepository.setOpenAiApiKey(apiKey) }
+    }
+
+    val openAiModel: StateFlow<String> = settingsRepository.observeOpenAiModel()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_OPENAI_MODEL)
+
+    fun setOpenAiModel(model: String) {
+        viewModelScope.launch { settingsRepository.setOpenAiModel(model) }
+    }
 
     val anthropicApiKey: StateFlow<String> = settingsRepository.observeAnthropicApiKey()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
