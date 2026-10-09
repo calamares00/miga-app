@@ -1,5 +1,13 @@
 package org.calamares.miga.ui.settings
 
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material.icons.filled.Tour
+import androidx.compose.material3.Switch
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.semantics.Role
+import kotlinx.coroutines.launch
+import org.calamares.miga.MigaApp
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
@@ -152,6 +160,7 @@ fun HelpScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit, onOpenChangelog: (
                     onToggle = { expanded = if (topic.title in expanded) expanded - topic.title else expanded + topic.title }
                 )
             }
+            item { WelcomeTourCard() }
             item {
                 ContactCard(
                     onReport = {
@@ -202,6 +211,39 @@ private fun HelpTopicCard(topic: HelpTopic, expanded: Boolean, onToggle: () -> U
                     modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
                 )
             }
+        }
+    }
+}
+
+/** Shows the welcome tour again on the next start, for whoever wants to see it again. */
+@Composable
+private fun WelcomeTourCard() {
+    val context = LocalContext.current
+    val settings = remember { (context.applicationContext as MigaApp).settingsRepository }
+    val scope = rememberCoroutineScope()
+    val enabled by settings.observeWelcomeOnNextStart().collectAsState(initial = false)
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(value = enabled, role = Role.Switch) { checked -> scope.launch { settings.setWelcomeOnNextStart(checked) } }
+                .padding(18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Filled.Tour, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Column(modifier = Modifier.weight(1f).padding(horizontal = 14.dp)) {
+                Text(L10n.str(R.string.welcome_again_title), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    L10n.str(if (enabled) R.string.welcome_again_on else R.string.welcome_again_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(checked = enabled, onCheckedChange = null)
         }
     }
 }

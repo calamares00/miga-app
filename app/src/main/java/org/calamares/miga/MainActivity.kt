@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -52,10 +53,8 @@ import org.calamares.miga.ui.settings.SettingsSection
 import org.calamares.miga.ui.welcome.WelcomeScreen
 import org.calamares.miga.ui.security.BiometricAuthenticator
 import org.calamares.miga.ui.theme.MigaTheme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private const val SPLASH_MIN_DURATION_MILLIS = 1200L
 private const val PROMPTS_PREFS = "miga_prompts"
 private const val KEY_ASKED_NOTIFICATIONS = "asked_notifications"
 
@@ -80,7 +79,15 @@ class MainActivity : FragmentActivity() {
         super.attachBaseContext(L10n.wrap(newBase))
     }
 
+    /**
+     * Set once the settings that decide the first screen (welcome, lock or books) have loaded;
+     * until then the system splash screen stays, so no screen is shown just to be replaced.
+     */
+    @Volatile
+    private var startScreenReady = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen().setKeepOnScreenCondition { !startScreenReady }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         if (savedInstanceState == null) ShoppingIntents.handle(intent)
@@ -99,13 +106,19 @@ class MainActivity : FragmentActivity() {
             val onboardingDone by settingsRepository.observeOnboardingDone().collectAsState(initial = null)
             var welcomeDestination by remember { mutableStateOf<String?>(null) }
             var unlocked by remember { mutableStateOf(false) }
-            var showSplash by remember { mutableStateOf(true) }
             val lifecycleOwner = LocalLifecycleOwner.current
             val scope = rememberCoroutineScope()
 
+            // "Show the welcome again on the next start" (Settings > Help) is applied before the
+            // first screen is chosen.
+            var welcomeRequestApplied by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
-                delay(SPLASH_MIN_DURATION_MILLIS)
-                showSplash = false
+                settingsRepository.applyWelcomeRequest()
+                welcomeRequestApplied = true
+            }
+            val settingsLoaded = welcomeRequestApplied && onboardingDone != null && biometricLockEnabled != null
+            LaunchedEffect(settingsLoaded) {
+                if (settingsLoaded) startScreenReady = true
             }
 
             // The first time an AI task runs, ask for the notification permission (Android 13+)
@@ -129,7 +142,8 @@ class MainActivity : FragmentActivity() {
             MigaTheme(darkTheme = darkTheme, colorTheme = colorTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     when {
-                        showSplash || onboardingDone == null || biometricLockEnabled == null -> SplashScreen()
+                        // Covered by the system splash screen until the settings load.
+                        !settingsLoaded -> Unit
                         onboardingDone == false -> WelcomeScreen(
                             packsRoute = Destinations.PACKS_CATALOG_ROUTE,
                             backupRoute = Destinations.settingsSection(SettingsSection.BACKUP.id),
@@ -150,32 +164,6 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun SplashScreen() {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Image(
-            painter = painterResource(R.drawable.ic_launcher_foreground),
-            contentDescription = null,
-            modifier = Modifier.size(96.dp)
-        )
-        Text(
-            text = "Miga",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(top = 16.dp)
-        )
-        Text(
-            text = L10n.str(R.string.recipes_books_kitchen),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp)
-        )
     }
 }
 
