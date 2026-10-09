@@ -13,6 +13,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import java.io.IOException
 import org.calamares.miga.data.model.ColorTheme
+import org.calamares.miga.data.model.PhotoFrame
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
@@ -37,6 +38,7 @@ class SettingsRepository(private val context: Context) {
 
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val colorThemeKey = stringPreferencesKey("color_theme")
+    private val photoFrameKey = stringPreferencesKey("photo_frame")
     private val biometricLockKey = booleanPreferencesKey("biometric_lock_enabled")
     private val aiEnabledKey = booleanPreferencesKey("ai_enabled")
     private val aiHealthEnabledKey = booleanPreferencesKey("ai_health_enabled")
@@ -120,6 +122,17 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setColorTheme(colorTheme: ColorTheme) {
         context.settingsDataStore.edit { prefs -> prefs[colorThemeKey] = colorTheme.name }
+    }
+
+    fun observePhotoFrame(): Flow<PhotoFrame> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[photoFrameKey]?.let { stored ->
+                runCatching { PhotoFrame.valueOf(stored) }.getOrDefault(PhotoFrame.DEFAULT)
+            } ?: PhotoFrame.DEFAULT
+        }
+
+    suspend fun setPhotoFrame(frame: PhotoFrame) {
+        context.settingsDataStore.edit { prefs -> prefs[photoFrameKey] = frame.name }
     }
 
     /** Shopping list currently open; "main" is the default list. */

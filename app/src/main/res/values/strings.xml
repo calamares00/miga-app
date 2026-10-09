@@ -1043,4 +1043,19 @@
     <string name="new_short">"New"</string>
     <string name="app_slogan">"Your recipes. Your books. Your kitchen."</string>
     <string name="checking_connection">"Checking…"</string>
+    <string name="photo_enhance_ai">"Improve with AI"</string>
+    <string name="photo_enhancing">"Improving…"</string>
+    <string name="photo_compare">"Compare"</string>
+    <string name="photo_undo_enhance">"Undo"</string>
+    <string name="photo_showing_original">"Showing the original photo."</string>
+    <string name="photo_compare_hint">"Hold Compare to see the original. Drag the corners to crop."</string>
+    <string name="photo_optimized_x_y">"Photo optimised: %1$s → %2$s"</string>
+    <string name="photo_frame_title">"Photo frame"</string>
+    <string name="photo_frame_hint">"Gives every recipe photo the same look, in lists and in the recipe."</string>
+    <string name="photo_frame_none">"None"</string>
+    <string name="photo_frame_polaroid">"Polaroid"</string>
+    <string name="photo_frame_gallery">"Gallery"</string>
+    <string name="photo_frame_fine_line">"Fine line"</string>
+    <string name="photo_frame_vignette">"Vignette"</string>
+    <string name="photo_frame_accent">"Colour"</string>
 </resources>
