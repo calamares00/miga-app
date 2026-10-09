@@ -1,5 +1,12 @@
 package org.calamares.miga.ui.detail
 
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.filled.AutoAwesome
+import kotlinx.coroutines.launch
 import org.calamares.miga.ui.theme.recipePhotoFrame
 import org.calamares.miga.ui.components.FormattedText
 import org.calamares.miga.ui.components.ButtonContent
@@ -147,6 +154,9 @@ fun RecipeDetailScreen(
     val healthState by viewModel.healthState.collectAsState()
     val nutritionState by viewModel.nutritionState.collectAsState()
     val substitutionDialogState by viewModel.substitutionDialogState.collectAsState()
+    val polishState by viewModel.polishState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val aiEnabled = rememberAiEnabled()
     val context = LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
@@ -176,6 +186,7 @@ fun RecipeDetailScreen(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
+        snackbarHost = { SnackbarHost(snackbarHostState, modifier = Modifier.navigationBarsPadding()) },
         floatingActionButton = {
             if (recipe?.stepGroups?.any { it.instructions.isNotEmpty() } == true) {
                 ExtendedFloatingActionButton(
@@ -254,6 +265,13 @@ fun RecipeDetailScreen(
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         if (!currentBookIsPack) {
                             DropdownMenuItem(text = { Text(L10n.str(R.string.edit)) }, leadingIcon = { Icon(Icons.Filled.Edit, null) }, onClick = { showMenu = false; onEdit() })
+                            if (aiEnabled) {
+                                DropdownMenuItem(
+                                    text = { Text(L10n.str(R.string.polish_menu)) },
+                                    leadingIcon = { Icon(Icons.Filled.AutoAwesome, null) },
+                                    onClick = { showMenu = false; viewModel.polishRecipe() }
+                                )
+                            }
                         }
                         DropdownMenuItem(
                             text = { Text(L10n.str(R.string.export_ellipsis)) },
@@ -293,6 +311,27 @@ fun RecipeDetailScreen(
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) { Text(L10n.str(R.string.cancel)) }
             }
+        )
+    }
+
+    recipe?.let { current ->
+        RecipePolishDialog(
+            state = polishState,
+            recipe = current,
+            onApply = {
+                viewModel.applyPolish {
+                    scope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = L10n.str(R.string.polish_applied),
+                            actionLabel = L10n.str(R.string.undo),
+                            duration = SnackbarDuration.Long
+                        )
+                        if (result == SnackbarResult.ActionPerformed) viewModel.undoPolish()
+                    }
+                }
+            },
+            onRetry = { viewModel.polishRecipe() },
+            onDismiss = { viewModel.dismissPolish() }
         )
     }
 

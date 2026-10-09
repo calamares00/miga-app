@@ -1057,4 +1057,13 @@
     <string name="photo_frame_fine_line">"Línea fina"</string>
     <string name="photo_frame_vignette">"Viñeta"</string>
     <string name="photo_frame_accent">"Color"</string>
+    <string name="polish_menu">"Mejorar textos con IA"</string>
+    <string name="polish_title">"Mejorar con IA"</string>
+    <string name="polish_working">"Revisando la redacción, los ingredientes y los pasos…"</string>
+    <string name="polish_review_title">"Receta mejorada"</string>
+    <string name="polish_changes">"Qué ha cambiado"</string>
+    <string name="polish_before">"Antes"</string>
+    <string name="polish_after">"Después"</string>
+    <string name="polish_apply">"Aplicar"</string>
+    <string name="polish_applied">"Receta mejorada con IA"</string>
 </resources>
