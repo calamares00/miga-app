@@ -11,6 +11,10 @@ import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.nutrition.RecipeNutritionResult
 import org.calamares.miga.data.nutrition.analyzeNutrition
+import org.calamares.miga.data.model.toDraft
+import org.calamares.miga.data.polish.PolishedRecipe
+import org.calamares.miga.data.polish.RecipePolishResult
+import org.calamares.miga.data.polish.polishRecipe
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.substitution.IngredientSubstitution
 import org.calamares.miga.data.substitution.SubstitutionResult
@@ -49,6 +53,15 @@ sealed interface SubstitutionDialogState {
     data class Loaded(val ingredientName: String, val substitutions: List<IngredientSubstitution>) : SubstitutionDialogState
     data class NotConfigured(val ingredientName: String) : SubstitutionDialogState
     data class Error(val ingredientName: String, val reason: String) : SubstitutionDialogState
+}
+
+/** "Improve texts with AI": the request, then the result to review before it is saved. */
+sealed interface PolishState {
+    data object Hidden : PolishState
+    data object Loading : PolishState
+    data object NotConfigured : PolishState
+    data class Error(val reason: String) : PolishState
+    data class Ready(val polished: PolishedRecipe) : PolishState
 }
 
 class RecipeDetailViewModel(
@@ -207,6 +220,60 @@ class RecipeDetailViewModel(
 
     fun dismissSubstitutionDialog() {
         _substitutionDialogState.value = SubstitutionDialogState.Hidden
+    }
+
+    private val _polishState = MutableStateFlow<PolishState>(PolishState.Hidden)
+    val polishState: StateFlow<PolishState> = _polishState
+
+    /** The recipe as it was before the last improvement applied, for "Undo". */
+    private var beforePolish: Recipe? = null
+
+    fun polishRecipe() {
+        viewModelScope.launch {
+            _polishState.value = PolishState.Loading
+            val current = recipe.filterNotNull().first()
+            val result = settingsRepository.runAi<RecipePolishResult>(
+                errorOf = { (it as? RecipePolishResult.Error)?.reason },
+                error = { RecipePolishResult.Error(it) }
+            ) { ai -> ai.polishRecipe(current) }
+            // Closed by the user while waiting: the answer is dropped.
+            if (_polishState.value != PolishState.Loading) return@launch
+            _polishState.value = when (result) {
+                null -> PolishState.NotConfigured
+                is RecipePolishResult.Success -> PolishState.Ready(result.polished)
+                is RecipePolishResult.Error -> PolishState.Error(result.reason)
+            }
+        }
+    }
+
+    /** Saves the improved texts; the rest of the recipe (photos, tags, rating...) is kept. */
+    fun applyPolish(onApplied: () -> Unit) {
+        val ready = _polishState.value as? PolishState.Ready ?: return
+        val current = recipe.value ?: return
+        _polishState.value = PolishState.Hidden
+        viewModelScope.launch {
+            beforePolish = current
+            val polished = ready.polished
+            repository.saveRecipe(
+                current.toDraft().copy(
+                    name = polished.name,
+                    notes = polished.notes,
+                    ingredientGroups = polished.ingredientGroups,
+                    stepGroups = polished.stepGroups
+                )
+            )
+            onApplied()
+        }
+    }
+
+    fun undoPolish() {
+        val previous = beforePolish ?: return
+        beforePolish = null
+        viewModelScope.launch { repository.saveRecipe(previous.toDraft()) }
+    }
+
+    fun dismissPolish() {
+        _polishState.value = PolishState.Hidden
     }
 
     fun toggleFavorite() {

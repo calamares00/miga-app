@@ -1058,4 +1058,13 @@
     <string name="photo_frame_fine_line">"Fine line"</string>
     <string name="photo_frame_vignette">"Vignette"</string>
     <string name="photo_frame_accent">"Colour"</string>
+    <string name="polish_menu">"Improve texts with AI"</string>
+    <string name="polish_title">"Improve with AI"</string>
+    <string name="polish_working">"Reviewing the wording, ingredients and steps…"</string>
+    <string name="polish_review_title">"Improved recipe"</string>
+    <string name="polish_changes">"What changed"</string>
+    <string name="polish_before">"Before"</string>
+    <string name="polish_after">"After"</string>
+    <string name="polish_apply">"Apply"</string>
+    <string name="polish_applied">"Recipe improved with AI"</string>
 </resources>
