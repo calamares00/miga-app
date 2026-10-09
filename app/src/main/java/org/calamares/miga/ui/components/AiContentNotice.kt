@@ -57,8 +57,7 @@ fun AiContentNotice(feature: String, content: () -> String, modifier: Modifier =
             modifier = Modifier.weight(1f).padding(start = 6.dp)
         )
         TextButton(onClick = { reporting = true }) {
-            Icon(Icons.Filled.Flag, contentDescription = null, modifier = Modifier.size(16.dp))
-            Text(L10n.str(R.string.report), style = MaterialTheme.typography.labelLarge)
+            ButtonContent(Icons.Filled.Flag, L10n.str(R.string.report))
         }
     }
     if (reporting) {

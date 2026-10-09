@@ -1039,4 +1039,8 @@
     <string name="welcome_again_title">"Welcome tour"</string>
     <string name="welcome_again_desc">"Show the welcome and the tour of the app again the next time you open it."</string>
     <string name="welcome_again_on">"It will show the next time you open the app."</string>
+    <string name="template_short">"Template"</string>
+    <string name="new_short">"New"</string>
+    <string name="app_slogan">"Your recipes. Your books. Your kitchen."</string>
+    <string name="checking_connection">"Checking…"</string>
 </resources>

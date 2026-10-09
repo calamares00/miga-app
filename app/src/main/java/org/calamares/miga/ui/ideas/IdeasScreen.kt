@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.ideas
 
 import androidx.compose.animation.AnimatedVisibility
+import org.calamares.miga.ui.components.ButtonContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -226,8 +227,7 @@ fun IdeasScreen(
                         onValueChange = { question = it.take(MAX_IDEAS_QUESTION_CHARS) },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text(L10n.str(R.string.ideas_ask_placeholder)) },
-                        maxLines = 4,
-                        shape = RoundedCornerShape(24.dp)
+                        maxLines = 4
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     FilledIconButton(onClick = ::send, enabled = question.isNotBlank() && !busy) {
@@ -401,9 +401,7 @@ private fun OptionsPanel(
                         }
                     }
                     Button(onClick = onAsk, enabled = !filters.isEmpty && !busy, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                        Icon(Icons.Filled.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(L10n.str(R.string.ideas_ask_button))
+                        ButtonContent(Icons.Filled.AutoAwesome, L10n.str(R.string.ideas_ask_button))
                     }
                 }
             }
@@ -512,9 +510,7 @@ private fun AnswerCard(
 
             if (answer.recipeIds.size > 1) {
                 OutlinedButton(onClick = onAddToShopping) {
-                    Icon(Icons.Filled.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(L10n.str(R.string.ideas_add_to_shopping))
+                    ButtonContent(Icons.Filled.ShoppingCart, L10n.str(R.string.ideas_add_to_shopping))
                 }
             }
 

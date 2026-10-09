@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.detail
 
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.calamares.miga.ui.components.ButtonContent
 import kotlinx.coroutines.isActive
 import kotlin.coroutines.resume
 import androidx.compose.material.icons.filled.RecordVoiceOver
@@ -530,9 +531,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                         modifier = Modifier.weight(1f),
                         contentPadding = PaddingValues(vertical = 16.dp)
                     ) {
-                        Icon(Icons.Filled.ArrowBackIosNew, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(L10n.str(R.string.previous).trim())
+                        ButtonContent(Icons.Filled.ArrowBackIosNew, L10n.str(R.string.previous).trim())
                     }
                     Button(
                         onClick = { if (pageIndex < totalPages - 1) goToPage(pageIndex + 1) else close() },
@@ -713,9 +712,8 @@ private fun StepPage(
         if (detectedSeconds != null) {
             Spacer(modifier = Modifier.height(20.dp))
             FilledTonalButton(onClick = onTimer) {
-                Icon(Icons.Filled.Timer, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
+                ButtonContent(
+                    Icons.Filled.Timer,
                     if (timerRunningHere) L10n.str(R.string.stop_timer).trim() else L10n.str(R.string.start_timer_x, formatTimer(detectedSeconds)).trim()
                 )
             }

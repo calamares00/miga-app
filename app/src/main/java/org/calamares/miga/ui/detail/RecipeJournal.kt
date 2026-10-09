@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.detail
 
 import android.text.format.DateUtils
+import org.calamares.miga.ui.components.ButtonContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -73,9 +74,7 @@ internal fun RecipeJournalSection(notes: List<RecipeNote>, actions: JournalActio
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(L10n.str(R.string.journal_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
             TextButton(onClick = { editing = RecipeNote(0, "", 0) }) {
-                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(L10n.str(R.string.journal_add))
+                ButtonContent(Icons.Filled.Add, L10n.str(R.string.journal_add))
             }
         }
         if (notes.isEmpty()) {

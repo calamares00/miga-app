@@ -120,6 +120,7 @@ fun MigaTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = MigaTypography,
+        shapes = MigaShapes,
         content = content
     )
 }

@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.shoppinglist
 
 import org.calamares.miga.L10n
+import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.R
 import android.Manifest
 import android.content.Intent
@@ -207,8 +208,7 @@ internal fun TemplateRow(template: ShoppingTemplate, onApply: () -> Unit, onClic
             )
         }
         FilledTonalButton(onClick = onApply, enabled = template.items.isNotEmpty(), contentPadding = PaddingValues(horizontal = 12.dp)) {
-            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(L10n.str(R.string.add_2))
+            ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_2))
         }
     }
 }
@@ -383,8 +383,7 @@ internal fun TemplateEditorSheet(
 
             if (searching) {
                 TextButton(onClick = { searching = false; viewModel.clearSearch() }) {
-                    Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(L10n.str(R.string.back_template))
+                    ButtonContent(Icons.Filled.Close, L10n.str(R.string.back_template))
                 }
                 Box(modifier = Modifier.weight(1f)) {
                     ProductSearchContent(

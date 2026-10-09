@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.detail
 
 import org.calamares.miga.ui.components.FormattedText
+import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -530,8 +531,7 @@ private fun RecipeDetailContent(
                     }
                 }
                 FilledTonalButton(onClick = onAddToShoppingList, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Filled.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text("  " + L10n.str(R.string.add_shopping_list))
+                    ButtonContent(Icons.Filled.ShoppingCart, L10n.str(R.string.add_shopping_list))
                 }
             }
 

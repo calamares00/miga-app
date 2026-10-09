@@ -1,26 +1,18 @@
 package org.calamares.miga.ui
 
-import android.os.SystemClock
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Keeps the system splash screen until the first screen has its content, so it never appears
- * empty ("You have no books yet") for a moment before the data arrives.
- *
- * The first screen calls [contentReady] once its data has loaded; MainActivity keeps the splash
- * while [isWaiting]. A safety limit lets the app through even if that never happens.
+ * Tells MainActivity when the first screen has its content, so the start screen (logo, name and
+ * slogan) covers it until then and it never appears empty ("You have no books yet") for a moment.
+ * The first screen calls [contentReady] once its data has loaded.
  */
 object StartupGate {
-    private const val MAX_WAIT_MILLIS = 2000L
-
-    private val startedAt = SystemClock.elapsedRealtime()
-
-    @Volatile
-    private var ready = false
+    private val _ready = MutableStateFlow(false)
+    val ready: StateFlow<Boolean> = _ready
 
     fun contentReady() {
-        ready = true
+        _ready.value = true
     }
-
-    val isWaiting: Boolean
-        get() = !ready && SystemClock.elapsedRealtime() - startedAt < MAX_WAIT_MILLIS
 }

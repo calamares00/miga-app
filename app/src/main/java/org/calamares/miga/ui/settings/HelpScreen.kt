@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.settings
 
 import androidx.compose.foundation.selection.toggleable
+import org.calamares.miga.ui.components.ButtonContent
 import androidx.compose.material.icons.filled.Tour
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.collectAsState
@@ -138,7 +139,6 @@ fun HelpScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit, onOpenChangelog: (
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(28.dp),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
                 )
             }
@@ -259,20 +259,14 @@ private fun ContactCard(onReport: () -> Unit, onOpenPrivacy: () -> Unit, onOpenC
             Text(L10n.str(R.string.help_contact_title), style = MaterialTheme.typography.titleMedium)
             Text(L10n.str(R.string.found_bug_have_suggestion_write), style = MaterialTheme.typography.bodyMedium)
             FilledTonalButton(onClick = onReport, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Filled.BugReport, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(L10n.str(R.string.report_problem))
+                ButtonContent(Icons.Filled.BugReport, L10n.str(R.string.report_problem))
             }
             OutlinedButton(onClick = onOpenPrivacy, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Filled.Policy, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(L10n.str(R.string.privacy_policy))
+                ButtonContent(Icons.Filled.Policy, L10n.str(R.string.privacy_policy))
             }
             if (onOpenChangelog != null) {
                 OutlinedButton(onClick = onOpenChangelog, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Filled.NewReleases, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(L10n.str(R.string.whats_new))
+                    ButtonContent(Icons.Filled.NewReleases, L10n.str(R.string.whats_new))
                 }
             }
             Text(

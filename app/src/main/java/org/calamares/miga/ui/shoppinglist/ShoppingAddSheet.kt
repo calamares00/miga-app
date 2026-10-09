@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.shoppinglist
 
 import org.calamares.miga.data.model.displayCategoryName
+import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.Manifest
@@ -441,13 +442,11 @@ internal fun ProductSearchContent(
             actions = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = { add(product); detail = null }, enabled = product.barcode !in addedBarcodes) {
-                        Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Text("  $addDescription")
+                        ButtonContent(Icons.Filled.Add, addDescription)
                     }
                     if (onSaveToTemplate != null) {
                         OutlinedButton(onClick = { onSaveToTemplate(product) }) {
-                            Icon(Icons.Filled.BookmarkAdd, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text("  Plantilla")
+                            ButtonContent(Icons.Filled.BookmarkAdd, L10n.str(R.string.template_short))
                         }
                     }
                 }
@@ -472,8 +471,7 @@ private fun TemplatesContent(
         item(key = "actions") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
                 FilledTonalButton(onClick = onNew) {
-                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text("  Nueva")
+                    ButtonContent(Icons.Filled.Add, L10n.str(R.string.new_short))
                 }
                 OutlinedButton(onClick = onSaveList, enabled = !listIsEmpty) { Text(L10n.str(R.string.save_list)) }
             }

@@ -379,7 +379,7 @@ private fun AddConnectionDialog(
                 when (val state = testState) {
                     TestConnectionState.Testing -> Row(verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                        Text(" Comprobando...", modifier = Modifier.padding(start = 8.dp))
+                        Text(L10n.str(R.string.checking_connection), modifier = Modifier.padding(start = 8.dp))
                     }
                     TestConnectionState.Success -> Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
