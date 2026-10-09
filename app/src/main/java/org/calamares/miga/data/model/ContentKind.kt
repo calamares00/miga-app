@@ -14,10 +14,10 @@ enum class ContentKind {
 
     val title: String
         get() = when (this) {
-            CATEGORY -> L10n.str(R.string.categories)
+            CATEGORY -> L10n.str(R.string.recipe_categories)
             EQUIPMENT -> L10n.str(R.string.utensils)
             TAG -> L10n.str(R.string.tags)
-            INGREDIENT -> L10n.str(R.string.ingredients)
+            INGREDIENT -> L10n.str(R.string.ingredients_and_products)
             INGREDIENT_CATEGORY -> L10n.str(R.string.ingredient_categories)
         }
 
@@ -30,9 +30,9 @@ enum class ContentKind {
         INGREDIENT_CATEGORY -> DefaultCatalog.isDefaultIngredientCategory(name)
     }
 
-    /** "3 recipes" or, for ingredient categories, "3 ingredients". */
+    /** "3 recipes" or, for product categories, "3 products". */
     fun usageLabel(count: Int): String = when (this) {
-        INGREDIENT_CATEGORY -> if (count == 1) L10n.str(R.string.ingredient_count_one) else L10n.str(R.string.ingredient_count_many, count)
+        INGREDIENT_CATEGORY -> if (count == 1) L10n.str(R.string.product_count_one) else L10n.str(R.string.product_count_many, count)
         else -> if (count == 1) L10n.str(R.string.recipe_count_one) else L10n.str(R.string.recipe_count_many, count)
     }
 }
