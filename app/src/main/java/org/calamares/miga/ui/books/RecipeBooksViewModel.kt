@@ -33,8 +33,9 @@ class RecipeBooksViewModel(
     ) { enabled, providers -> enabled && providers.isNotEmpty() }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
     private var autoSyncStarted = false
 
-    val books: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    /** Null until the books have loaded, so the screen does not show "no books yet" meanwhile. */
+    val books: StateFlow<List<RecipeBookSummary>?> = repository.observeRecipeBooks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val viewMode: StateFlow<RecipeListViewMode> = settingsRepository.observeRecipeBookListViewMode()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecipeListViewMode.GRID)
