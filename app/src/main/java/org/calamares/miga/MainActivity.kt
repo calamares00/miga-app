@@ -47,6 +47,7 @@ import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.model.ColorTheme
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.share.ShoppingIntents
+import org.calamares.miga.ui.StartupGate
 import org.calamares.miga.ui.navigation.Destinations
 import org.calamares.miga.ui.navigation.MigaNavHost
 import org.calamares.miga.ui.settings.SettingsSection
@@ -87,7 +88,8 @@ class MainActivity : FragmentActivity() {
     private var startScreenReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen().setKeepOnScreenCondition { !startScreenReady }
+        // The splash also waits for the first screen's content (see StartupGate).
+        installSplashScreen().setKeepOnScreenCondition { !startScreenReady || StartupGate.isWaiting }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         if (savedInstanceState == null) ShoppingIntents.handle(intent)
@@ -118,7 +120,11 @@ class MainActivity : FragmentActivity() {
             }
             val settingsLoaded = welcomeRequestApplied && onboardingDone != null && biometricLockEnabled != null
             LaunchedEffect(settingsLoaded) {
-                if (settingsLoaded) startScreenReady = true
+                if (settingsLoaded) {
+                    startScreenReady = true
+                    // The welcome and lock screens have no data to wait for.
+                    if (onboardingDone == false || biometricLockEnabled == true) StartupGate.contentReady()
+                }
             }
 
             // The first time an AI task runs, ask for the notification permission (Android 13+)

@@ -94,6 +94,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipeListViewMode
+import org.calamares.miga.ui.StartupGate
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -105,7 +106,11 @@ fun RecipeBooksScreen(
     onExplorePacks: () -> Unit = {},
     onOpenIdeas: () -> Unit = {}
 ) {
-    val books by viewModel.books.collectAsState()
+    val loadedBooks by viewModel.books.collectAsState()
+    val books = loadedBooks.orEmpty()
+    LaunchedEffect(loadedBooks != null) {
+        if (loadedBooks != null) StartupGate.contentReady()
+    }
     val aiReady by viewModel.aiReady.collectAsState()
     val changelogAnnouncement by viewModel.changelogAnnouncement.collectAsState()
     val crashReport by viewModel.crashReport.collectAsState()
@@ -161,7 +166,10 @@ fun RecipeBooksScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            if (books.isEmpty()) {
+            if (loadedBooks == null) {
+                // Still loading (usually behind the splash screen): nothing rather than "no books".
+                Spacer(modifier = Modifier.weight(1f))
+            } else if (books.isEmpty()) {
                 EmptyState(
                     icon = Icons.Outlined.MenuBook,
                     title = L10n.str(R.string.start_recipe_book),
