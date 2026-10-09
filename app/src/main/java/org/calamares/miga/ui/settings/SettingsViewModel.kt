@@ -57,6 +57,13 @@ class SettingsViewModel(
     val photoFrame: StateFlow<PhotoFrame> = settingsRepository.observePhotoFrame()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PhotoFrame.DEFAULT)
 
+    val disabledProviders: StateFlow<Set<AiProvider>> = settingsRepository.observeDisabledProviders()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    fun setProviderEnabled(provider: AiProvider, enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setProviderEnabled(provider, enabled) }
+    }
+
     /** Per list of Manage content: how many entries and how many of the user's own are unused. */
     val contentSummary: StateFlow<Map<ContentKind, ContentCounts>> = combine(
         ContentKind.entries.map { kind -> repository.observeContent(kind).map { items -> kind to ContentCounts(items.size, items.count { it.usage == 0 && !it.isDefault }) } }

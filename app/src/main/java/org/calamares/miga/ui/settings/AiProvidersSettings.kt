@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.settings
 
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.material3.Switch
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -84,6 +86,7 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
     val openRouterModelImages by viewModel.openRouterModelImages.collectAsState()
     val openAiApiKey by viewModel.openAiApiKey.collectAsState()
     val openAiModel by viewModel.openAiModel.collectAsState()
+    val disabledProviders by viewModel.disabledProviders.collectAsState()
     var expanded by rememberSaveable { mutableStateOf<AiProvider?>(null) }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -117,17 +120,21 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                 AiProvider.OPENAI ->
                     if (openAiApiKey.isBlank()) L10n.str(R.string.ai_provider_no_key) else openAiModel
             }
-            val active = when (provider) {
+            val configured = when (provider) {
                 AiProvider.GEMINI -> geminiApiKey.isNotBlank()
                 AiProvider.ANTHROPIC -> anthropicApiKey.isNotBlank()
                 AiProvider.OPENROUTER -> openRouterApiKey.isNotBlank() && openRouterModel.isNotBlank()
                 AiProvider.OPENAI -> openAiApiKey.isNotBlank()
             }
+            val switchedOn = provider !in disabledProviders
             ProviderRow(
                 provider = provider,
                 position = index + 1,
-                status = status,
-                active = active,
+                status = if (configured && !switchedOn) L10n.str(R.string.ai_provider_off_x, status) else status,
+                active = configured && switchedOn,
+                // Only a provider with a key can be switched on or off; the key and model are kept.
+                switchedOn = switchedOn.takeIf { configured },
+                onSwitch = { viewModel.setProviderEnabled(provider, it) },
                 expanded = expanded == provider,
                 isDragging = isDragging,
                 dragHandle = dragHandle,
@@ -217,6 +224,9 @@ private fun ProviderRow(
     position: Int,
     status: String,
     active: Boolean,
+    /** Null when the provider has no key yet, so there is nothing to switch. */
+    switchedOn: Boolean?,
+    onSwitch: (Boolean) -> Unit,
     expanded: Boolean,
     isDragging: Boolean,
     dragHandle: Modifier,
@@ -279,6 +289,13 @@ private fun ProviderRow(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
+                    )
+                }
+                if (switchedOn != null) {
+                    Switch(
+                        checked = switchedOn,
+                        onCheckedChange = onSwitch,
+                        modifier = Modifier.padding(horizontal = 8.dp).semantics { contentDescription = L10n.str(R.string.ai_provider_use_x, provider.label) }
                     )
                 }
                 Icon(

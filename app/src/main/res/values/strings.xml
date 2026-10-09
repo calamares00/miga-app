@@ -723,7 +723,7 @@
     <string name="ai_no_provider">"Add an AI provider key in Settings → Artificial intelligence."</string>
     <string name="ai_no_provider_summary">"No provider set up"</string>
     <string name="ai_providers_title">"Providers"</string>
-    <string name="ai_providers_desc">"They're tried in this order: if one fails or can't read images, the next one is used. Drag ⠿ to change the priority. Only providers with a key are used."</string>
+    <string name="ai_providers_desc">"They're tried in this order: if one fails or can't read images, the next one is used. Drag ⠿ to change the priority. Only providers with a key that are switched on are used."</string>
     <string name="ai_provider_no_key">"No key · not used"</string>
     <string name="ai_provider_no_model">"Pick a model"</string>
     <string name="ai_free">"Free"</string>
@@ -1116,4 +1116,6 @@
     <string name="ingredients_and_products">"Ingredients and products"</string>
     <string name="product_count_one">"1 product"</string>
     <string name="product_count_many">"%1$s products"</string>
+    <string name="ai_provider_off_x">"Off · %1$s"</string>
+    <string name="ai_provider_use_x">"Use %1$s"</string>
 </resources>

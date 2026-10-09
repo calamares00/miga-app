@@ -12,13 +12,15 @@ private const val NETWORK_RETRY_DELAY_MILLIS = 3000L
 /** A provider that is ready to use: it has both an API key and a model. */
 data class AiCandidate(val provider: AiProvider, val apiKey: String, val model: String)
 
-/** Configured providers, in the priority order chosen in Settings. */
-suspend fun SettingsRepository.aiCandidates(): List<AiCandidate> =
-    observeProviderOrder().first().mapNotNull { provider ->
+/** Configured providers, in the priority order chosen in Settings, without the ones switched off. */
+suspend fun SettingsRepository.aiCandidates(): List<AiCandidate> {
+    val disabled = observeDisabledProviders().first()
+    return observeProviderOrder().first().filter { it !in disabled }.mapNotNull { provider ->
         val key = apiKeyFor(provider)
         val model = modelFor(provider)
         if (key.isBlank() || model.isBlank()) null else AiCandidate(provider, key, model)
     }
+}
 
 /**
  * Runs an AI operation trying the configured providers in priority order.
