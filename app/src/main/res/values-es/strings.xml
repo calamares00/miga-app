@@ -722,7 +722,7 @@
     <string name="ai_no_provider">"Añade la clave de un proveedor de IA en Ajustes → Inteligencia artificial."</string>
     <string name="ai_no_provider_summary">"Sin proveedor configurado"</string>
     <string name="ai_providers_title">"Proveedores"</string>
-    <string name="ai_providers_desc">"Se prueban en este orden: si uno falla o no puede leer imágenes, se usa el siguiente. Arrastra ⠿ para cambiar la prioridad. Solo se usan los que tienen clave."</string>
+    <string name="ai_providers_desc">"Se prueban en este orden: si uno falla o no puede leer imágenes, se usa el siguiente. Arrastra ⠿ para cambiar la prioridad. Solo se usan los que tienen clave y están activados."</string>
     <string name="ai_provider_no_key">"Sin clave · no se usa"</string>
     <string name="ai_provider_no_model">"Elige un modelo"</string>
     <string name="ai_free">"Gratis"</string>
@@ -1115,4 +1115,6 @@
     <string name="ingredients_and_products">"Ingredientes y productos"</string>
     <string name="product_count_one">"1 producto"</string>
     <string name="product_count_many">"%1$s productos"</string>
+    <string name="ai_provider_off_x">"Desactivado · %1$s"</string>
+    <string name="ai_provider_use_x">"Usar %1$s"</string>
 </resources>

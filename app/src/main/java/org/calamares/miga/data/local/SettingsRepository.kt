@@ -65,6 +65,7 @@ class SettingsRepository(private val context: Context) {
     private val openAiApiKeyKey = stringPreferencesKey("openai_api_key")
     private val openAiModelKey = stringPreferencesKey("openai_model")
     private val aiProviderOrderKey = stringPreferencesKey("ai_provider_order")
+    private val aiDisabledProvidersKey = stringPreferencesKey("ai_disabled_providers")
     private val ttsVoiceNameKey = stringPreferencesKey("tts_voice_name")
     private val dictationLanguageKey = stringPreferencesKey("dictation_language")
     private val lastSeenVersionCodeKey = intPreferencesKey("last_seen_version_code")
@@ -296,6 +297,20 @@ class SettingsRepository(private val context: Context) {
             (stored + AiProvider.entries).distinct()
         }
 
+    /** Providers switched off in Settings: kept with their key and model, but never asked. */
+    fun observeDisabledProviders(): Flow<Set<AiProvider>> =
+        context.settingsDataStore.data.map { prefs -> parseProviders(prefs[aiDisabledProvidersKey]) }
+
+    suspend fun setProviderEnabled(provider: AiProvider, enabled: Boolean) {
+        context.settingsDataStore.edit { prefs ->
+            val disabled = parseProviders(prefs[aiDisabledProvidersKey])
+            prefs[aiDisabledProvidersKey] = (if (enabled) disabled - provider else disabled + provider).joinToString(",") { it.name }
+        }
+    }
+
+    private fun parseProviders(stored: String?): Set<AiProvider> =
+        stored?.split(',')?.mapNotNull { name -> runCatching { AiProvider.valueOf(name.trim()) }.getOrNull() }?.toSet().orEmpty()
+
     suspend fun setProviderOrder(order: List<AiProvider>) {
         context.settingsDataStore.edit { prefs -> prefs[aiProviderOrderKey] = (order + AiProvider.entries).distinct().joinToString(",") { it.name } }
     }
@@ -395,7 +410,8 @@ class SettingsRepository(private val context: Context) {
      */
     fun observeConfiguredProviders(): Flow<List<AiProvider>> =
         combine(observeProviderOrder(), context.settingsDataStore.data) { order, prefs ->
-            order.filter { provider ->
+            val disabled = parseProviders(prefs[aiDisabledProvidersKey])
+            order.filter { provider -> provider !in disabled }.filter { provider ->
                 val (key, model) = when (provider) {
                     AiProvider.GEMINI -> decodeApiKey(prefs[geminiApiKeyKey]) to (prefs[geminiModelKey] ?: DEFAULT_GEMINI_MODEL)
                     AiProvider.ANTHROPIC -> decodeApiKey(prefs[anthropicApiKeyKey]) to (prefs[anthropicModelKey] ?: DEFAULT_ANTHROPIC_MODEL)

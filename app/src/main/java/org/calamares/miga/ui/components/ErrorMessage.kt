@@ -93,6 +93,7 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
     val settings = remember { (context.applicationContext as MigaApp).settingsRepository }
     val scope = rememberCoroutineScope()
     val order by settings.observeProviderOrder().collectAsState(initial = AiProvider.entries.toList())
+    val disabled by settings.observeDisabledProviders().collectAsState(initial = emptySet())
     val geminiKey by settings.observeGeminiApiKey().collectAsState(initial = "")
     val anthropicKey by settings.observeAnthropicApiKey().collectAsState(initial = "")
     val openRouterKey by settings.observeOpenRouterApiKey().collectAsState(initial = "")
@@ -158,7 +159,7 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
         }
     }
 
-    val providers = order.filter { hasKey(it) }
+    val providers = order.filter { hasKey(it) && it !in disabled }
 
     // In a window of its own: it is often opened from an error shown inside a dialog.
     DialogSheet(onDismissRequest = onDismiss) {
