@@ -1,5 +1,7 @@
 package org.calamares.miga.data.repository
 
+import org.calamares.miga.data.model.ContentItem
+import org.calamares.miga.data.model.ContentKind
 import androidx.room.withTransaction
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -115,6 +117,7 @@ class RecipeRepository(
     private val syncConnectionDao = db.syncConnectionDao()
     private val pendingSyncChangeDao = db.pendingSyncChangeDao()
     private val recipeNoteDao = db.recipeNoteDao()
+    private val contentDao = db.contentDao()
 
     fun observeRecipesForBook(bookId: Long): Flow<List<Recipe>> =
         recipeDao.observeAllWithDetailsForBook(bookId).map { list -> list.map { it.toDomain() } }
@@ -396,24 +399,178 @@ class RecipeRepository(
     fun computeNutritionFingerprint(ingredientGroups: List<IngredientGroup>, stepGroups: List<StepGroup>): String =
         HealthFingerprint.compute(ingredientGroups, stepGroups)
 
+    // --- Content management (Settings > Manage content) ---
+
+    /** Entries of [kind] with how many recipes (or ingredients) use each, kept up to date. */
+    fun observeContent(kind: ContentKind): Flow<List<ContentItem>> = when (kind) {
+        ContentKind.CATEGORY -> contentDao.observeCategories()
+        ContentKind.EQUIPMENT -> contentDao.observeUtensils()
+        ContentKind.TAG -> contentDao.observeTags()
+        ContentKind.INGREDIENT -> contentDao.observeIngredients()
+        ContentKind.INGREDIENT_CATEGORY -> contentDao.observeIngredientCategories()
+    }.map { rows -> rows.map { ContentItem(kind, it.id, it.name, it.usage) } }
+
+    /**
+     * Renames an entry. When another entry of the same kind already has [newName] (in any case),
+     * both are merged into that one: its recipes (or ingredients) move to it and this entry goes.
+     *
+     * Recipes link categories, equipment and tags by id, so they show the new name at once; they
+     * are also marked as changed so synced books upload it. Ingredients are written in the recipes
+     * by name: with [updateRecipes] the user's own recipes (not packs) that use the old name get
+     * the new one.
+     */
+    suspend fun renameContent(kind: ContentKind, id: Long, newName: String, updateRecipes: Boolean = true) {
+        val name = newName.trim().replace(Regex("""\s+"""), " ")
+        if (name.isEmpty()) return
+        val connections = db.withTransaction<Set<Long>> {
+            val oldName = contentName(kind, id) ?: return@withTransaction emptySet()
+            if (oldName == name) return@withTransaction emptySet()
+            val affected = recipesUsing(kind, id, oldName, updateRecipes)
+            val target = when (kind) {
+                ContentKind.CATEGORY -> contentDao.categoryNamed(name, id)
+                ContentKind.EQUIPMENT -> contentDao.utensilNamed(name, id)
+                ContentKind.TAG -> contentDao.tagNamed(name, id)
+                ContentKind.INGREDIENT -> contentDao.ingredientNamed(name, id)
+                ContentKind.INGREDIENT_CATEGORY -> contentDao.ingredientCategoryNamed(name, id)
+            }
+            if (target != null) mergeInto(kind, id, target) else renameRow(kind, id, name)
+            if (kind == ContentKind.INGREDIENT && updateRecipes) {
+                // Merged or not, the recipes take the name exactly as now written.
+                val finalName = if (target != null) contentDao.ingredientName(target) ?: name else name
+                contentDao.renameIngredientInOwnRecipes(oldName, finalName)
+            }
+            touchRecipesLocked(affected)
+        }
+        connections.forEach { onSyncChangeEnqueued(it) }
+    }
+
+    /**
+     * Deletes entries. Recipes lose the category, equipment or tag (and are marked as changed for
+     * sync); deleting an ingredient only removes it from the suggestions and the shopping
+     * categories, as the recipes keep their own text; ingredients of a deleted ingredient category
+     * are left without one.
+     */
+    suspend fun deleteContent(kind: ContentKind, ids: Collection<Long>) {
+        val connections = db.withTransaction<Set<Long>> {
+            val affected = mutableSetOf<Long>()
+            ids.forEach { id ->
+                if (kind != ContentKind.INGREDIENT) affected += recipesUsing(kind, id, null, updateRecipes = false)
+                when (kind) {
+                    ContentKind.CATEGORY -> contentDao.deleteCategory(id)
+                    ContentKind.EQUIPMENT -> contentDao.deleteUtensil(id)
+                    ContentKind.TAG -> contentDao.deleteTag(id)
+                    ContentKind.INGREDIENT -> contentDao.deleteIngredient(id)
+                    ContentKind.INGREDIENT_CATEGORY -> contentDao.deleteIngredientCategory(id)
+                }
+            }
+            touchRecipesLocked(affected)
+        }
+        connections.forEach { onSyncChangeEnqueued(it) }
+    }
+
+    /**
+     * Merges [ids] into [intoId]: what used them now uses it, and they go. Ingredients are renamed
+     * in the user's own recipes too.
+     */
+    suspend fun mergeContent(kind: ContentKind, ids: Collection<Long>, intoId: Long) {
+        val connections = db.withTransaction<Set<Long>> {
+            val targetName = contentName(kind, intoId) ?: return@withTransaction emptySet()
+            val affected = mutableSetOf<Long>()
+            ids.filter { it != intoId }.forEach { id ->
+                val name = contentName(kind, id) ?: return@forEach
+                affected += recipesUsing(kind, id, name, updateRecipes = true)
+                mergeInto(kind, id, intoId)
+                if (kind == ContentKind.INGREDIENT) contentDao.renameIngredientInOwnRecipes(name, targetName)
+            }
+            touchRecipesLocked(affected)
+        }
+        connections.forEach { onSyncChangeEnqueued(it) }
+    }
+
+    suspend fun addContent(kind: ContentKind, name: String) = when (kind) {
+        ContentKind.CATEGORY -> addCategory(name)
+        ContentKind.EQUIPMENT -> addUtensil(name)
+        ContentKind.TAG -> addTag(name)
+        ContentKind.INGREDIENT -> addIngredientName(name)
+        ContentKind.INGREDIENT_CATEGORY -> addIngredientCategory(name)
+    }
+
+    private suspend fun contentName(kind: ContentKind, id: Long): String? = when (kind) {
+        ContentKind.CATEGORY -> contentDao.categoryName(id)
+        ContentKind.EQUIPMENT -> contentDao.utensilName(id)
+        ContentKind.TAG -> contentDao.tagName(id)
+        ContentKind.INGREDIENT -> contentDao.ingredientName(id)
+        ContentKind.INGREDIENT_CATEGORY -> contentDao.ingredientCategoryName(id)
+    }
+
+    /** The recipes a change of this entry shows up in (none for ingredient categories). */
+    private suspend fun recipesUsing(kind: ContentKind, id: Long, name: String?, updateRecipes: Boolean): List<Long> = when (kind) {
+        ContentKind.CATEGORY -> contentDao.recipesWithCategory(id)
+        ContentKind.EQUIPMENT -> contentDao.recipesWithUtensil(id)
+        ContentKind.TAG -> contentDao.recipesWithTag(id)
+        ContentKind.INGREDIENT -> if (updateRecipes && name != null) contentDao.ownRecipesWithIngredient(name) else emptyList()
+        ContentKind.INGREDIENT_CATEGORY -> emptyList()
+    }
+
+    private suspend fun renameRow(kind: ContentKind, id: Long, name: String) = when (kind) {
+        ContentKind.CATEGORY -> contentDao.renameCategory(id, name)
+        ContentKind.EQUIPMENT -> contentDao.renameUtensil(id, name)
+        ContentKind.TAG -> contentDao.renameTag(id, name)
+        ContentKind.INGREDIENT -> contentDao.renameIngredient(id, name)
+        ContentKind.INGREDIENT_CATEGORY -> contentDao.renameIngredientCategory(id, name)
+    }
+
+    /** Moves everything that uses [fromId] to [toId] and deletes [fromId]. */
+    private suspend fun mergeInto(kind: ContentKind, fromId: Long, toId: Long) {
+        when (kind) {
+            ContentKind.CATEGORY -> {
+                contentDao.moveCategory(fromId, toId)
+                contentDao.deleteCategory(fromId)
+            }
+            ContentKind.EQUIPMENT -> {
+                contentDao.moveUtensil(fromId, toId)
+                contentDao.deleteUtensil(fromId)
+            }
+            ContentKind.TAG -> {
+                contentDao.moveTag(fromId, toId)
+                contentDao.deleteTag(fromId)
+            }
+            ContentKind.INGREDIENT -> {
+                contentDao.inheritIngredientCategory(fromId, toId)
+                contentDao.deleteIngredient(fromId)
+            }
+            ContentKind.INGREDIENT_CATEGORY -> {
+                contentDao.moveIngredientCategory(fromId, toId)
+                contentDao.deleteIngredientCategory(fromId)
+            }
+        }
+    }
+
+    /**
+     * Marks [recipeIds] as changed now and queues those of synced books for upload, after a change
+     * in a label they show. Call inside a transaction; returns the connections to notify after it.
+     */
+    private suspend fun touchRecipesLocked(recipeIds: Collection<Long>): Set<Long> {
+        if (recipeIds.isEmpty()) return emptySet()
+        val now = System.currentTimeMillis()
+        val connections = mutableSetOf<Long>()
+        // SQLite limits the number of parameters of a query.
+        recipeIds.distinct().chunked(500).forEach { chunk ->
+            contentDao.touchRecipes(chunk, now)
+            contentDao.syncTargets(chunk).forEach { target ->
+                enqueueSyncChange(target.connectionId, SyncEntityType.RECIPE, target.uid, SyncChangeType.UPSERT)
+                connections += target.connectionId
+            }
+        }
+        return connections
+    }
+
     // --- Categories ---
 
     suspend fun addCategory(name: String) {
         val trimmed = name.trim()
         if (trimmed.isNotEmpty()) resolveCategoryId(trimmed)
     }
-
-    suspend fun renameCategory(id: Long, newName: String) {
-        val category = categoryDao.getOnce(id) ?: return
-        categoryDao.update(category.copy(name = newName.trim()))
-    }
-
-    suspend fun deleteCategory(id: Long) {
-        val category = categoryDao.getOnce(id) ?: return
-        categoryDao.delete(category)
-    }
-
-    suspend fun countRecipesUsingCategory(id: Long): Int = categoryDao.countRecipesUsing(id)
 
     /** Creates the default categories when the database has none. */
     /** Creates the default categories that are missing. Called once, on the first start. */
@@ -431,18 +588,6 @@ class RecipeRepository(
         val trimmed = name.trim()
         if (trimmed.isNotEmpty()) resolveUtensilId(trimmed)
     }
-
-    suspend fun renameUtensil(id: Long, newName: String) {
-        val utensil = utensilDao.getOnce(id) ?: return
-        utensilDao.update(utensil.copy(name = newName.trim()))
-    }
-
-    suspend fun deleteUtensil(id: Long) {
-        val utensil = utensilDao.getOnce(id) ?: return
-        utensilDao.delete(utensil)
-    }
-
-    suspend fun countRecipesUsingUtensil(id: Long): Int = utensilDao.countRecipesUsing(id)
 
     /** Creates the default kitchen equipment that is missing. Called once, on the first start. */
     suspend fun seedDefaultUtensils(language: String = "es") {
@@ -487,17 +632,6 @@ class RecipeRepository(
         if (trimmed.isNotEmpty()) ingredientCatalogDao.insert(IngredientCatalogEntity(name = trimmed))
     }
 
-    suspend fun renameIngredientName(id: Long, newName: String) {
-        val trimmed = newName.trim()
-        if (trimmed.isEmpty()) return
-        val existing = ingredientCatalogDao.getOnce(id) ?: return
-        ingredientCatalogDao.update(existing.copy(name = trimmed))
-    }
-
-    suspend fun deleteIngredientName(id: Long) {
-        ingredientCatalogDao.delete(IngredientCatalogEntity(id = id, name = ""))
-    }
-
     /** Ingredient catalogue rows with their category name already resolved for the UI. */
     fun observeIngredientCatalogWithCategory(): Flow<List<IngredientCatalogItem>> =
         combine(ingredientCatalogDao.observeAll(), ingredientCategoryDao.observeAll()) { ingredients, categories ->
@@ -512,6 +646,9 @@ class RecipeRepository(
             }
         }
 
+    fun observeIngredientCatalogWithCategoryById(): Flow<Map<Long, IngredientCatalogItem>> =
+        observeIngredientCatalogWithCategory().map { list -> list.associateBy { it.id } }
+
     suspend fun changeIngredientCategory(id: Long, categoryId: Long?) {
         ingredientCatalogDao.updateCategory(id, categoryId)
     }
@@ -524,18 +661,6 @@ class RecipeRepository(
         val trimmed = name.trim()
         if (trimmed.isNotEmpty()) ingredientCategoryDao.insert(IngredientCategoryEntity(name = trimmed))
     }
-
-    suspend fun renameIngredientCategory(id: Long, newName: String) {
-        val category = ingredientCategoryDao.getOnce(id) ?: return
-        ingredientCategoryDao.update(category.copy(name = newName.trim()))
-    }
-
-    suspend fun deleteIngredientCategory(id: Long) {
-        val category = ingredientCategoryDao.getOnce(id) ?: return
-        ingredientCategoryDao.delete(category)
-    }
-
-    suspend fun countIngredientsUsingCategory(id: Long): Int = ingredientCategoryDao.countIngredientsUsing(id)
 
     /**
      * Adds the base ingredient catalogue with categories (see IngredientCatalogSeed). Ingredients

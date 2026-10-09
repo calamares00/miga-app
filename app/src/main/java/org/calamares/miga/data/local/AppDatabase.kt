@@ -3,6 +3,7 @@ package org.calamares.miga.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import org.calamares.miga.data.local.dao.CategoryDao
+import org.calamares.miga.data.local.dao.ContentDao
 import org.calamares.miga.data.local.dao.IngredientCatalogDao
 import org.calamares.miga.data.local.dao.IngredientCategoryDao
 import org.calamares.miga.data.local.dao.PendingSyncChangeDao
@@ -81,6 +82,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun shoppingListsDao(): ShoppingListsDao
     abstract fun syncConnectionDao(): SyncConnectionDao
     abstract fun pendingSyncChangeDao(): PendingSyncChangeDao
+    abstract fun contentDao(): ContentDao
     abstract fun recipeNoteDao(): RecipeNoteDao
 
     companion object {

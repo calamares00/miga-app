@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.navigation
 
+import org.calamares.miga.ui.settings.ManageContentScreen
+import org.calamares.miga.ui.settings.ManageContentViewModel
+import org.calamares.miga.data.model.ContentKind
 import org.calamares.miga.ui.ideas.IdeasViewModel
 import org.calamares.miga.ui.ideas.IdeasScreen
 import org.calamares.miga.L10n
@@ -99,14 +102,6 @@ import org.calamares.miga.ui.stats.StatsViewModel
 import org.calamares.miga.ui.settings.AboutScreen
 import org.calamares.miga.ui.settings.ChangelogScreen
 import org.calamares.miga.ui.settings.HelpScreen
-import org.calamares.miga.ui.settings.ManageCategoriesScreen
-import org.calamares.miga.ui.settings.ManageCategoriesViewModel
-import org.calamares.miga.ui.settings.ManageIngredientCategoriesScreen
-import org.calamares.miga.ui.settings.ManageIngredientCategoriesViewModel
-import org.calamares.miga.ui.settings.ManageIngredientsScreen
-import org.calamares.miga.ui.settings.ManageIngredientsViewModel
-import org.calamares.miga.ui.settings.ManageUtensilsScreen
-import org.calamares.miga.ui.settings.ManageUtensilsViewModel
 import org.calamares.miga.ui.settings.SettingsHomeScreen
 import org.calamares.miga.ui.settings.SettingsSection
 import org.calamares.miga.ui.settings.SettingsSectionScreen
@@ -551,10 +546,7 @@ private fun NavGraphBuilder.screens(
             viewModel = viewModel,
             section = section,
             onBack = { navController.popBackStack() },
-            onManageCategories = { navController.navigate(Destinations.MANAGE_CATEGORIES_ROUTE) },
-            onManageUtensils = { navController.navigate(Destinations.MANAGE_UTENSILS_ROUTE) },
-            onManageIngredients = { navController.navigate(Destinations.MANAGE_INGREDIENTS_ROUTE) },
-            onManageIngredientCategories = { navController.navigate(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) },
+            onManageContent = { kind -> navController.navigate(Destinations.manageContent(kind)) },
             onOpenPacksCatalog = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) },
             onOpenSyncConnections = { navController.navigate(Destinations.SYNC_CONNECTIONS_ROUTE) }
         )
@@ -656,31 +648,22 @@ private fun NavGraphBuilder.screens(
         )
     }
 
-    screen(Destinations.MANAGE_CATEGORIES_ROUTE) {
-        val viewModel: ManageCategoriesViewModel = viewModel(
-            factory = viewModelFactory { initializer { ManageCategoriesViewModel(repository) } }
+    screen(
+        route = Destinations.MANAGE_CONTENT_ROUTE,
+        arguments = listOf(navArgument(Destinations.ARG_CONTENT_KIND) { type = NavType.StringType })
+    ) { backStackEntry ->
+        val kind = ContentKind.entries.firstOrNull { it.name == backStackEntry.arguments?.getString(Destinations.ARG_CONTENT_KIND) }
+            ?: ContentKind.CATEGORY
+        val viewModel: ManageContentViewModel = viewModel(
+            factory = viewModelFactory { initializer { ManageContentViewModel(repository, kind) } }
         )
-        ManageCategoriesScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
-    }
-
-    screen(Destinations.MANAGE_UTENSILS_ROUTE) {
-        val viewModel: ManageUtensilsViewModel = viewModel(
-            factory = viewModelFactory { initializer { ManageUtensilsViewModel(repository) } }
+        ManageContentScreen(
+            viewModel = viewModel,
+            onBack = { navController.popBackStack() },
+            onOpenRecipes = { title, filter ->
+                SearchRequests.open(SearchRequest(title, filter))
+                navController.navigate(Destinations.FILTERED_SEARCH_ROUTE)
+            }
         )
-        ManageUtensilsScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
-    }
-
-    screen(Destinations.MANAGE_INGREDIENTS_ROUTE) {
-        val viewModel: ManageIngredientsViewModel = viewModel(
-            factory = viewModelFactory { initializer { ManageIngredientsViewModel(repository) } }
-        )
-        ManageIngredientsScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
-    }
-
-    screen(Destinations.MANAGE_INGREDIENT_CATEGORIES_ROUTE) {
-        val viewModel: ManageIngredientCategoriesViewModel = viewModel(
-            factory = viewModelFactory { initializer { ManageIngredientCategoriesViewModel(repository) } }
-        )
-        ManageIngredientCategoriesScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
     }
 }

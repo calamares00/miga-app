@@ -1067,4 +1067,26 @@
     <string name="polish_after">"After"</string>
     <string name="polish_apply">"Apply"</string>
     <string name="polish_applied">"Recipe improved with AI"</string>
+    <string name="content_merge">"Merge"</string>
+    <string name="content_sort">"Sort"</string>
+    <string name="content_sort_name">"By name"</string>
+    <string name="content_sort_usage">"Most used first"</string>
+    <string name="content_filter_all">"All (%1$d)"</string>
+    <string name="content_filter_unused">"Unused (%1$d)"</string>
+    <string name="content_filter_mine">"Mine (%1$d)"</string>
+    <string name="content_unused">"Not used"</string>
+    <string name="content_rename_merges_x">"\"%1$s\" already exists: both will be merged into it."</string>
+    <string name="content_already_exists_x">"\"%1$s\" already exists."</string>
+    <string name="content_rename_in_recipes">"Change it in its %1$s too"</string>
+    <string name="content_rename_updates">"Its %1$s will show the new name."</string>
+    <string name="content_delete_n">"Delete %1$d entries"</string>
+    <string name="content_delete_unused">"Nothing uses it. It can't be undone."</string>
+    <string name="content_delete_ingredient_used">"Recipes keep their ingredients as written; it is only removed from the suggestions and the shopping categories."</string>
+    <string name="content_delete_used_x">"Used in %1$s, which will be left without it. You can move them to another one instead."</string>
+    <string name="content_move_to">"Move them to"</string>
+    <string name="content_move_to_x">"Move to \"%1$s\""</string>
+    <string name="content_merge_n">"Merge %1$d entries"</string>
+    <string name="content_merge_keep">"Everything that uses them will use the one you keep:"</string>
+    <string name="content_summary_x">"%1$d"</string>
+    <string name="content_summary_unused_x_y">"%1$d · %2$d of yours unused"</string>
 </resources>

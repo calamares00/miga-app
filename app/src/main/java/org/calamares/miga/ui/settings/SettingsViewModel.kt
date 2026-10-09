@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.settings
 
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
+import org.calamares.miga.data.model.ContentKind
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import kotlinx.coroutines.flow.first
@@ -53,6 +56,12 @@ class SettingsViewModel(
 
     val photoFrame: StateFlow<PhotoFrame> = settingsRepository.observePhotoFrame()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PhotoFrame.DEFAULT)
+
+    /** Per list of Manage content: how many entries and how many of the user's own are unused. */
+    val contentSummary: StateFlow<Map<ContentKind, ContentCounts>> = combine(
+        ContentKind.entries.map { kind -> repository.observeContent(kind).map { items -> kind to ContentCounts(items.size, items.count { it.usage == 0 && !it.isDefault }) } }
+    ) { pairs -> pairs.toMap() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     /** One of the user's own photos for the frame previews; null without any. */
     val samplePhoto: StateFlow<String?> = repository.observeSamplePhotoUri()
@@ -261,3 +270,5 @@ class SettingsViewModel(
         }
     }
 }
+
+data class ContentCounts(val total: Int, val unusedMine: Int)
