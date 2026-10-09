@@ -1108,4 +1108,7 @@
     <string name="cleanup_done_merged">"%1$d duplicados fusionados"</string>
     <string name="cleanup_done_renamed">"%1$d nombres unificados"</string>
     <string name="cleanup_done_deleted">"%1$d elementos sin usar eliminados"</string>
+    <string name="did_you_mean_x">"¿Querías decir «%1$s»? Toca para usarla."</string>
+    <string name="already_have_x">"Ya tienes «%1$s»."</string>
+    <string name="use_x">"Usar «%1$s»"</string>
 </resources>

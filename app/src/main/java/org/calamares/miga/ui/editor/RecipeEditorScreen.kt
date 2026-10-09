@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.editor
 
+import androidx.compose.material3.FilledTonalButton
+import org.calamares.miga.data.model.ContentKind
+import org.calamares.miga.data.content.ContentCleanup
 import org.calamares.miga.ui.components.AiProgressView
 import androidx.compose.foundation.layout.widthIn
 import org.calamares.miga.ui.components.RichTextField
@@ -284,7 +287,8 @@ fun RecipeEditorScreen(
                         available = availableUtensils,
                         onToggle = viewModel::toggleUtensil,
                         onAddCustom = viewModel::addCustomUtensil,
-                        addDialogTitle = L10n.str(R.string.add_utensil)
+                        addDialogTitle = L10n.str(R.string.add_utensil),
+                        kind = ContentKind.EQUIPMENT
                     )
                 }
                 Section(title = L10n.str(R.string.tags)) {
@@ -293,7 +297,8 @@ fun RecipeEditorScreen(
                         available = availableTags,
                         onToggle = viewModel::toggleTag,
                         onAddCustom = viewModel::addCustomTag,
-                        addDialogTitle = L10n.str(R.string.add_tag)
+                        addDialogTitle = L10n.str(R.string.add_tag),
+                        kind = ContentKind.TAG
                     )
                 }
                 RichTextField(
@@ -543,12 +548,25 @@ private fun OriginField(value: String, countryCode: String?, onValueChange: (Str
 @Composable
 private fun CategoryField(value: String, suggestions: List<String>, onValueChange: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
+    // "postre" when "Postres" exists: offered instead of creating a near duplicate.
+    val similar = remember(value, suggestions) {
+        ContentCleanup.similarExisting(ContentKind.CATEGORY, value, suggestions, L10n.locale().language)
+    }
     Column {
         OutlinedTextField(
             value = value,
             onValueChange = { onValueChange(it); expanded = true },
             label = { Text(L10n.str(R.string.category)) },
             placeholder = { Text(L10n.str(R.string.e_g_desserts_soups_pasta)) },
+            supportingText = similar?.let { name ->
+                {
+                    Text(
+                        L10n.str(R.string.did_you_mean_x, name),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable { onValueChange(name); expanded = false }
+                    )
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
         if (expanded && suggestions.isNotEmpty()) {
@@ -577,7 +595,8 @@ private fun ChipMultiSelect(
     available: List<String>,
     onToggle: (String) -> Unit,
     onAddCustom: (String) -> Unit,
-    addDialogTitle: String
+    addDialogTitle: String,
+    kind: ContentKind
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     val allOptions = (available + selected).distinct()
@@ -595,16 +614,29 @@ private fun ChipMultiSelect(
 
     if (showAddDialog) {
         var newValue by remember { mutableStateOf("") }
+        val similar = remember(newValue, allOptions) {
+            ContentCleanup.similarExisting(kind, newValue, allOptions, L10n.locale().language)
+        }
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
             title = { Text(addDialogTitle) },
             text = {
-                OutlinedTextField(
-                    value = newValue,
-                    onValueChange = { newValue = it },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = newValue,
+                        onValueChange = { newValue = it },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (similar != null) {
+                        // A near duplicate: the existing one is offered instead.
+                        Text(L10n.str(R.string.already_have_x, similar), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        FilledTonalButton(onClick = {
+                            if (similar !in selected) onToggle(similar)
+                            showAddDialog = false
+                        }) { Text(L10n.str(R.string.use_x, similar)) }
+                    }
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
