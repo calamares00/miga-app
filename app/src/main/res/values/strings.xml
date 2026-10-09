@@ -1109,4 +1109,7 @@
     <string name="cleanup_done_merged">"%1$d duplicates merged"</string>
     <string name="cleanup_done_renamed">"%1$d names unified"</string>
     <string name="cleanup_done_deleted">"%1$d unused entries deleted"</string>
+    <string name="did_you_mean_x">"Did you mean \"%1$s\"? Tap to use it."</string>
+    <string name="already_have_x">"You already have \"%1$s\"."</string>
+    <string name="use_x">"Use \"%1$s\""</string>
 </resources>

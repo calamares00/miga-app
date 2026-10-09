@@ -76,6 +76,45 @@ object ContentCleanup {
         return proposals
     }
 
+    /**
+     * The existing entry [typed] most likely means when it is not written exactly like it: the same
+     * name in another case, with or without accents, in singular or plural, an equipment variant or
+     * a small typo ("Postrs"). Null when [typed] already exists as written or nothing is close.
+     */
+    fun similarExisting(kind: ContentKind, typed: String, existing: List<String>, language: String): String? {
+        val clean = typed.trim()
+        if (clean.isEmpty() || existing.any { it == clean }) return null
+        val key = comparisonKey(kind, clean, language)
+        if (key.isEmpty()) return null
+        existing.firstOrNull { sameName(key, comparisonKey(kind, it, language)) }?.let { return it }
+        // Typos: one wrong letter in short names, two in long ones.
+        val allowed = when {
+            key.length < 4 -> return null
+            key.length < 8 -> 1
+            else -> 2
+        }
+        return existing
+            .map { it to editDistance(key, comparisonKey(kind, it, language)) }
+            .filter { (_, distance) -> distance in 1..allowed }
+            .minByOrNull { (_, distance) -> distance }
+            ?.first
+    }
+
+    internal fun editDistance(a: String, b: String): Int {
+        if (kotlin.math.abs(a.length - b.length) > 2) return Int.MAX_VALUE
+        var previous = IntArray(b.length + 1) { it }
+        for (i in 1..a.length) {
+            val current = IntArray(b.length + 1)
+            current[0] = i
+            for (j in 1..b.length) {
+                val cost = if (a[i - 1] == b[j - 1]) 0 else 1
+                current[j] = minOf(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost)
+            }
+            previous = current
+        }
+        return previous[b.length]
+    }
+
     /** Groups of two or more entries that are the same thing written differently. */
     internal fun duplicateGroups(kind: ContentKind, items: List<ContentItem>, language: String): List<List<ContentItem>> {
         val parent = IntArray(items.size) { it }

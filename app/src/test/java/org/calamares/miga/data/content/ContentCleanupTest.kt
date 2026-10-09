@@ -89,4 +89,15 @@ class ContentCleanupTest {
         val renames = proposals.filter { it.action == CleanupAction.RENAME }.associate { it.items.single().name to it.newName }
         assertEquals(mapOf("  cena " to "Cenas", "queso  ahumado de cabra" to "Queso ahumado de cabra"), renames)
     }
+
+    @Test
+    fun `typing a name close to an existing one suggests it`() {
+        val categories = listOf("Postres", "Sopas y cremas", "Pastas")
+        assertEquals("Postres", ContentCleanup.similarExisting(ContentKind.CATEGORY, "postre", categories, "es"))
+        assertEquals("Postres", ContentCleanup.similarExisting(ContentKind.CATEGORY, "Postrs", categories, "es"))
+        assertEquals("Sopas y cremas", ContentCleanup.similarExisting(ContentKind.CATEGORY, "sopa y crema", categories, "es"))
+        assertEquals(null, ContentCleanup.similarExisting(ContentKind.CATEGORY, "Postres", categories, "es"))
+        assertEquals(null, ContentCleanup.similarExisting(ContentKind.CATEGORY, "Cenas", categories, "es"))
+        assertEquals("Freidora de aire", ContentCleanup.similarExisting(ContentKind.EQUIPMENT, "airfryer", listOf("Horno", "Freidora de aire"), "es"))
+    }
 }
