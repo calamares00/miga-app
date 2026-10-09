@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.settings
 
+import androidx.compose.material.icons.filled.Tag
+import org.calamares.miga.data.model.ContentKind
 import org.calamares.miga.ui.theme.accentColorFor
 import org.calamares.miga.AppLanguage
 import android.content.ContextWrapper
@@ -127,16 +129,14 @@ fun SettingsSectionScreen(
     viewModel: SettingsViewModel,
     section: SettingsSection,
     onBack: () -> Unit,
-    onManageCategories: () -> Unit,
-    onManageUtensils: () -> Unit,
-    onManageIngredients: () -> Unit,
-    onManageIngredientCategories: () -> Unit,
+    onManageContent: (ContentKind) -> Unit,
     onOpenPacksCatalog: () -> Unit,
     onOpenSyncConnections: () -> Unit
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
     val colorTheme by viewModel.colorTheme.collectAsState()
     val photoFrame by viewModel.photoFrame.collectAsState()
+    val contentSummary by viewModel.contentSummary.collectAsState()
     val samplePhoto by viewModel.samplePhoto.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
     val books by viewModel.books.collectAsState()
@@ -285,13 +285,24 @@ fun SettingsSectionScreen(
                 }
                 SettingsSection.CONTENT -> {
             SettingsCard(title = "", contentSpacing = 0.dp) {
-                ManageRow(icon = Icons.Filled.Category, label = L10n.str(R.string.categories), onClick = onManageCategories)
-                HorizontalDivider()
-                ManageRow(icon = Icons.Filled.Kitchen, label = L10n.str(R.string.utensils), onClick = onManageUtensils)
-                HorizontalDivider()
-                ManageRow(icon = Icons.Filled.RestaurantMenu, label = L10n.str(R.string.ingredients), onClick = onManageIngredients)
-                HorizontalDivider()
-                ManageRow(icon = Icons.Filled.Sell, label = L10n.str(R.string.ingredient_categories), onClick = onManageIngredientCategories)
+                ContentKind.entries.forEachIndexed { index, kind ->
+                    if (index > 0) HorizontalDivider()
+                    ManageRow(
+                        icon = when (kind) {
+                            ContentKind.CATEGORY -> Icons.Filled.Category
+                            ContentKind.EQUIPMENT -> Icons.Filled.Kitchen
+                            ContentKind.TAG -> Icons.Filled.Tag
+                            ContentKind.INGREDIENT -> Icons.Filled.RestaurantMenu
+                            ContentKind.INGREDIENT_CATEGORY -> Icons.Filled.Sell
+                        },
+                        label = kind.title,
+                        summary = contentSummary[kind]?.let { counts ->
+                            if (counts.unusedMine > 0) L10n.str(R.string.content_summary_unused_x_y, counts.total, counts.unusedMine)
+                            else L10n.str(R.string.content_summary_x, counts.total)
+                        },
+                        onClick = { onManageContent(kind) }
+                    )
+                }
             }
                 }
                 SettingsSection.BACKUP -> {

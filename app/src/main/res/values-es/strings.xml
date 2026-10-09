@@ -1066,4 +1066,26 @@
     <string name="polish_after">"Después"</string>
     <string name="polish_apply">"Aplicar"</string>
     <string name="polish_applied">"Receta mejorada con IA"</string>
+    <string name="content_merge">"Fusionar"</string>
+    <string name="content_sort">"Ordenar"</string>
+    <string name="content_sort_name">"Por nombre"</string>
+    <string name="content_sort_usage">"Más usados primero"</string>
+    <string name="content_filter_all">"Todos (%1$d)"</string>
+    <string name="content_filter_unused">"Sin usar (%1$d)"</string>
+    <string name="content_filter_mine">"Míos (%1$d)"</string>
+    <string name="content_unused">"Sin usar"</string>
+    <string name="content_rename_merges_x">"Ya existe «%1$s»: se fusionarán los dos en él."</string>
+    <string name="content_already_exists_x">"Ya existe «%1$s»."</string>
+    <string name="content_rename_in_recipes">"Cambiarlo también en sus %1$s"</string>
+    <string name="content_rename_updates">"Sus %1$s mostrarán el nombre nuevo."</string>
+    <string name="content_delete_n">"Eliminar %1$d elementos"</string>
+    <string name="content_delete_unused">"No se usa en nada. No se puede deshacer."</string>
+    <string name="content_delete_ingredient_used">"Las recetas mantienen sus ingredientes tal cual; solo se quita de las sugerencias y de las categorías de la compra."</string>
+    <string name="content_delete_used_x">"Se usa en %1$s, que se quedarán sin él. Puedes pasarlas a otro en su lugar."</string>
+    <string name="content_move_to">"Pasarlas a"</string>
+    <string name="content_move_to_x">"Pasar a «%1$s»"</string>
+    <string name="content_merge_n">"Fusionar %1$d elementos"</string>
+    <string name="content_merge_keep">"Todo lo que los usa pasará a usar el que conserves:"</string>
+    <string name="content_summary_x">"%1$d"</string>
+    <string name="content_summary_unused_x_y">"%1$d · %2$d tuyos sin usar"</string>
 </resources>

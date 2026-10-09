@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.navigation
 
 import android.net.Uri
+import org.calamares.miga.data.model.ContentKind
 
 object Destinations {
     const val BOOKS_ROUTE = "books"
@@ -23,10 +24,8 @@ object Destinations {
     const val IDEAS_ROUTE = "ideas"
     const val SETTINGS_ROUTE = "settings"
     const val SETTINGS_SECTION_ROUTE = "settings/section/{section}"
-    const val MANAGE_CATEGORIES_ROUTE = "settings/categories"
-    const val MANAGE_UTENSILS_ROUTE = "settings/utensils"
-    const val MANAGE_INGREDIENTS_ROUTE = "settings/ingredients"
-    const val MANAGE_INGREDIENT_CATEGORIES_ROUTE = "settings/ingredientCategories"
+    /** One list of Settings > Manage content; {kind} is a ContentKind name. */
+    const val MANAGE_CONTENT_ROUTE = "settings/content/{kind}"
     const val SYNC_CONNECTIONS_ROUTE = "settings/syncConnections"
     const val HELP_ROUTE = "help"
     const val HELP_CHANGELOG_ROUTE = "help/changelog"
@@ -36,6 +35,7 @@ object Destinations {
     const val ARG_RECIPE_ID = "recipeId"
     const val ARG_BOOK_ID = "bookId"
     const val ARG_SETTINGS_SECTION = "section"
+    const val ARG_CONTENT_KIND = "kind"
     const val ARG_SOURCE_PHOTO_URIS = "sourcePhotoUris"
     const val ARG_SOURCE_DISH_NAME = "sourceDishName"
     const val ARG_SOURCE_DISH_DESCRIPTION = "sourceDishDescription"
@@ -94,4 +94,7 @@ object Destinations {
 
     fun decodeUriList(raw: String?): List<String> =
         raw?.takeIf { it.isNotBlank() }?.split(",")?.map { Uri.decode(it) }.orEmpty()
+
+    fun manageContent(kind: ContentKind) = "settings/content/${kind.name}"
 }
+
