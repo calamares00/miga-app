@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.search
 
+import org.calamares.miga.ui.theme.recipePhotoFrame
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import androidx.compose.material3.OutlinedButton
@@ -297,7 +298,7 @@ private fun SearchResultCard(
                             model = result.photoUri,
                             contentDescription = result.recipeName,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize().recipePhotoFrame()
                         )
                     } else {
                         Icon(

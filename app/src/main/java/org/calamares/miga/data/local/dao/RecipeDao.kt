@@ -74,6 +74,10 @@ interface RecipeDao {
     @Query("SELECT * FROM recipe_photos WHERE recipeId = :recipeId")
     suspend fun getPhotosOnce(recipeId: Long): List<RecipePhotoEntity>
 
+    /** A cover photo of the user's (the newest), to preview the photo frames in Settings. */
+    @Query("SELECT uri FROM recipe_photos ORDER BY isCover DESC, id DESC LIMIT 1")
+    fun observeSamplePhotoUri(): Flow<String?>
+
     @Query("SELECT * FROM recipe_photos WHERE uid = :uid LIMIT 1")
     suspend fun findPhotoByUid(uid: String): RecipePhotoEntity?
 

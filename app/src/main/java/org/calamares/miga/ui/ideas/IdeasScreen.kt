@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.ideas
 
+import org.calamares.miga.ui.theme.recipePhotoFrame
 import androidx.compose.animation.AnimatedVisibility
 import org.calamares.miga.ui.components.ButtonContent
 import androidx.compose.animation.core.animateFloatAsState
@@ -541,7 +542,7 @@ private fun RecipeIdeaRow(recipe: Recipe, idea: IdeaRecipe, onClick: () -> Unit)
             contentAlignment = Alignment.Center
         ) {
             if (photo != null) {
-                AsyncImage(model = photo, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                AsyncImage(model = photo, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().recipePhotoFrame())
             } else {
                 Text("🍽️")
             }

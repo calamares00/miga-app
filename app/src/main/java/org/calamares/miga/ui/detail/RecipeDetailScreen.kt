@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.ui.theme.recipePhotoFrame
 import org.calamares.miga.ui.components.FormattedText
 import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.ui.components.ErrorMessage
@@ -708,7 +709,7 @@ private fun PhotoHeader(recipe: Recipe, onPhotoClick: (Int) -> Unit) {
                 model = photos[page],
                 contentDescription = recipe.name,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize().clickable { onPhotoClick(page) }
+                modifier = Modifier.fillMaxSize().recipePhotoFrame().clickable { onPhotoClick(page) }
             )
         }
         Box(

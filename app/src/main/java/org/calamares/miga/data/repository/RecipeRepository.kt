@@ -126,6 +126,7 @@ class RecipeRepository(
     fun observeRecipe(id: Long): Flow<Recipe?> =
         recipeDao.observeWithDetails(id).map { it?.toDomain() }
 
+    fun observeSamplePhotoUri(): Flow<String?> = recipeDao.observeSamplePhotoUri()
     fun observeCategories(): Flow<List<CategoryEntity>> = categoryDao.observeAll()
     fun observeTags(): Flow<List<TagEntity>> = tagDao.observeAll()
     fun observeUtensils(): Flow<List<UtensilEntity>> = utensilDao.observeAll()

@@ -24,6 +24,14 @@ private const val MAX_PHOTO_DIMENSION = 1600
 private const val JPEG_QUALITY = 92
 
 /**
+ * Size of a photo improved in the editor (see [PhotoStorage.saveOptimized]): enough for a sharp
+ * full-screen view on any phone, at a quality where JPEG artefacts are not visible, so it weighs a
+ * fraction of the original.
+ */
+private const val OPTIMIZED_PHOTO_DIMENSION = 1440
+private const val OPTIMIZED_JPEG_QUALITY = 85
+
+/**
  * Size and quality of the photos sent to an AI model (not the ones stored for display). Gemini
  * charges tokens per image tile, which depends on resolution, so images are not sent larger than
  * needed to read the text; 1280 px is plenty for printed or handwritten text in a cookbook photo.
@@ -176,6 +184,28 @@ object PhotoStorage {
         val destination = File(dir, "${UUID.randomUUID()}.jpg")
         FileOutputStream(destination).use { out -> normalized.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out) }
         return "file://${destination.absolutePath}"
+    }
+
+    /** A photo written by [saveOptimized]: its uri and size in bytes. */
+    class SavedPhoto(val uri: String, val bytes: Long)
+
+    /**
+     * Stores [bitmap] at the size and quality a phone needs and no more (see
+     * [OPTIMIZED_PHOTO_DIMENSION]), for photos the user asked to improve.
+     */
+    fun saveOptimized(context: Context, bitmap: Bitmap): SavedPhoto {
+        val optimized = downscaleIfNeeded(bitmap, OPTIMIZED_PHOTO_DIMENSION)
+        val dir = File(context.filesDir, "photos").apply { mkdirs() }
+        val destination = File(dir, "${UUID.randomUUID()}.jpg")
+        FileOutputStream(destination).use { out -> optimized.compress(Bitmap.CompressFormat.JPEG, OPTIMIZED_JPEG_QUALITY, out) }
+        return SavedPhoto("file://${destination.absolutePath}", destination.length())
+    }
+
+    /** Size in bytes of the file behind [uri], or null when it cannot be known. */
+    fun sizeOf(context: Context, uri: Uri): Long? = try {
+        context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length }?.takeIf { it > 0 }
+    } catch (e: Exception) {
+        null
     }
 
     /**

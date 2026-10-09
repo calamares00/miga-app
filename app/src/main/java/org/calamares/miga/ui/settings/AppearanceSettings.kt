@@ -61,7 +61,13 @@ import androidx.compose.ui.unit.dp
 import org.calamares.miga.AppLanguage
 import org.calamares.miga.L10n
 import org.calamares.miga.R
+import coil.compose.AsyncImage
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.ContentScale
 import org.calamares.miga.data.model.ColorTheme
+import org.calamares.miga.data.model.PhotoFrame
+import org.calamares.miga.ui.theme.recipePhotoFrame
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.ui.theme.Ink
 import org.calamares.miga.ui.theme.NightBackground
@@ -74,21 +80,26 @@ import org.calamares.miga.ui.theme.accentColorFor
 import org.calamares.miga.ui.theme.accentSoftColorFor
 
 private const val SWATCHES_PER_ROW = 4
+private const val FRAMES_PER_ROW = 3
 
 /**
  * Settings > Appearance: a live preview, the light/dark mode as three picture cards, the accent
- * colour as named swatches and the language as a segmented control. Each group sits in its own
- * card so the screen reads as three clear choices.
+ * colour as named swatches, the photo frame as framed miniatures and the language as a segmented
+ * control. Each group sits in its own card so the screen reads as clear, separate choices.
  */
 @Composable
 fun AppearanceSettings(
     themeMode: ThemeMode,
     colorTheme: ColorTheme,
     onThemeMode: (ThemeMode) -> Unit,
-    onColorTheme: (ColorTheme) -> Unit
+    onColorTheme: (ColorTheme) -> Unit,
+    photoFrame: PhotoFrame,
+    onPhotoFrame: (PhotoFrame) -> Unit,
+    /** One of the user's recipe photos for the previews; a drawn dish without any. */
+    samplePhoto: String?
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(vertical = 8.dp)) {
-        ThemePreview()
+        ThemePreview(photoFrame, samplePhoto)
 
         AppearanceGroup(L10n.str(R.string.appearance_theme)) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -122,6 +133,30 @@ fun AppearanceSettings(
             }
         }
 
+        AppearanceGroup(L10n.str(R.string.photo_frame_title)) {
+            Text(
+                L10n.str(R.string.photo_frame_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                PhotoFrame.entries.chunked(FRAMES_PER_ROW).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                        row.forEach { frame ->
+                            FrameOption(
+                                frame = frame,
+                                samplePhoto = samplePhoto,
+                                selected = photoFrame == frame,
+                                onClick = { onPhotoFrame(frame) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        repeat(FRAMES_PER_ROW - row.size) { Spacer(modifier = Modifier.weight(1f)) }
+                    }
+                }
+            }
+        }
+
         AppearanceGroup(L10n.str(R.string.language_title)) {
             LanguagePicker()
         }
@@ -147,7 +182,7 @@ private fun AppearanceGroup(title: String, content: @Composable () -> Unit) {
  * at once.
  */
 @Composable
-private fun ThemePreview() {
+private fun ThemePreview(photoFrame: PhotoFrame, samplePhoto: String?) {
     val colors = MaterialTheme.colorScheme
     Surface(color = colors.surfaceContainerLow, shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -158,11 +193,10 @@ private fun ThemePreview() {
             )
             Surface(color = colors.surface, shape = RoundedCornerShape(18.dp), shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
                 Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Brush.linearGradient(listOf(colors.primaryContainer, colors.primary)))
+                    SamplePhoto(
+                        samplePhoto = samplePhoto,
+                        frame = photoFrame,
+                        modifier = Modifier.size(56.dp).clip(RoundedCornerShape(14.dp))
                     )
                     Column(modifier = Modifier.padding(start = 12.dp).weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
@@ -408,4 +442,88 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+/** One frame as a miniature of a recipe photo wearing it, selectable like the theme cards. */
+@Composable
+private fun FrameOption(frame: PhotoFrame, samplePhoto: String?, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val accent = MaterialTheme.colorScheme.primary
+    val borderColor by animateColorAsState(
+        if (selected) accent else MaterialTheme.colorScheme.outlineVariant,
+        label = "frameBorder"
+    )
+    val borderWidth by animateDpAsState(if (selected) 2.dp else 1.dp, label = "frameBorderWidth")
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
+            .padding(4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(16.dp))
+                .border(BorderStroke(borderWidth, borderColor), RoundedCornerShape(16.dp))
+        ) {
+            SamplePhoto(samplePhoto = samplePhoto, frame = frame, modifier = Modifier.fillMaxSize())
+            if (selected) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .size(20.dp)
+                        .clip(CircleShape)
+                        .background(accent),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(14.dp))
+                }
+            }
+        }
+        Text(
+            frame.label,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (selected) accent else MaterialTheme.colorScheme.onSurface,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+/** The user's [samplePhoto] with [frame], or a drawn dish when there is no photo yet. */
+@Composable
+private fun SamplePhoto(samplePhoto: String?, frame: PhotoFrame, modifier: Modifier = Modifier) {
+    if (samplePhoto != null) {
+        AsyncImage(
+            model = samplePhoto,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = modifier.recipePhotoFrame(frame)
+        )
+    } else {
+        DrawnDish(modifier.recipePhotoFrame(frame))
+    }
+}
+
+/** A plate of food on a wooden table, drawn, for the previews before the user has any photo. */
+@Composable
+private fun DrawnDish(modifier: Modifier) {
+    Canvas(modifier = modifier) {
+        drawRect(Brush.linearGradient(listOf(Color(0xFFB07A4F), Color(0xFF7A4E2D)), start = Offset.Zero, end = Offset(size.width, size.height)))
+        val plate = size.minDimension * 0.4f
+        drawCircle(Color.Black.copy(alpha = 0.18f), radius = plate * 1.02f, center = center + Offset(plate * 0.06f, plate * 0.08f))
+        drawCircle(Color(0xFFF7F4EE), radius = plate, center = center)
+        drawCircle(Color(0xFFE9E3D8), radius = plate * 0.72f, center = center)
+        // Pasta, tomato and basil.
+        drawCircle(Color(0xFFF1C25B), radius = plate * 0.5f, center = center)
+        drawCircle(Color(0xFFD9442E), radius = plate * 0.2f, center = center + Offset(-plate * 0.18f, -plate * 0.1f))
+        drawCircle(Color(0xFFC7382A), radius = plate * 0.15f, center = center + Offset(plate * 0.22f, plate * 0.12f))
+        drawCircle(Color(0xFF4E9A3E), radius = plate * 0.1f, center = center + Offset(plate * 0.05f, -plate * 0.3f))
+        drawCircle(Color(0xFF3F8A33), radius = plate * 0.08f, center = center + Offset(-plate * 0.25f, plate * 0.22f))
+    }
 }

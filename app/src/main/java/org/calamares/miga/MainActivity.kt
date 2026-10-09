@@ -60,6 +60,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.model.ColorTheme
+import org.calamares.miga.data.model.PhotoFrame
+import org.calamares.miga.ui.theme.LocalPhotoFrame
+import androidx.compose.runtime.CompositionLocalProvider
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.share.ShoppingIntents
 import org.calamares.miga.ui.StartupGate
@@ -125,6 +128,7 @@ class MainActivity : FragmentActivity() {
                 ThemeMode.DARK -> true
             }
             val colorTheme by settingsRepository.observeColorTheme().collectAsState(initial = ColorTheme.DEFAULT)
+            val photoFrame by settingsRepository.observePhotoFrame().collectAsState(initial = PhotoFrame.DEFAULT)
             val biometricLockEnabled by settingsRepository.observeBiometricLockEnabled().collectAsState(initial = null)
             // These start as null while the settings load; the splash stays on screen meanwhile so
             // neither the lock screen nor the content flashes.
@@ -182,7 +186,7 @@ class MainActivity : FragmentActivity() {
                 onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
             }
 
-            MigaTheme(darkTheme = darkTheme, colorTheme = colorTheme) {
+            MigaTheme(darkTheme = darkTheme, colorTheme = colorTheme) { CompositionLocalProvider(LocalPhotoFrame provides photoFrame) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         when {
@@ -214,7 +218,7 @@ class MainActivity : FragmentActivity() {
                         }
                     }
                 }
-            }
+            } }
         }
     }
 }

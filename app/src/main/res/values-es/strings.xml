@@ -1042,4 +1042,19 @@
     <string name="new_short">"Nueva"</string>
     <string name="app_slogan">"Tus recetas. Tus libros. Tu cocina."</string>
     <string name="checking_connection">"Comprobando…"</string>
+    <string name="photo_enhance_ai">"Mejorar con IA"</string>
+    <string name="photo_enhancing">"Mejorando…"</string>
+    <string name="photo_compare">"Comparar"</string>
+    <string name="photo_undo_enhance">"Deshacer"</string>
+    <string name="photo_showing_original">"Mostrando la foto original."</string>
+    <string name="photo_compare_hint">"Mantén pulsado Comparar para ver la original. Arrastra las esquinas para recortar."</string>
+    <string name="photo_optimized_x_y">"Foto optimizada: %1$s → %2$s"</string>
+    <string name="photo_frame_title">"Marco de las fotos"</string>
+    <string name="photo_frame_hint">"Da el mismo estilo a todas las fotos de tus recetas, en las listas y en la receta."</string>
+    <string name="photo_frame_none">"Sin marco"</string>
+    <string name="photo_frame_polaroid">"Polaroid"</string>
+    <string name="photo_frame_gallery">"Galería"</string>
+    <string name="photo_frame_fine_line">"Línea fina"</string>
+    <string name="photo_frame_vignette">"Viñeta"</string>
+    <string name="photo_frame_accent">"Color"</string>
 </resources>

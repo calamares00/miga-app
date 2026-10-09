@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.components
 
+import org.calamares.miga.ui.theme.recipePhotoFrame
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.model.RecipeOrigin
@@ -107,7 +108,7 @@ fun RecipeCard(
                             model = recipe.coverPhotoUri,
                             contentDescription = recipe.name,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxSize().recipePhotoFrame()
                         )
                     } else {
                         Icon(
@@ -225,7 +226,7 @@ fun RecipeGridCard(
                         model = recipe.coverPhotoUri,
                         contentDescription = recipe.name,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize().recipePhotoFrame()
                     )
                 } else {
                     Icon(

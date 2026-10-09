@@ -136,6 +136,8 @@ fun SettingsSectionScreen(
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
     val colorTheme by viewModel.colorTheme.collectAsState()
+    val photoFrame by viewModel.photoFrame.collectAsState()
+    val samplePhoto by viewModel.samplePhoto.collectAsState()
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
     val books by viewModel.books.collectAsState()
     val packsCatalogRepo by viewModel.packsCatalogRepo.collectAsState()
@@ -248,7 +250,10 @@ fun SettingsSectionScreen(
                     themeMode = themeMode,
                     colorTheme = colorTheme,
                     onThemeMode = { viewModel.setThemeMode(it) },
-                    onColorTheme = { viewModel.setColorTheme(it) }
+                    onColorTheme = { viewModel.setColorTheme(it) },
+                    photoFrame = photoFrame,
+                    onPhotoFrame = { viewModel.setPhotoFrame(it) },
+                    samplePhoto = samplePhoto
                 )
                 SettingsSection.SECURITY -> {
             SettingsCard(title = "") {
