@@ -1088,4 +1088,24 @@
     <string name="content_merge_keep">"Todo lo que los usa pasará a usar el que conserves:"</string>
     <string name="content_summary_x">"%1$d"</string>
     <string name="content_summary_unused_x_y">"%1$d · %2$d tuyos sin usar"</string>
+    <string name="cleanup_title">"Limpiar contenido"</string>
+    <string name="cleanup_summary">"Duplicados, nombres a unificar y lo tuyo sin usar"</string>
+    <string name="cleanup_summary_unused_x">"%1$d elementos tuyos sin usar"</string>
+    <string name="cleanup_intro">"Revisa lo que se puede ordenar y desmarca lo que quieras conservar. Solo se renombra o elimina lo tuyo; lo que trae la app se mantiene."</string>
+    <string name="cleanup_ai">"Afinar con IA"</string>
+    <string name="cleanup_ai_working">"Buscando sinónimos y erratas…"</string>
+    <string name="cleanup_ai_done">"Sugerencias de la IA añadidas"</string>
+    <string name="cleanup_nothing">"Todo está en orden"</string>
+    <string name="cleanup_section_merge">"Fusionar duplicados (%1$d)"</string>
+    <string name="cleanup_section_rename">"Unificar nombres (%1$d)"</string>
+    <string name="cleanup_section_delete">"Eliminar sin usar (%1$d)"</string>
+    <string name="cleanup_tick_all">"Marcar todo"</string>
+    <string name="cleanup_untick_all">"Desmarcar todo"</string>
+    <string name="cleanup_from_ai">"Sugerido por la IA"</string>
+    <string name="cleanup_apply_n">"Aplicar %1$d cambios"</string>
+    <string name="cleanup_done">"Contenido ordenado"</string>
+    <string name="cleanup_undone">"Cambios deshechos"</string>
+    <string name="cleanup_done_merged">"%1$d duplicados fusionados"</string>
+    <string name="cleanup_done_renamed">"%1$d nombres unificados"</string>
+    <string name="cleanup_done_deleted">"%1$d elementos sin usar eliminados"</string>
 </resources>

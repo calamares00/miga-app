@@ -1,11 +1,23 @@
 package org.calamares.miga.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
+import org.calamares.miga.data.local.entity.CategoryEntity
+import org.calamares.miga.data.local.entity.IngredientCatalogEntity
+import org.calamares.miga.data.local.entity.IngredientCategoryEntity
+import org.calamares.miga.data.local.entity.RecipeTagCrossRef
+import org.calamares.miga.data.local.entity.RecipeUtensilCrossRef
+import org.calamares.miga.data.local.entity.TagEntity
+import org.calamares.miga.data.local.entity.UtensilEntity
 
 /** A label of the user's content (category, equipment, tag...) and how many things use it. */
 data class ContentRow(val id: Long, val name: String, val usage: Int)
+
+/** A recipe and its category, to put it back when a cleanup is undone. */
+data class RecipeCategoryLink(val id: Long, val categoryId: Long?)
 
 /** A recipe whose book syncs, to queue it for upload after one of its labels changed. */
 data class RecipeSyncTarget(val uid: String, val connectionId: Long)
@@ -158,4 +170,74 @@ interface ContentDao {
             "WHERE r.id IN (:ids) AND b.syncConnectionId IS NOT NULL"
     )
     suspend fun syncTargets(ids: List<Long>): List<RecipeSyncTarget>
+
+    // --- Cleanup: what the shopping lists use, and a snapshot to undo it ---
+
+    /** Names on the shopping lists and in the shopping history: ingredients in use there. */
+    @Query("SELECT name FROM shopping_list_items WHERE deletedAt IS NULL UNION SELECT name FROM shopping_history")
+    suspend fun shoppingNames(): List<String>
+
+    @Query("SELECT * FROM categories")
+    suspend fun allCategories(): List<CategoryEntity>
+
+    @Query("SELECT * FROM utensils")
+    suspend fun allUtensils(): List<UtensilEntity>
+
+    @Query("SELECT * FROM tags")
+    suspend fun allTags(): List<TagEntity>
+
+    @Query("SELECT * FROM ingredient_catalog")
+    suspend fun allIngredients(): List<IngredientCatalogEntity>
+
+    @Query("SELECT * FROM ingredient_categories")
+    suspend fun allIngredientCategories(): List<IngredientCategoryEntity>
+
+    @Query("SELECT * FROM recipe_utensil_cross_ref")
+    suspend fun allUtensilLinks(): List<RecipeUtensilCrossRef>
+
+    @Query("SELECT * FROM recipe_tag_cross_ref")
+    suspend fun allTagLinks(): List<RecipeTagCrossRef>
+
+    @Query("SELECT id, categoryId FROM recipes")
+    suspend fun allRecipeCategories(): List<RecipeCategoryLink>
+
+    @Query("DELETE FROM ingredient_catalog")
+    suspend fun clearIngredients()
+
+    @Query("DELETE FROM ingredient_categories")
+    suspend fun clearIngredientCategories()
+
+    @Query("DELETE FROM categories")
+    suspend fun clearCategories()
+
+    /** Also removes their links to recipes (cascade); they are inserted again from the snapshot. */
+    @Query("DELETE FROM utensils")
+    suspend fun clearUtensils()
+
+    @Query("DELETE FROM tags")
+    suspend fun clearTags()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCategories(items: List<CategoryEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertUtensils(items: List<UtensilEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTags(items: List<TagEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertIngredients(items: List<IngredientCatalogEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertIngredientCategories(items: List<IngredientCategoryEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertUtensilLinks(items: List<RecipeUtensilCrossRef>)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertTagLinks(items: List<RecipeTagCrossRef>)
+
+    @Query("UPDATE recipes SET categoryId = :categoryId WHERE id = :id")
+    suspend fun setRecipeCategory(id: Long, categoryId: Long?)
 }

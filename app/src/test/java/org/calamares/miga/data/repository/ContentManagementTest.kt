@@ -111,4 +111,23 @@ class ContentManagementTest {
         assertTrue(recipe(id).utensils.isEmpty())
         assertNull(repository.observeContent(ContentKind.EQUIPMENT).first().firstOrNull { it.id == oven.id })
     }
+
+    @Test
+    fun `a cleanup is applied and undone`() = runBlocking {
+        val flan = save("Flan", "merienda", tags = listOf("dulce"))
+        save("Bizcocho", "meriendas")
+        repository.addContent(ContentKind.TAG, "sin usar")
+        val (content, shopping) = repository.contentForCleanup()
+        val proposals = org.calamares.miga.data.content.ContentCleanup.propose(content, "es", shopping)
+
+        val snapshot = repository.applyCleanup(proposals)
+        assertEquals("Meriendas", recipe(flan).categoryName)
+        assertNull(repository.observeContent(ContentKind.TAG).first().firstOrNull { it.name == "sin usar" })
+
+        repository.undoCleanup(snapshot)
+        assertEquals("merienda", recipe(flan).categoryName)
+        assertEquals(listOf("dulce"), recipe(flan).tags)
+        assertEquals(setOf("merienda", "meriendas"), repository.observeContent(ContentKind.CATEGORY).first().map { it.name }.toSet())
+        assertEquals(setOf("dulce", "sin usar"), repository.observeContent(ContentKind.TAG).first().map { it.name }.toSet())
+    }
 }

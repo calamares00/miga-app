@@ -1089,4 +1089,24 @@
     <string name="content_merge_keep">"Everything that uses them will use the one you keep:"</string>
     <string name="content_summary_x">"%1$d"</string>
     <string name="content_summary_unused_x_y">"%1$d · %2$d of yours unused"</string>
+    <string name="cleanup_title">"Clean up content"</string>
+    <string name="cleanup_summary">"Duplicates, names to unify and unused entries of yours"</string>
+    <string name="cleanup_summary_unused_x">"%1$d entries of yours unused"</string>
+    <string name="cleanup_intro">"Review what can be tidied and untick what you want to keep. Only your own entries are renamed or deleted; the app's are kept."</string>
+    <string name="cleanup_ai">"Refine with AI"</string>
+    <string name="cleanup_ai_working">"Looking for synonyms and typos…"</string>
+    <string name="cleanup_ai_done">"AI suggestions added"</string>
+    <string name="cleanup_nothing">"Everything is tidy"</string>
+    <string name="cleanup_section_merge">"Merge duplicates (%1$d)"</string>
+    <string name="cleanup_section_rename">"Unify names (%1$d)"</string>
+    <string name="cleanup_section_delete">"Delete unused (%1$d)"</string>
+    <string name="cleanup_tick_all">"Tick all"</string>
+    <string name="cleanup_untick_all">"Untick all"</string>
+    <string name="cleanup_from_ai">"Suggested by AI"</string>
+    <string name="cleanup_apply_n">"Apply %1$d changes"</string>
+    <string name="cleanup_done">"Content tidied"</string>
+    <string name="cleanup_undone">"Changes undone"</string>
+    <string name="cleanup_done_merged">"%1$d duplicates merged"</string>
+    <string name="cleanup_done_renamed">"%1$d names unified"</string>
+    <string name="cleanup_done_deleted">"%1$d unused entries deleted"</string>
 </resources>

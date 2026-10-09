@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.navigation
 
+import org.calamares.miga.ui.settings.ContentCleanupScreen
+import org.calamares.miga.ui.settings.ContentCleanupViewModel
 import org.calamares.miga.ui.settings.ManageContentScreen
 import org.calamares.miga.ui.settings.ManageContentViewModel
 import org.calamares.miga.data.model.ContentKind
@@ -547,6 +549,7 @@ private fun NavGraphBuilder.screens(
             section = section,
             onBack = { navController.popBackStack() },
             onManageContent = { kind -> navController.navigate(Destinations.manageContent(kind)) },
+            onCleanUpContent = { navController.navigate(Destinations.CONTENT_CLEANUP_ROUTE) },
             onOpenPacksCatalog = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) },
             onOpenSyncConnections = { navController.navigate(Destinations.SYNC_CONNECTIONS_ROUTE) }
         )
@@ -646,6 +649,13 @@ private fun NavGraphBuilder.screens(
             assetPath = L10n.str(R.string.privacy_asset),
             onBack = { navController.popBackStack() }
         )
+    }
+
+    screen(Destinations.CONTENT_CLEANUP_ROUTE) {
+        val viewModel: ContentCleanupViewModel = viewModel(
+            factory = viewModelFactory { initializer { ContentCleanupViewModel(repository, settingsRepository) } }
+        )
+        ContentCleanupScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
     }
 
     screen(
