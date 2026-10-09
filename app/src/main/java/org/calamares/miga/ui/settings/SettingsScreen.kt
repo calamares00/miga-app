@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.settings
 
+import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Tag
 import org.calamares.miga.data.model.ContentKind
 import org.calamares.miga.ui.theme.accentColorFor
@@ -130,6 +131,7 @@ fun SettingsSectionScreen(
     section: SettingsSection,
     onBack: () -> Unit,
     onManageContent: (ContentKind) -> Unit,
+    onCleanUpContent: () -> Unit,
     onOpenPacksCatalog: () -> Unit,
     onOpenSyncConnections: () -> Unit
 ) {
@@ -284,6 +286,15 @@ fun SettingsSectionScreen(
             }
                 }
                 SettingsSection.CONTENT -> {
+            SettingsCard(title = "", contentSpacing = 0.dp) {
+                val unusedMine = contentSummary.values.sumOf { it.unusedMine }
+                ManageRow(
+                    icon = Icons.Filled.CleaningServices,
+                    label = L10n.str(R.string.cleanup_title),
+                    summary = if (unusedMine > 0) L10n.str(R.string.cleanup_summary_unused_x, unusedMine) else L10n.str(R.string.cleanup_summary),
+                    onClick = onCleanUpContent
+                )
+            }
             SettingsCard(title = "", contentSpacing = 0.dp) {
                 ContentKind.entries.forEachIndexed { index, kind ->
                     if (index > 0) HorizontalDivider()

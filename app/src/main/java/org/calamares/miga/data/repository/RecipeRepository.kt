@@ -1,5 +1,8 @@
 package org.calamares.miga.data.repository
 
+import org.calamares.miga.data.local.dao.RecipeCategoryLink
+import org.calamares.miga.data.content.CleanupProposal
+import org.calamares.miga.data.content.CleanupAction
 import org.calamares.miga.data.model.ContentItem
 import org.calamares.miga.data.model.ContentKind
 import androidx.room.withTransaction
@@ -472,17 +475,90 @@ class RecipeRepository(
      * Merges [ids] into [intoId]: what used them now uses it, and they go. Ingredients are renamed
      * in the user's own recipes too.
      */
-    suspend fun mergeContent(kind: ContentKind, ids: Collection<Long>, intoId: Long) {
+    suspend fun mergeContent(kind: ContentKind, ids: Collection<Long>, intoId: Long, updateRecipes: Boolean = true) {
         val connections = db.withTransaction<Set<Long>> {
             val targetName = contentName(kind, intoId) ?: return@withTransaction emptySet()
             val affected = mutableSetOf<Long>()
             ids.filter { it != intoId }.forEach { id ->
                 val name = contentName(kind, id) ?: return@forEach
-                affected += recipesUsing(kind, id, name, updateRecipes = true)
+                affected += recipesUsing(kind, id, name, updateRecipes)
                 mergeInto(kind, id, intoId)
-                if (kind == ContentKind.INGREDIENT) contentDao.renameIngredientInOwnRecipes(name, targetName)
+                if (kind == ContentKind.INGREDIENT && updateRecipes) contentDao.renameIngredientInOwnRecipes(name, targetName)
             }
             touchRecipesLocked(affected)
+        }
+        connections.forEach { onSyncChangeEnqueued(it) }
+    }
+
+    /** Every list of Manage content as it is now, and the names in use on the shopping lists. */
+    suspend fun contentForCleanup(): Pair<Map<ContentKind, List<ContentItem>>, Set<String>> =
+        ContentKind.entries.associateWith { observeContent(it).first() } to
+            contentDao.shoppingNames().map { it.trim().lowercase() }.toSet()
+
+    /**
+     * Applies the proposals of a cleanup (see ContentCleanup) and returns how to undo it. Merges go
+     * first, then renames, then deletions. Ingredients are only changed in the list: recipes keep
+     * their ingredients as written, since case or plural there is the author's choice.
+     */
+    suspend fun applyCleanup(proposals: List<CleanupProposal>): ContentSnapshot {
+        val snapshot = db.withTransaction {
+            ContentSnapshot(
+                categories = contentDao.allCategories(),
+                utensils = contentDao.allUtensils(),
+                tags = contentDao.allTags(),
+                ingredients = contentDao.allIngredients(),
+                ingredientCategories = contentDao.allIngredientCategories(),
+                utensilLinks = contentDao.allUtensilLinks(),
+                tagLinks = contentDao.allTagLinks(),
+                recipeCategories = contentDao.allRecipeCategories(),
+                affectedRecipes = proposals.flatMap { proposal ->
+                    proposal.items.flatMap { item -> recipesUsing(proposal.kind, item.id, item.name, updateRecipes = false) }
+                }.toSet()
+            )
+        }
+        val order = listOf(CleanupAction.MERGE, CleanupAction.RENAME, CleanupAction.DELETE)
+        proposals.sortedBy { order.indexOf(it.action) }.forEach { proposal ->
+            when (proposal.action) {
+                CleanupAction.MERGE -> {
+                    val target = proposal.target ?: return@forEach
+                    mergeContent(proposal.kind, proposal.items.map { it.id }, target.id, updateRecipes = false)
+                    val newName = proposal.newName
+                    if (newName != null && newName != target.name && !target.isDefault) {
+                        renameContent(proposal.kind, target.id, newName, updateRecipes = false)
+                    }
+                }
+                CleanupAction.RENAME -> proposal.newName?.let { renameContent(proposal.kind, proposal.items.single().id, it, updateRecipes = false) }
+                CleanupAction.DELETE -> deleteContent(proposal.kind, proposal.items.map { it.id })
+            }
+        }
+        return snapshot
+    }
+
+    /** Puts every list back as it was before [applyCleanup], with the recipes' links. */
+    suspend fun undoCleanup(snapshot: ContentSnapshot) {
+        val connections = db.withTransaction<Set<Long>> {
+            val recipes = contentDao.allRecipeCategories()
+            val recipeIds = recipes.map { it.id }.toSet()
+            // Ingredients first (they point to their categories), then the rest; links cascade away
+            // with their entries and come back from the snapshot.
+            contentDao.clearIngredients()
+            contentDao.clearIngredientCategories()
+            contentDao.clearCategories()
+            contentDao.clearUtensils()
+            contentDao.clearTags()
+            contentDao.insertIngredientCategories(snapshot.ingredientCategories)
+            contentDao.insertIngredients(snapshot.ingredients)
+            contentDao.insertCategories(snapshot.categories)
+            contentDao.insertUtensils(snapshot.utensils)
+            contentDao.insertTags(snapshot.tags)
+            // A recipe deleted meanwhile would break the foreign key.
+            contentDao.insertUtensilLinks(snapshot.utensilLinks.filter { it.recipeId in recipeIds })
+            contentDao.insertTagLinks(snapshot.tagLinks.filter { it.recipeId in recipeIds })
+            val before = snapshot.recipeCategories.associate { it.id to it.categoryId }
+            recipes.forEach { recipe ->
+                if (recipe.id in before) contentDao.setRecipeCategory(recipe.id, before[recipe.id])
+            }
+            touchRecipesLocked(snapshot.affectedRecipes.filter { it in recipeIds })
         }
         connections.forEach { onSyncChangeEnqueued(it) }
     }
@@ -1974,3 +2050,17 @@ private fun <T> orderGroupsMainFirst(groups: LinkedHashMap<String?, MutableList<
     result.addAll(rest)
     return result
 }
+
+/** The lists of Manage content before a cleanup, to undo it (see RecipeRepository.applyCleanup). */
+class ContentSnapshot(
+    val categories: List<CategoryEntity>,
+    val utensils: List<UtensilEntity>,
+    val tags: List<TagEntity>,
+    val ingredients: List<IngredientCatalogEntity>,
+    val ingredientCategories: List<IngredientCategoryEntity>,
+    val utensilLinks: List<RecipeUtensilCrossRef>,
+    val tagLinks: List<RecipeTagCrossRef>,
+    val recipeCategories: List<RecipeCategoryLink>,
+    /** Recipes that showed a change, marked again for sync when undone. */
+    val affectedRecipes: Set<Long>
+)

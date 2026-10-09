@@ -26,6 +26,7 @@ object Destinations {
     const val SETTINGS_SECTION_ROUTE = "settings/section/{section}"
     /** One list of Settings > Manage content; {kind} is a ContentKind name. */
     const val MANAGE_CONTENT_ROUTE = "settings/content/{kind}"
+    const val CONTENT_CLEANUP_ROUTE = "settings/cleanup"
     const val SYNC_CONNECTIONS_ROUTE = "settings/syncConnections"
     const val HELP_ROUTE = "help"
     const val HELP_CHANGELOG_ROUTE = "help/changelog"
