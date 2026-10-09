@@ -122,7 +122,7 @@ fun GlobalSearchScreen(
             if (selectionMode) {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                    title = { Text("${selectedIds.size} seleccionadas") },
+                    title = { Text(L10n.str(R.string.n_selected, selectedIds.size)) },
                     navigationIcon = {
                         IconButton(onClick = viewModel::clearSelection) {
                             Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel_selection))

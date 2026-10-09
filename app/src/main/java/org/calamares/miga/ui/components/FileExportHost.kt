@@ -201,7 +201,7 @@ fun FileExportHost() {
                             onClick = { FileExports.share(context, current); FileExports.dismiss() },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            ButtonLabel(Icons.Filled.Share, L10n.str(R.string.share))
+                            ButtonContent(Icons.Filled.Share, L10n.str(R.string.share))
                         }
                         OutlinedButton(
                             onClick = {
@@ -214,7 +214,7 @@ fun FileExportHost() {
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            ButtonLabel(Icons.Filled.Save, L10n.str(R.string.save_to_files))
+                            ButtonContent(Icons.Filled.Save, L10n.str(R.string.save_to_files))
                         }
                     }
                 }
@@ -230,14 +230,6 @@ fun FileExportHost() {
             confirmButton = { TextButton(onClick = { FileExports.dismiss() }) { Text(L10n.str(R.string.close)) } }
         )
     }
-}
-
-/** Icon and text of a button, centred on one line. */
-@Composable
-private fun ButtonLabel(icon: ImageVector, text: String) {
-    Icon(icon, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
-    Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
-    Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
 }
 
 private fun formatIcon(format: ExportFormat): ImageVector = when (format) {

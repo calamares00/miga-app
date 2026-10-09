@@ -1038,4 +1038,8 @@
     <string name="welcome_again_title">"Paseo por la app"</string>
     <string name="welcome_again_desc">"Vuelve a mostrar la bienvenida y el paseo por la app la próxima vez que la abras."</string>
     <string name="welcome_again_on">"Se mostrará la próxima vez que abras la app."</string>
+    <string name="template_short">"Plantilla"</string>
+    <string name="new_short">"Nueva"</string>
+    <string name="app_slogan">"Tus recetas. Tus libros. Tu cocina."</string>
+    <string name="checking_connection">"Comprobando…"</string>
 </resources>

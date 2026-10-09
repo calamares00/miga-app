@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.shoppinglist
 
 import org.calamares.miga.data.model.displayCategoryName
+import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.Manifest
@@ -448,7 +449,6 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                         onValueChange = { quickText = it },
                         modifier = Modifier.weight(1f).focusRequester(quickAddFocus),
                         placeholder = { Text(L10n.str(R.string.add_2_kg_tomatoes_milk)) },
-                        shape = CircleShape,
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { submitQuick() }),
@@ -732,8 +732,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                 onDismiss = { productDetail = null },
                 actions = {
                     OutlinedButton(onClick = { templateTarget = item.toTemplateItem() }) {
-                        Icon(Icons.Filled.BookmarkAdd, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Text(L10n.str(R.string.save_template_2))
+                        ButtonContent(Icons.Filled.BookmarkAdd, L10n.str(R.string.save_template_2))
                     }
                 }
             )
@@ -939,20 +938,16 @@ private fun EmptyShoppingList(
         )
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.widthIn(max = 320.dp)) {
             FilledTonalButton(onClick = onTemplates, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Filled.Bookmarks, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text(L10n.str(R.string.use_template))
+                ButtonContent(Icons.Filled.Bookmarks, L10n.str(R.string.use_template))
             }
             OutlinedButton(onClick = onCatalog, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Filled.GridView, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text(L10n.str(R.string.catalogue_2))
+                ButtonContent(Icons.Filled.GridView, L10n.str(R.string.catalogue_2))
             }
             OutlinedButton(onClick = onSearch, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text(L10n.str(R.string.search_open_food_facts))
+                ButtonContent(Icons.Filled.Search, L10n.str(R.string.search_open_food_facts))
             }
             OutlinedButton(onClick = onScan, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Filled.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text(L10n.str(R.string.scan_product))
+                ButtonContent(Icons.Filled.QrCodeScanner, L10n.str(R.string.scan_product))
             }
         }
     } }
@@ -1032,8 +1027,7 @@ private fun ShoppingListsSheet(
             }
             item(key = "new") {
                 TextButton(onClick = { creating = true }, modifier = Modifier.padding(top = 4.dp)) {
-                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(L10n.str(R.string.new_list_2))
+                    ButtonContent(Icons.Filled.Add, L10n.str(R.string.new_list_2))
                 }
             }
             item(key = "author") {

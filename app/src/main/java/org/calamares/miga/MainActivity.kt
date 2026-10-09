@@ -39,6 +39,21 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.style.TextAlign
+import kotlinx.coroutines.delay
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
@@ -58,6 +73,14 @@ import kotlinx.coroutines.launch
 
 private const val PROMPTS_PREFS = "miga_prompts"
 private const val KEY_ASKED_NOTIFICATIONS = "asked_notifications"
+
+/** The start screen shows at least this long, then until the first screen has its content... */
+private const val START_SCREEN_MIN_MILLIS = 900L
+
+/** ...but never more than this beyond the minimum. */
+private const val START_SCREEN_MAX_EXTRA_MILLIS = 2000L
+
+private const val START_SCREEN_FADE_MILLIS = 300
 
 class MainActivity : FragmentActivity() {
     override fun onNewIntent(intent: Intent) {
@@ -88,8 +111,8 @@ class MainActivity : FragmentActivity() {
     private var startScreenReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // The splash also waits for the first screen's content (see StartupGate).
-        installSplashScreen().setKeepOnScreenCondition { !startScreenReady || StartupGate.isWaiting }
+        // The system splash only lasts until the settings load; the start screen below follows.
+        installSplashScreen().setKeepOnScreenCondition { !startScreenReady }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         if (savedInstanceState == null) ShoppingIntents.handle(intent)
@@ -127,6 +150,20 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
+            // Start screen (logo, name and slogan) over the first screen: shown for a moment and
+            // until that screen has its content, with a limit so a slow start never hangs on it.
+            // Not shown again when the activity is recreated (rotation, language change).
+            val firstContentReady by StartupGate.ready.collectAsState()
+            var minTimeElapsed by remember { mutableStateOf(savedInstanceState != null) }
+            var timedOut by remember { mutableStateOf(savedInstanceState != null) }
+            LaunchedEffect(Unit) {
+                delay(START_SCREEN_MIN_MILLIS)
+                minTimeElapsed = true
+                delay(START_SCREEN_MAX_EXTRA_MILLIS)
+                timedOut = true
+            }
+            val showStartScreen = !(minTimeElapsed && (firstContentReady || timedOut))
+
             // The first time an AI task runs, ask for the notification permission (Android 13+)
             // so its progress shows in the status bar and the user learns when it has finished.
             val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -147,28 +184,81 @@ class MainActivity : FragmentActivity() {
 
             MigaTheme(darkTheme = darkTheme, colorTheme = colorTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    when {
-                        // Covered by the system splash screen until the settings load.
-                        !settingsLoaded -> Unit
-                        onboardingDone == false -> WelcomeScreen(
-                            packsRoute = Destinations.PACKS_CATALOG_ROUTE,
-                            backupRoute = Destinations.settingsSection(SettingsSection.BACKUP.id),
-                            onFinish = { destination ->
-                                welcomeDestination = destination
-                                scope.launch { settingsRepository.setOnboardingDone() }
-                            }
-                        )
-                        biometricLockEnabled == true && !unlocked -> LockScreen(
-                            onUnlockClick = {
-                                scope.launch {
-                                    if (BiometricAuthenticator.authenticate(this@MainActivity)) unlocked = true
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        when {
+                            // Covered by the system splash screen until the settings load.
+                            !settingsLoaded -> Unit
+                            onboardingDone == false -> WelcomeScreen(
+                                packsRoute = Destinations.PACKS_CATALOG_ROUTE,
+                                backupRoute = Destinations.settingsSection(SettingsSection.BACKUP.id),
+                                onFinish = { destination ->
+                                    welcomeDestination = destination
+                                    scope.launch { settingsRepository.setOnboardingDone() }
                                 }
-                            }
-                        )
-                        else -> MigaNavHost(initialRoute = welcomeDestination)
+                            )
+                            biometricLockEnabled == true && !unlocked -> LockScreen(
+                                onUnlockClick = {
+                                    scope.launch {
+                                        if (BiometricAuthenticator.authenticate(this@MainActivity)) unlocked = true
+                                    }
+                                }
+                            )
+                            else -> MigaNavHost(initialRoute = welcomeDestination)
+                        }
+                        AnimatedVisibility(
+                            visible = showStartScreen,
+                            enter = EnterTransition.None,
+                            exit = fadeOut(tween(START_SCREEN_FADE_MILLIS))
+                        ) {
+                            StartScreen()
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Start screen: the app icon where the system splash screen left it, then the name and the
+ * slogan, in the app's language.
+ */
+@Composable
+private fun StartScreen() {
+    val textAlpha = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { textAlpha.animateTo(1f, tween(400)) }
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        // Same size as the system splash icon (a 160 dp circle), so the hand-over does not jump.
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(160.dp)
+                .clip(CircleShape)
+                .background(colorResource(R.color.launcher_icon_background)),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_launcher_foreground),
+                contentDescription = null,
+                modifier = Modifier.requiredSize(240.dp)
+            )
+        }
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .offset(y = 150.dp)
+                .alpha(textAlpha.value)
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Miga", style = MaterialTheme.typography.headlineMedium)
+            Text(
+                L10n.str(R.string.app_slogan),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 6.dp)
+            )
         }
     }
 }

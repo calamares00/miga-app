@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.editor
 
 import org.calamares.miga.ui.components.RichTextField
+import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.Manifest
@@ -76,8 +77,7 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
                 }
 
                 TextButton(onClick = { viewModel.addIngredientRow(groupIndex) }) {
-                    Icon(Icons.Filled.Add, contentDescription = null)
-                    Text(L10n.str(R.string.add_ingredient))
+                    ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_ingredient))
                 }
             }
             if (groupIndex < viewModel.ingredientGroups.lastIndex) {
@@ -86,8 +86,7 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
         }
 
         TextButton(onClick = { viewModel.addIngredientSubGroup() }) {
-            Icon(Icons.Filled.Add, contentDescription = null)
-            Text(L10n.str(R.string.add_sub_recipe_e_g))
+            ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_sub_recipe_e_g))
         }
     }
 }
@@ -263,8 +262,7 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
                 }
 
                 TextButton(onClick = { viewModel.addStepRow(groupIndex) }) {
-                    Icon(Icons.Filled.Add, contentDescription = null)
-                    Text(L10n.str(R.string.add_step))
+                    ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_step))
                 }
             }
             if (groupIndex < viewModel.stepGroups.lastIndex) {
@@ -273,8 +271,7 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
         }
 
         TextButton(onClick = { viewModel.addStepSubGroup() }) {
-            Icon(Icons.Filled.Add, contentDescription = null)
-            Text(L10n.str(R.string.add_steps_sub_recipe_e))
+            ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_steps_sub_recipe_e))
         }
     }
 }
