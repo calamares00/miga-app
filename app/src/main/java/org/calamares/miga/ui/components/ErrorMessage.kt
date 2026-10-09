@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.collectAsState
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
@@ -161,7 +160,8 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
 
     val providers = order.filter { hasKey(it) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    // In a window of its own: it is often opened from an error shown inside a dialog.
+    DialogSheet(onDismissRequest = onDismiss) {
         LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp)) {
             item {
                 Text(L10n.str(R.string.change_model_title), style = MaterialTheme.typography.titleLarge)
