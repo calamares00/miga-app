@@ -122,8 +122,8 @@
     <string name="category_2">"Por categoría"</string>
     <string name="category_x">"Categoría de \"%1$s\""</string>
     <string name="categories">"Categorías"</string>
-    <string name="ingredient_categories">"Categorías de ingredientes"</string>
-    <string name="categories_utensils_ingredients">"Categorías, equipamiento e ingredientes"</string>
+    <string name="ingredient_categories">"Categorías de productos"</string>
+    <string name="categories_utensils_ingredients">"Categorías de recetas, equipamiento, etiquetas y productos"</string>
     <string name="close">"Cerrar"</string>
     <string name="dismiss_notice">"Cerrar aviso"</string>
     <string name="close_cooking_mode">"Cerrar modo cocina"</string>
@@ -1111,4 +1111,8 @@
     <string name="did_you_mean_x">"¿Querías decir «%1$s»? Toca para usarla."</string>
     <string name="already_have_x">"Ya tienes «%1$s»."</string>
     <string name="use_x">"Usar «%1$s»"</string>
+    <string name="recipe_categories">"Categorías de recetas"</string>
+    <string name="ingredients_and_products">"Ingredientes y productos"</string>
+    <string name="product_count_one">"1 producto"</string>
+    <string name="product_count_many">"%1$s productos"</string>
 </resources>
