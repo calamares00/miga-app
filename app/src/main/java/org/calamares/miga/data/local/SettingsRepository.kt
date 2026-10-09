@@ -42,6 +42,7 @@ class SettingsRepository(private val context: Context) {
     private val aiHealthEnabledKey = booleanPreferencesKey("ai_health_enabled")
     private val aiNutritionEnabledKey = booleanPreferencesKey("ai_nutrition_enabled")
     private val onboardingDoneKey = booleanPreferencesKey("onboarding_done")
+    private val welcomeOnNextStartKey = booleanPreferencesKey("welcome_on_next_start")
     private val seedLanguageKey = stringPreferencesKey("seed_language")
     /** Default kitchen equipment and categories created (and old equipment normalised) once. */
     private val defaultsSetUpKey = booleanPreferencesKey("defaults_set_up_v2")
@@ -178,6 +179,27 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setOnboardingDone() {
         context.settingsDataStore.edit { prefs -> prefs[onboardingDoneKey] = true }
+    }
+
+    /** Whether the welcome tour is shown again the next time the app starts (Settings > Help). */
+    fun observeWelcomeOnNextStart(): Flow<Boolean> =
+        context.settingsDataStore.data.map { prefs -> prefs[welcomeOnNextStartKey] ?: false }
+
+    suspend fun setWelcomeOnNextStart(show: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[welcomeOnNextStartKey] = show }
+    }
+
+    /**
+     * Called once at startup, before the first screen is chosen: a pending "show the welcome on
+     * the next start" turns the welcome back on, only for this start.
+     */
+    suspend fun applyWelcomeRequest() {
+        context.settingsDataStore.edit { prefs ->
+            if (prefs[welcomeOnNextStartKey] == true) {
+                prefs[onboardingDoneKey] = false
+                prefs[welcomeOnNextStartKey] = false
+            }
+        }
     }
 
     /** Global AI switch: when off, no AI feature is shown or used. */

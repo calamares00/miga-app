@@ -531,7 +531,6 @@
     <string name="recipes">"Recipes"</string>
     <string name="recipes_favourites_most_cooked">"Recipes, favourites and most cooked"</string>
     <string name="recipes_imported_ai_x_photos">"Recipes imported with AI from %1$s photos (review each recipe and report a specific one from its editor)."</string>
-    <string name="recipes_books_kitchen">"Your recipes. Your books. Your kitchen."</string>
     <string name="receive_via_qr">"Receive via QR"</string>
     <string name="recipe_count_many">"%1$s recipes"</string>
     <string name="recipe_count_one">"1 recipe"</string>
@@ -1037,4 +1036,7 @@
     <string name="export_format_image">"Image"</string>
     <string name="export_format_image_desc">"The whole recipe in one picture (photo, ingredients and steps), for Instagram or WhatsApp."</string>
     <string name="image_card_signature">"My recipe book"</string>
+    <string name="welcome_again_title">"Welcome tour"</string>
+    <string name="welcome_again_desc">"Show the welcome and the tour of the app again the next time you open it."</string>
+    <string name="welcome_again_on">"It will show the next time you open the app."</string>
 </resources>
