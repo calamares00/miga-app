@@ -108,18 +108,28 @@ internal fun RecipePolishDialog(
 @Composable
 private fun PolishReview(polished: PolishedRecipe, recipe: Recipe, onApply: () -> Unit, onDismiss: () -> Unit) {
     var showBefore by rememberSaveable { mutableStateOf(false) }
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+    // The dialog window fits between the system bars: drawn behind them, the Apply and Discard
+    // buttons ended up under the navigation bar of phones with buttons.
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         BackHandler(onBack = onDismiss)
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Column(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+            Column(modifier = Modifier.fillMaxSize()) {
                 Row(modifier = Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.close)) }
+                    IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.discard)) }
                     Text(
                         L10n.str(R.string.polish_review_title),
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
                     )
+                    // Also at the top, so it is in sight without scrolling or looking for it.
+                    TextButton(onClick = onApply) { Text(L10n.str(R.string.polish_apply)) }
                 }
+                Text(
+                    L10n.str(R.string.polish_review_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                )
                 Column(
                     modifier = Modifier
                         .weight(1f)
