@@ -1,5 +1,6 @@
 package org.calamares.miga
 
+import org.calamares.miga.data.ai.AiJobs
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -90,6 +91,7 @@ class MainActivity : FragmentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         ShoppingIntents.handle(intent)
+        AiJobs.handle(intent)
     }
 
     /** True once, on Android 13+, when notifications are not allowed yet; later calls return false. */
@@ -118,7 +120,10 @@ class MainActivity : FragmentActivity() {
         installSplashScreen().setKeepOnScreenCondition { !startScreenReady }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        if (savedInstanceState == null) ShoppingIntents.handle(intent)
+        if (savedInstanceState == null) {
+            ShoppingIntents.handle(intent)
+            AiJobs.handle(intent)
+        }
         val settingsRepository = (application as MigaApp).settingsRepository
         setContent {
             val themeMode by settingsRepository.observeThemeMode().collectAsState(initial = ThemeMode.SYSTEM)

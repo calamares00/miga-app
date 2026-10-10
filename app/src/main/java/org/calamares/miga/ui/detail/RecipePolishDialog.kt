@@ -67,26 +67,37 @@ internal fun RecipePolishDialog(
     recipe: Recipe,
     onApply: () -> Unit,
     onRetry: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    /** Hides the progress; the work goes on and a notification says when it is ready. */
+    onHide: () -> Unit,
+    onCancel: () -> Unit
 ) {
     when (state) {
         PolishState.Hidden -> Unit
+        // Leaving it (back, tapping outside) never loses the work: it goes on in the background.
         PolishState.Loading -> AlertDialog(
-            onDismissRequest = onDismiss,
+            onDismissRequest = onHide,
             icon = { Icon(Icons.Filled.AutoAwesome, contentDescription = null) },
             title = { Text(L10n.str(R.string.polish_title)) },
             text = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Text(
+                            L10n.str(R.string.polish_working),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(start = 12.dp)
+                        )
+                    }
                     Text(
-                        L10n.str(R.string.polish_working),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(start = 12.dp)
+                        L10n.str(R.string.ai_background_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             },
-            confirmButton = {},
-            dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
+            confirmButton = { TextButton(onClick = onHide) { Text(L10n.str(R.string.continue_in_background)) } },
+            dismissButton = { TextButton(onClick = onCancel) { Text(L10n.str(R.string.cancel)) } }
         )
         PolishState.NotConfigured -> AlertDialog(
             onDismissRequest = onDismiss,

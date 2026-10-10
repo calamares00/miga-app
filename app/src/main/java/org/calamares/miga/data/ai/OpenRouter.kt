@@ -140,7 +140,7 @@ internal object OpenRouterTransport : AiTransport {
     }
 
     /** One completion request, retried without max_tokens when the upstream provider rejects it. */
-    private fun send(model: String, messages: List<OpenRouterMessage>, maxTokens: Int, apiKey: String): Answer {
+    private suspend fun send(model: String, messages: List<OpenRouterMessage>, maxTokens: Int, apiKey: String): Answer {
         var response = post(OpenRouterRequest(model, messages, maxTokens), apiKey)
         var errorDetail: String? = null
         // A 400 usually means the upstream provider rejects a parameter; with free models it is
@@ -168,7 +168,7 @@ internal object OpenRouterTransport : AiTransport {
         return if (truncated) Answer.Truncated(text) else Answer.Complete(text)
     }
 
-    private fun post(request: OpenRouterRequest, apiKey: String): HttpResponse = postJson(
+    private suspend fun post(request: OpenRouterRequest, apiKey: String): HttpResponse = postJson(
         url = OPENROUTER_CHAT_ENDPOINT,
         body = aiJson.encodeToString(OpenRouterRequest.serializer(), request),
         headers = mapOf(

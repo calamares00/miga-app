@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.navigation
 
+import org.calamares.miga.data.ai.AiJobs
 import org.calamares.miga.ui.settings.ContentCleanupScreen
 import org.calamares.miga.ui.settings.ContentCleanupViewModel
 import org.calamares.miga.ui.settings.ManageContentScreen
@@ -207,6 +208,15 @@ fun MigaNavHost(initialRoute: String? = null) {
                 launchSingleTop = true
                 restoreState = true
             }
+        }
+    }
+
+    /** A notification of finished AI work (a recipe improved with AI): open that recipe. */
+    val openRecipe by AiJobs.openRecipe.collectAsState()
+    LaunchedEffect(openRecipe) {
+        openRecipe?.let { id ->
+            AiJobs.consumeOpenRecipe()
+            navController.navigate(Destinations.detail(id))
         }
     }
 
