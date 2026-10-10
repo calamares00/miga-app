@@ -89,6 +89,6 @@ abstract class AppDatabase : RoomDatabase() {
         const val DATABASE_NAME = "recetario.db"
 
         /** Current schema version; a new one needs a migration in ALL_MIGRATIONS and its schema committed. */
-        const val VERSION = 21
+        const val VERSION = 22
     }
 }

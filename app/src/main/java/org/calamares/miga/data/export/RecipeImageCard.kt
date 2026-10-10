@@ -1,5 +1,6 @@
 package org.calamares.miga.data.export
 
+import org.calamares.miga.data.model.displayText
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -132,7 +133,7 @@ object RecipeImageCard {
             ingredientGroups.forEach { group ->
                 group.name?.let { text(it, textPaint(34f, INK, bold = true), 18f) }
                 group.ingredients.forEach { ingredient ->
-                    val layout = layout(formatIngredientText(ingredient.name, ingredient.quantity, ingredient.unit), itemPaint, CONTENT_WIDTH - 36)
+                    val layout = layout(ingredient.displayText(), itemPaint, CONTENT_WIDTH - 36)
                     blocks += Block(layout.height.toFloat(), 10f) { canvas, y ->
                         canvas.drawCircle(PADDING + 9f, y + 24f, 7f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = accent })
                         drawLayout(canvas, layout, PADDING + 36f, y)

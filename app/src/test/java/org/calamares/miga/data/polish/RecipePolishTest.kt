@@ -65,4 +65,26 @@ class RecipePolishTest {
         """.trimIndent()
         decodeAiJson(PolishedRecipeDto.serializer(), answer).toPolished(recipe)
     }
+
+    @Test
+    fun `an optional note in the name becomes the flag`() {
+        val answer = """
+            {"name": "Tortilla", "ingredientGroups": [{"name": null, "ingredients": [{"name": "patata", "quantity": 1, "unit": "kg"},
+             {"name": "huevo", "quantity": 6, "unit": null}, {"name": "cebolla (opcional)", "quantity": 1, "unit": null}]}],
+             "stepGroups": [{"name": null, "instructions": ["Uno.", "Dos."]}]}
+        """.trimIndent()
+        val ingredients = decodeAiJson(PolishedRecipeDto.serializer(), answer).toPolished(recipe).ingredientGroups.single().ingredients
+        assertEquals("cebolla", ingredients[2].name)
+        assertEquals(true, ingredients[2].optional)
+        assertEquals(false, ingredients[0].optional)
+    }
+
+    @Test
+    fun `optional markers are recognised in both languages`() {
+        assertEquals("perejil" to true, org.calamares.miga.data.model.splitOptionalMarker("perejil (opcional)"))
+        assertEquals("Parsley" to true, org.calamares.miga.data.model.splitOptionalMarker("Parsley, optional"))
+        assertEquals("nata" to true, org.calamares.miga.data.model.splitOptionalMarker("nata - opcional"))
+        assertEquals("pan opcionalmente tostado" to false, org.calamares.miga.data.model.splitOptionalMarker("pan opcionalmente tostado"))
+        assertEquals("Optional" to false, org.calamares.miga.data.model.splitOptionalMarker("Optional"))
+    }
 }

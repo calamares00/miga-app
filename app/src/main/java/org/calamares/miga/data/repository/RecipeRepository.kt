@@ -291,7 +291,8 @@ class RecipeRepository(
                         position = ingredientPosition++,
                         name = ingredient.name.trim(),
                         quantity = ingredient.quantity,
-                        unit = ingredient.unit?.trim()?.takeIf { it.isNotBlank() }
+                        unit = ingredient.unit?.trim()?.takeIf { it.isNotBlank() },
+                        optional = ingredient.optional
                     )
                 }
             }
@@ -1454,7 +1455,8 @@ class RecipeRepository(
                         position = ingredientPosition++,
                         name = ingredient.name.trim(),
                         quantity = ingredient.quantity,
-                        unit = ingredient.unit?.trim()?.takeIf { it.isNotBlank() }
+                        unit = ingredient.unit?.trim()?.takeIf { it.isNotBlank() },
+                        optional = ingredient.optional
                     )
                 }
             }
@@ -1694,7 +1696,7 @@ class RecipeRepository(
             source = recipe.source,
             isFavorite = recipe.isFavorite,
             ingredientGroups = recipe.ingredientGroups.map { g ->
-                IngredientGroupDto(g.name, g.ingredients.map { IngredientDto(it.name, it.quantity, it.unit) })
+                IngredientGroupDto(g.name, g.ingredients.map { IngredientDto(it.name, it.quantity, it.unit, it.optional) })
             },
             stepGroups = recipe.stepGroups.map { g -> StepGroupDto(g.name, g.instructions) },
             tags = recipe.tags,
@@ -1878,7 +1880,7 @@ class RecipeRepository(
                 IngredientEntity(
                     recipeId = recipeId, groupName = group.name, position = ingredientPosition++,
                     name = ingredient.name.trim(), quantity = ingredient.quantity,
-                    unit = ingredient.unit?.trim()?.takeIf { it.isNotBlank() }
+                    unit = ingredient.unit?.trim()?.takeIf { it.isNotBlank() }, optional = ingredient.optional
                 )
             }
         }
@@ -1984,7 +1986,7 @@ fun RecipeWithDetails.toDomain(): Recipe {
     val ingredientGroups = LinkedHashMap<String?, MutableList<Ingredient>>()
     sortedIngredients.forEach { entity ->
         ingredientGroups.getOrPut(entity.groupName) { mutableListOf() }
-            .add(Ingredient(entity.name, entity.quantity, entity.unit))
+            .add(Ingredient(entity.name, entity.quantity, entity.unit, entity.optional))
     }
 
     val sortedSteps = steps.sortedBy { it.position }

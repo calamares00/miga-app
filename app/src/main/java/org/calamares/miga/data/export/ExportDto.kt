@@ -114,7 +114,9 @@ data class IngredientGroupDto(
 data class IngredientDto(
     val name: String,
     val quantity: Double?,
-    val unit: String?
+    val unit: String?,
+    /** Absent in files of older versions: not optional. */
+    val optional: Boolean = false
 )
 
 @Serializable

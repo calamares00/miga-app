@@ -58,7 +58,9 @@ data class IngredientGroup(
 data class Ingredient(
     val name: String,
     val quantity: Double?,
-    val unit: String?
+    val unit: String?,
+    /** Can be left out ("to taste", a garnish): shown as optional, not written in the name. */
+    val optional: Boolean = false
 )
 
 data class StepGroup(
@@ -98,3 +100,16 @@ fun Recipe.toSummary() = RecipeSummary(
     prepTimeMinutes = prepTimeMinutes,
     originCountry = originCountry
 )
+
+/** "(optional)", ", opcional"… at the end of an ingredient name, as people often write it. */
+private val OPTIONAL_MARKER = Regex("""\s*[(\[,–-]?\s*\b(opcional|optional)\b\s*[)\]]?\s*$""", RegexOption.IGNORE_CASE)
+
+/**
+ * [name] without an "optional" note at its end, and whether it had one: "perejil (opcional)" is
+ * "perejil", optional. The flag is how the app marks it, so it is not kept in the name.
+ */
+fun splitOptionalMarker(name: String): Pair<String, Boolean> {
+    val match = OPTIONAL_MARKER.find(name) ?: return name.trim() to false
+    val stripped = name.substring(0, match.range.first).trim()
+    return if (stripped.isEmpty()) name.trim() to false else stripped to true
+}

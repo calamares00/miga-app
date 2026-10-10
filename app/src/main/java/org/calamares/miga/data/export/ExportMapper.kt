@@ -23,7 +23,7 @@ fun Recipe.toExportDto() = RecipeExportDto(
     source = source,
     isFavorite = isFavorite,
     ingredientGroups = ingredientGroups.map { group ->
-        IngredientGroupDto(group.name, group.ingredients.map { IngredientDto(it.name, it.quantity, it.unit) })
+        IngredientGroupDto(group.name, group.ingredients.map { IngredientDto(it.name, it.quantity, it.unit, it.optional) })
     },
     stepGroups = stepGroups.map { group -> StepGroupDto(group.name, group.instructions) },
     tags = tags,

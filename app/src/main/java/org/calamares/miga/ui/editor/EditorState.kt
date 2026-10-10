@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.data.model.splitOptionalMarker
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -11,10 +12,11 @@ import org.calamares.miga.data.model.IngredientGroup
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.StepGroup
 
-class IngredientRowUi(name: String = "", quantity: String = "", unit: String = "") {
+class IngredientRowUi(name: String = "", quantity: String = "", unit: String = "", optional: Boolean = false) {
     var name by mutableStateOf(name)
     var quantity by mutableStateOf(quantity)
     var unit by mutableStateOf(unit)
+    var optional by mutableStateOf(optional)
 }
 
 class IngredientGroupUi(name: String? = null, ingredients: List<IngredientRowUi> = emptyList()) {
@@ -46,7 +48,7 @@ class PhotoUi(uri: String, isCover: Boolean) {
 
 fun IngredientGroup.toUi() = IngredientGroupUi(
     name = name,
-    ingredients = ingredients.map { IngredientRowUi(it.name, it.quantity?.let { q -> formatEditorQuantity(q) } ?: "", it.unit.orEmpty()) }
+    ingredients = ingredients.map { IngredientRowUi(it.name, it.quantity?.let { q -> formatEditorQuantity(q) } ?: "", it.unit.orEmpty(), it.optional) }
 )
 
 fun StepGroup.toUi() = StepGroupUi(name = name, steps = instructions.map { StepRowUi(it) })
@@ -54,7 +56,10 @@ fun StepGroup.toUi() = StepGroupUi(name = name, steps = instructions.map { StepR
 /** Like [IngredientGroup.toUi], from the DTO returned by photo recognition. */
 fun IngredientGroupDto.toUi() = IngredientGroupUi(
     name = name,
-    ingredients = ingredients.map { IngredientRowUi(it.name, it.quantity?.let { q -> formatEditorQuantity(q) } ?: "", it.unit.orEmpty()) }
+    ingredients = ingredients.map { dto ->
+        val (name, marked) = splitOptionalMarker(dto.name)
+        IngredientRowUi(name, dto.quantity?.let { q -> formatEditorQuantity(q) } ?: "", dto.unit.orEmpty(), dto.optional || marked)
+    }
 )
 
 /** Like [StepGroup.toUi], from the DTO returned by photo recognition. */
@@ -65,10 +70,13 @@ fun IngredientGroupUi.toDomain(): IngredientGroup = IngredientGroup(
     ingredients = ingredients
         .filter { it.name.isNotBlank() }
         .map { row ->
+            // "perejil (opcional)" typed by hand becomes the flag, not part of the name.
+            val (name, marked) = splitOptionalMarker(row.name)
             Ingredient(
-                name = row.name.trim(),
+                name = name,
                 quantity = row.quantity.trim().replace(',', '.').toDoubleOrNull(),
-                unit = row.unit.trim().takeIf { it.isNotBlank() }
+                unit = row.unit.trim().takeIf { it.isNotBlank() },
+                optional = row.optional || marked
             )
         }
 )

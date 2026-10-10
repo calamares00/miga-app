@@ -1,5 +1,6 @@
 package org.calamares.miga.data.vision
 
+import org.calamares.miga.data.model.splitOptionalMarker
 import org.calamares.miga.L10n
 import org.calamares.miga.data.ai.KnownLabels
 import org.calamares.miga.data.model.CatalogMatching
@@ -39,7 +40,11 @@ fun RecipeVisionResultDto.toRecipeDraft(bookId: Long): RecipeDraft {
             IngredientGroup(
                 name = group.name,
                 ingredients = group.ingredients.filter { it.name.isNotBlank() }
-                    .map { Ingredient(name = it.name.trim(), quantity = it.quantity, unit = it.unit?.trim()?.takeIf { u -> u.isNotBlank() }) }
+                    .map {
+                        // A model may still write "(opcional)" in the name instead of the flag.
+                        val (name, marked) = splitOptionalMarker(it.name)
+                        Ingredient(name = name, quantity = it.quantity, unit = it.unit?.trim()?.takeIf { u -> u.isNotBlank() }, optional = it.optional || marked)
+                    }
             )
         }.ifEmpty { listOf(IngredientGroup(name = null, ingredients = emptyList())) },
         stepGroups = stepGroups.map { group ->
