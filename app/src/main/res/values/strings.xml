@@ -1127,4 +1127,5 @@
     <string name="filter_only_cooked">"Already cooked"</string>
     <string name="filter_only_rated">"With a rating"</string>
     <string name="search_in_favourites">"Search your favourites"</string>
+    <string name="polish_review_hint">"Nothing is saved until you tap Apply. Going back or Discard keeps the recipe as it was."</string>
 </resources>

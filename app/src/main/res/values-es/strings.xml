@@ -1126,4 +1126,5 @@
     <string name="filter_only_cooked">"Ya cocinadas"</string>
     <string name="filter_only_rated">"Con valoración"</string>
     <string name="search_in_favourites">"Buscar en favoritos"</string>
+    <string name="polish_review_hint">"No se guarda nada hasta que pulses Aplicar. Volver atrás o Descartar deja la receta como estaba."</string>
 </resources>
