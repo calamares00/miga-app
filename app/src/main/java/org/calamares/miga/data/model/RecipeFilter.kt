@@ -46,6 +46,15 @@ data class RecipeFilter(
             utensils.isNotEmpty() || tags.isNotEmpty() || ingredients.isNotEmpty() || origins.isNotEmpty() || onlyFavorites ||
             hasStatsConditions
 
+    /**
+     * How many conditions are applied, for the badge of the filter button. [ignoreFavorites] on the
+     * Favourites tab, where "only favourites" is implicit.
+     */
+    fun activeConditions(ignoreFavorites: Boolean = false): Int =
+        categoryNames.size + difficulties.size + utensils.size + tags.size + ingredients.size + origins.size +
+            bookNames.size + missing.size +
+            listOf(onlyFavorites && !ignoreFavorites, maxMinutes != null, onlyCooked, onlyRated, addedSince != null).count { it }
+
     /** This filter without the conditions from the statistics screen. */
     fun withoutStatsConditions(): RecipeFilter =
         copy(bookNames = emptySet(), missing = emptySet(), maxMinutes = null, onlyCooked = false, onlyRated = false, addedSince = null)

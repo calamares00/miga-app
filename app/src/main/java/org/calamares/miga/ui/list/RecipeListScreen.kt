@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.list
 
+import org.calamares.miga.ui.components.ResultsHeader
+import org.calamares.miga.ui.components.ActiveFilterChips
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -284,7 +286,7 @@ fun RecipeListScreen(
                         singleLine = true
                     )
                     IconButton(onClick = { showFilters = true }) {
-                        BadgedBox(badge = { if (filter.isActive) Badge() }) {
+                        BadgedBox(badge = { if (filter.isActive) Badge { Text(filter.activeConditions().toString()) } }) {
                             Icon(Icons.Filled.FilterList, contentDescription = L10n.str(R.string.filters))
                         }
                     }
@@ -295,6 +297,15 @@ fun RecipeListScreen(
                 // Opening the search puts the cursor in the field, with the keyboard.
                 LaunchedEffect(searchOpen) {
                     if (searchOpen && filter.query.isEmpty()) runCatching { searchFocus.requestFocus() }
+                }
+            }
+
+            if (searchVisible) {
+                // Same as Search and Favourites: what is applied, how many and in what order.
+                ActiveFilterChips(filter = filter, onChange = viewModel::applyFilter, onClearAll = { viewModel.clearFilters() })
+                val shownCount = uiState.groups.sumOf { it.recipes.size }
+                if (shownCount > 0) {
+                    ResultsHeader(count = shownCount, sort = filter.sortOption, onSort = { viewModel.applyFilter(filter.copy(sortOption = it)) })
                 }
             }
 
