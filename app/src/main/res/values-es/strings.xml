@@ -1117,4 +1117,13 @@
     <string name="product_count_many">"%1$s productos"</string>
     <string name="ai_provider_off_x">"Desactivado · %1$s"</string>
     <string name="ai_provider_use_x">"Usar %1$s"</string>
+    <string name="filters_n">"Filtros (%1$d)"</string>
+    <string name="clear_all">"Borrar todo"</string>
+    <string name="filter_total_time">"Tiempo total"</string>
+    <string name="filter_up_to_x_min">"Hasta %1$d min"</string>
+    <string name="filter_find_ingredient">"Buscar un ingrediente"</string>
+    <string name="filter_more">"Más"</string>
+    <string name="filter_only_cooked">"Ya cocinadas"</string>
+    <string name="filter_only_rated">"Con valoración"</string>
+    <string name="search_in_favourites">"Buscar en favoritos"</string>
 </resources>

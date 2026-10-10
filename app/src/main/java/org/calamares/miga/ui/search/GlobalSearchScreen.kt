@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.search
 
+import org.calamares.miga.ui.components.ResultsHeader
+import org.calamares.miga.ui.components.ActiveFilterChips
 import org.calamares.miga.ui.theme.recipePhotoFrame
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -78,22 +80,14 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import org.calamares.miga.ui.components.FilterSheetContent
 
-/**
- * Candidates for the quick dietary filter chips. Only those that already exist as a user tag
- * (case-insensitive) are shown, so no new taxonomy is invented on top of tags.
- */
-private val DIETARY_QUICK_TAGS = listOf(
-    "Vegano", "Vegetariano", "Sin gluten", "Sin lactosa", "Sin azúcar", "Bajo en calorías",
-    "Vegan", "Vegetarian", "Gluten-free", "Gluten free", "Lactose-free", "Dairy-free", "Sugar-free", "Low calorie"
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GlobalSearchScreen(
     viewModel: GlobalSearchViewModel,
     onRecipeClick: (Long) -> Unit,
     title: String = L10n.str(R.string.search_recipes_2),
-    showQueryField: Boolean = true,
+    /** The Favourites tab: only favourites, so that condition is implicit and not offered. */
+    favoritesOnly: Boolean = false,
     /** Shows a back arrow: the screen was opened on top of another one (from the statistics). */
     onBack: (() -> Unit)? = null
 ) {
@@ -102,20 +96,11 @@ fun GlobalSearchScreen(
     val selectedIds by viewModel.selectedIds.collectAsState()
     val selectionMode = selectedIds.isNotEmpty()
     var showFilters by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState()
-    val quickDietaryTags = remember(uiState.availableTags) {
-        DIETARY_QUICK_TAGS.mapNotNull { candidate -> uiState.availableTags.firstOrNull { it.equals(candidate, ignoreCase = true) } }
-    }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     /** In Favourites, "only favourites" is implicit and does not count as an applied filter. */
-    val filtersApplied = if (showQueryField) filter.isActive else filter.copy(onlyFavorites = false).isActive
-    val filterButton: @Composable () -> Unit = {
-        IconButton(onClick = { showFilters = true }) {
-            BadgedBox(badge = { if (filtersApplied) Badge() }) {
-                Icon(Icons.Filled.FilterList, contentDescription = L10n.str(R.string.filters))
-            }
-        }
-    }
+    val activeCount = filter.activeConditions(ignoreFavorites = favoritesOnly)
+    val filtersApplied = activeCount > 0
 
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars).exclude(WindowInsets.ime),
@@ -144,51 +129,58 @@ fun GlobalSearchScreen(
                             IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                         }
                     },
-                    actions = { if (!showQueryField) filterButton() }
                 )
             }
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            if (showQueryField) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = filter.query,
-                        onValueChange = viewModel::updateQuery,
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text(L10n.str(R.string.name_ingredient_tag)) },
-                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                        singleLine = true
-                    )
-                    filterButton()
-                }
-            }
-
-            if (filter.hasStatsConditions) {
-                StatsConditionChips(filter = filter, onChange = viewModel::applyFilter)
-            }
-
-            if (quickDietaryTags.isNotEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    quickDietaryTags.forEach { tag ->
-                        FilterChip(
-                            selected = tag in filter.tags,
-                            onClick = {
-                                viewModel.applyFilter(filter.copy(tags = if (tag in filter.tags) filter.tags - tag else filter.tags + tag))
-                            },
-                            label = { Text(tag) }
+            // The same header on Search and Favourites: the search field with the filters next to
+            // it, the filters applied as chips and, over the results, how many and their order.
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = filter.query,
+                    onValueChange = viewModel::updateQuery,
+                    modifier = Modifier.weight(1f),
+                    placeholder = {
+                        Text(
+                            L10n.str(if (favoritesOnly) R.string.search_in_favourites else R.string.name_ingredient_tag),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
+                    },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (filter.query.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.updateQuery("") }) {
+                                Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.close_search))
+                            }
+                        }
+                    },
+                    singleLine = true
+                )
+                IconButton(onClick = { showFilters = true }) {
+                    BadgedBox(badge = { if (filtersApplied) Badge { Text(activeCount.toString()) } }) {
+                        Icon(Icons.Filled.FilterList, contentDescription = L10n.str(R.string.filters))
                     }
                 }
+            }
+
+            ActiveFilterChips(
+                filter = filter,
+                onChange = viewModel::applyFilter,
+                onClearAll = { viewModel.clearFilters() },
+                ignoreFavorites = favoritesOnly
+            )
+
+            if (!uiState.isLoading && uiState.results.isNotEmpty()) {
+                ResultsHeader(
+                    count = uiState.results.size,
+                    sort = filter.sortOption,
+                    onSort = { viewModel.applyFilter(filter.copy(sortOption = it)) }
+                )
             }
 
             when {
@@ -196,7 +188,7 @@ fun GlobalSearchScreen(
                     CircularProgressIndicator()
                 }
                 uiState.results.isEmpty() -> when {
-                    !showQueryField && !filtersApplied -> EmptyState(
+                    favoritesOnly && !filtersApplied && filter.query.isBlank() -> EmptyState(
                         icon = Icons.Filled.FavoriteBorder,
                         title = L10n.str(R.string.no_favourites_yet),
                         body = L10n.str(R.string.tap_heart_recipe_keep_handy),
@@ -219,7 +211,7 @@ fun GlobalSearchScreen(
                 }
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize().weight(1f),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(uiState.results, key = { it.recipeId }) { result ->
@@ -248,7 +240,8 @@ fun GlobalSearchScreen(
                 availableIngredients = uiState.availableIngredients,
                 availableOrigins = uiState.availableOrigins,
                 onApply = { newFilter -> viewModel.applyFilter(newFilter) },
-                onClear = { viewModel.clearFilters() }
+                onClear = { viewModel.clearFilters() },
+                showFavoritesToggle = !favoritesOnly
             )
         }
     }
@@ -338,49 +331,6 @@ private fun SearchResultCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }
-    }
-}
-
-/**
- * The conditions that came from the statistics screen ("Without photo", a book...), which the
- * filter sheet does not show; each chip removes its condition.
- */
-@Composable
-private fun StatsConditionChips(filter: RecipeFilter, onChange: (RecipeFilter) -> Unit) {
-    val chips = buildList<Pair<String, RecipeFilter>> {
-        filter.bookNames.forEach { book ->
-            add(L10n.str(R.string.search_cond_book_x, book) to filter.copy(bookNames = filter.bookNames - book))
-        }
-        filter.missing.forEach { field ->
-            val label = when (field) {
-                MissingField.PHOTO -> R.string.stats_without_photo
-                MissingField.CATEGORY -> R.string.stats_without_category
-                MissingField.INGREDIENTS -> R.string.stats_without_ingredients
-                MissingField.STEPS -> R.string.stats_without_steps
-                MissingField.TIME -> R.string.stats_without_time
-            }
-            add(L10n.str(label) to filter.copy(missing = filter.missing - field))
-        }
-        filter.maxMinutes?.let { add(L10n.str(R.string.stats_quick_recipes_x, it) to filter.copy(maxMinutes = null)) }
-        if (filter.onlyCooked) add(L10n.str(R.string.search_cond_cooked) to filter.copy(onlyCooked = false))
-        if (filter.onlyRated) add(L10n.str(R.string.search_cond_rated) to filter.copy(onlyRated = false))
-        if (filter.addedSince != null) add(L10n.str(R.string.search_cond_added_this_month) to filter.copy(addedSince = null))
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        chips.forEach { (label, without) ->
-            InputChip(
-                selected = true,
-                onClick = { onChange(without) },
-                label = { Text(label) },
-                trailingIcon = { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.remove_filter_x, label), modifier = Modifier.size(18.dp)) }
-            )
         }
     }
 }

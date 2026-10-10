@@ -308,8 +308,8 @@ private fun NavGraphBuilder.screens(
         GlobalSearchScreen(
             viewModel = viewModel,
             onRecipeClick = { navController.navigate(Destinations.detail(it)) },
-            title = L10n.str(R.string.favourites),
-            showQueryField = false
+            title = L10n.str(R.string.favourites_2),
+            favoritesOnly = true
         )
     }
 
