@@ -1,13 +1,13 @@
 ## 📚 Libros y recetas
 
-Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo o uno por temas. Las recetas nuevas se guardan en el libro que tengas abierto, y puedes moverlas a otro desde su menú (⋮).
+Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo o uno por temas (las mejores croquetas merecen su propio libro). Las recetas nuevas se guardan en el libro que tengas abierto, y puedes moverlas a otro desde su menú (⋮).
 
 - Mantén pulsado un libro para **fijarlo arriba**: los libros fijados salen los primeros, con una chincheta en la portada. También puedes fijarlo desde el menú del libro.
 - Dentro de un libro, las recetas se agrupan por **categoría**. Toca una categoría para plegarla o desplegarla; desde el menú puedes plegarlas o desplegarlas todas.
 - Al abrir una receta, **desliza a izquierda o derecha** para pasar a la siguiente o a la anterior del libro, como las páginas de un libro.
-- Mantén pulsada una receta para **seleccionar varias** y cambiarles a la vez la categoría, la dificultad, las raciones o el libro, añadirlas a la lista de la compra o exportarlas.
+- Mantén pulsada una receta para **seleccionar varias** y cambiarles a la vez la categoría, la dificultad, las raciones o el libro, añadirlas a la lista de la compra, exportarlas o **mejorarlas con IA** ✨ todas de una vez.
 - En cada receta, **Mis notas** guarda notas personales con fecha ("la próxima vez, menos sal"). No cambian la receta y van en las copias de seguridad y los archivos de Miga.
-- La pestaña **Buscar** busca en todos los libros por nombre o ingrediente, con filtros por categoría, etiqueta, equipamiento o dificultad. Las favoritas tienen su propia pestaña.
+- La pestaña **Buscar** busca en todos los libros por nombre o ingrediente. Con el botón de filtros afinas por tiempo, dificultad, categoría, equipamiento, etiquetas, ingredientes u origen, y los filtros activos aparecen como chips que puedes quitar de uno en uno. **Favoritos** funciona igual, solo con tus favoritas.
 
 ## ✍️ Escribir una receta
 
@@ -17,6 +17,8 @@ Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo
 - **Dictado**: pulsa el micrófono para dictar los pasos en lugar de escribirlos.
 - **Origen**: de dónde es la receta (México, Córdoba, cocina tailandesa…). La bandera se pone sola cuando reconoce el país; toca el globo o la bandera para elegirlo. En Buscar puedes filtrar por origen.
 - **Raciones**: en la receta, cambia las raciones y las cantidades se recalculan solas.
+- **Fotos**: al añadir una foto puedes recortarla, girarla y **mejorarla con IA** ✨ (luz, color y nitidez); se guarda con el tamaño justo para que no ocupe de más.
+- **Mejorar textos con IA** ✨: desde el menú ⋮ de la receta, la IA pule la redacción, normaliza los ingredientes y resalta en negrita tiempos y temperaturas. Ves el antes y el después y decides si aplicarlo; no se guarda nada sin tu permiso.
 
 ## 📥 Añadir recetas de otras fuentes
 
@@ -64,13 +66,26 @@ Las funciones de IA son opcionales y usan **tu propia clave** de Google Gemini, 
 
 - Si añades varios proveedores, se usan **en el orden que elijas**: si uno falla, se prueba el siguiente automáticamente.
 - Mientras trabaja, la app te dice **qué está haciendo** en cada momento ("Leyendo el texto de la foto…", "Repasando tus recetas…").
-- Si sales de la app o apagas la pantalla, la tarea **sigue en segundo plano** y una notificación muestra su progreso.
+- Si sales de la app o apagas la pantalla, la tarea **sigue en segundo plano** y una notificación muestra su progreso. Cuando termina una mejora con IA, la notificación te lleva directo al resultado para revisarlo.
+- Cada proveedor tiene un **interruptor**: desactívalo cuando quieras sin perder su clave.
 - La IA también puede valorar lo saludable que es una receta, estimar su información nutricional y sugerir **sustitutos** de un ingrediente (toca ⟳ junto al ingrediente).
-- El contenido generado con IA se marca como tal y puede contener errores: revísalo. Si algo es inadecuado, puedes reportarlo.
+- El contenido generado con IA se marca como tal y puede contener errores (la IA también se equivoca de vez en cuando): revísalo. Si algo es inadecuado, puedes informar de ello.
 
 ## 📦 Packs de recetas
 
 En Ajustes → Packs de recetas encontrarás libros listos para instalar. Un pack se instala como un libro más; sus recetas no se pueden editar, pero puedes seleccionarlas y copiarlas a uno de tus libros.
+
+## 🗂️ Gestión de contenido
+
+En Ajustes → Gestión de contenido están las listas de categorías de recetas, equipamiento, etiquetas, ingredientes y productos, y categorías de productos.
+
+- Busca, filtra lo que no se usa y ordena por nombre o por uso. Toca «N recetas» para ver las recetas que lo usan.
+- Al renombrar a un nombre que ya existe, los dos se **fusionan**, y las recetas afectadas se actualizan (también en los libros sincronizados).
+- **Limpiar contenido** encuentra duplicados, nombres por unificar y lo tuyo que no se usa, y lo ordena de una vez. Con la IA activada puede afinar aún más, y siempre tienes «Deshacer», por si acaso.
+
+## 🎨 Apariencia
+
+Tema claro u oscuro, color de acento, idioma y **marco de las fotos**: elige uno (Polaroid, galería, viñeta…) y todas las fotos de tus recetas lucirán a juego.
 
 ## 🔄 Sincronización
 
