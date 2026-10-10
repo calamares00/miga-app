@@ -1,5 +1,6 @@
 package org.calamares.miga.data.model
 
+import org.calamares.miga.R
 import org.calamares.miga.L10n
 import kotlin.math.roundToInt
 
@@ -31,3 +32,7 @@ fun formatQuantity(value: Double): String {
         rounded.toString().trimEnd('0').trimEnd('.')
     }
 }
+
+/** "200 g flour", with "(optional)" after it when the ingredient can be left out. */
+fun Ingredient.displayText(scale: Double = 1.0): String =
+    formatIngredientText(name, quantity, unit, scale) + if (optional) " " + L10n.str(R.string.ingredient_optional_suffix) else ""

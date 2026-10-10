@@ -1154,4 +1154,7 @@
     <string name="bulk_polish_review">"Revisar"</string>
     <string name="bulk_polish_busy">"Ya hay otra lista mejorándose: aquí la tienes."</string>
     <string name="bulk_polish_resume">"Continuar"</string>
+    <string name="ingredient_optional">"Opcional"</string>
+    <string name="ingredient_not_optional">"Quitar opcional"</string>
+    <string name="ingredient_optional_suffix">"(opcional)"</string>
 </resources>

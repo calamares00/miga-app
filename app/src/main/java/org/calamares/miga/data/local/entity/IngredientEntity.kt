@@ -1,5 +1,6 @@
 package org.calamares.miga.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -28,5 +29,7 @@ data class IngredientEntity(
     val position: Int,
     val name: String,
     val quantity: Double?,
-    val unit: String?
+    val unit: String?,
+    /** Can be left out ("salt to taste", a garnish); shown as optional instead of in the name. */
+    @ColumnInfo(defaultValue = "0") val optional: Boolean = false
 )

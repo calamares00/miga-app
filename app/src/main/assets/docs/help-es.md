@@ -11,7 +11,7 @@ Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo
 
 ## ✍️ Escribir una receta
 
-- **Ingredientes**: al escribir el nombre, la app te sugiere los que ya has usado.
+- **Ingredientes**: al escribir el nombre, la app te sugiere los que ya has usado. Desde el menú ⋮ de cada ingrediente puedes marcarlo como **opcional** (el perejil para decorar, por ejemplo): se mostrará «(opcional)» sin ensuciar su nombre.
 - **Subrecetas**: divide la receta en partes (por ejemplo "Para la salsa"), cada una con sus ingredientes y pasos.
 - **Pasos y notas** admiten formato: al escribir aparece una barra con **negrita**, *cursiva*, tachado y listas. Pulsar Intro en una lista empieza el siguiente punto.
 - **Dictado**: pulsa el micrófono para dictar los pasos en lugar de escribirlos.

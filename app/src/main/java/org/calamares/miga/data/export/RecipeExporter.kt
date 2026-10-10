@@ -1,5 +1,6 @@
 package org.calamares.miga.data.export
 
+import org.calamares.miga.data.model.displayText
 import org.calamares.miga.data.model.RichText
 import android.content.Context
 import android.content.Intent
@@ -649,7 +650,7 @@ object RecipeExporter {
         recipe.ingredientGroups.forEach { group ->
             if (group.ingredients.isNotEmpty()) {
                 if (group.name != null) appendLine(group.name.uppercase())
-                group.ingredients.forEach { appendLine("- " + formatIngredientText(it.name, it.quantity, it.unit)) }
+                group.ingredients.forEach { appendLine("- " + it.displayText()) }
             }
         }
         appendLine()

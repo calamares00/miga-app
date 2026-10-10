@@ -1,5 +1,6 @@
 package org.calamares.miga.data.polish
 
+import org.calamares.miga.data.model.splitOptionalMarker
 import kotlinx.serialization.Serializable
 import org.calamares.miga.L10n
 import org.calamares.miga.data.ai.AiCandidate
@@ -68,7 +69,10 @@ internal fun PolishedRecipeDto.toPolished(original: Recipe): PolishedRecipe {
             name = group.name?.trim()?.ifEmpty { null },
             ingredients = group.ingredients
                 .filter { it.name.isNotBlank() }
-                .map { Ingredient(it.name.trim(), it.quantity?.takeIf { q -> q.isFinite() && q > 0 }, it.unit?.trim()?.ifEmpty { null }) }
+                .map {
+                    val (name, marked) = splitOptionalMarker(it.name)
+                    Ingredient(name, it.quantity?.takeIf { q -> q.isFinite() && q > 0 }, it.unit?.trim()?.ifEmpty { null }, it.optional || marked)
+                }
         )
     }.filter { it.ingredients.isNotEmpty() }
     val steps = stepGroups.map { group ->
@@ -111,7 +115,7 @@ internal fun buildPolishPrompt(recipe: Recipe): String {
         servings = recipe.servings,
         notes = recipe.notes,
         ingredientGroups = recipe.ingredientGroups.map { group ->
-            IngredientGroupDto(group.name, group.ingredients.map { IngredientDto(it.name, it.quantity, it.unit) })
+            IngredientGroupDto(group.name, group.ingredients.map { IngredientDto(it.name, it.quantity, it.unit, it.optional) })
         },
         stepGroups = recipe.stepGroups.map { StepGroupDto(it.name, it.instructions) }
     )
@@ -147,6 +151,9 @@ internal fun buildPolishPrompt(recipe: Recipe): String {
           "tbsp", "tsp", "cup", "pinch", "clove", "can", "packet". Convert only abbreviations and
           spellings ("gr" → "g", "cc" → "ml", "cda" → "cucharada"), never the measuring system.
           Null for things counted by unit ("2 eggs").
+        - Optional: true for an ingredient the recipe marks as optional, whether by the flag already
+          set or by a note such as "(optional)", "if you like" or "for garnish, optional"; that
+          note is then removed from the name. Keep true the ones already optional.
 
         Name and notes: fix only spelling and capitalisation of the name. Improve the notes like the
         steps, with the same bold and italics, keeping all their information; leave them empty if
@@ -159,7 +166,7 @@ internal fun buildPolishPrompt(recipe: Recipe): String {
         {
           "name": "string",
           "notes": "string",
-          "ingredientGroups": [ { "name": "string or null", "ingredients": [ { "name": "string", "quantity": number or null, "unit": "string or null" } ] } ],
+          "ingredientGroups": [ { "name": "string or null", "ingredients": [ { "name": "string", "quantity": number or null, "unit": "string or null", "optional": true or false } ] } ],
           "stepGroups": [ { "name": "string or null", "instructions": ["string", ...] } ],
           "changes": ["string", ...]
         }

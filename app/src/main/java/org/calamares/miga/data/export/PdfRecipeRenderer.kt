@@ -1,5 +1,6 @@
 package org.calamares.miga.data.export
 
+import org.calamares.miga.data.model.displayText
 import org.calamares.miga.data.model.RichText
 import android.graphics.Typeface
 import android.text.style.StyleSpan
@@ -241,7 +242,7 @@ object PdfRecipeRenderer {
             if (group.ingredients.isNotEmpty()) {
                 if (group.name != null) items += Item.Text(group.name, paints.subHeader, 10f)
                 group.ingredients.forEach { ingredient ->
-                    val line = "• " + formatIngredientText(ingredient.name, ingredient.quantity, ingredient.unit)
+                    val line = "• " + ingredient.displayText()
                     items += Item.Text(line, paints.body, 4f)
                 }
             }

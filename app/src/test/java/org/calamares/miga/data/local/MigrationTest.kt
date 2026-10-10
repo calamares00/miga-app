@@ -67,6 +67,30 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun `21 to 22 keeps the ingredients and makes none optional`() {
+        helper.createDatabase(TEST_DB, 21).use { db ->
+            db.execSQL(
+                "INSERT INTO recipe_books (id, uid, name, coverPhotoUri, createdAt, updatedAt, isPinned) " +
+                    "VALUES (1, 'book-1', 'Casa', NULL, 1, 1, 0)"
+            )
+            db.execSQL(
+                "INSERT INTO recipes (id, uid, name, categoryId, recipeBookId, difficulty, prepTimeMinutes, cookTimeMinutes, " +
+                    "servings, notes, source, isFavorite, timesCooked, createdAt, updatedAt) " +
+                    "VALUES (7, 'recipe-7', 'Tortilla', NULL, 1, 'EASY', 10, 20, 4, NULL, NULL, 0, 3, 1, 1)"
+            )
+            db.execSQL("INSERT INTO ingredients (recipeId, groupName, position, name, quantity, unit) VALUES (7, NULL, 0, 'huevo', 6, NULL)")
+        }
+
+        val db = helper.runMigrationsAndValidate(TEST_DB, 22, true, MIGRATION_21_22)
+
+        db.query("SELECT name, optional FROM ingredients WHERE recipeId = 7").use { cursor ->
+            cursor.moveToFirst()
+            assertEquals("huevo", cursor.getString(0))
+            assertEquals(0, cursor.getInt(1))
+        }
+    }
+
     private companion object {
         const val TEST_DB = "migration-test.db"
     }

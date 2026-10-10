@@ -12,11 +12,12 @@ internal const val RECIPE_JSON_FORMAT = """{
   "servings": whole number,
   "notes": "string",
   "source": "string",
-  "ingredientGroups": [ { "name": "string or null", "ingredients": [ { "name": "string", "quantity": number or null, "unit": "string or null" } ] } ],
+  "ingredientGroups": [ { "name": "string or null", "ingredients": [ { "name": "string", "quantity": number or null, "unit": "string or null", "optional": true or false } ] } ],
   "stepGroups": [ { "name": "string or null", "instructions": ["string", ...] } ],
   "tags": ["string", ...],
   "origin": "place or cuisine it comes from (a country, region or city such as Mexico, Córdoba or Japan), only when the recipe or its source clearly says so or it is a well-known dish of that place; otherwise null",
   "originCountry": "ISO 3166-1 alpha-2 code of the origin's country (MX, ES, JP...) or null",
+  "optionalIngredients": "rule: an ingredient the recipe says can be left out (optional, if you like, for garnish) has optional true, and that note is not written in its name",
   "utensils": ["appliance or special equipment the recipe needs (oven, air fryer, food processor, pressure cooker...); never basics every kitchen has such as knife, pot, pan, bowl or fridge", ...]
 }"""
 

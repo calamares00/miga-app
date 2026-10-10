@@ -1,5 +1,11 @@
 package org.calamares.miga.ui.editor
 
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.foundation.layout.Box
 import org.calamares.miga.ui.components.RichTextField
 import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.L10n
@@ -118,9 +124,33 @@ private fun IngredientRow(row: IngredientRowUi, availableNames: List<String>, on
                 modifier = Modifier.weight(1.5f),
                 singleLine = true
             )
-            IconButton(onClick = onRemove) {
-                Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.remove_ingredient))
+            // Optional and Remove in a menu: the row has no room for more buttons.
+            Box {
+                var menu by remember { mutableStateOf(false) }
+                IconButton(onClick = { menu = true }) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = L10n.str(R.string.more_options))
+                }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(L10n.str(R.string.ingredient_optional)) },
+                        leadingIcon = { Checkbox(checked = row.optional, onCheckedChange = null) },
+                        onClick = { row.optional = !row.optional; menu = false }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(L10n.str(R.string.remove_ingredient)) },
+                        leadingIcon = { Icon(Icons.Filled.Close, contentDescription = null) },
+                        onClick = { menu = false; onRemove() }
+                    )
+                }
             }
+        }
+        if (row.optional) {
+            AssistChip(
+                onClick = { row.optional = false },
+                label = { Text(L10n.str(R.string.ingredient_optional)) },
+                trailingIcon = { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.ingredient_not_optional), modifier = Modifier.size(16.dp)) },
+                modifier = Modifier.padding(start = 4.dp)
+            )
         }
 
         if (showSuggestions && row.name.isNotBlank()) {

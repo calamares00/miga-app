@@ -11,7 +11,7 @@ Each book is a recipe collection with its own cover: your mum's, a friend's or o
 
 ## ✍️ Writing a recipe
 
-- **Ingredients**: as you type a name, the app suggests the ones you have used before.
+- **Ingredients**: as you type a name, the app suggests the ones you have used before. From each ingredient's ⋮ menu you can mark it as **optional** (parsley for garnish, say): it shows "(optional)" without cluttering its name.
 - **Sub-recipes**: split the recipe into parts (for example "For the sauce"), each with its own ingredients and steps.
 - **Steps and notes** support formatting: while typing, a bar offers **bold**, *italic*, strikethrough and lists. Pressing Enter in a list starts the next item.
 - **Dictation**: tap the microphone to dictate the steps instead of typing them.
