@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.search
 
+import androidx.compose.material.icons.filled.AutoAwesome
+import org.calamares.miga.ui.components.rememberAiEnabled
 import org.calamares.miga.ui.components.ResultsHeader
 import org.calamares.miga.ui.components.ActiveFilterChips
 import org.calamares.miga.ui.theme.recipePhotoFrame
@@ -89,8 +91,11 @@ fun GlobalSearchScreen(
     /** The Favourites tab: only favourites, so that condition is implicit and not offered. */
     favoritesOnly: Boolean = false,
     /** Shows a back arrow: the screen was opened on top of another one (from the statistics). */
-    onBack: (() -> Unit)? = null
+    onBack: (() -> Unit)? = null,
+    /** Improve the selected recipes with AI, all together (see BulkPolishScreen). */
+    onPolishRecipes: ((List<Long>) -> Unit)? = null
 ) {
+    val aiEnabled = rememberAiEnabled()
     val uiState by viewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
     val selectedIds by viewModel.selectedIds.collectAsState()
@@ -115,6 +120,14 @@ fun GlobalSearchScreen(
                         }
                     },
                     actions = {
+                        if (aiEnabled && onPolishRecipes != null) {
+                            IconButton(onClick = {
+                                onPolishRecipes(selectedIds.toList())
+                                viewModel.clearSelection()
+                            }) {
+                                Icon(Icons.Filled.AutoAwesome, contentDescription = L10n.str(R.string.bulk_polish_action))
+                            }
+                        }
                         IconButton(onClick = { viewModel.addSelectedToShoppingList() }) {
                             Icon(Icons.Filled.ShoppingCart, contentDescription = L10n.str(R.string.add_shopping_list))
                         }

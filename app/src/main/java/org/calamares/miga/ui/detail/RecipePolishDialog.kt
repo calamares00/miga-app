@@ -111,13 +111,22 @@ internal fun RecipePolishDialog(
             text = { ErrorMessage(state.reason, onRetry = onRetry) },
             confirmButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.close)) } }
         )
-        is PolishState.Ready -> PolishReview(state.polished, recipe, onApply, onDismiss)
+        is PolishState.Ready -> PolishReview(state.polished, recipe, onApply, onDiscard = onDismiss)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PolishReview(polished: PolishedRecipe, recipe: Recipe, onApply: () -> Unit, onDismiss: () -> Unit) {
+internal fun PolishReview(
+    polished: PolishedRecipe,
+    recipe: Recipe,
+    onApply: () -> Unit,
+    onDiscard: () -> Unit,
+    /** Back or ×: discards a single recipe's result, only closes the review in a list of several. */
+    onDismiss: () -> Unit = onDiscard,
+    /** "2 of 5" when reviewing a list. */
+    subtitle: String? = null
+) {
     var showBefore by rememberSaveable { mutableStateOf(false) }
     // The dialog window fits between the system bars: drawn behind them, the Apply and Discard
     // buttons ended up under the navigation bar of phones with buttons.
@@ -126,12 +135,13 @@ private fun PolishReview(polished: PolishedRecipe, recipe: Recipe, onApply: () -
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(modifier = Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.discard)) }
-                    Text(
-                        L10n.str(R.string.polish_review_title),
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
-                    )
+                    IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.close)) }
+                    Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                        Text(L10n.str(R.string.polish_review_title), style = MaterialTheme.typography.titleLarge)
+                        subtitle?.let {
+                            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                     // Also at the top, so it is in sight without scrolling or looking for it.
                     TextButton(onClick = onApply) { Text(L10n.str(R.string.polish_apply)) }
                 }
@@ -198,7 +208,7 @@ private fun PolishReview(polished: PolishedRecipe, recipe: Recipe, onApply: () -
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                    OutlinedButton(onClick = onDiscard, modifier = Modifier.weight(1f)) {
                         ButtonContent(Icons.Filled.Close, L10n.str(R.string.discard))
                     }
                     Button(onClick = onApply, modifier = Modifier.weight(1f)) {

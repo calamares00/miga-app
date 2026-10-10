@@ -139,11 +139,11 @@ object AiKeepAlive {
 
     /**
      * Posts [message] as a regular notification, also while the app is visible: the user may be
-     * on another screen than the one waiting for the result. With [openRecipeId] it opens that
-     * recipe, where the result is shown (see AiJobs).
+     * on another screen than the one waiting for the result. With [openRoute] it opens that screen,
+     * where the result is shown (see AiJobs).
      */
     @SuppressLint("MissingPermission")
-    fun announce(message: String, icon: Int = R.drawable.ic_notification_ai, openRecipeId: Long? = null) {
+    fun announce(message: String, icon: Int = R.drawable.ic_notification_ai, openRoute: String? = null) {
         val context = appContext ?: return
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
         createChannels(context)
@@ -152,7 +152,7 @@ object AiKeepAlive {
             .setContentTitle(L10n.str(R.string.app_name))
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-            .setContentIntent(if (openRecipeId != null) openRecipeIntent(context, openRecipeId) else openAppIntent(context))
+            .setContentIntent(if (openRoute != null) openRouteIntent(context, openRoute) else openAppIntent(context))
             .setAutoCancel(true)
             .build()
         runCatching { NotificationManagerCompat.from(context).notify(DONE_NOTIFICATION_ID, notification) }
@@ -254,13 +254,13 @@ object AiKeepAlive {
         )
     }
 
-    private fun openRecipeIntent(context: Context, recipeId: Long): PendingIntent = PendingIntent.getActivity(
+    private fun openRouteIntent(context: Context, route: String): PendingIntent = PendingIntent.getActivity(
         context,
-        // One per recipe, so two ready notifications do not share their extras.
-        recipeId.toInt(),
+        // One per screen, so two ready notifications do not share their extras.
+        route.hashCode(),
         Intent(context, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            .putExtra(AiJobs.EXTRA_OPEN_RECIPE, recipeId),
+            .putExtra(AiJobs.EXTRA_OPEN_ROUTE, route),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
     )
 
