@@ -1128,4 +1128,9 @@
     <string name="filter_only_rated">"With a rating"</string>
     <string name="search_in_favourites">"Search your favourites"</string>
     <string name="polish_review_hint">"Nothing is saved until you tap Apply. Going back or Discard keeps the recipe as it was."</string>
+    <string name="continue_in_background">"Continue in background"</string>
+    <string name="ai_background_hint">"You can leave this screen or the app: it carries on and a notification tells you when it is ready."</string>
+    <string name="polish_ready_x">"\"%1$s\" improved with AI: tap to review it"</string>
+    <string name="polish_failed_x">"Couldn't improve \"%1$s\" with AI: tap to see why"</string>
+    <string name="polish_show_progress">"Improving with AI… (see progress)"</string>
 </resources>

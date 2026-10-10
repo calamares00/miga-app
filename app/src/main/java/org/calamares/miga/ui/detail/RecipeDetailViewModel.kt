@@ -1,5 +1,11 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.R
+import org.calamares.miga.L10n
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.Job
+import org.calamares.miga.data.ai.AiJobState
+import org.calamares.miga.data.ai.AiJobs
 import org.calamares.miga.data.ai.aiCandidates
 import org.calamares.miga.data.ai.runAi
 import androidx.lifecycle.ViewModel
@@ -201,7 +207,8 @@ class RecipeDetailViewModel(
      * (see RecipeDetailScreen).
      */
     fun findSubstitutesFor(ingredientName: String) {
-        viewModelScope.launch {
+        substitutionJob?.cancel()
+        substitutionJob = viewModelScope.launch {
             _substitutionDialogState.value = SubstitutionDialogState.Loading(ingredientName)
             val current = recipe.filterNotNull().first()
             val result = settingsRepository.runAi<SubstitutionResult>(
@@ -218,39 +225,86 @@ class RecipeDetailViewModel(
         }
     }
 
+    /** Closing the dialog stops a search still running: nothing would show its answer. */
     fun dismissSubstitutionDialog() {
+        substitutionJob?.cancel()
+        substitutionJob = null
         _substitutionDialogState.value = SubstitutionDialogState.Hidden
     }
 
-    private val _polishState = MutableStateFlow<PolishState>(PolishState.Hidden)
-    val polishState: StateFlow<PolishState> = _polishState
+    private var substitutionJob: Job? = null
 
-    /** The recipe as it was before the last improvement applied, for "Undo". */
-    private var beforePolish: Recipe? = null
+    /**
+     * The improvement runs in AiJobs, not here: leaving the recipe (or the app) does not stop it,
+     * and coming back shows its result. [polishVisible] is whether its progress is on screen.
+     */
+    private val polishKey = "polish:$recipeId"
+    private val polishVisible = MutableStateFlow(false)
 
-    fun polishRecipe() {
-        viewModelScope.launch {
-            _polishState.value = PolishState.Loading
-            val current = recipe.filterNotNull().first()
-            val result = settingsRepository.runAi<RecipePolishResult>(
-                errorOf = { (it as? RecipePolishResult.Error)?.reason },
-                error = { RecipePolishResult.Error(it) }
-            ) { ai -> ai.polishRecipe(current) }
-            // Closed by the user while waiting: the answer is dropped.
-            if (_polishState.value != PolishState.Loading) return@launch
-            _polishState.value = when (result) {
+    val polishState: StateFlow<PolishState> = combine(AiJobs.observe<RecipePolishResult?>(polishKey), polishVisible) { job, visible ->
+        when (job) {
+            null -> PolishState.Hidden
+            AiJobState.Running -> if (visible) PolishState.Loading else PolishState.Hidden
+            is AiJobState.Finished -> when (val result = job.result) {
                 null -> PolishState.NotConfigured
                 is RecipePolishResult.Success -> PolishState.Ready(result.polished)
                 is RecipePolishResult.Error -> PolishState.Error(result.reason)
             }
         }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PolishState.Hidden)
+
+    /** Running with its progress hidden: the menu offers to show it again. */
+    val polishInBackground: StateFlow<Boolean> = combine(AiJobs.observe<RecipePolishResult?>(polishKey), polishVisible) { job, visible ->
+        job == AiJobState.Running && !visible
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /** The recipe as it was before the last improvement applied, for "Undo". */
+    private var beforePolish: Recipe? = null
+
+    fun polishRecipe() {
+        showPolishProgress()
+        viewModelScope.launch {
+            val current = recipe.filterNotNull().first()
+            AiJobs.start(
+                key = polishKey,
+                openRecipeId = recipeId,
+                doneMessage = { result: RecipePolishResult? ->
+                    when (result) {
+                        is RecipePolishResult.Success -> L10n.str(R.string.polish_ready_x, current.name)
+                        is RecipePolishResult.Error -> L10n.str(R.string.polish_failed_x, current.name)
+                        null -> null
+                    }
+                }
+            ) {
+                settingsRepository.runAi<RecipePolishResult>(
+                    errorOf = { (it as? RecipePolishResult.Error)?.reason },
+                    error = { RecipePolishResult.Error(it) }
+                ) { ai -> ai.polishRecipe(current) }
+            }
+        }
+    }
+
+    fun showPolishProgress() {
+        polishVisible.value = true
+        AiJobs.watch(polishKey, true)
+    }
+
+    /** "Continue in the background": the work goes on and a notification says when it is ready. */
+    fun hidePolishProgress() {
+        polishVisible.value = false
+        AiJobs.watch(polishKey, false)
+    }
+
+    fun cancelPolish() {
+        AiJobs.cancel(polishKey)
+        hidePolishProgress()
     }
 
     /** Saves the improved texts; the rest of the recipe (photos, tags, rating...) is kept. */
     fun applyPolish(onApplied: () -> Unit) {
-        val ready = _polishState.value as? PolishState.Ready ?: return
+        val ready = polishState.value as? PolishState.Ready ?: return
         val current = recipe.value ?: return
-        _polishState.value = PolishState.Hidden
+        dismissPolish()
         viewModelScope.launch {
             beforePolish = current
             val polished = ready.polished
@@ -272,8 +326,15 @@ class RecipeDetailViewModel(
         viewModelScope.launch { repository.saveRecipe(previous.toDraft()) }
     }
 
+    /** Closes the result (discarded, or an error read): the job is forgotten. */
     fun dismissPolish() {
-        _polishState.value = PolishState.Hidden
+        AiJobs.clear(polishKey)
+        hidePolishProgress()
+    }
+
+    override fun onCleared() {
+        // The job goes on without this screen; its end is then notified.
+        AiJobs.watch(polishKey, false)
     }
 
     fun toggleFavorite() {

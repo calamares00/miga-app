@@ -13,6 +13,11 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import java.net.HttpURLConnection
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import java.net.URL
 
 /** An image already in memory, ready to be sent to a model that can read images. */
@@ -150,24 +155,36 @@ internal class HttpResponse(val code: Int, val body: String) {
     val isSuccessful: Boolean get() = code in 200..299
 }
 
-/** Blocking JSON POST; call it from Dispatchers.IO. Network failures are thrown as IOException. */
-internal fun postJson(url: String, body: String, headers: Map<String, String>, timeoutMillis: Int): HttpResponse {
-    val connection = URL(url).openConnection() as HttpURLConnection
-    try {
-        connection.requestMethod = "POST"
-        connection.doOutput = true
-        connection.connectTimeout = timeoutMillis
-        connection.readTimeout = timeoutMillis
-        connection.setRequestProperty("Content-Type", "application/json")
-        headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
-        connection.outputStream.use { it.write(body.toByteArray()) }
-        val code = connection.responseCode
-        val stream = if (code in 200..299) connection.inputStream else connection.errorStream
-        return HttpResponse(code, stream?.bufferedReader()?.use { it.readText() }.orEmpty())
-    } finally {
-        connection.disconnect()
+/**
+ * JSON POST that stops as soon as the calling coroutine is cancelled: the user left the screen or
+ * cancelled the task. The request runs on an IO thread and cancelling closes its connection, which
+ * ends the blocked read at once; otherwise the task (and its "AI is working" notification) would
+ * stay until the server answered, up to the timeout. Network failures are thrown as IOException.
+ */
+internal suspend fun postJson(url: String, body: String, headers: Map<String, String>, timeoutMillis: Int): HttpResponse =
+    suspendCancellableCoroutine { continuation ->
+        val connection = URL(url).openConnection() as HttpURLConnection
+        continuation.invokeOnCancellation { runCatching { connection.disconnect() } }
+        HTTP_EXECUTOR.execute {
+            val result = runCatching {
+                connection.requestMethod = "POST"
+                connection.doOutput = true
+                connection.connectTimeout = timeoutMillis
+                connection.readTimeout = timeoutMillis
+                connection.setRequestProperty("Content-Type", "application/json")
+                headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
+                connection.outputStream.use { it.write(body.toByteArray()) }
+                val code = connection.responseCode
+                val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+                HttpResponse(code, stream?.bufferedReader()?.use { it.readText() }.orEmpty())
+            }
+            connection.disconnect()
+            // After a cancellation the continuation is already resumed; these are then ignored.
+            if (continuation.isActive) result.fold({ continuation.resume(it) }, { continuation.resumeWithException(it) })
+        }
     }
-}
+
+private val HTTP_EXECUTOR = Dispatchers.IO.asExecutor()
 
 /** Blocking GET; call it from Dispatchers.IO. Network failures are thrown as IOException. */
 internal fun getJson(url: String, headers: Map<String, String>, timeoutMillis: Int): HttpResponse {

@@ -102,7 +102,7 @@ internal object OpenAiTransport : AiTransport {
         class Failed(val reason: String) : Answer
     }
 
-    private fun send(model: String, messages: List<OpenAiMessage>, maxTokens: Int, apiKey: String): Answer {
+    private suspend fun send(model: String, messages: List<OpenAiMessage>, maxTokens: Int, apiKey: String): Answer {
         val response = postJson(
             url = OPENAI_CHAT_ENDPOINT,
             body = aiJson.encodeToString(OpenAiRequest.serializer(), OpenAiRequest(model, messages, maxTokens)),

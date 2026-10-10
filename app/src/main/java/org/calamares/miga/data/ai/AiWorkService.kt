@@ -133,17 +133,26 @@ object AiKeepAlive {
      * Posts [message] as a regular notification when the app is in the background, so the user
      * learns that a task they left running has finished. Does nothing while the app is visible.
      */
-    @SuppressLint("MissingPermission")
     fun announceIfInBackground(message: String, icon: Int = R.drawable.ic_notification_ai) {
+        if (inBackground) announce(message, icon)
+    }
+
+    /**
+     * Posts [message] as a regular notification, also while the app is visible: the user may be
+     * on another screen than the one waiting for the result. With [openRecipeId] it opens that
+     * recipe, where the result is shown (see AiJobs).
+     */
+    @SuppressLint("MissingPermission")
+    fun announce(message: String, icon: Int = R.drawable.ic_notification_ai, openRecipeId: Long? = null) {
         val context = appContext ?: return
-        if (!inBackground || !NotificationManagerCompat.from(context).areNotificationsEnabled()) return
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
         createChannels(context)
         val notification = NotificationCompat.Builder(context, DONE_CHANNEL_ID)
             .setSmallIcon(icon)
             .setContentTitle(L10n.str(R.string.app_name))
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-            .setContentIntent(openAppIntent(context))
+            .setContentIntent(if (openRecipeId != null) openRecipeIntent(context, openRecipeId) else openAppIntent(context))
             .setAutoCancel(true)
             .build()
         runCatching { NotificationManagerCompat.from(context).notify(DONE_NOTIFICATION_ID, notification) }
@@ -244,6 +253,16 @@ object AiKeepAlive {
             NotificationChannel(DONE_CHANNEL_ID, L10n.str(R.string.ai_done_channel), NotificationManager.IMPORTANCE_DEFAULT)
         )
     }
+
+    private fun openRecipeIntent(context: Context, recipeId: Long): PendingIntent = PendingIntent.getActivity(
+        context,
+        // One per recipe, so two ready notifications do not share their extras.
+        recipeId.toInt(),
+        Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            .putExtra(AiJobs.EXTRA_OPEN_RECIPE, recipeId),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    )
 
     private fun openAppIntent(context: Context): PendingIntent = PendingIntent.getActivity(
         context,

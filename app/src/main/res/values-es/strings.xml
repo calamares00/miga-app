@@ -1127,4 +1127,9 @@
     <string name="filter_only_rated">"Con valoración"</string>
     <string name="search_in_favourites">"Buscar en favoritos"</string>
     <string name="polish_review_hint">"No se guarda nada hasta que pulses Aplicar. Volver atrás o Descartar deja la receta como estaba."</string>
+    <string name="continue_in_background">"Seguir en segundo plano"</string>
+    <string name="ai_background_hint">"Puedes salir de esta pantalla o de la app: sigue trabajando y una notificación te avisa cuando esté lista."</string>
+    <string name="polish_ready_x">"«%1$s» mejorada con IA: toca para revisarla"</string>
+    <string name="polish_failed_x">"No se pudo mejorar «%1$s» con IA: toca para ver por qué"</string>
+    <string name="polish_show_progress">"Mejorando con IA… (ver progreso)"</string>
 </resources>

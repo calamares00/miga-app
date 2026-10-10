@@ -155,6 +155,7 @@ fun RecipeDetailScreen(
     val nutritionState by viewModel.nutritionState.collectAsState()
     val substitutionDialogState by viewModel.substitutionDialogState.collectAsState()
     val polishState by viewModel.polishState.collectAsState()
+    val polishInBackground by viewModel.polishInBackground.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val aiEnabled = rememberAiEnabled()
@@ -267,9 +268,13 @@ fun RecipeDetailScreen(
                             DropdownMenuItem(text = { Text(L10n.str(R.string.edit)) }, leadingIcon = { Icon(Icons.Filled.Edit, null) }, onClick = { showMenu = false; onEdit() })
                             if (aiEnabled) {
                                 DropdownMenuItem(
-                                    text = { Text(L10n.str(R.string.polish_menu)) },
+                                    // While it runs in the background, the same item shows its progress again.
+                                    text = { Text(L10n.str(if (polishInBackground) R.string.polish_show_progress else R.string.polish_menu)) },
                                     leadingIcon = { Icon(Icons.Filled.AutoAwesome, null) },
-                                    onClick = { showMenu = false; viewModel.polishRecipe() }
+                                    onClick = {
+                                        showMenu = false
+                                        if (polishInBackground) viewModel.showPolishProgress() else viewModel.polishRecipe()
+                                    }
                                 )
                             }
                         }
@@ -331,7 +336,9 @@ fun RecipeDetailScreen(
                 }
             },
             onRetry = { viewModel.polishRecipe() },
-            onDismiss = { viewModel.dismissPolish() }
+            onDismiss = { viewModel.dismissPolish() },
+            onHide = { viewModel.hidePolishProgress() },
+            onCancel = { viewModel.cancelPolish() }
         )
     }
 
