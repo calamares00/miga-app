@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.list
 
+import androidx.compose.material.icons.filled.AutoAwesome
 import org.calamares.miga.ui.components.ResultsHeader
 import org.calamares.miga.ui.components.ActiveFilterChips
 import androidx.activity.compose.BackHandler
@@ -118,8 +119,11 @@ fun RecipeListScreen(
     onAddRecipeFromPhoto: (List<String>) -> Unit,
     onAddRecipesBulk: (List<String>) -> Unit,
     onSearchDishClick: () -> Unit,
-    onAddRecipeFromUrl: (String) -> Unit
+    onAddRecipeFromUrl: (String) -> Unit,
+    /** Improve the selected recipes with AI, all together (see BulkPolishScreen). */
+    onPolishRecipes: (List<Long>) -> Unit = {}
 ) {
+    val aiEnabled = rememberAiEnabled()
     val uiState by viewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
@@ -198,6 +202,14 @@ fun RecipeListScreen(
                         }
                         IconButton(onClick = { showBulkEditSheet = true }) {
                             Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.bulk_edit))
+                        }
+                        if (aiEnabled) {
+                            IconButton(onClick = {
+                                onPolishRecipes(selectedIds.toList())
+                                viewModel.clearSelection()
+                            }) {
+                                Icon(Icons.Filled.AutoAwesome, contentDescription = L10n.str(R.string.bulk_polish_action))
+                            }
                         }
                         IconButton(onClick = { exportSelectionOnly = true }) {
                             Icon(Icons.Filled.FileDownload, contentDescription = L10n.str(R.string.export_selected))

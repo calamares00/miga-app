@@ -44,16 +44,16 @@ object AiJobs {
 
     /**
      * Starts [block] under [key] unless it is already running. When it ends, [doneMessage] (null for
-     * none) is notified and the notification opens recipe [openRecipeId].
+     * none) is notified and the notification opens [openRoute], where the result is shown.
      */
-    fun <T> start(key: String, openRecipeId: Long?, doneMessage: (T) -> String?, block: suspend () -> T) {
+    fun <T> start(key: String, openRoute: String?, doneMessage: (T) -> String?, block: suspend () -> T) {
         if (isRunning(key)) return
         _states.update { it + (key to AiJobState.Running) }
         val job = scope.launch {
             try {
                 val result = block()
                 _states.update { it + (key to AiJobState.Finished(result)) }
-                if (key !in watched) doneMessage(result)?.let { AiKeepAlive.announce(it, openRecipeId = openRecipeId) }
+                if (key !in watched) doneMessage(result)?.let { AiKeepAlive.announce(it, openRoute = openRoute) }
             } catch (e: CancellationException) {
                 _states.update { it - key }
                 throw e
@@ -79,21 +79,27 @@ object AiJobs {
         if (watching) watched += key else watched -= key
     }
 
-    // --- Opening a recipe from the "ready" notification ---
+    // --- Opening the result from the "ready" notification ---
 
-    const val EXTRA_OPEN_RECIPE = "org.calamares.miga.extra.OPEN_RECIPE"
+    const val EXTRA_OPEN_ROUTE = "org.calamares.miga.extra.OPEN_ROUTE"
 
-    private val _openRecipe = MutableStateFlow<Long?>(null)
+    private val _openRoute = MutableStateFlow<String?>(null)
 
-    /** A recipe to open, asked by a notification; the navigation consumes it. */
-    val openRecipe: StateFlow<Long?> = _openRecipe
+    /** A screen to open (navigation route), asked by a notification; the navigation consumes it. */
+    val openRoute: StateFlow<String?> = _openRoute
+
+    /**
+     * Only the screens that show AI results: the launcher activity is exported, so another app
+     * could send this extra to open any screen otherwise.
+     */
+    private val OPENABLE_ROUTES = listOf(Regex("""recipes/\d+(\?.*)?"""), Regex("""bulkPolish"""))
 
     fun handle(intent: Intent?) {
-        val id = intent?.getLongExtra(EXTRA_OPEN_RECIPE, 0L) ?: 0L
-        if (id > 0L) _openRecipe.value = id
+        val route = intent?.getStringExtra(EXTRA_OPEN_ROUTE) ?: return
+        if (OPENABLE_ROUTES.any { it.matches(route) }) _openRoute.value = route
     }
 
-    fun consumeOpenRecipe() {
-        _openRecipe.value = null
+    fun consumeOpenRoute() {
+        _openRoute.value = null
     }
 }

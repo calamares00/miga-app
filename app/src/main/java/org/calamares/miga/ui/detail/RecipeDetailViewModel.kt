@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.ui.navigation.Destinations
 import org.calamares.miga.R
 import org.calamares.miga.L10n
 import kotlinx.coroutines.flow.combine
@@ -267,7 +268,7 @@ class RecipeDetailViewModel(
             val current = recipe.filterNotNull().first()
             AiJobs.start(
                 key = polishKey,
-                openRecipeId = recipeId,
+                openRoute = Destinations.detail(recipeId),
                 doneMessage = { result: RecipePolishResult? ->
                     when (result) {
                         is RecipePolishResult.Success -> L10n.str(R.string.polish_ready_x, current.name)

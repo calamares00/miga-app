@@ -1132,4 +1132,26 @@
     <string name="polish_ready_x">"«%1$s» mejorada con IA: toca para revisarla"</string>
     <string name="polish_failed_x">"No se pudo mejorar «%1$s» con IA: toca para ver por qué"</string>
     <string name="polish_show_progress">"Mejorando con IA… (ver progreso)"</string>
+    <string name="bulk_polish_title">"Mejorar con IA"</string>
+    <string name="bulk_polish_action">"Mejorar con IA"</string>
+    <string name="bulk_polish_working_n">"Mejorando %1$d recetas con IA"</string>
+    <string name="bulk_polish_done_n">"%1$d recetas mejoradas con IA: toca para revisarlas"</string>
+    <string name="bulk_polish_done_n_failed_m">"%1$d recetas mejoradas con IA, %2$d con error: toca para revisarlas"</string>
+    <string name="bulk_polish_retry_failed">"Reintentar fallidas"</string>
+    <string name="bulk_polish_finish">"Terminar"</string>
+    <string name="bulk_polish_apply_all_n">"Aplicar las %1$d listas"</string>
+    <string name="bulk_polish_apply_all_body">"Se guardan sin revisarlas una a una. Las que hayas descartado no se tocan."</string>
+    <string name="bulk_polish_applied_n">"%1$d recetas actualizadas"</string>
+    <string name="bulk_polish_empty">"No hay recetas mejorándose."</string>
+    <string name="bulk_polish_summary">"%1$d de %2$d terminadas · %3$d por revisar"</string>
+    <string name="bulk_polish_review_hint">"Toca cada receta para revisar el antes y el después, y aplicarla o descartarla. No se guarda nada hasta que apliques."</string>
+    <string name="bulk_polish_reviewing_x_of_y">"%1$d de %2$d por revisar"</string>
+    <string name="bulk_polish_working">"Mejorando…"</string>
+    <string name="bulk_polish_ready">"Lista para revisar"</string>
+    <string name="bulk_polish_ready_n_changes">"Lista para revisar · %1$d cambios"</string>
+    <string name="bulk_polish_applied">"Aplicada"</string>
+    <string name="bulk_polish_discarded">"Descartada"</string>
+    <string name="bulk_polish_review">"Revisar"</string>
+    <string name="bulk_polish_busy">"Ya hay otra lista mejorándose: aquí la tienes."</string>
+    <string name="bulk_polish_resume">"Continuar"</string>
 </resources>

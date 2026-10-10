@@ -1133,4 +1133,26 @@
     <string name="polish_ready_x">"\"%1$s\" improved with AI: tap to review it"</string>
     <string name="polish_failed_x">"Couldn't improve \"%1$s\" with AI: tap to see why"</string>
     <string name="polish_show_progress">"Improving with AI… (see progress)"</string>
+    <string name="bulk_polish_title">"Improve with AI"</string>
+    <string name="bulk_polish_action">"Improve with AI"</string>
+    <string name="bulk_polish_working_n">"Improving %1$d recipes with AI"</string>
+    <string name="bulk_polish_done_n">"%1$d recipes improved with AI: tap to review them"</string>
+    <string name="bulk_polish_done_n_failed_m">"%1$d recipes improved with AI, %2$d failed: tap to review them"</string>
+    <string name="bulk_polish_retry_failed">"Retry failed"</string>
+    <string name="bulk_polish_finish">"Finish"</string>
+    <string name="bulk_polish_apply_all_n">"Apply the %1$d ready"</string>
+    <string name="bulk_polish_apply_all_body">"They are saved without reviewing them one by one. The ones you discarded are not touched."</string>
+    <string name="bulk_polish_applied_n">"%1$d recipes updated"</string>
+    <string name="bulk_polish_empty">"No recipes are being improved."</string>
+    <string name="bulk_polish_summary">"%1$d of %2$d done · %3$d to review"</string>
+    <string name="bulk_polish_review_hint">"Tap each recipe to review it before and after, and apply or discard it. Nothing is saved until you apply."</string>
+    <string name="bulk_polish_reviewing_x_of_y">"%1$d of %2$d to review"</string>
+    <string name="bulk_polish_working">"Improving…"</string>
+    <string name="bulk_polish_ready">"Ready to review"</string>
+    <string name="bulk_polish_ready_n_changes">"Ready to review · %1$d changes"</string>
+    <string name="bulk_polish_applied">"Applied"</string>
+    <string name="bulk_polish_discarded">"Discarded"</string>
+    <string name="bulk_polish_review">"Review"</string>
+    <string name="bulk_polish_busy">"Another list is still being improved: here it is."</string>
+    <string name="bulk_polish_resume">"Continue"</string>
 </resources>

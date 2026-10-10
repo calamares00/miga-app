@@ -1,5 +1,10 @@
 package org.calamares.miga.ui.navigation
 
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import android.widget.Toast
+import org.calamares.miga.ui.detail.BulkPolishScreen
+import org.calamares.miga.data.polish.BulkPolish
 import org.calamares.miga.data.ai.AiJobs
 import org.calamares.miga.ui.settings.ContentCleanupScreen
 import org.calamares.miga.ui.settings.ContentCleanupViewModel
@@ -211,12 +216,12 @@ fun MigaNavHost(initialRoute: String? = null) {
         }
     }
 
-    /** A notification of finished AI work (a recipe improved with AI): open that recipe. */
-    val openRecipe by AiJobs.openRecipe.collectAsState()
-    LaunchedEffect(openRecipe) {
-        openRecipe?.let { id ->
-            AiJobs.consumeOpenRecipe()
-            navController.navigate(Destinations.detail(id))
+    /** A notification of finished AI work (a recipe improved with AI): open where its result is. */
+    val openRoute by AiJobs.openRoute.collectAsState()
+    LaunchedEffect(openRoute) {
+        openRoute?.let { route ->
+            AiJobs.consumeOpenRoute()
+            navController.navigate(route) { launchSingleTop = true }
         }
     }
 
@@ -307,7 +312,8 @@ private fun NavGraphBuilder.screens(
         )
         GlobalSearchScreen(
             viewModel = viewModel,
-            onRecipeClick = { navController.navigate(Destinations.detail(it)) }
+            onRecipeClick = { navController.navigate(Destinations.detail(it)) },
+            onPolishRecipes = rememberPolishRecipes(navController, repository, settingsRepository)
         )
     }
 
@@ -319,7 +325,8 @@ private fun NavGraphBuilder.screens(
             viewModel = viewModel,
             onRecipeClick = { navController.navigate(Destinations.detail(it)) },
             title = L10n.str(R.string.favourites_2),
-            favoritesOnly = true
+            favoritesOnly = true,
+            onPolishRecipes = rememberPolishRecipes(navController, repository, settingsRepository)
         )
     }
 
@@ -360,9 +367,11 @@ private fun NavGraphBuilder.screens(
             key = "book_$bookId",
             factory = viewModelFactory { initializer { RecipeListViewModel(repository, bookId, settingsRepository) } }
         )
+        val polishRecipes = rememberPolishRecipes(navController, repository, settingsRepository)
         RecipeListScreen(
             viewModel = viewModel,
             onBack = { navController.popBackStack() },
+            onPolishRecipes = polishRecipes,
             onRecipeClick = { id ->
                 // The book's recipes in the order shown, to swipe to the next or previous one.
                 val shownIds = viewModel.uiState.value.groups.flatMap { group -> group.recipes.map { it.id } }
@@ -403,6 +412,13 @@ private fun NavGraphBuilder.screens(
                     )
                 )
             }
+        )
+    }
+
+    screen(BulkPolish.ROUTE) {
+        BulkPolishScreen(
+            onBack = { navController.popBackStack() },
+            onOpenRecipe = { navController.navigate(Destinations.detail(it)) }
         )
     }
 
@@ -685,5 +701,27 @@ private fun NavGraphBuilder.screens(
                 navController.navigate(Destinations.FILTERED_SEARCH_ROUTE)
             }
         )
+    }
+}
+
+/**
+ * Starts improving the selected recipes with AI together and opens their list (see BulkPolish).
+ * While another list is still running, that one is opened instead.
+ */
+@Composable
+private fun rememberPolishRecipes(
+    navController: NavHostController,
+    repository: RecipeRepository,
+    settingsRepository: SettingsRepository
+): (List<Long>) -> Unit {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    return { ids ->
+        scope.launch {
+            if (!BulkPolish.start(repository, settingsRepository, ids)) {
+                Toast.makeText(context, L10n.str(R.string.bulk_polish_busy), Toast.LENGTH_SHORT).show()
+            }
+            navController.navigate(BulkPolish.ROUTE) { launchSingleTop = true }
+        }
     }
 }
