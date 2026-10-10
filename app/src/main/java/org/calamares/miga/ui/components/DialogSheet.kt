@@ -63,7 +63,9 @@ fun DialogSheet(onDismissRequest: () -> Unit, content: @Composable ColumnScope.(
 
     Dialog(
         onDismissRequest = close,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+        // Between the system bars: behind them, the bottom of the sheet (its main button) could end
+        // up under the navigation bar of phones with buttons.
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         BackHandler(onBack = close)
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
