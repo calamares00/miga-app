@@ -1809,7 +1809,7 @@ class RecipeRepository(
         if (existing != null && existing.updatedAt > dto.updatedAt) return@withTransaction null
 
         val categoryId = dto.categoryName?.takeIf { it.isNotBlank() }?.let { resolveCategoryId(it) }
-        val domainIngredientGroups = dto.ingredientGroups.map { g -> IngredientGroup(g.name, g.ingredients.map { Ingredient(it.name, it.quantity, it.unit) }) }
+        val domainIngredientGroups = dto.ingredientGroups.map { g -> IngredientGroup(g.name, g.ingredients.map { Ingredient(it.name, it.quantity, it.unit, it.optional) }) }
         val domainStepGroups = dto.stepGroups.map { g -> StepGroup(g.name, g.instructions) }
         val newFingerprint = computeHealthFingerprint(domainIngredientGroups, domainStepGroups)
         val keepHealth = existing != null && existing.healthFingerprint == newFingerprint

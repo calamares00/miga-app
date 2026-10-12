@@ -454,8 +454,8 @@
     <string name="aisle_order">"Orden de pasillos"</string>
     <string name="sort_shop">"Orden por tienda"</string>
     <string name="sort">"Ordenar por"</string>
-    <string name="source">"Origen"</string>
-    <string name="source_book_website_etc">"Origen (libro, web, etc.)"</string>
+    <string name="source">"Fuente"</string>
+    <string name="source_book_website_etc">"Fuente (libro, web, etc.)"</string>
     <string name="dark">"Oscuro"</string>
     <string name="another_page">"¿Otra página?"</string>
     <string name="other_reason">"Otro motivo"</string>
