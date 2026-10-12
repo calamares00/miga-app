@@ -270,6 +270,8 @@ object SyncClient {
         try {
             httpConnection.requestMethod = method
             httpConnection.setRequestProperty("Authorization", "Bearer ${connection.accessToken}")
+            // Error messages and server texts come back in the app's language.
+            httpConnection.setRequestProperty("Accept-Language", L10n.locale().language)
             httpConnection.connectTimeout = timeoutMillis
             httpConnection.readTimeout = timeoutMillis
             if (body != null) {
@@ -291,6 +293,8 @@ object SyncClient {
         try {
             httpConnection.requestMethod = method
             httpConnection.setRequestProperty("Authorization", "Bearer ${connection.accessToken}")
+            // Error messages and server texts come back in the app's language.
+            httpConnection.setRequestProperty("Accept-Language", L10n.locale().language)
             httpConnection.connectTimeout = timeoutMillis
             httpConnection.readTimeout = timeoutMillis
             val code = httpConnection.responseCode

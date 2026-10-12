@@ -59,7 +59,7 @@ fun RecipeExportDto.toDraft(recipeBookId: Long, photos: List<RecipePhoto> = empt
     isFavorite = isFavorite,
     photos = photos,
     ingredientGroups = ingredientGroups.map { dto ->
-        IngredientGroup(dto.name, dto.ingredients.map { Ingredient(it.name, it.quantity, it.unit) })
+        IngredientGroup(dto.name, dto.ingredients.map { Ingredient(it.name, it.quantity, it.unit, it.optional) })
     },
     stepGroups = stepGroups.map { dto -> StepGroup(dto.name, dto.instructions) },
     tagNames = tags,
