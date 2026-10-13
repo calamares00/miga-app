@@ -7,9 +7,10 @@ cambian las funciones de red, los permisos o la IA (y actualizar a la vez `PRIVA
 
 - Título, descripción corta y larga: `fastlane/metadata/android/es-ES/` (corta ≤ 80 caracteres).
 - Correo de contacto: miga@calamares.org. Sitio web: https://miga.calamares.org
-- Política de privacidad: la app la muestra en Ajustes → Acerca de (`app/src/main/assets/docs/privacy-es.md`,
-  mismo texto que `PRIVACY.md`). Play exige además una URL pública: falta publicar ese texto en una página
-  y poner aquí su dirección.
+- Política de privacidad: **https://miga.calamares.org/privacy/** (en inglés,
+  https://miga.calamares.org/en/privacy/), publicada desde el repositorio `bmo00/web-miga`. La app
+  la muestra además en Ajustes → Acerca de (`app/src/main/assets/docs/privacy-es.md`, mismo texto
+  que `PRIVACY.md`). Si cambia, copiarla también a `content/` de web-miga y regenerar la web.
 - Catálogo de packs: https://miga.calamares.org/packs/catalog.json (las URLs de portada y ZIP pueden ser relativas a él).
 - ID de la aplicación: `org.calamares.miga` (permanente una vez publicada).
 - Categoría: Comida y bebida. Etiquetas sugeridas: recetas, lista de la compra.
