@@ -712,6 +712,7 @@
     <string name="ai_health_title">"Automatic health rating"</string>
     <string name="ai_health_desc">"Rates how healthy a recipe is from its ingredients when you open it."</string>
     <string name="ai_nutrition_title">"Automatic nutrition estimate"</string>
+    <string name="ai_health_disclaimer">"A guide only: it doesn't replace advice from a doctor or dietitian."</string>
     <string name="ai_nutrition_desc">"Estimates calories and macros per serving when you open a recipe."</string>
     <string name="ai_disabled_summary">"Disabled"</string>
     <string name="ai_incomplete_too_long">"%1$s cut the answer off before finishing (too long). Try fewer photos at once or a simpler photo."</string>

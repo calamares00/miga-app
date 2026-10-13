@@ -678,6 +678,11 @@ private fun HealthBlock(recipe: Recipe, healthState: HealthState, onRetry: () ->
                     colors = AssistChipDefaults.assistChipColors(containerColor = containerColor, labelColor = contentColor)
                 )
                 Text(rating.description, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    L10n.str(R.string.ai_health_disclaimer),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 AiContentNotice(feature = L10n.str(R.string.health_rating), content = { "${recipe.name}: $label. ${rating.description}" })
             }
         }
@@ -704,6 +709,11 @@ private fun NutritionBlock(recipe: Recipe, nutritionState: NutritionState, onRet
                     NutritionStat(value = formatQuantity(nutrition.carbsGrams), label = L10n.str(R.string.carbs_g))
                     NutritionStat(value = formatQuantity(nutrition.fatGrams), label = L10n.str(R.string.fat_g))
                 }
+                Text(
+                    L10n.str(R.string.ai_health_disclaimer),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 AiContentNotice(
                     feature = L10n.str(R.string.estimated_nutrition),
                     content = {
