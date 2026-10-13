@@ -7,6 +7,10 @@ sin anuncios. Tus datos se guardan en el teléfono; internet solo se usa para
 las funciones opcionales que eliges (IA con tu propia clave, Open Food Facts,
 catálogo de packs y sincronización con un servidor propio).
 
+Web: **https://miga.calamares.org** · Servidor de sincronización:
+[calamares00/miga-server](https://github.com/calamares00/miga-server) · Código de la web:
+[calamares00/miga-web](https://github.com/calamares00/miga-web)
+
 ## Funciones
 
 - **Libros de recetas**: organiza tus recetas en libros independientes (por

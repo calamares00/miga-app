@@ -1,0 +1,6 @@
+Primera versión pública de Miga.
+• Libros de recetas con fotos, subrecetas, ingredientes opcionales y modo cocina con temporizadores y voz.
+• Lista de la compra por pasillos, con varias listas, plantillas y escáner de productos (Open Food Facts).
+• Asistente de cocina opcional con tu clave (Gemini, Claude, OpenAI u OpenRouter): recetas desde fotos o webs, mejorar recetas e ideas.
+• Copias de seguridad, packs y sincronización con tu propio servidor.
+• En español e inglés.
