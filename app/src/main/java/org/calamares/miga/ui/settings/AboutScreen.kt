@@ -5,6 +5,7 @@ import org.calamares.miga.R
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -20,12 +21,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import org.calamares.miga.BuildConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
+    val uriHandler = LocalUriHandler.current
 
     Scaffold(
         topBar = {
@@ -51,12 +54,20 @@ fun AboutScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
             AboutRow(L10n.str(R.string.architecture), Build.SUPPORTED_ABIS.firstOrNull() ?: L10n.str(R.string.unknown))
             // The policy is read inside the app (assets/docs, same text as PRIVACY.md at the
             // repository root, which is also published on the Miga website for Google Play).
-            OutlinedButton(onClick = onOpenPrivacy) {
-                Text(L10n.str(R.string.privacy_policy))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(onClick = onOpenPrivacy) {
+                    Text(L10n.str(R.string.privacy_policy))
+                }
+                OutlinedButton(onClick = { runCatching { uriHandler.openUri(WEBSITE_URL) } }) {
+                    Text(L10n.str(R.string.website))
+                }
             }
         }
     }
 }
+
+/** Miga's website (repository calamares00/miga-web): features, privacy policy and recipe packs. */
+const val WEBSITE_URL = "https://miga.calamares.org"
 
 @Composable
 private fun AboutRow(label: String, value: String) {
