@@ -711,6 +711,7 @@
     <string name="ai_health_title">"Valoración de salud automática"</string>
     <string name="ai_health_desc">"Valora lo saludable que es una receta según sus ingredientes al abrirla."</string>
     <string name="ai_nutrition_title">"Estimación nutricional automática"</string>
+    <string name="ai_health_disclaimer">"Es orientativo y no sustituye el consejo de un médico o dietista-nutricionista."</string>
     <string name="ai_nutrition_desc">"Estima calorías y macros por ración al abrir una receta."</string>
     <string name="ai_disabled_summary">"Desactivada"</string>
     <string name="ai_incomplete_too_long">"%1$s cortó la respuesta antes de terminar (demasiado larga). Prueba con menos fotos a la vez o una foto más sencilla."</string>
