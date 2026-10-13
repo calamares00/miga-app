@@ -1,6 +1,6 @@
 # Política de privacidad de Miga
 
-Última actualización: 7 de octubre de 2026.
+Última actualización: 13 de octubre de 2026.
 
 Miga es una app de recetario familiar y lista de la compra. Este documento explica qué datos maneja la app, adónde van y qué control tienes sobre ellos.
 
@@ -34,9 +34,12 @@ Todas se inician por una acción tuya o por una función que has activado. Ningu
 
 1. **Funciones de IA (opcionales, con tu propia clave).** Se envía al proveedor que configures (**Google Gemini**, **Anthropic Claude**, **OpenAI** u **OpenRouter**, que a su vez lo reenvía al proveedor del modelo que elijas) lo necesario para cada función:
    - **Recetas desde fotos**: las fotos que elijas. El recorte de la foto del plato se hace después en tu dispositivo.
+   - **Mejorar una foto**: la foto que eliges. El asistente solo propone ajustes de color, brillo y nitidez, que se aplican en tu dispositivo.
    - **Recetas desde una web**: el texto de la página.
    - **Buscar receta con IA**: el nombre y la descripción del plato.
    - **Valoración de salud, estimación nutricional y sustitutos**: los ingredientes y pasos de la receta.
+   - **Mejorar recetas** (una o varias): el nombre, los ingredientes, los pasos y las notas de cada receta.
+   - **Limpiar contenido**: los nombres de tus categorías, equipamiento, etiquetas, ingredientes y categorías de productos, cuántas recetas usan cada uno y los que trae la app.
    - **Limpieza del texto dictado**: el texto que has dictado.
    - **Ideas**: un resumen de tus recetas (nombre, categoría, etiquetas, tiempo, ingredientes principales, equipamiento, si es favorita y cuántas veces la has cocinado), las opciones que elijas, tu pregunta y las preguntas anteriores de esa conversación.
 
