@@ -17,7 +17,7 @@ android {
         // versionCode goes up on every commit (Play requires it to always grow). versionName is the
         // public version and only changes when a new version is released (1.0.0, 1.0.1, 1.1.0...),
         // with release notes in assets/changelogs and fastlane/.../changelogs (<versionCode>.txt).
-        versionCode = 184
+        versionCode = 185
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -64,6 +64,14 @@ android {
             include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
             isUniversalApk = true
         }
+    }
+
+    // AGP's dependency report is encrypted with Google's key, so F-Droid and IzzyOnDroid flag it as
+    // an opaque blob. Keep it out of the APKs (GitHub, Obtainium, F-Droid) but in the AAB, where
+    // Play Console uses it for SDK insights.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = true
     }
 
     buildTypes {
