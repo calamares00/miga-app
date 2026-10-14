@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Allows plain HTTP (not only HTTPS) for the self-hosted sync server, which usually lives on a
+    home network (http://192.168.x.x:port) without TLS. Every other service the app uses (AI
+    providers, Open Food Facts, recipe packs) is HTTPS anyway.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

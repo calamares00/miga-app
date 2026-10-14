@@ -3,19 +3,22 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 android {
-    namespace = "com.bmo00.miga"
-    compileSdk = 34
+    namespace = "org.calamares.miga"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.bmo00.miga"
+        applicationId = "org.calamares.miga"
         minSdk = 26
-        targetSdk = 34
-        // El patch de versionName se incrementa en cada commit (1.0.1, 1.0.2...); versionCode sube en paralelo.
-        versionCode = 41
-        versionName = "1.0.40"
+        targetSdk = 36
+        // versionCode goes up on every commit (Play requires it to always grow). versionName is the
+        // public version and only changes when a new version is released (1.0.0, 1.0.1, 1.1.0...),
+        // with release notes in assets/changelogs and fastlane/.../changelogs (<versionCode>.txt).
+        versionCode = 191
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -23,17 +26,19 @@ android {
         }
     }
 
-    // Firma de release: se lee de variables de entorno (nunca de valores fijos en el repo,
-    // a diferencia del keystore de debug). En local, sin esas variables, el build "release"
-    // simplemente sale sin firmar; en CI se rellenan desde secretos de GitHub Actions solo
-    // cuando existen, así que el workflow no se rompe mientras no se hayan configurado.
+    /**
+     * Release signing is read from environment variables, never from values in the repository
+     * (unlike the debug keystore). Locally, without them, the release build is simply unsigned; CI
+     * fills them from GitHub Actions secrets only when they exist, so the workflow keeps working
+     * before they are configured.
+     */
     val releaseKeystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
 
     signingConfigs {
         getByName("debug") {
-            // Keystore de debug fijo y compartido (versionado en el repo) para que todos los
-            // APKs debug —también los generados por CI en runners nuevos cada vez— queden
-            // firmados igual y se puedan instalar como actualización sin desinstalar antes.
+            // Fixed debug keystore shared through the repository, so every debug APK (including
+            // those built by CI on fresh runners) has the same signature and installs as an update
+            // without uninstalling first.
             storeFile = file("../debug.keystore")
             storePassword = "android"
             keyAlias = "androiddebugkey"
@@ -49,9 +54,9 @@ android {
         }
     }
 
-    // APK independiente por arquitectura (más ligeros) + uno universal, al estilo de las
-    // releases de Obtainium. Solo afecta a los APK (assemble*); el AAB de bundleRelease para
-    // Play Store no se ve afectado, ya que Play hace su propio reparto por ABI internamente.
+    // One APK per ABI (smaller) plus a universal one, like Obtainium-style releases. This only
+    // affects APKs (assemble*); the bundleRelease AAB for the Play Store is unaffected, since Play
+    // splits by ABI itself.
     splits {
         abi {
             isEnable = true
@@ -59,6 +64,14 @@ android {
             include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
             isUniversalApk = true
         }
+    }
+
+    // AGP's dependency report is encrypted with Google's key, so F-Droid and IzzyOnDroid flag it as
+    // an opaque blob. Keep it out of the APKs (GitHub, Obtainium, F-Droid) but in the AAB, where
+    // Play Console uses it for SDK insights.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = true
     }
 
     buildTypes {
@@ -93,6 +106,13 @@ android {
         kotlinCompilerExtensionVersion = "1.5.14"
     }
 
+    // Room schemas, one JSON per database version, read by the migration tests (see room {} below).
+    sourceSets.getByName("debug").assets.srcDir("$projectDir/schemas")
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -100,8 +120,19 @@ android {
     }
 }
 
+/**
+ * Room's Gradle plugin exports the schema of every database version to schemas/ (committed): CI
+ * checks they are, and the migration tests open old versions from them. Unlike the plain
+ * room.schemaLocation KSP option, it writes per variant and copies afterwards, so building debug
+ * and release together no longer races on the same file.
+ */
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
 dependencies {
     implementation(libs.core.ktx)
+    implementation(libs.core.splashscreen)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.activity.compose)
@@ -125,6 +156,14 @@ dependencies {
     implementation(libs.datastore.preferences)
     implementation(libs.biometric)
     implementation(libs.exifinterface)
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.embedded)
 
     testImplementation(libs.junit)
+    // Database migration tests (MigrationTestHelper) run on the JVM with Robolectric.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.room.testing)
 }
