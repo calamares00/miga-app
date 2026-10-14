@@ -63,9 +63,11 @@ fun DialogSheet(onDismissRequest: () -> Unit, content: @Composable ColumnScope.(
 
     Dialog(
         onDismissRequest = close,
-        // Between the system bars: behind them, the bottom of the sheet (its main button) could end
-        // up under the navigation bar of phones with buttons.
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        // Edge to edge, with the bars handled below by statusBarsPadding/navigationBarsPadding.
+        // Since Android 15 the system draws the dialog window behind the bars anyway; asking it to
+        // fit them only kept the insets from reaching Compose, so the paddings were 0 and the
+        // bottom of the sheet (its main button) ended up under the navigation bar.
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         BackHandler(onBack = close)
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
