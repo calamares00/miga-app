@@ -52,7 +52,7 @@ Binaries: https://github.com/calamares00/miga-app/releases/download/v%v/miga-v%v
 
 Builds:
   - versionName: 1.0.0
-    versionCode: 190
+    versionCode: 191
     commit: <hash completo del commit de la etiqueta v1.0.0>
     subdir: app
     gradle:
@@ -64,7 +64,7 @@ AllowedAPKSigningKeys: <huella SHA-256 del certificado>
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
 CurrentVersion: 1.0.0
-CurrentVersionCode: 190
+CurrentVersionCode: 191
 ```
 
 - `versionCode` y `CurrentVersionCode`: el `versionCode` de `app/build.gradle.kts` en la etiqueta.

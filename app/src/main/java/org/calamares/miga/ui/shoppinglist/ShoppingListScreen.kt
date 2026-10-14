@@ -212,6 +212,8 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     var addSheetTab by remember { mutableStateOf<AddTab?>(null) }
     var addSheetQuery by remember { mutableStateOf("") }
     var showLists by remember { mutableStateOf(false) }
+    var renamingCurrentList by remember { mutableStateOf(false) }
+    var deletingCurrentList by remember { mutableStateOf(false) }
     var showShare by remember { mutableStateOf(false) }
     var showStores by remember { mutableStateOf(false) }
     var editingStore by remember { mutableStateOf<ShoppingStore?>(null) }
@@ -412,6 +414,19 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                     IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = L10n.str(R.string.more_options)) }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         DropdownMenuItem(
+                            text = { Text(L10n.str(R.string.my_lists)) },
+                            leadingIcon = { Icon(Icons.Filled.ShoppingBag, null) },
+                            onClick = { showMenu = false; showLists = true }
+                        )
+                        // The main list cannot be renamed or deleted, only emptied.
+                        if (selectedListUid != DEFAULT_SHOPPING_LIST_UID) {
+                            DropdownMenuItem(
+                                text = { Text(L10n.str(R.string.rename_list)) },
+                                leadingIcon = { Icon(Icons.Filled.Edit, null) },
+                                onClick = { showMenu = false; renamingCurrentList = true }
+                            )
+                        }
+                        DropdownMenuItem(
                             text = { Text(L10n.str(R.string.share_2)) },
                             leadingIcon = { Icon(Icons.Filled.Share, null) },
                             onClick = { showMenu = false; showShare = true }
@@ -433,6 +448,13 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                             enabled = totalCount > 0,
                             onClick = { showMenu = false; showClearAllConfirm = true }
                         )
+                        if (selectedListUid != DEFAULT_SHOPPING_LIST_UID) {
+                            DropdownMenuItem(
+                                text = { Text(L10n.str(R.string.delete_list), color = MaterialTheme.colorScheme.error) },
+                                leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
+                                onClick = { showMenu = false; deletingCurrentList = true }
+                            )
+                        }
                     }
                 }
             )
@@ -840,6 +862,32 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                 editingStore = null
             },
             onDismiss = { editingStore = null }
+        )
+    }
+
+    if (renamingCurrentList) {
+        NameDialog(
+            title = L10n.str(R.string.rename_list),
+            initial = currentListName,
+            placeholder = currentListName,
+            confirmLabel = L10n.str(R.string.save),
+            onConfirm = { viewModel.renameList(selectedListUid, it); renamingCurrentList = false },
+            onDismiss = { renamingCurrentList = false }
+        )
+    }
+
+    if (deletingCurrentList) {
+        AlertDialog(
+            onDismissRequest = { deletingCurrentList = false },
+            title = { Text(L10n.str(R.string.delete_list)) },
+            text = { Text(L10n.str(R.string.delete_x_items, currentListName)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    deletingCurrentList = false
+                    viewModel.deleteList(selectedListUid)
+                }) { Text(L10n.str(R.string.delete), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { deletingCurrentList = false }) { Text(L10n.str(R.string.cancel)) } }
         )
     }
 
