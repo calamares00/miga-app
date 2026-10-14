@@ -163,7 +163,12 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
 
     // In a window of its own: it is often opened from an error shown inside a dialog.
     DialogSheet(onDismissRequest = onDismiss) {
-        LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp)) {
+        // The list scrolls and the button stays below it, always visible however many models
+        // there are.
+        LazyColumn(
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            modifier = Modifier.weight(1f, fill = false)
+        ) {
             item {
                 Text(L10n.str(R.string.change_model_title), style = MaterialTheme.typography.titleLarge)
                 Text(
@@ -218,12 +223,13 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
                     }
                 }
             }
-            if (providers.isNotEmpty()) {
-                item {
-                    Button(onClick = { saveAndRetry() }, modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
-                        Text(L10n.str(R.string.retry_with_these_models))
-                    }
-                }
+        }
+        if (providers.isNotEmpty()) {
+            Button(
+                onClick = { saveAndRetry() },
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)
+            ) {
+                Text(L10n.str(R.string.retry_with_these_models))
             }
         }
     }
