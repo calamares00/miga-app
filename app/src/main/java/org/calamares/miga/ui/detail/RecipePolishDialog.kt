@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,6 +52,7 @@ import org.calamares.miga.data.model.StepGroup
 import org.calamares.miga.data.polish.PolishedRecipe
 import org.calamares.miga.ui.components.AiContentNotice
 import org.calamares.miga.ui.components.ButtonContent
+import org.calamares.miga.ui.components.rememberSystemBarsPadding
 import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.ui.components.FormattedText
 
@@ -128,12 +127,13 @@ internal fun PolishReview(
     subtitle: String? = null
 ) {
     var showBefore by rememberSaveable { mutableStateOf(false) }
-    // The dialog window fits between the system bars: drawn behind them, the Apply and Discard
-    // buttons ended up under the navigation bar of phones with buttons.
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // Full screen; rememberSystemBarsPadding keeps the Apply and Discard buttons clear of the
+    // navigation bar (inside a dialog window Compose's own insets are 0).
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         BackHandler(onBack = onDismiss)
+        val bars = rememberSystemBarsPadding()
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().padding(bars)) {
                 Row(modifier = Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.close)) }
                     Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {

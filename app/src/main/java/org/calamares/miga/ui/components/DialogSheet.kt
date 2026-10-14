@@ -32,14 +32,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import kotlinx.coroutines.delay
 
 private const val SHEET_ANIMATION_MILLIS = 250
@@ -65,30 +61,16 @@ fun DialogSheet(onDismissRequest: () -> Unit, content: @Composable ColumnScope.(
     }
     val close = { closing = true }
 
-    // System bar sizes, read from the activity's window: inside the dialog's own window Compose's
-    // WindowInsets stay at 0, so statusBarsPadding/navigationBarsPadding did nothing and the
-    // bottom of the sheet (its main button) ended up under the navigation bar. Reading the
-    // configuration makes this run again after a rotation, when the bars move.
-    val orientation = LocalConfiguration.current.orientation
-    val activity = LocalContext.current.findActivity()
-    val bars = remember(activity, orientation) {
-        activity?.window?.decorView
-            ?.let { ViewCompat.getRootWindowInsets(it) }
-            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-    }
-    val density = LocalDensity.current
-    val topInset = with(density) { (bars?.top ?: 0).toDp() }
-    val bottomInset = with(density) { (bars?.bottom ?: 0).toDp() }
-
     Dialog(
         onDismissRequest = close,
-        // Edge to edge, so the scrim covers the whole screen; the bars are left free with the
-        // paddings below.
+        // Not fitted to the system bars by the window: rememberSystemBarsPadding leaves them free,
+        // and both together would leave a double gap.
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         BackHandler(onBack = close)
+        val bars = rememberSystemBarsPadding()
         BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-            val maxSheetHeight = (maxHeight - topInset) * 0.92f
+            val maxSheetHeight = (maxHeight - bars.calculateTopPadding()) * 0.92f
             AnimatedVisibility(visible = visible, enter = fadeIn(tween(SHEET_ANIMATION_MILLIS)), exit = fadeOut(tween(SHEET_ANIMATION_MILLIS))) {
                 Box(
                     modifier = Modifier
@@ -108,10 +90,18 @@ fun DialogSheet(onDismissRequest: () -> Unit, content: @Composable ColumnScope.(
                     tonalElevation = 1.dp,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = topInset)
+                        .padding(top = bars.calculateTopPadding())
                         .heightIn(max = maxSheetHeight)
                 ) {
-                    Column(modifier = Modifier.padding(bottom = bottomInset), horizontalAlignment = Alignment.CenterHorizontally) {
+                    // The sheet's colour runs under the navigation bar; its content stays clear of it.
+                    Column(
+                        modifier = Modifier.padding(
+                            start = bars.calculateLeftPadding(LayoutDirection.Ltr),
+                            end = bars.calculateRightPadding(LayoutDirection.Ltr),
+                            bottom = bars.calculateBottomPadding()
+                        ),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         BottomSheetDefaults.DragHandle()
                         Column(modifier = Modifier.fillMaxWidth(), content = content)
                     }
