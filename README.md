@@ -107,6 +107,7 @@ GitHub se marca como *pre-release*.
 
 - `fastlane/metadata/android/es-ES/` contiene título, descripciones y
   changelog listos para dar de alta la app en Play Store o F-Droid.
+  Guías: [Google Play](docs/google-play.md) y [F-Droid](docs/f-droid.md).
 - Cada Release de GitHub incluye APKs listos para instalar directamente
   o a través de [Obtainium](https://github.com/ImranR98/Obtainium), y
   un `.aab` para subir a Play Console.
