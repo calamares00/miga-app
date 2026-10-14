@@ -185,6 +185,7 @@ jobs:
             abi="${abi%-debug.apk}"
             cp "$f" "dist/miga-v${VERSION}-${abi}-debug.apk"
           done
+          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
           echo "Ficheros generados:"
           ls -la dist
 
@@ -271,6 +272,10 @@ jobs:
               cp "$f" "dist/${SLUG}-v${VERSION}-release${aab_suffix}.aab"
             done
           fi
+
+          # Checksums of everything published, so a download can be checked with
+          # `sha256sum -c SHA256SUMS.txt --ignore-missing`.
+          (cd dist && sha256sum *.apk *.aab > SHA256SUMS.txt)
 
           echo "Ficheros generados:"
           ls -la dist

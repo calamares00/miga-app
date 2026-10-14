@@ -110,3 +110,6 @@ GitHub se marca como *pre-release*.
 - Cada Release de GitHub incluye APKs listos para instalar directamente
   o a través de [Obtainium](https://github.com/ImranR98/Obtainium), y
   un `.aab` para subir a Play Console.
+- `SHA256SUMS.txt`, en cada Release, lleva el SHA-256 de cada fichero.
+  Para comprobar una descarga, ponlo en la misma carpeta y ejecuta
+  `sha256sum -c SHA256SUMS.txt --ignore-missing`.
