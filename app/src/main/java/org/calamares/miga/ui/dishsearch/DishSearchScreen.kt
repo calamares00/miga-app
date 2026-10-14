@@ -1,0 +1,138 @@
+package org.calamares.miga.ui.dishsearch
+
+import org.calamares.miga.ui.components.ErrorMessage
+import org.calamares.miga.L10n
+import org.calamares.miga.R
+import org.calamares.miga.ui.components.AiContentNotice
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import org.calamares.miga.data.search.DishSuggestion
+
+/**
+ * AI recipe idea search: the user describes a region or country, a kind of dish or any free request
+ * and gets a list of suggested dishes. Picking one opens the editor pre-filled with the full
+ * AI-generated recipe (see RecipeEditorViewModel.startDishGeneration), like "From photo": it is
+ * reviewed before saving, never saved directly.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DishSearchScreen(
+    viewModel: DishSearchViewModel,
+    onBack: () -> Unit,
+    onDishSelected: (DishSuggestion) -> Unit
+) {
+    val state by viewModel.state.collectAsState()
+    var query by remember { mutableStateOf("") }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(L10n.str(R.string.find_recipes_ai)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                }
+            )
+        }
+    ) { padding ->
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                label = { Text(L10n.str(R.string.region_country_ingredient_type_dish)) },
+                placeholder = { Text(L10n.str(R.string.e_g_typical_dishes_andalusia)) },
+                singleLine = true,
+                trailingIcon = {
+                    IconButton(onClick = { viewModel.search(query) }) {
+                        Icon(Icons.Filled.Search, contentDescription = L10n.str(R.string.search))
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            when (val current = state) {
+                DishSearchUiState.Idle -> Text(
+                    L10n.str(R.string.look_typical_dishes_region_country),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                DishSearchUiState.Loading -> Box(modifier = Modifier.fillMaxWidth().padding(top = 32.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+                DishSearchUiState.NotConfigured -> Text(
+                    L10n.str(R.string.set_up_ai_provider_settings_2),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                is DishSearchUiState.Error -> ErrorMessage(current.reason, onRetry = { viewModel.search(query) })
+                is DishSearchUiState.Loaded -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item {
+                        AiContentNotice(
+                            feature = L10n.str(R.string.find_recipe_ai),
+                            content = { current.dishes.joinToString("\n") { "${it.name}: ${it.description}" } }
+                        )
+                    }
+                    items(current.dishes) { dish ->
+                        DishCard(dish = dish, onClick = { onDishSelected(dish) })
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DishCard(dish: DishSuggestion, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(dish.name, style = MaterialTheme.typography.titleMedium)
+            if (!dish.origin.isNullOrBlank()) {
+                Text(
+                    dish.origin,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            if (dish.description.isNotBlank()) {
+                Text(
+                    dish.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
+    }
+}

@@ -1,0 +1,28 @@
+# Perfil de referencia (baseline profile) de Miga: clases y métodos del arranque y de la pantalla
+# principal que ART compila por adelantado al instalar, para que la app abra y se desplace más
+# fluida desde el primer uso. Las bibliotecas de Jetpack (Compose, Room...) traen el suyo propio.
+# Sintaxis: https://developer.android.com/topic/performance/baselineprofiles/manually-create-measure
+
+# Arranque: aplicación, actividad, tema y navegación.
+HSPLorg/calamares/miga/RecetarioApp;->**(**)**
+HSPLorg/calamares/miga/MainActivity;->**(**)**
+HSPLorg/calamares/miga/MainActivityKt;->**(**)**
+HSPLorg/calamares/miga/ui/theme/**;->**(**)**
+HSPLorg/calamares/miga/ui/navigation/**;->**(**)**
+HSPLorg/calamares/miga/ui/welcome/**;->**(**)**
+
+# Pantalla principal (libros) y listado de recetas.
+HSPLorg/calamares/miga/ui/books/**;->**(**)**
+HSPLorg/calamares/miga/ui/list/**;->**(**)**
+HSPLorg/calamares/miga/ui/components/**;->**(**)**
+
+# Datos que se leen al abrir: ajustes, base de datos y repositorio.
+HSPLorg/calamares/miga/data/local/**;->**(**)**
+HSPLorg/calamares/miga/data/model/**;->**(**)**
+HSPLorg/calamares/miga/data/repository/**;->**(**)**
+
+# Lista de la compra y detalle de receta, las pantallas más usadas después de la principal.
+HSPLorg/calamares/miga/ui/shoppinglist/**;->**(**)**
+HSPLorg/calamares/miga/ui/detail/**;->**(**)**
+
+Lorg/calamares/miga/**;

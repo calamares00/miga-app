@@ -1,0 +1,67 @@
+package org.calamares.miga.data.local.dao
+
+import androidx.room.Dao
+import androidx.room.Embedded
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Update
+import org.calamares.miga.data.local.entity.RecipeBookEntity
+import kotlinx.coroutines.flow.Flow
+
+data class RecipeBookWithCount(
+    @Embedded val book: RecipeBookEntity,
+    val recipeCount: Int
+)
+
+@Dao
+interface RecipeBookDao {
+
+    @Query(
+        """
+        SELECT b.*, (SELECT COUNT(*) FROM recipes r WHERE r.recipeBookId = b.id) AS recipeCount
+        FROM recipe_books b
+        ORDER BY b.isPinned DESC, b.name COLLATE NOCASE ASC
+        """
+    )
+    fun observeAllWithCounts(): Flow<List<RecipeBookWithCount>>
+
+    @Query("SELECT * FROM recipe_books WHERE id = :id")
+    fun observeOne(id: Long): Flow<RecipeBookEntity?>
+
+    @Query("SELECT * FROM recipe_books WHERE id = :id")
+    suspend fun getOnce(id: Long): RecipeBookEntity?
+
+    @Query("SELECT * FROM recipe_books WHERE name = :name LIMIT 1")
+    suspend fun findByName(name: String): RecipeBookEntity?
+
+    @Query("SELECT * FROM recipe_books WHERE packId = :packId LIMIT 1")
+    suspend fun findByPackId(packId: String): RecipeBookEntity?
+
+    @Query("SELECT * FROM recipe_books WHERE uid = :uid LIMIT 1")
+    suspend fun findByUid(uid: String): RecipeBookEntity?
+
+    @Query("SELECT COUNT(*) FROM recipes WHERE recipeBookId = :bookId")
+    suspend fun countRecipes(bookId: Long): Int
+
+    @Insert
+    suspend fun insert(book: RecipeBookEntity): Long
+
+    @Update
+    suspend fun update(book: RecipeBookEntity)
+
+    @Query("UPDATE recipe_books SET isPinned = :pinned WHERE id = :id")
+    suspend fun setPinned(id: Long, pinned: Boolean)
+
+    @Query("DELETE FROM recipe_books WHERE id = :id")
+    suspend fun delete(id: Long)
+
+    /**
+     * Used when a sync connection is removed: its books become local without losing any content.
+     */
+    @Query("UPDATE recipe_books SET syncConnectionId = NULL WHERE syncConnectionId = :syncConnectionId")
+    suspend fun clearSyncConnection(syncConnectionId: Long)
+
+    /** Used by the connection-level "Sync now" to queue all its books again. */
+    @Query("SELECT * FROM recipe_books WHERE syncConnectionId = :syncConnectionId")
+    suspend fun findBySyncConnectionId(syncConnectionId: Long): List<RecipeBookEntity>
+}

@@ -6,7 +6,6 @@
 /build
 /app/build
 /app/release
-/app/schemas
 .cxx/
 captures/
 .externalNativeBuild/

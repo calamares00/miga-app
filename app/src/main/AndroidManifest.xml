@@ -2,11 +2,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Voice dictation of recipe steps (SpeechRecognizer). Camera and gallery go through system
+         apps and need no permission, but recording audio in-process needs a runtime grant. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Foreground service that keeps AI requests running while the app is in the background
+         (see AiKeepAlive). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Shows the running AI task and announces when it finishes (Android 13+). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Necesario en Android 11+ (restricciones de visibilidad de paquetes) para que el intent
-         implícito de ActivityResultContracts.TakePicture() encuentre la app de cámara del
-         sistema al añadir una receta con foto. No se declara el permiso CAMERA: la propia app
-         de cámara es la que accede al hardware, esta app solo recibe el archivo resultante. -->
+    <!-- Needed on Android 11+ (package visibility) so the implicit intent of
+         ActivityResultContracts.TakePicture() finds the system camera app. No CAMERA permission:
+         the camera app uses the hardware and this app only receives the resulting file. -->
     <queries>
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
@@ -14,25 +22,49 @@
     </queries>
 
     <application
-        android:name=".RecetarioApp"
+        android:name=".MigaApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Recetario">
+        android:theme="@style/Theme.Miga">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Recetario">
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.Miga.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Text shared from other apps (notes, messages...) becomes shopping list items. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
         </activity>
+
+        <receiver
+            android:name=".widget.ShoppingWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/shopping_widget_info" />
+        </receiver>
+
+        <service
+            android:name=".data.ai.AiWorkService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

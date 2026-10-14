@@ -2,4 +2,9 @@
 <full-backup-content>
     <include domain="database" path="." />
     <include domain="file" path="photos/" />
+    <!-- Settings (theme, colour, AI provider order, language...). The AI keys in them are encrypted
+         with a Keystore key that never leaves the device, so on another phone they read as empty. -->
+    <include domain="file" path="datastore/settings.preferences_pb" />
+    <include domain="sharedpref" path="miga_locale.xml" />
+    <include domain="sharedpref" path="miga_cook_mode.xml" />
 </full-backup-content>
