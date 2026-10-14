@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Recetario" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.Miga" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/night_background</item>
-        <item name="android:statusBarColor">@color/night_background</item>
         <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <style name="Theme.Miga.Starting" parent="Theme.SplashScreen.IconBackground">
+        <item name="windowSplashScreenBackground">@color/night_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/launcher_icon_background</item>
+        <item name="postSplashScreenTheme">@style/Theme.Miga</item>
     </style>
 </resources>

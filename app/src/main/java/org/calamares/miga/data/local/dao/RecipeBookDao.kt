@@ -20,7 +20,7 @@ interface RecipeBookDao {
         """
         SELECT b.*, (SELECT COUNT(*) FROM recipes r WHERE r.recipeBookId = b.id) AS recipeCount
         FROM recipe_books b
-        ORDER BY b.name ASC
+        ORDER BY b.isPinned DESC, b.name COLLATE NOCASE ASC
         """
     )
     fun observeAllWithCounts(): Flow<List<RecipeBookWithCount>>
@@ -37,6 +37,9 @@ interface RecipeBookDao {
     @Query("SELECT * FROM recipe_books WHERE packId = :packId LIMIT 1")
     suspend fun findByPackId(packId: String): RecipeBookEntity?
 
+    @Query("SELECT * FROM recipe_books WHERE uid = :uid LIMIT 1")
+    suspend fun findByUid(uid: String): RecipeBookEntity?
+
     @Query("SELECT COUNT(*) FROM recipes WHERE recipeBookId = :bookId")
     suspend fun countRecipes(bookId: Long): Int
 
@@ -46,6 +49,19 @@ interface RecipeBookDao {
     @Update
     suspend fun update(book: RecipeBookEntity)
 
+    @Query("UPDATE recipe_books SET isPinned = :pinned WHERE id = :id")
+    suspend fun setPinned(id: Long, pinned: Boolean)
+
     @Query("DELETE FROM recipe_books WHERE id = :id")
     suspend fun delete(id: Long)
+
+    /**
+     * Used when a sync connection is removed: its books become local without losing any content.
+     */
+    @Query("UPDATE recipe_books SET syncConnectionId = NULL WHERE syncConnectionId = :syncConnectionId")
+    suspend fun clearSyncConnection(syncConnectionId: Long)
+
+    /** Used by the connection-level "Sync now" to queue all its books again. */
+    @Query("SELECT * FROM recipe_books WHERE syncConnectionId = :syncConnectionId")
+    suspend fun findBySyncConnectionId(syncConnectionId: Long): List<RecipeBookEntity>
 }

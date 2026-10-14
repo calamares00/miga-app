@@ -12,7 +12,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-/** [installedVersion] es la versión ya instalada localmente de este pack (ver RecipeBook.packVersion). */
+/**
+ * [installedVersion] is the locally installed version of this pack (see RecipeBook.packVersion).
+ */
 data class PackListItem(val entry: PackEntryDto, val installedVersion: Int?) {
     val isInstalled: Boolean get() = installedVersion != null
     val hasUpdate: Boolean get() = installedVersion != null && entry.latestVersion > installedVersion
@@ -44,8 +46,8 @@ class PacksCatalogViewModel(
                 is CatalogFetchResult.Error -> _uiState.value = CatalogUiState.Error(result.reason)
                 is CatalogFetchResult.Success -> {
                     val installedVersionByPackId = repository.observeRecipeBooks().first()
-                        .filter { it.isPack }
-                        .associate { it.packId!! to (it.packVersion ?: 0) }
+                        .mapNotNull { book -> book.packId?.let { it to (book.packVersion ?: 0) } }
+                        .toMap()
                     val items = result.packs.map { entry -> PackListItem(entry, installedVersionByPackId[entry.id]) }
                     _uiState.value = CatalogUiState.Loaded(items)
                 }

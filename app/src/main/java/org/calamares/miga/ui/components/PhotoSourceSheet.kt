@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.components
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,9 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 /**
- * Contenido del selector de origen de una foto (cámara o galería), pensado para ir dentro de un
- * `ModalBottomSheet`. Se usa tanto para añadir una receta a partir de una foto como para añadir
- * cualquier otra foto (de una receta o de la portada de un libro).
+ * Content of the photo source picker (camera or gallery), meant to go inside a `ModalBottomSheet`.
+ * Used both to create a recipe from a photo and to add any other photo (to a recipe or as a book
+ * cover).
  */
 @Composable
 fun PhotoSourceSheet(title: String, onCameraClick: () -> Unit, onGalleryClick: () -> Unit) {
@@ -33,7 +35,7 @@ fun PhotoSourceSheet(title: String, onCameraClick: () -> Unit, onGalleryClick: (
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(Icons.Filled.PhotoCamera, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Hacer foto", modifier = Modifier.padding(start = 16.dp))
+            Text(L10n.str(R.string.take_photo), modifier = Modifier.padding(start = 16.dp))
         }
         Row(
             modifier = Modifier
@@ -43,7 +45,7 @@ fun PhotoSourceSheet(title: String, onCameraClick: () -> Unit, onGalleryClick: (
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(Icons.Filled.PhotoLibrary, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Elegir de galería", modifier = Modifier.padding(start = 16.dp))
+            Text(L10n.str(R.string.choose_gallery), modifier = Modifier.padding(start = 16.dp))
         }
     }
 }

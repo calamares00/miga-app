@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.Flow
 interface RecipeDao {
 
     @Transaction
-    @Query("SELECT * FROM recipes ORDER BY name ASC")
+    @Query("SELECT * FROM recipes ORDER BY name COLLATE NOCASE ASC")
     fun observeAllWithDetails(): Flow<List<RecipeWithDetails>>
 
     @Transaction
@@ -26,7 +26,7 @@ interface RecipeDao {
     fun observeWithDetails(id: Long): Flow<RecipeWithDetails?>
 
     @Transaction
-    @Query("SELECT * FROM recipes WHERE recipeBookId = :bookId ORDER BY name ASC")
+    @Query("SELECT * FROM recipes WHERE recipeBookId = :bookId ORDER BY name COLLATE NOCASE ASC")
     fun observeAllWithDetailsForBook(bookId: Long): Flow<List<RecipeWithDetails>>
 
     @Transaction
@@ -34,7 +34,7 @@ interface RecipeDao {
     suspend fun getAllWithDetailsOnce(): List<RecipeWithDetails>
 
     @Transaction
-    @Query("SELECT * FROM recipes WHERE recipeBookId = :bookId ORDER BY name ASC")
+    @Query("SELECT * FROM recipes WHERE recipeBookId = :bookId ORDER BY name COLLATE NOCASE ASC")
     suspend fun getAllWithDetailsForBookOnce(bookId: Long): List<RecipeWithDetails>
 
     @Query("UPDATE recipes SET recipeBookId = :newBookId WHERE id = :id")
@@ -67,6 +67,26 @@ interface RecipeDao {
     @Query("DELETE FROM recipe_photos WHERE recipeId = :recipeId")
     suspend fun deletePhotos(recipeId: Long)
 
+    /**
+     * Read before deleting and reinserting a recipe's photos on save, so photos that already
+     * existed (same uri) keep their uid.
+     */
+    @Query("SELECT * FROM recipe_photos WHERE recipeId = :recipeId")
+    suspend fun getPhotosOnce(recipeId: Long): List<RecipePhotoEntity>
+
+    /** A cover photo of the user's (the newest), to preview the photo frames in Settings. */
+    @Query("SELECT uri FROM recipe_photos ORDER BY isCover DESC, id DESC LIMIT 1")
+    fun observeSamplePhotoUri(): Flow<String?>
+
+    @Query("SELECT * FROM recipe_photos WHERE uid = :uid LIMIT 1")
+    suspend fun findPhotoByUid(uid: String): RecipePhotoEntity?
+
+    @Query("DELETE FROM recipe_photos WHERE uid = :uid")
+    suspend fun deletePhotoByUid(uid: String)
+
+    @Query("UPDATE recipe_photos SET isCover = :isCover, position = :position WHERE uid = :uid")
+    suspend fun updatePhotoMetaByUid(uid: String, isCover: Boolean, position: Int)
+
     @Insert
     suspend fun insertTagCrossRefs(items: List<RecipeTagCrossRef>)
 
@@ -82,6 +102,9 @@ interface RecipeDao {
     @Query("UPDATE recipes SET isFavorite = :favorite WHERE id = :id")
     suspend fun setFavorite(id: Long, favorite: Boolean)
 
+    @Query("UPDATE recipes SET rating = :rating WHERE id = :id")
+    suspend fun setRating(id: Long, rating: Int?)
+
     @Query("UPDATE recipes SET timesCooked = timesCooked + 1 WHERE id = :id")
     suspend fun incrementTimesCooked(id: Long)
 
@@ -94,6 +117,13 @@ interface RecipeDao {
     @Query("DELETE FROM recipes WHERE recipeBookId = :bookId AND uid NOT IN (:keepUids)")
     suspend fun deleteRecipesNotInUidSet(bookId: Long, keepUids: List<String>)
 
+    /**
+     * Gives a uid to photos created before sync existed (the v7 -> v8 migration added the column as
+     * NULL); without it a photo cannot be uploaded. Idempotent.
+     */
+    @Query("UPDATE recipe_photos SET uid = lower(hex(randomblob(16))) WHERE uid IS NULL")
+    suspend fun backfillPhotoUids()
+
     @Query("DELETE FROM recipes WHERE recipeBookId = :bookId")
     suspend fun deleteAllForBook(bookId: Long)
 
@@ -102,4 +132,19 @@ interface RecipeDao {
             "healthFingerprint = :fingerprint, healthAnalyzedAt = :analyzedAt WHERE id = :id"
     )
     suspend fun updateHealthRating(id: Long, color: String?, description: String?, fingerprint: String?, analyzedAt: Long?)
+
+    @Query(
+        "UPDATE recipes SET nutritionCalories = :calories, nutritionProteinGrams = :protein, " +
+            "nutritionCarbsGrams = :carbs, nutritionFatGrams = :fat, nutritionFingerprint = :fingerprint, " +
+            "nutritionAnalyzedAt = :analyzedAt WHERE id = :id"
+    )
+    suspend fun updateNutritionInfo(
+        id: Long,
+        calories: Int?,
+        protein: Double?,
+        carbs: Double?,
+        fat: Double?,
+        fingerprint: String?,
+        analyzedAt: Long?
+    )
 }

@@ -1,39 +1,39 @@
 package org.calamares.miga.ui.settings
 
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
+import org.calamares.miga.data.model.ContentKind
+import org.calamares.miga.L10n
+import org.calamares.miga.R
+import kotlinx.coroutines.flow.first
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.calamares.miga.BuildConfig
+import org.calamares.miga.data.export.LibraryImportParseResult
 import org.calamares.miga.data.export.LibraryImportResult
 import org.calamares.miga.data.export.RecipeExportDto
 import org.calamares.miga.data.export.RecipeExporter
 import org.calamares.miga.data.export.RecipeImportResult
 import org.calamares.miga.data.export.toDraft
 import org.calamares.miga.data.local.SettingsRepository
+import org.calamares.miga.data.model.ColorTheme
+import org.calamares.miga.data.model.PhotoFrame
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.ThemeMode
-import org.calamares.miga.data.model.UpdateChannel
-import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG_REPO
-import org.calamares.miga.data.remote.UpdateCheckResult
-import org.calamares.miga.data.remote.UpdateChecker
-import org.calamares.miga.data.remote.UpdateInfo
+import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
 import org.calamares.miga.data.repository.RecipeRepository
-import org.calamares.miga.data.vision.DEFAULT_GEMINI_MODEL
+import org.calamares.miga.data.ai.DEFAULT_ANTHROPIC_MODEL
+import org.calamares.miga.data.ai.DEFAULT_OPENAI_MODEL
+import org.calamares.miga.data.ai.DEFAULT_GEMINI_MODEL
+import org.calamares.miga.data.ai.AiProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-
-sealed interface UpdateCheckState {
-    data object Idle : UpdateCheckState
-    data object Checking : UpdateCheckState
-    data object UpToDate : UpdateCheckState
-    data class Available(val info: UpdateInfo) : UpdateCheckState
-    data class Error(val reason: String) : UpdateCheckState
-}
 
 class SettingsViewModel(
     private val repository: RecipeRepository,
@@ -47,6 +47,37 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }
     }
 
+    val colorTheme: StateFlow<ColorTheme> = settingsRepository.observeColorTheme()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ColorTheme.DEFAULT)
+
+    fun setColorTheme(colorTheme: ColorTheme) {
+        viewModelScope.launch { settingsRepository.setColorTheme(colorTheme) }
+    }
+
+    val photoFrame: StateFlow<PhotoFrame> = settingsRepository.observePhotoFrame()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PhotoFrame.DEFAULT)
+
+    val disabledProviders: StateFlow<Set<AiProvider>> = settingsRepository.observeDisabledProviders()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    fun setProviderEnabled(provider: AiProvider, enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setProviderEnabled(provider, enabled) }
+    }
+
+    /** Per list of Manage content: how many entries and how many of the user's own are unused. */
+    val contentSummary: StateFlow<Map<ContentKind, ContentCounts>> = combine(
+        ContentKind.entries.map { kind -> repository.observeContent(kind).map { items -> kind to ContentCounts(items.size, items.count { it.usage == 0 && !it.isDefault }) } }
+    ) { pairs -> pairs.toMap() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    /** One of the user's own photos for the frame previews; null without any. */
+    val samplePhoto: StateFlow<String?> = repository.observeSamplePhotoUri()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun setPhotoFrame(frame: PhotoFrame) {
+        viewModelScope.launch { settingsRepository.setPhotoFrame(frame) }
+    }
+
     val biometricLockEnabled: StateFlow<Boolean> = settingsRepository.observeBiometricLockEnabled()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -54,47 +85,58 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setBiometricLockEnabled(enabled) }
     }
 
-    val autoCheckUpdatesEnabled: StateFlow<Boolean> = settingsRepository.observeAutoCheckUpdatesEnabled()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
-    fun setAutoCheckUpdatesEnabled(enabled: Boolean) {
-        viewModelScope.launch { settingsRepository.setAutoCheckUpdatesEnabled(enabled) }
-    }
-
-    val updateChannel: StateFlow<UpdateChannel> = settingsRepository.observeUpdateChannel()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UpdateChannel.STABLE)
-
-    fun setUpdateChannel(channel: UpdateChannel) {
-        viewModelScope.launch { settingsRepository.setUpdateChannel(channel) }
-    }
-
-    private val _updateCheckState = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
-    val updateCheckState: StateFlow<UpdateCheckState> = _updateCheckState
-
-    fun checkForUpdatesNow() {
+    /**
+     * Writes the full backup to [destination], encrypted when [password] is given; the password is
+     * wiped from memory afterwards. [onDone] reports the outcome.
+     */
+    fun exportLibrary(context: Context, destination: Uri, password: CharArray?, onDone: (String) -> Unit) {
         viewModelScope.launch {
-            _updateCheckState.value = UpdateCheckState.Checking
-            _updateCheckState.value = when (val result = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, updateChannel.value)) {
-                is UpdateCheckResult.UpdateFound -> UpdateCheckState.Available(result.info)
-                is UpdateCheckResult.UpToDate -> UpdateCheckState.UpToDate
-                is UpdateCheckResult.Error -> UpdateCheckState.Error(result.reason)
+            val message = try {
+                val allBooks = repository.getAllRecipeBooksOnce()
+                val recipes = repository.getAllRecipesOnce()
+                val templates = repository.observeShoppingTemplates().first()
+                val stores = repository.observeShoppingStores().first()
+                RecipeExporter.exportLibrary(context, destination, allBooks, recipes, templates, stores, password)
+                L10n.str(if (password != null) R.string.backup_exported_encrypted else R.string.backup_exported)
+            } catch (e: Exception) {
+                L10n.str(R.string.couldnt_export_x, e.message ?: e::class.simpleName.orEmpty())
+            } finally {
+                password?.fill('\u0000')
             }
+            onDone(message)
         }
     }
 
-    fun exportLibrary(context: Context, destination: Uri) {
-        viewModelScope.launch {
-            val allBooks = repository.getAllRecipeBooksOnce()
-            val recipes = repository.getAllRecipesOnce()
-            RecipeExporter.exportLibrary(context, destination, allBooks, recipes)
-        }
+    /**
+     * Reads and validates the chosen file without writing anything. The result decides whether the
+     * "delete before importing" dialog or an error is shown, with the database untouched.
+     */
+    suspend fun validateLibraryImport(context: Context, source: Uri, password: CharArray? = null): LibraryImportParseResult {
+        val result = RecipeExporter.parseLibraryImport(context, source, password)
+        // Kept only by a successful result, which uses it to read the photos during the import.
+        if (result !is LibraryImportParseResult.Success) password?.fill('\u0000')
+        return result
     }
 
-    fun importLibrary(context: Context, source: Uri, onMessage: (String) -> Unit) {
+    /** Forgets the password of a backup the user decided not to import. */
+    fun discardLibraryImport(parsed: LibraryImportParseResult.Success) {
+        parsed.password?.fill('\u0000')
+    }
+
+    fun confirmLibraryImport(context: Context, parsed: LibraryImportParseResult.Success, wipeFirst: Boolean, onMessage: (String) -> Unit) {
         viewModelScope.launch {
-            when (val result = RecipeExporter.importLibrary(context, source, repository)) {
-                is LibraryImportResult.Success -> onMessage("Se importaron ${result.count} recetas")
-                is LibraryImportResult.Error -> onMessage("No se pudo importar: ${result.reason}")
+            val wipeMessage = if (wipeFirst) {
+                val result = repository.wipeUserRecipesAndBooks()
+                L10n.str(R.string.deleted_x_book_x_recipe, result.bookCount, result.recipeCount)
+            } else ""
+            val result = try {
+                RecipeExporter.importParsedLibrary(context, parsed, repository)
+            } finally {
+                parsed.password?.fill('\u0000')
+            }
+            when (result) {
+                is LibraryImportResult.Success -> onMessage(wipeMessage + L10n.str(R.string.imported_n_recipes, result.count))
+                is LibraryImportResult.Error -> onMessage(L10n.str(R.string.couldnt_import_x, result.reason))
             }
         }
     }
@@ -116,8 +158,83 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setGeminiModel(model) }
     }
 
+    val aiEnabled: StateFlow<Boolean> = settingsRepository.observeAiEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val aiHealthEnabled: StateFlow<Boolean> = settingsRepository.observeAiHealthEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val aiNutritionEnabled: StateFlow<Boolean> = settingsRepository.observeAiNutritionEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setAiEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAiEnabled(enabled) }
+    }
+
+    fun setAiHealthEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAiHealthEnabled(enabled) }
+    }
+
+    fun setAiNutritionEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAiNutritionEnabled(enabled) }
+    }
+
+    val providerOrder: StateFlow<List<AiProvider>> = settingsRepository.observeProviderOrder()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AiProvider.entries.toList())
+
+    fun setProviderOrder(order: List<AiProvider>) {
+        viewModelScope.launch { settingsRepository.setProviderOrder(order) }
+    }
+
+    val openRouterApiKey: StateFlow<String> = settingsRepository.observeOpenRouterApiKey()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    fun setOpenRouterApiKey(apiKey: String) {
+        viewModelScope.launch { settingsRepository.setOpenRouterApiKey(apiKey) }
+    }
+
+    val openRouterModel: StateFlow<String> = settingsRepository.observeOpenRouterModel()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val openRouterModelImages: StateFlow<Boolean> = settingsRepository.observeOpenRouterModelImages()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setOpenRouterModel(model: String, supportsImages: Boolean) {
+        viewModelScope.launch { settingsRepository.setOpenRouterModel(model, supportsImages) }
+    }
+
+    /** Summary for the main Settings screen: providers with a key, in priority order. */
+    val aiProvidersSummary: StateFlow<List<AiProvider>> = settingsRepository.observeConfiguredProviders()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val openAiApiKey: StateFlow<String> = settingsRepository.observeOpenAiApiKey()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    fun setOpenAiApiKey(apiKey: String) {
+        viewModelScope.launch { settingsRepository.setOpenAiApiKey(apiKey) }
+    }
+
+    val openAiModel: StateFlow<String> = settingsRepository.observeOpenAiModel()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_OPENAI_MODEL)
+
+    fun setOpenAiModel(model: String) {
+        viewModelScope.launch { settingsRepository.setOpenAiModel(model) }
+    }
+
+    val anthropicApiKey: StateFlow<String> = settingsRepository.observeAnthropicApiKey()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    fun setAnthropicApiKey(apiKey: String) {
+        viewModelScope.launch { settingsRepository.setAnthropicApiKey(apiKey) }
+    }
+
+    val anthropicModel: StateFlow<String> = settingsRepository.observeAnthropicModel()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_ANTHROPIC_MODEL)
+
+    fun setAnthropicModel(model: String) {
+        viewModelScope.launch { settingsRepository.setAnthropicModel(model) }
+    }
+
     val packsCatalogRepo: StateFlow<String> = settingsRepository.observePacksCatalogRepo()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_PACKS_CATALOG_REPO)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_PACKS_CATALOG)
 
     fun setPacksCatalogRepo(repo: String) {
         viewModelScope.launch { settingsRepository.setPacksCatalogRepo(repo) }
@@ -126,6 +243,13 @@ class SettingsViewModel(
     val ttsVoiceName: StateFlow<String?> = settingsRepository.observeTtsVoiceName()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    val dictationLanguage: StateFlow<String> = settingsRepository.observeDictationLanguage()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), org.calamares.miga.data.voice.DictationLanguages.DEFAULT)
+
+    fun setDictationLanguage(tag: String) {
+        viewModelScope.launch { settingsRepository.setDictationLanguage(tag) }
+    }
+
     fun setTtsVoiceName(name: String?) {
         viewModelScope.launch { settingsRepository.setTtsVoiceName(name) }
     }
@@ -133,11 +257,25 @@ class SettingsViewModel(
     suspend fun parseRecipeJson(context: Context, source: Uri): RecipeImportResult =
         RecipeExporter.importRecipe(context, source)
 
+    /** Imports an exported book or selection into [targetBookId], or as its own book when null. */
+    fun importCollection(context: Context, collection: RecipeImportResult.Collection, targetBookId: Long?, onMessage: (String) -> Unit) {
+        viewModelScope.launch {
+            when (val result = RecipeExporter.importParsedLibrary(context, collection.parsed, repository, targetBookId)) {
+                is LibraryImportResult.Success -> onMessage(L10n.str(R.string.imported_n_recipes, result.count))
+                is LibraryImportResult.Error -> onMessage(L10n.str(R.string.couldnt_import_x, result.reason))
+            }
+        }
+    }
+
     fun importRecipeIntoBook(dto: RecipeExportDto, photos: List<RecipePhoto>, bookId: Long, onFinished: () -> Unit) {
         viewModelScope.launch {
             val recipeId = repository.saveRecipe(dto.toDraft(bookId, photos))
             RecipeExporter.applyHealthFromImport(repository, recipeId, dto.health)
+            RecipeExporter.applyJournalFromImport(repository, recipeId, dto.journal)
+            if (dto.rating != null) repository.setRating(recipeId, dto.rating)
             onFinished()
         }
     }
 }
+
+data class ContentCounts(val total: Int, val unusedMine: Int)

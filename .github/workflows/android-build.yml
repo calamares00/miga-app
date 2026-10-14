@@ -1,4 +1,4 @@
-name: Android build (Miga)
+name: Android CI (Miga)
 
 on:
   push:
@@ -10,11 +10,83 @@ on:
   workflow_dispatch: {}
 
 jobs:
+  # Always runs (any push, PR or manual run), whatever is built or published afterwards: a
+  # broken test blocks the rest just like a compile error.
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      # Every database version needs its Room schema (app/schemas) committed, or migrations to
+      # later versions cannot be tested. The build exports it; a new or changed one fails here and
+      # is printed so it can be committed.
+      - name: Room schemas committed
+        if: always()
+        run: |
+          changed=$(git status --porcelain --untracked-files=all app/schemas | cut -c4-)
+          if [ -n "$changed" ]; then
+            echo "::error::Room schema not committed: $changed"
+            # Compressed and with a checksum, so it can be copied from this log exactly.
+            for f in $changed; do
+              echo "===== $f sha256=$(sha256sum "$f" | cut -d' ' -f1)"
+              gzip -9c "$f" | base64 -w0; echo
+            done
+            exit 1
+          fi
+
+      # Artifact name unique per branch and commit. It does not depend on the mode (that belongs to
+      # build/publish); it only needs to identify the run in a readable way.
+      - name: Compute artifact name suffix
+        id: ref
+        if: always()
+        run: |
+          echo "safe_ref=$(echo '${{ github.ref_name }}' | tr '/' '-')" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload unit test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: miga-unit-test-report-${{ steps.ref.outputs.safe_ref }}-${{ steps.ref.outputs.short_sha }}
+          path: app/build/reports/tests/testDebugUnitTest
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # Compiles (and, depending on the branch, packages) the app. The mode decides what is built:
+  # release: direct push to main (usually after merging a PR) -> full signed build.
+  # pr_check: pull request to main -> checks only (lint + compile), nothing to publish.
+  # dev_debug: push to any other branch, or a manual run -> a quick debug APK only.
+  # Files ready to publish are left in dist/ and uploaded as an artifact so the publish job
+  # (which runs on another runner) can download them without rebuilding.
   build:
     name: Build
+    needs: test
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    outputs:
+      mode: ${{ steps.mode.outputs.mode }}
+      version: ${{ steps.version.outputs.version }}
+      safe_ref: ${{ steps.mode.outputs.safe_ref }}
+      short_sha: ${{ steps.mode.outputs.short_sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,9 +97,9 @@ jobs:
           VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      # release: push directo a main (normalmente tras fusionar un PR) -> build completo + Release.
-      # pr_check: pull request hacia main -> solo comprobaciones (lint + compilar), no se publica nada.
-      # dev_debug: push a cualquier otra rama, o ejecución manual -> solo un APK debug rápido.
+      # release: direct push to main (usually after merging a PR) -> full build + Release.
+      # pr_check: pull request to main -> checks only (lint + compile), nothing is published.
+      # dev_debug: push to any other branch, or a manual run -> a quick debug APK only.
       - name: Determine build mode
         id: mode
         run: |
@@ -38,8 +110,8 @@ jobs:
           else
             echo "mode=dev_debug" >> "$GITHUB_OUTPUT"
           fi
-          # Los nombres de artefacto de GitHub Actions no admiten "/", que sí es válido en un
-          # nombre de rama (ej. "setup/initial-import"); se sustituye por "-".
+          # GitHub Actions artifact names do not allow "/", which is valid in a branch name
+          # (e.g. "setup/initial-import"), so it is replaced with "-".
           echo "safe_ref=$(echo '${{ github.ref_name }}' | tr '/' '-')" >> "$GITHUB_OUTPUT"
           echo "short_sha=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
 
@@ -58,29 +130,15 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      # Tests unitarios: se ejecutan siempre (cualquier push, PR o modo manual), no solo en
-      # pull requests, para que un test roto bloquee el build igual que un fallo de compilación.
-      - name: Unit tests
-        run: ./gradlew :app:testDebugUnitTest --stacktrace
-
-      - name: Upload unit test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: miga-unit-test-report-${{ steps.mode.outputs.safe_ref }}-${{ steps.mode.outputs.short_sha }}
-          path: app/build/reports/tests/testDebugUnitTest
-          if-no-files-found: ignore
-          retention-days: 14
-
-      # El build "release" (mode == 'release') solo se dispara al hacer push a main; en cualquier
-      # otro caso se valida aquí que assembleRelease sigue compilando con isMinifyEnabled=true,
-      # para que una regla de ProGuard/R8 rota se detecte en esta misma rama y no solo al fusionar.
-      # Sale sin firmar (no hay secretos de keystore en este paso) y no se publica en ningún sitio.
-      - name: Build release APK (validar minificación con R8)
+      # On any branch that will not run a real release build (which already compiles with
+      # isMinifyEnabled=true below), check here that assembleRelease still compiles with R8, so a
+      # broken ProGuard rule is caught on that branch and not only after merging.
+      # The output is unsigned (no keystore secrets in this step) and is not published.
+      - name: Build release APK (check R8 minification)
         if: steps.mode.outputs.mode != 'release'
         run: ./gradlew :app:assembleRelease --stacktrace
 
-      # --- pull request hacia main: lint + compilación de comprobación ---
+      # --- pull request to main: lint + check compilation ---
       - name: Lint (pull request)
         if: steps.mode.outputs.mode == 'pr_check'
         run: ./gradlew :app:lintDebug --stacktrace
@@ -98,7 +156,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      # --- push a una rama que no es main (o ejecución manual): solo un APK debug ---
+      # --- push to a branch other than main (or a manual run): debug APK only ---
       - name: Build debug APK (rama de desarrollo)
         if: steps.mode.outputs.mode == 'dev_debug'
         run: ./gradlew :app:assembleDebug --stacktrace
@@ -112,10 +170,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      # Además del artefacto de la propia ejecución, se publica/actualiza una única Release
-      # "beta-latest" (canal beta del selector de actualizaciones dentro de la app) con el APK
-      # debug más reciente de cualquier rama de desarrollo, para poder probarlo sin entrar a
-      # Actions. El tag es fijo a propósito: cada push la sobrescribe, no se acumulan releases.
+      # Also puts a renamed copy in dist/ (same naming as the beta Release in the publish job) and
+      # uploads it as its own artifact, so publish does not have to rebuild anything.
       - name: Normalize debug APK names (canal beta)
         if: steps.mode.outputs.mode == 'dev_debug'
         run: |
@@ -129,27 +185,23 @@ jobs:
             abi="${abi%-debug.apk}"
             cp "$f" "dist/miga-v${VERSION}-${abi}-debug.apk"
           done
+          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
           echo "Ficheros generados:"
           ls -la dist
 
-      - name: Publish beta-latest Release
+      - name: Upload beta dist (para el job publish)
         if: steps.mode.outputs.mode == 'dev_debug'
-        uses: softprops/action-gh-release@v2
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: beta-latest
-          name: "Miga v${{ steps.version.outputs.version }} (beta · ${{ github.ref_name }} · ${{ steps.mode.outputs.short_sha }})"
-          body: |
-            Build de desarrollo automático, generado desde la rama `${{ github.ref_name }}`
-            (commit ${{ github.sha }}). No es una versión estable: se sobrescribe en cada push
-            a una rama que no es `main`.
-          prerelease: true
-          make_latest: false
-          files: dist/*
+          name: miga-beta-dist-${{ steps.mode.outputs.safe_ref }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
 
-      # --- push a main: build completo (debug + release por ABI + AAB) y Release en GitHub ---
-      # El keystore de release nunca vive en el repo (a diferencia de debug.keystore): se lee de
-      # 4 secretos de GitHub Actions. Mientras no existan, el build release sale sin firmar sin
-      # romper el CI, y la Release se marca como pre-release.
+      # --- push to main: full build (debug + release per ABI + AAB) ---
+      # The release keystore never lives in the repository (unlike debug.keystore): it is read from
+      # 4 GitHub Actions secrets. Until they exist the release build is unsigned without breaking CI,
+      # and the publish job marks the resulting Release as a pre-release.
       - name: Decode release keystore
         if: steps.mode.outputs.mode == 'release'
         env:
@@ -206,9 +258,9 @@ jobs:
           rename_apks debug
           rename_apks release
 
-          # A diferencia de las APK, Gradle no añade "-unsigned" al nombre del AAB cuando no hay
-          # signingConfig, así que la firma real se decide por si existe el keystore de release
-          # (RELEASE_KEYSTORE_PATH, heredado del paso anterior), no por el nombre del fichero.
+          # Unlike APKs, Gradle does not add "-unsigned" to the AAB name when there is no
+          # signingConfig, so whether it is signed is decided by the release keystore being present
+          # (RELEASE_KEYSTORE_PATH, inherited from the previous step), not by the file name.
           aab_suffix=""
           if [ -z "${RELEASE_KEYSTORE_PATH:-}" ]; then
             aab_suffix="-unsigned"
@@ -220,6 +272,10 @@ jobs:
               cp "$f" "dist/${SLUG}-v${VERSION}-release${aab_suffix}.aab"
             done
           fi
+
+          # Checksums of everything published, so a download can be checked with
+          # `sha256sum -c SHA256SUMS.txt --ignore-missing`.
+          (cd dist && sha256sum *.apk *.aab > SHA256SUMS.txt)
 
           echo "Ficheros generados:"
           ls -la dist
@@ -233,12 +289,94 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Create GitHub Release
-        if: steps.mode.outputs.mode == 'release'
+  # Nothing to publish for a pull request (mode == pr_check): the whole job is skipped and shows
+  # as "skipped" in the checks instead of an empty success. It downloads the dist/ prepared by
+  # the build job (nothing is rebuilt) and uploads it to a GitHub Release.
+  publish:
+    name: Publish
+    needs: build
+    if: needs.build.outputs.mode != 'pr_check'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Publishes run one at a time: two pushes in a row used to publish at the same moment and the
+    # older build could end up overwriting the newer one.
+    concurrency:
+      group: publish-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      # Besides this run's own artifact (uploaded by build), a single "beta-latest" Release is
+      # published or updated (to test development builds by installing the APK by hand) with the
+      # latest debug APK from any development branch. The tag is fixed on purpose: every push
+      # overwrites it, so releases do not pile up.
+      # A run whose commit is no longer the branch head must not replace a newer build.
+      - name: Check this is the latest commit of the branch
+        id: latest
+        if: needs.build.outputs.mode == 'dev_debug'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          head=$(gh api "repos/${{ github.repository }}/commits/${{ github.ref_name }}" --jq .sha || echo "")
+          if [ -z "$head" ] || [ "$head" = "${{ github.sha }}" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "The branch already points to $head; beta-latest is left as it is."
+          fi
+
+      - name: Download beta dist
+        if: needs.build.outputs.mode == 'dev_debug' && steps.latest.outputs.publish == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: miga-beta-dist-${{ needs.build.outputs.safe_ref }}
+          path: dist
+
+      - name: Publish beta-latest Release
+        if: needs.build.outputs.mode == 'dev_debug' && steps.latest.outputs.publish == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: Miga v${{ steps.version.outputs.version }}
+          tag_name: beta-latest
+          name: "Miga v${{ needs.build.outputs.version }} (beta · ${{ github.ref_name }} · ${{ needs.build.outputs.short_sha }})"
+          body: |
+            Build de desarrollo automático, generado desde la rama `${{ github.ref_name }}`
+            (commit ${{ github.sha }}). No es una versión estable: se sobrescribe en cada push
+            a una rama que no es `main`.
+          prerelease: true
+          make_latest: false
+          files: dist/*
+
+      # Keeps beta-latest down to the APKs just published: any other file (older version names)
+      # is deleted, so the release does not pile up old builds.
+      - name: Remove old files from beta-latest
+        if: needs.build.outputs.mode == 'dev_debug' && steps.latest.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          repo="${{ github.repository }}"
+          release_id=$(gh api "repos/$repo/releases/tags/beta-latest" --jq .id)
+          # The full list is read before deleting anything: deleting while paging shifts the pages
+          # and skips files.
+          assets=$(gh api --paginate "repos/$repo/releases/$release_id/assets?per_page=100" --jq '.[] | "\(.id) \(.name)"')
+          echo "$assets" | while read -r id name; do
+            if [ -n "$id" ] && [ ! -f "dist/$name" ]; then
+              gh api -X DELETE "repos/$repo/releases/assets/$id" && echo "Deleted $name"
+            fi
+          done
+
+      # --- push to main: stable GitHub Release with everything build left in dist/ ---
+      - name: Download release dist
+        if: needs.build.outputs.mode == 'release'
+        uses: actions/download-artifact@v4
+        with:
+          name: miga-builds-v${{ needs.build.outputs.version }}
+          path: dist
+
+      - name: Create GitHub Release
+        if: needs.build.outputs.mode == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.build.outputs.version }}
+          name: Miga v${{ needs.build.outputs.version }}
           prerelease: ${{ secrets.RELEASE_KEYSTORE_BASE64 == '' }}
           make_latest: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
           files: dist/*

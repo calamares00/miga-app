@@ -1,29 +1,48 @@
 package org.calamares.miga.ui.search
 
+import androidx.compose.material.icons.filled.AutoAwesome
+import org.calamares.miga.ui.components.rememberAiEnabled
+import org.calamares.miga.ui.components.ResultsHeader
+import org.calamares.miga.ui.components.ActiveFilterChips
+import org.calamares.miga.ui.theme.recipePhotoFrame
+import org.calamares.miga.L10n
+import org.calamares.miga.R
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.FavoriteBorder
+import org.calamares.miga.ui.components.EmptyState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.InputChip
+import org.calamares.miga.data.model.MissingField
+import org.calamares.miga.data.model.RecipeFilter
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -36,6 +55,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +77,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import org.calamares.miga.ui.components.FilterSheetContent
@@ -65,81 +86,145 @@ import org.calamares.miga.ui.components.FilterSheetContent
 @Composable
 fun GlobalSearchScreen(
     viewModel: GlobalSearchViewModel,
-    onRecipeClick: (Long) -> Unit
+    onRecipeClick: (Long) -> Unit,
+    title: String = L10n.str(R.string.search_recipes_2),
+    /** The Favourites tab: only favourites, so that condition is implicit and not offered. */
+    favoritesOnly: Boolean = false,
+    /** Shows a back arrow: the screen was opened on top of another one (from the statistics). */
+    onBack: (() -> Unit)? = null,
+    /** Improve the selected recipes with AI, all together (see BulkPolishScreen). */
+    onPolishRecipes: ((List<Long>) -> Unit)? = null
 ) {
+    val aiEnabled = rememberAiEnabled()
     val uiState by viewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
     val selectedIds by viewModel.selectedIds.collectAsState()
     val selectionMode = selectedIds.isNotEmpty()
     var showFilters by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    /** In Favourites, "only favourites" is implicit and does not count as an applied filter. */
+    val activeCount = filter.activeConditions(ignoreFavorites = favoritesOnly)
+    val filtersApplied = activeCount > 0
 
     Scaffold(
-        contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars),
+        contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars).exclude(WindowInsets.ime),
         topBar = {
             if (selectionMode) {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                    title = { Text("${selectedIds.size} seleccionadas") },
+                    title = { Text(L10n.str(R.string.n_selected, selectedIds.size)) },
                     navigationIcon = {
                         IconButton(onClick = viewModel::clearSelection) {
-                            Icon(Icons.Filled.Close, contentDescription = "Cancelar selección")
+                            Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel_selection))
                         }
                     },
                     actions = {
+                        if (aiEnabled && onPolishRecipes != null) {
+                            IconButton(onClick = {
+                                onPolishRecipes(selectedIds.toList())
+                                viewModel.clearSelection()
+                            }) {
+                                Icon(Icons.Filled.AutoAwesome, contentDescription = L10n.str(R.string.bulk_polish_action))
+                            }
+                        }
                         IconButton(onClick = { viewModel.addSelectedToShoppingList() }) {
-                            Icon(Icons.Filled.ShoppingCart, contentDescription = "Añadir a la lista de la compra")
+                            Icon(Icons.Filled.ShoppingCart, contentDescription = L10n.str(R.string.add_shopping_list))
                         }
                     }
                 )
             } else {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                    title = { Text("Buscar recetas") }
+                    title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    navigationIcon = {
+                        if (onBack != null) {
+                            IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                        }
+                    },
                 )
             }
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // The same header on Search and Favourites: the search field with the filters next to
+            // it, the filters applied as chips and, over the results, how many and their order.
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedTextField(
                     value = filter.query,
                     onValueChange = viewModel::updateQuery,
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Nombre, ingrediente, etiqueta...") },
+                    placeholder = {
+                        Text(
+                            L10n.str(if (favoritesOnly) R.string.search_in_favourites else R.string.name_ingredient_tag),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
                     leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (filter.query.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.updateQuery("") }) {
+                                Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.close_search))
+                            }
+                        }
+                    },
                     singleLine = true
                 )
                 IconButton(onClick = { showFilters = true }) {
-                    BadgedBox(badge = { if (filter.isActive) Badge() }) {
-                        Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
+                    BadgedBox(badge = { if (filtersApplied) Badge { Text(activeCount.toString()) } }) {
+                        Icon(Icons.Filled.FilterList, contentDescription = L10n.str(R.string.filters))
                     }
                 }
+            }
+
+            ActiveFilterChips(
+                filter = filter,
+                onChange = viewModel::applyFilter,
+                onClearAll = { viewModel.clearFilters() },
+                ignoreFavorites = favoritesOnly
+            )
+
+            if (!uiState.isLoading && uiState.results.isNotEmpty()) {
+                ResultsHeader(
+                    count = uiState.results.size,
+                    sort = filter.sortOption,
+                    onSort = { viewModel.applyFilter(filter.copy(sortOption = it)) }
+                )
             }
 
             when {
                 uiState.isLoading -> Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
-                uiState.results.isEmpty() -> Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = if (filter.query.isBlank() && !filter.isActive) {
-                            "Busca por nombre, ingrediente, etiqueta, utensilio o dificultad."
-                        } else {
-                            "No se encontraron recetas."
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(32.dp)
+                uiState.results.isEmpty() -> when {
+                    favoritesOnly && !filtersApplied && filter.query.isBlank() -> EmptyState(
+                        icon = Icons.Filled.FavoriteBorder,
+                        title = L10n.str(R.string.no_favourites_yet),
+                        body = L10n.str(R.string.tap_heart_recipe_keep_handy),
+                        modifier = Modifier.fillMaxSize().weight(1f)
                     )
+                    filter.query.isBlank() && !filter.isActive -> EmptyState(
+                        icon = Icons.Filled.Search,
+                        title = L10n.str(R.string.search_recipes),
+                        body = L10n.str(R.string.name_ingredient_tag_utensil_difficulty),
+                        modifier = Modifier.fillMaxSize().weight(1f)
+                    )
+                    else -> EmptyState(
+                        icon = Icons.Filled.SearchOff,
+                        title = L10n.str(R.string.no_results),
+                        body = L10n.str(R.string.try_other_words_remove_filter),
+                        modifier = Modifier.fillMaxSize().weight(1f)
+                    ) {
+                        if (filtersApplied) OutlinedButton(onClick = { viewModel.clearFilters() }) { Text(L10n.str(R.string.clear_filters)) }
+                    }
                 }
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize().weight(1f),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(uiState.results, key = { it.recipeId }) { result ->
@@ -166,8 +251,10 @@ fun GlobalSearchScreen(
                 availableTags = uiState.availableTags,
                 availableUtensils = uiState.availableUtensils,
                 availableIngredients = uiState.availableIngredients,
+                availableOrigins = uiState.availableOrigins,
                 onApply = { newFilter -> viewModel.applyFilter(newFilter) },
-                onClear = { viewModel.clearFilters() }
+                onClear = { viewModel.clearFilters() },
+                showFavoritesToggle = !favoritesOnly
             )
         }
     }
@@ -202,7 +289,7 @@ private fun SearchResultCard(
             if (selectionMode) {
                 Icon(
                     imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                    contentDescription = if (isSelected) "Seleccionada" else "No seleccionada",
+                    contentDescription = if (isSelected) L10n.str(R.string.selected) else L10n.str(R.string.not_selected),
                     tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
@@ -217,7 +304,7 @@ private fun SearchResultCard(
                             model = result.photoUri,
                             contentDescription = result.recipeName,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize().recipePhotoFrame()
                         )
                     } else {
                         Icon(
@@ -231,7 +318,12 @@ private fun SearchResultCard(
             }
 
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(text = result.recipeName, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                Text(
+                    text = result.recipeName,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Outlined.MenuBook,

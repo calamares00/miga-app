@@ -42,5 +42,8 @@ data class RecipeWithDetails(
             entityColumn = "utensilId"
         )
     )
-    val utensils: List<UtensilEntity>
+    val utensils: List<UtensilEntity>,
+
+    @Relation(parentColumn = "id", entityColumn = "recipeId")
+    val journal: List<RecipeNoteEntity> = emptyList()
 )

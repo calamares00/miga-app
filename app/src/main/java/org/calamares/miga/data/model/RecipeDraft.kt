@@ -1,9 +1,9 @@
 package org.calamares.miga.data.model
 
-/** Modelo editable usado por la pantalla de alta/edición de recetas. */
+/** Editable recipe used by the editor and by every save operation. */
 data class RecipeDraft(
     val id: Long = 0L,
-    /** Solo se rellena al importar, para conservar el uid de la receta exportada; null = generar uno nuevo. */
+    /** Only set on import, to keep the uid of the exported recipe; null generates a new one. */
     val uid: String? = null,
     val recipeBookId: Long,
     val name: String,
@@ -19,7 +19,10 @@ data class RecipeDraft(
     val ingredientGroups: List<IngredientGroup>,
     val stepGroups: List<StepGroup>,
     val tagNames: List<String>,
-    val utensilNames: List<String>
+    val utensilNames: List<String>,
+    /** See Recipe.origin. */
+    val origin: String? = null,
+    val originCountry: String? = null
 )
 
 fun Recipe.toDraft() = RecipeDraft(
@@ -39,7 +42,9 @@ fun Recipe.toDraft() = RecipeDraft(
     ingredientGroups = ingredientGroups,
     stepGroups = stepGroups,
     tagNames = tags,
-    utensilNames = utensils
+    utensilNames = utensils,
+    origin = origin,
+    originCountry = originCountry
 )
 
 fun emptyRecipeDraft(recipeBookId: Long) = RecipeDraft(
@@ -47,7 +52,7 @@ fun emptyRecipeDraft(recipeBookId: Long) = RecipeDraft(
     recipeBookId = recipeBookId,
     name = "",
     categoryName = null,
-    difficulty = Difficulty.MEDIA,
+    difficulty = Difficulty.MEDIUM,
     prepTimeMinutes = null,
     cookTimeMinutes = null,
     servings = 4,

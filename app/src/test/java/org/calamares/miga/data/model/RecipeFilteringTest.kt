@@ -9,7 +9,7 @@ class RecipeFilteringTest {
         id: Long = 1L,
         name: String = "Receta",
         categoryName: String? = null,
-        difficulty: Difficulty = Difficulty.MEDIA,
+        difficulty: Difficulty = Difficulty.MEDIUM,
         tags: List<String> = emptyList(),
         utensils: List<String> = emptyList(),
         ingredientNames: List<String> = emptyList(),
@@ -50,6 +50,13 @@ class RecipeFilteringTest {
     }
 
     @Test
+    fun `query ignores accents`() {
+        val recipes = listOf(recipe(id = 1, name = "Café con leche"), recipe(id = 2, name = "Té"))
+        assertEquals(listOf(1L), recipes.applyFilter(RecipeFilter(query = "cafe")).map { it.id })
+        assertEquals(listOf(2L), recipes.applyFilter(RecipeFilter(query = "TE")).map { it.id })
+    }
+
+    @Test
     fun `query matches an ingredient name`() {
         val recipes = listOf(
             recipe(id = 1, name = "A", ingredientNames = listOf("Tomate")),
@@ -69,11 +76,11 @@ class RecipeFilteringTest {
     @Test
     fun `difficulty filter is an OR across the selected values`() {
         val recipes = listOf(
-            recipe(id = 1, difficulty = Difficulty.FACIL),
-            recipe(id = 2, difficulty = Difficulty.DIFICIL),
-            recipe(id = 3, difficulty = Difficulty.MEDIA)
+            recipe(id = 1, difficulty = Difficulty.EASY),
+            recipe(id = 2, difficulty = Difficulty.HARD),
+            recipe(id = 3, difficulty = Difficulty.MEDIUM)
         )
-        val result = recipes.applyFilter(RecipeFilter(difficulties = setOf(Difficulty.FACIL, Difficulty.DIFICIL)))
+        val result = recipes.applyFilter(RecipeFilter(difficulties = setOf(Difficulty.EASY, Difficulty.HARD)))
         assertEquals(setOf(1L, 2L), result.map { it.id }.toSet())
     }
 

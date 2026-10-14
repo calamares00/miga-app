@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.packs
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,9 +50,9 @@ fun PackDetailScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text("Detalle del pack") },
+                title = { Text(L10n.str(R.string.pack_details)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                 }
             )
         }
@@ -97,7 +99,7 @@ fun PackDetailScreen(
 
                     Text(state.entry.name, style = MaterialTheme.typography.headlineSmall)
                     Text(
-                        "De ${state.entry.author} · ${state.entry.recipeCount} recetas · versión ${state.entry.latestVersion}",
+                        L10n.str(R.string.x_x_recipes_version_x, state.entry.author, state.entry.recipeCount, state.entry.latestVersion),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -105,18 +107,16 @@ fun PackDetailScreen(
                         Text(state.entry.description, style = MaterialTheme.typography.bodyLarge)
                     }
                     Text(
-                        "Este libro se instala de solo lectura: podrás verlo, cocinar sus recetas y " +
-                            "exportarlas, pero no editarlas. Se actualizará cuando el autor publique una " +
-                            "versión nueva.",
+                        L10n.str(R.string.book_installed_read_only_view),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     val buttonLabel = when {
-                        installState is InstallState.Installing -> "Instalando..."
-                        state.installedVersion == null -> "Instalar"
-                        state.entry.latestVersion > state.installedVersion -> "Actualizar"
-                        else -> "Reinstalar"
+                        installState is InstallState.Installing -> L10n.str(R.string.installing)
+                        state.installedVersion == null -> L10n.str(R.string.install)
+                        state.entry.latestVersion > state.installedVersion -> L10n.str(R.string.update)
+                        else -> L10n.str(R.string.reinstall)
                     }
                     Button(
                         onClick = { viewModel.install(context, onInstalled) },

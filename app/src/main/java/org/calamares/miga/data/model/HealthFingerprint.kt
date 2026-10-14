@@ -3,9 +3,8 @@ package org.calamares.miga.data.model
 import java.security.MessageDigest
 
 /**
- * Huella de ingredientes+pasos usada para invalidar la valoración de salud cacheada de una receta
- * (ver HealthRating) cuando su contenido cambia. Extraída como función pura (sin depender de
- * RecipeRepository/AppDatabase) para poder probarla con un test unitario normal.
+ * Fingerprint of a recipe's ingredients and steps, used to invalidate the cached AI health rating
+ * and nutrition estimate when the content changes. A pure function so it can be unit tested.
  */
 object HealthFingerprint {
     fun compute(ingredientGroups: List<IngredientGroup>, stepGroups: List<StepGroup>): String {

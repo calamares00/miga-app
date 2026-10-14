@@ -1,133 +1,279 @@
 package org.calamares.miga.ui.settings
 
-import android.content.Context
+import androidx.compose.foundation.selection.toggleable
+import org.calamares.miga.ui.components.ButtonContent
+import androidx.compose.material.icons.filled.Tour
+import androidx.compose.material3.Switch
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.semantics.Role
+import kotlinx.coroutines.launch
+import org.calamares.miga.MigaApp
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.Policy
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import org.calamares.miga.BuildConfig
+import org.calamares.miga.L10n
+import org.calamares.miga.R
+import org.calamares.miga.data.model.MarkdownDocument
+import org.calamares.miga.data.support.AiContentReport
+import org.calamares.miga.ui.components.MarkdownBlocks
+import org.calamares.miga.ui.components.readDocumentAsset
+import org.calamares.miga.ui.components.rememberAiEnabled
+import java.text.Normalizer
+
+/** Marks a help topic that only applies when AI is turned on ("## ✨ Ideas {ai}"). */
+private const val AI_ONLY_MARKER = "{ai}"
+
+/** A help topic: a "## " section of the help document, with its leading emoji split off. */
+private data class HelpTopic(val emoji: String?, val title: String, val blocks: List<MarkdownDocument.Block>, val searchText: String)
+
+private fun helpTopics(markdown: String, aiEnabled: Boolean): List<HelpTopic> =
+    MarkdownDocument.sections(markdown)
+        .filter { it.title.isNotBlank() }
+        .filter { aiEnabled || !it.title.trimEnd().endsWith(AI_ONLY_MARKER) }
+        .map { section ->
+            val title = section.title.trimEnd().removeSuffix(AI_ONLY_MARKER).trim()
+            val firstWord = title.substringBefore(' ')
+            val emoji = firstWord.takeIf { word -> word.isNotEmpty() && word != title && word.none { it.isLetterOrDigit() } }
+            val name = if (emoji != null) title.removePrefix(emoji).trim() else title
+            HelpTopic(emoji, name, section.blocks, normalizeForSearch(name + " " + section.blocks.joinToString(" ") { it.text }))
+        }
+
+/** Lower case without accents or formatting marks, so "economia" finds "Economía". */
+private fun normalizeForSearch(text: String): String =
+    Normalizer.normalize(text.lowercase(), Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "").replace("*", "")
 
 /**
- * TODO: sustituir por el enlace real de donación (PayPal.me, Ko-fi...) antes de publicar la app.
- * Se le añade el importe al final, ej. "$DONATION_BASE_URL/0.99".
+ * Help topics from the help document in the app language (assets/docs), as expandable cards with
+ * a search box, followed by the ways to get in touch.
  */
-private const val DONATION_BASE_URL = "https://TODO_DONATION_URL"
-private val DONATION_AMOUNTS = listOf("0.99", "2.99", "4.99", "9.99")
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HelpScreen(onBack: () -> Unit) {
+fun HelpScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit, onOpenChangelog: (() -> Unit)?) {
     val context = LocalContext.current
+    val aiEnabled = rememberAiEnabled()
+    val topics = remember(aiEnabled) { helpTopics(readDocumentAsset(context, L10n.str(R.string.help_asset)), aiEnabled) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var expanded by rememberSaveable { mutableStateOf(listOf<String>()) }
+    val normalizedQuery = normalizeForSearch(query.trim())
+    val searching = normalizedQuery.isNotEmpty()
+    val shown = if (searching) topics.filter { normalizedQuery in it.searchText } else topics
 
     Scaffold(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text("Ayuda y soporte") },
+                title = { Text(L10n.str(R.string.help_support)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                 }
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            HelpSection(
-                title = "Libros de recetas",
-                body = "Cada libro es el recetario de una persona (por ejemplo Josi o Helen), con su propia portada. " +
-                    "Cuando tienes un libro abierto, las recetas nuevas que crees se guardan ahí por defecto. " +
-                    "Puedes mover una receta a otro libro desde su menú de opciones (⋮)."
-            )
-            HelpSection(
-                title = "Categorías, etiquetas y utensilios",
-                body = "Las recetas se agrupan por categoría en el listado. Puedes añadir, renombrar o borrar " +
-                    "categorías, utensilios e ingredientes desde Ajustes → Gestionar."
-            )
-            HelpSection(
-                title = "Ingredientes",
-                body = "Al escribir el nombre de un ingrediente en una receta, la app sugiere los que ya has " +
-                    "usado antes para que no tengas que volver a escribirlos."
-            )
-            HelpSection(
-                title = "Modo cocina",
-                body = "Desde una receta con pasos, pulsa \"Modo cocina\" para verlos en pantalla completa, uno " +
-                    "a uno, sin que la pantalla se apague mientras cocinas."
-            )
-            HelpSection(
-                title = "Exportar e importar",
-                body = "Desde una receta puedes exportarla como texto, PDF o JSON. Desde un libro puedes " +
-                    "exportarlo entero. Y desde Ajustes puedes hacer o restaurar una copia de seguridad completa."
-            )
-            HelpSection(
-                title = "Añadir receta con foto (beta)",
-                body = "Desde el menú de un libro, \"Añadir con foto\" reconoce el texto de una foto (cámara o " +
-                    "galería) con Google Gemini y precarga el editor para que solo tengas que revisarlo antes de " +
-                    "guardar. Necesita conexión a internet y tu propia API key gratuita de Gemini, configurable " +
-                    "en Ajustes → Importar con IA; sin ella no se envía ninguna foto a ningún sitio."
-            )
-            HelpSection(
-                title = "Bloqueo biométrico",
-                body = "Actívalo en Ajustes → Seguridad para que la app pida tu huella, rostro o PIN cada vez " +
-                    "que la abras."
-            )
-
-            HorizontalDivider()
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Apoya la app", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = "Si te resulta útil, puedes invitarnos a un café con una pequeña donación.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    DONATION_AMOUNTS.forEach { amount ->
-                        OutlinedButton(onClick = { openDonationLink(context, amount) }) {
-                            Text("${amount.replace('.', ',')} €")
+            item {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = { Text(L10n.str(R.string.search_help)) },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (query.isNotEmpty()) {
+                            IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.clear)) }
                         }
-                    }
+                    },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
+                )
+            }
+            if (shown.isEmpty()) {
+                item {
+                    Text(
+                        L10n.str(R.string.help_no_results),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
                 }
+            }
+            items(shown, key = { it.title }) { topic ->
+                HelpTopicCard(
+                    topic = topic,
+                    // While searching, every match is open so the text found is visible.
+                    expanded = searching || topic.title in expanded,
+                    onToggle = { expanded = if (topic.title in expanded) expanded - topic.title else expanded + topic.title }
+                )
+            }
+            item { WelcomeTourCard() }
+            item {
+                ContactCard(
+                    onReport = {
+                        val url = AiContentReport.targetUrl(L10n.str(R.string.miga_support), L10n.str(R.string.version_miga_x_2, BuildConfig.VERSION_NAME))
+                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                    },
+                    onOpenPrivacy = onOpenPrivacy,
+                    onOpenChangelog = onOpenChangelog
+                )
             }
         }
     }
 }
 
 @Composable
-private fun HelpSection(title: String, body: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun HelpTopicCard(topic: HelpTopic, expanded: Boolean, onToggle: () -> Unit) {
+    val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "helpArrow")
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onToggle)
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(topic.emoji ?: "•", style = MaterialTheme.typography.titleMedium)
+                }
+                Spacer(modifier = Modifier.width(14.dp))
+                Text(topic.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Icon(
+                    Icons.Filled.ExpandMore,
+                    contentDescription = L10n.str(if (expanded) R.string.expanded else R.string.collapsed),
+                    modifier = Modifier.rotate(rotation)
+                )
+            }
+            AnimatedVisibility(visible = expanded) {
+                MarkdownBlocks(
+                    blocks = topic.blocks,
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                )
+            }
+        }
     }
 }
 
-private fun openDonationLink(context: Context, amount: String) {
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("$DONATION_BASE_URL/$amount"))
-    runCatching { context.startActivity(intent) }
+/** Shows the welcome tour again on the next start, for whoever wants to see it again. */
+@Composable
+private fun WelcomeTourCard() {
+    val context = LocalContext.current
+    val settings = remember { (context.applicationContext as MigaApp).settingsRepository }
+    val scope = rememberCoroutineScope()
+    val enabled by settings.observeWelcomeOnNextStart().collectAsState(initial = false)
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(value = enabled, role = Role.Switch) { checked -> scope.launch { settings.setWelcomeOnNextStart(checked) } }
+                .padding(18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Filled.Tour, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Column(modifier = Modifier.weight(1f).padding(horizontal = 14.dp)) {
+                Text(L10n.str(R.string.welcome_again_title), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    L10n.str(if (enabled) R.string.welcome_again_on else R.string.welcome_again_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(checked = enabled, onCheckedChange = null)
+        }
+    }
+}
+
+@Composable
+private fun ContactCard(onReport: () -> Unit, onOpenPrivacy: () -> Unit, onOpenChangelog: (() -> Unit)?) {
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp).navigationBarsPadding()
+    ) {
+        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(L10n.str(R.string.help_contact_title), style = MaterialTheme.typography.titleMedium)
+            Text(L10n.str(R.string.found_bug_have_suggestion_write), style = MaterialTheme.typography.bodyMedium)
+            FilledTonalButton(onClick = onReport, modifier = Modifier.fillMaxWidth()) {
+                ButtonContent(Icons.Filled.BugReport, L10n.str(R.string.report_problem))
+            }
+            OutlinedButton(onClick = onOpenPrivacy, modifier = Modifier.fillMaxWidth()) {
+                ButtonContent(Icons.Filled.Policy, L10n.str(R.string.privacy_policy))
+            }
+            if (onOpenChangelog != null) {
+                OutlinedButton(onClick = onOpenChangelog, modifier = Modifier.fillMaxWidth()) {
+                    ButtonContent(Icons.Filled.NewReleases, L10n.str(R.string.whats_new))
+                }
+            }
+            Text(
+                L10n.str(R.string.version_miga_x_2, BuildConfig.VERSION_NAME),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+            )
+        }
+    }
 }

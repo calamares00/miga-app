@@ -31,7 +31,9 @@ data class GlobalSearchUiState(
     val availableCategories: List<String> = emptyList(),
     val availableTags: List<String> = emptyList(),
     val availableUtensils: List<String> = emptyList(),
-    val availableIngredients: List<String> = emptyList()
+    val availableIngredients: List<String> = emptyList(),
+    /** Country codes of the origins the recipes have, for the origin filter. */
+    val availableOrigins: List<String> = emptyList()
 )
 
 private data class FilterOptions(
@@ -41,9 +43,15 @@ private data class FilterOptions(
     val ingredientNames: List<String>
 )
 
-class GlobalSearchViewModel(private val repository: RecipeRepository) : ViewModel() {
+class GlobalSearchViewModel(
+    private val repository: RecipeRepository,
+    /** True on the Favourites tab: "only favourites" is fixed and clearing filters keeps it. */
+    private val initialOnlyFavorites: Boolean = false,
+    /** Filter to start with, when opened from the statistics (see SearchRequests). */
+    initialFilter: RecipeFilter? = null
+) : ViewModel() {
 
-    private val _filter = MutableStateFlow(RecipeFilter())
+    private val _filter = MutableStateFlow(initialFilter ?: RecipeFilter(onlyFavorites = initialOnlyFavorites))
     val filter: StateFlow<RecipeFilter> = _filter
 
     private val filterOptions = combine(
@@ -64,7 +72,8 @@ class GlobalSearchViewModel(private val repository: RecipeRepository) : ViewMode
             availableCategories = options.categories.map { it.name },
             availableTags = options.tags.map { it.name },
             availableUtensils = options.utensils.map { it.name },
-            availableIngredients = options.ingredientNames
+            availableIngredients = options.ingredientNames,
+            availableOrigins = recipes.mapNotNull { it.originCountry }.distinct()
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GlobalSearchUiState())
 
@@ -84,8 +93,9 @@ class GlobalSearchViewModel(private val repository: RecipeRepository) : ViewMode
                 utensils = emptySet(),
                 tags = emptySet(),
                 ingredients = emptySet(),
-                onlyFavorites = false
-            )
+                origins = emptySet(),
+                onlyFavorites = initialOnlyFavorites
+            ).withoutStatsConditions()
         }
     }
 
@@ -104,7 +114,9 @@ class GlobalSearchViewModel(private val repository: RecipeRepository) : ViewMode
         _selectedIds.value = emptySet()
     }
 
-    /** Añade los ingredientes de todas las recetas seleccionadas a la lista de la compra y sale de selección. */
+    /**
+     * Adds the ingredients of every selected recipe to the shopping list and leaves selection mode.
+     */
     fun addSelectedToShoppingList() {
         viewModelScope.launch {
             val ids = _selectedIds.value

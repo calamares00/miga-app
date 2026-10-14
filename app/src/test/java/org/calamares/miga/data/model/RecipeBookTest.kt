@@ -4,7 +4,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Cubre la regla de solo-lectura de los packs (ver Fase 2 de packs de recetas): isPack se deriva de packId, nunca se guarda aparte. */
+/**
+ * Covers the read-only rule of packs: isPack is derived from packId and never stored separately.
+ */
 class RecipeBookTest {
 
     @Test

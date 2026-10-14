@@ -5,6 +5,7 @@ import org.calamares.miga.data.model.Ingredient
 import org.calamares.miga.data.model.IngredientGroup
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.RecipeDraft
+import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.StepGroup
 
@@ -22,19 +23,26 @@ fun Recipe.toExportDto() = RecipeExportDto(
     source = source,
     isFavorite = isFavorite,
     ingredientGroups = ingredientGroups.map { group ->
-        IngredientGroupDto(group.name, group.ingredients.map { IngredientDto(it.name, it.quantity, it.unit) })
+        IngredientGroupDto(group.name, group.ingredients.map { IngredientDto(it.name, it.quantity, it.unit, it.optional) })
     },
     stepGroups = stepGroups.map { group -> StepGroupDto(group.name, group.instructions) },
     tags = tags,
     utensils = utensils,
     photos = photos.mapIndexed { index, photo -> PhotoExportDto(fileName = "$index.jpg", isCover = photo.isCover) },
-    health = healthRating?.let { RecipeHealthDto(it.color.name, it.description, it.fingerprint, it.analyzedAt) }
+    health = healthRating?.let { RecipeHealthDto(it.color.name, it.description, it.fingerprint, it.analyzedAt) },
+    nutrition = nutritionInfo?.let {
+        RecipeNutritionDto(it.caloriesPerServing, it.proteinGrams, it.carbsGrams, it.fatGrams, it.fingerprint, it.analyzedAt)
+    },
+    rating = rating,
+    origin = origin,
+    originCountry = originCountry,
+    journal = journal.map { JournalNoteDto(it.text, it.createdAt) }
 )
 
 /**
- * [recipeBookId] debe resolverse antes (buscar/crear el libro por [RecipeExportDto.recipeBookName]).
- * [photos] son las fotos ya copiadas al almacenamiento interno del dispositivo (extraídas del ZIP
- * de importación, si lo había); vacío si se importó un .json plano sin fotos.
+ * Converts an imported recipe into a draft for [recipeBookId], which must already be resolved from
+ * [RecipeExportDto.recipeBookName]. [photos] are the photos already copied to internal storage
+ * (empty for a plain JSON import).
  */
 fun RecipeExportDto.toDraft(recipeBookId: Long, photos: List<RecipePhoto> = emptyList()) = RecipeDraft(
     id = 0L,
@@ -42,7 +50,7 @@ fun RecipeExportDto.toDraft(recipeBookId: Long, photos: List<RecipePhoto> = empt
     recipeBookId = recipeBookId,
     name = name,
     categoryName = categoryName,
-    difficulty = runCatching { Difficulty.valueOf(difficulty) }.getOrDefault(Difficulty.MEDIA),
+    difficulty = Difficulty.parse(difficulty),
     prepTimeMinutes = prepTimeMinutes,
     cookTimeMinutes = cookTimeMinutes,
     servings = servings,
@@ -51,9 +59,11 @@ fun RecipeExportDto.toDraft(recipeBookId: Long, photos: List<RecipePhoto> = empt
     isFavorite = isFavorite,
     photos = photos,
     ingredientGroups = ingredientGroups.map { dto ->
-        IngredientGroup(dto.name, dto.ingredients.map { Ingredient(it.name, it.quantity, it.unit) })
+        IngredientGroup(dto.name, dto.ingredients.map { Ingredient(it.name, it.quantity, it.unit, it.optional) })
     },
     stepGroups = stepGroups.map { dto -> StepGroup(dto.name, dto.instructions) },
     tagNames = tags,
-    utensilNames = utensils
+    utensilNames = utensils,
+    origin = origin,
+    originCountry = RecipeOrigin.normalizeCountry(originCountry)
 )

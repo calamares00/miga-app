@@ -1,5 +1,9 @@
 package org.calamares.miga.ui.components
 
+import org.calamares.miga.ui.theme.recipePhotoFrame
+import org.calamares.miga.L10n
+import org.calamares.miga.R
+import org.calamares.miga.data.model.RecipeOrigin
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.LocalIndication
@@ -42,14 +46,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import org.calamares.miga.data.model.RecipeSummary
 
 /**
- * Tarjeta de receta para las vistas en lista (Normal y Compacta). [compact] oculta la foto para
- * que el título quepa entero y el listado sea más denso; en modo selección múltiple se sustituye
- * el hueco de la foto/icono por una casilla y se ocultan las acciones rápidas.
+ * Recipe card for the list views (Normal and Compact). [compact] hides the photo to give the title
+ * more width and make the list denser. In multi-select mode the photo slot becomes a checkbox and
+ * quick actions are hidden.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -88,7 +93,7 @@ fun RecipeCard(
             if (selectionMode) {
                 Icon(
                     imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                    contentDescription = if (isSelected) "Seleccionada" else "No seleccionada",
+                    contentDescription = if (isSelected) L10n.str(R.string.selected) else L10n.str(R.string.not_selected),
                     tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else if (!compact) {
@@ -103,7 +108,7 @@ fun RecipeCard(
                             model = recipe.coverPhotoUri,
                             contentDescription = recipe.name,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxSize().recipePhotoFrame()
                         )
                     } else {
                         Icon(
@@ -120,9 +125,11 @@ fun RecipeCard(
                 Text(
                     text = recipe.name,
                     style = MaterialTheme.typography.titleMedium,
-                    maxLines = if (compact) Int.MAX_VALUE else 1
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    RecipeOrigin.flag(recipe.originCountry)?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                     Text(
                         text = recipe.difficulty.label,
                         style = MaterialTheme.typography.bodyMedium,
@@ -150,7 +157,7 @@ fun RecipeCard(
                 IconButton(onClick = onToggleFavorite) {
                     Icon(
                         imageVector = if (recipe.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        contentDescription = "Favorita",
+                        contentDescription = L10n.str(R.string.favourite),
                         tint = if (recipe.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -160,18 +167,18 @@ fun RecipeCard(
                         IconButton(onClick = { showMenu = true }) {
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
-                                contentDescription = "Más opciones",
+                                contentDescription = L10n.str(R.string.more_options),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             DropdownMenuItem(
-                                text = { Text("Editar") },
+                                text = { Text(L10n.str(R.string.edit)) },
                                 leadingIcon = { Icon(Icons.Filled.Edit, null) },
                                 onClick = { showMenu = false; onEditClick() }
                             )
                             DropdownMenuItem(
-                                text = { Text("Borrar", color = MaterialTheme.colorScheme.error) },
+                                text = { Text(L10n.str(R.string.delete), color = MaterialTheme.colorScheme.error) },
                                 leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
                                 onClick = { showMenu = false; onDeleteClick() }
                             )
@@ -183,7 +190,7 @@ fun RecipeCard(
     }
 }
 
-/** Tarjeta de receta para la vista en cuadrícula: foto arriba, título y datos abajo. */
+/** Recipe card for the grid view: photo on top, title and details below. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RecipeGridCard(
@@ -219,7 +226,7 @@ fun RecipeGridCard(
                         model = recipe.coverPhotoUri,
                         contentDescription = recipe.name,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize().recipePhotoFrame()
                     )
                 } else {
                     Icon(
@@ -235,7 +242,7 @@ fun RecipeGridCard(
                 if (selectionMode) {
                     Icon(
                         imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                        contentDescription = if (isSelected) "Seleccionada" else "No seleccionada",
+                        contentDescription = if (isSelected) L10n.str(R.string.selected) else L10n.str(R.string.not_selected),
                         tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
                         modifier = Modifier
                             .align(Alignment.TopStart)
@@ -245,7 +252,7 @@ fun RecipeGridCard(
                     IconButton(onClick = onToggleFavorite, modifier = Modifier.align(Alignment.TopEnd)) {
                         Icon(
                             imageVector = if (recipe.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Favorita",
+                            contentDescription = L10n.str(R.string.favourite),
                             tint = if (recipe.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
                         )
                     }
@@ -253,8 +260,14 @@ fun RecipeGridCard(
             }
 
             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(text = recipe.name, style = MaterialTheme.typography.titleSmall, maxLines = 2)
+                Text(
+                    text = recipe.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    RecipeOrigin.flag(recipe.originCountry)?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                     Text(
                         text = recipe.difficulty.label,
                         style = MaterialTheme.typography.bodySmall,

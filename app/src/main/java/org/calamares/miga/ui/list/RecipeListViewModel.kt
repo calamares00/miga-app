@@ -1,6 +1,12 @@
 package org.calamares.miga.ui.list
 
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.content.Context
+import android.widget.Toast
+import org.calamares.miga.data.export.ExportFormat
+import org.calamares.miga.data.export.FileExports
+import org.calamares.miga.data.export.LibraryImportResult
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +18,20 @@ import org.calamares.miga.data.local.entity.CategoryEntity
 import org.calamares.miga.data.local.entity.TagEntity
 import org.calamares.miga.data.local.entity.UtensilEntity
 import org.calamares.miga.data.model.Recipe
+import org.calamares.miga.data.model.Difficulty
+import org.calamares.miga.data.model.RecipeBookSummary
+import org.calamares.miga.data.model.RecipeDraft
+import org.calamares.miga.data.model.RecipePhoto
+import org.calamares.miga.data.model.formatIngredientText
+import org.calamares.miga.data.model.toDraft
+import org.calamares.miga.data.local.PhotoStorage
+import org.calamares.miga.data.ai.AiKeepAlive
+import org.calamares.miga.data.ai.aiCandidates
+import org.calamares.miga.data.ai.runAi
+import org.calamares.miga.data.health.RecipeHealthResult
+import org.calamares.miga.data.health.analyzeHealthiness
+import org.calamares.miga.data.nutrition.RecipeNutritionResult
+import org.calamares.miga.data.nutrition.analyzeNutrition
 import org.calamares.miga.data.model.RecipeFilter
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.data.model.RecipeSummary
@@ -23,6 +43,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -41,8 +65,15 @@ data class RecipeListUiState(
     val availableTags: List<String> = emptyList(),
     val availableUtensils: List<String> = emptyList(),
     val availableIngredients: List<String> = emptyList(),
-    /** Libro instalado desde un pack (ver RecipeBook.isPack): solo lectura, sin añadir/editar/borrar recetas. */
-    val isPackBook: Boolean = false
+    /** Country codes of the origins the recipes have, for the origin filter. */
+    val availableOrigins: List<String> = emptyList(),
+    /**
+     * Book installed from a pack (see RecipeBook.isPack): read-only, recipes cannot be added,
+     * edited or deleted.
+     */
+    val isPackBook: Boolean = false,
+    /** The book is pinned to the top of the books list. */
+    val isPinned: Boolean = false
 )
 
 private data class FilterOptions(
@@ -60,7 +91,7 @@ private data class RecipeListBase(
 
 class RecipeListViewModel(
     private val repository: RecipeRepository,
-    private val bookId: Long,
+    val bookId: Long,
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
@@ -72,6 +103,23 @@ class RecipeListViewModel(
 
     fun setViewMode(mode: RecipeListViewMode) {
         viewModelScope.launch { settingsRepository.setRecipeListViewMode(mode) }
+    }
+
+    /** Categories collapsed by the user in this book, remembered between sessions. */
+    val collapsedCategories: StateFlow<Set<String>> = settingsRepository.observeCollapsedCategories(bookId)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
+
+    fun toggleCategory(categoryName: String) {
+        val current = collapsedCategories.value
+        setCollapsed(if (categoryName in current) current - categoryName else current + categoryName)
+    }
+
+    fun collapseAllCategories() = setCollapsed(uiState.value.groups.map { it.categoryName }.toSet())
+
+    fun expandAllCategories() = setCollapsed(emptySet())
+
+    private fun setCollapsed(categories: Set<String>) {
+        viewModelScope.launch { settingsRepository.setCollapsedCategories(bookId, categories) }
     }
 
     private val _selectedIds = MutableStateFlow<Set<Long>>(emptySet())
@@ -96,28 +144,254 @@ class RecipeListViewModel(
         }
     }
 
-    fun exportSelected(context: Context) {
+    fun exportSelected(context: Context, format: ExportFormat) {
         viewModelScope.launch {
             val ids = _selectedIds.value
             val book = repository.getRecipeBookOnce(bookId)
             val recipes = repository.getRecipesForBookOnce(bookId).filter { it.id in ids }
             if (recipes.isNotEmpty()) {
-                RecipeExporter.shareRecipes(context, "recetas_seleccionadas", book, recipes)
+                val started = if (recipes.size == 1) {
+                    FileExports.exportRecipe(context, recipes.single(), format)
+                } else {
+                    FileExports.exportSelection(context, L10n.str(R.string.file_name_selected_recipes), book, recipes, format)
+                }
+                if (!started) {
+                    Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
             }
             _selectedIds.value = emptySet()
         }
     }
 
+    // --- Bulk editing of the selected recipes ---
+
+    fun selectAll() {
+        _selectedIds.value = uiState.value.groups.flatMap { group -> group.recipes.map { it.id } }.toSet()
+    }
+
+    /** Books recipes can be moved or copied to: all except this one and packs (read-only). */
+    val targetBooks: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
+        .map { books -> books.filter { it.id != bookId && !it.isPack } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val categoryNames: StateFlow<List<String>> = repository.observeCategories()
+        .map { categories -> categories.map { it.name } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * Whether "Recalculate health and nutrition" can be offered: AI on and at least one of the two
+     * enabled.
+     */
+    val aiRecalculationAvailable: StateFlow<Boolean> = combine(
+        settingsRepository.observeAiHealthEnabled(),
+        settingsRepository.observeAiNutritionEnabled()
+    ) { health, nutrition -> health || nutrition }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    private suspend fun takeSelectedRecipes(): List<Recipe> {
+        val ids = _selectedIds.value
+        _selectedIds.value = emptySet()
+        return repository.getRecipesForBookOnce(bookId).filter { it.id in ids }
+    }
+
+    /**
+     * Applies [transform] to every selected recipe and saves it through the normal path (sync
+     * included).
+     */
+    private fun updateSelected(onMessage: (String) -> Unit, transform: (RecipeDraft) -> RecipeDraft) {
+        viewModelScope.launch {
+            val recipes = takeSelectedRecipes()
+            recipes.forEach { repository.saveRecipe(transform(it.toDraft())) }
+            onMessage(L10n.str(R.string.bulk_updated_n, recipes.size))
+        }
+    }
+
+    fun bulkSetCategory(categoryName: String?, onMessage: (String) -> Unit) =
+        updateSelected(onMessage) { it.copy(categoryName = categoryName?.trim()?.takeIf { name -> name.isNotEmpty() }) }
+
+    fun bulkSetDifficulty(difficulty: Difficulty, onMessage: (String) -> Unit) =
+        updateSelected(onMessage) { it.copy(difficulty = difficulty) }
+
+    /**
+     * Changes the servings. With [scaleIngredients] the quantities are rescaled so the recipe still
+     * adds up.
+     */
+    fun bulkSetServings(servings: Int, scaleIngredients: Boolean, onMessage: (String) -> Unit) =
+        updateSelected(onMessage) { draft ->
+            val factor = servings.toDouble() / draft.servings.coerceAtLeast(1)
+            draft.copy(
+                servings = servings,
+                ingredientGroups = if (!scaleIngredients || factor == 1.0) draft.ingredientGroups else draft.ingredientGroups.map { group ->
+                    group.copy(ingredients = group.ingredients.map { ingredient -> ingredient.copy(quantity = ingredient.quantity?.let { roundQuantity(it * factor) }) })
+                }
+            )
+        }
+
+    fun bulkSetSource(source: String, onMessage: (String) -> Unit) =
+        updateSelected(onMessage) { it.copy(source = source.trim()) }
+
+    fun bulkSetFavorite(favorite: Boolean, onMessage: (String) -> Unit) {
+        viewModelScope.launch {
+            val recipes = takeSelectedRecipes()
+            recipes.forEach { repository.toggleFavorite(it.id, favorite) }
+            onMessage(L10n.str(R.string.bulk_updated_n, recipes.size))
+        }
+    }
+
+    fun bulkMoveTo(targetBookId: Long, onMessage: (String) -> Unit) {
+        viewModelScope.launch {
+            val recipes = takeSelectedRecipes()
+            recipes.forEach { repository.moveRecipeToBook(it.id, targetBookId) }
+            onMessage(L10n.str(R.string.bulk_moved_n, recipes.size))
+        }
+    }
+
+    /**
+     * Copies the recipes to another book as new recipes with their own photo copies, so deleting
+     * one never leaves the other without a photo.
+     */
+    fun bulkCopyTo(context: Context, targetBookId: Long, onMessage: (String) -> Unit) {
+        val appContext = context.applicationContext
+        viewModelScope.launch {
+            val recipes = takeSelectedRecipes()
+            recipes.forEach { recipe ->
+                val photos = withContext(Dispatchers.IO) {
+                    recipe.photos.mapNotNull { photo ->
+                        PhotoStorage.readBytes(photo.uri)
+                            ?.let { bytes -> PhotoStorage.copyBytesToInternalStorage(appContext, bytes) }
+                            ?.let { RecipePhoto(it, photo.isCover) }
+                    }
+                }
+                repository.saveRecipe(recipe.toDraft().copy(id = 0L, uid = null, recipeBookId = targetBookId, photos = photos))
+            }
+            onMessage(L10n.str(R.string.bulk_copied_n, recipes.size))
+        }
+    }
+
+    fun bulkAddToShoppingList(onMessage: (String) -> Unit) {
+        viewModelScope.launch {
+            val recipes = takeSelectedRecipes()
+            repository.addIngredientsToShoppingList(recipes.flatMap { recipe -> recipe.ingredientGroups.flatMap { it.ingredients } })
+            onMessage(L10n.str(R.string.bulk_added_to_shopping_n, recipes.size))
+        }
+    }
+
+    /**
+     * Recalculates with AI the health rating and/or nutrition (as enabled in Settings) of the
+     * selected recipes.
+     */
+    fun bulkRecalculateAi(onMessage: (String) -> Unit) {
+        viewModelScope.launch {
+            val recipes = takeSelectedRecipes()
+            if (settingsRepository.aiCandidates().isEmpty()) {
+                onMessage(L10n.str(R.string.ai_no_provider))
+                return@launch
+            }
+            val doHealth = settingsRepository.observeAiHealthEnabled().first()
+            val doNutrition = settingsRepository.observeAiNutritionEnabled().first()
+            onMessage(L10n.str(R.string.bulk_ai_started_n, recipes.size))
+            var failed = 0
+            AiKeepAlive.hold(L10n.str(R.string.ai_task_bulk_analysis)) {
+                recipes.forEachIndexed { index, recipe ->
+                    progress(index + 1, recipes.size)
+                    val ingredientsText = recipe.ingredientGroups.joinToString("\n") { group ->
+                        group.name?.let { "$it:\n" }.orEmpty() + group.ingredients.joinToString("\n") {
+                            "- " + formatIngredientText(it.name, it.quantity, it.unit)
+                        }
+                    }
+                    val stepsText = recipe.stepGroups.joinToString("\n") { group ->
+                        group.name?.let { "$it:\n" }.orEmpty() + group.instructions.joinToString("\n") { "- $it" }
+                    }
+                    if (doHealth) {
+                        val result = settingsRepository.runAi<RecipeHealthResult>(
+                            errorOf = { (it as? RecipeHealthResult.Error)?.reason },
+                            error = { RecipeHealthResult.Error(it) }
+                        ) { ai -> ai.analyzeHealthiness(ingredientsText, stepsText) }
+                        if (result is RecipeHealthResult.Success) {
+                            val fingerprint = repository.computeHealthFingerprint(recipe.ingredientGroups, recipe.stepGroups)
+                            repository.saveHealthRating(recipe.id, result.colorLevel, result.description, fingerprint, System.currentTimeMillis())
+                        } else {
+                            failed++
+                        }
+                    }
+                    if (doNutrition) {
+                        val result = settingsRepository.runAi<RecipeNutritionResult>(
+                            errorOf = { (it as? RecipeNutritionResult.Error)?.reason },
+                            error = { RecipeNutritionResult.Error(it) }
+                        ) { ai -> ai.analyzeNutrition(ingredientsText, stepsText, recipe.servings) }
+                        if (result is RecipeNutritionResult.Success) {
+                            val fingerprint = repository.computeNutritionFingerprint(recipe.ingredientGroups, recipe.stepGroups)
+                            repository.saveNutritionInfo(
+                                recipe.id, result.caloriesPerServing, result.proteinGrams, result.carbsGrams, result.fatGrams,
+                                fingerprint, System.currentTimeMillis()
+                            )
+                        } else {
+                            failed++
+                        }
+                    }
+                }
+            }
+            val summary = if (failed == 0) {
+                L10n.str(R.string.bulk_ai_done_n, recipes.size)
+            } else {
+                L10n.str(R.string.bulk_ai_done_with_errors, recipes.size, failed)
+            }
+            onMessage(summary)
+            AiKeepAlive.announceIfInBackground(summary)
+        }
+    }
+
+    /** A file with several recipes waiting for the user to choose where they go (see [confirmCollectionImport]). */
+    private val _pendingCollection = MutableStateFlow<RecipeImportResult.Collection?>(null)
+    val pendingCollection: StateFlow<RecipeImportResult.Collection?> = _pendingCollection
+
+    /**
+     * Imports a Miga file: one recipe goes straight into this book; an exported book or selection
+     * asks first whether to add its recipes here, to another book or as a new book.
+     */
     fun importRecipeFile(context: Context, uri: Uri, onMessage: (String) -> Unit) {
         viewModelScope.launch {
             when (val result = RecipeExporter.importRecipe(context, uri)) {
                 is RecipeImportResult.Success -> {
                     val recipeId = repository.saveRecipe(result.recipe.toDraft(bookId, result.photos))
                     RecipeExporter.applyHealthFromImport(repository, recipeId, result.recipe.health)
-                    onMessage("Receta importada")
+                    RecipeExporter.applyJournalFromImport(repository, recipeId, result.recipe.journal)
+                    if (result.recipe.rating != null) repository.setRating(recipeId, result.recipe.rating)
+                    onMessage(L10n.str(R.string.recipe_imported))
                 }
-                is RecipeImportResult.Error -> onMessage("No se pudo importar: ${result.reason}")
+                is RecipeImportResult.Collection -> {
+                    if (result.parsed.dto.recipes.size == 1) {
+                        importCollection(context, result, bookId, onMessage)
+                    } else {
+                        _pendingCollection.value = result
+                    }
+                }
+                is RecipeImportResult.Error -> onMessage(L10n.str(R.string.couldnt_import_x, result.reason))
             }
+        }
+    }
+
+    /** [targetBookId] null imports the recipes as their own book. */
+    fun confirmCollectionImport(context: Context, targetBookId: Long?, onMessage: (String) -> Unit) {
+        val collection = _pendingCollection.value ?: return
+        _pendingCollection.value = null
+        viewModelScope.launch { importCollection(context, collection, targetBookId, onMessage) }
+    }
+
+    fun dismissCollectionImport() {
+        _pendingCollection.value = null
+    }
+
+    private suspend fun importCollection(
+        context: Context,
+        collection: RecipeImportResult.Collection,
+        targetBookId: Long?,
+        onMessage: (String) -> Unit
+    ) {
+        when (val result = RecipeExporter.importParsedLibrary(context, collection.parsed, repository, targetBookId)) {
+            is LibraryImportResult.Success -> onMessage(L10n.str(R.string.imported_n_recipes, result.count))
+            is LibraryImportResult.Error -> onMessage(L10n.str(R.string.couldnt_import_x, result.reason))
         }
     }
 
@@ -144,7 +418,9 @@ class RecipeListViewModel(
             availableTags = data.options.tags.map { it.name },
             availableUtensils = data.options.utensils.map { it.name },
             availableIngredients = data.options.ingredientNames,
-            isPackBook = book?.isPack == true
+            availableOrigins = data.recipes.mapNotNull { it.originCountry }.distinct(),
+            isPackBook = book?.isPack == true,
+            isPinned = book?.isPinned == true
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecipeListUiState())
 
@@ -164,8 +440,9 @@ class RecipeListViewModel(
                 utensils = emptySet(),
                 tags = emptySet(),
                 ingredients = emptySet(),
+                origins = emptySet(),
                 onlyFavorites = false
-            )
+            ).withoutStatsConditions()
         }
     }
 
@@ -177,20 +454,21 @@ class RecipeListViewModel(
         viewModelScope.launch { repository.deleteRecipe(id) }
     }
 
-    fun exportBook(context: Context) {
+    /**
+     * Starts exporting the whole book in [FileExports], which outlives this screen, shows the
+     * progress and offers to save or share the file when it is ready.
+     */
+    fun exportBook(context: Context, format: ExportFormat) {
         viewModelScope.launch {
             val book = repository.getRecipeBookOnce(bookId) ?: return@launch
-            val recipes = repository.getRecipesForBookOnce(bookId)
-            RecipeExporter.shareBook(context, book, recipes)
+            if (!FileExports.exportBook(context, book, format) { repository.getRecipesForBookOnce(bookId) }) {
+                Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    fun exportBookAsPdf(context: Context) {
-        viewModelScope.launch {
-            val book = repository.getRecipeBookOnce(bookId) ?: return@launch
-            val recipes = repository.getRecipesForBookOnce(bookId)
-            RecipeExporter.shareBookAsPdf(context, book, recipes)
-        }
+    fun togglePinned() {
+        viewModelScope.launch { repository.setRecipeBookPinned(bookId, !uiState.value.isPinned) }
     }
 
     private fun buildGroups(recipes: List<Recipe>, filter: RecipeFilter): List<RecipeGroup> {
@@ -200,3 +478,6 @@ class RecipeListViewModel(
             .map { (category, recipesInGroup) -> RecipeGroup(category, recipesInGroup.map { it.toSummary() }) }
     }
 }
+
+/** Rounds a rescaled quantity to something sensible for a recipe (at most 2 decimals). */
+internal fun roundQuantity(value: Double): Double = kotlin.math.round(value * 100) / 100

@@ -22,5 +22,10 @@ data class RecipePhotoEntity(
     val recipeId: Long,
     val uri: String,
     val position: Int,
-    val isCover: Boolean
+    val isCover: Boolean,
+    /**
+     * Stable identifier (UUID) used by sync to upload, download and delete this photo on its own.
+     * Nullable only because of the v7 -> v8 migration; every new photo gets one.
+     */
+    val uid: String? = null
 )

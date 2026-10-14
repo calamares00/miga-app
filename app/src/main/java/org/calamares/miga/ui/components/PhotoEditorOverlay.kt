@@ -1,5 +1,11 @@
 package org.calamares.miga.ui.components
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.WindowInsets
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.foundation.Canvas
@@ -47,7 +53,28 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import android.text.format.Formatter
+import android.widget.Toast
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Compare
+import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import org.calamares.miga.MigaApp
+import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.data.local.PhotoStorage
+import org.calamares.miga.data.vision.PhotoEnhanceResult
+import org.calamares.miga.data.vision.applyAdjustments
+import org.calamares.miga.data.vision.suggestPhotoAdjustments
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -55,9 +82,13 @@ import kotlinx.coroutines.withContext
 private enum class DragMode { NONE, MOVE, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
 
 /**
- * Editor de foto a pantalla completa: rotar en pasos de 90º y recortar con un marco de ancho y
- * alto libres (arrastrando sus esquinas, como el recorte nativo de Android) antes de guardarla
- * normalizada (JPEG recomprimido y redimensionado, ver [PhotoStorage]) en el almacenamiento interno.
+ * Full-screen photo editor: rotate in 90 degree steps and crop with a free-ratio frame (dragging
+ * its corners, like Android's own cropper) before saving it normalised (recompressed and resized
+ * JPEG, see [PhotoStorage]) to internal storage.
+ *
+ * With AI on, "Improve with AI" asks the model how to correct light and colour (see
+ * [suggestPhotoAdjustments]), applies it on the device and saves the result at the size a phone
+ * needs ([PhotoStorage.saveOptimized]). Holding "Compare" shows the original.
  */
 @Composable
 fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () -> Unit) {
@@ -68,6 +99,41 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
     var boxSize by remember { mutableStateOf(IntSize.Zero) }
     var cropRect by remember { mutableStateOf<Rect?>(null) }
     var dragMode by remember { mutableStateOf(DragMode.NONE) }
+    val aiEnabled = rememberAiEnabled()
+    val scope = rememberCoroutineScope()
+    /** The photo before the AI improvement, null while it has not been improved. */
+    var original by remember { mutableStateOf<Bitmap?>(null) }
+    var enhancing by remember { mutableStateOf(false) }
+    var enhanceError by remember { mutableStateOf<String?>(null) }
+    val compareSource = remember { MutableInteractionSource() }
+    val comparing by compareSource.collectIsPressedAsState()
+
+    fun enhance() {
+        val photo = bitmap ?: return
+        enhancing = true
+        enhanceError = null
+        scope.launch {
+            val settings = (context.applicationContext as MigaApp).settingsRepository
+            val result = settings.runAi<PhotoEnhanceResult>(
+                needsImages = true,
+                errorOf = { (it as? PhotoEnhanceResult.Error)?.reason },
+                error = { PhotoEnhanceResult.Error(it) }
+            ) { ai -> ai.suggestPhotoAdjustments(photo) }
+            when (result) {
+                is PhotoEnhanceResult.Success -> {
+                    val improved = withContext(Dispatchers.Default) { applyAdjustments(photo, result.adjustments) }
+                    // The user may have rotated it meanwhile: the result is only kept for the photo it was made from.
+                    if (bitmap === photo) {
+                        original = photo
+                        bitmap = improved
+                    }
+                }
+                is PhotoEnhanceResult.Error -> enhanceError = result.reason
+                null -> enhanceError = L10n.str(R.string.ai_no_provider)
+            }
+            enhancing = false
+        }
+    }
 
     LaunchedEffect(sourceUri) {
         val loaded = withContext(Dispatchers.IO) { PhotoStorage.loadBitmap(context, sourceUri) }
@@ -87,8 +153,8 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
         null
     }
 
-    // Al cargar la foto (o al rotarla, lo que cambia sus proporciones) el marco de recorte
-    // empieza abarcando toda la imagen; el usuario lo reduce arrastrando las esquinas.
+    // When the photo loads or is rotated (which changes its proportions) the crop frame starts
+    // covering the whole image; the user shrinks it by dragging the corners.
     LaunchedEffect(imageRect) {
         if (imageRect != null) cropRect = imageRect
     }
@@ -96,33 +162,39 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
     val handleRadiusPx = with(density) { 24.dp.toPx() }
     val minCropSizePx = with(density) { 48.dp.toPx() }
 
-    Dialog(onDismissRequest = onCancel, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // Full-screen layer inside the app window rather than a Dialog, so it gets the real system bar
+    // insets and never shows the screen underneath.
+    BackHandler(onBack = onCancel)
+    Box(modifier = Modifier.fillMaxSize()) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onCancel) { Icon(Icons.Filled.Close, contentDescription = "Cancelar") }
+                    IconButton(onClick = onCancel) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel)) }
                     Row {
                         IconButton(
-                            enabled = bmp != null,
+                            enabled = bmp != null && !enhancing,
                             onClick = {
                                 bitmap = bitmap?.let { PhotoStorage.rotateBitmap(it, -90f) }
+                                original = original?.let { PhotoStorage.rotateBitmap(it, -90f) }
                                 cropRect = null
                             }
-                        ) { Icon(Icons.Filled.RotateLeft, contentDescription = "Rotar a la izquierda") }
+                        ) { Icon(Icons.Filled.RotateLeft, contentDescription = L10n.str(R.string.rotate_left)) }
                         IconButton(
-                            enabled = bmp != null,
+                            enabled = bmp != null && !enhancing,
                             onClick = {
                                 bitmap = bitmap?.let { PhotoStorage.rotateBitmap(it, 90f) }
+                                original = original?.let { PhotoStorage.rotateBitmap(it, 90f) }
                                 cropRect = null
                             }
-                        ) { Icon(Icons.Filled.RotateRight, contentDescription = "Rotar a la derecha") }
+                        ) { Icon(Icons.Filled.RotateRight, contentDescription = L10n.str(R.string.rotate_right)) }
                     }
                     IconButton(
-                        enabled = bmp != null && imageRect != null && cropRect != null,
+                        enabled = bmp != null && imageRect != null && cropRect != null && !enhancing,
                         onClick = {
                             val bitmapNow = bmp ?: return@IconButton
                             val rect = cropRect ?: return@IconButton
@@ -133,9 +205,25 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
                             val right = ((rect.right - frame.left) / scale).roundToInt().coerceIn(left + 1, bitmapNow.width)
                             val bottom = ((rect.bottom - frame.top) / scale).roundToInt().coerceIn(top + 1, bitmapNow.height)
                             val cropped = Bitmap.createBitmap(bitmapNow, left, top, right - left, bottom - top)
-                            onSave(PhotoStorage.saveNormalized(context, cropped))
+                            if (original != null) {
+                                val saved = PhotoStorage.saveOptimized(context, cropped)
+                                PhotoStorage.sizeOf(context, sourceUri)?.let { before ->
+                                    Toast.makeText(
+                                        context,
+                                        L10n.str(
+                                            R.string.photo_optimized_x_y,
+                                            Formatter.formatShortFileSize(context, before),
+                                            Formatter.formatShortFileSize(context, saved.bytes)
+                                        ),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                onSave(saved.uri)
+                            } else {
+                                onSave(PhotoStorage.saveNormalized(context, cropped))
+                            }
                         }
-                    ) { Icon(Icons.Filled.Check, contentDescription = "Guardar") }
+                    ) { Icon(Icons.Filled.Check, contentDescription = L10n.str(R.string.save)) }
                 }
 
                 Box(
@@ -148,14 +236,14 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
                 ) {
                     when {
                         loadFailed -> Text(
-                            "No se pudo leer la foto.",
+                            L10n.str(R.string.couldnt_read_photo_2),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.error
                         )
                         bmp == null -> CircularProgressIndicator()
                         else -> {
                             Image(
-                                bitmap = bmp.asImageBitmap(),
+                                bitmap = (original.takeIf { comparing } ?: bmp).asImageBitmap(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Fit,
                                 modifier = Modifier.fillMaxSize()
@@ -245,12 +333,70 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
                     }
                 }
 
+                if (aiEnabled && bmp != null) {
+                    EnhanceBar(
+                        enhanced = original != null,
+                        enhancing = enhancing,
+                        compareSource = compareSource,
+                        onEnhance = { enhance() },
+                        onUndo = {
+                            original?.let { bitmap = it }
+                            original = null
+                        }
+                    )
+                    enhanceError?.let { reason ->
+                        ErrorMessage(reason, modifier = Modifier.padding(horizontal = 16.dp), onRetry = { enhance() })
+                    }
+                }
                 Text(
-                    "Arrastra las esquinas para ajustar el recorte.",
+                    L10n.str(
+                        when {
+                            comparing -> R.string.photo_showing_original
+                            original != null -> R.string.photo_compare_hint
+                            else -> R.string.drag_corners_adjust_crop
+                        }
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth().padding(16.dp)
                 )
+            }
+        }
+        }
+    }
+}
+
+/** "Improve with AI", or once improved, "Compare" (hold to see the original) and "Undo". */
+@Composable
+private fun EnhanceBar(
+    enhanced: Boolean,
+    enhancing: Boolean,
+    compareSource: MutableInteractionSource,
+    onEnhance: () -> Unit,
+    onUndo: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        when {
+            enhancing -> FilledTonalButton(onClick = {}, enabled = false) {
+                CircularProgressIndicator(modifier = Modifier.size(ButtonDefaults.IconSize), strokeWidth = 2.dp)
+                Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
+                Text(L10n.str(R.string.photo_enhancing), maxLines = 1)
+            }
+            !enhanced -> FilledTonalButton(onClick = onEnhance) {
+                ButtonContent(Icons.Filled.AutoAwesome, L10n.str(R.string.photo_enhance_ai))
+            }
+            else -> {
+                // Pressed and held rather than clicked: the original shows only while the finger is down.
+                OutlinedButton(onClick = {}, interactionSource = compareSource) {
+                    ButtonContent(Icons.Filled.Compare, L10n.str(R.string.photo_compare))
+                }
+                TextButton(onClick = onUndo) {
+                    ButtonContent(Icons.Filled.Undo, L10n.str(R.string.photo_undo_enhance))
+                }
             }
         }
     }

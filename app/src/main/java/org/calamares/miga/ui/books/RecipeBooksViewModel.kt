@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.books
 
+import kotlinx.coroutines.flow.combine
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.calamares.miga.BuildConfig
@@ -7,10 +9,8 @@ import org.calamares.miga.crash.CrashReporter
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipeListViewMode
-import org.calamares.miga.data.remote.UpdateCheckResult
-import org.calamares.miga.data.remote.UpdateChecker
-import org.calamares.miga.data.remote.UpdateInfo
 import org.calamares.miga.data.repository.RecipeRepository
+import org.calamares.miga.data.sync.SyncEngine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,26 +21,39 @@ import kotlinx.coroutines.launch
 data class ChangelogAnnouncement(val versionName: String, val entries: List<String>)
 
 class RecipeBooksViewModel(
-    repository: RecipeRepository,
+    private val repository: RecipeRepository,
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
-    val books: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private val syncEngine = SyncEngine(repository)
+
+    /** True when AI is switched on and at least one provider is configured, so Ideas can be offered. */
+    val aiReady: StateFlow<Boolean> = combine(
+        settingsRepository.observeAiEnabled(),
+        settingsRepository.observeConfiguredProviders()
+    ) { enabled, providers -> enabled && providers.isNotEmpty() }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    private var autoSyncStarted = false
+
+    /** Null until the books have loaded, so the screen does not show "no books yet" meanwhile. */
+    val books: StateFlow<List<RecipeBookSummary>?> = repository.observeRecipeBooks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val viewMode: StateFlow<RecipeListViewMode> = settingsRepository.observeRecipeBookListViewMode()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecipeListViewMode.GRID)
+
+    fun togglePinned(book: RecipeBookSummary) {
+        viewModelScope.launch { repository.setRecipeBookPinned(book.id, !book.isPinned) }
+    }
 
     fun setViewMode(mode: RecipeListViewMode) {
         viewModelScope.launch { settingsRepository.setRecipeBookListViewMode(mode) }
     }
 
-    private val _updateAvailable = MutableStateFlow<UpdateInfo?>(null)
-    val updateAvailable: StateFlow<UpdateInfo?> = _updateAvailable
-
     private val _changelogAnnouncement = MutableStateFlow<ChangelogAnnouncement?>(null)
     val changelogAnnouncement: StateFlow<ChangelogAnnouncement?> = _changelogAnnouncement
 
-    /** Informe del último fallo no capturado (ver CrashReporter), si lo hay; solo local, nada se envía. */
+    /**
+     * Report of the last uncaught crash (see CrashReporter), if any. Local only; nothing is sent.
+     */
     private val _crashReport = MutableStateFlow(CrashReporter.pendingReport())
     val crashReport: StateFlow<String?> = _crashReport
 
@@ -51,19 +64,12 @@ class RecipeBooksViewModel(
 
     init {
         viewModelScope.launch {
-            if (settingsRepository.observeAutoCheckUpdatesEnabled().first()) {
-                val channel = settingsRepository.observeUpdateChannel().first()
-                val result = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME, channel)
-                _updateAvailable.value = (result as? UpdateCheckResult.UpdateFound)?.info
-            }
-        }
-        viewModelScope.launch {
             val lastSeen = settingsRepository.observeLastSeenVersionCode().first()
             val current = BuildConfig.VERSION_CODE
             if (lastSeen == 0) {
-                // Primera vez que corre esta lógica (instalación nueva, o actualización desde una
-                // versión anterior a que existiera el changelog en la app): no hay nada que
-                // mostrar todavía, solo se empieza a registrar la versión vista a partir de ahora.
+                // First run of this logic (fresh install, or update from a version without the
+                // in-app changelog): nothing to show yet, just start recording the last seen
+                // version.
                 settingsRepository.setLastSeenVersionCode(current)
             } else if (lastSeen < current) {
                 val entries = (lastSeen + 1..current).flatMap { code ->
@@ -81,8 +87,19 @@ class RecipeBooksViewModel(
         }
     }
 
-    fun dismissUpdateBanner() {
-        _updateAvailable.value = null
+    /**
+     * Syncs every configured connection when the app opens, so changes from other devices on the
+     * same namespace arrive without a manual sync. Runs once per ViewModel instance (which lives as
+     * long as the books tab) to avoid syncing on every recomposition or tab switch.
+     */
+    fun syncAllOnOpen(context: Context) {
+        if (autoSyncStarted) return
+        autoSyncStarted = true
+        viewModelScope.launch {
+            repository.observeSyncConnections().first().forEach { connection ->
+                syncEngine.syncConnection(context, connection.id)
+            }
+        }
     }
 
     fun dismissChangelogAnnouncement() {

@@ -25,7 +25,7 @@ import androidx.room.PrimaryKey
 )
 data class RecipeEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    /** Identificador estable (UUID) independiente del id local, usado en export/import. */
+    /** Stable identifier (UUID) independent of the local id, used by export/import and sync. */
     val uid: String,
     val name: String,
     val categoryId: Long?,
@@ -40,10 +40,33 @@ data class RecipeEntity(
     val timesCooked: Int,
     val createdAt: Long,
     val updatedAt: Long,
-    /** Valoración de salud cacheada (ver HealthRating en data/model); null = nunca analizada. */
+    /** Cached health rating (see HealthRating); null when never analysed. */
     val healthColor: String? = null,
     val healthDescription: String? = null,
-    /** Huella de ingredientes+pasos analizados; si no coincide con el estado actual, está obsoleta. */
+    /**
+     * Fingerprint of the analysed ingredients and steps; when it differs from the current content
+     * the rating is stale.
+     */
     val healthFingerprint: String? = null,
-    val healthAnalyzedAt: Long? = null
+    val healthAnalyzedAt: Long? = null,
+    /** Cached nutrition estimate (see NutritionInfo); null when never analysed. */
+    val nutritionCalories: Int? = null,
+    val nutritionProteinGrams: Double? = null,
+    val nutritionCarbsGrams: Double? = null,
+    val nutritionFatGrams: Double? = null,
+    /**
+     * Fingerprint of the analysed ingredients and steps; when it differs from the current content
+     * the estimate is stale.
+     */
+    val nutritionFingerprint: String? = null,
+    val nutritionAnalyzedAt: Long? = null,
+    /**
+     * Personal rating from 1 to 5 stars; null when not rated. Set from the recipe screen, not from
+     * the editor.
+     */
+    val rating: Int? = null,
+    /** Where the recipe comes from, as written by the user or the AI ("México", "Córdoba"). */
+    val origin: String? = null,
+    /** ISO 3166-1 alpha-2 code of the origin's country ("MX", "ES"), for its flag; null when unknown. */
+    val originCountry: String? = null
 )

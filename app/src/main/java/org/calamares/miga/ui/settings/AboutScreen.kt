@@ -1,10 +1,11 @@
 package org.calamares.miga.ui.settings
 
-import android.content.Intent
-import android.net.Uri
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -20,26 +21,22 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import org.calamares.miga.BuildConfig
 
-// Documento versionado junto con el código (ver PRIVACY.md en la raíz del repo); se abre en el
-// navegador en vez de duplicar el texto dentro de la app, para que quede siempre sincronizado.
-private const val PRIVACY_POLICY_URL = "https://github.com/calamares00/app-miga/blob/main/PRIVACY.md"
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutScreen(onBack: () -> Unit) {
-    val context = LocalContext.current
+fun AboutScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
+    val uriHandler = LocalUriHandler.current
 
     Scaffold(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text("Acerca de") },
+                title = { Text(L10n.str(R.string.about)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                 }
             )
         }
@@ -52,18 +49,25 @@ fun AboutScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Text("Miga", style = MaterialTheme.typography.headlineSmall)
-            AboutRow("Versión", "${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})")
-            AboutRow("Tipo de build", if (BuildConfig.DEBUG) "Beta (desarrollo)" else "Estable")
-            AboutRow("Arquitectura", Build.SUPPORTED_ABIS.firstOrNull() ?: "Desconocida")
-            OutlinedButton(onClick = {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL))
-                runCatching { context.startActivity(intent) }
-            }) {
-                Text("Política de privacidad")
+            AboutRow(L10n.str(R.string.version), "${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})")
+            AboutRow(L10n.str(R.string.build_type), if (BuildConfig.DEBUG) L10n.str(R.string.beta_development) else L10n.str(R.string.stable))
+            AboutRow(L10n.str(R.string.architecture), Build.SUPPORTED_ABIS.firstOrNull() ?: L10n.str(R.string.unknown))
+            // The policy is read inside the app (assets/docs, same text as PRIVACY.md at the
+            // repository root, which is also published on the Miga website for Google Play).
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(onClick = onOpenPrivacy) {
+                    Text(L10n.str(R.string.privacy_policy))
+                }
+                OutlinedButton(onClick = { runCatching { uriHandler.openUri(WEBSITE_URL) } }) {
+                    Text(L10n.str(R.string.website))
+                }
             }
         }
     }
 }
+
+/** Miga's website (repository calamares00/miga-web): features, privacy policy and recipe packs. */
+const val WEBSITE_URL = "https://miga.calamares.org"
 
 @Composable
 private fun AboutRow(label: String, value: String) {

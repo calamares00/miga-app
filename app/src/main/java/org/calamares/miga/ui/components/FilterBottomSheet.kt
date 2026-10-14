@@ -1,5 +1,13 @@
 package org.calamares.miga.ui.components
 
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.clickable
+import org.calamares.miga.data.model.displayCategoryName
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -26,8 +34,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.data.model.RecipeFilter
-import org.calamares.miga.data.model.SortOption
+import org.calamares.miga.data.model.RecipeOrigin
 
+/** Maximum total times offered in the filters, in minutes. */
+private val TIME_LIMITS = listOf(15, 30, 60)
+
+/** Ingredients shown before "See all": a library can use hundreds. */
+private const val COLLAPSED_INGREDIENTS = 24
+
+/**
+ * The filters of a list of recipes, applied as they change. Ordered from the quick decisions
+ * (time, difficulty) to the detailed ones (ingredients, origin); sorting is not here but next to
+ * the results (see ResultsHeader). [showFavoritesToggle] is false on the Favourites tab.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FilterSheetContent(
@@ -36,17 +55,24 @@ fun FilterSheetContent(
     availableTags: List<String>,
     availableUtensils: List<String>,
     availableIngredients: List<String> = emptyList(),
+    availableOrigins: List<String> = emptyList(),
     onApply: (RecipeFilter) -> Unit,
     onClear: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showFavoritesToggle: Boolean = true
 ) {
     var categoryNames by remember(filter) { mutableStateOf(filter.categoryNames) }
     var difficulties by remember(filter) { mutableStateOf(filter.difficulties) }
     var utensils by remember(filter) { mutableStateOf(filter.utensils) }
     var tags by remember(filter) { mutableStateOf(filter.tags) }
     var ingredients by remember(filter) { mutableStateOf(filter.ingredients) }
+    var origins by remember(filter) { mutableStateOf(filter.origins) }
     var onlyFavorites by remember(filter) { mutableStateOf(filter.onlyFavorites) }
-    var sortOption by remember(filter) { mutableStateOf(filter.sortOption) }
+    var maxMinutes by remember(filter) { mutableStateOf(filter.maxMinutes) }
+    var onlyCooked by remember(filter) { mutableStateOf(filter.onlyCooked) }
+    var onlyRated by remember(filter) { mutableStateOf(filter.onlyRated) }
+    var ingredientQuery by remember { mutableStateOf("") }
+    var allIngredients by remember { mutableStateOf(false) }
 
     val currentFilter = filter.copy(
         categoryNames = categoryNames,
@@ -54,55 +80,84 @@ fun FilterSheetContent(
         utensils = utensils,
         tags = tags,
         ingredients = ingredients,
+        origins = origins,
         onlyFavorites = onlyFavorites,
-        sortOption = sortOption
+        maxMinutes = maxMinutes,
+        onlyCooked = onlyCooked,
+        onlyRated = onlyRated
     )
     LaunchedEffect(currentFilter) { onApply(currentFilter) }
+    val count = currentFilter.activeConditions(ignoreFavorites = !showFavoritesToggle)
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        Text("Filtrar y ordenar", style = MaterialTheme.typography.titleLarge)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                if (count > 0) L10n.str(R.string.filters_n, count) else L10n.str(R.string.filters),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(
+                enabled = count > 0,
+                onClick = {
+                    categoryNames = emptySet(); difficulties = emptySet(); utensils = emptySet(); tags = emptySet()
+                    ingredients = emptySet(); origins = emptySet(); maxMinutes = null; onlyCooked = false; onlyRated = false
+                    if (showFavoritesToggle) onlyFavorites = false
+                    onClear()
+                }
+            ) { Text(L10n.str(R.string.clear_all)) }
+        }
 
-        if (availableCategories.isNotEmpty()) {
-            FilterSection(title = "Categoría") {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    availableCategories.forEach { category ->
-                        FilterChip(
-                            selected = category in categoryNames,
-                            onClick = {
-                                categoryNames = if (category in categoryNames) categoryNames - category else categoryNames + category
-                            },
-                            label = { Text(category) }
-                        )
-                    }
+        FilterSection(title = L10n.str(R.string.filter_total_time)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TIME_LIMITS.forEach { minutes ->
+                    FilterChip(
+                        selected = maxMinutes == minutes,
+                        onClick = { maxMinutes = if (maxMinutes == minutes) null else minutes },
+                        label = { Text(L10n.str(R.string.filter_up_to_x_min, minutes)) }
+                    )
                 }
             }
         }
 
-        FilterSection(title = "Dificultad") {
+        FilterSection(title = L10n.str(R.string.difficulty)) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Difficulty.entries.forEach { difficulty ->
                     FilterChip(
                         selected = difficulty in difficulties,
-                        onClick = { difficulties = if (difficulty in difficulties) difficulties - difficulty else difficulties + difficulty },
+                        onClick = { difficulties = difficulties.toggled(difficulty) },
                         label = { Text(difficulty.label) }
                     )
                 }
             }
         }
 
+        if (availableCategories.isNotEmpty()) {
+            FilterSection(title = L10n.str(R.string.category)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    availableCategories.forEach { category ->
+                        FilterChip(
+                            selected = category in categoryNames,
+                            onClick = { categoryNames = categoryNames.toggled(category) },
+                            label = { Text(displayCategoryName(category)) }
+                        )
+                    }
+                }
+            }
+        }
+
         if (availableUtensils.isNotEmpty()) {
-            FilterSection(title = "Utensilios") {
+            FilterSection(title = L10n.str(R.string.utensils)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     availableUtensils.forEach { utensil ->
                         FilterChip(
                             selected = utensil in utensils,
-                            onClick = { utensils = if (utensil in utensils) utensils - utensil else utensils + utensil },
+                            onClick = { utensils = utensils.toggled(utensil) },
                             label = { Text(utensil) }
                         )
                     }
@@ -111,12 +166,12 @@ fun FilterSheetContent(
         }
 
         if (availableTags.isNotEmpty()) {
-            FilterSection(title = "Etiquetas") {
+            FilterSection(title = L10n.str(R.string.tags)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     availableTags.forEach { tag ->
                         FilterChip(
                             selected = tag in tags,
-                            onClick = { tags = if (tag in tags) tags - tag else tags + tag },
+                            onClick = { tags = tags.toggled(tag) },
                             label = { Text(tag) }
                         )
                     }
@@ -125,47 +180,70 @@ fun FilterSheetContent(
         }
 
         if (availableIngredients.isNotEmpty()) {
-            FilterSection(title = "Ingredientes") {
+            FilterSection(title = L10n.str(R.string.ingredients)) {
+                OutlinedTextField(
+                    value = ingredientQuery,
+                    onValueChange = { ingredientQuery = it },
+                    singleLine = true,
+                    placeholder = { Text(L10n.str(R.string.filter_find_ingredient)) },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                // The chosen ones first, then those matching what is typed.
+                val matching = availableIngredients.filter { ingredientQuery.isBlank() || it.contains(ingredientQuery.trim(), ignoreCase = true) }
+                val ordered = matching.filter { it in ingredients } + matching.filter { it !in ingredients }
+                val shown = if (allIngredients || ingredientQuery.isNotBlank()) ordered else ordered.take(COLLAPSED_INGREDIENTS)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    availableIngredients.forEach { ingredient ->
+                    shown.forEach { ingredient ->
                         FilterChip(
                             selected = ingredient in ingredients,
-                            onClick = { ingredients = if (ingredient in ingredients) ingredients - ingredient else ingredients + ingredient },
+                            onClick = { ingredients = ingredients.toggled(ingredient) },
                             label = { Text(ingredient) }
+                        )
+                    }
+                }
+                if (shown.size < ordered.size) {
+                    TextButton(onClick = { allIngredients = true }) { Text(L10n.str(R.string.see_all_x, ordered.size)) }
+                }
+            }
+        }
+
+        if (availableOrigins.isNotEmpty()) {
+            FilterSection(title = L10n.str(R.string.origin)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    availableOrigins.sortedBy { RecipeOrigin.countryName(it) }.forEach { code ->
+                        FilterChip(
+                            selected = code in origins,
+                            onClick = { origins = origins.toggled(code) },
+                            label = { Text(RecipeOrigin.label(null, code).orEmpty()) }
                         )
                     }
                 }
             }
         }
 
-        FilterSection(title = "Ordenar por") {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SortOption.entries.forEach { option ->
-                    FilterChip(
-                        selected = sortOption == option,
-                        onClick = { sortOption = option },
-                        label = { Text(option.label) }
-                    )
-                }
-            }
-        }
-
         HorizontalDivider()
 
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Solo favoritas", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-            Switch(checked = onlyFavorites, onCheckedChange = { onlyFavorites = it })
+        FilterSection(title = L10n.str(R.string.filter_more)) {
+            if (showFavoritesToggle) {
+                SwitchRow(L10n.str(R.string.favourites_only), onlyFavorites) { onlyFavorites = it }
+            }
+            SwitchRow(L10n.str(R.string.filter_only_cooked), onlyCooked) { onlyCooked = it }
+            SwitchRow(L10n.str(R.string.filter_only_rated), onlyRated) { onlyRated = it }
         }
+    }
+}
 
-        TextButton(
-            onClick = {
-                categoryNames = emptySet(); difficulties = emptySet()
-                utensils = emptySet(); tags = emptySet(); ingredients = emptySet(); onlyFavorites = false
-                sortOption = SortOption.NAME_ASC
-                onClear()
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("Limpiar") }
+private fun <T> Set<T>.toggled(item: T): Set<T> = if (item in this) this - item else this + item
+
+@Composable
+private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onChange(!checked) },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Switch(checked = checked, onCheckedChange = onChange)
     }
 }
 

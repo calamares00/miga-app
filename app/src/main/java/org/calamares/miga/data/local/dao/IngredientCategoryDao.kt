@@ -11,13 +11,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface IngredientCategoryDao {
-    @Query("SELECT * FROM ingredient_categories ORDER BY name ASC")
+    @Query("SELECT * FROM ingredient_categories ORDER BY name COLLATE NOCASE ASC")
     fun observeAll(): Flow<List<IngredientCategoryEntity>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(category: IngredientCategoryEntity): Long
 
-    @Query("SELECT * FROM ingredient_categories WHERE name = :name LIMIT 1")
+    @Query("SELECT * FROM ingredient_categories WHERE name = :name COLLATE NOCASE LIMIT 1")
     suspend fun findByName(name: String): IngredientCategoryEntity?
 
     @Query("SELECT * FROM ingredient_categories WHERE id = :id")
