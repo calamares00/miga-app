@@ -8,8 +8,9 @@ import kotlin.math.roundToInt
  * Formats an ingredient as "quantity unit name", scaled by [scale]. Shared by the recipe screens,
  * text and PDF export and the shopping list.
  *
- * Spanish joins unit and name with "de" ("2 tazas de harina") but only when there is a unit
- * ("3 huevos", not "3 de huevos"); English needs no connector ("2 cups flour").
+ * The unit agrees with the quantity shown ("1 taza", "3 tazas", see [UnitInflection]). Spanish
+ * joins unit and name with "de" ("2 tazas de harina") but only when there is a unit ("3 huevos",
+ * not "3 de huevos"); English needs no connector ("2 cups flour").
  */
 fun formatIngredientText(
     name: String,
@@ -19,8 +20,9 @@ fun formatIngredientText(
     language: String = L10n.locale().language
 ): String {
     val quantityPart = quantity?.let { formatQuantity(it * scale) } ?: return name
+    if (unit.isNullOrBlank()) return "$quantityPart $name"
     val connector = if (language == "es") " de " else " "
-    return if (unit.isNullOrBlank()) "$quantityPart $name" else "$quantityPart $unit$connector$name"
+    return "$quantityPart ${UnitInflection.inflect(unit, quantityPart.toDouble(), language)}$connector$name"
 }
 
 /** Rounds to two decimals and drops trailing zeros: 2.0 -> "2", 2.50 -> "2.5", 0.333 -> "0.33". */
