@@ -17,7 +17,7 @@ android {
         // versionCode goes up on every commit (Play requires it to always grow). versionName is the
         // public version and only changes when a new version is released (1.0.0, 1.0.1, 1.1.0...),
         // with release notes in assets/changelogs and fastlane/.../changelogs (<versionCode>.txt).
-        versionCode = 193
+        versionCode = 194
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -54,12 +54,15 @@ android {
         }
     }
 
-    // One APK per ABI (smaller) plus a universal one, like Obtainium-style releases. This only
-    // affects APKs (assemble*); the bundleRelease AAB for the Play Store is unaffected, since Play
-    // splits by ABI itself.
+    // One APK per ABI (smaller) plus a universal one, like Obtainium-style releases. Only for
+    // APKs (assemble*): the AAB for the Play Store is split by Play itself, and with ABI splits on
+    // bundleRelease fails ("Sequence contains more than one matching element" in
+    // PerModuleBundleTask), so they are off when the build asks for a bundle. CI builds APKs and
+    // the AAB in separate Gradle runs.
+    val buildingBundle = gradle.startParameter.taskNames.any { it.contains("bundle", ignoreCase = true) }
     splits {
         abi {
-            isEnable = true
+            isEnable = !buildingBundle
             reset()
             include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
             isUniversalApk = true
