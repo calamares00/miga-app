@@ -7,7 +7,7 @@ import org.calamares.miga.data.ai.AiRequest
 import org.calamares.miga.data.ai.KnownLabels
 import org.calamares.miga.data.ai.knownLabelsInstruction
 import org.calamares.miga.data.ai.RECIPE_JSON_FORMAT
-import org.calamares.miga.data.ai.complete
+import org.calamares.miga.data.ai.completeInAppLanguage
 import org.calamares.miga.data.ai.outputLanguageInstruction
 import org.calamares.miga.data.ai.transcriptionLanguageInstruction
 import org.calamares.miga.data.vision.RECIPE_MAX_TOKENS
@@ -16,7 +16,7 @@ import org.calamares.miga.data.vision.parseRecipeAnswer
 
 /** Writes a full recipe for a dish chosen in the AI search, from the model's own knowledge. */
 suspend fun AiCandidate.generateRecipe(dish: DishSuggestion, known: KnownLabels = KnownLabels.NONE): RecipeVisionResult {
-    val result = complete(AiRequest(buildDishRecipePrompt(dish, known), RECIPE_MAX_TOKENS))
+    val result = completeInAppLanguage(AiRequest(buildDishRecipePrompt(dish, known), RECIPE_MAX_TOKENS))
     return parseRecipeAnswer(result) { L10n.str(R.string.couldnt_generate_recipe) }
 }
 
@@ -25,7 +25,7 @@ suspend fun AiCandidate.generateRecipe(dish: DishSuggestion, known: KnownLabels 
  * The model reads the text; structured data such as schema.org/JSON-LD is not parsed.
  */
 suspend fun AiCandidate.importRecipeFromPage(url: String, pageText: String, known: KnownLabels = KnownLabels.NONE): RecipeVisionResult {
-    val result = complete(AiRequest(buildUrlImportPrompt(url, pageText, known), RECIPE_MAX_TOKENS))
+    val result = completeInAppLanguage(AiRequest(buildUrlImportPrompt(url, pageText, known), RECIPE_MAX_TOKENS))
     return parseRecipeAnswer(result) { L10n.str(R.string.no_recipe_was_found_page) }
 }
 
