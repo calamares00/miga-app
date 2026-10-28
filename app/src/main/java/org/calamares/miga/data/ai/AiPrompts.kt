@@ -21,7 +21,10 @@ internal const val RECIPE_JSON_FORMAT = """{
   "utensils": ["appliance or special equipment the recipe needs (oven, air fryer, food processor, pressure cooker...); never basics every kitchen has such as knife, pot, pan, bowl or fridge", ...]
 }"""
 
-private fun appLanguageName(): String = if (L10n.locale().language == "es") "Spanish" else "English"
+/** Language the AI must write in: the app's, "es" or "en". */
+internal fun appLanguageCode(): String = if (L10n.locale().language == "es") "es" else "en"
+
+internal fun appLanguageName(code: String = appLanguageCode()): String = if (code == "es") "Spanish" else "English"
 
 /** Appended to prompts that GENERATE text so the model answers in the app language. */
 internal fun outputLanguageInstruction(): String =
@@ -29,13 +32,24 @@ internal fun outputLanguageInstruction(): String =
 
 /**
  * Appended to prompts that TRANSCRIBE an existing recipe (photo, web page): the recipe is stored
- * in the app language and translated when the original is in another language.
+ * in the app language and translated when the original is in another language. Spelled out with
+ * care because the rest of the prompt is in English, which some models took as the language to
+ * answer in.
  */
 internal fun transcriptionLanguageInstruction(): String {
     val language = appLanguageName()
-    return "\n\nWrite the recipe in $language. If the original is in another language, translate all of it " +
-        "(name, category, ingredients, units, steps, notes, tags and utensils) naturally; " +
-        "if it is already in $language, transcribe it as is. Do not change quantities or the \"difficulty\" values."
+    return "\n\nLANGUAGE (mandatory): the user reads the app in $language. Write every text value of the JSON " +
+        "(name, category, ingredients, units, steps, notes, tags and utensils) in $language, even though these " +
+        "instructions are in English. If the original is already in $language, transcribe it as is, without " +
+        "translating anything; if it is in another language, translate all of it naturally into $language. " +
+        "Do not change quantities or the \"difficulty\" values."
+}
+
+/** Added when a recipe came back in another language; see completeInAppLanguage. */
+internal fun languageCorrectionInstruction(wrong: String): String {
+    val language = appLanguageName()
+    return "\n\nIMPORTANT: a previous answer to this request was written in ${appLanguageName(wrong)}, which is wrong. " +
+        "Write the whole recipe in $language: every name, ingredient, unit, step, note and tag."
 }
 
 /** The categories and kitchen equipment the user already has, offered to the model to reuse. */

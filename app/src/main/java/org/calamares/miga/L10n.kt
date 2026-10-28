@@ -35,11 +35,13 @@ object L10n {
 
     private lateinit var app: Context
     private var forcedResources: Resources? = null
+    private var forcedLocale: Locale? = null
 
     /** Must be called as early as possible (Application.attachBaseContext). */
     fun init(context: Context) {
         app = context.applicationContext ?: context
-        forcedResources = language(context).tag?.let { localized(context, Locale.forLanguageTag(it)).resources }
+        forcedLocale = language(context).tag?.let { Locale.forLanguageTag(it) }
+        forcedResources = forcedLocale?.let { localized(context, it).resources }
     }
 
     fun language(context: Context): AppLanguage =
@@ -60,8 +62,13 @@ object L10n {
         return localized(base, Locale.forLanguageTag(tag))
     }
 
-    /** Effective app locale: the one chosen in Settings or the system one. */
-    fun locale(): Locale = Locale.getDefault()
+    /**
+     * Effective app locale: the one chosen in Settings or the system one. The chosen one is kept
+     * apart from Locale.getDefault(), which Android resets to the system language on configuration
+     * changes (rotation, dark mode...): prompts built after that asked the AI for the system
+     * language instead of the one chosen.
+     */
+    fun locale(): Locale = forcedLocale ?: Locale.getDefault()
 
     fun str(@StringRes id: Int, vararg args: Any?): String {
         // Plain JVM tests have no Android context: return a stable text built from the id so

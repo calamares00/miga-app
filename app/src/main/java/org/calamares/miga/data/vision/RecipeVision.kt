@@ -10,8 +10,8 @@ import org.calamares.miga.data.ai.AiText
 import org.calamares.miga.data.ai.KnownLabels
 import org.calamares.miga.data.ai.knownLabelsInstruction
 import org.calamares.miga.data.ai.RECIPE_JSON_FORMAT
-import org.calamares.miga.data.ai.complete
 import org.calamares.miga.data.ai.decodeAiJson
+import org.calamares.miga.data.ai.completeInAppLanguage
 import org.calamares.miga.data.ai.transcriptionLanguageInstruction
 import org.calamares.miga.data.export.IngredientGroupDto
 import org.calamares.miga.data.export.StepGroupDto
@@ -85,7 +85,7 @@ sealed interface RecipeVisionResult {
  */
 suspend fun AiCandidate.extractRecipes(images: List<AiImage>, known: KnownLabels = KnownLabels.NONE): RecipeExtractionResult {
     if (images.isEmpty()) return RecipeExtractionResult.Error(L10n.str(R.string.there_no_photos_process))
-    return when (val result = complete(AiRequest(recipeExtractionPrompt(known), RECIPE_MAX_TOKENS, images))) {
+    return when (val result = completeInAppLanguage(AiRequest(recipeExtractionPrompt(known), RECIPE_MAX_TOKENS, images))) {
         is AiText.Error -> RecipeExtractionResult.Error(result.reason)
         is AiText.Success -> parseExtractionAnswer(result.text)
     }
