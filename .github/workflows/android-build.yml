@@ -138,6 +138,12 @@ jobs:
         if: steps.mode.outputs.mode != 'release'
         run: ./gradlew :app:assembleRelease --stacktrace
 
+      # The AAB for Play is otherwise only built on main, so a change that breaks it was only seen
+      # after merging (it happened with the ABI splits). Unsigned and not published.
+      - name: Build release AAB (check the Play bundle)
+        if: steps.mode.outputs.mode != 'release'
+        run: ./gradlew :app:bundleRelease --stacktrace
+
       # --- pull request to main: lint + check compilation ---
       - name: Lint (pull request)
         if: steps.mode.outputs.mode == 'pr_check'
