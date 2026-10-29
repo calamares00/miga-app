@@ -295,6 +295,33 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      # What the Google Play upload in publish needs besides the AAB, kept out of the GitHub
+      # Release: the R8 mapping (so Play shows readable stack traces for crashes and ANRs) and the
+      # release notes, one whatsnew-<locale> file per language taken from the fastlane changelog
+      # of this versionCode (Play allows 500 characters).
+      - name: Prepare Google Play extras
+        if: steps.mode.outputs.mode == 'release'
+        run: |
+          set -euo pipefail
+          CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+          mkdir -p play/whatsnew
+          cp app/build/outputs/mapping/release/mapping.txt play/mapping.txt
+          for dir in fastlane/metadata/android/*/; do
+            locale=$(basename "$dir")
+            notes="$dir/changelogs/$CODE.txt"
+            [ -f "$notes" ] && cp "$notes" "play/whatsnew/whatsnew-$locale"
+          done
+          ls -la play play/whatsnew
+
+      - name: Upload Google Play extras
+        if: steps.mode.outputs.mode == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: miga-play-v${{ steps.version.outputs.version }}
+          path: play/
+          if-no-files-found: error
+          retention-days: 30
+
   # Nothing to publish for a pull request (mode == pr_check): the whole job is skipped and shows
   # as "skipped" in the checks instead of an empty success. It downloads the dist/ prepared by
   # the build job (nothing is rebuilt) and uploads it to a GitHub Release.
@@ -386,3 +413,41 @@ jobs:
           prerelease: ${{ secrets.RELEASE_KEYSTORE_BASE64 == '' }}
           make_latest: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
           files: dist/*
+
+      # Google Play: the signed AAB goes to the track in the PLAY_TRACK repository variable
+      # (internal testing when it is not set; "alpha" is closed testing, "production" production).
+      # Needs the PLAY_SERVICE_ACCOUNT_JSON secret (a Google Cloud service account with release
+      # rights in Play Console, see docs/google-play.md) and the release keystore; without either
+      # the step is skipped and the Release on GitHub is all that is published.
+      - name: Check Google Play upload
+        id: play
+        if: needs.build.outputs.mode == 'release'
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$PLAY_SERVICE_ACCOUNT_JSON" ] && [ -n "$RELEASE_KEYSTORE_BASE64" ]; then
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+            echo "No PLAY_SERVICE_ACCOUNT_JSON or release keystore: not uploading to Google Play."
+          fi
+
+      - name: Download Google Play extras
+        if: steps.play.outputs.upload == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: miga-play-v${{ needs.build.outputs.version }}
+          path: play
+
+      - name: Upload to Google Play
+        if: steps.play.outputs.upload == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: org.calamares.miga
+          releaseFiles: dist/miga-v${{ needs.build.outputs.version }}-release.aab
+          track: ${{ vars.PLAY_TRACK || 'internal' }}
+          status: completed
+          whatsNewDirectory: play/whatsnew
+          mappingFile: play/mapping.txt
