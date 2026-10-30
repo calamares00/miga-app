@@ -34,7 +34,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -68,6 +67,7 @@ import org.calamares.miga.data.model.ContentItem
 import org.calamares.miga.data.model.ContentKind
 import org.calamares.miga.data.repository.ContentSnapshot
 import org.calamares.miga.data.repository.RecipeRepository
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.ui.components.rememberAiEnabled
@@ -191,7 +191,7 @@ fun ContentCleanupScreen(viewModel: ContentCleanupViewModel, onBack: () -> Unit)
     val aiEnabled = rememberAiEnabled()
     val chosen = state.proposals.count { it.key in state.ticked }
 
-    Scaffold(
+    AdaptiveScaffold(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),

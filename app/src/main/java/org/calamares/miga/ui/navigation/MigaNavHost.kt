@@ -54,6 +54,11 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.material3.Surface
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -131,6 +136,9 @@ private val BOTTOM_TABS = listOf(
 )
 
 private val TAB_ROUTES = BOTTOM_TABS.map { it.route }.toSet()
+
+/** Widest the bottom bar's row of tabs grows on a tablet. */
+private val NAVIGATION_BAR_MAX_WIDTH = 640.dp
 
 /** Height of the Material 3 navigation bar, without the system navigation bar under it. */
 private val BOTTOM_BAR_HEIGHT = 80.dp
@@ -248,20 +256,27 @@ fun MigaNavHost(initialRoute: String? = null) {
             exit = slideOutVertically(tween(BAR_ANIMATION_MILLIS)) { it },
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            NavigationBar {
-                BOTTOM_TABS.forEach { tab ->
-                    NavigationBarItem(
-                        selected = currentRoute == tab.route,
-                        onClick = {
-                            navController.navigate(tab.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(tab.icon, contentDescription = tab.label) },
-                        label = { Text(tab.label) }
-                    )
+            // The bar's colour spans the screen; on a tablet its items stay together in the middle
+            // instead of spreading across the full width.
+            Surface(color = NavigationBarDefaults.containerColor, tonalElevation = NavigationBarDefaults.Elevation) {
+                NavigationBar(
+                    modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).widthIn(max = NAVIGATION_BAR_MAX_WIDTH),
+                    tonalElevation = 0.dp
+                ) {
+                    BOTTOM_TABS.forEach { tab ->
+                        NavigationBarItem(
+                            selected = currentRoute == tab.route,
+                            onClick = {
+                                navController.navigate(tab.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(tab.icon, contentDescription = tab.label) },
+                            label = { Text(tab.label) }
+                        )
+                    }
                 }
             }
         }

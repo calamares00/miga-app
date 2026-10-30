@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.bulkimport
 
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.AiProgressView
 import org.calamares.miga.data.ai.AiProgress
 import org.calamares.miga.ui.components.ErrorMessage
@@ -27,7 +28,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -63,7 +63,7 @@ fun BulkImportScreen(
     LaunchedEffect(Unit) { viewModel.start(context) }
     BackHandler(enabled = isProcessing) { showExitConfirm = true }
 
-    Scaffold(
+    AdaptiveScaffold(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),

@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.os.Build
@@ -15,7 +16,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -30,7 +30,7 @@ import org.calamares.miga.BuildConfig
 fun AboutScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
     val uriHandler = LocalUriHandler.current
 
-    Scaffold(
+    AdaptiveScaffold(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
