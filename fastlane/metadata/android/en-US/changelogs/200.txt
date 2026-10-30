@@ -1,0 +1,3 @@
+What's new in 1.0.2:
+• Maintenance release: from now on updates reach Google Play sooner.
+• Includes everything in 1.0.1: better on tablets, recipe packs in the app's language and new Mexican, Mediterranean and Christmas packs.
