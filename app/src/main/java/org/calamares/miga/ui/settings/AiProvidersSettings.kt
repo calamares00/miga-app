@@ -57,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import org.calamares.miga.ui.components.rememberSettingText
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.ai.OpenRouterModel
@@ -318,9 +319,10 @@ private fun ProviderRow(
 
 @Composable
 private fun ApiKeyField(value: String, onValueChange: (String) -> Unit, label: String, placeholder: String) {
+    val (text, onTextChange) = rememberSettingText(saved = value, save = onValueChange)
     OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
+        value = text,
+        onValueChange = onTextChange,
         label = { Text(label) },
         placeholder = { Text(placeholder) },
         singleLine = true,

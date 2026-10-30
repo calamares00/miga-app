@@ -1,0 +1,4 @@
+What's new in 1.0.1:
+• Better on tablets: content stays at a comfortable reading width and grids show more columns.
+• Recipe packs are shown in the app's language, and there are new packs: Mexican cooking, Mediterranean cooking and Christmas special.
+• Fixed: letters were lost while typing an alternative pack catalogue or an AI key.

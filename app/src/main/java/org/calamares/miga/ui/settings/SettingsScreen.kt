@@ -76,7 +76,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
@@ -116,6 +115,8 @@ import org.calamares.miga.data.ai.ANTHROPIC_MODELS
 import org.calamares.miga.data.ai.GEMINI_MODELS
 import org.calamares.miga.data.ai.AiProvider
 import org.calamares.miga.ui.common.BACKUP_MIME_TYPES
+import org.calamares.miga.ui.components.AdaptiveScaffold
+import org.calamares.miga.ui.components.rememberSettingText
 import org.calamares.miga.ui.components.ImportRecipesDialog
 import org.calamares.miga.ui.security.BiometricAuthenticator
 import kotlinx.coroutines.launch
@@ -222,7 +223,7 @@ fun SettingsSectionScreen(
     }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    Scaffold(
+    AdaptiveScaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -469,10 +470,14 @@ fun SettingsSectionScreen(
                 ManageRow(icon = Icons.Filled.Storefront, label = L10n.str(R.string.explore_catalogue), onClick = onOpenPacksCatalog)
                 var showCustomCatalog by remember { mutableStateOf(packsCatalogRepo != DEFAULT_PACKS_CATALOG) }
                 if (showCustomCatalog) {
+                    // The official catalogue is not shown: an empty field means using it.
+                    val (catalogText, onCatalogChange) = rememberSettingText(
+                        saved = if (packsCatalogRepo == DEFAULT_PACKS_CATALOG) "" else packsCatalogRepo,
+                        save = viewModel::setPacksCatalogRepo
+                    )
                     OutlinedTextField(
-                        // The official catalogue is not shown: an empty field means using it.
-                        value = if (packsCatalogRepo == DEFAULT_PACKS_CATALOG) "" else packsCatalogRepo,
-                        onValueChange = { viewModel.setPacksCatalogRepo(it) },
+                        value = catalogText,
+                        onValueChange = onCatalogChange,
                         label = { Text(L10n.str(R.string.alternative_catalogue)) },
                         placeholder = { Text(L10n.str(R.string.url_github_user_repo_empty)) },
                         singleLine = true,

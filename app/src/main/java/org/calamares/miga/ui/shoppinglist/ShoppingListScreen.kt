@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.shoppinglist
 
 import org.calamares.miga.data.model.displayCategoryName
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -96,7 +97,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -375,7 +375,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
         )
     }
 
-    Scaffold(
+    AdaptiveScaffold(
         contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars).exclude(WindowInsets.ime),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {

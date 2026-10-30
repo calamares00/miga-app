@@ -25,4 +25,15 @@ class PacksCatalogClientTest {
         assertEquals("https://example.org/covers/tapas.jpg", PacksCatalogClient.resolveUrl(catalog, "/covers/tapas.jpg"))
         assertEquals("https://cdn.example.com/a.zip", PacksCatalogClient.resolveUrl(catalog, "https://cdn.example.com/a.zip"))
     }
+
+    private fun pack(id: String, language: String?) =
+        PackEntryDto(id = id, name = id, author = "Miga", latestVersion = 1, downloadUrl = "$id.zip", language = language)
+
+    @Test
+    fun `the catalog lists packs in the app language, packs for every language and installed ones`() {
+        val packs = listOf(pack("tapas", "es"), pack("tapas-en", "en"), pack("basics", null), pack("navidad", "es"))
+        assertEquals(listOf("tapas", "basics", "navidad"), packs.visibleFor("es", emptySet()).map { it.id })
+        assertEquals(listOf("tapas-en", "basics"), packs.visibleFor("en", emptySet()).map { it.id })
+        assertEquals(listOf("tapas-en", "basics", "navidad"), packs.visibleFor("EN", setOf("navidad")).map { it.id })
+    }
 }

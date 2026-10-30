@@ -119,3 +119,42 @@ considera "compartir" igualmente, por eso se declaran.
 
 Antes de pedir acceso a producción hay que hacer una prueba cerrada con al menos **12 testers**
 que mantengan la app instalada **14 días seguidos**.
+
+## Nuevas versiones
+
+1. Sube `versionName` en `app/build.gradle.kts` (1.0.1 para arreglos, 1.1.0 para funciones nuevas)
+   y escribe las notas en `fastlane/metadata/android/{es-ES,en-US}/changelogs/<versionCode>.txt`
+   (como mucho 500 caracteres; son las notas que muestra Play).
+2. Fusiona en `main`. El CI compila, firma, publica la Release `v<versionName>` en GitHub y, si
+   está configurada la subida automática (abajo), sube el AAB a Google Play con esas notas y el
+   archivo de desofuscación de R8.
+3. Por defecto va a **Prueba interna**. Desde Play Console se promociona a la prueba cerrada o a
+   producción (Probar y publicar → la pista → Promocionar versión).
+
+`versionCode` sube en cada commit, así que cada fusión en `main` lleva un código mayor que el
+anterior, como exige Play.
+
+## Subida automática a Google Play
+
+El paso «Upload to Google Play» del workflow usa una cuenta de servicio de Google Cloud. Se
+configura una vez:
+
+1. En https://console.cloud.google.com crea un proyecto (por ejemplo «miga-play») y activa la
+   **Google Play Android Developer API**
+   (https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com).
+2. En **IAM y administración → Cuentas de servicio**, crea una cuenta (por ejemplo
+   `miga-ci`). No necesita roles de Google Cloud. En su pestaña **Claves**, **Añadir clave → JSON**:
+   se descarga un archivo `.json`. Guárdalo bien: da acceso a publicar.
+3. En Play Console, **Usuarios y permisos → Invitar a nuevos usuarios**: pon el correo de la cuenta
+   de servicio (`miga-ci@<proyecto>.iam.gserviceaccount.com`), en **Permisos de la aplicación**
+   añade Miga y marca **Lanzar versiones en canales de prueba** (y **Lanzar a producción** si
+   quieres poder publicar en producción desde el CI). Envía la invitación; se acepta sola.
+4. En GitHub, https://github.com/calamares00/miga-app/settings/secrets/actions, crea el secreto
+   `PLAY_SERVICE_ACCOUNT_JSON` con el contenido completo del `.json`.
+5. Opcional: en la pestaña **Variables** de la misma página, crea `PLAY_TRACK` con la pista de
+   destino: `internal` (por defecto), `alpha` (prueba cerrada; pasa por revisión de Google) o
+   `production`.
+
+Sin ese secreto, o sin la clave de firma, el paso se salta y solo se publica la Release de GitHub.
+La primera versión de una app tiene que subirse a mano desde Play Console (ya está hecho con la
+1.0.0); a partir de ahí la API puede subir las siguientes.
