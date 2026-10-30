@@ -125,7 +125,7 @@ fun BulkPolishScreen(onBack: () -> Unit, onOpenRecipe: (Long) -> Unit) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Text(L10n.str(R.string.bulk_polish_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            return@Scaffold
+            return@AdaptiveScaffold
         }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),

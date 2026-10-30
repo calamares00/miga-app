@@ -174,7 +174,7 @@ fun RecipeEditorScreen(
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            return@Scaffold
+            return@AdaptiveScaffold
         }
 
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
