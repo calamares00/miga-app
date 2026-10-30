@@ -2,10 +2,12 @@ package org.calamares.miga.ui.packs
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import org.calamares.miga.L10n
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.remote.CatalogFetchResult
 import org.calamares.miga.data.remote.PackEntryDto
 import org.calamares.miga.data.remote.PacksCatalogClient
+import org.calamares.miga.data.remote.visibleFor
 import org.calamares.miga.data.repository.RecipeRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,7 +50,9 @@ class PacksCatalogViewModel(
                     val installedVersionByPackId = repository.observeRecipeBooks().first()
                         .mapNotNull { book -> book.packId?.let { it to (book.packVersion ?: 0) } }
                         .toMap()
-                    val items = result.packs.map { entry -> PackListItem(entry, installedVersionByPackId[entry.id]) }
+                    val items = result.packs
+                        .visibleFor(L10n.locale().language, installedVersionByPackId.keys)
+                        .map { entry -> PackListItem(entry, installedVersionByPackId[entry.id]) }
                     _uiState.value = CatalogUiState.Loaded(items)
                 }
             }
