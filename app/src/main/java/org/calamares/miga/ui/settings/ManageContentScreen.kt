@@ -40,7 +40,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -71,6 +70,7 @@ import org.calamares.miga.data.model.ContentKind
 import org.calamares.miga.data.model.IngredientCatalogItem
 import org.calamares.miga.data.model.RecipeFilter
 import org.calamares.miga.data.repository.RecipeRepository
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.ButtonContent
 
 class ManageContentViewModel(private val repository: RecipeRepository, val kind: ContentKind) : ViewModel() {
@@ -155,7 +155,7 @@ fun ManageContentScreen(
         .let { list -> if (sort == ContentSort.USAGE) list.sortedByDescending { it.usage } else list }
     val selecting = selected.isNotEmpty()
 
-    Scaffold(
+    AdaptiveScaffold(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),

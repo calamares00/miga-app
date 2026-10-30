@@ -24,8 +24,17 @@ data class PackEntryDto(
     val latestVersion: Int,
     val recipeCount: Int = 0,
     val downloadUrl: String,
-    val minAppVersion: Int? = null
+    val minAppVersion: Int? = null,
+    /** Language of the recipes ("es", "en"); null for a pack meant for every language. */
+    val language: String? = null
 )
+
+/**
+ * The packs to list for an app in [language]: those in that language or without one, plus the
+ * installed ones whatever their language, so they can still be updated after switching language.
+ */
+fun List<PackEntryDto>.visibleFor(language: String, installedIds: Set<String>): List<PackEntryDto> =
+    filter { it.language == null || it.language.equals(language, ignoreCase = true) || it.id in installedIds }
 
 @Serializable
 private data class CatalogDto(
