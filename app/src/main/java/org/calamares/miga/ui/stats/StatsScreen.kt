@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.AssistChip
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.data.model.MissingField
 import org.calamares.miga.data.model.RecipeFilter
 import org.calamares.miga.data.model.SortOption
@@ -54,7 +55,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -109,7 +109,7 @@ fun StatsScreen(
     val scope = rememberCoroutineScope()
     val showMessage: (String) -> Unit = { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
 
-    Scaffold(
+    AdaptiveScaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(

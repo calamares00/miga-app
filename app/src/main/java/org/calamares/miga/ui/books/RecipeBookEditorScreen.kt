@@ -30,7 +30,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -53,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import org.calamares.miga.data.local.PhotoStorage
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.PhotoEditorOverlay
 import org.calamares.miga.ui.components.PhotoSourceSheet
 
@@ -102,7 +102,7 @@ fun RecipeBookEditorScreen(
         }
     }
 
-    Scaffold(
+    AdaptiveScaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -134,7 +134,7 @@ fun RecipeBookEditorScreen(
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            return@Scaffold
+            return@AdaptiveScaffold
         }
 
         Column(
