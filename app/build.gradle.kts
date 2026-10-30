@@ -17,8 +17,8 @@ android {
         // versionCode goes up on every commit (Play requires it to always grow). versionName is the
         // public version and only changes when a new version is released (1.0.0, 1.0.1, 1.1.0...),
         // with release notes in assets/changelogs and fastlane/.../changelogs (<versionCode>.txt).
-        versionCode = 200
-        versionName = "1.0.2"
+        versionCode = 201
+        versionName = "1.0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -75,6 +75,15 @@ android {
     dependenciesInfo {
         includeInApk = false
         includeInBundle = true
+    }
+
+    // Play splits an AAB by language and only installs the device's languages, so on a phone in
+    // English the Spanish strings never reached it and choosing Español in Settings changed
+    // nothing. The app has its own language picker, so every language ships in the base APK.
+    bundle {
+        language {
+            enableSplit = false
+        }
     }
 
     buildTypes {

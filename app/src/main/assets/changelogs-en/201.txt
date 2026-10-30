@@ -1,0 +1,2 @@
+What's new in 1.0.3:
+• Fixed: in the Google Play version, choosing English or Spanish in Settings didn't change the language when the phone used a different one.

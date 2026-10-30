@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.3:
+• Corregido: en la versión de Google Play, elegir Español en Ajustes no cambiaba el idioma si el teléfono estaba en otro idioma.
