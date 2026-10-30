@@ -1,6 +1,8 @@
 package org.calamares.miga.ui.list
 
 import androidx.compose.material.icons.filled.AutoAwesome
+import org.calamares.miga.ui.components.AdaptiveScaffold
+import org.calamares.miga.ui.components.GRID_CONTENT_WIDTH
 import org.calamares.miga.ui.components.ResultsHeader
 import org.calamares.miga.ui.components.ActiveFilterChips
 import androidx.activity.compose.BackHandler
@@ -72,7 +74,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -184,7 +185,8 @@ fun RecipeListScreen(
         ActivityResultContracts.PickMultipleVisualMedia(maxItems = 20)
     ) { uris -> if (uris.isNotEmpty()) onAddRecipesBulk(uris.map { it.toString() }) }
 
-    Scaffold(
+    AdaptiveScaffold(
+        maxContentWidth = GRID_CONTENT_WIDTH,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             if (selectionMode) {
@@ -334,8 +336,9 @@ fun RecipeListScreen(
                     )
                 }
             } else if (viewMode == RecipeListViewMode.GRID) {
+                // Two columns on a phone, more on a tablet, so cards keep their size.
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                    columns = GridCells.Adaptive(160.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)

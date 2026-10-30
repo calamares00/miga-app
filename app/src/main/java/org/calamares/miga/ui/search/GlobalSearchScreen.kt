@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.search
 
 import androidx.compose.material.icons.filled.AutoAwesome
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.rememberAiEnabled
 import org.calamares.miga.ui.components.ResultsHeader
 import org.calamares.miga.ui.components.ActiveFilterChips
@@ -61,7 +62,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -107,7 +107,7 @@ fun GlobalSearchScreen(
     val activeCount = filter.activeConditions(ignoreFavorites = favoritesOnly)
     val filtersApplied = activeCount > 0
 
-    Scaffold(
+    AdaptiveScaffold(
         contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars).exclude(WindowInsets.ime),
         topBar = {
             if (selectionMode) {

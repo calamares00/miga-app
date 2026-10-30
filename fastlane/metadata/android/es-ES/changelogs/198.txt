@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.1:
+• Mejor en tablets: el contenido se mantiene a un ancho cómodo de leer y las cuadrículas muestran más columnas.
+• Los packs de recetas se muestran en el idioma de la app, y hay packs nuevos: Cocina mexicana, Cocina mediterránea y Especial Navidad.
+• Arreglado: al escribir el catálogo de packs alternativo o una clave de IA se perdían letras.

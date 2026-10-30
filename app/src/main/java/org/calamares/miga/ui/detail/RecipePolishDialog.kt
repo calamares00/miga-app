@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.safeDrawing
@@ -52,6 +54,7 @@ import org.calamares.miga.data.model.StepGroup
 import org.calamares.miga.data.polish.PolishedRecipe
 import org.calamares.miga.ui.components.AiContentNotice
 import org.calamares.miga.ui.components.ButtonContent
+import org.calamares.miga.ui.components.READABLE_CONTENT_WIDTH
 import org.calamares.miga.ui.components.rememberSystemBarsPadding
 import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.ui.components.FormattedText
@@ -133,7 +136,15 @@ internal fun PolishReview(
         BackHandler(onBack = onDismiss)
         val bars = rememberSystemBarsPadding()
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Column(modifier = Modifier.fillMaxSize().padding(bars)) {
+            // Full screen, but at a readable width on tablets.
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bars)
+                    .wrapContentWidth(Alignment.CenterHorizontally)
+                    .widthIn(max = READABLE_CONTENT_WIDTH)
+                    .fillMaxWidth()
+            ) {
                 Row(modifier = Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.close)) }
                     Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {

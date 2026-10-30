@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.sync
 
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.sync.ServerUrlSecurity
@@ -35,7 +36,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
@@ -97,7 +97,7 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
         }
     }
 
-    Scaffold(
+    AdaptiveScaffold(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),

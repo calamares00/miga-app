@@ -1,3 +1,0 @@
-Novedades de la versión 1.0.1:
-• Los packs de recetas se muestran en el idioma de la app; los que ya tienes instalados siguen apareciendo para poder actualizarlos.
-• Nuevos packs para instalar desde Ajustes › Packs de recetas: Cocina mexicana, Cocina mediterránea y Especial Navidad.

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -88,7 +89,9 @@ fun DialogSheet(onDismissRequest: () -> Unit, content: @Composable ColumnScope.(
                     shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerLow,
                     tonalElevation = 1.dp,
+                    // At most as wide as Material's bottom sheets, centred on tablets.
                     modifier = Modifier
+                        .widthIn(max = 640.dp)
                         .fillMaxWidth()
                         .padding(top = bars.calculateTopPadding())
                         .heightIn(max = maxSheetHeight)

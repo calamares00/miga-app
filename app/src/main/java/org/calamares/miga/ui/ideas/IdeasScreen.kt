@@ -2,6 +2,7 @@ package org.calamares.miga.ui.ideas
 
 import org.calamares.miga.ui.theme.recipePhotoFrame
 import androidx.compose.animation.AnimatedVisibility
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.ButtonContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -52,7 +53,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -136,7 +136,7 @@ fun IdeasScreen(
         optionsExpanded = false
     }
 
-    Scaffold(
+    AdaptiveScaffold(
         // The keyboard is handled by the NavHost; the navigation bar only by the input bar below,
         // so it does not stay padded while the keyboard covers it.
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
