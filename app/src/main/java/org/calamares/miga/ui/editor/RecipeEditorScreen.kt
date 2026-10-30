@@ -3,6 +3,7 @@ package org.calamares.miga.ui.editor
 import androidx.compose.material3.FilledTonalButton
 import org.calamares.miga.data.model.ContentKind
 import org.calamares.miga.data.content.ContentCleanup
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.AiProgressView
 import androidx.compose.foundation.layout.widthIn
 import org.calamares.miga.ui.components.RichTextField
@@ -72,7 +73,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -152,7 +152,7 @@ fun RecipeEditorScreen(
         pendingCameraPath = null
     }
 
-    Scaffold(
+    AdaptiveScaffold(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),

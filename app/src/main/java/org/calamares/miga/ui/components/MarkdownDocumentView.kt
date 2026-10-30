@@ -21,7 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -36,6 +35,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.model.MarkdownDocument
@@ -126,7 +126,7 @@ fun MarkdownBlocks(blocks: List<MarkdownDocument.Block>, modifier: Modifier = Mo
 fun DocumentScreen(title: String, assetPath: String, onBack: () -> Unit) {
     val context = LocalContext.current
     val blocks = remember(assetPath) { MarkdownDocument.parse(readDocumentAsset(context, assetPath)) }
-    Scaffold(
+    AdaptiveScaffold(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),

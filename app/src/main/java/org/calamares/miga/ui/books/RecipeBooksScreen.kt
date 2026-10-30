@@ -13,6 +13,8 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
+import org.calamares.miga.ui.components.AdaptiveScaffold
+import org.calamares.miga.ui.components.GRID_CONTENT_WIDTH
 import org.calamares.miga.ui.components.EmptyState
 import android.content.Intent
 import android.net.Uri
@@ -69,7 +71,6 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -123,7 +124,8 @@ fun RecipeBooksScreen(
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
-    Scaffold(
+    AdaptiveScaffold(
+        maxContentWidth = GRID_CONTENT_WIDTH,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars).exclude(WindowInsets.ime),
         topBar = {

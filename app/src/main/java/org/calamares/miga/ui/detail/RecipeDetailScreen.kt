@@ -8,6 +8,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material.icons.filled.AutoAwesome
 import kotlinx.coroutines.launch
 import org.calamares.miga.ui.theme.recipePhotoFrame
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.FormattedText
 import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.ui.components.ErrorMessage
@@ -67,7 +68,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -185,7 +185,7 @@ fun RecipeDetailScreen(
         Toast.makeText(context, L10n.str(R.string.added_shopping_list), Toast.LENGTH_SHORT).show()
     }
 
-    Scaffold(
+    AdaptiveScaffold(
         contentWindowInsets = WindowInsets(0.dp),
         snackbarHost = { SnackbarHost(snackbarHostState, modifier = Modifier.navigationBarsPadding()) },
         floatingActionButton = {

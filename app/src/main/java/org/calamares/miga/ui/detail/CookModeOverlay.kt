@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.detail
 
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.calamares.miga.ui.components.READABLE_CONTENT_WIDTH
 import org.calamares.miga.ui.components.ButtonContent
 import kotlinx.coroutines.isActive
 import kotlin.coroutines.resume
@@ -36,6 +37,8 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -365,7 +368,15 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         // Since Android 15 full-screen windows draw under the system bars, so the insets are
         // applied here to keep the bottom buttons clear of the navigation bar.
-        Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+        // On a tablet the steps stay at a readable width in the middle of the screen.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .wrapContentWidth(Alignment.CenterHorizontally)
+                .widthIn(max = READABLE_CONTENT_WIDTH)
+                .fillMaxWidth()
+        ) {
             if (totalPages == 0) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(L10n.str(R.string.recipe_has_no_steps), style = MaterialTheme.typography.bodyLarge)

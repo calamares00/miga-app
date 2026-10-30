@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.dishsearch
 
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -25,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -55,7 +55,7 @@ fun DishSearchScreen(
     val state by viewModel.state.collectAsState()
     var query by remember { mutableStateOf("") }
 
-    Scaffold(
+    AdaptiveScaffold(
         topBar = {
             TopAppBar(
                 title = { Text(L10n.str(R.string.find_recipes_ai)) },

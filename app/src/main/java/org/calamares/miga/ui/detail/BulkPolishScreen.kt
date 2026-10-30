@@ -35,7 +35,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,6 +63,7 @@ import org.calamares.miga.R
 import org.calamares.miga.data.polish.BulkPolish
 import org.calamares.miga.data.polish.BulkPolishItem
 import org.calamares.miga.data.polish.BulkPolishState
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.AiContentNotice
 import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.ui.components.ErrorMessage
@@ -93,7 +93,7 @@ fun BulkPolishScreen(onBack: () -> Unit, onOpenRecipe: (Long) -> Unit) {
         onDispose { BulkPolish.watched = false }
     }
 
-    Scaffold(
+    AdaptiveScaffold(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),

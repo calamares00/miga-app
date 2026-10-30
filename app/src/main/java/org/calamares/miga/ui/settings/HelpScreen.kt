@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.settings
 
 import androidx.compose.foundation.selection.toggleable
+import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.ButtonContent
 import androidx.compose.material.icons.filled.Tour
 import androidx.compose.material3.Switch
@@ -46,7 +47,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -111,7 +111,7 @@ fun HelpScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit, onOpenChangelog: (
     val searching = normalizedQuery.isNotEmpty()
     val shown = if (searching) topics.filter { normalizedQuery in it.searchText } else topics
 
-    Scaffold(
+    AdaptiveScaffold(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
