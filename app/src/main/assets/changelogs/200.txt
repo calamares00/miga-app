@@ -1,0 +1,3 @@
+Novedades de la versión 1.0.2:
+• Versión de mantenimiento: a partir de ahora las actualizaciones llegan antes a Google Play.
+• Incluye todo lo de la 1.0.1: mejor en tablets, packs de recetas en el idioma de la app y packs nuevos de cocina mexicana, mediterránea y Navidad.
