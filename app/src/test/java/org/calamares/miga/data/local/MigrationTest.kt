@@ -91,6 +91,26 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun `22 to 23 keeps the books and leaves packs without a series`() {
+        helper.createDatabase(TEST_DB, 22).use { db ->
+            db.execSQL(
+                "INSERT INTO recipe_books (id, uid, name, coverPhotoUri, createdAt, packId, packVersion, updatedAt, isPinned) " +
+                    "VALUES (1, 'book-1', 'Cocina del mundo: México', NULL, 1, 'cocina-mexicana', 2, 1, 1)"
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(TEST_DB, 23, true, MIGRATION_22_23)
+
+        db.query("SELECT packId, packVersion, isPinned, packSeries FROM recipe_books WHERE id = 1").use { cursor ->
+            cursor.moveToFirst()
+            assertEquals("cocina-mexicana", cursor.getString(0))
+            assertEquals(2, cursor.getInt(1))
+            assertEquals(1, cursor.getInt(2))
+            assertEquals(true, cursor.isNull(3))
+        }
+    }
+
     private companion object {
         const val TEST_DB = "migration-test.db"
     }

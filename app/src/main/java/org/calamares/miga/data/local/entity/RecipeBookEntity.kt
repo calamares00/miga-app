@@ -26,5 +26,10 @@ data class RecipeBookEntity(
      */
     val syncConnectionId: Long? = null,
     /** Pinned by the user to the top of the books list; local to this device, not synced. */
-    val isPinned: Boolean = false
+    val isPinned: Boolean = false,
+    /**
+     * Series of an installed pack ("World cuisine", "Specials"...), from the catalogue, used to group
+     * packs in the books list; null for other books or a pack whose catalogue gives none.
+     */
+    val packSeries: String? = null
 )

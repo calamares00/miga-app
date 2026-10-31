@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -39,6 +40,33 @@ class RecipeBooksViewModel(
 
     val viewMode: StateFlow<RecipeListViewMode> = settingsRepository.observeRecipeBookListViewMode()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecipeListViewMode.GRID)
+
+    /** Whether the list is split into my books, server books and packs by series (stored). */
+    val grouped: StateFlow<Boolean> = settingsRepository.observeRecipeBookListGrouped()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /** Kind of book shown; kept while the books tab lives, not stored, so no book stays hidden. */
+    private val _filter = MutableStateFlow(BookFilter.ALL)
+    val filter: StateFlow<BookFilter> = _filter
+
+    /** Names of the sync connections, for the subgroups of server books. */
+    val connectionNames: StateFlow<Map<Long, String>> = repository.observeSyncConnections()
+        .map { connections -> connections.associate { it.id to it.label } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    fun setGrouped(grouped: Boolean) {
+        viewModelScope.launch { settingsRepository.setRecipeBookListGrouped(grouped) }
+    }
+
+    fun setFilter(filter: BookFilter) {
+        _filter.value = filter
+    }
+
+    /** Uninstalls the pack of [book] (its book and the recipes still in it). */
+    fun uninstallPack(book: RecipeBookSummary) {
+        if (!book.isPack) return
+        viewModelScope.launch { repository.uninstallPack(book.id) }
+    }
 
     fun togglePinned(book: RecipeBookSummary) {
         viewModelScope.launch { repository.setRecipeBookPinned(book.id, !book.isPinned) }

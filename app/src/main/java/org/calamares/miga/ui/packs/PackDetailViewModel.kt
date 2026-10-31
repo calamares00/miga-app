@@ -6,7 +6,6 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.calamares.miga.data.export.PackImportResult
-import org.calamares.miga.data.export.RecipeExporter
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.remote.CatalogFetchResult
 import org.calamares.miga.data.remote.PackEntryDto
@@ -51,6 +50,7 @@ class PackDetailViewModel(
                     _uiState.value = if (entry == null) {
                         PackDetailUiState.Error(L10n.str(R.string.pack_no_longer_catalogue))
                     } else {
+                        repository.updatePackSeries(mapOf(entry.id to entry.series))
                         PackDetailUiState.Loaded(entry, repository.findRecipeBookByPackId(packId)?.packVersion)
                     }
                 }
@@ -66,18 +66,24 @@ class PackDetailViewModel(
         val state = _uiState.value as? PackDetailUiState.Loaded ?: return
         viewModelScope.launch {
             _installState.value = InstallState.Installing
-            val bytes = PacksCatalogClient.downloadPackZip(state.entry.downloadUrl)
-            if (bytes == null) {
-                _installState.value = InstallState.Error(L10n.str(R.string.couldnt_download_pack_check_connection))
-                return@launch
-            }
-            when (val result = RecipeExporter.importPackFromBytes(context, bytes, repository, packId, state.entry.latestVersion)) {
+            when (val result = PackInstaller.install(context, repository, state.entry)) {
                 is PackImportResult.Success -> {
                     _installState.value = InstallState.Idle
                     onInstalled(result.bookId)
                 }
                 is PackImportResult.Error -> _installState.value = InstallState.Error(result.reason)
             }
+        }
+    }
+
+    /** Uninstalls this pack (its book and the recipes still in it); the page stays, to reinstall. */
+    fun uninstall() {
+        val state = _uiState.value as? PackDetailUiState.Loaded ?: return
+        viewModelScope.launch {
+            _installState.value = InstallState.Installing
+            repository.uninstallPackById(packId)
+            _uiState.value = state.copy(installedVersion = null)
+            _installState.value = InstallState.Idle
         }
     }
 }
