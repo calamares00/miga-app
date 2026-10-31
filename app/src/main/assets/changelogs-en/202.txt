@@ -1,0 +1,4 @@
+What's new in 1.0.4:
+• Books: filter by packs, your own books or server books, and group them by type, with packs sorted by series (World cuisine, Specials…).
+• Pack catalogue grouped by series, with multiple selection to install, update or uninstall several packs at once.
+• You can now uninstall a pack from its page or by long-pressing its book.
