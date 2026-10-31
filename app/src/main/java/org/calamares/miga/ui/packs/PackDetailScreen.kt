@@ -15,7 +15,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -45,6 +53,7 @@ fun PackDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     val installState by viewModel.installState.collectAsState()
     val context = LocalContext.current
+    var confirmUninstall by remember { mutableStateOf(false) }
 
     AdaptiveScaffold(
         topBar = {
@@ -70,7 +79,7 @@ fun PackDetailScreen(
             }
             is PackDetailUiState.Loaded -> {
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
+                    modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Box(
@@ -124,6 +133,32 @@ fun PackDetailScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(buttonLabel)
+                    }
+
+                    if (state.installedVersion != null) {
+                        OutlinedButton(
+                            onClick = { confirmUninstall = true },
+                            enabled = installState !is InstallState.Installing,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(L10n.str(R.string.uninstall_pack), color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+
+                    if (confirmUninstall) {
+                        AlertDialog(
+                            onDismissRequest = { confirmUninstall = false },
+                            title = { Text(L10n.str(R.string.uninstall_pack)) },
+                            text = { Text(L10n.str(R.string.sure_want_uninstall_x_recipes, state.entry.name)) },
+                            confirmButton = {
+                                TextButton(onClick = { confirmUninstall = false; viewModel.uninstall() }) {
+                                    Text(L10n.str(R.string.uninstall), color = MaterialTheme.colorScheme.error)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { confirmUninstall = false }) { Text(L10n.str(R.string.cancel)) }
+                            }
+                        )
                     }
 
                     val error = installState as? InstallState.Error

@@ -11,7 +11,9 @@ data class RecipeBook(
     /** Sync connection the book belongs to (see SyncConnection); null for a local book. */
     val syncConnectionId: Long? = null,
     /** Shown first in the books list (see RecipeBookSummary.isPinned). */
-    val isPinned: Boolean = false
+    val isPinned: Boolean = false,
+    /** Series of an installed pack, from the catalogue (see RecipeBookEntity.packSeries). */
+    val packSeries: String? = null
 ) {
     /**
      * Pack books are read-only: they cannot be renamed, get a new cover or have recipes added or
@@ -35,7 +37,8 @@ data class RecipeBookSummary(
     val packVersion: Int? = null,
     val syncConnectionId: Long? = null,
     /** Shown first in the books list, with a pin on its cover. */
-    val isPinned: Boolean = false
+    val isPinned: Boolean = false,
+    val packSeries: String? = null
 ) {
     val isPack: Boolean get() = packId != null
     val isSynced: Boolean get() = syncConnectionId != null

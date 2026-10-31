@@ -54,6 +54,7 @@ class SettingsRepository(private val context: Context) {
     private val shoppingAuthorKey = stringPreferencesKey("shopping_author_name")
     private val recipeListViewModeKey = stringPreferencesKey("recipe_list_view_mode")
     private val recipeBookListViewModeKey = stringPreferencesKey("recipe_book_list_view_mode")
+    private val recipeBookListGroupedKey = booleanPreferencesKey("recipe_book_list_grouped")
     private val visionProviderKey = stringPreferencesKey("vision_provider")
     private val geminiApiKeyKey = stringPreferencesKey("gemini_api_key")
     private val geminiModelKey = stringPreferencesKey("gemini_model")
@@ -282,6 +283,14 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setRecipeBookListViewMode(mode: RecipeListViewMode) {
         context.settingsDataStore.edit { prefs -> prefs[recipeBookListViewModeKey] = mode.name }
+    }
+
+    /** Whether the books list is split into packs (by series), the user's books and synced books. */
+    fun observeRecipeBookListGrouped(): Flow<Boolean> =
+        context.settingsDataStore.data.map { prefs -> prefs[recipeBookListGroupedKey] ?: false }
+
+    suspend fun setRecipeBookListGrouped(grouped: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[recipeBookListGroupedKey] = grouped }
     }
 
     /**

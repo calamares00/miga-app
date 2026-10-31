@@ -26,7 +26,9 @@ data class PackEntryDto(
     val downloadUrl: String,
     val minAppVersion: Int? = null,
     /** Language of the recipes ("es", "en"); null for a pack meant for every language. */
-    val language: String? = null
+    val language: String? = null,
+    /** Series the pack belongs to ("Cocina del mundo", "Specials"...), used to group packs. */
+    val series: String? = null
 )
 
 /**

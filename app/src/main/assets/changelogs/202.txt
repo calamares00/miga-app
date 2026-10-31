@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.4:
+• Libros: filtra por packs, tus libros o los del servidor, y agrúpalos por tipo, con los packs ordenados por serie (Cocina del mundo, Especiales…).
+• Catálogo de packs agrupado por series, con selección múltiple para instalar, actualizar o desinstalar varios a la vez.
+• Ya puedes desinstalar un pack desde su ficha o manteniendo pulsado su libro.

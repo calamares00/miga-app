@@ -9,6 +9,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import androidx.compose.material3.OutlinedButton
@@ -105,7 +112,8 @@ fun RecipeBooksScreen(
     onAddBookClick: () -> Unit,
     onEditBookClick: (Long) -> Unit,
     onExplorePacks: () -> Unit = {},
-    onOpenIdeas: () -> Unit = {}
+    onOpenIdeas: () -> Unit = {},
+    onOpenSync: () -> Unit = {}
 ) {
     val loadedBooks by viewModel.books.collectAsState()
     val books = loadedBooks.orEmpty()
@@ -116,7 +124,20 @@ fun RecipeBooksScreen(
     val changelogAnnouncement by viewModel.changelogAnnouncement.collectAsState()
     val crashReport by viewModel.crashReport.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
+    val grouped by viewModel.grouped.collectAsState()
+    val filter by viewModel.filter.collectAsState()
+    val connectionNames by viewModel.connectionNames.collectAsState()
     var showViewModeMenu by remember { mutableStateOf(false) }
+    var packToUninstall by remember { mutableStateOf<RecipeBookSummary?>(null) }
+    val labels = BookSectionLabels(
+        myBooks = L10n.str(R.string.books_group_mine),
+        server = L10n.str(R.string.books_group_server),
+        packs = L10n.str(R.string.books_group_packs),
+        otherPacks = L10n.str(R.string.books_group_other_packs)
+    )
+    val sections = remember(books, filter, grouped, connectionNames, labels) {
+        bookSections(books, filter, grouped, connectionNames, labels)
+    }
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
 
@@ -154,6 +175,13 @@ fun RecipeBooksScreen(
                                     onClick = { showViewModeMenu = false; viewModel.setViewMode(mode) }
                                 )
                             }
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text(L10n.str(R.string.group_books)) },
+                                leadingIcon = { Icon(Icons.Filled.Category, contentDescription = null) },
+                                trailingIcon = { Checkbox(checked = grouped, onCheckedChange = null) },
+                                onClick = { showViewModeMenu = false; viewModel.setGrouped(!grouped) }
+                            )
                         }
                     }
                 }
@@ -181,58 +209,99 @@ fun RecipeBooksScreen(
                     Button(onClick = onAddBookClick) { Text(L10n.str(R.string.create_my_first_book)) }
                     OutlinedButton(onClick = onExplorePacks) { Text(L10n.str(R.string.explore_recipe_packs)) }
                 }
-            } else if (viewMode == RecipeListViewMode.GRID) {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(150.dp),
-                    // Bottom padding so the "New book" button does not cover the last row.
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    items(books, key = { it.id }) { book ->
-                        BookMenuHost(
-                            book,
-                            onEdit = { onEditBookClick(book.id) },
-                            onTogglePin = { viewModel.togglePinned(book) },
-                            // Pinning moves the book to the top; animate it instead of jumping.
-                            modifier = Modifier.animateItemPlacement()
-                        ) { openMenu ->
-                            RecipeBookCard(
-                                book = book,
-                                onClick = { onBookClick(book.id) },
-                                onLongClick = openMenu,
-                                onEditClick = { onEditBookClick(book.id) }
-                            )
+            } else {
+                BookFilterChips(filter, onSelect = viewModel::setFilter)
+                if (sections.isEmpty()) {
+                    FilterEmptyState(
+                        filter,
+                        onExplorePacks = onExplorePacks,
+                        onAddBookClick = onAddBookClick,
+                        onOpenSync = onOpenSync,
+                        modifier = Modifier.fillMaxSize().weight(1f)
+                    )
+                } else if (viewMode == RecipeListViewMode.GRID) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(150.dp),
+                        // Bottom padding so the "New book" button does not cover the last row.
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        sections.forEach { section ->
+                            section.title?.let { title ->
+                                item(key = "header/${section.key}", span = { GridItemSpan(maxLineSpan) }, contentType = "header") {
+                                    SectionHeader(title, section.level)
+                                }
+                            }
+                            items(section.books, key = { it.id }) { book ->
+                                BookMenuHost(
+                                    book,
+                                    onEdit = { onEditBookClick(book.id) },
+                                    onTogglePin = { viewModel.togglePinned(book) },
+                                    onUninstall = { packToUninstall = book },
+                                    // Pinning moves the book to the top; animate it instead of jumping.
+                                    modifier = Modifier.animateItemPlacement()
+                                ) { openMenu ->
+                                    RecipeBookCard(
+                                        book = book,
+                                        onClick = { onBookClick(book.id) },
+                                        onLongClick = openMenu,
+                                        onEditClick = { onEditBookClick(book.id) }
+                                    )
+                                }
+                            }
                         }
                     }
-                }
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    items(books, key = { it.id }) { book ->
-                        BookMenuHost(
-                            book,
-                            onEdit = { onEditBookClick(book.id) },
-                            onTogglePin = { viewModel.togglePinned(book) },
-                            // Pinning moves the book to the top; animate it instead of jumping.
-                            modifier = Modifier.animateItemPlacement()
-                        ) { openMenu ->
-                            RecipeBookRow(
-                                book = book,
-                                compact = viewMode == RecipeListViewMode.COMPACT,
-                                onClick = { onBookClick(book.id) },
-                                onLongClick = openMenu,
-                                onEditClick = { onEditBookClick(book.id) }
-                            )
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        sections.forEach { section ->
+                            section.title?.let { title ->
+                                item(key = "header/${section.key}", contentType = "header") { SectionHeader(title, section.level) }
+                            }
+                            items(section.books, key = { it.id }) { book ->
+                                BookMenuHost(
+                                    book,
+                                    onEdit = { onEditBookClick(book.id) },
+                                    onTogglePin = { viewModel.togglePinned(book) },
+                                    onUninstall = { packToUninstall = book },
+                                    // Pinning moves the book to the top; animate it instead of jumping.
+                                    modifier = Modifier.animateItemPlacement()
+                                ) { openMenu ->
+                                    RecipeBookRow(
+                                        book = book,
+                                        compact = viewMode == RecipeListViewMode.COMPACT,
+                                        onClick = { onBookClick(book.id) },
+                                        onLongClick = openMenu,
+                                        onEditClick = { onEditBookClick(book.id) }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    packToUninstall?.let { book ->
+        AlertDialog(
+            onDismissRequest = { packToUninstall = null },
+            title = { Text(L10n.str(R.string.uninstall_pack)) },
+            text = { Text(L10n.str(R.string.sure_want_uninstall_x_recipes, book.name)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.uninstallPack(book); packToUninstall = null }) {
+                    Text(L10n.str(R.string.uninstall), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { packToUninstall = null }) { Text(L10n.str(R.string.cancel)) }
+            }
+        )
     }
 
     changelogAnnouncement?.let { announcement ->
@@ -311,6 +380,7 @@ private fun BookMenuHost(
     book: RecipeBookSummary,
     onEdit: () -> Unit,
     onTogglePin: () -> Unit,
+    onUninstall: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable (openMenu: () -> Unit) -> Unit
 ) {
@@ -327,7 +397,13 @@ private fun BookMenuHost(
                 leadingIcon = { Icon(if (book.isPinned) Icons.Outlined.PushPin else Icons.Filled.PushPin, contentDescription = null) },
                 onClick = { showMenu = false; onTogglePin() }
             )
-            if (!book.isPack) {
+            if (book.isPack) {
+                DropdownMenuItem(
+                    text = { Text(L10n.str(R.string.uninstall_pack)) },
+                    leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
+                    onClick = { showMenu = false; onUninstall() }
+                )
+            } else {
                 DropdownMenuItem(
                     text = { Text(L10n.str(R.string.edit_book)) },
                     leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
@@ -335,6 +411,86 @@ private fun BookMenuHost(
                 )
             }
         }
+    }
+}
+
+/** All, packs, my books, server: which kind of book the list shows. */
+@Composable
+private fun BookFilterChips(selected: BookFilter, onSelect: (BookFilter) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        BookFilter.entries.forEach { filter ->
+            FilterChip(
+                selected = filter == selected,
+                onClick = { onSelect(filter) },
+                label = {
+                    Text(
+                        L10n.str(
+                            when (filter) {
+                                BookFilter.ALL -> R.string.books_filter_all
+                                BookFilter.PACKS -> R.string.books_filter_packs
+                                BookFilter.LOCAL -> R.string.books_filter_mine
+                                BookFilter.SERVER -> R.string.books_filter_server
+                            }
+                        )
+                    )
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, level: Int) {
+    Text(
+        text = title,
+        style = if (level == 0) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleSmall,
+        fontWeight = if (level == 0) FontWeight.SemiBold else FontWeight.Medium,
+        color = if (level == 0) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.primary,
+        modifier = Modifier.fillMaxWidth().padding(top = if (level == 0) 8.dp else 0.dp)
+    )
+}
+
+/**
+ * Shown when a filter leaves no books: says why and offers the way to get some (the pack
+ * catalogue, a new book or the sync settings).
+ */
+@Composable
+private fun FilterEmptyState(
+    filter: BookFilter,
+    onExplorePacks: () -> Unit,
+    onAddBookClick: () -> Unit,
+    onOpenSync: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    when (filter) {
+        BookFilter.PACKS -> EmptyState(
+            icon = Icons.Filled.CloudDone,
+            title = L10n.str(R.string.no_packs_installed),
+            body = L10n.str(R.string.no_packs_installed_body),
+            modifier = modifier
+        ) {
+            Button(onClick = onExplorePacks) { Text(L10n.str(R.string.open_pack_catalogue)) }
+        }
+        BookFilter.LOCAL -> EmptyState(
+            icon = Icons.Outlined.MenuBook,
+            title = L10n.str(R.string.no_own_books),
+            body = L10n.str(R.string.no_own_books_body),
+            modifier = modifier
+        ) {
+            Button(onClick = onAddBookClick) { Text(L10n.str(R.string.new_book)) }
+        }
+        BookFilter.SERVER -> EmptyState(
+            icon = Icons.Filled.Sync,
+            title = L10n.str(R.string.no_server_books),
+            body = L10n.str(R.string.no_server_books_body),
+            modifier = modifier
+        ) {
+            Button(onClick = onOpenSync) { Text(L10n.str(R.string.set_up_sync)) }
+        }
+        BookFilter.ALL -> Unit
     }
 }
 

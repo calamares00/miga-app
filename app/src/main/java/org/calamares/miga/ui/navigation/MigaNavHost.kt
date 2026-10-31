@@ -301,7 +301,8 @@ private fun NavGraphBuilder.screens(
             onAddBookClick = { navController.navigate(Destinations.bookEditor()) },
             onEditBookClick = { navController.navigate(Destinations.bookEditor(it)) },
             onExplorePacks = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) },
-            onOpenIdeas = { navController.navigate(Destinations.IDEAS_ROUTE) }
+            onOpenIdeas = { navController.navigate(Destinations.IDEAS_ROUTE) },
+            onOpenSync = { navController.navigate(Destinations.SYNC_CONNECTIONS_ROUTE) }
         )
     }
 
