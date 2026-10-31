@@ -406,7 +406,8 @@ object RecipeExporter {
         zipBytes: ByteArray,
         repository: RecipeRepository,
         packId: String,
-        packVersion: Int
+        packVersion: Int,
+        packSeries: String?
     ): PackImportResult = withContext(Dispatchers.IO) {
         try {
             if (!isZip(zipBytes)) return@withContext PackImportResult.Error(L10n.str(R.string.downloaded_file_isnt_valid_zip))
@@ -425,6 +426,7 @@ object RecipeExporter {
             val bookId = repository.installOrUpdatePack(
                 packId = packId,
                 packVersion = packVersion,
+                packSeries = packSeries,
                 bookName = bookMeta.name,
                 bookUid = bookMeta.uid,
                 bookCoverUri = coverPath?.let { extracted[it] },
@@ -439,12 +441,12 @@ object RecipeExporter {
         }
     }
 
-    /** Stores the AI health rating included in an imported recipe, if any. */
     /** Restores the dated personal notes included in an imported recipe. */
     suspend fun applyJournalFromImport(repository: RecipeRepository, recipeId: Long, journal: List<JournalNoteDto>) {
         journal.forEach { repository.addRecipeNote(recipeId, it.text, it.createdAt) }
     }
 
+    /** Stores the AI health rating included in an imported recipe, if any. */
     suspend fun applyHealthFromImport(repository: RecipeRepository, recipeId: Long, health: RecipeHealthDto?) {
         if (health == null) return
         val colorLevel = runCatching { HealthColorLevel.valueOf(health.colorLevel) }.getOrDefault(HealthColorLevel.YELLOW)

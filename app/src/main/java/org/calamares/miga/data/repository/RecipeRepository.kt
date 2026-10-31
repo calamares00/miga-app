@@ -1247,7 +1247,8 @@ class RecipeRepository(
             list.map {
                 RecipeBookSummary(
                     it.book.id, it.book.name, it.book.coverPhotoUri, it.recipeCount,
-                    it.book.packId, it.book.packVersion, it.book.syncConnectionId, it.book.isPinned
+                    it.book.packId, it.book.packVersion, it.book.syncConnectionId, it.book.isPinned,
+                    it.book.packSeries
                 )
             }
         }
@@ -1267,6 +1268,25 @@ class RecipeRepository(
 
     suspend fun findRecipeBookByPackId(packId: String): RecipeBook? =
         recipeBookDao.findByPackId(packId)?.toDomain()
+
+    /**
+     * Stores the series the catalogue gives for each installed pack ([seriesByPackId]), so packs
+     * installed before series existed, or moved to another series, are grouped right. Only called
+     * with a catalogue the user opened: the app never fetches it in the background.
+     */
+    suspend fun updatePackSeries(seriesByPackId: Map<String, String?>) {
+        seriesByPackId.forEach { (packId, series) ->
+            val book = recipeBookDao.findByPackId(packId) ?: return@forEach
+            if (series != null && book.packSeries != series) recipeBookDao.update(book.copy(packSeries = series))
+        }
+    }
+
+    /** Uninstalls the pack [packId] if it is installed (see [uninstallPack]); false if it is not. */
+    suspend fun uninstallPackById(packId: String): Boolean {
+        val book = recipeBookDao.findByPackId(packId) ?: return false
+        uninstallPack(book.id)
+        return true
+    }
 
     /**
      * Safeguard: pack books are read-only (see [RecipeBook.isPack]). The UI already blocks editing
@@ -1369,6 +1389,7 @@ class RecipeRepository(
     suspend fun installOrUpdatePack(
         packId: String,
         packVersion: Int,
+        packSeries: String?,
         bookName: String,
         bookUid: String,
         bookCoverUri: String?,
@@ -1385,7 +1406,8 @@ class RecipeRepository(
                     coverPhotoUri = bookCoverUri,
                     createdAt = now,
                     packId = packId,
-                    packVersion = packVersion
+                    packVersion = packVersion,
+                    packSeries = packSeries
                 )
             )
         } else {
@@ -1393,7 +1415,8 @@ class RecipeRepository(
                 existingBook.copy(
                     name = bookName,
                     coverPhotoUri = bookCoverUri ?: existingBook.coverPhotoUri,
-                    packVersion = packVersion
+                    packVersion = packVersion,
+                    packSeries = packSeries ?: existingBook.packSeries
                 )
             )
             existingBook.id
@@ -1512,12 +1535,21 @@ class RecipeRepository(
     }
 
     /**
-     * Uninstalls a pack: deletes its recipes and the book, bypassing the non-empty check of
-     * [deleteRecipeBook].
+     * Uninstalls a pack: deletes the book and the recipes still in it (those the user moved to
+     * another book stay), bypassing the non-empty check of [deleteRecipeBook], plus their photo and
+     * cover files unless another recipe or book still uses them.
      */
-    suspend fun uninstallPack(bookId: Long) = db.withTransaction {
-        recipeDao.deleteAllForBook(bookId)
-        recipeBookDao.delete(bookId)
+    suspend fun uninstallPack(bookId: Long) {
+        val book = recipeBookDao.getOnce(bookId) ?: return
+        val files = getRecipesForBookOnce(bookId).flatMap { recipe -> recipe.photos.map { it.uri } } +
+            listOfNotNull(book.coverPhotoUri)
+        db.withTransaction {
+            recipeDao.deleteAllForBook(bookId)
+            recipeBookDao.delete(bookId)
+        }
+        val stillUsed = getAllRecipesOnce().flatMap { recipe -> recipe.photos.map { it.uri } }.toSet() +
+            getAllRecipeBooksOnce().mapNotNull { it.coverPhotoUri }
+        files.distinct().filter { it !in stillUsed }.forEach { PhotoStorage.deleteFile(it) }
     }
 
     // --- Sync server (self-hosted namespaces) ---
@@ -1970,7 +2002,8 @@ class RecipeRepository(
     private fun appLanguage(): String = if (L10n.locale().language == "es") "es" else "en"
 }
 
-fun RecipeBookEntity.toDomain() = RecipeBook(id, uid, name, coverPhotoUri, packId, packVersion, syncConnectionId, isPinned)
+fun RecipeBookEntity.toDomain() =
+    RecipeBook(id, uid, name, coverPhotoUri, packId, packVersion, syncConnectionId, isPinned, packSeries)
 
 /**
  * The "?: accessToken" fallback is deliberate: decrypt returns null (it does not throw) for rows
