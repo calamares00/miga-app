@@ -319,17 +319,23 @@ class RecipeRepository(
             if (stepEntities.isNotEmpty()) recipeDao.insertSteps(stepEntities)
 
             // Photos are rewritten too, but existing ones (matched by uri) keep their uid so the
-            // sync engine does not treat them as new photos on every save.
+            // sync engine does not treat them as new photos on every save. A restored photo keeps
+            // the uid saved in the backup, or the server would see it as a second copy.
             val existingPhotos = recipeDao.getPhotosOnce(recipeId)
             val existingUidByUri = existingPhotos.associate { it.uri to it.uid }
             recipeDao.deletePhotos(recipeId)
+            val usedUids = mutableSetOf<String>()
             val newPhotoEntities = draft.photos.mapIndexed { index, photo ->
+                val uid = existingUidByUri[photo.uri]?.takeIf { it !in usedUids }
+                    ?: photo.uid?.takeIf { it !in usedUids && recipeDao.findPhotoByUid(it) == null }
+                    ?: UUID.randomUUID().toString()
+                usedUids += uid
                 RecipePhotoEntity(
                     recipeId = recipeId,
                     uri = photo.uri,
                     position = index,
                     isCover = photo.isCover,
-                    uid = existingUidByUri[photo.uri] ?: UUID.randomUUID().toString()
+                    uid = uid
                 )
             }
             if (newPhotoEntities.isNotEmpty()) recipeDao.insertPhotos(newPhotoEntities)
@@ -1781,10 +1787,20 @@ class RecipeRepository(
      * Returns the local book id after applying the upsert, or null when it was ignored (the local
      * copy was newer, or it is a tombstone).
      */
-    suspend fun applyRemoteBookUpsert(connectionId: Long, dto: BookSyncDto): Long? = db.withTransaction {
+    suspend fun applyRemoteBookUpsert(connectionId: Long, dto: BookSyncDto, firstSync: Boolean = false): Long? = db.withTransaction {
         if (dto.deletedAt != null) return@withTransaction null
         val existing = recipeBookDao.findByUid(dto.uid)
-        if (existing != null && existing.updatedAt > dto.updatedAt) return@withTransaction null
+        if (existing != null && existing.updatedAt > dto.updatedAt) {
+            // On the first sync of a new connection, a local book the server already knows (same
+            // uid, typically restored from a backup after reinstalling) is the same book: it is
+            // linked again, as the user would do by hand, instead of staying local while its
+            // recipes and photos keep arriving from the server.
+            if (firstSync && existing.syncConnectionId == null && existing.packId == null) {
+                recipeBookDao.update(existing.copy(syncConnectionId = connectionId))
+                enqueueBookResyncLocked(existing.id, connectionId)
+            }
+            return@withTransaction null
+        }
         if (existing == null) {
             recipeBookDao.insert(
                 RecipeBookEntity(
@@ -1967,6 +1983,47 @@ class RecipeRepository(
      * [RecipePhotoEntity.uri] so the sync engine can delete the file; null when there was nothing
      * to delete.
      */
+    /**
+     * Applies the cover flag and position of a server photo this phone already has, unless the
+     * recipe or the photo still has local changes waiting to be uploaded (those win).
+     */
+    suspend fun applyRemotePhotoMeta(dto: PhotoMetaDto) {
+        if (dto.deletedAt != null) return
+        if (pendingSyncChangeDao.hasPendingForUid(dto.recipeUid) || pendingSyncChangeDao.hasPendingForUid(dto.uid)) return
+        recipeDao.updatePhotoMetaByUid(dto.uid, dto.isCover, dto.position)
+    }
+
+    /**
+     * Handles a downloaded server photo whose bytes are identical to a photo the recipe already has
+     * under another uid: the same picture stored twice, for example after restoring a backup made
+     * before backups kept photo uids. Instead of adding a duplicate, every device keeps the smaller
+     * of the two uids: the local row takes the server's uid when it is smaller, and the other uid
+     * is queued for deletion on the server. Returns false when there is no such twin, so the caller
+     * stores the photo as new.
+     */
+    suspend fun mergeRemotePhotoTwin(dto: PhotoMetaDto, bytes: ByteArray): Boolean {
+        val recipe = recipeDao.findByUid(dto.recipeUid) ?: return false
+        val twin = recipeDao.getPhotosOnce(recipe.id).firstOrNull { photo ->
+            photo.uid != dto.uid && PhotoStorage.readBytes(photo.uri)?.contentEquals(bytes) == true
+        } ?: return false
+        val connectionId = recipeBookDao.getOnce(recipe.recipeBookId)?.syncConnectionId
+        db.withTransaction {
+            val twinUid = twin.uid
+            if (twinUid == null || dto.uid < twinUid) {
+                recipeDao.updatePhotoUid(twin.id, dto.uid)
+                recipeDao.updatePhotoMetaByUid(dto.uid, dto.isCover, dto.position)
+                if (connectionId != null && twinUid != null) {
+                    enqueueSyncChange(connectionId, SyncEntityType.PHOTO, twinUid, SyncChangeType.DELETE, parentUid = dto.recipeUid)
+                }
+            } else if (connectionId != null) {
+                // The local uid wins: make sure the server has it before its copy goes away.
+                enqueueSyncChange(connectionId, SyncEntityType.PHOTO, twinUid, SyncChangeType.UPSERT, parentUid = dto.recipeUid)
+                enqueueSyncChange(connectionId, SyncEntityType.PHOTO, dto.uid, SyncChangeType.DELETE, parentUid = dto.recipeUid)
+            }
+        }
+        return true
+    }
+
     suspend fun applyRemotePhotoDeletion(dto: PhotoMetaDto): String? {
         if (dto.deletedAt == null) return null
         val existing = recipeDao.findPhotoByUid(dto.uid) ?: return null
@@ -2046,7 +2103,7 @@ fun RecipeWithDetails.toDomain(): Recipe {
         timesCooked = recipe.timesCooked,
         createdAt = recipe.createdAt,
         updatedAt = recipe.updatedAt,
-        photos = photos.sortedBy { it.position }.map { RecipePhoto(it.uri, it.isCover) },
+        photos = photos.sortedBy { it.position }.map { RecipePhoto(it.uri, it.isCover, it.uid) },
         ingredientGroups = orderGroupsMainFirst(ingredientGroups).map { (name, items) -> IngredientGroup(name, items) },
         stepGroups = orderGroupsMainFirst(stepGroups).map { (name, items) -> StepGroup(name, items) },
         tags = tags.map { it.name }.sorted(),

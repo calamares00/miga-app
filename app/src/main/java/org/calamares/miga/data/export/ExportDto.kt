@@ -101,7 +101,9 @@ data class RecipeNutritionDto(
 @Serializable
 data class PhotoExportDto(
     val fileName: String,
-    val isCover: Boolean
+    val isCover: Boolean,
+    /** Sync uid of the photo (see [org.calamares.miga.data.model.RecipePhoto.uid]); absent in older files. */
+    val uid: String? = null
 )
 
 @Serializable
