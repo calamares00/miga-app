@@ -1,0 +1,6 @@
+Novedades de la versión 1.0.6:
+• Lista de la compra reorganizada: cambia de lista desde el título, comparte desde la barra y entra en el modo tienda con el botón de abajo.
+• Toca el lápiz de un artículo para cambiar su nombre, cantidad o pasillo.
+• Catálogo con buscador. Las plantillas tienen su propio apartado en el menú.
+• El catálogo de artículos ya sigue el idioma de la app.
+• Si instalaste Miga desde Google Play, te avisa al abrirla cuando hay una versión nueva.

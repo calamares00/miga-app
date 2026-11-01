@@ -72,6 +72,8 @@ class SettingsRepository(private val context: Context) {
     private val dictationLanguageKey = stringPreferencesKey("dictation_language")
     private val lastSeenVersionCodeKey = intPreferencesKey("last_seen_version_code")
     private val packsCatalogRepoKey = stringPreferencesKey("packs_catalog_repo")
+    private val lastUpdateCheckKey = longPreferencesKey("last_update_check")
+    private val dismissedUpdateKey = stringPreferencesKey("dismissed_update_version")
 
     /**
      * AI API keys are stored encrypted with the device Keystore key of [TokenCipher], as
@@ -479,6 +481,20 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setPacksCatalogRepo(repo: String) {
         context.settingsDataStore.edit { prefs -> prefs[packsCatalogRepoKey] = repo.trim() }
+    }
+
+    /** When the app last looked for a newer version (see AppUpdateClient), in epoch millis. */
+    suspend fun lastUpdateCheck(): Long = context.settingsDataStore.data.first()[lastUpdateCheckKey] ?: 0L
+
+    suspend fun setLastUpdateCheck(millis: Long) {
+        context.settingsDataStore.edit { prefs -> prefs[lastUpdateCheckKey] = millis }
+    }
+
+    /** Version the user answered "Not now" to; it is not announced again. */
+    suspend fun dismissedUpdateVersion(): String? = context.settingsDataStore.data.first()[dismissedUpdateKey]
+
+    suspend fun setDismissedUpdateVersion(versionName: String) {
+        context.settingsDataStore.edit { prefs -> prefs[dismissedUpdateKey] = versionName }
     }
 
     // Settings carried by the full backup. API keys (encrypted with this phone's Keystore, useless
