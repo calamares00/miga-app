@@ -150,7 +150,7 @@ class SyncEngine(private val repository: RecipeRepository) {
     private suspend fun applyChanges(context: Context, connection: SyncConnection, changes: ChangesResponseDto): List<Long> {
         val failedPhotoRevisions = mutableListOf<Long>()
         changes.books.filter { it.deletedAt == null }.forEach { dto ->
-            val bookId = repository.applyRemoteBookUpsert(connection.id, dto)
+            val bookId = repository.applyRemoteBookUpsert(connection.id, dto, firstSync = connection.lastSyncedAt == null)
             if (bookId != null) applyBookCoverIfPresent(context, connection, bookId, dto)
         }
         // An "unlinked" tombstone (dto.unlinked, see SyncDtos.kt) must not delete anything locally.
@@ -168,11 +168,9 @@ class SyncEngine(private val repository: RecipeRepository) {
             when {
                 dto.unlinked -> Unit
                 dto.deletedAt != null -> repository.applyRemotePhotoDeletion(dto)?.let { PhotoStorage.deleteFile(it) }
-                !repository.hasLocalPhoto(dto.uid) -> when (val download = SyncClient.downloadPhoto(connection, dto.recipeUid, dto.uid)) {
-                    is PhotoDownloadResult.Success -> {
-                        val localUri = PhotoStorage.copyBytesToInternalStorage(context, download.bytes)
-                        if (localUri != null && !repository.applyRemotePhotoUpsert(dto, localUri)) PhotoStorage.deleteFile(localUri)
-                    }
+                repository.hasLocalPhoto(dto.uid) -> repository.applyRemotePhotoMeta(dto)
+                else -> when (val download = SyncClient.downloadPhoto(connection, dto.recipeUid, dto.uid)) {
+                    is PhotoDownloadResult.Success -> storeDownloadedPhoto(context, dto, download.bytes)
                     // The server knows the photo but not its bytes yet (the uploader has not sent
                     // them). It will arrive as a new change once uploaded, so the cursor does not
                     // need to wait.
@@ -350,9 +348,18 @@ class SyncEngine(private val repository: RecipeRepository) {
             repository.applyRemotePhotoDeletion(copy)?.let { PhotoStorage.deleteFile(it) }
         } else if (!repository.hasLocalPhoto(copy.uid)) {
             val download = SyncClient.downloadPhoto(connection, copy.recipeUid, copy.uid) as? PhotoDownloadResult.Success ?: return
-            val localUri = PhotoStorage.copyBytesToInternalStorage(context, download.bytes) ?: return
-            if (!repository.applyRemotePhotoUpsert(copy, localUri)) PhotoStorage.deleteFile(localUri)
+            storeDownloadedPhoto(context, copy, download.bytes)
         }
+    }
+
+    /**
+     * Stores a downloaded photo the phone does not have under its uid, unless the recipe already
+     * has the same picture under another uid (see [RecipeRepository.mergeRemotePhotoTwin]).
+     */
+    private suspend fun storeDownloadedPhoto(context: Context, dto: PhotoMetaDto, bytes: ByteArray) {
+        if (repository.mergeRemotePhotoTwin(dto, bytes)) return
+        val localUri = PhotoStorage.copyBytesToInternalStorage(context, bytes) ?: return
+        if (!repository.applyRemotePhotoUpsert(dto, localUri)) PhotoStorage.deleteFile(localUri)
     }
 
     private companion object {

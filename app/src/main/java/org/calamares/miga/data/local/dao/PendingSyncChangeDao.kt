@@ -14,6 +14,9 @@ interface PendingSyncChangeDao {
     @Query("SELECT * FROM pending_sync_changes WHERE syncConnectionId = :syncConnectionId ORDER BY createdAt ASC")
     suspend fun getPendingForConnection(syncConnectionId: Long): List<PendingSyncChangeEntity>
 
+    @Query("SELECT EXISTS(SELECT 1 FROM pending_sync_changes WHERE uid = :uid)")
+    suspend fun hasPendingForUid(uid: String): Boolean
+
     @Query("DELETE FROM pending_sync_changes WHERE id = :id")
     suspend fun clear(id: Long)
 
