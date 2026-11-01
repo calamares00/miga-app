@@ -9,6 +9,9 @@ import org.calamares.miga.crash.CrashReporter
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipeListViewMode
+import org.calamares.miga.data.remote.AppInstallSource
+import org.calamares.miga.data.remote.AppRelease
+import org.calamares.miga.data.remote.AppUpdateClient
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.sync.SyncEngine
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -85,6 +88,43 @@ class RecipeBooksViewModel(
     private val _crashReport = MutableStateFlow(CrashReporter.pendingReport())
     val crashReport: StateFlow<String?> = _crashReport
 
+    /** A newer version on Google Play, announced once a day at most (see [checkForUpdate]). */
+    private val _availableUpdate = MutableStateFlow<AppRelease?>(null)
+    val availableUpdate: StateFlow<AppRelease?> = _availableUpdate
+
+    /**
+     * Looks for a newer Miga when the app was installed from Google Play (F-Droid and sideloaded
+     * installs update elsewhere, so they make no request). At most once a day, and a release is
+     * only announced a day after publication, when Play has normally approved it.
+     */
+    fun checkForUpdate(context: Context) {
+        if (!AppInstallSource.isGooglePlay(context)) return
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            if (now - settingsRepository.lastUpdateCheck() < UPDATE_CHECK_INTERVAL_MILLIS) return@launch
+            val latest = AppUpdateClient.fetchLatest() ?: return@launch
+            settingsRepository.setLastUpdateCheck(now)
+            val published = latest.publishedAt?.toEpochMilli() ?: return@launch
+            if (now - published < PLAY_REVIEW_GRACE_MILLIS) {
+                // Too recent: look again on the next start instead of waiting a whole day.
+                settingsRepository.setLastUpdateCheck(0L)
+                return@launch
+            }
+            if (AppUpdateClient.isNewer(latest.versionName, BuildConfig.VERSION_NAME) &&
+                latest.versionName != settingsRepository.dismissedUpdateVersion()
+            ) {
+                _availableUpdate.value = latest
+            }
+        }
+    }
+
+    /** [forever] ("Not now") stops announcing this version; otherwise it comes back tomorrow. */
+    fun dismissUpdate(forever: Boolean) {
+        val release = _availableUpdate.value ?: return
+        _availableUpdate.value = null
+        if (forever) viewModelScope.launch { settingsRepository.setDismissedUpdateVersion(release.versionName) }
+    }
+
     fun dismissCrashReport() {
         CrashReporter.dismiss()
         _crashReport.value = null
@@ -134,3 +174,6 @@ class RecipeBooksViewModel(
         _changelogAnnouncement.value = null
     }
 }
+
+private const val UPDATE_CHECK_INTERVAL_MILLIS = 24L * 60 * 60 * 1000
+private const val PLAY_REVIEW_GRACE_MILLIS = 24L * 60 * 60 * 1000
