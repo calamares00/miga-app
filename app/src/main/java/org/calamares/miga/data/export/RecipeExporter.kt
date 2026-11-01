@@ -264,14 +264,16 @@ object RecipeExporter {
         recipes: List<Recipe>,
         templates: List<ShoppingTemplate> = emptyList(),
         stores: List<ShoppingStore> = emptyList(),
+        settings: SettingsBackupDto? = null,
         password: CharArray? = null
     ) = withContext(Dispatchers.IO) {
         val dto = LibraryExportDto(
             exportedAt = System.currentTimeMillis(),
-            books = books.map { bookExportDto(it) },
+            books = books.map { bookExportDto(it, withPack = true) },
             recipes = recipes.map { it.toExportDto() },
             shoppingTemplates = templates.filter { !it.isPredefined }.map { TemplateBackupDto(it.name, it.items) },
-            shoppingStores = stores.map { StoreBackupDto(it.name, it.argb, it.aisleOrder) }
+            shoppingStores = stores.map { StoreBackupDto(it.name, it.argb, it.aisleOrder) },
+            settings = settings
         )
         val content = json.encodeToString(dto)
         val photoSources = books.flatMap { book ->
@@ -350,7 +352,9 @@ object RecipeExporter {
         parsed: LibraryImportParseResult.Success,
         repository: RecipeRepository,
         /** Puts every recipe in this book instead of the books they came from (importing a book's file into another book). */
-        targetBookId: Long? = null
+        targetBookId: Long? = null,
+        /** Restores the installed packs of a full backup as packs instead of as normal books. */
+        restorePacks: Boolean = false
     ): LibraryImportResult = withContext(Dispatchers.IO) {
         try {
             val dto = parsed.dto
@@ -362,7 +366,25 @@ object RecipeExporter {
                 book?.coverPhotoFileName?.let { extracted["books/${book.uid}/$it"] }
 
             val bookIdsByName = mutableMapOf<String, Long>()
-            dto.recipes.forEach { recipeDto ->
+            val packRecipeUids = mutableSetOf<String>()
+            if (restorePacks && targetBookId == null) {
+                dto.books.forEach { book ->
+                    val packId = book.packId ?: return@forEach
+                    val packRecipes = dto.recipes.filter { it.recipeBookName == book.name }
+                    bookIdsByName[book.name] = repository.installOrUpdatePack(
+                        packId = packId,
+                        packVersion = book.packVersion ?: 0,
+                        packSeries = book.packSeries,
+                        bookName = book.name,
+                        bookUid = book.uid,
+                        bookCoverUri = coverOf(book),
+                        recipes = packRecipes,
+                        photosByUid = packRecipes.associate { it.uid to resolvePhotos(it.uid, it.photos, extracted) }
+                    )
+                    packRecipeUids += packRecipes.map { it.uid }
+                }
+            }
+            dto.recipes.filter { it.uid !in packRecipeUids }.forEach { recipeDto ->
                 val bookId = targetBookId ?: bookIdsByName.getOrPut(recipeDto.recipeBookName) {
                     val bookMeta = dto.books.find { it.name == recipeDto.recipeBookName }
                     repository.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName, bookMeta?.uid, coverOf(bookMeta))
@@ -467,10 +489,14 @@ object RecipeExporter {
         )
     }
 
-    private fun bookExportDto(book: RecipeBook) = BookExportDto(
+    /** [withPack] only for the full backup: a shared book file is always imported as a normal book. */
+    private fun bookExportDto(book: RecipeBook, withPack: Boolean = false) = BookExportDto(
         uid = book.uid,
         name = book.name,
-        coverPhotoFileName = if (book.coverPhotoUri != null) "cover.jpg" else null
+        coverPhotoFileName = if (book.coverPhotoUri != null) "cover.jpg" else null,
+        packId = book.packId.takeIf { withPack },
+        packVersion = book.packVersion.takeIf { withPack },
+        packSeries = book.packSeries.takeIf { withPack }
     )
 
     private fun photoSourcesFor(book: RecipeBook?, recipes: List<Recipe>): List<Pair<String, String>> {
