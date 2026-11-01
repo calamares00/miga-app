@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import java.io.IOException
+import org.calamares.miga.data.export.SettingsBackupDto
 import org.calamares.miga.data.model.ColorTheme
 import org.calamares.miga.data.model.PhotoFrame
 import org.calamares.miga.data.model.RecipeListViewMode
@@ -473,6 +474,37 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setPacksCatalogRepo(repo: String) {
         context.settingsDataStore.edit { prefs -> prefs[packsCatalogRepoKey] = repo.trim() }
+    }
+
+    // Settings carried by the full backup. API keys (encrypted with this phone's Keystore, useless
+    // elsewhere), the biometric lock and per-device state (onboarding, seed language, selected
+    // supermarket and shopping list, last seen version) are deliberately left out.
+    private val backupStringKeys = listOf(
+        themeModeKey, colorThemeKey, photoFrameKey, shoppingAuthorKey, recipeListViewModeKey,
+        recipeBookListViewModeKey, visionProviderKey, geminiModelKey, anthropicModelKey, openRouterModelKey,
+        openAiModelKey, aiProviderOrderKey, aiDisabledProvidersKey, ttsVoiceNameKey, dictationLanguageKey,
+        packsCatalogRepoKey
+    )
+    private val backupBooleanKeys = listOf(
+        aiEnabledKey, aiHealthEnabledKey, aiNutritionEnabledKey, shoppingImagesKey, recipeBookListGroupedKey,
+        openRouterModelImagesKey
+    )
+
+    /** The settings to include in a full backup (only those the user has set). */
+    suspend fun exportForBackup(): SettingsBackupDto {
+        val prefs = context.settingsDataStore.data.first()
+        return SettingsBackupDto(
+            strings = backupStringKeys.mapNotNull { key -> prefs[key]?.let { key.name to it } }.toMap(),
+            booleans = backupBooleanKeys.mapNotNull { key -> prefs[key]?.let { key.name to it } }.toMap()
+        )
+    }
+
+    /** Restores the settings of a full backup; unknown or excluded names are ignored. */
+    suspend fun restoreFromBackup(dto: SettingsBackupDto) {
+        context.settingsDataStore.edit { prefs ->
+            backupStringKeys.forEach { key -> dto.strings[key.name]?.let { prefs[key] = it } }
+            backupBooleanKeys.forEach { key -> dto.booleans[key.name]?.let { prefs[key] = it } }
+        }
     }
 
     /**

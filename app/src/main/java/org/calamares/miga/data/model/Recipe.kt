@@ -46,7 +46,12 @@ data class Recipe(
 
 data class RecipePhoto(
     val uri: String,
-    val isCover: Boolean
+    val isCover: Boolean,
+    /**
+     * Sync uid of the stored photo; null for a photo not saved yet. Kept through backups so a
+     * restored photo is still the same photo for the sync server (see [org.calamares.miga.data.repository.RecipeRepository.saveRecipe]).
+     */
+    val uid: String? = null
 )
 
 data class IngredientGroup(
