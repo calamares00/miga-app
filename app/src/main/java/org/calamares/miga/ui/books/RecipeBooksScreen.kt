@@ -69,6 +69,8 @@ import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewHeadline
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material3.AlertDialog
+import org.calamares.miga.data.remote.AppInstallSource
+import org.calamares.miga.BuildConfig
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -123,6 +125,7 @@ fun RecipeBooksScreen(
     val aiReady by viewModel.aiReady.collectAsState()
     val changelogAnnouncement by viewModel.changelogAnnouncement.collectAsState()
     val crashReport by viewModel.crashReport.collectAsState()
+    val availableUpdate by viewModel.availableUpdate.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
     val grouped by viewModel.grouped.collectAsState()
     val filter by viewModel.filter.collectAsState()
@@ -141,7 +144,10 @@ fun RecipeBooksScreen(
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
 
-    LaunchedEffect(Unit) { viewModel.syncAllOnOpen(context) }
+    LaunchedEffect(Unit) {
+        viewModel.syncAllOnOpen(context)
+        viewModel.checkForUpdate(context)
+    }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
@@ -327,6 +333,23 @@ fun RecipeBooksScreen(
             confirmButton = {
                 TextButton(onClick = { viewModel.dismissChangelogAnnouncement() }) { Text(L10n.str(R.string.got)) }
             }
+        )
+    }
+
+    // After "What's new" and the crash report, never on top of them.
+    availableUpdate?.takeIf { changelogAnnouncement == null && crashReport == null }?.let { release ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissUpdate(forever = false) },
+            icon = { Icon(Icons.Filled.SystemUpdate, contentDescription = null) },
+            title = { Text(L10n.str(R.string.new_version_available)) },
+            text = { Text(L10n.str(R.string.miga_x_available_play, release.versionName, BuildConfig.VERSION_NAME)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.dismissUpdate(forever = false)
+                    AppInstallSource.openStorePage(context)
+                }) { Text(L10n.str(R.string.update)) }
+            },
+            dismissButton = { TextButton(onClick = { viewModel.dismissUpdate(forever = true) }) { Text(L10n.str(R.string.not_now)) } }
         )
     }
 

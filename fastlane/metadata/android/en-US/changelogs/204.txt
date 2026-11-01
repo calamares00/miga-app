@@ -1,0 +1,6 @@
+What's new in 1.0.6:
+• Reorganised shopping list: switch lists from the title, share from the top bar and start shop mode with the button at the bottom.
+• Tap an item's pencil to change its name, quantity or aisle.
+• Searchable catalogue. Templates have their own place in the menu.
+• The item catalogue now follows the app language.
+• Installed from Google Play? Miga tells you when a new version is out.
