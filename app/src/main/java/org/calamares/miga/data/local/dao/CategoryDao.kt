@@ -26,6 +26,9 @@ interface CategoryDao {
     @Update
     suspend fun update(category: CategoryEntity)
 
+    @Query("UPDATE recipes SET categoryId = :toId WHERE categoryId = :fromId")
+    suspend fun moveRecipes(fromId: Long, toId: Long)
+
     @Query("SELECT COUNT(*) FROM recipes WHERE categoryId = :id")
     suspend fun countRecipesUsing(id: Long): Int
 

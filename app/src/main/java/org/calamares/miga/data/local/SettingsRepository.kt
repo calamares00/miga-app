@@ -171,9 +171,10 @@ class SettingsRepository(private val context: Context) {
     }
 
     /**
-     * Language ("es" or "en") of the initial catalogue (utensils, categories, ingredients). Fixed
-     * on the first run from the app language and never changed afterwards, so switching languages
-     * does not duplicate data.
+     * Language ("es" or "en") of the initial catalogue (utensils, categories, ingredients). Set on
+     * the first run from the app language; when the app language changes later the catalogue is
+     * translated (see RecipeRepository.relocalizeDefaults) and this is updated with
+     * [setSeedLanguage], so switching languages never duplicates data.
      */
     suspend fun seedLanguage(current: String): String {
         val stored = context.settingsDataStore.data.first()[seedLanguageKey]
@@ -181,6 +182,10 @@ class SettingsRepository(private val context: Context) {
         val chosen = if (current == "es") "es" else "en"
         context.settingsDataStore.edit { prefs -> prefs[seedLanguageKey] = chosen }
         return chosen
+    }
+
+    suspend fun setSeedLanguage(language: String) {
+        context.settingsDataStore.edit { prefs -> prefs[seedLanguageKey] = language }
     }
 
     suspend fun areDefaultsSetUp(): Boolean = context.settingsDataStore.data.first()[defaultsSetUpKey] ?: false

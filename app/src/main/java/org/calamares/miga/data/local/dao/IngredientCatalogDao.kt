@@ -26,6 +26,9 @@ interface IngredientCatalogDao {
     @Update
     suspend fun update(entity: IngredientCatalogEntity)
 
+    @Query("UPDATE ingredient_catalog SET categoryId = :toId WHERE categoryId = :fromId")
+    suspend fun moveToCategory(fromId: Long, toId: Long)
+
     @Query("UPDATE ingredient_catalog SET categoryId = :categoryId WHERE id = :id")
     suspend fun updateCategory(id: Long, categoryId: Long?)
 
