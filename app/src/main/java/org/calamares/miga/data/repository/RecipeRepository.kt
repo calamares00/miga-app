@@ -761,6 +761,72 @@ class RecipeRepository(
         }
     }
 
+    /**
+     * Translates the default catalogue from [from] to [to] ("es" or "en") after the app language
+     * changes: ingredients and their categories, recipe categories and kitchen equipment. Only names
+     * that are still the [from] default change, so what the user renamed or created stays as it is;
+     * when the translated name already exists both are merged. Supermarket aisle orders follow the
+     * renamed categories.
+     */
+    suspend fun relocalizeDefaults(from: String, to: String) = db.withTransaction {
+        if (from == to) return@withTransaction
+        val fromSeed = IngredientCatalogSeed.forLanguage(from)
+        val toSeed = IngredientCatalogSeed.forLanguage(to)
+
+        val renamedAisles = mutableMapOf<String, String>()
+        fromSeed.zip(toSeed).forEach { (old, new) ->
+            if (old.first == new.first) return@forEach
+            val category = ingredientCategoryDao.findByName(old.first) ?: return@forEach
+            val target = ingredientCategoryDao.findByName(new.first)
+            if (target == null) {
+                ingredientCategoryDao.update(category.copy(name = new.first))
+            } else {
+                ingredientCatalogDao.moveToCategory(fromId = category.id, toId = target.id)
+                ingredientCategoryDao.delete(category)
+            }
+            renamedAisles[category.name] = new.first
+        }
+
+        fromSeed.flatMap { it.second }.zip(toSeed.flatMap { it.second }).distinctBy { it.first }.forEach { (old, new) ->
+            if (old == new) return@forEach
+            val ingredient = ingredientCatalogDao.findByName(old) ?: return@forEach
+            if (ingredientCatalogDao.findByName(new) == null) ingredientCatalogDao.update(ingredient.copy(name = new))
+            else ingredientCatalogDao.delete(ingredient)
+        }
+
+        DefaultCatalog.categories(from).zip(DefaultCatalog.categories(to)).forEach { (old, new) ->
+            if (old == new) return@forEach
+            val category = categoryDao.findByName(old) ?: return@forEach
+            val target = categoryDao.findByName(new)
+            if (target == null) {
+                categoryDao.update(category.copy(name = new))
+            } else {
+                categoryDao.moveRecipes(fromId = category.id, toId = target.id)
+                categoryDao.delete(category)
+            }
+        }
+
+        KitchenEquipment.defaults(from).zip(KitchenEquipment.defaults(to)).forEach { (old, new) ->
+            if (old == new) return@forEach
+            val utensil = utensilDao.findByName(old) ?: return@forEach
+            val target = utensilDao.findByName(new)
+            if (target == null) {
+                utensilDao.update(utensil.copy(name = new))
+            } else {
+                utensilDao.moveRecipes(fromId = utensil.id, toId = target.id)
+                utensilDao.delete(utensil)
+            }
+        }
+
+        if (renamedAisles.isNotEmpty()) {
+            shoppingStoreDao.observeAll().first().forEach { store ->
+                val aisles = store.aisleOrder.split("\n").map(String::trim).filter(String::isNotEmpty)
+                val translated = aisles.map { renamedAisles[it] ?: it }.distinct()
+                if (translated != aisles) shoppingStoreDao.update(store.copy(aisleOrder = translated.joinToString("\n")))
+            }
+        }
+    }
+
     private suspend fun resolveIngredientCategoryId(name: String): Long {
         ingredientCategoryDao.findByName(name)?.let { return it.id }
         return ingredientCategoryDao.insert(IngredientCategoryEntity(name = name))
@@ -1083,6 +1149,35 @@ class RecipeRepository(
      */
     suspend fun deleteShoppingListItem(id: Long) {
         shoppingListDao.softDelete(id, System.currentTimeMillis())
+        notifyShoppingListChanged()
+    }
+
+    /**
+     * Edits an item's name and quantity. [aisle] (an ingredient category name, or null for none) is
+     * remembered in the ingredient catalogue for that name, so the item and later ones with the
+     * same name are grouped there.
+     */
+    suspend fun updateShoppingListItem(id: Long, name: String, quantity: Double?, unit: String?, aisle: String?) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        db.withTransaction {
+            shoppingListDao.updateDetails(
+                id = id,
+                name = trimmed,
+                normalizedName = trimmed.lowercase(),
+                quantity = quantity,
+                unit = unit?.trim()?.takeIf { it.isNotEmpty() },
+                now = System.currentTimeMillis(),
+                updatedBy = currentShoppingAuthor()
+            )
+            val categoryId = aisle?.let { resolveIngredientCategoryId(it) }
+            val existing = ingredientCatalogDao.observeAll().first().firstOrNull { it.name.trim().lowercase() == trimmed.lowercase() }
+            if (existing != null) {
+                if (existing.categoryId != categoryId) ingredientCatalogDao.updateCategory(existing.id, categoryId)
+            } else if (categoryId != null) {
+                ingredientCatalogDao.insert(IngredientCatalogEntity(name = trimmed, categoryId = categoryId))
+            }
+        }
         notifyShoppingListChanged()
     }
 

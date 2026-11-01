@@ -10,6 +10,9 @@
     <string name="about">"About"</string>
     <string name="update_available">"Update available"</string>
     <string name="update">"Update"</string>
+    <string name="new_version_available">"New version available"</string>
+    <string name="miga_x_available_play">"Miga %1$s is on Google Play (you have %2$s)."</string>
+    <string name="not_now">"Not now"</string>
     <string name="additives_x">"Additives (%1$s)"</string>
     <string name="settings">"Settings"</string>
     <string name="allergens">"Allergens"</string>
@@ -237,7 +240,6 @@
     <string name="scan_product_barcode">"Scan a product barcode"</string>
     <string name="scan_product">"  Scan a product"</string>
     <string name="type_dictate_what_need_above">"Type or dictate what you need above, or start here:"</string>
-    <string name="type_paste_one_item_per">"Type or paste one item per line, or separate them with commas. You can include quantity and unit: \"2 kg tomatoes\"."</string>
     <string name="type_product_tap_search_most">"Type a product and tap search. The most scanned ones come first."</string>
     <string name="type_product_tap_search_adds">"Type a product and tap search. ⊕ adds it to the list; the bookmark saves it to a template for next time."</string>
     <string name="listening_next_previous_repeat_timer">"Listening… (next, previous, repeat, timer)"</string>
@@ -285,7 +287,6 @@
     <string name="generating_recipe_ai">"Cooking up the recipe…"</string>
     <string name="manage_connections">"Manage connections"</string>
     <string name="manage_content">"Manage content"</string>
-    <string name="manage_supermarkets">"Manage supermarkets…"</string>
     <string name="gluten">"Gluten"</string>
     <string name="fat">"Fat"</string>
     <string name="fat_g">"Fat (g)"</string>
@@ -373,6 +374,17 @@
     <string name="moderate">"Moderate"</string>
     <string name="cooking_mode">"Cooking mode"</string>
     <string name="shop_mode">"Shop mode"</string>
+    <string name="edit_item">"Edit item"</string>
+    <string name="edit_x">"Edit %1$s"</string>
+    <string name="quantity">"Quantity"</string>
+    <string name="unit_of_measure">"Unit"</string>
+    <string name="e_g_kg_packs">"e.g. kg, packs"</string>
+    <string name="aisle">"Aisle"</string>
+    <string name="aisle_remembered_explanation">"Remembered for this item next time."</string>
+    <string name="search_catalogue">"Search the catalogue"</string>
+    <string name="clear_search">"Clear search"</string>
+    <string name="nothing_found_catalogue">"Nothing like that in the catalogue. Type it in the add field."</string>
+    <string name="template_x_saved">"Template “%1$s” saved"</string>
     <string name="molluscs">"Molluscs"</string>
     <string name="purple">"Purple"</string>
     <string name="mustard">"Mustard"</string>
@@ -641,7 +653,6 @@
     <string name="x_recipe_imported_want_delete">"%1$s recipe(s) will be imported. Do you want to delete your current books and recipes (with their photos) first for a fresh start, or add the imported content to what you already have? Installed packs aren't affected."</string>
     <string name="several_people">"Several people"</string>
     <string name="several_recipes_images">"Several recipes from images"</string>
-    <string name="bulk">"Bulk"</string>
     <string name="vegan">"Vegan"</string>
     <string name="vegetarian">"Vegetarian"</string>
     <string name="view_product_details">"View product details"</string>
