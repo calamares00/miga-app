@@ -58,7 +58,15 @@ class MigaApp : Application() {
         applicationScope.launch {
             settingsRepository.encryptStoredApiKeys()
             repository.ensurePhotoUids()
-            val seedLanguage = settingsRepository.seedLanguage(L10n.locale().language)
+            val appLanguage = if (L10n.locale().language == "es") "es" else "en"
+            var seedLanguage = settingsRepository.seedLanguage(appLanguage)
+            // The default catalogue follows the app language: created in one language, it is
+            // translated when the user switches (only the names nobody has changed).
+            if (seedLanguage != appLanguage && settingsRepository.areDefaultsSetUp()) {
+                repository.relocalizeDefaults(from = seedLanguage, to = appLanguage)
+                settingsRepository.setSeedLanguage(appLanguage)
+                seedLanguage = appLanguage
+            }
             // Only once: what the user deletes or renames afterwards stays that way.
             if (!settingsRepository.areDefaultsSetUp()) {
                 repository.normalizeUtensils(seedLanguage)
