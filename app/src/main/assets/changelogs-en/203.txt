@@ -1,4 +1,4 @@
 What's new in 1.0.5:
-• Fixed: recipes in server books could show repeated photos and several covers. Sync now merges identical photos.
-• Backups keep each photo's identity, so restoring no longer duplicates photos on the server.
-• After reinstalling and restoring, adding the server again re-links your books automatically.
+• Fixed: repeated photos and several covers in recipes of server books.
+• Restoring a backup no longer duplicates photos, and reconnecting the server re-links your books automatically.
+• Full backup: choose whether to include server books, installed packs (restored as packs) and settings.

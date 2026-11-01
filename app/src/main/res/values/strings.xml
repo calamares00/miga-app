@@ -948,6 +948,13 @@
     <string name="couldnt_export_x">"Couldn\'t export: %1$s"</string>
     <string name="backup_protect_with_password">"Protect with a password"</string>
     <string name="backup_protect_explanation">"Encrypts the backup (AES-256) so only your password can open it."</string>
+    <string name="backup_include">"What to include"</string>
+    <string name="backup_include_server_books">"Server books"</string>
+    <string name="backup_include_server_books_explanation">"Synced books. Left out, they come back when you connect the server again."</string>
+    <string name="backup_include_packs">"Installed packs"</string>
+    <string name="backup_include_packs_explanation">"Restored as packs. Left out, you can install them again from the catalogue."</string>
+    <string name="backup_include_settings">"Settings"</string>
+    <string name="backup_include_settings_explanation">"Appearance, cooking assistant, voice and views. No API keys or fingerprint lock."</string>
     <string name="backup_password">"Password"</string>
     <string name="backup_password_min_x">"At least %1$d characters"</string>
     <string name="backup_password_strong">"Strong password"</string>
