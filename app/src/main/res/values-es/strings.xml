@@ -9,6 +9,9 @@
     <string name="about">"Acerca de"</string>
     <string name="update_available">"Actualización disponible"</string>
     <string name="update">"Actualizar"</string>
+    <string name="new_version_available">"Hay una versión nueva"</string>
+    <string name="miga_x_available_play">"Miga %1$s ya está en Google Play (tienes la %2$s)."</string>
+    <string name="not_now">"Ahora no"</string>
     <string name="additives_x">"Aditivos (%1$s)"</string>
     <string name="settings">"Ajustes"</string>
     <string name="allergens">"Alérgenos"</string>
@@ -236,7 +239,6 @@
     <string name="scan_product_barcode">"Escanear código de barras de un producto"</string>
     <string name="scan_product">"  Escanear un producto"</string>
     <string name="type_dictate_what_need_above">"Escribe o dicta arriba lo que necesitas, o empieza desde aquí:"</string>
-    <string name="type_paste_one_item_per">"Escribe o pega un artículo por línea, o sepáralos con comas. Puedes indicar cantidad y unidad: «2 kg tomates»."</string>
     <string name="type_product_tap_search_most">"Escribe un producto y pulsa buscar. Salen primero los más escaneados."</string>
     <string name="type_product_tap_search_adds">"Escribe un producto y pulsa buscar. Con ⊕ va a la lista; con el marcador lo guardas en una plantilla para la próxima vez."</string>
     <string name="listening_next_previous_repeat_timer">"Escuchando… (siguiente, anterior, repite, temporizador)"</string>
@@ -284,7 +286,6 @@
     <string name="generating_recipe_ai">"Cocinando la receta…"</string>
     <string name="manage_connections">"Gestionar conexiones"</string>
     <string name="manage_content">"Gestionar contenido"</string>
-    <string name="manage_supermarkets">"Gestionar supermercados…"</string>
     <string name="gluten">"Gluten"</string>
     <string name="fat">"Grasas"</string>
     <string name="fat_g">"Grasas (g)"</string>
@@ -372,6 +373,17 @@
     <string name="moderate">"Moderada"</string>
     <string name="cooking_mode">"Modo cocina"</string>
     <string name="shop_mode">"Modo tienda"</string>
+    <string name="edit_item">"Editar artículo"</string>
+    <string name="edit_x">"Editar %1$s"</string>
+    <string name="quantity">"Cantidad"</string>
+    <string name="unit_of_measure">"Unidad"</string>
+    <string name="e_g_kg_packs">"p. ej. kg, paquetes"</string>
+    <string name="aisle">"Pasillo"</string>
+    <string name="aisle_remembered_explanation">"Se recuerda para este artículo la próxima vez."</string>
+    <string name="search_catalogue">"Buscar en el catálogo"</string>
+    <string name="clear_search">"Borrar búsqueda"</string>
+    <string name="nothing_found_catalogue">"No hay nada así en el catálogo. Escríbelo en el campo de añadir."</string>
+    <string name="template_x_saved">"Plantilla «%1$s» guardada"</string>
     <string name="molluscs">"Moluscos"</string>
     <string name="purple">"Morado"</string>
     <string name="mustard">"Mostaza"</string>
@@ -640,7 +652,6 @@
     <string name="x_recipe_imported_want_delete">"Se van a importar %1$s receta(s). ¿Quieres borrar antes tus libros y recetas actuales (con sus fotos) para empezar de cero, o añadir lo importado a lo que ya tienes? Los packs instalados no se tocan."</string>
     <string name="several_people">"Varias personas"</string>
     <string name="several_recipes_images">"Varias recetas desde imágenes"</string>
-    <string name="bulk">"Varios"</string>
     <string name="vegan">"Vegano"</string>
     <string name="vegetarian">"Vegetariano"</string>
     <string name="view_product_details">"Ver detalles del producto"</string>
