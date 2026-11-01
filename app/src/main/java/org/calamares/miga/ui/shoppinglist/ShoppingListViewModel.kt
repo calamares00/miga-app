@@ -318,6 +318,11 @@ class ShoppingListViewModel(
         viewModelScope.launch { repository.setShoppingListItemChecked(id, checked) }
     }
 
+    /** Saves the item editor (see ShoppingItemEditorSheet); [aisle] null means no aisle. */
+    fun updateItem(id: Long, name: String, quantity: Double?, unit: String?, aisle: String?) {
+        viewModelScope.launch { repository.updateShoppingListItem(id, name, quantity, unit, aisle) }
+    }
+
     /** [onDeleted] is called once removed, to offer "Undo" through [restoreItem]. */
     fun deleteItem(item: ShoppingListItem, onDeleted: () -> Unit) {
         viewModelScope.launch {

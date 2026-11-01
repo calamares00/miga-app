@@ -181,14 +181,13 @@ import kotlinx.coroutines.launch
  */
 internal enum class AddTab(val title: String) {
     CATALOG(L10n.str(R.string.catalogue)),
-    PRODUCTS(L10n.str(R.string.products)),
-    TEMPLATES(L10n.str(R.string.templates)),
-    BULK(L10n.str(R.string.bulk))
+    PRODUCTS(L10n.str(R.string.products))
 }
 
 /**
- * Single sheet for adding items: tappable catalogue, Open Food Facts search (with "save to
- * template"), templates (predefined and the user's) and pasting several items at once.
+ * Sheet for adding items beyond the quick field: the tappable catalogue by aisle (with search)
+ * and the Open Food Facts search (with "save to template"). Templates have their own sheet
+ * ([ShoppingTemplatesSheet]).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -197,17 +196,12 @@ internal fun ShoppingAddSheet(
     initialTab: AddTab,
     initialQuery: String,
     pendingNames: Set<String>,
-    listIsEmpty: Boolean,
     onMessage: (String) -> Unit,
     onSaveToTemplate: (TemplateItem) -> Unit,
-    onEditTemplate: (Long) -> Unit,
-    onNewTemplate: () -> Unit,
-    onSaveListAsTemplate: () -> Unit,
     onDismiss: () -> Unit
 ) {
     var tab by remember { mutableStateOf(initialTab) }
     val catalog by viewModel.catalog.collectAsState()
-    val templates by viewModel.templates.collectAsState()
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.fillMaxHeight(0.92f)) {
@@ -235,23 +229,6 @@ internal fun ShoppingAddSheet(
                             onSaveToTemplate = { product -> onSaveToTemplate(product.toTemplateItem()) }
                         )
                     }
-                    AddTab.TEMPLATES -> TemplatesContent(
-                        templates = templates,
-                        listIsEmpty = listIsEmpty,
-                        onApply = { template ->
-                            viewModel.applyTemplate(template)
-                            onMessage(L10n.str(R.string.added_x_items_x, template.items.size, template.name))
-                        },
-                        onEdit = onEditTemplate,
-                        onNew = onNewTemplate,
-                        onSaveList = onSaveListAsTemplate
-                    )
-                    AddTab.BULK -> BulkContent(
-                        onAdd = { text ->
-                            val count = viewModel.addEntries(text)
-                            onMessage(if (count == 1) L10n.str(R.string.added_1_item) else L10n.str(R.string.added_x_items, count))
-                        }
-                    )
                 }
             }
         }
@@ -272,15 +249,89 @@ private fun CatalogContent(
         byCategory.keys.sortedWith(compareBy({ it == UNCATEGORIZED_INGREDIENT_LABEL || it == "Otros" || it == "Other" }, { it.lowercase() }))
     }
     var selected by remember { mutableStateOf<String?>(null) }
+    var query by remember { mutableStateOf("") }
     val current = selected?.takeIf { it in byCategory } ?: categories.firstOrNull()
+    // While searching, matches from every aisle replace the aisle tabs.
+    val matches = remember(catalog, query) {
+        val needle = query.trim().lowercase()
+        if (needle.isEmpty()) emptyList()
+        else catalog.filter { needle in it.name.lowercase() }
+            .sortedWith(compareBy({ !it.name.lowercase().startsWith(needle) }, { it.name.lowercase() }))
+            .map { it.name to (it.categoryName ?: UNCATEGORIZED_INGREDIENT_LABEL) }
+    }
+
+    @Composable
+    fun CatalogTile(name: String, category: String) {
+        val inList = name.trim().lowercase() in pendingNames
+        val accent = Color(ShoppingVisuals.categoryStyle(category).argb)
+        Column(
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.medium)
+                .clickable { onToggle(name) }
+                .padding(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(CircleShape)
+                    .background(accent.copy(alpha = if (inList) 0.35f else 0.14f))
+                    .then(if (inList) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape) else Modifier),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(ShoppingVisuals.itemEmoji(name, category), fontSize = 26.sp)
+            }
+            Text(
+                text = name,
+                style = MaterialTheme.typography.labelMedium,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            placeholder = { Text(L10n.str(R.string.search_catalogue)) },
+            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.clear_search)) }
+                }
+            },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+        )
         Text(
             L10n.str(R.string.tap_add_remove_list),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
         )
+        if (query.isNotBlank()) {
+            if (matches.isEmpty()) {
+                Text(
+                    L10n.str(R.string.nothing_found_catalogue),
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(84.dp),
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    gridItems(matches, key = { it.first }) { (name, category) -> CatalogTile(name, category) }
+                }
+            }
+            return@Column
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -303,7 +354,6 @@ private fun CatalogContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else {
-            val style = ShoppingVisuals.categoryStyle(current)
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(84.dp),
                 modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -311,36 +361,7 @@ private fun CatalogContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                gridItems(byCategory.getValue(current), key = { it }) { name ->
-                    val inList = name.trim().lowercase() in pendingNames
-                    val accent = Color(style.argb)
-                    Column(
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.medium)
-                            .clickable { onToggle(name) }
-                            .padding(6.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(52.dp)
-                                .clip(CircleShape)
-                                .background(accent.copy(alpha = if (inList) 0.35f else 0.14f))
-                                .then(if (inList) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape) else Modifier),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(ShoppingVisuals.itemEmoji(name, current), fontSize = 26.sp)
-                        }
-                        Text(
-                            text = name,
-                            style = MaterialTheme.typography.labelMedium,
-                            textAlign = TextAlign.Center,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-                }
+                gridItems(byCategory.getValue(current), key = { it }) { name -> CatalogTile(name, current) }
             }
         }
     }
@@ -455,48 +476,6 @@ internal fun ProductSearchContent(
 }
 
 @Composable
-private fun TemplatesContent(
-    templates: List<ShoppingTemplate>,
-    listIsEmpty: Boolean,
-    onApply: (ShoppingTemplate) -> Unit,
-    onEdit: (Long) -> Unit,
-    onNew: () -> Unit,
-    onSaveList: () -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp)
-    ) {
-        item(key = "actions") {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
-                FilledTonalButton(onClick = onNew) {
-                    ButtonContent(Icons.Filled.Add, L10n.str(R.string.new_short))
-                }
-                OutlinedButton(onClick = onSaveList, enabled = !listIsEmpty) { Text(L10n.str(R.string.save_list)) }
-            }
-        }
-        item(key = "mine_header") { SectionLabel(L10n.str(R.string.my_templates)) }
-        if (templates.isEmpty()) {
-            item(key = "mine_empty") {
-                Text(
-                    L10n.str(R.string.dont_have_templates_yet_create),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-        }
-        items(templates, key = { "m${it.id}" }) { template ->
-            TemplateRow(template = template, onApply = { onApply(template) }, onClick = { onEdit(template.id) })
-        }
-        item(key = "predefined_header") { SectionLabel(L10n.str(R.string.ready_made), top = 16.dp) }
-        items(PredefinedShoppingLists.ALL, key = { "p${it.id}" }) { template ->
-            TemplateRow(template = template, onApply = { onApply(template) }, onClick = null)
-        }
-    }
-}
-
-@Composable
 internal fun SectionLabel(text: String, top: androidx.compose.ui.unit.Dp = 0.dp) {
     Text(
         text,
@@ -506,26 +485,3 @@ internal fun SectionLabel(text: String, top: androidx.compose.ui.unit.Dp = 0.dp)
     )
 }
 
-@Composable
-private fun BulkContent(onAdd: (String) -> Unit) {
-    var bulkText by remember { mutableStateOf("") }
-    val parsedCount = remember(bulkText) { ShoppingEntryParser.parse(bulkText).size }
-    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            L10n.str(R.string.type_paste_one_item_per),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        OutlinedTextField(
-            value = bulkText,
-            onValueChange = { bulkText = it },
-            modifier = Modifier.fillMaxWidth(),
-            minLines = 5
-        )
-        Button(
-            onClick = { onAdd(bulkText); bulkText = "" },
-            enabled = parsedCount > 0,
-            modifier = Modifier.align(Alignment.End)
-        ) { Text(if (parsedCount > 0) L10n.str(R.string.add_x, parsedCount) else L10n.str(R.string.add)) }
-    }
-}

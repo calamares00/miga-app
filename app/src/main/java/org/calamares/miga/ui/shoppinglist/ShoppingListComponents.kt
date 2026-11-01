@@ -224,7 +224,16 @@ internal fun EmojiBadge(emoji: String, accent: Color, size: Int) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImage: Boolean, note: String?, onOpenProduct: (() -> Unit)?, onCheckedChange: (Boolean) -> Unit, onDelete: () -> Unit) {
+internal fun ShoppingListRow(
+    item: ShoppingListItem,
+    shopMode: Boolean,
+    showImage: Boolean,
+    note: String?,
+    onOpenProduct: (() -> Unit)?,
+    onEdit: () -> Unit,
+    onCheckedChange: (Boolean) -> Unit,
+    onDelete: () -> Unit
+) {
     val style = ShoppingVisuals.categoryStyle(item.categoryName)
     val emoji = ShoppingVisuals.itemEmoji(item.name, item.categoryName)
     val currentChecked = rememberUpdatedState(item.checked)
@@ -237,8 +246,7 @@ internal fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImag
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.background)
                 .toggleable(value = item.checked, role = Role.Checkbox, onValueChange = onCheckedChange)
-                // In store mode removing is a gesture (swipe), so it is also offered as an
-                // accessibility action.
+                // Removing is a gesture (swipe), so it is also offered as an accessibility action.
                 .semantics { customActions = listOf(CustomAccessibilityAction(L10n.str(R.string.remove_x, item.name)) { onDelete(); true }) }
                 .padding(vertical = if (shopMode) 12.dp else 6.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -290,18 +298,14 @@ internal fun ShoppingListRow(item: ShoppingListItem, shopMode: Boolean, showImag
                 Spacer(modifier = Modifier.width(8.dp))
             }
             if (!shopMode) {
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.remove_x, item.name), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.edit_x, item.name), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
     }
 
-    if (!shopMode) {
-        rowContent()
-        return
-    }
-
+    // Swipe right to tick, left to remove, in both modes.
     val swipeState = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
         when (value) {
             SwipeToDismissBoxValue.StartToEnd -> currentOnCheckedChange.value(!currentChecked.value)

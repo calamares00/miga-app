@@ -48,6 +48,12 @@ interface ShoppingListDao {
     @Query("UPDATE shopping_list_items SET deletedAt = :now, updatedAt = :now, syncDirty = 1 WHERE id = :id")
     suspend fun softDelete(id: Long, now: Long)
 
+    @Query(
+        "UPDATE shopping_list_items SET name = :name, normalizedName = :normalizedName, quantity = :quantity, unit = :unit, " +
+            "updatedAt = :now, updatedBy = :updatedBy, syncDirty = 1 WHERE id = :id"
+    )
+    suspend fun updateDetails(id: Long, name: String, normalizedName: String, quantity: Double?, unit: String?, now: Long, updatedBy: String?)
+
     @Query("UPDATE shopping_list_items SET deletedAt = :now, updatedAt = :now, syncDirty = 1 WHERE deletedAt IS NULL AND listUid = :listUid")
     suspend fun softDeleteAll(listUid: String, now: Long)
 
