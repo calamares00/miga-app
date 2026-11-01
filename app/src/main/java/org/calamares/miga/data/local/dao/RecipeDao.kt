@@ -87,6 +87,9 @@ interface RecipeDao {
     @Query("UPDATE recipe_photos SET isCover = :isCover, position = :position WHERE uid = :uid")
     suspend fun updatePhotoMetaByUid(uid: String, isCover: Boolean, position: Int)
 
+    @Query("UPDATE recipe_photos SET uid = :uid WHERE id = :id")
+    suspend fun updatePhotoUid(id: Long, uid: String)
+
     @Insert
     suspend fun insertTagCrossRefs(items: List<RecipeTagCrossRef>)
 

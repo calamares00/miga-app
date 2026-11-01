@@ -86,17 +86,21 @@ class SettingsViewModel(
     }
 
     /**
-     * Writes the full backup to [destination], encrypted when [password] is given; the password is
-     * wiped from memory afterwards. [onDone] reports the outcome.
+     * Writes the full backup to [destination] with what [contents] includes, encrypted when
+     * [password] is given; the password is wiped from memory afterwards. [onDone] reports the outcome.
      */
-    fun exportLibrary(context: Context, destination: Uri, password: CharArray?, onDone: (String) -> Unit) {
+    fun exportLibrary(context: Context, destination: Uri, password: CharArray?, contents: BackupContents, onDone: (String) -> Unit) {
         viewModelScope.launch {
             val message = try {
-                val allBooks = repository.getAllRecipeBooksOnce()
-                val recipes = repository.getAllRecipesOnce()
+                val books = repository.getAllRecipeBooksOnce().filter { book ->
+                    (contents.serverBooks || book.syncConnectionId == null) && (contents.packs || book.packId == null)
+                }
+                val bookIds = books.map { it.id }.toSet()
+                val recipes = repository.getAllRecipesOnce().filter { it.recipeBookId in bookIds }
                 val templates = repository.observeShoppingTemplates().first()
                 val stores = repository.observeShoppingStores().first()
-                RecipeExporter.exportLibrary(context, destination, allBooks, recipes, templates, stores, password)
+                val settings = if (contents.settings) settingsRepository.exportForBackup() else null
+                RecipeExporter.exportLibrary(context, destination, books, recipes, templates, stores, settings, password)
                 L10n.str(if (password != null) R.string.backup_exported_encrypted else R.string.backup_exported)
             } catch (e: Exception) {
                 L10n.str(R.string.couldnt_export_x, e.message ?: e::class.simpleName.orEmpty())
@@ -130,7 +134,10 @@ class SettingsViewModel(
                 L10n.str(R.string.deleted_x_book_x_recipe, result.bookCount, result.recipeCount)
             } else ""
             val result = try {
-                RecipeExporter.importParsedLibrary(context, parsed, repository)
+                RecipeExporter.importParsedLibrary(context, parsed, repository, restorePacks = true).also { result ->
+                    val settings = parsed.dto.settings
+                    if (result is LibraryImportResult.Success && settings != null) settingsRepository.restoreFromBackup(settings)
+                }
             } finally {
                 parsed.password?.fill('\u0000')
             }

@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -84,7 +86,8 @@ private fun PasswordField(value: String, onValueChange: (String) -> Unit, label:
  * gets the password, or null for an unprotected backup.
  */
 @Composable
-fun ExportBackupDialog(onConfirm: (password: CharArray?) -> Unit, onDismiss: () -> Unit) {
+fun ExportBackupDialog(onConfirm: (password: CharArray?, contents: BackupContents) -> Unit, onDismiss: () -> Unit) {
+    var contents by remember { mutableStateOf(BackupContents()) }
     var protect by remember { mutableStateOf(true) }
     var password by remember { mutableStateOf("") }
     var repeat by remember { mutableStateOf("") }
@@ -97,7 +100,17 @@ fun ExportBackupDialog(onConfirm: (password: CharArray?) -> Unit, onDismiss: () 
         onDismissRequest = onDismiss,
         title = { Text(L10n.str(R.string.export_whole_app)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(L10n.str(R.string.backup_include), style = MaterialTheme.typography.titleSmall)
+                BackupContentSwitch(L10n.str(R.string.backup_include_server_books), L10n.str(R.string.backup_include_server_books_explanation), contents.serverBooks) {
+                    contents = contents.copy(serverBooks = it)
+                }
+                BackupContentSwitch(L10n.str(R.string.backup_include_packs), L10n.str(R.string.backup_include_packs_explanation), contents.packs) {
+                    contents = contents.copy(packs = it)
+                }
+                BackupContentSwitch(L10n.str(R.string.backup_include_settings), L10n.str(R.string.backup_include_settings_explanation), contents.settings) {
+                    contents = contents.copy(settings = it)
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(L10n.str(R.string.backup_protect_with_password), style = MaterialTheme.typography.bodyLarge)
@@ -155,12 +168,31 @@ fun ExportBackupDialog(onConfirm: (password: CharArray?) -> Unit, onDismiss: () 
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(if (protect) password.toCharArray() else null) },
+                onClick = { onConfirm(if (protect) password.toCharArray() else null, contents) },
                 enabled = canCreate
             ) { Text(L10n.str(R.string.backup_create)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
+}
+
+/** What the full backup includes besides the user's own books, chosen in [ExportBackupDialog]. All on by default. */
+data class BackupContents(
+    val serverBooks: Boolean = true,
+    val packs: Boolean = true,
+    val settings: Boolean = true
+)
+
+@Composable
+private fun BackupContentSwitch(title: String, explanation: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(explanation, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
 }
 
 /** Asked when restoring an encrypted backup; [wrongPassword] after a failed attempt. */
