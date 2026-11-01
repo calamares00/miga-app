@@ -180,14 +180,15 @@ fun SettingsSectionScreen(
     // save the file (plain backups are .zip, encrypted ones a .migabackup only Miga can open).
     var showExportDialog by remember { mutableStateOf(false) }
     var exportPassword by remember { mutableStateOf<CharArray?>(null) }
+    var exportContents by remember { mutableStateOf(BackupContents()) }
     val onExported: (String) -> Unit = { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
-        if (uri != null) viewModel.exportLibrary(context, uri, null, onExported)
+        if (uri != null) viewModel.exportLibrary(context, uri, null, exportContents, onExported)
     }
     val encryptedExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
         val password = exportPassword
         exportPassword = null
-        if (uri != null && password != null) viewModel.exportLibrary(context, uri, password, onExported) else password?.fill('\u0000')
+        if (uri != null && password != null) viewModel.exportLibrary(context, uri, password, exportContents, onExported) else password?.fill('\u0000')
     }
     var pendingLibraryImport by remember { mutableStateOf<LibraryImportParseResult.Success?>(null) }
     var passwordPrompt by remember { mutableStateOf<LibraryImportParseResult.NeedsPassword?>(null) }
@@ -554,8 +555,9 @@ fun SettingsSectionScreen(
 
     if (showExportDialog) {
         ExportBackupDialog(
-            onConfirm = { password ->
+            onConfirm = { password, contents ->
                 showExportDialog = false
+                exportContents = contents
                 val baseName = L10n.str(R.string.file_name_backup_x, java.time.LocalDate.now().toString())
                 if (password == null) {
                     exportLauncher.launch("$baseName.zip")

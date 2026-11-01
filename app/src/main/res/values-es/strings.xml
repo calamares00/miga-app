@@ -947,6 +947,13 @@
     <string name="couldnt_export_x">"No se pudo exportar: %1$s"</string>
     <string name="backup_protect_with_password">"Proteger con contraseña"</string>
     <string name="backup_protect_explanation">"Cifra la copia (AES-256) para que solo pueda abrirse con tu contraseña."</string>
+    <string name="backup_include">"Qué incluir"</string>
+    <string name="backup_include_server_books">"Libros del servidor"</string>
+    <string name="backup_include_server_books_explanation">"Los libros sincronizados. Si no los incluyes, vuelven al conectar de nuevo el servidor."</string>
+    <string name="backup_include_packs">"Packs instalados"</string>
+    <string name="backup_include_packs_explanation">"Se restauran como packs. Si no los incluyes, puedes instalarlos otra vez desde el catálogo."</string>
+    <string name="backup_include_settings">"Ajustes"</string>
+    <string name="backup_include_settings_explanation">"Aspecto, asistente de cocina, voz y vistas. Sin claves de API ni bloqueo con huella."</string>
     <string name="backup_password">"Contraseña"</string>
     <string name="backup_password_min_x">"Al menos %1$d caracteres"</string>
     <string name="backup_password_strong">"Contraseña fuerte"</string>

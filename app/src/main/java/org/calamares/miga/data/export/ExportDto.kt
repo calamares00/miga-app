@@ -24,7 +24,19 @@ data class LibraryExportDto(
     /** Shopping list templates (absent in older backups). */
     val shoppingTemplates: List<TemplateBackupDto> = emptyList(),
     /** Supermarkets and their aisle order (absent in older backups). */
-    val shoppingStores: List<StoreBackupDto> = emptyList()
+    val shoppingStores: List<StoreBackupDto> = emptyList(),
+    /** App settings (see SettingsRepository.exportForBackup); absent in older backups or when left out. */
+    val settings: SettingsBackupDto? = null
+)
+
+/**
+ * Settings carried by a full backup, by preference name. Only the names listed in
+ * SettingsRepository are written or restored; API keys and per-device state are never included.
+ */
+@Serializable
+data class SettingsBackupDto(
+    val strings: Map<String, String> = emptyMap(),
+    val booleans: Map<String, Boolean> = emptyMap()
 )
 
 @Serializable
@@ -41,7 +53,11 @@ data class BookExportDto(
     /**
      * File name of the cover inside "books/<uid>/" in the ZIP, or null when the book has no cover.
      */
-    val coverPhotoFileName: String? = null
+    val coverPhotoFileName: String? = null,
+    /** Set for an installed pack, which is restored as that pack (read-only, updatable from the catalogue). */
+    val packId: String? = null,
+    val packVersion: Int? = null,
+    val packSeries: String? = null
 )
 
 @Serializable
