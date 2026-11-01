@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.5:
+• Arreglado: fotos repetidas y varias portadas en las recetas de los libros del servidor.
+• Restaurar una copia ya no duplica fotos, y al volver a conectar el servidor tus libros se vinculan solos.
+• Copia completa: elige si incluir los libros del servidor, los packs instalados (se restauran como packs) y los ajustes.
