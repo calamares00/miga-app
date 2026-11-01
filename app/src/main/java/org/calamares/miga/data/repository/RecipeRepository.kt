@@ -1152,6 +1152,35 @@ class RecipeRepository(
         notifyShoppingListChanged()
     }
 
+    /**
+     * Edits an item's name and quantity. [aisle] (an ingredient category name, or null for none) is
+     * remembered in the ingredient catalogue for that name, so the item and later ones with the
+     * same name are grouped there.
+     */
+    suspend fun updateShoppingListItem(id: Long, name: String, quantity: Double?, unit: String?, aisle: String?) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        db.withTransaction {
+            shoppingListDao.updateDetails(
+                id = id,
+                name = trimmed,
+                normalizedName = trimmed.lowercase(),
+                quantity = quantity,
+                unit = unit?.trim()?.takeIf { it.isNotEmpty() },
+                now = System.currentTimeMillis(),
+                updatedBy = currentShoppingAuthor()
+            )
+            val categoryId = aisle?.let { resolveIngredientCategoryId(it) }
+            val existing = ingredientCatalogDao.observeAll().first().firstOrNull { it.name.trim().lowercase() == trimmed.lowercase() }
+            if (existing != null) {
+                if (existing.categoryId != categoryId) ingredientCatalogDao.updateCategory(existing.id, categoryId)
+            } else if (categoryId != null) {
+                ingredientCatalogDao.insert(IngredientCatalogEntity(name = trimmed, categoryId = categoryId))
+            }
+        }
+        notifyShoppingListChanged()
+    }
+
     suspend fun clearShoppingList() {
         shoppingListDao.softDeleteAll(currentShoppingListUid(), System.currentTimeMillis())
         notifyShoppingListChanged()

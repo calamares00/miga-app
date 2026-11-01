@@ -85,6 +85,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
@@ -212,12 +213,13 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
     var addSheetTab by remember { mutableStateOf<AddTab?>(null) }
     var addSheetQuery by remember { mutableStateOf("") }
     var showLists by remember { mutableStateOf(false) }
-    var renamingCurrentList by remember { mutableStateOf(false) }
     var deletingCurrentList by remember { mutableStateOf(false) }
     var showShare by remember { mutableStateOf(false) }
     var showStores by remember { mutableStateOf(false) }
     var editingStore by remember { mutableStateOf<ShoppingStore?>(null) }
     var showClearAllConfirm by remember { mutableStateOf(false) }
+    var showTemplates by remember { mutableStateOf(false) }
+    var editingItem by remember { mutableStateOf<ShoppingListItem?>(null) }
     var showSaveTemplate by remember { mutableStateOf(false) }
     var showNewTemplate by remember { mutableStateOf(false) }
     var editingTemplateId by remember { mutableStateOf<Long?>(null) }
@@ -260,7 +262,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
 
     /** An open sheet covers the snackbar, so a toast is used instead. */
     fun announce(message: String) {
-        if (addSheetTab != null || editingTemplateId != null || productDetail != null) Toast.makeText(context, message, Toast.LENGTH_SHORT).show() else showMessage(message)
+        if (addSheetTab != null || showTemplates || editingTemplateId != null || productDetail != null) Toast.makeText(context, message, Toast.LENGTH_SHORT).show() else showMessage(message)
     }
 
     fun openAddSheet(tab: AddTab, query: String = "") {
@@ -404,32 +406,13 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = { shopMode = !shopMode }) {
-                        Icon(
-                            Icons.Filled.ShoppingBag,
-                            contentDescription = if (shopMode) L10n.str(R.string.leave_shop_mode) else L10n.str(R.string.shop_mode),
-                            tint = if (shopMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    IconButton(onClick = { showShare = true }) { Icon(Icons.Filled.Share, contentDescription = L10n.str(R.string.share_2)) }
                     IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = L10n.str(R.string.more_options)) }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         DropdownMenuItem(
-                            text = { Text(L10n.str(R.string.my_lists)) },
-                            leadingIcon = { Icon(Icons.Filled.ShoppingBag, null) },
-                            onClick = { showMenu = false; showLists = true }
-                        )
-                        // The main list cannot be renamed or deleted, only emptied.
-                        if (selectedListUid != DEFAULT_SHOPPING_LIST_UID) {
-                            DropdownMenuItem(
-                                text = { Text(L10n.str(R.string.rename_list)) },
-                                leadingIcon = { Icon(Icons.Filled.Edit, null) },
-                                onClick = { showMenu = false; renamingCurrentList = true }
-                            )
-                        }
-                        DropdownMenuItem(
-                            text = { Text(L10n.str(R.string.share_2)) },
-                            leadingIcon = { Icon(Icons.Filled.Share, null) },
-                            onClick = { showMenu = false; showShare = true }
+                            text = { Text(L10n.str(R.string.templates)) },
+                            leadingIcon = { Icon(Icons.Filled.Bookmarks, null) },
+                            onClick = { showMenu = false; showTemplates = true }
                         )
                         DropdownMenuItem(
                             text = { Text(L10n.str(R.string.supermarkets_2)) },
@@ -448,6 +431,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                             enabled = totalCount > 0,
                             onClick = { showMenu = false; showClearAllConfirm = true }
                         )
+                        // The main list cannot be deleted, only emptied.
                         if (selectedListUid != DEFAULT_SHOPPING_LIST_UID) {
                             DropdownMenuItem(
                                 text = { Text(L10n.str(R.string.delete_list), color = MaterialTheme.colorScheme.error) },
@@ -458,6 +442,17 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            // Shop mode: bigger rows, swipe to tick, screen kept on.
+            if (totalCount > 0) {
+                ExtendedFloatingActionButton(
+                    onClick = { shopMode = !shopMode },
+                    icon = { Icon(if (shopMode) Icons.Filled.Check else Icons.Filled.ShoppingBag, contentDescription = null) },
+                    text = { Text(if (shopMode) L10n.str(R.string.leave_shop_mode) else L10n.str(R.string.shop_mode)) },
+                    containerColor = if (shopMode) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer
+                )
+            }
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -471,7 +466,8 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                         onValueChange = { quickText = it },
                         modifier = Modifier.weight(1f).focusRequester(quickAddFocus),
                         placeholder = { Text(L10n.str(R.string.add_2_kg_tomatoes_milk)) },
-                        singleLine = true,
+                        // Several items at once: separated by commas, or pasted one per line.
+                        maxLines = 4,
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { submitQuick() }),
                         trailingIcon = {
@@ -525,25 +521,6 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                         )
                     }
                 }
-
-                if (lists.size > 1) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        lists.forEach { list ->
-                            val pending = listCounts[list.uid] ?: 0
-                            FilterChip(
-                                selected = list.uid == selectedListUid,
-                                onClick = { viewModel.selectList(list.uid) },
-                                label = { Text(if (pending > 0) "${list.name} · $pending" else list.name) }
-                            )
-                        }
-                    }
-                }
             }
 
             if (totalCount > 0) {
@@ -580,12 +557,6 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                                     onClick = { showStoreMenu = false; viewModel.selectStore(store.id) }
                                 )
                             }
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text(L10n.str(R.string.manage_supermarkets)) },
-                                leadingIcon = { Icon(Icons.Filled.Edit, null) },
-                                onClick = { showStoreMenu = false; showStores = true }
-                            )
                         }
                     }
                 }
@@ -599,7 +570,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                 EmptyShoppingList(
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     onCatalog = { openAddSheet(AddTab.CATALOG) },
-                    onTemplates = { openAddSheet(AddTab.TEMPLATES) },
+                    onTemplates = { showTemplates = true },
                     onSearch = { openAddSheet(AddTab.PRODUCTS) },
                     onScan = { launchProductScan() }
                 )
@@ -611,6 +582,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                         showImage = imagesEnabled,
                         note = authorNote(shoppingItem, author),
                         onOpenProduct = if (shoppingItem.productInfo != null) ({ productDetail = shoppingItem }) else null,
+                        onEdit = { editingItem = shoppingItem },
                         onCheckedChange = { viewModel.setChecked(shoppingItem.id, it) },
                         onDelete = {
                             viewModel.deleteItem(shoppingItem) {
@@ -656,7 +628,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                             items(cartItems, key = { it.id }) { shoppingItem -> rowFor(shoppingItem)() }
                         }
                     }
-                    item { Spacer(modifier = Modifier.padding(40.dp)) }
+                    item { Spacer(modifier = Modifier.height(96.dp)) } // room for the shop mode button
                 }
             }
         }
@@ -668,16 +640,48 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
             initialTab = tab,
             initialQuery = addSheetQuery,
             pendingNames = pendingNames,
-            listIsEmpty = totalCount == 0,
             onMessage = { announce(it) },
             onSaveToTemplate = { templateTarget = it },
-            onEditTemplate = { id -> addSheetTab = null; viewModel.clearSearch(); editingTemplateId = id },
-            onNewTemplate = { showNewTemplate = true },
-            onSaveListAsTemplate = { showSaveTemplate = true },
             onDismiss = {
                 addSheetTab = null
                 viewModel.clearSearch()
             }
+        )
+    }
+
+    if (showTemplates) {
+        ShoppingTemplatesSheet(
+            templates = templates,
+            listIsEmpty = totalCount == 0,
+            onApply = { template ->
+                viewModel.applyTemplate(template)
+                announce(L10n.str(R.string.added_x_items_x, template.items.size, template.name))
+            },
+            onEdit = { id -> showTemplates = false; editingTemplateId = id },
+            onNew = { showNewTemplate = true },
+            onSaveList = { showSaveTemplate = true },
+            onDismiss = { showTemplates = false }
+        )
+    }
+
+    editingItem?.let { item ->
+        ShoppingItemEditorSheet(
+            item = item,
+            aisles = categoryNames,
+            onSave = { name, quantity, unit, aisle ->
+                viewModel.updateItem(item.id, name, quantity, unit, aisle)
+                editingItem = null
+            },
+            onDelete = {
+                editingItem = null
+                viewModel.deleteItem(item) {
+                    scope.launch {
+                        val result = snackbarHostState.showSnackbar(L10n.str(R.string.item_removed), actionLabel = L10n.str(R.string.undo))
+                        if (result == SnackbarResult.ActionPerformed) viewModel.restoreItem(item)
+                    }
+                }
+            },
+            onDismiss = { editingItem = null }
         )
     }
 
@@ -720,8 +724,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
             onConfirm = { name ->
                 showNewTemplate = false
                 viewModel.createTemplate(name) { id ->
-                    addSheetTab = null
-                    viewModel.clearSearch()
+                    showTemplates = false
                     editingTemplateId = id
                 }
             },
@@ -738,7 +741,7 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
             onConfirm = { name ->
                 viewModel.saveTemplate(name)
                 showSaveTemplate = false
-                announce("Plantilla \"$name\" guardada")
+                announce(L10n.str(R.string.template_x_saved, name))
             },
             onDismiss = { showSaveTemplate = false }
         )
@@ -862,17 +865,6 @@ fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
                 editingStore = null
             },
             onDismiss = { editingStore = null }
-        )
-    }
-
-    if (renamingCurrentList) {
-        NameDialog(
-            title = L10n.str(R.string.rename_list),
-            initial = currentListName,
-            placeholder = currentListName,
-            confirmLabel = L10n.str(R.string.save),
-            onConfirm = { viewModel.renameList(selectedListUid, it); renamingCurrentList = false },
-            onDismiss = { renamingCurrentList = false }
         )
     }
 

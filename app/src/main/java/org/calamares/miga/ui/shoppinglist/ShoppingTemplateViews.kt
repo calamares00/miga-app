@@ -545,3 +545,69 @@ private fun TemplateItemRow(item: TemplateItem, onOpen: (() -> Unit)?, onRemove:
         }
     }
 }
+
+/** Templates of the current list: apply, edit or create them, or save the list as one. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ShoppingTemplatesSheet(
+    templates: List<ShoppingTemplate>,
+    listIsEmpty: Boolean,
+    onApply: (ShoppingTemplate) -> Unit,
+    onEdit: (Long) -> Unit,
+    onNew: () -> Unit,
+    onSaveList: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.fillMaxHeight(0.92f)) {
+            Text(
+                L10n.str(R.string.templates),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+            )
+            TemplatesContent(templates, listIsEmpty, onApply, onEdit, onNew, onSaveList)
+        }
+    }
+}
+
+@Composable
+private fun TemplatesContent(
+    templates: List<ShoppingTemplate>,
+    listIsEmpty: Boolean,
+    onApply: (ShoppingTemplate) -> Unit,
+    onEdit: (Long) -> Unit,
+    onNew: () -> Unit,
+    onSaveList: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp)
+    ) {
+        item(key = "actions") {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
+                FilledTonalButton(onClick = onNew) {
+                    ButtonContent(Icons.Filled.Add, L10n.str(R.string.new_short))
+                }
+                OutlinedButton(onClick = onSaveList, enabled = !listIsEmpty) { Text(L10n.str(R.string.save_list)) }
+            }
+        }
+        item(key = "mine_header") { SectionLabel(L10n.str(R.string.my_templates)) }
+        if (templates.isEmpty()) {
+            item(key = "mine_empty") {
+                Text(
+                    L10n.str(R.string.dont_have_templates_yet_create),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+        }
+        items(templates, key = { "m${it.id}" }) { template ->
+            TemplateRow(template = template, onApply = { onApply(template) }, onClick = { onEdit(template.id) })
+        }
+        item(key = "predefined_header") { SectionLabel(L10n.str(R.string.ready_made), top = 16.dp) }
+        items(PredefinedShoppingLists.ALL, key = { "p${it.id}" }) { template ->
+            TemplateRow(template = template, onApply = { onApply(template) }, onClick = null)
+        }
+    }
+}
