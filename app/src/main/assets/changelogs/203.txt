@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.5:
+• Arreglado: las recetas de los libros del servidor podían tener fotos repetidas y varias portadas. Ahora la sincronización junta las fotos idénticas.
+• Las copias de seguridad guardan la identidad de cada foto, así que restaurar ya no duplica fotos en el servidor.
+• Tras reinstalar y restaurar, al añadir de nuevo el servidor tus libros vuelven a sincronizarse solos.

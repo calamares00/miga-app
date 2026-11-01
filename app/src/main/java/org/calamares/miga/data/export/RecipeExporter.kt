@@ -485,7 +485,7 @@ object RecipeExporter {
     /** Maps the photos of a recipe to the files extracted from the ZIP, skipping missing ones. */
     private fun resolvePhotos(recipeUid: String, photoDtos: List<PhotoExportDto>, extracted: Map<String, String>): List<RecipePhoto> =
         photoDtos.mapNotNull { photoDto ->
-            extracted["recipes/$recipeUid/${photoDto.fileName}"]?.let { RecipePhoto(uri = it, isCover = photoDto.isCover) }
+            extracted["recipes/$recipeUid/${photoDto.fileName}"]?.let { RecipePhoto(uri = it, isCover = photoDto.isCover, uid = photoDto.uid) }
         }
 
     private class Manifest(val text: String?, val isZip: Boolean)
