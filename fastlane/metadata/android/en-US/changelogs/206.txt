@@ -1,3 +1,4 @@
 What's new in 1.0.8:
+• Ratings (stars) in server books are now yours alone, like favourites: they are no longer shared with the other people syncing.
 • Recipe editor: the preparation and cooking fields no longer break the layout.
 • Utensils and tags: instead of listing them all, type and pick from the suggestions. You can add several separated by commas.
