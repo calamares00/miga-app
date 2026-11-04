@@ -1,0 +1,3 @@
+What's new in 1.0.8:
+• Recipe editor: the preparation and cooking fields no longer break the layout.
+• Utensils and tags: instead of listing them all, type and pick from the suggestions. You can add several separated by commas.
