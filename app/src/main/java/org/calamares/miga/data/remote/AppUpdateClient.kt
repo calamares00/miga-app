@@ -2,7 +2,6 @@ package org.calamares.miga.data.remote
 
 import java.net.HttpURLConnection
 import java.net.URL
-import java.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -10,14 +9,13 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-/** A published version of Miga: its version name ("1.0.6") and when it was published. */
-data class AppRelease(val versionName: String, val publishedAt: Instant?, val pageUrl: String)
+/** A published version of Miga: its version name ("1.0.6") and its GitHub page. */
+data class AppRelease(val versionName: String, val pageUrl: String)
 
 @Serializable
 private data class GithubReleaseDto(
     @SerialName("tag_name") val tagName: String,
     @SerialName("html_url") val htmlUrl: String = "",
-    @SerialName("published_at") val publishedAt: String? = null,
     val draft: Boolean = false,
     val prerelease: Boolean = false
 )
@@ -48,7 +46,6 @@ object AppUpdateClient {
                 if (dto.draft || dto.prerelease) return@withContext null
                 AppRelease(
                     versionName = dto.tagName.removePrefix("v"),
-                    publishedAt = dto.publishedAt?.let { runCatching { Instant.parse(it) }.getOrNull() },
                     pageUrl = dto.htmlUrl
                 )
             } finally {
