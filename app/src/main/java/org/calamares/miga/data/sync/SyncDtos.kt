@@ -40,6 +40,7 @@ data class RecipeSyncDto(
     val servings: Int,
     val notes: String = "",
     val source: String = "",
+    /** Kept for older servers and apps; always false now: favourites are personal and local to each device. */
     val isFavorite: Boolean = false,
     /**
      * Personal rating (1-5), null when not rated. Shared by every device in the namespace, like
