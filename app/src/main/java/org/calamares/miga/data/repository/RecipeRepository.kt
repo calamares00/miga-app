@@ -1827,7 +1827,8 @@ class RecipeRepository(
             servings = recipe.servings,
             notes = recipe.notes,
             source = recipe.source,
-            isFavorite = recipe.isFavorite,
+            // Favourites are personal: never uploaded, so they do not reach other devices.
+            isFavorite = false,
             ingredientGroups = recipe.ingredientGroups.map { g ->
                 IngredientGroupDto(g.name, g.ingredients.map { IngredientDto(it.name, it.quantity, it.unit, it.optional) })
             },
@@ -1970,7 +1971,7 @@ class RecipeRepository(
                     servings = dto.servings,
                     notes = dto.notes,
                     source = dto.source,
-                    isFavorite = dto.isFavorite,
+                    isFavorite = false, // personal: never taken from the server
                     timesCooked = 0,
                     createdAt = dto.updatedAt,
                     updatedAt = dto.updatedAt,
@@ -1991,7 +1992,7 @@ class RecipeRepository(
                     servings = dto.servings,
                     notes = dto.notes,
                     source = dto.source,
-                    isFavorite = dto.isFavorite,
+                    // isFavorite stays as this device has it (personal, see RecipeSyncDto).
                     updatedAt = dto.updatedAt,
                     rating = dto.rating,
                     // An older server does not know the fields and returns null: keep what the device has.
