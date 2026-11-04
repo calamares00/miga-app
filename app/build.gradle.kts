@@ -17,8 +17,8 @@ android {
         // versionCode goes up on every commit (Play requires it to always grow). versionName is the
         // public version and only changes when a new version is released (1.0.0, 1.0.1, 1.1.0...),
         // with release notes in assets/changelogs and fastlane/.../changelogs (<versionCode>.txt).
-        versionCode = 205
-        versionName = "1.0.7"
+        versionCode = 206
+        versionName = "1.0.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
