@@ -132,7 +132,6 @@
     <string name="dismiss_notice">"Dismiss notice"</string>
     <string name="close_cooking_mode">"Close cooking mode"</string>
     <string name="light">"Light"</string>
-    <string name="cooking_min">"Cooking (min)"</string>
     <string name="cooked_x_x">"Cooked %1$sx"</string>
     <string name="invitation_qr_code">"Invitation QR code"</string>
     <string name="qr_code_x_items">"QR code with %1$s items"</string>
@@ -509,7 +508,10 @@
     <string name="ready_made">"Ready-made"</string>
     <string name="system_default_2">"System default"</string>
     <string name="faq_contact">"FAQ and contact"</string>
-    <string name="prep_min">"Prep (min)"</string>
+    <string name="editor_prep_label">"Prep."</string>
+    <string name="editor_cook_label">"Cooking"</string>
+    <string name="editor_minutes_suffix">"min"</string>
+    <string name="separate_with_commas">"Separate with commas"</string>
     <string name="method">"Method"</string>
     <string name="test_connection">"Test connection"</string>
     <string name="test_voice">"Test voice"</string>
@@ -1130,8 +1132,6 @@
     <string name="cleanup_done_renamed">"%1$d names unified"</string>
     <string name="cleanup_done_deleted">"%1$d unused entries deleted"</string>
     <string name="did_you_mean_x">"Did you mean \"%1$s\"? Tap to use it."</string>
-    <string name="already_have_x">"You already have \"%1$s\"."</string>
-    <string name="use_x">"Use \"%1$s\""</string>
     <string name="recipe_categories">"Recipe categories"</string>
     <string name="ingredients_and_products">"Ingredients and products"</string>
     <string name="product_count_one">"1 product"</string>

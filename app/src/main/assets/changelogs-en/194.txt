@@ -1,3 +1,4 @@
+What's new in 1.0.0:
 First public release of Miga.
 • Recipe books with photos, sub-recipes, optional ingredients and a cooking mode with timers and voice.
 • Shopping list sorted by aisle, with several lists, templates and a product scanner (Open Food Facts).

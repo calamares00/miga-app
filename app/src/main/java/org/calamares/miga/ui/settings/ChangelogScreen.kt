@@ -3,6 +3,7 @@ package org.calamares.miga.ui.settings
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.L10n
 import org.calamares.miga.R
+import org.calamares.miga.data.model.ChangelogParser
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,7 +34,7 @@ fun ChangelogScreen(settingsRepository: SettingsRepository, onBack: () -> Unit) 
      */
     val changelogEntries = remember {
         settingsRepository.listAvailableChangelogVersionCodes()
-            .mapNotNull { versionCode -> settingsRepository.readChangelog(versionCode)?.let { versionCode to it } }
+            .mapNotNull { versionCode -> settingsRepository.readChangelog(versionCode)?.let { ChangelogParser.parse(versionCode, it) } }
     }
 
     AdaptiveScaffold(
@@ -55,14 +56,12 @@ fun ChangelogScreen(settingsRepository: SettingsRepository, onBack: () -> Unit) 
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            changelogEntries.forEach { (versionCode, text) ->
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        "v1.0.${versionCode - 1}",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            changelogEntries.forEach { entry ->
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(entry.title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                    entry.items.forEach { item ->
+                        Text("• $item", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }

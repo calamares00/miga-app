@@ -67,6 +67,11 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -116,6 +121,8 @@ fun RecipeEditorScreen(
     val availableCategories by viewModel.availableCategories.collectAsState()
     val availableTags by viewModel.availableTags.collectAsState()
     val availableUtensils by viewModel.availableUtensils.collectAsState()
+    val popularTags by viewModel.popularTags.collectAsState()
+    val popularUtensils by viewModel.popularUtensils.collectAsState()
     val visionState by viewModel.visionState.collectAsState()
     val aiProgress by viewModel.aiProgress.collectAsState()
     val detectedRecipes by viewModel.detectedRecipes.collectAsState()
@@ -252,7 +259,8 @@ fun RecipeEditorScreen(
                     OutlinedTextField(
                         value = viewModel.prepTimeMinutesText,
                         onValueChange = { if (it.all(Char::isDigit)) viewModel.prepTimeMinutesText = it },
-                        label = { Text(L10n.str(R.string.prep_min)) },
+                        label = { Text(L10n.str(R.string.editor_prep_label), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        suffix = { Text(L10n.str(R.string.editor_minutes_suffix)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.weight(1f)
@@ -260,7 +268,8 @@ fun RecipeEditorScreen(
                     OutlinedTextField(
                         value = viewModel.cookTimeMinutesText,
                         onValueChange = { if (it.all(Char::isDigit)) viewModel.cookTimeMinutesText = it },
-                        label = { Text(L10n.str(R.string.cooking_min)) },
+                        label = { Text(L10n.str(R.string.editor_cook_label), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        suffix = { Text(L10n.str(R.string.editor_minutes_suffix)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.weight(1f)
@@ -268,7 +277,7 @@ fun RecipeEditorScreen(
                     OutlinedTextField(
                         value = viewModel.servings.toString(),
                         onValueChange = { text -> text.toIntOrNull()?.let { viewModel.servings = it.coerceIn(1, 99) } },
-                        label = { Text(L10n.str(R.string.servings_2)) },
+                        label = { Text(L10n.str(R.string.servings_2), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.weight(1f)
@@ -285,9 +294,10 @@ fun RecipeEditorScreen(
                     ChipMultiSelect(
                         selected = viewModel.selectedUtensils,
                         available = availableUtensils,
+                        popular = popularUtensils,
                         onToggle = viewModel::toggleUtensil,
                         onAddCustom = viewModel::addCustomUtensil,
-                        addDialogTitle = L10n.str(R.string.add_utensil),
+                        label = L10n.str(R.string.add_utensil),
                         kind = ContentKind.EQUIPMENT
                     )
                 }
@@ -295,9 +305,10 @@ fun RecipeEditorScreen(
                     ChipMultiSelect(
                         selected = viewModel.selectedTags,
                         available = availableTags,
+                        popular = popularTags,
                         onToggle = viewModel::toggleTag,
                         onAddCustom = viewModel::addCustomTag,
-                        addDialogTitle = L10n.str(R.string.add_tag),
+                        label = L10n.str(R.string.add_tag),
                         kind = ContentKind.TAG
                     )
                 }
@@ -588,68 +599,108 @@ private fun CategoryField(value: String, suggestions: List<String>, onValueChang
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * Picks several utensils or tags without listing every one that exists: the chosen ones are shown
+ * as removable chips, and a field below suggests matches while typing ([popular] ones, the most
+ * used, when it is focused and empty). Several can be typed at once separated by commas, and a
+ * name that does not exist yet is created.
+ */
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun ChipMultiSelect(
     selected: List<String>,
     available: List<String>,
+    popular: List<String>,
     onToggle: (String) -> Unit,
     onAddCustom: (String) -> Unit,
-    addDialogTitle: String,
+    label: String,
     kind: ContentKind
 ) {
-    var showAddDialog by remember { mutableStateOf(false) }
+    var text by remember { mutableStateOf("") }
+    var focused by remember { mutableStateOf(false) }
+    // Not remembered: [selected] is a state list that changes without changing identity, and
+    // filtering a few hundred names on each recomposition is cheap.
     val allOptions = (available + selected).distinct()
+    val fragment = text.trim()
 
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        allOptions.forEach { option ->
-            FilterChip(selected = option in selected, onClick = { onToggle(option) }, label = { Text(option) })
+    /** Each name as an existing one when it matches ignoring case, otherwise as a new one. */
+    fun commit(names: List<String>) {
+        names.map { it.trim() }.filter { it.isNotEmpty() }.distinctBy { it.lowercase() }.forEach { name ->
+            val existing = allOptions.firstOrNull { it.equals(name, ignoreCase = true) }
+            if (existing == null) onAddCustom(name) else if (existing !in selected) onToggle(existing)
         }
-        FilterChip(
-            selected = false,
-            onClick = { showAddDialog = true },
-            label = { Icon(Icons.Filled.Add, contentDescription = addDialogTitle, modifier = Modifier.size(18.dp)) }
-        )
     }
 
-    if (showAddDialog) {
-        var newValue by remember { mutableStateOf("") }
-        val similar = remember(newValue, allOptions) {
-            ContentCleanup.similarExisting(kind, newValue, allOptions, L10n.locale().language)
-        }
-        AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = { Text(addDialogTitle) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = newValue,
-                        onValueChange = { newValue = it },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+    val matches = if (fragment.isEmpty()) {
+        // On an empty field: the most used, or the first ones while nothing is used yet.
+        if (focused) (popular + available).distinct().filter { it !in selected }.take(MAX_SUGGESTIONS) else emptyList()
+    } else {
+        available.filter { it !in selected && it.contains(fragment, ignoreCase = true) }
+            .sortedWith(compareBy({ !it.startsWith(fragment, ignoreCase = true) }, { it.lowercase() }))
+            .take(MAX_SUGGESTIONS)
+    }
+    // "bol grnade" when "Bol grande" exists: offered instead of creating a near duplicate.
+    val similar = if (fragment.isEmpty()) null else ContentCleanup.similarExisting(kind, fragment, allOptions, L10n.locale().language)
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (selected.isNotEmpty()) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                selected.forEach { option ->
+                    InputChip(
+                        selected = true,
+                        onClick = { onToggle(option) },
+                        label = { Text(option) },
+                        trailingIcon = {
+                            Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.remove_x, option), modifier = Modifier.size(18.dp))
+                        }
                     )
-                    if (similar != null) {
-                        // A near duplicate: the existing one is offered instead.
-                        Text(L10n.str(R.string.already_have_x, similar), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        FilledTonalButton(onClick = {
-                            if (similar !in selected) onToggle(similar)
-                            showAddDialog = false
-                        }) { Text(L10n.str(R.string.use_x, similar)) }
+                }
+            }
+        }
+        OutlinedTextField(
+            value = text,
+            onValueChange = { value ->
+                if (value.any { it == ',' || it == ';' || it == '\n' }) {
+                    val parts = value.split(',', ';', '\n')
+                    commit(parts.dropLast(1))
+                    text = parts.last().trimStart()
+                } else {
+                    text = value
+                }
+            },
+            label = { Text(label) },
+            placeholder = { Text(L10n.str(R.string.separate_with_commas)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { commit(listOf(text)); text = "" }),
+            trailingIcon = {
+                if (fragment.isNotEmpty()) {
+                    IconButton(onClick = { commit(listOf(text)); text = "" }) {
+                        Icon(Icons.Filled.Add, contentDescription = L10n.str(R.string.add))
                     }
                 }
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (newValue.isNotBlank()) onAddCustom(newValue)
-                    showAddDialog = false
-                }) { Text(L10n.str(R.string.add)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) { Text(L10n.str(R.string.cancel)) }
-            }
+            modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused }
         )
+        if (matches.isNotEmpty()) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                matches.forEach { option ->
+                    SuggestionChip(onClick = { commit(listOf(option)); text = "" }, label = { Text(option) })
+                }
+            }
+        }
+        if (similar != null && similar !in selected && similar !in matches) {
+            Text(
+                L10n.str(R.string.did_you_mean_x, similar),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable { commit(listOf(similar)); text = "" }
+            )
+        }
     }
 }
+
+private const val MAX_SUGGESTIONS = 8
 
 @Composable
 internal fun Section(title: String, content: @Composable () -> Unit) {
