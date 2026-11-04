@@ -1,2 +1,2 @@
 Novedades de la versión 1.0.7:
-• Los favoritos de los libros del servidor ahora son solo tuyos: marcar o quitar un favorito ya no afecta a los demás usuarios que sincronizan.
+• Los favoritos y las valoraciones de los libros del servidor ahora son solo tuyos: cambiarlos ya no afecta a los demás usuarios que sincronizan.

@@ -1,2 +1,2 @@
 What's new in 1.0.7:
-• Favourites in server books are now yours alone: marking or unmarking one no longer affects the other people syncing.
+• Favourites and ratings in server books are now yours alone: changing them no longer affects the other people syncing.
