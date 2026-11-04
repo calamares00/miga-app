@@ -72,7 +72,6 @@ class SettingsRepository(private val context: Context) {
     private val dictationLanguageKey = stringPreferencesKey("dictation_language")
     private val lastSeenVersionCodeKey = intPreferencesKey("last_seen_version_code")
     private val packsCatalogRepoKey = stringPreferencesKey("packs_catalog_repo")
-    private val lastUpdateCheckKey = longPreferencesKey("last_update_check")
     private val dismissedUpdateKey = stringPreferencesKey("dismissed_update_version")
 
     /**
@@ -481,13 +480,6 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setPacksCatalogRepo(repo: String) {
         context.settingsDataStore.edit { prefs -> prefs[packsCatalogRepoKey] = repo.trim() }
-    }
-
-    /** When the app last looked for a newer version (see AppUpdateClient), in epoch millis. */
-    suspend fun lastUpdateCheck(): Long = context.settingsDataStore.data.first()[lastUpdateCheckKey] ?: 0L
-
-    suspend fun setLastUpdateCheck(millis: Long) {
-        context.settingsDataStore.edit { prefs -> prefs[lastUpdateCheckKey] = millis }
     }
 
     /** Version the user answered "Not now" to; it is not announced again. */
