@@ -1836,7 +1836,7 @@ class RecipeRepository(
             tags = recipe.tags,
             utensils = recipe.utensils,
             updatedAt = details.recipe.updatedAt,
-            rating = recipe.rating,
+            rating = null, // personal: never uploaded (see RecipeSyncDto)
             origin = recipe.origin,
             originCountry = recipe.originCountry,
             schema = RECIPE_SYNC_SCHEMA
@@ -1975,7 +1975,7 @@ class RecipeRepository(
                     timesCooked = 0,
                     createdAt = dto.updatedAt,
                     updatedAt = dto.updatedAt,
-                    rating = dto.rating,
+                    rating = null, // personal: never taken from the server
                     origin = dto.origin,
                     originCountry = RecipeOrigin.normalizeCountry(dto.originCountry)
                 )
@@ -1994,7 +1994,7 @@ class RecipeRepository(
                     source = dto.source,
                     // isFavorite stays as this device has it (personal, see RecipeSyncDto).
                     updatedAt = dto.updatedAt,
-                    rating = dto.rating,
+                    // rating stays as this device has it (personal, see RecipeSyncDto).
                     // An older server does not know the fields and returns null: keep what the device has.
                     origin = if (dto.schema >= RECIPE_SYNC_SCHEMA) dto.origin else dto.origin ?: existing.origin,
                     originCountry = if (dto.schema >= RECIPE_SYNC_SCHEMA) {
