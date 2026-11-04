@@ -1,3 +1,4 @@
+Novedades de la versión 1.0.0:
 Primera versión pública de Miga.
 • Libros de recetas con fotos, subrecetas, ingredientes opcionales y modo cocina con temporizadores y voz.
 • Lista de la compra por pasillos, con varias listas, plantillas y escáner de productos (Open Food Facts).
