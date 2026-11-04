@@ -47,6 +47,7 @@ import org.calamares.miga.data.vision.RecipeExtractionResult
 import org.calamares.miga.ui.navigation.Destinations
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import org.calamares.miga.data.model.ContentKind
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -155,6 +156,14 @@ class RecipeEditorViewModel(
 
     val availableUtensils: StateFlow<List<String>> = repository.observeUtensils()
         .map { it.map { u -> u.name } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Tags and utensils by how many recipes use them, most used first, offered on an empty field. */
+    val popularTags: StateFlow<List<String>> = popularNames(ContentKind.TAG)
+    val popularUtensils: StateFlow<List<String>> = popularNames(ContentKind.EQUIPMENT)
+
+    private fun popularNames(kind: ContentKind): StateFlow<List<String>> = repository.observeContent(kind)
+        .map { items -> items.filter { it.usage > 0 }.sortedByDescending { it.usage }.map { it.name } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val availableIngredientNames: StateFlow<List<String>> = repository.observeIngredientNames()

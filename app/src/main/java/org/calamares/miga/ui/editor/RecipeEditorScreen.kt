@@ -67,6 +67,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.SuggestionChip
@@ -120,6 +121,8 @@ fun RecipeEditorScreen(
     val availableCategories by viewModel.availableCategories.collectAsState()
     val availableTags by viewModel.availableTags.collectAsState()
     val availableUtensils by viewModel.availableUtensils.collectAsState()
+    val popularTags by viewModel.popularTags.collectAsState()
+    val popularUtensils by viewModel.popularUtensils.collectAsState()
     val visionState by viewModel.visionState.collectAsState()
     val aiProgress by viewModel.aiProgress.collectAsState()
     val detectedRecipes by viewModel.detectedRecipes.collectAsState()
@@ -291,6 +294,7 @@ fun RecipeEditorScreen(
                     ChipMultiSelect(
                         selected = viewModel.selectedUtensils,
                         available = availableUtensils,
+                        popular = popularUtensils,
                         onToggle = viewModel::toggleUtensil,
                         onAddCustom = viewModel::addCustomUtensil,
                         label = L10n.str(R.string.add_utensil),
@@ -301,6 +305,7 @@ fun RecipeEditorScreen(
                     ChipMultiSelect(
                         selected = viewModel.selectedTags,
                         available = availableTags,
+                        popular = popularTags,
                         onToggle = viewModel::toggleTag,
                         onAddCustom = viewModel::addCustomTag,
                         label = L10n.str(R.string.add_tag),
@@ -596,21 +601,26 @@ private fun CategoryField(value: String, suggestions: List<String>, onValueChang
 
 /**
  * Picks several utensils or tags without listing every one that exists: the chosen ones are shown
- * as removable chips, and a field below suggests matches while typing. Several can be typed at once
- * separated by commas, and a name that does not exist yet is created.
+ * as removable chips, and a field below suggests matches while typing ([popular] ones, the most
+ * used, when it is focused and empty). Several can be typed at once separated by commas, and a
+ * name that does not exist yet is created.
  */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun ChipMultiSelect(
     selected: List<String>,
     available: List<String>,
+    popular: List<String>,
     onToggle: (String) -> Unit,
     onAddCustom: (String) -> Unit,
     label: String,
     kind: ContentKind
 ) {
     var text by remember { mutableStateOf("") }
-    val allOptions = remember(available, selected) { (available + selected).distinct() }
+    var focused by remember { mutableStateOf(false) }
+    // Not remembered: [selected] is a state list that changes without changing identity, and
+    // filtering a few hundred names on each recomposition is cheap.
+    val allOptions = (available + selected).distinct()
     val fragment = text.trim()
 
     /** Each name as an existing one when it matches ignoring case, otherwise as a new one. */
@@ -621,16 +631,16 @@ private fun ChipMultiSelect(
         }
     }
 
-    val matches = remember(fragment, available, selected) {
-        if (fragment.isEmpty()) emptyList()
-        else available.filter { it !in selected && it.contains(fragment, ignoreCase = true) }
+    val matches = if (fragment.isEmpty()) {
+        // On an empty field: the most used, or the first ones while nothing is used yet.
+        if (focused) (popular + available).distinct().filter { it !in selected }.take(MAX_SUGGESTIONS) else emptyList()
+    } else {
+        available.filter { it !in selected && it.contains(fragment, ignoreCase = true) }
             .sortedWith(compareBy({ !it.startsWith(fragment, ignoreCase = true) }, { it.lowercase() }))
             .take(MAX_SUGGESTIONS)
     }
     // "bol grnade" when "Bol grande" exists: offered instead of creating a near duplicate.
-    val similar = remember(fragment, allOptions) {
-        if (fragment.isEmpty()) null else ContentCleanup.similarExisting(kind, fragment, allOptions, L10n.locale().language)
-    }
+    val similar = if (fragment.isEmpty()) null else ContentCleanup.similarExisting(kind, fragment, allOptions, L10n.locale().language)
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (selected.isNotEmpty()) {
@@ -670,7 +680,7 @@ private fun ChipMultiSelect(
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused }
         )
         if (matches.isNotEmpty()) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

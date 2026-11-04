@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import org.calamares.miga.BuildConfig
 import org.calamares.miga.crash.CrashReporter
 import org.calamares.miga.data.local.SettingsRepository
+import org.calamares.miga.data.model.ChangelogParser
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.data.remote.AppInstallSource
@@ -140,12 +141,10 @@ class RecipeBooksViewModel(
                 // version.
                 settingsRepository.setLastSeenVersionCode(current)
             } else if (lastSeen < current) {
+                // The items of every version since the last one seen, without their "What's new in
+                // x.y.z" line: the dialog title already names the version.
                 val entries = (lastSeen + 1..current).flatMap { code ->
-                    settingsRepository.readChangelog(code)
-                        ?.lines()
-                        ?.map { it.trim() }
-                        ?.filter { it.isNotBlank() }
-                        .orEmpty()
+                    settingsRepository.readChangelog(code)?.let { ChangelogParser.parse(code, it).items }.orEmpty()
                 }
                 if (entries.isNotEmpty()) {
                     _changelogAnnouncement.value = ChangelogAnnouncement(BuildConfig.VERSION_NAME, entries)

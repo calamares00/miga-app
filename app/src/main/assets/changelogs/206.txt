@@ -1,4 +1,5 @@
 Novedades de la versión 1.0.8:
-• Las valoraciones (estrellas) de los libros del servidor ahora son solo tuyas, como los favoritos: ya no se comparten con los demás usuarios que sincronizan.
-• Editor de recetas: los campos de preparación y cocción ya no se desajustan.
-• Utensilios y etiquetas: en vez de listarlos todos, escribe y elige entre las sugerencias. Puedes añadir varios separados por comas.
+• Las valoraciones de los libros del servidor ahora son solo tuyas, como los favoritos.
+• Editor: los campos de preparación y cocción ya no se desajustan.
+• Utensilios y etiquetas: ya no se listan todos. Al tocar el campo ves los más usados; escribe para buscar o añade varios separados por comas.
+• Historial de cambios más claro: cada versión con su número de compilación.
