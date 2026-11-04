@@ -1,0 +1,6 @@
+What's new in 1.0.8:
+• Ratings in server books are now yours alone, like favourites.
+• Editor: the preparation and cooking fields no longer break the layout.
+• Utensils and tags: no longer all listed. Tap the field to see the most used; type to search or add several separated by commas.
+• Clearer changelog: each version with its build number.
+• The new version notice shows as soon as it is published.

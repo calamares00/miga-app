@@ -42,10 +42,7 @@ data class RecipeSyncDto(
     val source: String = "",
     /** Kept for older servers and apps; always false now: favourites are personal and local to each device. */
     val isFavorite: Boolean = false,
-    /**
-     * Personal rating (1-5), null when not rated. Shared by every device in the namespace, like
-     * isFavorite (not per person).
-     */
+    /** Kept for older servers and apps; always null now: the rating is personal and local to each device, like isFavorite. */
     val rating: Int? = null,
     /** Where the recipe comes from and its country code (see RecipeOrigin). */
     val origin: String? = null,
