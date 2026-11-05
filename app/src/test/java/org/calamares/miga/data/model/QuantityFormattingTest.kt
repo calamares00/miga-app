@@ -69,4 +69,12 @@ class QuantityFormattingTest {
     fun `a negative time is shown as zero`() {
         assertEquals("0 min", formatDuration(-5))
     }
+
+    @Test
+    fun `a small positive amount is not shown as zero`() {
+        assertEquals("0.004", formatQuantity(0.004))
+        assertEquals("0.0012", formatQuantity(0.0012345))
+        assertEquals("0.01", formatQuantity(0.006))
+        assertEquals("0", formatQuantity(0.0))
+    }
 }

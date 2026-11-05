@@ -1,0 +1,4 @@
+What's new in 1.0.10:
+• Changing a recipe's servings with + and − now updates the servings figure too.
+• Tapping + or − quickly no longer loses taps, and the buttons are disabled at the minimum or maximum.
+• Very small amounts no longer show as 0 when reducing servings.
