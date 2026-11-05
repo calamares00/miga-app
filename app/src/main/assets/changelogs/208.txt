@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.10:
+• Al cambiar las raciones de una receta con + y −, el dato de raciones también cambia.
+• Pulsar + o − rápido ya no pierde pulsaciones, y los botones se desactivan al llegar al mínimo o al máximo.
+• Las cantidades muy pequeñas ya no aparecen como 0 al reducir raciones.
