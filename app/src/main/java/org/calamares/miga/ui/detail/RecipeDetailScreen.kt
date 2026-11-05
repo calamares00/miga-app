@@ -94,6 +94,7 @@ import coil.compose.AsyncImage
 import org.calamares.miga.data.export.RecipeExporter
 import org.calamares.miga.data.export.FileExports
 import org.calamares.miga.ui.components.ExportFormatDialog
+import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.HealthColorLevel
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.formatQuantity
@@ -524,8 +525,8 @@ private fun RecipeDetailContent(
 
             // Key facts
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                recipe.prepTimeMinutes?.let { FactTile(Icons.Outlined.Timer, L10n.str(R.string.prep_short), L10n.str(R.string.minutes_short, it), Modifier.weight(1f)) }
-                recipe.cookTimeMinutes?.let { FactTile(Icons.Outlined.LocalFireDepartment, L10n.str(R.string.cook_short), L10n.str(R.string.minutes_short, it), Modifier.weight(1f)) }
+                recipe.prepTimeMinutes?.let { FactTile(Icons.Outlined.Timer, L10n.str(R.string.prep_short), formatDuration(it), Modifier.weight(1f)) }
+                recipe.cookTimeMinutes?.let { FactTile(Icons.Outlined.LocalFireDepartment, L10n.str(R.string.cook_short), formatDuration(it), Modifier.weight(1f)) }
                 FactTile(Icons.Outlined.People, L10n.str(R.string.servings_2), "${recipe.servings}", Modifier.weight(1f))
                 FactTile(Icons.Outlined.BarChart, L10n.str(R.string.difficulty), recipe.difficulty.label, Modifier.weight(1f))
             }

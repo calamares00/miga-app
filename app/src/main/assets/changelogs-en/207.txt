@@ -1,0 +1,2 @@
+What's new in 1.0.9:
+• Times of 60 minutes or more are shown in hours and minutes (1 h, 3 h 50 min) in recipes, the filter, statistics, PDFs and shared images.

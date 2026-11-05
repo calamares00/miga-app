@@ -35,6 +35,21 @@ fun formatQuantity(value: Double): String {
     }
 }
 
+/**
+ * A time in minutes as people read it: "45 min", "1 h", "3 h 50 min". From 60 minutes on it goes to
+ * hours. "h" and "min" are the same in Spanish and English, so no translation is needed.
+ */
+fun formatDuration(minutes: Int): String {
+    val total = minutes.coerceAtLeast(0)
+    val hours = total / 60
+    val rest = total % 60
+    return when {
+        hours == 0 -> "$rest min"
+        rest == 0 -> "$hours h"
+        else -> "$hours h $rest min"
+    }
+}
+
 /** "200 g flour", with "(optional)" after it when the ingredient can be left out. */
 fun Ingredient.displayText(scale: Double = 1.0): String =
     formatIngredientText(name, quantity, unit, scale) + if (optional) " " + L10n.str(R.string.ingredient_optional_suffix) else ""
