@@ -8,6 +8,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
 import org.calamares.miga.ui.components.AdaptiveScaffold
+import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.MissingField
 import org.calamares.miga.data.model.RecipeFilter
 import org.calamares.miga.data.model.SortOption
@@ -88,12 +89,6 @@ import org.calamares.miga.data.stats.LibraryStatsCalculator
 import org.calamares.miga.data.stats.RankedRecipe
 import org.calamares.miga.data.stats.StorageUsage
 import java.util.Locale
-
-private fun formatMinutes(minutes: Int): String = when {
-    minutes < 60 -> L10n.str(R.string.stats_minutes_x, minutes)
-    minutes % 60 == 0 -> L10n.str(R.string.stats_hours_x, minutes / 60)
-    else -> L10n.str(R.string.stats_hours_minutes_x_y, minutes / 60, minutes % 60)
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -214,7 +209,7 @@ private fun LibraryContent(stats: LibraryStats, onRecipeClick: (Long) -> Unit, o
     val averageMinutes = stats.averageMinutes
     if (averageMinutes != null) {
         StatsCard(Icons.Filled.Schedule, L10n.str(R.string.stats_time)) {
-            KeyValueRow(L10n.str(R.string.stats_average_time), formatMinutes(averageMinutes))
+            KeyValueRow(L10n.str(R.string.stats_average_time), formatDuration(averageMinutes))
             val quickLabel = L10n.str(R.string.stats_quick_recipes_x, LibraryStatsCalculator.QUICK_RECIPE_MINUTES)
             KeyValueRow(
                 quickLabel,
@@ -226,7 +221,7 @@ private fun LibraryContent(stats: LibraryStats, onRecipeClick: (Long) -> Unit, o
             stats.longestRecipe?.let { longest ->
                 KeyValueRow(
                     L10n.str(R.string.stats_longest),
-                    "${longest.name} · ${formatMinutes(longest.value)}",
+                    "${longest.name} · ${formatDuration(longest.value)}",
                     onClick = { onRecipeClick(longest.recipeId) }
                 )
             }

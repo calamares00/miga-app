@@ -699,7 +699,6 @@
     <string name="view_details">"Ver detalles"</string>
     <string name="prep_short">"Preparación"</string>
     <string name="cook_short">"Cocción"</string>
-    <string name="minutes_short">"%1$s min"</string>
     <string name="substitute_x">"Sustituir «%1$s»"</string>
     <string name="stars_x">"%1$s estrella(s)"</string>
     <string name="health_and_nutrition">"Salud y nutrición"</string>
@@ -904,9 +903,6 @@
     <string name="stats_average_time">"Tiempo medio"</string>
     <string name="stats_quick_recipes_x">"Rápidas (hasta %1$d min)"</string>
     <string name="stats_longest">"La más larga"</string>
-    <string name="stats_minutes_x">"%1$d min"</string>
-    <string name="stats_hours_minutes_x_y">"%1$d h %2$d min"</string>
-    <string name="stats_hours_x">"%1$d h"</string>
     <string name="stats_top_rated">"Mejor valoradas"</string>
     <string name="stats_average_rating_x_y">"Media de %1$s ★ en %2$d recetas valoradas"</string>
     <string name="stats_times_x">"%1$d veces"</string>
@@ -1140,7 +1136,7 @@
     <string name="filters_n">"Filtros (%1$d)"</string>
     <string name="clear_all">"Borrar todo"</string>
     <string name="filter_total_time">"Tiempo total"</string>
-    <string name="filter_up_to_x_min">"Hasta %1$d min"</string>
+    <string name="filter_up_to_x">"Hasta %1$s"</string>
     <string name="filter_find_ingredient">"Buscar un ingrediente"</string>
     <string name="filter_more">"Más"</string>
     <string name="filter_only_cooked">"Ya cocinadas"</string>

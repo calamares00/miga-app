@@ -1,5 +1,6 @@
 package org.calamares.miga.data.export
 
+import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.displayText
 import org.calamares.miga.data.model.RichText
 import android.content.Context
@@ -670,7 +671,7 @@ object RecipeExporter {
         append(recipe.difficulty.label)
         recipe.categoryName?.let { append(" · ").append(it) }
         RecipeOrigin.label(recipe.origin, recipe.originCountry)?.let { append(" · ").append(it) }
-        recipe.totalTimeMinutes?.let { append(" · ").append(it).append(" min") }
+        recipe.totalTimeMinutes?.let { append(" · ").append(formatDuration(it)) }
         appendLine(L10n.str(R.string.servings_x, recipe.servings))
         if (recipe.utensils.isNotEmpty()) appendLine(L10n.str(R.string.utensils) + ": " + recipe.utensils.joinToString(", "))
         appendLine()
