@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.calamares.miga.L10n
 import org.calamares.miga.R
+import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.MissingField
 import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.data.model.RecipeFilter
@@ -50,7 +51,7 @@ fun ActiveFilterChips(
 ) {
     val chips = buildList<Pair<String, RecipeFilter>> {
         if (filter.onlyFavorites && !ignoreFavorites) add(L10n.str(R.string.favourites_2) to filter.copy(onlyFavorites = false))
-        filter.maxMinutes?.let { add(L10n.str(R.string.filter_up_to_x_min, it) to filter.copy(maxMinutes = null)) }
+        filter.maxMinutes?.let { add(L10n.str(R.string.filter_up_to_x, formatDuration(it)) to filter.copy(maxMinutes = null)) }
         filter.difficulties.forEach { add(it.label to filter.copy(difficulties = filter.difficulties - it)) }
         filter.categoryNames.forEach { add(displayCategoryName(it) to filter.copy(categoryNames = filter.categoryNames - it)) }
         filter.utensils.forEach { add(it to filter.copy(utensils = filter.utensils - it)) }

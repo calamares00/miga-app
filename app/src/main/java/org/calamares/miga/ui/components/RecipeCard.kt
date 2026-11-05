@@ -3,6 +3,7 @@ package org.calamares.miga.ui.components
 import org.calamares.miga.ui.theme.recipePhotoFrame
 import org.calamares.miga.L10n
 import org.calamares.miga.R
+import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.RecipeOrigin
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -144,7 +145,7 @@ fun RecipeCard(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "${recipe.totalTimeMinutes} min",
+                                text = formatDuration(recipe.totalTimeMinutes ?: 0),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -275,7 +276,7 @@ fun RecipeGridCard(
                     )
                     if (recipe.totalTimeMinutes != null) {
                         Text(
-                            text = "${recipe.totalTimeMinutes} min",
+                            text = formatDuration(recipe.totalTimeMinutes ?: 0),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

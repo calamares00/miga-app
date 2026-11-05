@@ -1,5 +1,6 @@
 package org.calamares.miga.data.export
 
+import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.displayText
 import android.content.Context
 import android.graphics.Bitmap
@@ -117,8 +118,8 @@ object RecipeImageCard {
         text(recipe.name, textPaint(68f, INK, bold = true), if (kicker.isNotEmpty()) 12f else 0f, maxLines = 4)
 
         val facts = buildList {
-            recipe.prepTimeMinutes?.takeIf { it > 0 }?.let { add("🔪 " + L10n.str(R.string.minutes_short, it)) }
-            recipe.cookTimeMinutes?.takeIf { it > 0 }?.let { add("🔥 " + L10n.str(R.string.minutes_short, it)) }
+            recipe.prepTimeMinutes?.takeIf { it > 0 }?.let { add("🔪 " + formatDuration(it)) }
+            recipe.cookTimeMinutes?.takeIf { it > 0 }?.let { add("🔥 " + formatDuration(it)) }
             add("👥 " + recipe.servings)
             add(recipe.difficulty.label)
             recipe.rating?.let { add("★".repeat(it)) }
