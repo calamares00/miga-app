@@ -527,7 +527,7 @@ private fun RecipeDetailContent(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
                 recipe.prepTimeMinutes?.let { FactTile(Icons.Outlined.Timer, L10n.str(R.string.prep_short), formatDuration(it), Modifier.weight(1f)) }
                 recipe.cookTimeMinutes?.let { FactTile(Icons.Outlined.LocalFireDepartment, L10n.str(R.string.cook_short), formatDuration(it), Modifier.weight(1f)) }
-                FactTile(Icons.Outlined.People, L10n.str(R.string.servings_2), "${recipe.servings}", Modifier.weight(1f))
+                FactTile(Icons.Outlined.People, L10n.str(R.string.servings_2), "$servings", Modifier.weight(1f))
                 FactTile(Icons.Outlined.BarChart, L10n.str(R.string.difficulty), recipe.difficulty.label, Modifier.weight(1f))
             }
 
@@ -535,7 +535,9 @@ private fun RecipeDetailContent(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(L10n.str(R.string.ingredients), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                    ServingsStepper(servings = servings, onChange = { servings = it.coerceIn(1, 99) })
+                    // The new value is computed from the state when the tap happens, not from the
+                    // last composition, so quick taps are never lost.
+                    ServingsStepper(servings = servings, onStep = { delta -> servings = (servings + delta).coerceIn(MIN_SERVINGS, MAX_SERVINGS) })
                 }
                 recipe.ingredientGroups.filter { it.ingredients.isNotEmpty() }.forEach { group ->
                     if (group.name != null) GroupTitle(group.name)
@@ -846,16 +848,24 @@ private fun StarRatingRow(rating: Int?, onRatingChange: (Int) -> Unit) {
 }
 
 @Composable
-private fun ServingsStepper(servings: Int, onChange: (Int) -> Unit) {
+private fun ServingsStepper(servings: Int, onStep: (Int) -> Unit) {
     Row(
         modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { onChange(servings - 1) }) { Icon(Icons.Filled.Remove, contentDescription = L10n.str(R.string.fewer_servings)) }
+        // Disabled at the limits, so it is clear why nothing changes.
+        IconButton(onClick = { onStep(-1) }, enabled = servings > MIN_SERVINGS) {
+            Icon(Icons.Filled.Remove, contentDescription = L10n.str(R.string.fewer_servings))
+        }
         Text("$servings", style = MaterialTheme.typography.titleMedium)
-        IconButton(onClick = { onChange(servings + 1) }) { Icon(Icons.Filled.Add, contentDescription = L10n.str(R.string.more_servings)) }
+        IconButton(onClick = { onStep(1) }, enabled = servings < MAX_SERVINGS) {
+            Icon(Icons.Filled.Add, contentDescription = L10n.str(R.string.more_servings))
+        }
     }
 }
+
+private const val MIN_SERVINGS = 1
+private const val MAX_SERVINGS = 99
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
