@@ -25,9 +25,16 @@ fun formatIngredientText(
     return "$quantityPart ${UnitInflection.inflect(unit, quantityPart.toDouble(), language)}$connector$name"
 }
 
-/** Rounds to two decimals and drops trailing zeros: 2.0 -> "2", 2.50 -> "2.5", 0.333 -> "0.33". */
+/**
+ * Rounds to two decimals and drops trailing zeros: 2.0 -> "2", 2.50 -> "2.5", 0.333 -> "0.33". A
+ * positive amount too small for two decimals keeps two significant digits (0.004 -> "0.004")
+ * instead of showing "0", which happened when scaling a big recipe down to a few servings.
+ */
 fun formatQuantity(value: Double): String {
     val rounded = (value * 100).roundToInt() / 100.0
+    if (rounded == 0.0 && value > 0.0) {
+        return java.math.BigDecimal(value).round(java.math.MathContext(2)).stripTrailingZeros().toPlainString()
+    }
     return if (rounded == rounded.toLong().toDouble()) {
         rounded.toLong().toString()
     } else {
