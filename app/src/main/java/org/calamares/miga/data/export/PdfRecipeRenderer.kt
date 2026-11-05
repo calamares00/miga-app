@@ -1,5 +1,6 @@
 package org.calamares.miga.data.export
 
+import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.displayText
 import org.calamares.miga.data.model.RichText
 import android.graphics.Typeface
@@ -216,7 +217,7 @@ object PdfRecipeRenderer {
             recipe.categoryName?.let { append(" · ").append(it) }
             // Without the flag: emoji may not render in the PDF.
             (recipe.origin?.takeIf { it.isNotBlank() } ?: recipe.originCountry?.let { RecipeOrigin.countryName(it) })?.let { append(" · ").append(it) }
-            recipe.totalTimeMinutes?.let { append(" · ").append(it).append(" min") }
+            recipe.totalTimeMinutes?.let { append(" · ").append(formatDuration(it)) }
             append(L10n.str(R.string.servings_x, recipe.servings))
         }
         items += Item.Text(meta, paints.meta, 6f)

@@ -49,4 +49,24 @@ class QuantityFormattingTest {
     fun `formatIngredientText uses no connector in English`() {
         assertEquals("2 cups flour", formatIngredientText("flour", 2.0, "cups", language = "en"))
     }
+
+    @Test
+    fun `under an hour stays in minutes`() {
+        assertEquals("0 min", formatDuration(0))
+        assertEquals("45 min", formatDuration(45))
+        assertEquals("59 min", formatDuration(59))
+    }
+
+    @Test
+    fun `from 60 minutes on it goes to hours`() {
+        assertEquals("1 h", formatDuration(60))
+        assertEquals("1 h 1 min", formatDuration(61))
+        assertEquals("2 h", formatDuration(120))
+        assertEquals("3 h 50 min", formatDuration(230))
+    }
+
+    @Test
+    fun `a negative time is shown as zero`() {
+        assertEquals("0 min", formatDuration(-5))
+    }
 }
