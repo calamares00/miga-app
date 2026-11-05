@@ -5,6 +5,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.clickable
+import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -119,7 +120,7 @@ fun FilterSheetContent(
                     FilterChip(
                         selected = maxMinutes == minutes,
                         onClick = { maxMinutes = if (maxMinutes == minutes) null else minutes },
-                        label = { Text(L10n.str(R.string.filter_up_to_x_min, minutes)) }
+                        label = { Text(L10n.str(R.string.filter_up_to_x, formatDuration(minutes))) }
                     )
                 }
             }
