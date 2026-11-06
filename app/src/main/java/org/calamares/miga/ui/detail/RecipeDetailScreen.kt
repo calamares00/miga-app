@@ -15,7 +15,8 @@ import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.ui.components.AiContentNotice
-import org.calamares.miga.ui.components.rememberAiEnabled
+import org.calamares.miga.ui.components.rememberAiReady
+import androidx.compose.material.icons.filled.Refresh
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -153,13 +154,14 @@ fun RecipeDetailScreen(
     val recipeBooks by viewModel.recipeBooks.collectAsState()
     val ttsVoiceName by viewModel.ttsVoiceName.collectAsState()
     val healthState by viewModel.healthState.collectAsState()
+    val canRecalculateAnalysis by viewModel.canRecalculateAnalysis.collectAsState()
     val nutritionState by viewModel.nutritionState.collectAsState()
     val substitutionDialogState by viewModel.substitutionDialogState.collectAsState()
     val polishState by viewModel.polishState.collectAsState()
     val polishInBackground by viewModel.polishInBackground.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val aiEnabled = rememberAiEnabled()
+    val aiEnabled = rememberAiReady()
     val context = LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -214,6 +216,7 @@ fun RecipeDetailScreen(
                     onRetryHealth = { viewModel.retryHealthCheck() },
                     nutritionState = nutritionState,
                     onRetryNutrition = { viewModel.retryNutritionCheck() },
+                    onRecalculateAnalysis = { viewModel.recalculateAnalysis() }.takeIf { canRecalculateAnalysis },
                     onSubstituteIngredient = { name: String -> viewModel.findSubstitutesFor(name) }.takeIf { aiEnabled },
                     onRatingChange = { stars -> viewModel.setRating(stars) },
                     onAddToShoppingList = { addToShoppingList() },
@@ -468,6 +471,7 @@ private fun RecipeDetailContent(
     onRetryHealth: () -> Unit,
     nutritionState: NutritionState,
     onRetryNutrition: () -> Unit,
+    onRecalculateAnalysis: (() -> Unit)?,
     onSubstituteIngredient: ((String) -> Unit)?,
     onRatingChange: (Int) -> Unit,
     onAddToShoppingList: () -> Unit,
@@ -611,16 +615,32 @@ private fun RecipeDetailContent(
                 }
             }
 
-            // Health and nutrition (AI)
+            // Health and nutrition: saved values always show; the assistant only creates them.
             if (healthState != HealthState.Idle || nutritionState != NutritionState.Idle) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(L10n.str(R.string.health_and_nutrition), style = MaterialTheme.typography.titleLarge)
                     RoundedGroup(contentPadding = 16.dp) {
-                        HealthBlock(recipe, healthState, onRetryHealth)
-                        if (healthState != HealthState.Idle && nutritionState != NutritionState.Idle) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                        val sameNotice = when {
+                            healthState == HealthState.NotConfigured && nutritionState == NutritionState.NotConfigured -> R.string.health_needs_assistant
+                            healthState == HealthState.PackPending && nutritionState == NutritionState.PackPending -> R.string.health_pack_pending
+                            else -> null
                         }
-                        NutritionBlock(recipe, nutritionState, onRetryNutrition)
+                        if (sameNotice != null) {
+                            NoticeText(L10n.str(sameNotice))
+                        } else {
+                            HealthBlock(recipe, healthState, onRetryHealth)
+                            if (healthState != HealthState.Idle && nutritionState != NutritionState.Idle) {
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                            }
+                            NutritionBlock(recipe, nutritionState, onRetryNutrition)
+                        }
+                        val analysing = healthState == HealthState.Loading || nutritionState == NutritionState.Loading
+                        val hasValues = recipe.healthRating != null || recipe.nutritionInfo != null
+                        if (onRecalculateAnalysis != null && hasValues && !analysing) {
+                            TextButton(onClick = onRecalculateAnalysis, modifier = Modifier.padding(top = 4.dp)) {
+                                ButtonContent(Icons.Filled.Refresh, L10n.str(R.string.recalculate_with_assistant))
+                            }
+                        }
                     }
                 }
             }
@@ -662,11 +682,8 @@ private fun RecipeDetailContent(
 private fun HealthBlock(recipe: Recipe, healthState: HealthState, onRetry: () -> Unit) {
     when (healthState) {
         HealthState.Loading -> LoadingRow()
-        HealthState.NotConfigured -> Text(
-            L10n.str(R.string.set_up_ai_provider_settings_3),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        HealthState.NotConfigured -> NoticeText(L10n.str(R.string.health_needs_assistant))
+        HealthState.PackPending -> NoticeText(L10n.str(R.string.health_pack_pending))
         is HealthState.Error -> ErrorMessage(healthState.reason, onRetry = onRetry)
         HealthState.Loaded -> recipe.healthRating?.let { rating ->
             val (containerColor, contentColor, label) = when (rating.color) {
@@ -697,11 +714,8 @@ private fun HealthBlock(recipe: Recipe, healthState: HealthState, onRetry: () ->
 private fun NutritionBlock(recipe: Recipe, nutritionState: NutritionState, onRetry: () -> Unit) {
     when (nutritionState) {
         NutritionState.Loading -> LoadingRow()
-        NutritionState.NotConfigured -> Text(
-            L10n.str(R.string.set_up_ai_provider_settings_3),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        NutritionState.NotConfigured -> NoticeText(L10n.str(R.string.health_needs_assistant))
+        NutritionState.PackPending -> NoticeText(L10n.str(R.string.health_pack_pending))
         is NutritionState.Error -> ErrorMessage(nutritionState.reason, onRetry = onRetry)
         NutritionState.Loaded -> recipe.nutritionInfo?.let { nutrition ->
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -727,6 +741,11 @@ private fun NutritionBlock(recipe: Recipe, nutritionState: NutritionState, onRet
         }
         NutritionState.Idle -> Unit
     }
+}
+
+@Composable
+private fun NoticeText(text: String) {
+    Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable
