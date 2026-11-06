@@ -5,8 +5,9 @@ package org.calamares.miga.data.model
  * text, so it travels unchanged through backups, sync, packs and exports.
  *
  * Supported: **bold** (or __bold__), *italic* (or _italic_), ~~strikethrough~~, bullet lists
- * ("- item", "* item", "• item"), numbered lists ("1. item" or "1) item"), headings ("# Title")
- * and backslash escapes ("\*" is a literal asterisk). Anything else is shown as typed. Pure
+ * ("- item", "* item", "• item"), numbered lists ("1. item" or "1) item"), headings ("# Title"),
+ * links ("[text](https://...)", shown as the text) and backslash escapes ("\*" is a literal
+ * asterisk). Anything else is shown as typed. Pure
  * logic, so it can be unit tested.
  */
 object RichText {
@@ -29,11 +30,19 @@ object RichText {
         val bold: BooleanArray,
         val italic: BooleanArray,
         val strike: BooleanArray,
-        val marker: BooleanArray
+        val marker: BooleanArray,
+        /** Link target of each character of a link text, null elsewhere. */
+        val link: Array<String?>
     )
 
-    /** A piece of visible text with a single style. */
-    data class Run(val text: String, val bold: Boolean = false, val italic: Boolean = false, val strike: Boolean = false)
+    /** A piece of visible text with a single style; [url] is set for the text of a link. */
+    data class Run(
+        val text: String,
+        val bold: Boolean = false,
+        val italic: Boolean = false,
+        val strike: Boolean = false,
+        val url: String? = null
+    )
 
     /** A line ready to render: its kind, list number and styled runs (syntax removed). */
     data class Block(val kind: LineKind, val number: Int?, val runs: List<Run>) {
@@ -43,7 +52,8 @@ object RichText {
     private val HEADING_PREFIX = Regex("""^\s*#{1,3}\s+""")
     internal val BULLET_PREFIX = Regex("""^(\s*)([-*•+])(\s+)""")
     internal val NUMBERED_PREFIX = Regex("""^(\s*)(\d{1,3})([.)])(\s+)""")
-    private const val ESCAPABLE = "\\*_~#-+.•"
+    private const val ESCAPABLE = "\\*_~#-+.•[]"
+    private val LINK_TARGET = Regex("""https?://[^\s)]+""")
 
     fun parse(text: String): Parsed {
         val n = text.length
@@ -51,6 +61,7 @@ object RichText {
         val italic = BooleanArray(n)
         val strike = BooleanArray(n)
         val marker = BooleanArray(n)
+        val link = arrayOfNulls<String>(n)
         val lines = mutableListOf<Line>()
         var lineStart = 0
         while (lineStart <= n) {
@@ -68,11 +79,11 @@ object RichText {
                 else -> Line(lineStart, lineEnd, lineStart, LineKind.PARAGRAPH, null)
             }
             for (i in line.start until line.contentStart) marker[i] = true
-            Inline(text, bold, italic, strike, marker).parse(line.contentStart, line.end, line.kind == LineKind.HEADING, false, false)
+            Inline(text, bold, italic, strike, marker, link).parse(line.contentStart, line.end, line.kind == LineKind.HEADING, false, false)
             lines += line
             lineStart = lineEnd + 1
         }
-        return Parsed(text, lines, bold, italic, strike, marker)
+        return Parsed(text, lines, bold, italic, strike, marker, link)
     }
 
     /** One block per line, with the syntax removed and the styles grouped into runs. */
@@ -81,18 +92,18 @@ object RichText {
         return parsed.lines.map { line ->
             val runs = mutableListOf<Run>()
             val current = StringBuilder()
-            var style: Triple<Boolean, Boolean, Boolean>? = null
+            var style: Run? = null
             for (i in line.contentStart until line.end) {
                 if (parsed.marker[i]) continue
-                val charStyle = Triple(parsed.bold[i], parsed.italic[i], parsed.strike[i])
+                val charStyle = Run("", parsed.bold[i], parsed.italic[i], parsed.strike[i], parsed.link[i])
                 if (style != null && charStyle != style && current.isNotEmpty()) {
-                    runs += Run(current.toString(), style.first, style.second, style.third)
+                    runs += style.copy(text = current.toString())
                     current.clear()
                 }
                 style = charStyle
                 current.append(text[i])
             }
-            if (current.isNotEmpty() && style != null) runs += Run(current.toString(), style.first, style.second, style.third)
+            if (current.isNotEmpty() && style != null) runs += style.copy(text = current.toString())
             Block(line.kind, line.number, runs)
         }
     }
@@ -115,12 +126,29 @@ object RichText {
         val bold: BooleanArray,
         val italic: BooleanArray,
         val strike: BooleanArray,
-        val marker: BooleanArray
+        val marker: BooleanArray,
+        val link: Array<String?>
     ) {
+        /** Link target of the text being parsed, inside a link. */
+        private var url: String? = null
+
         fun parse(start: Int, end: Int, isBold: Boolean, isItalic: Boolean, isStrike: Boolean) {
             var k = start
             while (k < end) {
                 val c = text[k]
+                if (c == '[' && url == null) {
+                    val target = findLink(k, end)
+                    if (target != null) {
+                        val (labelEnd, linkEnd, href) = target
+                        marker[k] = true
+                        for (i in labelEnd until linkEnd) marker[i] = true
+                        url = href
+                        parse(k + 1, labelEnd, isBold, isItalic, isStrike)
+                        url = null
+                        k = linkEnd
+                        continue
+                    }
+                }
                 if (c == '\\' && k + 1 < end && text[k + 1] in ESCAPABLE) {
                     marker[k] = true
                     style(k + 1, isBold, isItalic, isStrike)
@@ -158,6 +186,20 @@ object RichText {
             bold[index] = isBold
             italic[index] = isItalic
             strike[index] = isStrike
+            link[index] = url
+        }
+
+        /**
+         * "[text](https://...)" starting at [open]: the index of "]", the index after ")" and the
+         * target. Null when it is not a complete link with a non-empty text and a web address.
+         */
+        private fun findLink(open: Int, end: Int): Triple<Int, Int, String>? {
+            val close = text.indexOf("](", open + 1)
+            if (close < 0 || close >= end || close == open + 1 || text.substring(open + 1, close).contains('[')) return null
+            val match = LINK_TARGET.find(text, close + 2)?.takeIf { it.range.first == close + 2 } ?: return null
+            val after = match.range.last + 1
+            if (after >= end || text[after] != ')') return null
+            return Triple(close, after + 1, match.value)
         }
 
         /** Closing "**" (or "__", "~~") after non-empty, non-space content; the last of a "***" run. */
