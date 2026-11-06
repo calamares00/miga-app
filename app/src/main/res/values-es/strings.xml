@@ -1204,6 +1204,7 @@
     <string name="installing_x_of_x">"Instalando %1$d de %2$d…"</string>
     <string name="uninstalling_x_of_x">"Desinstalando %1$d de %2$d…"</string>
     <string name="x_packs_installed">"Packs instalados: %1$d"</string>
+    <string name="pack_x_installed">"«%1$s» instalado. Lo tienes en Libros."</string>
     <string name="x_packs_uninstalled">"Packs desinstalados: %1$d"</string>
     <string name="couldnt_install_packs_x">"No se pudieron instalar: %1$s. Comprueba la conexión e inténtalo de nuevo."</string>
     <string name="uninstall_x_packs">"¿Desinstalar packs (%1$d)?"</string>

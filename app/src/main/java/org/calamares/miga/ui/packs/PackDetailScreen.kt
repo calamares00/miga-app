@@ -48,7 +48,7 @@ import coil.compose.AsyncImage
 fun PackDetailScreen(
     viewModel: PackDetailViewModel,
     onBack: () -> Unit,
-    onInstalled: (Long) -> Unit
+    onInstalled: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val installState by viewModel.installState.collectAsState()
