@@ -121,6 +121,12 @@
     <string name="alternative_catalogue">"Catálogo alternativo"</string>
     <string name="ingredient_catalogue_empty">"El catálogo de ingredientes está vacío. ¡Toca llenar la despensa!"</string>
     <string name="pack_catalogue">"Catálogo de packs"</string>
+    <string name="pack_updates_x">"Actualizaciones (%1$d)"</string>
+    <string name="update_all">"Actualizar todos"</string>
+    <string name="x_packs_updated">"%1$d packs actualizados"</string>
+    <string name="pack_updates_found_title">"Packs con novedades"</string>
+    <string name="pack_updates_found_x">"Hay versiones nuevas de %1$d packs: %2$s. ¿Los actualizo ahora?"</string>
+    <string name="updating_packs_x">"Actualizando %1$d packs…"</string>
     <string name="category">"Categoría"</string>
     <string name="category_2">"Por categoría"</string>
     <string name="category_x">"Categoría de «%1$s»"</string>

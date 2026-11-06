@@ -5,6 +5,10 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.calamares.miga.BuildConfig
+import org.calamares.miga.R
+import org.calamares.miga.L10n
+import org.calamares.miga.ui.packs.PackInstaller
+import org.calamares.miga.data.remote.PackEntryDto
 import org.calamares.miga.crash.CrashReporter
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.ChangelogParser
@@ -60,6 +64,55 @@ class RecipeBooksViewModel(
 
     fun setGrouped(grouped: Boolean) {
         viewModelScope.launch { settingsRepository.setRecipeBookListGrouped(grouped) }
+    }
+
+    /** Installed packs with a newer version, found when the app opens (see [checkPackUpdates]). */
+    private val _packUpdates = MutableStateFlow<List<PackEntryDto>>(emptyList())
+    val packUpdates: StateFlow<List<PackEntryDto>> = _packUpdates
+    private var packCheckStarted = false
+
+    /** Whether the found pack updates are being installed. */
+    private val _updatingPacks = MutableStateFlow(false)
+    val updatingPacks: StateFlow<Boolean> = _updatingPacks
+
+    /**
+     * Looks once per app start for newer versions of the installed packs. Versions already
+     * answered with "Not now" are not announced again; a newer one is.
+     */
+    fun checkPackUpdates() {
+        if (packCheckStarted) return
+        packCheckStarted = true
+        viewModelScope.launch {
+            val updates = PackInstaller.findUpdates(repository, settingsRepository) ?: return@launch
+            val dismissed = settingsRepository.dismissedPackUpdates()
+            if (updates.any { "${it.id}:${it.latestVersion}" !in dismissed }) _packUpdates.value = updates
+        }
+    }
+
+    /** Downloads and installs every found update; [onDone] gets the message to show. */
+    fun installPackUpdates(context: Context, onDone: (String) -> Unit) {
+        val updates = _packUpdates.value
+        if (updates.isEmpty() || _updatingPacks.value) return
+        _packUpdates.value = emptyList()
+        _updatingPacks.value = true
+        val appContext = context.applicationContext
+        viewModelScope.launch {
+            val failed = PackInstaller.installAll(appContext, repository, updates)
+            _updatingPacks.value = false
+            onDone(
+                if (failed.isEmpty()) L10n.str(R.string.x_packs_updated, updates.size)
+                else L10n.str(R.string.couldnt_install_packs_x, failed.joinToString(", "))
+            )
+        }
+    }
+
+    /** "Not now": these versions are not announced again (the catalogue still offers them). */
+    fun dismissPackUpdates() {
+        val updates = _packUpdates.value
+        _packUpdates.value = emptyList()
+        viewModelScope.launch {
+            settingsRepository.setDismissedPackUpdates(updates.map { "${it.id}:${it.latestVersion}" }.toSet())
+        }
     }
 
     fun setFilter(filter: BookFilter) {
