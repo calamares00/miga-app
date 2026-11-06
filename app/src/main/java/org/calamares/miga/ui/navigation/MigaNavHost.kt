@@ -658,9 +658,10 @@ private fun NavGraphBuilder.screens(
         PackDetailScreen(
             viewModel = viewModel,
             onBack = { navController.popBackStack() },
-            onInstalled = { bookId ->
-                navController.popBackStack(Destinations.PACKS_CATALOG_ROUTE, inclusive = true)
-                navController.navigate(Destinations.book(bookId))
+            // Back to the catalogue list, to install more; the book is in the books tab.
+            onInstalled = { packName ->
+                Toast.makeText(context, L10n.str(R.string.pack_x_installed, packName), Toast.LENGTH_SHORT).show()
+                if (!navController.popBackStack(Destinations.PACKS_CATALOG_ROUTE, inclusive = false)) navController.popBackStack()
             }
         )
     }
