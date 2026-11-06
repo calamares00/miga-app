@@ -59,17 +59,17 @@ class PackDetailViewModel(
     }
 
     /**
-     * Downloads and installs (or updates) this pack; on success [onInstalled] opens the installed
-     * book.
+     * Downloads and installs (or updates) this pack; on success [onInstalled] gets the pack name,
+     * to go back to the catalogue and say it is installed.
      */
-    fun install(context: Context, onInstalled: (Long) -> Unit) {
+    fun install(context: Context, onInstalled: (String) -> Unit) {
         val state = _uiState.value as? PackDetailUiState.Loaded ?: return
         viewModelScope.launch {
             _installState.value = InstallState.Installing
             when (val result = PackInstaller.install(context, repository, state.entry)) {
                 is PackImportResult.Success -> {
                     _installState.value = InstallState.Idle
-                    onInstalled(result.bookId)
+                    onInstalled(state.entry.name)
                 }
                 is PackImportResult.Error -> _installState.value = InstallState.Error(result.reason)
             }
