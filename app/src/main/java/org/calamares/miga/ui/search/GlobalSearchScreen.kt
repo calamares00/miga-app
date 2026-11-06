@@ -2,7 +2,7 @@ package org.calamares.miga.ui.search
 
 import androidx.compose.material.icons.filled.AutoAwesome
 import org.calamares.miga.ui.components.AdaptiveScaffold
-import org.calamares.miga.ui.components.rememberAiEnabled
+import org.calamares.miga.ui.components.rememberAiReady
 import org.calamares.miga.ui.components.ResultsHeader
 import org.calamares.miga.ui.components.ActiveFilterChips
 import org.calamares.miga.ui.theme.recipePhotoFrame
@@ -95,7 +95,7 @@ fun GlobalSearchScreen(
     /** Improve the selected recipes with AI, all together (see BulkPolishScreen). */
     onPolishRecipes: ((List<Long>) -> Unit)? = null
 ) {
-    val aiEnabled = rememberAiEnabled()
+    val aiEnabled = rememberAiReady()
     val uiState by viewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
     val selectedIds by viewModel.selectedIds.collectAsState()

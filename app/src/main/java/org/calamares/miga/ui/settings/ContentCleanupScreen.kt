@@ -70,7 +70,7 @@ import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.ui.components.ErrorMessage
-import org.calamares.miga.ui.components.rememberAiEnabled
+import org.calamares.miga.ui.components.rememberAiReady
 
 /** What the cleanup screen shows. */
 data class CleanupUiState(
@@ -188,7 +188,7 @@ class ContentCleanupViewModel(
 @Composable
 fun ContentCleanupScreen(viewModel: ContentCleanupViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
-    val aiEnabled = rememberAiEnabled()
+    val aiEnabled = rememberAiReady()
     val chosen = state.proposals.count { it.key in state.ticked }
 
     AdaptiveScaffold(

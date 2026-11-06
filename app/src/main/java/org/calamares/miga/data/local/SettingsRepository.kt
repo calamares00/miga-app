@@ -231,6 +231,13 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[aiEnabledKey] = enabled }
     }
 
+    /**
+     * The cooking assistant can actually be used: switched on and with at least one provider
+     * configured. Options that need it are only offered then.
+     */
+    fun observeAiReady(): Flow<Boolean> =
+        combine(observeAiEnabled(), observeConfiguredProviders()) { enabled, providers -> enabled && providers.isNotEmpty() }
+
     /** Automatic health rating when opening a recipe (only with AI enabled). */
     fun observeAiHealthEnabled(): Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
         (prefs[aiEnabledKey] ?: true) && (prefs[aiHealthEnabledKey] ?: true)
