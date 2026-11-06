@@ -18,3 +18,16 @@ fun rememberAiEnabled(): Boolean {
     val enabled by flow.collectAsState(initial = true)
     return enabled
 }
+
+/**
+ * `true` when the cooking assistant can be used: the switch is on and at least one provider is
+ * configured. Buttons and options that call the assistant are only shown then; with the switch on
+ * but no provider they would only answer "set it up in Settings".
+ */
+@Composable
+fun rememberAiReady(): Boolean {
+    val context = LocalContext.current
+    val flow = remember { (context.applicationContext as MigaApp).settingsRepository.observeAiReady() }
+    val ready by flow.collectAsState(initial = false)
+    return ready
+}

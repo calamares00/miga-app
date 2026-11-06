@@ -33,12 +33,22 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
+/**
+ * Health rating of the recipe on screen. Saved values are always shown, with or without the
+ * assistant; [NotConfigured] means there is none and the assistant is not available, [PackPending]
+ * a pack recipe without values yet (installed before packs carried them).
+ */
 sealed interface HealthState {
     data object Idle : HealthState
     data object Loading : HealthState
     data object Loaded : HealthState
     data object NotConfigured : HealthState
+    data object PackPending : HealthState
     data class Error(val reason: String) : HealthState
 }
 
@@ -47,6 +57,7 @@ sealed interface NutritionState {
     data object Loading : NutritionState
     data object Loaded : NutritionState
     data object NotConfigured : NutritionState
+    data object PackPending : NutritionState
     data class Error(val reason: String) : NutritionState
 }
 
@@ -90,49 +101,42 @@ class RecipeDetailViewModel(
     val healthState: StateFlow<HealthState> = _healthState
     private var healthCheckStarted = false
 
+    private val _nutritionState = MutableStateFlow<NutritionState>(NutritionState.Idle)
+    val nutritionState: StateFlow<NutritionState> = _nutritionState
+    private var nutritionCheckStarted = false
+
     /**
-     * When AI is available and there is no valid rating yet, analyses the recipe and caches the
-     * result.
+     * Whether the saved health and nutrition values can be recalculated: the assistant is ready and
+     * the recipe is not from a pack (pack values are fixed and come with the pack).
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val canRecalculateAnalysis: StateFlow<Boolean> = combine(
+        settingsRepository.observeAiReady(),
+        recipe.filterNotNull().map { it.recipeBookId }.distinctUntilChanged()
+            .flatMapLatest { bookId -> repository.observeRecipeBook(bookId) }
+            .map { it?.isPack == true }
+    ) { ready, isPack -> ready && !isPack }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    private suspend fun isPackRecipe(recipe: Recipe): Boolean = repository.getRecipeBookOnce(recipe.recipeBookId)?.isPack == true
+
+    /**
+     * Shows the saved health rating, or creates it with the assistant when there is none. Values
+     * are never regenerated just by opening the recipe ([recalculateAnalysis] does it on request),
+     * and pack recipes are never sent to the assistant.
      */
     fun fetchHealthinessIfNeeded() {
         if (healthCheckStarted) return
         healthCheckStarted = true
         viewModelScope.launch {
-            // Turned off in Settings (or AI is off entirely): nothing is analysed or shown.
-            if (!settingsRepository.observeAiHealthEnabled().first()) {
-                _healthState.value = HealthState.Idle
-                return@launch
-            }
             val current = recipe.filterNotNull().first()
-            if (settingsRepository.aiCandidates().isEmpty()) {
-                _healthState.value = HealthState.NotConfigured
-                return@launch
-            }
-            if (current.healthRating != null) {
-                _healthState.value = HealthState.Loaded
-                return@launch
-            }
-            _healthState.value = HealthState.Loading
-            val ingredientsText = current.ingredientGroups.joinToString("\n") { group ->
-                val header = group.name?.let { "$it:\n" }.orEmpty()
-                header + group.ingredients.joinToString("\n") { "- ${formatIngredient(it, 1.0)}" }
-            }
-            val stepsText = current.stepGroups.joinToString("\n") { group ->
-                val header = group.name?.let { "$it:\n" }.orEmpty()
-                header + group.instructions.joinToString("\n") { "- $it" }
-            }
-            val result = settingsRepository.runAi<RecipeHealthResult>(
-                errorOf = { (it as? RecipeHealthResult.Error)?.reason },
-                error = { RecipeHealthResult.Error(it) }
-            ) { ai -> ai.analyzeHealthiness(ingredientsText, stepsText) }
-            when (result) {
-                null -> _healthState.value = HealthState.NotConfigured
-                is RecipeHealthResult.Success -> {
-                    val fingerprint = repository.computeHealthFingerprint(current.ingredientGroups, current.stepGroups)
-                    repository.saveHealthRating(current.id, result.colorLevel, result.description, fingerprint, System.currentTimeMillis())
-                    _healthState.value = HealthState.Loaded
-                }
-                is RecipeHealthResult.Error -> _healthState.value = HealthState.Error(result.reason)
+            _healthState.value = when {
+                current.healthRating != null -> HealthState.Loaded
+                isPackRecipe(current) -> HealthState.PackPending
+                !settingsRepository.observeAiReady().first() -> HealthState.NotConfigured
+                // Automatic rating turned off in Settings: nothing is created or shown.
+                !settingsRepository.observeAiHealthEnabled().first() -> HealthState.Idle
+                else -> generateHealth(current)
             }
         }
     }
@@ -142,55 +146,18 @@ class RecipeDetailViewModel(
         fetchHealthinessIfNeeded()
     }
 
-    private val _nutritionState = MutableStateFlow<NutritionState>(NutritionState.Idle)
-    val nutritionState: StateFlow<NutritionState> = _nutritionState
-    private var nutritionCheckStarted = false
-
-    /**
-     * When AI is available and there is no valid estimate yet, analyses the recipe and caches the
-     * result.
-     */
+    /** Shows the saved nutrition estimate, or creates it; same rules as [fetchHealthinessIfNeeded]. */
     fun fetchNutritionIfNeeded() {
         if (nutritionCheckStarted) return
         nutritionCheckStarted = true
         viewModelScope.launch {
-            if (!settingsRepository.observeAiNutritionEnabled().first()) {
-                _nutritionState.value = NutritionState.Idle
-                return@launch
-            }
             val current = recipe.filterNotNull().first()
-            if (settingsRepository.aiCandidates().isEmpty()) {
-                _nutritionState.value = NutritionState.NotConfigured
-                return@launch
-            }
-            if (current.nutritionInfo != null) {
-                _nutritionState.value = NutritionState.Loaded
-                return@launch
-            }
-            _nutritionState.value = NutritionState.Loading
-            val ingredientsText = current.ingredientGroups.joinToString("\n") { group ->
-                val header = group.name?.let { "$it:\n" }.orEmpty()
-                header + group.ingredients.joinToString("\n") { "- ${formatIngredient(it, 1.0)}" }
-            }
-            val stepsText = current.stepGroups.joinToString("\n") { group ->
-                val header = group.name?.let { "$it:\n" }.orEmpty()
-                header + group.instructions.joinToString("\n") { "- $it" }
-            }
-            val result = settingsRepository.runAi<RecipeNutritionResult>(
-                errorOf = { (it as? RecipeNutritionResult.Error)?.reason },
-                error = { RecipeNutritionResult.Error(it) }
-            ) { ai -> ai.analyzeNutrition(ingredientsText, stepsText, current.servings) }
-            when (result) {
-                null -> _nutritionState.value = NutritionState.NotConfigured
-                is RecipeNutritionResult.Success -> {
-                    val fingerprint = repository.computeNutritionFingerprint(current.ingredientGroups, current.stepGroups)
-                    repository.saveNutritionInfo(
-                        current.id, result.caloriesPerServing, result.proteinGrams, result.carbsGrams, result.fatGrams,
-                        fingerprint, System.currentTimeMillis()
-                    )
-                    _nutritionState.value = NutritionState.Loaded
-                }
-                is RecipeNutritionResult.Error -> _nutritionState.value = NutritionState.Error(result.reason)
+            _nutritionState.value = when {
+                current.nutritionInfo != null -> NutritionState.Loaded
+                isPackRecipe(current) -> NutritionState.PackPending
+                !settingsRepository.observeAiReady().first() -> NutritionState.NotConfigured
+                !settingsRepository.observeAiNutritionEnabled().first() -> NutritionState.Idle
+                else -> generateNutrition(current)
             }
         }
     }
@@ -198,6 +165,63 @@ class RecipeDetailViewModel(
     fun retryNutritionCheck() {
         nutritionCheckStarted = false
         fetchNutritionIfNeeded()
+    }
+
+    /** Recreates the saved health rating and nutrition estimate with the assistant, on request. */
+    fun recalculateAnalysis() {
+        viewModelScope.launch {
+            val current = recipe.filterNotNull().first()
+            if (!canRecalculateAnalysis.value || isPackRecipe(current)) return@launch
+            launch { _healthState.value = generateHealth(current) }
+            launch { _nutritionState.value = generateNutrition(current) }
+        }
+    }
+
+    private suspend fun generateHealth(current: Recipe): HealthState {
+        _healthState.value = HealthState.Loading
+        val result = settingsRepository.runAi<RecipeHealthResult>(
+            errorOf = { (it as? RecipeHealthResult.Error)?.reason },
+            error = { RecipeHealthResult.Error(it) }
+        ) { ai -> ai.analyzeHealthiness(ingredientsText(current), stepsText(current)) }
+        return when (result) {
+            null -> HealthState.NotConfigured
+            is RecipeHealthResult.Success -> {
+                val fingerprint = repository.computeHealthFingerprint(current.ingredientGroups, current.stepGroups)
+                repository.saveHealthRating(current.id, result.colorLevel, result.description, fingerprint, System.currentTimeMillis())
+                HealthState.Loaded
+            }
+            is RecipeHealthResult.Error -> HealthState.Error(result.reason)
+        }
+    }
+
+    private suspend fun generateNutrition(current: Recipe): NutritionState {
+        _nutritionState.value = NutritionState.Loading
+        val result = settingsRepository.runAi<RecipeNutritionResult>(
+            errorOf = { (it as? RecipeNutritionResult.Error)?.reason },
+            error = { RecipeNutritionResult.Error(it) }
+        ) { ai -> ai.analyzeNutrition(ingredientsText(current), stepsText(current), current.servings) }
+        return when (result) {
+            null -> NutritionState.NotConfigured
+            is RecipeNutritionResult.Success -> {
+                val fingerprint = repository.computeNutritionFingerprint(current.ingredientGroups, current.stepGroups)
+                repository.saveNutritionInfo(
+                    current.id, result.caloriesPerServing, result.proteinGrams, result.carbsGrams, result.fatGrams,
+                    fingerprint, System.currentTimeMillis()
+                )
+                NutritionState.Loaded
+            }
+            is RecipeNutritionResult.Error -> NutritionState.Error(result.reason)
+        }
+    }
+
+    private fun ingredientsText(recipe: Recipe): String = recipe.ingredientGroups.joinToString("\n") { group ->
+        val header = group.name?.let { "$it:\n" }.orEmpty()
+        header + group.ingredients.joinToString("\n") { "- ${formatIngredient(it, 1.0)}" }
+    }
+
+    private fun stepsText(recipe: Recipe): String = recipe.stepGroups.joinToString("\n") { group ->
+        val header = group.name?.let { "$it:\n" }.orEmpty()
+        header + group.instructions.joinToString("\n") { "- $it" }
     }
 
     private val _substitutionDialogState = MutableStateFlow<SubstitutionDialogState>(SubstitutionDialogState.Hidden)

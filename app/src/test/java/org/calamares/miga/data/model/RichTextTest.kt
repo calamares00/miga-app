@@ -114,4 +114,28 @@ class RichTextTest {
         assertEquals(9, ended.selectionStart)
         assertNull(RichTextEditing.continueList("texto\n", 6))
     }
+
+    @Test
+    fun `a markdown link shows its text and keeps its target`() {
+        val runs = RichText.blocks("📷 Foto: [Lulu Durand](https://commons.wikimedia.org/wiki/File:A.jpg) · CC BY 2.0").single().runs
+        assertEquals("📷 Foto: Lulu Durand · CC BY 2.0", runs.joinToString("") { it.text })
+        val link = runs.single { it.url != null }
+        assertEquals("Lulu Durand", link.text)
+        assertEquals("https://commons.wikimedia.org/wiki/File:A.jpg", link.url)
+    }
+
+    @Test
+    fun `brackets that are not a web link stay as typed`() {
+        assertEquals("[nota](sin enlace)", RichText.toPlainText("[nota](sin enlace)"))
+        assertEquals("[](https://x.org)", RichText.toPlainText("[](https://x.org)"))
+        assertEquals("ver [aquí", RichText.toPlainText("ver [aquí"))
+    }
+
+    @Test
+    fun `a link text can be bold`() {
+        val run = RichText.blocks("[**Miga**](https://miga.calamares.org)").single().runs.single()
+        assertEquals("Miga", run.text)
+        assertEquals(true, run.bold)
+        assertEquals("https://miga.calamares.org", run.url)
+    }
 }

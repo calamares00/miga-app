@@ -1,0 +1,6 @@
+What's new in 1.0.11:
+• Health and nutrition: saved values always show, also without the assistant, and can be recalculated. Packs come with fixed values.
+• Without the assistant, options that need it are hidden.
+• On opening, the app tells you about new pack versions and updates them all at once. They come first in the catalogue.
+• Tappable links in notes.
+• The server filter only shows when you sync with one.

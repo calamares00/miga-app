@@ -1,0 +1,6 @@
+Novedades de la versión 1.0.11:
+• Salud y nutrición: los datos guardados se muestran siempre, también sin el asistente, y se pueden recalcular. Los packs los traen fijos.
+• Sin el asistente activado no salen las opciones que lo necesitan.
+• Al abrir la app avisa si hay packs con versión nueva y los actualiza todos de una vez. En el catálogo salen los primeros.
+• Enlaces pulsables en las notas.
+• El filtro de servidor solo aparece si sincronizas con uno.

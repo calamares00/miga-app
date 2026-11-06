@@ -121,6 +121,12 @@
     <string name="alternative_catalogue">"Catálogo alternativo"</string>
     <string name="ingredient_catalogue_empty">"El catálogo de ingredientes está vacío. ¡Toca llenar la despensa!"</string>
     <string name="pack_catalogue">"Catálogo de packs"</string>
+    <string name="pack_updates_x">"Actualizaciones (%1$d)"</string>
+    <string name="update_all">"Actualizar todos"</string>
+    <string name="x_packs_updated">"%1$d packs actualizados"</string>
+    <string name="pack_updates_found_title">"Packs con novedades"</string>
+    <string name="pack_updates_found_x">"Hay versiones nuevas de %1$d packs: %2$s. ¿Los actualizo ahora?"</string>
+    <string name="updating_packs_x">"Actualizando %1$d packs…"</string>
     <string name="category">"Categoría"</string>
     <string name="category_2">"Por categoría"</string>
     <string name="category_x">"Categoría de «%1$s»"</string>
@@ -159,7 +165,6 @@
     <string name="set_up_fingerprint_face_pin">"Configura una huella, rostro o PIN en el dispositivo para activar el bloqueo"</string>
     <string name="set_up_ai_provider_settings">"Configura el asistente de cocina en Ajustes para usar esta función."</string>
     <string name="set_up_ai_provider_settings_2">"Configura el asistente de cocina en Ajustes para usar el buscador."</string>
-    <string name="set_up_ai_provider_settings_3">"Configura el asistente de cocina en Ajustes para ver esta información."</string>
     <string name="get_one_console_anthropic_com">"Consíguela en console.anthropic.com"</string>
     <string name="get_one_free_aistudio_google">"Consíguela gratis en aistudio.google.com"</string>
     <string name="generated_content">"Contenido generado:"</string>
@@ -702,6 +707,9 @@
     <string name="substitute_x">"Sustituir «%1$s»"</string>
     <string name="stars_x">"%1$s estrella(s)"</string>
     <string name="health_and_nutrition">"Salud y nutrición"</string>
+    <string name="health_needs_assistant">"Solo disponible con el asistente de cocina activado."</string>
+    <string name="health_pack_pending">"Actualiza el pack desde el catálogo para ver estos datos."</string>
+    <string name="recalculate_with_assistant">"Recalcular con el asistente"</string>
     <string name="my_books">"Mis libros"</string>
     <string name="view_x">"Vista: %1$s"</string>
     <string name="editor_basics">"Lo básico"</string>
