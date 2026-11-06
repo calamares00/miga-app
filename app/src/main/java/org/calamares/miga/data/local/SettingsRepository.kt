@@ -73,6 +73,7 @@ class SettingsRepository(private val context: Context) {
     private val lastSeenVersionCodeKey = intPreferencesKey("last_seen_version_code")
     private val packsCatalogRepoKey = stringPreferencesKey("packs_catalog_repo")
     private val dismissedUpdateKey = stringPreferencesKey("dismissed_update_version")
+    private val dismissedPackUpdatesKey = stringPreferencesKey("dismissed_pack_updates")
 
     /**
      * AI API keys are stored encrypted with the device Keystore key of [TokenCipher], as
@@ -490,6 +491,14 @@ class SettingsRepository(private val context: Context) {
     }
 
     /** Version the user answered "Not now" to; it is not announced again. */
+    /** Pack updates ("id:version") the user answered "Not now" to; they are not announced again. */
+    suspend fun dismissedPackUpdates(): Set<String> =
+        context.settingsDataStore.data.first()[dismissedPackUpdatesKey]?.split(',')?.filter { it.isNotBlank() }?.toSet().orEmpty()
+
+    suspend fun setDismissedPackUpdates(updates: Set<String>) {
+        context.settingsDataStore.edit { prefs -> prefs[dismissedPackUpdatesKey] = updates.joinToString(",") }
+    }
+
     suspend fun dismissedUpdateVersion(): String? = context.settingsDataStore.data.first()[dismissedUpdateKey]
 
     suspend fun setDismissedUpdateVersion(versionName: String) {

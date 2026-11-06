@@ -155,6 +155,24 @@ class PacksCatalogViewModel(
         }
     }
 
+    /** Updates every installed pack that has a newer version. */
+    fun updateAll(context: Context) {
+        val entries = (uiState.value as? CatalogUiState.Loaded)?.items.orEmpty().filter { it.hasUpdate }.map { it.entry }
+        if (entries.isEmpty() || _progress.value != null) return
+        val appContext = context.applicationContext
+        viewModelScope.launch {
+            val failed = PackInstaller.installAll(appContext, repository, entries) { done, total ->
+                _progress.value = BatchProgress(done, total, uninstalling = false)
+            }
+            _progress.value = null
+            _message.value = if (failed.isEmpty()) {
+                L10n.str(R.string.x_packs_updated, entries.size)
+            } else {
+                L10n.str(R.string.couldnt_install_packs_x, failed.joinToString(", "))
+            }
+        }
+    }
+
     /** Uninstalls the selected packs that are installed. */
     fun uninstallSelected() {
         val items = selectedItems().filter { it.isInstalled }

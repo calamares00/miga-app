@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import org.calamares.miga.ui.components.ButtonContent
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -229,7 +231,42 @@ fun PacksCatalogScreen(
                             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            groupBySeries(filtered).forEach { (series, group) ->
+                            // Packs with a newer version first, so they are seen and updated at once.
+                            val updates = filtered.filter { it.hasUpdate }.sortedBy { it.entry.name.lowercase() }
+                            if (updates.isNotEmpty()) {
+                                item(key = "updates", contentType = "header") {
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                                        Text(
+                                            L10n.str(R.string.pack_updates_x, updates.size),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        if (!selecting) {
+                                            FilledTonalButton(onClick = { viewModel.updateAll(context) }, enabled = !busy) {
+                                                ButtonContent(Icons.Filled.SystemUpdate, L10n.str(R.string.update_all))
+                                            }
+                                        }
+                                    }
+                                }
+                                items(updates, key = { "update/" + it.entry.id }) { item ->
+                                    PackListCard(
+                                        item = item,
+                                        selecting = selecting,
+                                        selected = item.entry.id in selected,
+                                        onClick = {
+                                            when {
+                                                busy -> Unit
+                                                selecting -> viewModel.toggleSelection(item.entry.id)
+                                                else -> onPackClick(item.entry.id)
+                                            }
+                                        },
+                                        onLongClick = { if (!busy) viewModel.startSelection(item.entry.id) }
+                                    )
+                                }
+                            }
+                            groupBySeries(filtered.filter { !it.hasUpdate }).forEach { (series, group) ->
                                 item(key = "series/${series.orEmpty()}", contentType = "header") {
                                     Text(
                                         series ?: L10n.str(R.string.books_group_other_packs),
