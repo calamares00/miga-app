@@ -159,7 +159,6 @@
     <string name="set_up_fingerprint_face_pin">"Configura una huella, rostro o PIN en el dispositivo para activar el bloqueo"</string>
     <string name="set_up_ai_provider_settings">"Configura el asistente de cocina en Ajustes para usar esta función."</string>
     <string name="set_up_ai_provider_settings_2">"Configura el asistente de cocina en Ajustes para usar el buscador."</string>
-    <string name="set_up_ai_provider_settings_3">"Configura el asistente de cocina en Ajustes para ver esta información."</string>
     <string name="get_one_console_anthropic_com">"Consíguela en console.anthropic.com"</string>
     <string name="get_one_free_aistudio_google">"Consíguela gratis en aistudio.google.com"</string>
     <string name="generated_content">"Contenido generado:"</string>
@@ -702,6 +701,9 @@
     <string name="substitute_x">"Sustituir «%1$s»"</string>
     <string name="stars_x">"%1$s estrella(s)"</string>
     <string name="health_and_nutrition">"Salud y nutrición"</string>
+    <string name="health_needs_assistant">"Solo disponible con el asistente de cocina activado."</string>
+    <string name="health_pack_pending">"Actualiza el pack desde el catálogo para ver estos datos."</string>
+    <string name="recalculate_with_assistant">"Recalcular con el asistente"</string>
     <string name="my_books">"Mis libros"</string>
     <string name="view_x">"Vista: %1$s"</string>
     <string name="editor_basics">"Lo básico"</string>
