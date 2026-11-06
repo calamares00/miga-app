@@ -1,5 +1,11 @@
 package org.calamares.miga.ui.components
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,7 +55,7 @@ import org.calamares.miga.data.model.RichTextEditing
  * [text] (see [RichText]) as styled text: syntax removed, lists with bullets or numbers. Bold text
  * also takes [boldColor] when given, for places where the base style is already heavy.
  */
-fun richAnnotatedString(text: String, boldColor: Color = Color.Unspecified): AnnotatedString = buildAnnotatedString {
+fun richAnnotatedString(text: String, boldColor: Color = Color.Unspecified, linkColor: Color = Color.Unspecified): AnnotatedString = buildAnnotatedString {
     RichText.blocks(text).forEachIndexed { index, block ->
         if (index > 0) append('\n')
         when (block.kind) {
@@ -59,7 +65,12 @@ fun richAnnotatedString(text: String, boldColor: Color = Color.Unspecified): Ann
         }
         val heading = block.kind == RichText.LineKind.HEADING
         block.runs.forEach { run ->
+            val start = length
             withStyle(runStyle(run.bold, run.italic, run.strike, heading, if (run.bold) boldColor else Color.Unspecified)) { append(run.text) }
+            run.url?.let { url ->
+                addStyle(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline), start, length)
+                addStringAnnotation(RICH_LINK_TAG, url, start, length)
+            }
         }
     }
 }
@@ -72,11 +83,32 @@ private fun runStyle(bold: Boolean, italic: Boolean, strike: Boolean, heading: B
     fontSize = if (heading) 1.15.em else TextUnit.Unspecified
 )
 
-/** Shows formatted text (steps, notes); plain text is shown as is. */
+private const val RICH_LINK_TAG = "rich_link"
+
+/**
+ * Shows formatted text (steps, notes); plain text is shown as is. Links ("[text](https://...)")
+ * show only their text, underlined, and open in the browser when tapped.
+ */
 @Composable
 fun FormattedText(text: String, style: TextStyle, modifier: Modifier = Modifier, color: Color = Color.Unspecified) {
-    val annotated = remember(text) { richAnnotatedString(text) }
-    Text(annotated, style = style, color = color, modifier = modifier)
+    val linkColor = MaterialTheme.colorScheme.primary
+    val annotated = remember(text, linkColor) { richAnnotatedString(text, linkColor = linkColor) }
+    if (annotated.getStringAnnotations(RICH_LINK_TAG, 0, annotated.length).isEmpty()) {
+        Text(annotated, style = style, color = color, modifier = modifier)
+        return
+    }
+    val context = LocalContext.current
+    val baseColor = color.takeOrElse { style.color.takeOrElse { LocalContentColor.current } }
+    ClickableText(
+        text = annotated,
+        style = style.copy(color = baseColor),
+        modifier = modifier,
+        onClick = { offset ->
+            annotated.getStringAnnotations(RICH_LINK_TAG, offset, offset).firstOrNull()?.let { link ->
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.item))) }
+            }
+        }
+    )
 }
 
 /**
