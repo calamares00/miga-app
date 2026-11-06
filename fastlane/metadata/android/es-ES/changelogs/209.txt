@@ -2,3 +2,4 @@ Novedades de la versión 1.0.11:
 • Salud y nutrición: si la receta ya tiene estos datos se muestran siempre, también sin el asistente de cocina, y ya no se vuelven a calcular. Puedes recalcularlos con un botón.
 • Los packs traen sus datos de salud y nutrición fijos.
 • Sin el asistente de cocina activado ya no aparecen opciones que lo necesitan, como buscar alternativas a un ingrediente.
+• Los enlaces de las notas se pueden pulsar.
