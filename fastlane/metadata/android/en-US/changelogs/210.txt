@@ -1,0 +1,2 @@
+What's new in 1.0.12:
+• Installing a pack from the catalogue keeps you in the catalogue, to install more. The book is waiting in Books.
