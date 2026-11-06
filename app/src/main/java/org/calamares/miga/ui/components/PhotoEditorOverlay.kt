@@ -99,7 +99,7 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
     var boxSize by remember { mutableStateOf(IntSize.Zero) }
     var cropRect by remember { mutableStateOf<Rect?>(null) }
     var dragMode by remember { mutableStateOf(DragMode.NONE) }
-    val aiEnabled = rememberAiEnabled()
+    val aiEnabled = rememberAiReady()
     val scope = rememberCoroutineScope()
     /** The photo before the AI improvement, null while it has not been improved. */
     var original by remember { mutableStateOf<Bitmap?>(null) }

@@ -122,6 +122,12 @@
     <string name="alternative_catalogue">"Alternative catalogue"</string>
     <string name="ingredient_catalogue_empty">"The ingredient catalogue is empty. Time to stock the pantry!"</string>
     <string name="pack_catalogue">"Pack catalogue"</string>
+    <string name="pack_updates_x">"Updates (%1$d)"</string>
+    <string name="update_all">"Update all"</string>
+    <string name="x_packs_updated">"%1$d packs updated"</string>
+    <string name="pack_updates_found_title">"Pack updates"</string>
+    <string name="pack_updates_found_x">"New versions of %1$d packs are out: %2$s. Update them now?"</string>
+    <string name="updating_packs_x">"Updating %1$d packs…"</string>
     <string name="category">"Category"</string>
     <string name="category_2">"By category"</string>
     <string name="category_x">"Category for \"%1$s\""</string>
@@ -160,7 +166,6 @@
     <string name="set_up_fingerprint_face_pin">"Set up a fingerprint, face or PIN on your device to turn on the lock"</string>
     <string name="set_up_ai_provider_settings">"Set up the kitchen assistant in Settings to use this."</string>
     <string name="set_up_ai_provider_settings_2">"Set up the kitchen assistant in Settings to use search."</string>
-    <string name="set_up_ai_provider_settings_3">"Set up the kitchen assistant in Settings to see this."</string>
     <string name="get_one_console_anthropic_com">"Get one at console.anthropic.com"</string>
     <string name="get_one_free_aistudio_google">"Get one for free at aistudio.google.com"</string>
     <string name="generated_content">"Generated content:"</string>
@@ -703,6 +708,9 @@
     <string name="substitute_x">"Substitute \"%1$s\""</string>
     <string name="stars_x">"%1$s star(s)"</string>
     <string name="health_and_nutrition">"Health and nutrition"</string>
+    <string name="health_needs_assistant">"Only available with the cooking assistant turned on."</string>
+    <string name="health_pack_pending">"Update the pack from the catalogue to see this."</string>
+    <string name="recalculate_with_assistant">"Recalculate with the assistant"</string>
     <string name="my_books">"My books"</string>
     <string name="view_x">"View: %1$s"</string>
     <string name="editor_basics">"Basics"</string>
