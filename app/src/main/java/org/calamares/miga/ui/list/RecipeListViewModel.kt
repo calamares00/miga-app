@@ -184,9 +184,10 @@ class RecipeListViewModel(
      * enabled.
      */
     val aiRecalculationAvailable: StateFlow<Boolean> = combine(
+        settingsRepository.observeAiReady(),
         settingsRepository.observeAiHealthEnabled(),
         settingsRepository.observeAiNutritionEnabled()
-    ) { health, nutrition -> health || nutrition }
+    ) { ready, health, nutrition -> ready && (health || nutrition) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     private suspend fun takeSelectedRecipes(): List<Recipe> {
@@ -283,6 +284,8 @@ class RecipeListViewModel(
      */
     fun bulkRecalculateAi(onMessage: (String) -> Unit) {
         viewModelScope.launch {
+            // Pack recipes come with fixed values and are never recalculated.
+            if (repository.getRecipeBookOnce(bookId)?.isPack == true) return@launch
             val recipes = takeSelectedRecipes()
             if (settingsRepository.aiCandidates().isEmpty()) {
                 onMessage(L10n.str(R.string.ai_no_provider))

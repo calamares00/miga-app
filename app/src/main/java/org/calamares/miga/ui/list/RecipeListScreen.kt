@@ -103,7 +103,7 @@ import org.calamares.miga.ui.components.ExportFormatDialog
 import org.calamares.miga.ui.components.FilterSheetContent
 import org.calamares.miga.ui.components.ImportRecipesDialog
 import org.calamares.miga.ui.components.NewRecipeSourceSheet
-import org.calamares.miga.ui.components.rememberAiEnabled
+import org.calamares.miga.ui.components.rememberAiReady
 import org.calamares.miga.ui.components.PhotoSourceSheet
 import org.calamares.miga.ui.components.RecipeCard
 import org.calamares.miga.ui.components.RecipeGridCard
@@ -124,7 +124,7 @@ fun RecipeListScreen(
     /** Improve the selected recipes with AI, all together (see BulkPolishScreen). */
     onPolishRecipes: (List<Long>) -> Unit = {}
 ) {
-    val aiEnabled = rememberAiEnabled()
+    val aiEnabled = rememberAiReady()
     val uiState by viewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
@@ -459,7 +459,7 @@ fun RecipeListScreen(
                 },
                 onSearchDishClick = { showNewRecipeSheet = false; onSearchDishClick() },
                 onUrlClick = { showNewRecipeSheet = false; showUrlImportDialog = true },
-                aiEnabled = rememberAiEnabled()
+                aiEnabled = rememberAiReady()
             )
         }
     }

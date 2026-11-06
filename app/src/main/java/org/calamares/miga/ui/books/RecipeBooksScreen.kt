@@ -68,7 +68,9 @@ import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewHeadline
 import androidx.compose.material.icons.outlined.MenuBook
+import android.widget.Toast
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
 import org.calamares.miga.data.remote.AppInstallSource
 import org.calamares.miga.BuildConfig
 import androidx.compose.material3.Card
@@ -126,6 +128,8 @@ fun RecipeBooksScreen(
     val changelogAnnouncement by viewModel.changelogAnnouncement.collectAsState()
     val crashReport by viewModel.crashReport.collectAsState()
     val availableUpdate by viewModel.availableUpdate.collectAsState()
+    val packUpdates by viewModel.packUpdates.collectAsState()
+    val updatingPacks by viewModel.updatingPacks.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
     val grouped by viewModel.grouped.collectAsState()
     val filter by viewModel.filter.collectAsState()
@@ -147,6 +151,13 @@ fun RecipeBooksScreen(
     LaunchedEffect(Unit) {
         viewModel.syncAllOnOpen(context)
         viewModel.checkForUpdate(context)
+        viewModel.checkPackUpdates()
+    }
+
+    // Without any sync connection there are no server books, so that filter is not offered.
+    val hasServer = connectionNames.isNotEmpty()
+    LaunchedEffect(hasServer) {
+        if (!hasServer && filter == BookFilter.SERVER) viewModel.setFilter(BookFilter.ALL)
     }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -216,7 +227,8 @@ fun RecipeBooksScreen(
                     OutlinedButton(onClick = onExplorePacks) { Text(L10n.str(R.string.explore_recipe_packs)) }
                 }
             } else {
-                BookFilterChips(filter, onSelect = viewModel::setFilter)
+                BookFilterChips(filter, showServer = hasServer, onSelect = viewModel::setFilter)
+                if (updatingPacks) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp))
                 if (sections.isEmpty()) {
                     FilterEmptyState(
                         filter,
@@ -336,6 +348,23 @@ fun RecipeBooksScreen(
         )
     }
 
+    // Pack updates: after the other start-up notices, never on top of them.
+    packUpdates.takeIf { it.isNotEmpty() && changelogAnnouncement == null && crashReport == null && availableUpdate == null }?.let { updates ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissPackUpdates() },
+            icon = { Icon(Icons.Filled.SystemUpdate, contentDescription = null) },
+            title = { Text(L10n.str(R.string.pack_updates_found_title)) },
+            text = { Text(L10n.str(R.string.pack_updates_found_x, updates.size, updates.joinToString(", ") { it.name })) },
+            confirmButton = {
+                TextButton(onClick = {
+                    Toast.makeText(context, L10n.str(R.string.updating_packs_x, updates.size), Toast.LENGTH_SHORT).show()
+                    viewModel.installPackUpdates(context) { message -> Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
+                }) { Text(L10n.str(R.string.update)) }
+            },
+            dismissButton = { TextButton(onClick = { viewModel.dismissPackUpdates() }) { Text(L10n.str(R.string.not_now)) } }
+        )
+    }
+
     // After "What's new" and the crash report, never on top of them.
     availableUpdate?.takeIf { changelogAnnouncement == null && crashReport == null }?.let { release ->
         AlertDialog(
@@ -439,12 +468,12 @@ private fun BookMenuHost(
 
 /** All, packs, my books, server: which kind of book the list shows. */
 @Composable
-private fun BookFilterChips(selected: BookFilter, onSelect: (BookFilter) -> Unit) {
+private fun BookFilterChips(selected: BookFilter, showServer: Boolean, onSelect: (BookFilter) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        BookFilter.entries.forEach { filter ->
+        BookFilter.entries.filter { showServer || it != BookFilter.SERVER }.forEach { filter ->
             FilterChip(
                 selected = filter == selected,
                 onClick = { onSelect(filter) },
