@@ -2,3 +2,4 @@ What's new in 1.0.11:
 • Health and nutrition: saved values always show, also without the cooking assistant, and are no longer recalculated. A button recalculates them.
 • Packs come with fixed health and nutrition values.
 • Without the cooking assistant, options that need it, such as finding ingredient substitutes, no longer show.
+• Links in notes can be tapped.
