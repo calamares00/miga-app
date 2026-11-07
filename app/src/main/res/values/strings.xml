@@ -714,7 +714,7 @@
     <string name="health_needs_assistant">"Only available with the cooking assistant turned on."</string>
     <string name="health_pack_pending">"Update the pack from the catalogue to see this."</string>
     <string name="recalculate_with_assistant">"Recalculate with the assistant"</string>
-    <string name="my_books">"My books"</string>
+    <string name="my_books">"Library"</string>
     <string name="view_x">"View: %1$s"</string>
     <string name="editor_basics">"Basics"</string>
     <string name="editor_details">"Time and servings"</string>

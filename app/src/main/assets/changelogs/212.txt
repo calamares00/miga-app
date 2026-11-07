@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.14:
+• Los filtros de libros muestran cuántos libros hay en cada uno y van en este orden: Todos, Mis libros, Packs y Servidor.
+• La pantalla de libros se llama ahora Biblioteca, para no confundirse con el filtro «Mis libros».
+• Al cambiar de filtro, la lista vuelve al principio: al volver a «Todos» ya se ven todos los libros.
