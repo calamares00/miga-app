@@ -15,6 +15,7 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.util.UUID
 import kotlin.math.roundToInt
+import org.calamares.miga.data.io.TooLargeException
 
 /**
  * Longest side of every photo stored by the app (book covers, recipe photos). Phone photos of 10-50
@@ -69,12 +70,17 @@ object PhotoStorage {
 
     /** Same as [copyBytesToInternalStorage] but streaming from [input], for large ZIP entries. */
     fun copyStreamToInternalStorage(context: Context, input: InputStream): String? {
+        val dir = File(context.filesDir, "photos").apply { mkdirs() }
+        val destination = File(dir, "${UUID.randomUUID()}.jpg")
         return try {
-            val dir = File(context.filesDir, "photos").apply { mkdirs() }
-            val destination = File(dir, "${UUID.randomUUID()}.jpg")
             destination.outputStream().use { output -> input.copyTo(output) }
             "file://${destination.absolutePath}"
+        } catch (e: TooLargeException) {
+            // A ZIP entry over its limit aborts the whole import (see RecipeExporter.extractEntries).
+            destination.delete()
+            throw e
         } catch (e: Exception) {
+            destination.delete()
             null
         }
     }

@@ -12,6 +12,8 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
+import org.calamares.miga.data.io.ReadLimits
+import org.calamares.miga.data.io.readTextAtMost
 
 @Serializable
 data class PackEntryDto(
@@ -102,7 +104,7 @@ object PacksCatalogClient {
                         L10n.str(R.string.couldnt_load_catalogue_code_x, responseCode)
                     )
                 }
-                val body = connection.inputStream.bufferedReader().use { it.readText() }
+                val body = connection.inputStream.use { it.readTextAtMost(ReadLimits.CATALOG_BYTES) }
                 val catalog = json.decodeFromString(CatalogDto.serializer(), body)
                 CatalogFetchResult.Success(
                     catalog.packs.map { pack ->

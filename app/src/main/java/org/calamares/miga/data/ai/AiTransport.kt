@@ -19,6 +19,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import java.net.URL
+import org.calamares.miga.data.io.ReadLimits
+import org.calamares.miga.data.io.readTextAtMost
 
 /** An image already in memory, ready to be sent to a model that can read images. */
 class AiImage(val bytes: ByteArray, val mimeType: String)
@@ -176,7 +178,7 @@ internal suspend fun postJson(url: String, body: String, headers: Map<String, St
                 connection.outputStream.use { it.write(body.toByteArray()) }
                 val code = connection.responseCode
                 val stream = if (code in 200..299) connection.inputStream else connection.errorStream
-                HttpResponse(code, stream?.bufferedReader()?.use { it.readText() }.orEmpty())
+                HttpResponse(code, stream?.use { it.readTextAtMost(ReadLimits.API_JSON_BYTES) }.orEmpty())
             }
             connection.disconnect()
             // After a cancellation the continuation is already resumed; these are then ignored.
@@ -195,7 +197,7 @@ internal fun getJson(url: String, headers: Map<String, String>, timeoutMillis: I
         headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
         val code = connection.responseCode
         val stream = if (code in 200..299) connection.inputStream else connection.errorStream
-        return HttpResponse(code, stream?.bufferedReader()?.use { it.readText() }.orEmpty())
+        return HttpResponse(code, stream?.use { it.readTextAtMost(ReadLimits.API_JSON_BYTES) }.orEmpty())
     } finally {
         connection.disconnect()
     }
