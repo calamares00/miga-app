@@ -62,7 +62,8 @@
     <string name="point_miga_invitation_qr_code">"Point at the Miga invitation QR code"</string>
     <string name="point_miga_list_qr_code">"Point at the Miga list QR code"</string>
     <string name="downloaded_file_isnt_valid_zip">"The downloaded file isn't a valid ZIP"</string>
-    <string name="file_too_large_to_import_x">"The file is too large to import (one part exceeds %1$d MB) or is damaged"</string>
+    <string name="file_too_large_to_import_x">"The file is too large to import (over the %1$d MB limit) or is damaged"</string>
+    <string name="data_larger_than_x_mb">"The answer is over the %1$d MB limit"</string>
     <string name="file_too_large_to_import">"The file is too large to import"</string>
     <string name="file_isnt_valid_backup">"The file isn't a valid backup"</string>
     <string name="zip_file_doesnt_contain_manifest">"The ZIP file doesn't contain manifest.json"</string>

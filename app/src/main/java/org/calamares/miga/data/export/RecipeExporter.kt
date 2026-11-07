@@ -600,19 +600,32 @@ object RecipeExporter {
         val wantedSet = wanted.toSet()
         val result = mutableMapOf<String, String>()
         var totalBytes = 0L
-        var entry = zip.nextEntry
-        while (entry != null) {
-            val name = entry.name
-            // Each name once: a repeated entry would only leave an orphan copy behind.
-            if (!entry.isDirectory && name in wantedSet && name !in result) {
-                // ZIP sizes are declared by the file itself, so the bytes are counted while copying:
-                // a crafted entry can expand ~1000 times and fill the storage.
-                val limit = minOf(ReadLimits.ZIP_PHOTO_BYTES, ReadLimits.ZIP_TOTAL_BYTES - totalBytes)
-                val counted = CountingInputStream(LimitedInputStream(NonClosingInputStream(zip), limit))
-                PhotoStorage.copyStreamToInternalStorage(context, counted)?.let { result[name] = it }
-                totalBytes += counted.count
+        try {
+            var entry = zip.nextEntry
+            while (entry != null) {
+                val name = entry.name
+                // Each name once: a repeated entry would only leave an orphan copy behind.
+                if (!entry.isDirectory && name in wantedSet && name !in result) {
+                    // ZIP sizes are declared by the file itself, so the bytes are counted while copying:
+                    // a crafted entry can expand ~1000 times and fill the storage.
+                    val remaining = ReadLimits.ZIP_TOTAL_BYTES - totalBytes
+                    val counted = CountingInputStream(
+                        LimitedInputStream(NonClosingInputStream(zip), minOf(ReadLimits.ZIP_PHOTO_BYTES, remaining))
+                    )
+                    try {
+                        PhotoStorage.copyStreamToInternalStorage(context, counted)?.let { result[name] = it }
+                    } catch (e: TooLargeException) {
+                        // Report the limit that was actually exceeded: one photo or the whole file.
+                        throw if (remaining < ReadLimits.ZIP_PHOTO_BYTES) TooLargeException(ReadLimits.ZIP_TOTAL_BYTES) else e
+                    }
+                    totalBytes += counted.count
+                }
+                entry = zip.nextEntry
             }
-            entry = zip.nextEntry
+        } catch (e: Throwable) {
+            // Nothing references the photos copied so far: a failed import must not leave them behind.
+            result.values.forEach { PhotoStorage.deleteFile(it) }
+            throw e
         }
         return result
     }
@@ -635,7 +648,7 @@ object RecipeExporter {
 
     /** Error text for a failed import; files over the size limits get a clear message. */
     private fun importErrorMessage(e: Throwable, fallback: Int): String = when (e) {
-        is TooLargeException -> L10n.str(R.string.file_too_large_to_import_x, e.limitBytes / (1024 * 1024))
+        is TooLargeException -> L10n.str(R.string.file_too_large_to_import_x, e.limitMegabytes)
         is OutOfMemoryError -> L10n.str(R.string.file_too_large_to_import)
         else -> e.message ?: e::class.simpleName ?: L10n.str(fallback)
     }
