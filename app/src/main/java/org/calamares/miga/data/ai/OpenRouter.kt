@@ -20,6 +20,8 @@ import org.calamares.miga.data.support.ErrorDetail
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Base64
+import org.calamares.miga.data.io.ReadLimits
+import org.calamares.miga.data.io.readTextAtMost
 
 private const val OPENROUTER_CHAT_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 private const val OPENROUTER_MODELS_ENDPOINT = "https://openrouter.ai/api/v1/models"
@@ -245,7 +247,7 @@ object OpenRouterModels {
             if (connection.responseCode != HttpURLConnection.HTTP_OK) {
                 null
             } else {
-                val body = connection.inputStream.bufferedReader().use { it.readText() }
+                val body = connection.inputStream.use { it.readTextAtMost(ReadLimits.API_JSON_BYTES) }
                 aiJson.decodeFromString(OpenRouterModelsResponse.serializer(), body).data
                     .filter { dto -> dto.architecture?.outputModalities.let { it.isNullOrEmpty() || "text" in it } }
                     .map { dto ->

@@ -61,6 +61,8 @@
     <string name="point_miga_invitation_qr_code">"Apunta al QR de invitación de Miga"</string>
     <string name="point_miga_list_qr_code">"Apunta al QR de la lista de Miga"</string>
     <string name="downloaded_file_isnt_valid_zip">"El archivo descargado no es un ZIP válido"</string>
+    <string name="file_too_large_to_import_x">"El archivo es demasiado grande para importarlo (una parte supera %1$d MB) o está dañado"</string>
+    <string name="file_too_large_to_import">"El archivo es demasiado grande para importarlo"</string>
     <string name="file_isnt_valid_backup">"El archivo no es una copia de seguridad válida"</string>
     <string name="zip_file_doesnt_contain_manifest">"El archivo ZIP no contiene manifest.json"</string>
     <string name="architecture">"Arquitectura"</string>

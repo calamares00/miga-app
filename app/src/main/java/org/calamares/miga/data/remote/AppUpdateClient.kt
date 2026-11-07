@@ -8,6 +8,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.calamares.miga.data.io.ReadLimits
+import org.calamares.miga.data.io.readTextAtMost
 
 /** A published version of Miga: its version name ("1.0.6") and its GitHub page. */
 data class AppRelease(val versionName: String, val pageUrl: String)
@@ -41,7 +43,7 @@ object AppUpdateClient {
             connection.setRequestProperty("Accept", "application/vnd.github+json")
             try {
                 if (connection.responseCode != HttpURLConnection.HTTP_OK) return@withContext null
-                val body = connection.inputStream.bufferedReader().use { it.readText() }
+                val body = connection.inputStream.use { it.readTextAtMost(ReadLimits.API_JSON_BYTES) }
                 val dto = json.decodeFromString(GithubReleaseDto.serializer(), body)
                 if (dto.draft || dto.prerelease) return@withContext null
                 AppRelease(
