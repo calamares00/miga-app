@@ -4,9 +4,17 @@ import java.io.ByteArrayOutputStream
 import java.io.FilterInputStream
 import java.io.IOException
 import java.io.InputStream
+import org.calamares.miga.L10n
+import org.calamares.miga.R
 
 /** Thrown when a stream holds more than the bytes allowed for it (network body, ZIP entry...). */
-class TooLargeException(val limitBytes: Long) : IOException("More than ${limitBytes / (1024 * 1024)} MB")
+class TooLargeException(val limitBytes: Long) : IOException() {
+    val limitMegabytes: Long get() = limitBytes / (1024 * 1024)
+
+    // Shown as is by the callers that report e.message (sync, catalogue, AI), so it is localized.
+    override val message: String
+        get() = runCatching { L10n.str(R.string.data_larger_than_x_mb, limitMegabytes) }.getOrDefault("More than $limitMegabytes MB")
+}
 
 /**
  * Size limits for data the app does not control: ZIP files can expand ~1000 times, and a broken or
@@ -34,8 +42,8 @@ object ReadLimits {
     /** Photos and covers downloaded from the sync server. */
     const val SYNC_BINARY_BYTES = 20 * MB
 
-    /** Answers of AI providers, Open Food Facts and GitHub. */
-    const val API_JSON_BYTES = 4 * MB
+    /** Answers of AI providers (the OpenRouter model list was 0.8 MB in 2026), Open Food Facts and GitHub. */
+    const val API_JSON_BYTES = 16 * MB
 }
 
 /** Reads the whole stream, throwing [TooLargeException] when it is longer than [limit] bytes. */
