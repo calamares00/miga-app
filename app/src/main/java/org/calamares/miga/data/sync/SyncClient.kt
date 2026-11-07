@@ -11,6 +11,9 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.Json
 import java.net.HttpURLConnection
 import java.net.URL
+import org.calamares.miga.data.io.ReadLimits
+import org.calamares.miga.data.io.readBytesAtMost
+import org.calamares.miga.data.io.readTextAtMost
 
 sealed interface SyncPingResult {
     data object Success : SyncPingResult
@@ -281,7 +284,7 @@ object SyncClient {
             }
             val code = httpConnection.responseCode
             val stream = if (code in 200..299) httpConnection.inputStream else httpConnection.errorStream
-            val text = stream?.bufferedReader()?.use { it.readText() } ?: ""
+            val text = stream?.use { it.readTextAtMost(ReadLimits.SYNC_JSON_BYTES) } ?: ""
             return TextResponse(code, text)
         } finally {
             httpConnection.disconnect()
@@ -298,7 +301,7 @@ object SyncClient {
             httpConnection.connectTimeout = timeoutMillis
             httpConnection.readTimeout = timeoutMillis
             val code = httpConnection.responseCode
-            val bytes = if (code == HttpURLConnection.HTTP_OK) httpConnection.inputStream.use { it.readBytes() } else ByteArray(0)
+            val bytes = if (code == HttpURLConnection.HTTP_OK) httpConnection.inputStream.use { it.readBytesAtMost(ReadLimits.SYNC_BINARY_BYTES) } else ByteArray(0)
             return BinaryResponse(code, bytes)
         } finally {
             httpConnection.disconnect()
