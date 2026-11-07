@@ -3,7 +3,8 @@ package org.calamares.miga.ui.books
 import org.calamares.miga.data.model.RecipeBookSummary
 
 /** Which books the list shows: every book, installed packs, the user's own or synced ones. */
-enum class BookFilter { ALL, PACKS, LOCAL, SERVER }
+/** In the order the chips show them. */
+enum class BookFilter { ALL, LOCAL, PACKS, SERVER }
 
 fun RecipeBookSummary.matches(filter: BookFilter): Boolean = when (filter) {
     BookFilter.ALL -> true
