@@ -16,6 +16,8 @@ import kotlinx.serialization.json.jsonObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import org.calamares.miga.data.io.ReadLimits
+import org.calamares.miga.data.io.readTextAtMost
 
 data class ScannedProduct(val barcode: String, val name: String, val imageUrl: String?, val info: ProductInfo)
 
@@ -53,7 +55,7 @@ object OpenFoodFactsClient {
                 val code = connection.responseCode
                 if (code == HttpURLConnection.HTTP_NOT_FOUND) return@withContext ProductLookupResult.NotFound
                 if (code != HttpURLConnection.HTTP_OK) return@withContext ProductLookupResult.Error(L10n.str(R.string.open_food_facts_responded_code, code))
-                val body = connection.inputStream.bufferedReader().use { it.readText() }
+                val body = connection.inputStream.use { it.readTextAtMost(ReadLimits.API_JSON_BYTES) }
                 val product = parseProductResponse(body, barcode)
                 if (product == null) ProductLookupResult.NotFound else ProductLookupResult.Found(product)
             } finally {
@@ -87,7 +89,7 @@ object OpenFoodFactsClient {
                 if (code != HttpURLConnection.HTTP_OK) {
                     return@withContext ProductSearchResult.Error(L10n.str(R.string.open_food_facts_responded_code, code))
                 }
-                val body = connection.inputStream.bufferedReader().use { it.readText() }
+                val body = connection.inputStream.use { it.readTextAtMost(ReadLimits.API_JSON_BYTES) }
                 ProductSearchResult.Success(parseSearchResponse(body))
             } finally {
                 connection.disconnect()

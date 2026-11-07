@@ -33,6 +33,10 @@ import org.calamares.miga.data.model.ShoppingTemplate
 import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.data.model.formatIngredientText
 import org.calamares.miga.data.model.formatQuantity
+import org.calamares.miga.data.io.LimitedInputStream
+import org.calamares.miga.data.io.ReadLimits
+import org.calamares.miga.data.io.TooLargeException
+import org.calamares.miga.data.io.readTextAtMost
 import org.calamares.miga.data.repository.RecipeRepository
 import java.io.BufferedInputStream
 import java.io.ByteArrayInputStream
@@ -317,7 +321,9 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            RecipeImportResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
+            RecipeImportResult.Error(importErrorMessage(e, R.string.unknown_error))
+        } catch (e: OutOfMemoryError) {
+            RecipeImportResult.Error(importErrorMessage(e, R.string.unknown_error))
         }
     }
 
@@ -343,7 +349,9 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            LibraryImportParseResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.file_isnt_valid_backup))
+            LibraryImportParseResult.Error(importErrorMessage(e, R.string.file_isnt_valid_backup))
+        } catch (e: OutOfMemoryError) {
+            LibraryImportParseResult.Error(importErrorMessage(e, R.string.file_isnt_valid_backup))
         }
     }
 
@@ -415,7 +423,9 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            LibraryImportResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
+            LibraryImportResult.Error(importErrorMessage(e, R.string.unknown_error))
+        } catch (e: OutOfMemoryError) {
+            LibraryImportResult.Error(importErrorMessage(e, R.string.unknown_error))
         }
     }
 
@@ -460,7 +470,9 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            PackImportResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
+            PackImportResult.Error(importErrorMessage(e, R.string.unknown_error))
+        } catch (e: OutOfMemoryError) {
+            PackImportResult.Error(importErrorMessage(e, R.string.unknown_error))
         }
     }
 
@@ -558,7 +570,7 @@ object RecipeExporter {
             if (read == 2 && isZip(signature)) {
                 Manifest(ZipInputStream(buffered).let { readManifestEntry(it) }, isZip = true)
             } else {
-                Manifest(buffered.readBytes().toString(Charsets.UTF_8), isZip = false)
+                Manifest(buffered.readTextAtMost(ReadLimits.MANIFEST_BYTES), isZip = false)
             }
         }
     }
@@ -566,7 +578,7 @@ object RecipeExporter {
     private fun readManifestEntry(zip: ZipInputStream): String? {
         var entry = zip.nextEntry
         while (entry != null) {
-            if (!entry.isDirectory && entry.name == MANIFEST) return zip.readBytes().toString(Charsets.UTF_8)
+            if (!entry.isDirectory && entry.name == MANIFEST) return zip.readTextAtMost(ReadLimits.MANIFEST_BYTES)
             entry = zip.nextEntry
         }
         return null
@@ -587,13 +599,33 @@ object RecipeExporter {
     private fun extractEntries(context: Context, zip: ZipInputStream, wanted: Collection<String>): Map<String, String> {
         val wantedSet = wanted.toSet()
         val result = mutableMapOf<String, String>()
-        var entry = zip.nextEntry
-        while (entry != null) {
-            val name = entry.name
-            if (!entry.isDirectory && name in wantedSet) {
-                PhotoStorage.copyStreamToInternalStorage(context, NonClosingInputStream(zip))?.let { result[name] = it }
+        var totalBytes = 0L
+        try {
+            var entry = zip.nextEntry
+            while (entry != null) {
+                val name = entry.name
+                // Each name once: a repeated entry would only leave an orphan copy behind.
+                if (!entry.isDirectory && name in wantedSet && name !in result) {
+                    // ZIP sizes are declared by the file itself, so the bytes are counted while copying:
+                    // a crafted entry can expand ~1000 times and fill the storage.
+                    val remaining = ReadLimits.ZIP_TOTAL_BYTES - totalBytes
+                    val counted = CountingInputStream(
+                        LimitedInputStream(NonClosingInputStream(zip), minOf(ReadLimits.ZIP_PHOTO_BYTES, remaining))
+                    )
+                    try {
+                        PhotoStorage.copyStreamToInternalStorage(context, counted)?.let { result[name] = it }
+                    } catch (e: TooLargeException) {
+                        // Report the limit that was actually exceeded: one photo or the whole file.
+                        throw if (remaining < ReadLimits.ZIP_PHOTO_BYTES) TooLargeException(ReadLimits.ZIP_TOTAL_BYTES) else e
+                    }
+                    totalBytes += counted.count
+                }
+                entry = zip.nextEntry
             }
-            entry = zip.nextEntry
+        } catch (e: Throwable) {
+            // Nothing references the photos copied so far: a failed import must not leave them behind.
+            result.values.forEach { PhotoStorage.deleteFile(it) }
+            throw e
         }
         return result
     }
@@ -603,6 +635,22 @@ object RecipeExporter {
         override fun read(): Int = delegate.read()
         override fun read(b: ByteArray, off: Int, len: Int): Int = delegate.read(b, off, len)
         override fun close() = Unit
+    }
+
+    private class CountingInputStream(private val delegate: InputStream) : InputStream() {
+        var count = 0L
+            private set
+
+        override fun read(): Int = delegate.read().also { if (it >= 0) count++ }
+        override fun read(b: ByteArray, off: Int, len: Int): Int = delegate.read(b, off, len).also { if (it > 0) count += it }
+        override fun close() = delegate.close()
+    }
+
+    /** Error text for a failed import; files over the size limits get a clear message. */
+    private fun importErrorMessage(e: Throwable, fallback: Int): String = when (e) {
+        is TooLargeException -> L10n.str(R.string.file_too_large_to_import_x, e.limitMegabytes)
+        is OutOfMemoryError -> L10n.str(R.string.file_too_large_to_import)
+        else -> e.message ?: e::class.simpleName ?: L10n.str(fallback)
     }
 
     private fun isZip(bytes: ByteArray): Boolean =

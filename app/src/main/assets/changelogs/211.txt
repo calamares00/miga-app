@@ -1,0 +1,3 @@
+Novedades de la versión 1.0.13:
+• Más seguridad al importar: los packs, copias y libros que ocuparían muchísimo al descomprimirse se rechazan con un aviso, en lugar de cerrar la app o llenar el almacenamiento.
+• Las respuestas del catálogo, el servidor de sincronización, el asistente de cocina y Open Food Facts tienen un tamaño máximo.
