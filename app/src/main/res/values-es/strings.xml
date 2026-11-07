@@ -713,7 +713,7 @@
     <string name="health_needs_assistant">"Solo disponible con el asistente de cocina activado."</string>
     <string name="health_pack_pending">"Actualiza el pack desde el catálogo para ver estos datos."</string>
     <string name="recalculate_with_assistant">"Recalcular con el asistente"</string>
-    <string name="my_books">"Mis libros"</string>
+    <string name="my_books">"Biblioteca"</string>
     <string name="view_x">"Vista: %1$s"</string>
     <string name="editor_basics">"Lo básico"</string>
     <string name="editor_details">"Tiempo y raciones"</string>

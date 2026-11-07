@@ -1,0 +1,4 @@
+What's new in 1.0.14:
+• Book filters show how many books each one has and come in this order: All, My books, Packs and Server.
+• The books screen is now called Library, so it isn't confused with the "My books" filter.
+• Changing filter takes the list back to the top: going back to "All" shows every book again.

@@ -54,6 +54,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -162,6 +164,15 @@ fun RecipeBooksScreen(
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
+    // Lazy lists keep their position by item key: after "Packs", going back to "All" would stay on
+    // the packs header and hide the books above it. A new filter always starts from the top.
+    val gridState = rememberLazyGridState()
+    val listState = rememberLazyListState()
+    LaunchedEffect(filter) {
+        gridState.scrollToItem(0)
+        listState.scrollToItem(0)
+    }
+
     AdaptiveScaffold(
         maxContentWidth = GRID_CONTENT_WIDTH,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -227,7 +238,7 @@ fun RecipeBooksScreen(
                     OutlinedButton(onClick = onExplorePacks) { Text(L10n.str(R.string.explore_recipe_packs)) }
                 }
             } else {
-                BookFilterChips(filter, showServer = hasServer, onSelect = viewModel::setFilter)
+                BookFilterChips(filter, books, showServer = hasServer, onSelect = viewModel::setFilter)
                 if (updatingPacks) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp))
                 if (sections.isEmpty()) {
                     FilterEmptyState(
@@ -239,6 +250,7 @@ fun RecipeBooksScreen(
                     )
                 } else if (viewMode == RecipeListViewMode.GRID) {
                     LazyVerticalGrid(
+                        state = gridState,
                         columns = GridCells.Adaptive(150.dp),
                         // Bottom padding so the "New book" button does not cover the last row.
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
@@ -273,6 +285,7 @@ fun RecipeBooksScreen(
                     }
                 } else {
                     LazyColumn(
+                        state = listState,
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.weight(1f)
@@ -466,9 +479,9 @@ private fun BookMenuHost(
     }
 }
 
-/** All, packs, my books, server: which kind of book the list shows. */
+/** All, my books, packs, server: which kind of book the list shows, each with how many books it has. */
 @Composable
-private fun BookFilterChips(selected: BookFilter, showServer: Boolean, onSelect: (BookFilter) -> Unit) {
+private fun BookFilterChips(selected: BookFilter, books: List<RecipeBookSummary>, showServer: Boolean, onSelect: (BookFilter) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -478,16 +491,15 @@ private fun BookFilterChips(selected: BookFilter, showServer: Boolean, onSelect:
                 selected = filter == selected,
                 onClick = { onSelect(filter) },
                 label = {
-                    Text(
-                        L10n.str(
-                            when (filter) {
-                                BookFilter.ALL -> R.string.books_filter_all
-                                BookFilter.PACKS -> R.string.books_filter_packs
-                                BookFilter.LOCAL -> R.string.books_filter_mine
-                                BookFilter.SERVER -> R.string.books_filter_server
-                            }
-                        )
+                    val name = L10n.str(
+                        when (filter) {
+                            BookFilter.ALL -> R.string.books_filter_all
+                            BookFilter.PACKS -> R.string.books_filter_packs
+                            BookFilter.LOCAL -> R.string.books_filter_mine
+                            BookFilter.SERVER -> R.string.books_filter_server
+                        }
                     )
+                    Text("$name (${books.count { it.matches(filter) }})")
                 }
             )
         }
