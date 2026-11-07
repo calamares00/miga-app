@@ -7,6 +7,7 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BoundedStreamsTest {
@@ -49,5 +50,12 @@ class BoundedStreamsTest {
             zip.nextEntry
             zip.readBytesAtMost(1024 * 1024)
         }
+    }
+
+    @Test
+    fun `the error message names the limit in megabytes`() {
+        val e = TooLargeException(32L * 1024 * 1024)
+        assertEquals(32L, e.limitMegabytes)
+        assertTrue(e.message.contains("32"))
     }
 }
