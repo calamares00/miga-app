@@ -107,6 +107,7 @@ import org.calamares.miga.ui.search.GlobalSearchViewModel
 import org.calamares.miga.ui.search.SearchRequest
 import org.calamares.miga.ui.search.SearchRequests
 import androidx.compose.runtime.saveable.rememberSaveable
+import org.calamares.miga.data.share.BookFileIntents
 import org.calamares.miga.data.share.ShoppingIntents
 import org.calamares.miga.ui.shoppinglist.ShoppingListScreen
 import org.calamares.miga.ui.shoppinglist.ShoppingListViewModel
@@ -217,6 +218,18 @@ fun MigaNavHost(initialRoute: String? = null) {
     LaunchedEffect(shoppingEvent) {
         if (shoppingEvent != null) {
             navController.navigate(Destinations.SHOPPING_LIST_ROUTE) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
+
+    /** A Miga file opened from another app: the books tab asks whether to import it. */
+    val bookFileEvent by BookFileIntents.event.collectAsState()
+    LaunchedEffect(bookFileEvent) {
+        if (bookFileEvent != null) {
+            navController.navigate(Destinations.BOOKS_ROUTE) {
                 popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                 launchSingleTop = true
                 restoreState = true

@@ -1,3 +1,4 @@
 What's new in 1.0.17:
-• In the Library, an empty filter no longer repeats its button: the one in the message is enough.
-• The Server filter is always shown. Without a server, it explains what a Miga server is and how it shares books with family or friends, with a button to set it up.
+• Share book: send a book by WhatsApp, Telegram or mail in one tap. Opening it, Miga imports it; if you had it already, it adds new recipes and updates changed ones.
+• In the Library, an empty filter no longer repeats its button.
+• The Server filter is always shown and, without a server, explains what it is for.

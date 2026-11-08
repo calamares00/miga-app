@@ -14,6 +14,9 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Checkbox
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Share
+import org.calamares.miga.data.share.BookFileIntents
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.CircularProgressIndicator
@@ -165,6 +168,12 @@ fun RecipeBooksScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val syncing by viewModel.syncing.collectAsState()
     val syncMessage by viewModel.syncMessage.collectAsState()
+    val incomingBook by viewModel.incomingBook.collectAsState()
+    val importingBook by viewModel.importingBook.collectAsState()
+    val incomingFile by BookFileIntents.event.collectAsState()
+    LaunchedEffect(incomingFile) {
+        incomingFile?.let { viewModel.onIncomingFile(context, it) }
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(syncMessage) {
         syncMessage?.let {
@@ -301,6 +310,7 @@ fun RecipeBooksScreen(
                                     onEdit = { onEditBookClick(book.id) },
                                     onTogglePin = { viewModel.togglePinned(book) },
                                     onUninstall = { packToUninstall = book },
+                                    onShare = { viewModel.shareBook(context, book) },
                                     // Pinning moves the book to the top; animate it instead of jumping.
                                     modifier = Modifier.animateItemPlacement()
                                 ) { openMenu ->
@@ -331,6 +341,7 @@ fun RecipeBooksScreen(
                                     onEdit = { onEditBookClick(book.id) },
                                     onTogglePin = { viewModel.togglePinned(book) },
                                     onUninstall = { packToUninstall = book },
+                                    onShare = { viewModel.shareBook(context, book) },
                                     // Pinning moves the book to the top; animate it instead of jumping.
                                     modifier = Modifier.animateItemPlacement()
                                 ) { openMenu ->
@@ -348,6 +359,30 @@ fun RecipeBooksScreen(
                 }
             }
         }
+    }
+
+    incomingBook?.let { prompt ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissIncomingBook() },
+            icon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
+            title = { Text(L10n.str(R.string.import_book_x, prompt.bookName)) },
+            text = {
+                Text(
+                    L10n.str(R.string.x_recipes_count, prompt.recipeCount) + "\n\n" +
+                        L10n.str(if (prompt.alreadyHere) R.string.shared_book_update_explanation else R.string.shared_book_new_explanation)
+                )
+            },
+            confirmButton = { TextButton(onClick = { viewModel.importIncomingBook(context) }) { Text(L10n.str(R.string.import_action)) } },
+            dismissButton = { TextButton(onClick = { viewModel.dismissIncomingBook() }) { Text(L10n.str(R.string.cancel)) } }
+        )
+    }
+    if (importingBook) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(L10n.str(R.string.importing_book)) },
+            text = { LinearProgressIndicator(modifier = Modifier.fillMaxWidth()) },
+            confirmButton = {}
+        )
     }
 
     packToUninstall?.let { book ->
@@ -477,6 +512,7 @@ private fun BookMenuHost(
     onEdit: () -> Unit,
     onTogglePin: () -> Unit,
     onUninstall: () -> Unit,
+    onShare: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable (openMenu: () -> Unit) -> Unit
 ) {
@@ -504,6 +540,11 @@ private fun BookMenuHost(
                     text = { Text(L10n.str(R.string.edit_book)) },
                     leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
                     onClick = { showMenu = false; onEdit() }
+                )
+                DropdownMenuItem(
+                    text = { Text(L10n.str(R.string.share_book)) },
+                    leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                    onClick = { showMenu = false; onShare() }
                 )
             }
         }
