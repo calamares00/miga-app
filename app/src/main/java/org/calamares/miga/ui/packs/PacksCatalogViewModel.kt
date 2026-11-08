@@ -37,6 +37,15 @@ sealed interface CatalogUiState {
 }
 
 /** Progress of installing or uninstalling several packs: [done] of [total]. */
+/** Which packs the catalogue lists, by whether they are installed. */
+enum class PackStatusFilter { ALL, INSTALLED, NOT_INSTALLED }
+
+fun PackListItem.matches(filter: PackStatusFilter): Boolean = when (filter) {
+    PackStatusFilter.ALL -> true
+    PackStatusFilter.INSTALLED -> isInstalled
+    PackStatusFilter.NOT_INSTALLED -> !isInstalled
+}
+
 data class BatchProgress(val done: Int, val total: Int, val uninstalling: Boolean)
 
 private sealed interface CatalogLoad {
@@ -72,6 +81,25 @@ class PacksCatalogViewModel(
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CatalogUiState.Loading)
+
+    private val _collapsedSeries = MutableStateFlow<Set<String>>(emptySet())
+    /** Series folded in the list ("" for packs without a series); kept while the app is open. */
+    val collapsedSeries: StateFlow<Set<String>> = _collapsedSeries
+
+    fun toggleSeries(series: String) {
+        _collapsedSeries.value = _collapsedSeries.value.let { if (series in it) it - series else it + series }
+    }
+
+    fun setAllSeriesCollapsed(series: Collection<String>, collapsed: Boolean) {
+        _collapsedSeries.value = if (collapsed) series.toSet() else emptySet()
+    }
+
+    private val _statusFilter = MutableStateFlow(PackStatusFilter.ALL)
+    val statusFilter: StateFlow<PackStatusFilter> = _statusFilter
+
+    fun setStatusFilter(filter: PackStatusFilter) {
+        _statusFilter.value = filter
+    }
 
     /** Ids of the packs selected to install or uninstall several at once; empty outside selection. */
     private val _selected = MutableStateFlow<Set<String>>(emptySet())

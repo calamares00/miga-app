@@ -1,0 +1,3 @@
+Novedades de la versión 1.0.15:
+• En la Biblioteca, el botón cambia con el filtro: en Packs es «Añadir pack» y abre el catálogo; en Servidor es «Sincronizar» y sincroniza al momento.
+• Catálogo de packs: cada categoría se puede plegar y desplegar, y un filtro muestra todos, solo los instalados o solo los que faltan, con su número.

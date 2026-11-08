@@ -19,6 +19,7 @@ import org.calamares.miga.data.remote.AppRelease
 import org.calamares.miga.data.remote.AppUpdateClient
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.sync.SyncEngine
+import org.calamares.miga.data.sync.SyncOutcome
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -117,6 +118,35 @@ class RecipeBooksViewModel(
 
     fun setFilter(filter: BookFilter) {
         _filter.value = filter
+    }
+
+    private val _syncing = MutableStateFlow(false)
+    /** True while "Sync" (server filter) is syncing every connection. */
+    val syncing: StateFlow<Boolean> = _syncing
+
+    private val _syncMessage = MutableStateFlow<String?>(null)
+    /** Result of the last "Sync", shown once in a snackbar. */
+    val syncMessage: StateFlow<String?> = _syncMessage
+
+    /** Syncs every connection now, on request (the button of the server filter). */
+    fun syncNow(context: Context) {
+        if (_syncing.value) return
+        _syncing.value = true
+        val appContext = context.applicationContext
+        viewModelScope.launch {
+            try {
+                val errors = repository.observeSyncConnections().first().mapNotNull { connection ->
+                    (syncEngine.syncConnection(appContext, connection.id) as? SyncOutcome.Error)?.reason
+                }
+                _syncMessage.value = if (errors.isEmpty()) L10n.str(R.string.sync_finished) else L10n.str(R.string.sync_failed_x, errors.first())
+            } finally {
+                _syncing.value = false
+            }
+        }
+    }
+
+    fun dismissSyncMessage() {
+        _syncMessage.value = null
     }
 
     /** Uninstalls the pack of [book] (its book and the recipes still in it). */

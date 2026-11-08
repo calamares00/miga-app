@@ -1194,6 +1194,14 @@
     <string name="books_filter_packs">"Packs"</string>
     <string name="books_filter_mine">"My books"</string>
     <string name="books_filter_server">"Server"</string>
+    <string name="add_pack">"Add pack"</string>
+    <string name="sync_books">"Sync"</string>
+    <string name="syncing_now">"Syncing…"</string>
+    <string name="sync_finished">"Sync complete"</string>
+    <string name="sync_failed_x">"Couldn't sync: %1$s"</string>
+    <string name="packs_filter_all">"All"</string>
+    <string name="packs_filter_installed">"Installed"</string>
+    <string name="packs_filter_not_installed">"Not installed"</string>
     <string name="no_packs_installed">"No packs installed"</string>
     <string name="no_packs_installed_body">"Packs are ready-made recipe books: world cuisines, air fryer, Christmas and more. Install them from the catalogue."</string>
     <string name="open_pack_catalogue">"Browse the pack catalogue"</string>

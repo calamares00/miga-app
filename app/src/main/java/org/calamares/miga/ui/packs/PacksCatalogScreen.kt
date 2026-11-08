@@ -67,6 +67,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.UnfoldLess
+import androidx.compose.material.icons.filled.UnfoldMore
+import androidx.compose.material3.FilterChip
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import coil.compose.AsyncImage
 
 /**
@@ -91,19 +101,25 @@ fun PacksCatalogScreen(
     val selected by viewModel.selected.collectAsState()
     val progress by viewModel.progress.collectAsState()
     val message by viewModel.message.collectAsState()
+    val collapsed by viewModel.collapsedSeries.collectAsState()
+    val statusFilter by viewModel.statusFilter.collectAsState()
     var query by remember { mutableStateOf("") }
     var confirmUninstall by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     val items = (uiState as? CatalogUiState.Loaded)?.items.orEmpty()
-    val filtered = items.filter {
+    val searched = items.filter {
         query.isBlank() ||
             it.entry.name.contains(query, ignoreCase = true) ||
             it.entry.description.contains(query, ignoreCase = true) ||
             it.entry.author.contains(query, ignoreCase = true) ||
             it.entry.series.orEmpty().contains(query, ignoreCase = true)
     }
+    val filtered = searched.filter { it.matches(statusFilter) }
+    val seriesGroups = groupBySeries(filtered.filter { !it.hasUpdate })
+    // While searching every series is open: a match must never hide inside a folded one.
+    val isCollapsed = { series: String? -> query.isBlank() && series.orEmpty() in collapsed }
     val selectedItems = items.filter { it.entry.id in selected }
     val toInstall = selectedItems.count { it.canInstall }
     val toUninstall = selectedItems.count { it.isInstalled }
@@ -144,6 +160,15 @@ fun PacksCatalogScreen(
                         IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                     },
                     actions = {
+                        if (seriesGroups.size > 1 && query.isBlank()) {
+                            val allCollapsed = seriesGroups.all { (series, _) -> series.orEmpty() in collapsed }
+                            IconButton(onClick = { viewModel.setAllSeriesCollapsed(seriesGroups.map { it.first.orEmpty() }, !allCollapsed) }) {
+                                Icon(
+                                    if (allCollapsed) Icons.Filled.UnfoldMore else Icons.Filled.UnfoldLess,
+                                    contentDescription = L10n.str(if (allCollapsed) R.string.expand_all else R.string.collapse_all)
+                                )
+                            }
+                        }
                         if (items.isNotEmpty()) {
                             IconButton(onClick = { viewModel.startSelection() }) {
                                 Icon(Icons.Filled.Checklist, contentDescription = L10n.str(R.string.select_packs))
@@ -196,6 +221,27 @@ fun PacksCatalogScreen(
                 leadingIcon = { Icon(Icons.Filled.Search, null) },
                 singleLine = true
             )
+            if (items.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    PackStatusFilter.entries.forEach { option ->
+                        val name = L10n.str(
+                            when (option) {
+                                PackStatusFilter.ALL -> R.string.packs_filter_all
+                                PackStatusFilter.INSTALLED -> R.string.packs_filter_installed
+                                PackStatusFilter.NOT_INSTALLED -> R.string.packs_filter_not_installed
+                            }
+                        )
+                        FilterChip(
+                            selected = option == statusFilter,
+                            onClick = { viewModel.setStatusFilter(option) },
+                            label = { Text("$name (${searched.count { it.matches(option) }})") }
+                        )
+                    }
+                }
+            }
 
             when (val state = uiState) {
                 is CatalogUiState.Loading -> {
@@ -266,17 +312,18 @@ fun PacksCatalogScreen(
                                     )
                                 }
                             }
-                            groupBySeries(filtered.filter { !it.hasUpdate }).forEach { (series, group) ->
+                            seriesGroups.forEach { (series, group) ->
+                                val folded = isCollapsed(series)
                                 item(key = "series/${series.orEmpty()}", contentType = "header") {
-                                    Text(
-                                        series ?: L10n.str(R.string.books_group_other_packs),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(top = 8.dp)
+                                    SeriesHeader(
+                                        title = series ?: L10n.str(R.string.books_group_other_packs),
+                                        count = group.size,
+                                        collapsed = folded,
+                                        // Folding is pointless while searching, where every series is open.
+                                        onToggle = if (query.isBlank()) ({ viewModel.toggleSeries(series.orEmpty()) }) else null
                                     )
                                 }
-                                items(group, key = { it.entry.id }) { item ->
+                                if (!folded) items(group, key = { it.entry.id }) { item ->
                                     PackListCard(
                                         item = item,
                                         selecting = selecting,
@@ -313,6 +360,40 @@ fun PacksCatalogScreen(
                 TextButton(onClick = { confirmUninstall = false }) { Text(L10n.str(R.string.cancel)) }
             }
         )
+    }
+}
+
+/** Title of a series with its number of packs; tapping it folds or unfolds the series. */
+@Composable
+private fun SeriesHeader(title: String, count: Int, collapsed: Boolean, onToggle: (() -> Unit)?) {
+    val state = L10n.str(if (collapsed) R.string.collapsed else R.string.expanded)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .then(
+                if (onToggle != null) Modifier.clickable(onClickLabel = L10n.str(if (collapsed) R.string.expand_x else R.string.collapse_x, title)) { onToggle() }
+                else Modifier
+            )
+            .semantics { stateDescription = state }
+            .padding(vertical = 4.dp)
+    ) {
+        Text(
+            "$title ($count)",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f)
+        )
+        if (onToggle != null) {
+            Icon(
+                if (collapsed) Icons.Filled.ExpandMore else Icons.Filled.ExpandLess,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
 
