@@ -16,6 +16,8 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.calamares.miga.L10n
+import org.calamares.miga.MigaApp
+import kotlinx.coroutines.flow.first
 import org.calamares.miga.R
 import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.model.Recipe
@@ -50,8 +52,11 @@ sealed interface FileExportState {
         val uploading: Boolean = false
     ) : FileExportState
 
-    /** A book link ready to send ("Share link"): opens the share sheet with [url] at once. */
-    data class LinkReady(val title: String, val url: String, val expiresAt: Long) : FileExportState
+    /** A book or recipe link ready to send ("Share link"): opens the share sheet with [url] at once. */
+    data class LinkReady(val title: String, val url: String, val expiresAt: Long, val isBook: Boolean = true) : FileExportState
+
+    /** "Your name" is empty: asked before sharing [title], so whoever receives it sees who sent it. */
+    data class NeedsName(val title: String) : FileExportState
 
     /** [autoShare]: "Share book" opens the share sheet as soon as the file is ready. */
     data class Ready(val title: String, val format: ExportFormat, val file: File, val autoShare: Boolean = false) : FileExportState
@@ -99,21 +104,86 @@ object FileExports {
 
     /**
      * "Share book": writes [book] as a ".miga" file for someone else (see RecipeExporter.writeMigaFile
-     * with forSharing) and opens the share sheet as soon as it is ready.
+     * with forSharing) and opens the share sheet as soon as it is ready. Signed with "Your name",
+     * asked first when it is empty (see [NeedsName]).
      */
     fun shareBook(context: Context, book: RecipeBook, loadRecipes: suspend () -> List<Recipe>): Boolean =
-        start(context, book.name, ExportFormat.MIGA_FILE, autoShare = true) { appContext, onProgress ->
-            RecipeExporter.writeMigaFile(appContext, book.name, book, loadRecipes(), singleRecipe = false, forSharing = true, onPhoto = onProgress)
+        withSenderName(context, book.name) { sender ->
+            start(context, book.name, ExportFormat.MIGA_FILE, autoShare = true) { appContext, onProgress ->
+                RecipeExporter.writeMigaFile(appContext, book.name, book, loadRecipes(), singleRecipe = false, onPhoto = onProgress, forSharing = true, sharedBy = sender)
+            }
+        }
+
+    /** "Share recipe": one recipe as a ".miga" file, imported into a book chosen by whoever receives it. */
+    fun shareRecipe(context: Context, recipe: Recipe): Boolean =
+        withSenderName(context, recipe.name) { sender ->
+            start(context, recipe.name, ExportFormat.MIGA_FILE, autoShare = true) { appContext, onProgress ->
+                RecipeExporter.writeMigaFile(appContext, recipe.name, null, listOf(recipe), singleRecipe = true, onPhoto = onProgress, forSharing = true, sharedBy = sender)
+            }
         }
 
     /**
      * "Share link": writes [book] like [shareBook], encrypts it with a new key, uploads it to
      * miga-share.calamares.org and offers the link (the key goes only in the link's fragment).
      */
-    fun shareBookLink(context: Context, book: RecipeBook, loadRecipes: suspend () -> List<Recipe>): Boolean {
+    fun shareBookLink(context: Context, book: RecipeBook, loadRecipes: suspend () -> List<Recipe>): Boolean =
+        withSenderName(context, book.name) { sender ->
+            startLink(context, book.name, isBook = true) { appContext, onPhoto ->
+                RecipeExporter.writeMigaFile(appContext, book.name, book, loadRecipes(), singleRecipe = false, onPhoto = onPhoto, forSharing = true, sharedBy = sender)
+            }
+        }
+
+    /** "Share link" of one recipe, like [shareBookLink]. */
+    fun shareRecipeLink(context: Context, recipe: Recipe): Boolean =
+        withSenderName(context, recipe.name) { sender ->
+            startLink(context, recipe.name, isBook = false) { appContext, onPhoto ->
+                RecipeExporter.writeMigaFile(appContext, recipe.name, null, listOf(recipe), singleRecipe = true, onPhoto = onPhoto, forSharing = true, sharedBy = sender)
+            }
+        }
+
+    /** What to share once the sender's name is known (see [withSenderName]). */
+    private var pendingShare: ((String?) -> Unit)? = null
+
+    /**
+     * Runs [share] with "Your name", or first asks for it ([FileExportState.NeedsName]) when it is
+     * empty. False, without doing anything, when an export is running.
+     */
+    private fun withSenderName(context: Context, title: String, share: (String?) -> Unit): Boolean {
         if (isRunning) return false
+        val settings = (context.applicationContext as MigaApp).settingsRepository
+        scope.launch {
+            val name = settings.observeShoppingAuthor().first().trim()
+            if (name.isNotEmpty()) {
+                share(name)
+            } else {
+                pendingShare = share
+                _state.value = FileExportState.NeedsName(title)
+            }
+        }
+        return true
+    }
+
+    /** Answer to [FileExportState.NeedsName]: saves [name] as "Your name" (when given) and shares. */
+    fun continueWithName(context: Context, name: String?) {
+        val share = pendingShare ?: return
+        pendingShare = null
+        _state.value = FileExportState.Idle
+        val settings = (context.applicationContext as MigaApp).settingsRepository
+        val trimmed = name?.trim()?.take(60)?.ifEmpty { null }
+        scope.launch {
+            if (trimmed != null) settings.setShoppingAuthor(trimmed)
+            share(trimmed)
+        }
+    }
+
+    private fun startLink(
+        context: Context,
+        title: String,
+        isBook: Boolean,
+        write: suspend (Context, onPhoto: (Int, Int) -> Unit) -> File
+    ) {
+        if (isRunning) return
         val appContext = context.applicationContext
-        val title = book.name
         val format = ExportFormat.MIGA_FILE
         _state.value = FileExportState.Running(title, format)
         val notificationTitle = L10n.str(R.string.share_link_preparing_x, title)
@@ -123,12 +193,12 @@ object FileExports {
                 val result = AiKeepAlive.hold(notificationTitle, icon = icon) {
                     status(L10n.str(R.string.pdf_preparing))
                     val coroutineJob = coroutineContext.job
-                    val file = RecipeExporter.writeMigaFile(appContext, title, book, loadRecipes(), singleRecipe = false, onPhoto = { current, total ->
+                    val file = write(appContext) { current, total ->
                         coroutineJob.ensureActive()
                         _state.value = FileExportState.Running(title, format, current, total)
                         progress(current, total)
                         status(progressText(format, current, total))
-                    }, forSharing = true)
+                    }
                     val encrypted = File(file.parentFile, file.name + ".enc")
                     val key = withContext(Dispatchers.IO) { ShareLinkClient.encrypt(file, encrypted) }
                     try {
@@ -145,7 +215,7 @@ object FileExports {
                     }
                 }
                 _state.value = when (result) {
-                    is ShareUploadResult.Success -> FileExportState.LinkReady(title, result.link.url, result.expiresAt)
+                    is ShareUploadResult.Success -> FileExportState.LinkReady(title, result.link.url, result.expiresAt, isBook)
                     is ShareUploadResult.Error -> FileExportState.Failed(
                         title,
                         L10n.str(
@@ -163,7 +233,6 @@ object FileExports {
                 _state.value = FileExportState.Failed(title, e.message ?: e::class.simpleName.orEmpty())
             }
         }
-        return true
     }
 
     /** Several recipes of [book] chosen by the user, under [title] ("Selected recipes"). */
@@ -240,7 +309,7 @@ object FileExports {
     /** Sends [link] as text (WhatsApp, Telegram, mail…), with when it expires. */
     fun shareLink(context: Context, link: FileExportState.LinkReady) {
         val date = java.text.DateFormat.getDateInstance(java.text.DateFormat.LONG, L10n.locale()).format(java.util.Date(link.expiresAt))
-        val text = L10n.str(R.string.share_link_message_x_x_x, link.title, link.url, date)
+        val text = L10n.str(if (link.isBook) R.string.share_link_message_x_x_x else R.string.share_recipe_link_message_x_x_x, link.title, link.url, date)
         val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(android.content.Intent.EXTRA_TEXT, text)

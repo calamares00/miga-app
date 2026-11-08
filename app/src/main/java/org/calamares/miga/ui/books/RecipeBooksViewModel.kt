@@ -2,6 +2,11 @@ package org.calamares.miga.ui.books
 
 import kotlinx.coroutines.flow.combine
 import android.content.Context
+import org.calamares.miga.data.local.PhotoStorage
+import org.calamares.miga.data.model.RecipePhoto
+import org.calamares.miga.data.export.SharedRecipeImportResult
+import org.calamares.miga.data.export.RecipeExportDto
+import org.calamares.miga.data.export.RecipeImportResult
 import org.calamares.miga.data.remote.ShareLinkClient
 import java.io.File
 import android.net.Uri
@@ -163,8 +168,23 @@ class RecipeBooksViewModel(
         val parsed: LibraryImportParseResult.Success,
         val bookName: String,
         val recipeCount: Int,
-        val alreadyHere: Boolean
+        val alreadyHere: Boolean,
+        val sharedBy: String?,
+        val sharedAt: Long?
     )
+
+    /**
+     * A recipe shared alone, waiting for the user to choose its book ([existingBookName] when this
+     * phone already has it: it is then updated where it is). Its photos are already copied.
+     */
+    data class IncomingRecipePrompt(
+        val recipe: RecipeExportDto,
+        val photos: List<RecipePhoto>,
+        val existingBookName: String?
+    )
+
+    private val _incomingRecipe = MutableStateFlow<IncomingRecipePrompt?>(null)
+    val incomingRecipe: StateFlow<IncomingRecipePrompt?> = _incomingRecipe
 
     private val _incomingBook = MutableStateFlow<IncomingBookPrompt?>(null)
     val incomingBook: StateFlow<IncomingBookPrompt?> = _incomingBook
@@ -202,20 +222,30 @@ class RecipeBooksViewModel(
                 _syncMessage.value = L10n.str(R.string.couldnt_open_file)
                 return@launch
             }
-            when (val parsed = RecipeExporter.parseLibraryImport(appContext, Uri.fromFile(file), password)) {
-                is LibraryImportParseResult.Success -> {
+            // A shared book (library format) or a single shared recipe.
+            when (val result = RecipeExporter.importRecipe(appContext, Uri.fromFile(file), password)) {
+                is RecipeImportResult.Collection -> {
+                    val parsed = result.parsed
                     val book = parsed.dto.books.singleOrNull()
                     if (book == null) {
                         _syncMessage.value = L10n.str(R.string.shared_file_not_a_book)
                     } else {
                         _incomingBook.value = IncomingBookPrompt(
                             parsed, book.name, parsed.dto.recipes.size,
-                            alreadyHere = repository.findSharedBookId(book.uid) != null
+                            alreadyHere = repository.findSharedBookId(book.uid) != null,
+                            sharedBy = book.sharedBy,
+                            sharedAt = book.sharedAt
                         )
                     }
                 }
-                is LibraryImportParseResult.NeedsPassword -> _syncMessage.value = L10n.str(R.string.backup_encrypted_restore_in_settings)
-                is LibraryImportParseResult.Error -> _syncMessage.value = L10n.str(R.string.shared_file_not_a_book)
+                is RecipeImportResult.Success -> {
+                    val existing = repository.findRecipeStateByUid(result.recipe.uid)?.takeIf { !it.inPack }
+                    _incomingRecipe.value = IncomingRecipePrompt(
+                        result.recipe, result.photos,
+                        existingBookName = existing?.let { repository.recipeBookName(it.bookId) }
+                    )
+                }
+                is RecipeImportResult.Error -> _syncMessage.value = result.reason
             }
         }
     }
@@ -240,6 +270,39 @@ class RecipeBooksViewModel(
 
     fun dismissIncomingBook() {
         _incomingBook.value = null
+    }
+
+    /** Saves the shared recipe into [targetBookId], or into a new book called [newBookName]. */
+    fun importIncomingRecipe(targetBookId: Long?, newBookName: String?) {
+        val prompt = _incomingRecipe.value ?: return
+        _incomingRecipe.value = null
+        _importingBook.value = true
+        viewModelScope.launch {
+            try {
+                _syncMessage.value = when (val result = RecipeExporter.importSharedRecipe(repository, prompt.recipe, prompt.photos, targetBookId, newBookName)) {
+                    is SharedRecipeImportResult.Success -> {
+                        val book = repository.recipeBookName(result.bookId).orEmpty()
+                        L10n.str(
+                            when {
+                                result.unchanged -> R.string.shared_recipe_unchanged_x_x
+                                result.updated -> R.string.shared_recipe_updated_x_x
+                                else -> R.string.shared_recipe_saved_x_x
+                            },
+                            prompt.recipe.name, book
+                        )
+                    }
+                    is SharedRecipeImportResult.Error -> result.reason
+                }
+            } finally {
+                _importingBook.value = false
+            }
+        }
+    }
+
+    /** Not imported: the photos already copied for it are deleted. */
+    fun dismissIncomingRecipe() {
+        _incomingRecipe.value?.photos?.forEach { PhotoStorage.deleteFile(it.uri) }
+        _incomingRecipe.value = null
     }
 
     /** "Share link": the book encrypted on a temporary link, sent as text. */

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShortText
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Button
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.width
@@ -164,6 +165,35 @@ fun FileExportHost() {
 
     when (val current = state) {
         FileExportState.Idle, is FileExportState.LinkReady -> Unit
+
+        is FileExportState.NeedsName -> {
+            var name by remember { mutableStateOf("") }
+            AlertDialog(
+                onDismissRequest = { FileExports.dismiss() },
+                icon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                title = { Text(L10n.str(R.string.share_name_title)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(L10n.str(R.string.share_name_body), style = MaterialTheme.typography.bodyMedium)
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it.take(60) },
+                            label = { Text(L10n.str(R.string.your_name)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { FileExports.continueWithName(context, name) }, enabled = name.isNotBlank()) {
+                        Text(L10n.str(R.string.share))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { FileExports.continueWithName(context, null) }) { Text(L10n.str(R.string.share_without_name)) }
+                }
+            )
+        }
 
         is FileExportState.Running -> if (!progressHidden) {
             AlertDialog(
