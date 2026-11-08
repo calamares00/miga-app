@@ -1,0 +1,4 @@
+What's new in 1.0.17:
+• Share book: send it as a file by WhatsApp, Telegram or mail; opening it, Miga imports it and, if you had it, adds what's new and updates what changed.
+• Share link: the book is encrypted on your phone and shared with a link that expires after 7 days, ideal for books with many photos.
+• Library: empty filters don't repeat their button and Server explains what it's for.

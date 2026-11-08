@@ -62,6 +62,10 @@ Exporting (JSON, ZIP, PDF), sharing recipes or lists and backups use the standar
 
 If you protect a backup with a password, it is encrypted on your device with AES-256-GCM and a key derived from the password (PBKDF2). The password is neither stored nor sent anywhere; without it nobody, the developer included, can open the backup.
 
+Sharing a book as a file ("Share book") leaves out your favourites, ratings and journal notes.
+
+With "Share link", the book is encrypted on your device (AES-256-GCM) with a random key and uploaded encrypted to miga-share.calamares.org, where it is kept for 7 days and then deleted automatically. The key is only in the link itself, after the # sign, which browsers never send to the server: neither the server nor the developer can read the book, only whoever has the whole link. To limit the number of links per day, the server keeps an encrypted fingerprint of the date and the IP address that is deleted every day.
+
 ## Retention and deletion
 
 Data is kept while the app is installed. You can:

@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.17:
+• Compartir libro: envíalo como archivo por WhatsApp, Telegram o correo; al abrirlo, Miga lo importa y, si ya lo tenías, añade lo nuevo y actualiza lo cambiado.
+• Compartir enlace: el libro se cifra en tu móvil y se comparte con un enlace que caduca a los 7 días, ideal para libros con muchas fotos.
+• Biblioteca: los filtros vacíos no repiten el botón y Servidor explica para qué sirve.
