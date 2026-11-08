@@ -1,0 +1,3 @@
+What's new in 1.0.15:
+• In the Library, the button follows the filter: in Packs it is "Add pack" and opens the catalogue; in Server it is "Sync" and syncs right away.
+• Pack catalogue: each category can be folded and unfolded, and a filter shows all packs, only installed ones or only the missing ones, with their count.
