@@ -98,7 +98,7 @@ class RecipeBooksViewModel(
         _updatingPacks.value = true
         val appContext = context.applicationContext
         viewModelScope.launch {
-            val failed = PackInstaller.installAll(appContext, repository, updates)
+            val failed = PackInstaller.installAll(appContext, repository, settingsRepository, updates)
             _updatingPacks.value = false
             onDone(
                 if (failed.isEmpty()) L10n.str(R.string.x_packs_updated, updates.size)

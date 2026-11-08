@@ -144,6 +144,7 @@ fun SettingsSectionScreen(
     val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
     val books by viewModel.books.collectAsState()
     val packsCatalogRepo by viewModel.packsCatalogRepo.collectAsState()
+    val packInstallStats by viewModel.packInstallStats.collectAsState()
     var dictationMenuExpanded by remember { mutableStateOf(false) }
     val dictationLanguage by viewModel.dictationLanguage.collectAsState()
     val aiEnabled by viewModel.aiEnabled.collectAsState()
@@ -487,6 +488,12 @@ fun SettingsSectionScreen(
                 } else {
                     TextButton(onClick = { showCustomCatalog = true }) { Text(L10n.str(R.string.use_another_catalogue)) }
                 }
+                AiSwitchRow(
+                    title = L10n.str(R.string.contribute_pack_counter),
+                    subtitle = L10n.str(R.string.contribute_pack_counter_description),
+                    checked = packInstallStats,
+                    onCheckedChange = viewModel::setPackInstallStats
+                )
             }
                 }
                 SettingsSection.SYNC -> {

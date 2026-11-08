@@ -1,0 +1,3 @@
+What's new in 1.0.16:
+• The catalogue and each pack's page show how many times it has been installed (its Spanish and English versions together).
+• Installing a new pack from the official catalogue adds one anonymous install, with nothing about you or your phone. It can be turned off in Settings → Recipe packs.
