@@ -14,6 +14,9 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Checkbox
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import kotlinx.coroutines.flow.filterNotNull
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
@@ -174,6 +177,7 @@ fun RecipeBooksScreen(
     val syncing by viewModel.syncing.collectAsState()
     val syncMessage by viewModel.syncMessage.collectAsState()
     val incomingBook by viewModel.incomingBook.collectAsState()
+    val incomingRecipe by viewModel.incomingRecipe.collectAsState()
     val importingBook by viewModel.importingBook.collectAsState()
     val downloadingBook by viewModel.downloadingBook.collectAsState()
     // Only the visible Miga takes the file: opening it from WhatsApp starts a second Miga in
@@ -380,12 +384,23 @@ fun RecipeBooksScreen(
             title = { Text(L10n.str(R.string.import_book_x, prompt.bookName)) },
             text = {
                 Text(
-                    L10n.str(R.string.x_recipes_count, prompt.recipeCount) + "\n\n" +
+                    listOfNotNull(
+                        sharedByLine(prompt.sharedBy, prompt.sharedAt),
+                        L10n.str(R.string.x_recipes_count, prompt.recipeCount)
+                    ).joinToString(" · ") + "\n\n" +
                         L10n.str(if (prompt.alreadyHere) R.string.shared_book_update_explanation else R.string.shared_book_new_explanation)
                 )
             },
             confirmButton = { TextButton(onClick = { viewModel.importIncomingBook(context) }) { Text(L10n.str(R.string.import_action)) } },
             dismissButton = { TextButton(onClick = { viewModel.dismissIncomingBook() }) { Text(L10n.str(R.string.cancel)) } }
+        )
+    }
+    incomingRecipe?.let { prompt ->
+        SharedRecipeDialog(
+            prompt = prompt,
+            books = books.filter { !it.isPack },
+            onImport = viewModel::importIncomingRecipe,
+            onDismiss = viewModel::dismissIncomingRecipe
         )
     }
     if (importingBook || downloadingBook) {
@@ -569,6 +584,76 @@ private fun BookMenuHost(
     }
 }
 
+/** "Shared by Ana · 8 Nov" for a shared book or recipe; null when nobody signed it. */
+private fun sharedByLine(sharedBy: String?, sharedAt: Long?): String? {
+    val name = sharedBy?.takeIf { it.isNotBlank() } ?: return null
+    val date = sharedAt?.let { java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM, L10n.locale()).format(java.util.Date(it)) }
+    return listOfNotNull(L10n.str(R.string.shared_by_x, name), date).joinToString(" · ")
+}
+
+/**
+ * Where to save a recipe shared alone: in one of the user's books or in a new one. When this phone
+ * already has it, it is just updated where it is.
+ */
+@Composable
+private fun SharedRecipeDialog(
+    prompt: RecipeBooksViewModel.IncomingRecipePrompt,
+    books: List<RecipeBookSummary>,
+    onImport: (targetBookId: Long?, newBookName: String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    // null = a new book.
+    var selected by remember { mutableStateOf<Long?>(null) }
+    var newName by remember { mutableStateOf(L10n.str(R.string.shared_recipes_book)) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
+        title = { Text(L10n.str(R.string.import_recipe_x, prompt.recipe.name)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
+                sharedByLine(prompt.recipe.sharedBy, null)?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                if (prompt.existingBookName != null) {
+                    Text(L10n.str(R.string.shared_recipe_already_here_x, prompt.existingBookName), style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    Text(L10n.str(R.string.shared_recipe_choose_book), style = MaterialTheme.typography.bodyMedium)
+                    books.forEach { book ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().clickable { selected = book.id }
+                        ) {
+                            RadioButton(selected = selected == book.id, onClick = { selected = book.id })
+                            Text(book.name, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().clickable { selected = null }
+                    ) {
+                        RadioButton(selected = selected == null, onClick = { selected = null })
+                        Text(L10n.str(R.string.new_book), style = MaterialTheme.typography.bodyLarge)
+                    }
+                    if (selected == null) {
+                        OutlinedTextField(
+                            value = newName,
+                            onValueChange = { newName = it },
+                            label = { Text(L10n.str(R.string.book_name)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onImport(selected, newName) },
+                enabled = prompt.existingBookName != null || selected != null || newName.isNotBlank()
+            ) { Text(L10n.str(R.string.import_action)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
+    )
+}
+
 /** All, my books, packs, server: which kind of book the list shows, each with how many books it has. */
 @Composable
 private fun BookFilterChips(selected: BookFilter, books: List<RecipeBookSummary>, onSelect: (BookFilter) -> Unit) {
@@ -725,6 +810,15 @@ private fun RecipeBookCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.85f)
             )
+            book.sharedBy?.let {
+                Text(
+                    text = L10n.str(R.string.shared_by_x, it),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.85f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
         Row(
             modifier = Modifier.fillMaxWidth().padding(8.dp),
@@ -852,9 +946,15 @@ private fun RecipeBookRow(
                     )
                 }
                 Text(
-                    text = if (book.recipeCount == 1) L10n.str(R.string.recipe_count_one) else L10n.str(R.string.recipe_count_many, book.recipeCount),
+                    // "12 recipes · Shared by Ana": who sent a shared book, read-only.
+                    text = listOfNotNull(
+                        if (book.recipeCount == 1) L10n.str(R.string.recipe_count_one) else L10n.str(R.string.recipe_count_many, book.recipeCount),
+                        book.sharedBy?.let { L10n.str(R.string.shared_by_x, it) }
+                    ).joinToString(" · "),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 

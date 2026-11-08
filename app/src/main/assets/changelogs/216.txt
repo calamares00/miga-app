@@ -1,2 +1,4 @@
 Novedades de la versión 1.0.18:
 • Corregido: al abrir un libro compartido (archivo .miga o enlace) con Miga ya abierta, a veces no aparecía la pregunta para importarlo.
+• Compartido por: los libros y recetas recibidos muestran quién los compartió (en la lista de libros y en la receta). Tu nombre se pone en Ajustes → Tu nombre o se pide al compartir.
+• Compartir una receta suelta por archivo .miga o enlace, e importarla en un libro tuyo o en uno nuevo.

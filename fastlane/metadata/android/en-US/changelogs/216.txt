@@ -1,2 +1,4 @@
 What's new in 1.0.18:
 • Fixed: opening a shared book (.miga file or link) while Miga was already open sometimes did not show the prompt to import it.
+• Shared by: books and recipes you receive show who shared them (in the book list and on the recipe). Set your name in Settings → Your name, or type it when sharing.
+• Share a single recipe as a .miga file or link, and import it into one of your books or a new one.

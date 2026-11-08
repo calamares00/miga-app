@@ -68,5 +68,7 @@ data class RecipeEntity(
     /** Where the recipe comes from, as written by the user or the AI ("México", "Córdoba"). */
     val origin: String? = null,
     /** ISO 3166-1 alpha-2 code of the origin's country ("MX", "ES"), for its flag; null when unknown. */
-    val originCountry: String? = null
+    val originCountry: String? = null,
+    /** Who shared this recipe (alone or in a shared book); null for the user's own. Read-only. */
+    val sharedBy: String? = null
 )
