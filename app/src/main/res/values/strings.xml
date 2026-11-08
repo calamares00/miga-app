@@ -1212,7 +1212,10 @@
     <string name="no_own_books">"No books of your own yet"</string>
     <string name="no_own_books_body">"Create a book to keep your recipes: by theme, by person or however you like."</string>
     <string name="no_server_books">"No books on a server"</string>
-    <string name="no_server_books_body">"Connect a Miga server to sync your books across devices and share them with your family."</string>
+    <string name="no_server_books_body">"To share a book, edit it and tap \"Sync with…\". Books others share appear here when you sync."</string>
+    <string name="no_server_yet">"No server yet"</string>
+    <string name="no_server_yet_body">"With a Miga server, which you install at home or in the cloud, your books sync across your devices and you share them with family or friends: each one joins with an invitation and you all see the same recipes, always up to date."</string>
+    <string name="set_up_server">"Set up server"</string>
     <string name="set_up_sync">"Set up sync"</string>
     <string name="select_packs">"Select packs"</string>
     <string name="install_x">"Install (%1$d)"</string>
