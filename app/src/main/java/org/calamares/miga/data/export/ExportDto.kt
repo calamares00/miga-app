@@ -90,7 +90,9 @@ data class RecipeExportDto(
     val origin: String? = null,
     val originCountry: String? = null,
     /** Dated personal notes (absent in older files). */
-    val journal: List<JournalNoteDto> = emptyList()
+    val journal: List<JournalNoteDto> = emptyList(),
+    /** Last change (epoch ms); a shared book only overwrites a recipe that is older here. */
+    val updatedAt: Long? = null
 )
 
 @Serializable
