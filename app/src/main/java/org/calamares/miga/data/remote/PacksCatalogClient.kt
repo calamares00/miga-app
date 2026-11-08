@@ -30,7 +30,9 @@ data class PackEntryDto(
     /** Language of the recipes ("es", "en"); null for a pack meant for every language. */
     val language: String? = null,
     /** Series the pack belongs to ("Cocina del mundo", "Specials"...), used to group packs. */
-    val series: String? = null
+    val series: String? = null,
+    /** Shared by the Spanish and English versions of a pack; the install counter adds them up. */
+    val family: String? = null
 )
 
 /**
