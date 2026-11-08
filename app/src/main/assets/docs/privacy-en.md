@@ -1,6 +1,6 @@
 # Miga privacy policy
 
-Last updated: 13 October 2026.
+Last updated: 8 November 2026.
 
 Miga is a family recipe book and shopping list app. This document explains what data the app handles, where it goes and what control you have over it.
 
@@ -46,6 +46,8 @@ All of them start from an action of yours or a feature you have turned on. None 
    Providers are used in the priority order you choose: if one fails or cannot read images, the same request is sent to the next one. How that data is handled is subject to each provider's terms for your key (some free OpenRouter models may use requests for training). Without a key nothing is sent. The OpenRouter model list is downloaded from its public catalogue without sending any of your data; the Gemini, Claude and OpenAI lists are requested from each provider with your key, without sending any other data. You can turn off all AI features, or only the automatic health rating or nutrition estimate, in Settings → Artificial intelligence. AI-generated content is labelled in the app, may contain mistakes and can be reported.
 2. **Open Food Facts.** When you scan a barcode or search for a product by name, that code or text is sent to Open Food Facts (an open database, no account) to get the product's name, photo and details. Product photos are downloaded from its servers. Open Food Facts data is licensed under the ODbL.
 3. **Recipe packs catalogue.** When you open the catalogue or install a pack, a public listing and the pack file are downloaded from miga.calamares.org (or from the alternative catalogue you set up). None of your data is sent.
+
+   With the official catalogue, the app also reads from stats.miga.calamares.org how many times each pack has been installed and, when you install a new one (not when updating it), sends there only the pack's identifier to add one install. No data about you or your device is sent. To count each install only once a day, the server keeps an encrypted fingerprint of the date, your IP address and the pack, which cannot be turned back into the IP and is deleted every day; only totals per pack and day are kept. You can turn it off in Settings → Recipe packs → Contribute to the install counter.
 4. **Your own sync server (optional).** If you add a connection to a server you host yourself (miga-server), the books, recipes and photos you link and, if you turn it on, the shopping list (with the name you set as author) are sent only to that server. The app syncs when it opens, periodically in the background and every few seconds while you view a shared list. QR invitations contain the server address, the shared space and an access token: whoever scans the code can read and change that space. If the server uses http:// outside your local network, the app warns you that the connection is not encrypted.
 5. **Import from a URL.** The app downloads the page you enter to extract the recipe and, if you use AI, sends its text to the chosen provider (see point 1).
 6. **Reports and contact.** If you report AI-generated content or a problem, the app opens your email app with the message to miga@calamares.org already written; you decide whether to send it.

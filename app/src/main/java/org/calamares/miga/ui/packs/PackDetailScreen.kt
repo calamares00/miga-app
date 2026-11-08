@@ -3,6 +3,7 @@ package org.calamares.miga.ui.packs
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.L10n
 import org.calamares.miga.R
+import org.calamares.miga.data.remote.statsKey
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,6 +53,7 @@ fun PackDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val installState by viewModel.installState.collectAsState()
+    val installStats by viewModel.installStats.collectAsState()
     val context = LocalContext.current
     var confirmUninstall by remember { mutableStateOf(false) }
 
@@ -112,6 +114,9 @@ fun PackDetailScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    installsLabel(installStats[state.entry.statsKey])?.let { installs ->
+                        Text(installs, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                     if (state.entry.description.isNotBlank()) {
                         Text(state.entry.description, style = MaterialTheme.typography.bodyLarge)
                     }
