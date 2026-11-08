@@ -1211,7 +1211,10 @@
     <string name="no_own_books">"Aún no tienes libros propios"</string>
     <string name="no_own_books_body">"Crea un libro para guardar tus recetas: por temas, por persona o como prefieras."</string>
     <string name="no_server_books">"No hay libros en un servidor"</string>
-    <string name="no_server_books_body">"Conecta un servidor Miga para sincronizar tus libros entre dispositivos y compartirlos con tu familia."</string>
+    <string name="no_server_books_body">"Para compartir un libro, edítalo y pulsa «Sincronizar con…». Los que otros compartan aparecerán aquí al sincronizar."</string>
+    <string name="no_server_yet">"Aún no tienes un servidor"</string>
+    <string name="no_server_yet_body">"Con un servidor Miga, que instalas en casa o en la nube, tus libros se sincronizan entre tus dispositivos y los compartes con tu familia o amigos: cada uno se une con una invitación y todos veis las mismas recetas, siempre al día."</string>
+    <string name="set_up_server">"Configurar servidor"</string>
     <string name="set_up_sync">"Configurar la sincronización"</string>
     <string name="select_packs">"Seleccionar packs"</string>
     <string name="install_x">"Instalar (%1$d)"</string>
