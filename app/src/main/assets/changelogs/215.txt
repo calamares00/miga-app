@@ -1,0 +1,3 @@
+Novedades de la versión 1.0.17:
+• En la Biblioteca, si un filtro está vacío ya no se repite el botón: basta el del mensaje.
+• El filtro Servidor aparece siempre. Sin servidor, explica qué es un servidor Miga y cómo comparte libros con tu familia o amigos, con un botón para configurarlo.

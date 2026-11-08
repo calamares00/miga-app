@@ -159,11 +159,8 @@ fun RecipeBooksScreen(
         viewModel.checkPackUpdates()
     }
 
-    // Without any sync connection there are no server books, so that filter is not offered.
+    // The server filter is always offered: without a connection it explains what a server is for.
     val hasServer = connectionNames.isNotEmpty()
-    LaunchedEffect(hasServer) {
-        if (!hasServer && filter == BookFilter.SERVER) viewModel.setFilter(BookFilter.ALL)
-    }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val syncing by viewModel.syncing.collectAsState()
@@ -230,13 +227,17 @@ fun RecipeBooksScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             // The button follows the filter: packs come from the catalogue and server books from a sync.
-            when (filter) {
-                BookFilter.PACKS -> ExtendedFloatingActionButton(
+            // An empty filter already shows its own button in the message; a second one would repeat it.
+            val filterEmpty = loadedBooks != null && books.isNotEmpty() && sections.isEmpty()
+            when {
+                filterEmpty && filter != BookFilter.SERVER -> Unit
+                filter == BookFilter.SERVER && !hasServer -> Unit
+                filter == BookFilter.PACKS -> ExtendedFloatingActionButton(
                     onClick = onExplorePacks,
                     icon = { Icon(Icons.Filled.Add, null) },
                     text = { Text(L10n.str(R.string.add_pack)) }
                 )
-                BookFilter.SERVER -> ExtendedFloatingActionButton(
+                filter == BookFilter.SERVER -> ExtendedFloatingActionButton(
                     onClick = { viewModel.syncNow(context) },
                     icon = {
                         if (syncing) CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
@@ -267,11 +268,12 @@ fun RecipeBooksScreen(
                     OutlinedButton(onClick = onExplorePacks) { Text(L10n.str(R.string.explore_recipe_packs)) }
                 }
             } else {
-                BookFilterChips(filter, books, showServer = hasServer, onSelect = viewModel::setFilter)
+                BookFilterChips(filter, books, onSelect = viewModel::setFilter)
                 if (updatingPacks) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp))
                 if (sections.isEmpty()) {
                     FilterEmptyState(
                         filter,
+                        hasServer = hasServer,
                         onExplorePacks = onExplorePacks,
                         onAddBookClick = onAddBookClick,
                         onOpenSync = onOpenSync,
@@ -510,12 +512,12 @@ private fun BookMenuHost(
 
 /** All, my books, packs, server: which kind of book the list shows, each with how many books it has. */
 @Composable
-private fun BookFilterChips(selected: BookFilter, books: List<RecipeBookSummary>, showServer: Boolean, onSelect: (BookFilter) -> Unit) {
+private fun BookFilterChips(selected: BookFilter, books: List<RecipeBookSummary>, onSelect: (BookFilter) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        BookFilter.entries.filter { showServer || it != BookFilter.SERVER }.forEach { filter ->
+        BookFilter.entries.forEach { filter ->
             FilterChip(
                 selected = filter == selected,
                 onClick = { onSelect(filter) },
@@ -553,6 +555,7 @@ private fun SectionHeader(title: String, level: Int) {
 @Composable
 private fun FilterEmptyState(
     filter: BookFilter,
+    hasServer: Boolean,
     onExplorePacks: () -> Unit,
     onAddBookClick: () -> Unit,
     onOpenSync: () -> Unit,
@@ -575,13 +578,19 @@ private fun FilterEmptyState(
         ) {
             Button(onClick = onAddBookClick) { Text(L10n.str(R.string.new_book)) }
         }
-        BookFilter.SERVER -> EmptyState(
+        // With a server but no books yet, the "Sync" button below is the action.
+        BookFilter.SERVER -> if (hasServer) EmptyState(
             icon = Icons.Filled.Sync,
             title = L10n.str(R.string.no_server_books),
             body = L10n.str(R.string.no_server_books_body),
             modifier = modifier
+        ) else EmptyState(
+            icon = Icons.Filled.Sync,
+            title = L10n.str(R.string.no_server_yet),
+            body = L10n.str(R.string.no_server_yet_body),
+            modifier = modifier
         ) {
-            Button(onClick = onOpenSync) { Text(L10n.str(R.string.set_up_sync)) }
+            Button(onClick = onOpenSync) { Text(L10n.str(R.string.set_up_server)) }
         }
         BookFilter.ALL -> Unit
     }
