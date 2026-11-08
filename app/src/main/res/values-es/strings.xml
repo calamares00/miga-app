@@ -1201,6 +1201,10 @@
     <string name="packs_filter_all">"Todos"</string>
     <string name="packs_filter_installed">"Instalados"</string>
     <string name="packs_filter_not_installed">"Sin instalar"</string>
+    <string name="one_install">"1 instalación"</string>
+    <string name="x_installs">"%1$s instalaciones"</string>
+    <string name="contribute_pack_counter">"Contribuir al contador de instalaciones"</string>
+    <string name="contribute_pack_counter_description">"Al instalar un pack del catálogo oficial se suma una instalación anónima, para mostrar cuáles gustan más. No se envía nada sobre ti ni sobre tu móvil."</string>
     <string name="no_packs_installed">"No tienes packs instalados"</string>
     <string name="no_packs_installed_body">"Los packs son libros de recetas listos para usar: cocinas del mundo, freidora de aire, Navidad y más. Instálalos desde el catálogo."</string>
     <string name="open_pack_catalogue">"Ver el catálogo de packs"</string>
