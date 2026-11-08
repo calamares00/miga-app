@@ -247,6 +247,14 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setPacksCatalogRepo(repo) }
     }
 
+    /** "Your name": signs shared shopping lists and shared books and recipes. */
+    val yourName: StateFlow<String> = settingsRepository.observeShoppingAuthor()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    fun setYourName(name: String) {
+        viewModelScope.launch { settingsRepository.setShoppingAuthor(name) }
+    }
+
     val packInstallStats: StateFlow<Boolean> = settingsRepository.observePackInstallStats()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 

@@ -31,5 +31,11 @@ data class RecipeBookEntity(
      * Series of an installed pack ("World cuisine", "Specials"...), from the catalogue, used to group
      * packs in the books list; null for other books or a pack whose catalogue gives none.
      */
-    val packSeries: String? = null
+    val packSeries: String? = null,
+    /**
+     * Who shared this book with the user (their "Your name" when sending it as a file or link), and
+     * when; null for the user's own books. Read-only: set only by importing a shared book.
+     */
+    val sharedBy: String? = null,
+    val sharedAt: Long? = null
 )

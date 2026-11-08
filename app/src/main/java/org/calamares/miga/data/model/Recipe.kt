@@ -31,7 +31,9 @@ data class Recipe(
     val origin: String? = null,
     val originCountry: String? = null,
     /** Dated personal notes, newest first (see RecipeNote). */
-    val journal: List<RecipeNote> = emptyList()
+    val journal: List<RecipeNote> = emptyList(),
+    /** Who shared this recipe with the user (see RecipeEntity.sharedBy). */
+    val sharedBy: String? = null
 ) {
     val totalTimeMinutes: Int?
         get() = if (prepTimeMinutes == null && cookTimeMinutes == null) {
