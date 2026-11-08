@@ -11,7 +11,7 @@ import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
 
 /** Install counter of the official pack catalogue (calamares00/miga-stats). */
-const val PACK_STATS_URL = "https://stats.miga.calamares.org"
+const val PACK_STATS_URL = "https://miga-stats.calamares.org"
 
 /** Installs of a pack family (its Spanish and English versions together): in total and in the last 30 days. */
 data class PackInstallStats(val installs: Int, val recent: Int)
