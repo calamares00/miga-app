@@ -52,6 +52,9 @@ interface RecipeBookDao {
     @Query("UPDATE recipe_books SET isPinned = :pinned WHERE id = :id")
     suspend fun setPinned(id: Long, pinned: Boolean)
 
+    @Query("UPDATE recipe_books SET sharedBy = :sharedBy, sharedAt = :sharedAt WHERE id = :id")
+    suspend fun setSharedBy(id: Long, sharedBy: String?, sharedAt: Long?)
+
     @Query("DELETE FROM recipe_books WHERE id = :id")
     suspend fun delete(id: Long)
 

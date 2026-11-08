@@ -50,6 +50,8 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -283,8 +285,24 @@ fun RecipeDetailScreen(
                             }
                         }
                         DropdownMenuItem(
-                            text = { Text(L10n.str(R.string.export_ellipsis)) },
+                            text = { Text(L10n.str(R.string.share_recipe_file)) },
                             leadingIcon = { Icon(Icons.Filled.Share, null) },
+                            onClick = {
+                                showMenu = false
+                                recipe?.let { if (!FileExports.shareRecipe(context, it)) Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show() }
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(L10n.str(R.string.share_link)) },
+                            leadingIcon = { Icon(Icons.Filled.Link, null) },
+                            onClick = {
+                                showMenu = false
+                                recipe?.let { if (!FileExports.shareRecipeLink(context, it)) Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show() }
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(L10n.str(R.string.export_ellipsis)) },
+                            leadingIcon = { Icon(Icons.Filled.FileDownload, null) },
                             onClick = { showMenu = false; showExportDialog = true }
                         )
                         DropdownMenuItem(
@@ -514,6 +532,9 @@ private fun RecipeDetailContent(
                     }
                 }
                 Text(recipe.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
+                recipe.sharedBy?.let {
+                    Text(L10n.str(R.string.shared_by_x, it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StarRatingRow(rating = recipe.rating, onRatingChange = onRatingChange)
                     if (recipe.timesCooked > 0) {

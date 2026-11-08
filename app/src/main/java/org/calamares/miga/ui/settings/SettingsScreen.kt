@@ -145,6 +145,7 @@ fun SettingsSectionScreen(
     val books by viewModel.books.collectAsState()
     val packsCatalogRepo by viewModel.packsCatalogRepo.collectAsState()
     val packInstallStats by viewModel.packInstallStats.collectAsState()
+    val yourName by viewModel.yourName.collectAsState()
     var dictationMenuExpanded by remember { mutableStateOf(false) }
     val dictationLanguage by viewModel.dictationLanguage.collectAsState()
     val aiEnabled by viewModel.aiEnabled.collectAsState()
@@ -251,6 +252,18 @@ fun SettingsSectionScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             when (section) {
+                SettingsSection.PROFILE -> {
+            SettingsCard(title = "", description = L10n.str(R.string.your_name_description)) {
+                val (nameText, onNameChange) = rememberSettingText(saved = yourName, save = viewModel::setYourName)
+                OutlinedTextField(
+                    value = nameText,
+                    onValueChange = { onNameChange(it.take(60)) },
+                    label = { Text(L10n.str(R.string.your_name)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+                }
                 SettingsSection.APPEARANCE -> AppearanceSettings(
                     themeMode = themeMode,
                     colorTheme = colorTheme,

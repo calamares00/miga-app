@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SystemUpdate
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * is the route argument.
  */
 enum class SettingsSection(val id: String, val title: String, val icon: ImageVector) {
+    PROFILE("profile", L10n.str(R.string.your_name), Icons.Filled.Person),
     APPEARANCE("appearance", L10n.str(R.string.appearance), Icons.Filled.Palette),
     SECURITY("security", L10n.str(R.string.security), Icons.Filled.Fingerprint),
     CONTENT("content", L10n.str(R.string.manage_content), Icons.Filled.Tune),

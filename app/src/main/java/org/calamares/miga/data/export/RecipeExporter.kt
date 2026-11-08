@@ -27,6 +27,7 @@ import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.RecipeBook
 import org.calamares.miga.data.model.RecipePhoto
+import org.calamares.miga.data.model.RecipeBookDraft
 import org.calamares.miga.data.model.ShoppingListGroup
 import org.calamares.miga.data.model.ShoppingStore
 import org.calamares.miga.data.model.ShoppingTemplate
@@ -195,14 +196,20 @@ object RecipeExporter {
         singleRecipe: Boolean,
         onPhoto: (Int, Int) -> Unit,
         /**
-         * A book sent to someone else ("Share book"): a ".miga" file without what is personal
-         * (favourites, ratings, the cooking journal), which [importSharedBook] merges into the
-         * same book on the other phone.
+         * A book or recipe sent to someone else ("Share"): a ".miga" file without what is personal
+         * (favourites, ratings, the cooking journal), which [importSharedBook] and
+         * [importSharedRecipe] merge on the other phone.
          */
-        forSharing: Boolean = false
+        forSharing: Boolean = false,
+        /** The sender's "Your name", saved as "shared by" on the book and its recipes; null to share unsigned. */
+        sharedBy: String? = null
     ): File = withContext(Dispatchers.IO) {
+        val sender = sharedBy?.trim()?.take(60)?.ifEmpty { null }
         fun dto(recipe: Recipe) = recipe.toExportDto().let {
-            if (forSharing) it.copy(isFavorite = false, rating = null, journal = emptyList()) else it
+            if (forSharing) it.copy(isFavorite = false, rating = null, journal = emptyList(), sharedBy = sender) else it
+        }
+        fun bookDto(book: RecipeBook) = bookExportDto(book).let {
+            if (forSharing) it.copy(sharedBy = sender, sharedAt = System.currentTimeMillis()) else it
         }
         val manifest = if (singleRecipe) {
             json.encodeToString(dto(recipes.single()))
@@ -210,7 +217,7 @@ object RecipeExporter {
             json.encodeToString(
                 LibraryExportDto(
                     exportedAt = System.currentTimeMillis(),
-                    books = listOfNotNull(book?.let { bookExportDto(it) }),
+                    books = listOfNotNull(book?.let { bookDto(it) }),
                     recipes = recipes.map { dto(it) }
                 )
             )
@@ -303,10 +310,10 @@ object RecipeExporter {
      * Imports a Miga file (see [writeMigaFile]; plain JSON or ZIP with photos): one recipe, or an
      * exported book or selection as [RecipeImportResult.Collection].
      */
-    suspend fun importRecipe(context: Context, source: Uri): RecipeImportResult = withContext(Dispatchers.IO) {
+    suspend fun importRecipe(context: Context, source: Uri, password: CharArray? = null): RecipeImportResult = withContext(Dispatchers.IO) {
         try {
             val manifest = try {
-                readManifest(context, source, password = null)
+                readManifest(context, source, password)
             } catch (e: PasswordRequiredException) {
                 return@withContext RecipeImportResult.Error(L10n.str(R.string.backup_encrypted_restore_in_settings))
             } ?: return@withContext RecipeImportResult.Error(L10n.str(R.string.couldnt_open_file))
@@ -319,13 +326,13 @@ object RecipeExporter {
                     migrateJson(text, libraryMigrations, CURRENT_LIBRARY_SCHEMA_VERSION)
                 )
                 if (library.recipes.isEmpty()) return@withContext RecipeImportResult.Error(L10n.str(R.string.file_has_no_recipes))
-                return@withContext RecipeImportResult.Collection(LibraryImportParseResult.Success(library, source, manifest.isZip))
+                return@withContext RecipeImportResult.Collection(LibraryImportParseResult.Success(library, source, manifest.isZip, password))
             }
             val dto = json.decodeFromJsonElement(
                 RecipeExportDto.serializer(),
                 migrateJson(text, recipeMigrations, CURRENT_RECIPE_SCHEMA_VERSION)
             )
-            val extracted = if (manifest.isZip) extractZipPhotos(context, source, photoPaths(listOf(dto))) else emptyMap()
+            val extracted = if (manifest.isZip) extractZipPhotos(context, source, photoPaths(listOf(dto)), password) else emptyMap()
             RecipeImportResult.Success(dto, resolvePhotos(dto.uid, dto.photos, extracted))
         } catch (e: CancellationException) {
             throw e
@@ -405,7 +412,7 @@ object RecipeExporter {
             dto.recipes.filter { it.uid !in packRecipeUids }.forEach { recipeDto ->
                 val bookId = targetBookId ?: bookIdsByName.getOrPut(recipeDto.recipeBookName) {
                     val bookMeta = dto.books.find { it.name == recipeDto.recipeBookName }
-                    repository.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName, bookMeta?.uid, coverOf(bookMeta))
+                    repository.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName, bookMeta?.uid, coverOf(bookMeta), bookMeta?.sharedBy, bookMeta?.sharedAt)
                 }
                 val photos = resolvePhotos(recipeDto.uid, recipeDto.photos, extracted)
                 val recipeId = repository.saveRecipe(recipeDto.toDraft(bookId, photos))
@@ -417,7 +424,7 @@ object RecipeExporter {
             if (targetBookId != null) return@withContext LibraryImportResult.Success(dto.recipes.size)
             // Books without recipes are restored too.
             dto.books.filter { it.name !in bookIdsByName }.forEach { bookMeta ->
-                bookIdsByName[bookMeta.name] = repository.getOrCreateRecipeBookIdByName(bookMeta.name, bookMeta.uid, coverOf(bookMeta))
+                bookIdsByName[bookMeta.name] = repository.getOrCreateRecipeBookIdByName(bookMeta.name, bookMeta.uid, coverOf(bookMeta), bookMeta.sharedBy, bookMeta.sharedAt)
             }
             // Templates and supermarkets are only added when there is none with the same name.
             val existingTemplates = repository.observeShoppingTemplates().first().map { it.name.trim().lowercase() }.toSet()
@@ -504,8 +511,10 @@ object RecipeExporter {
             val wantedPaths = photoPaths(dto.recipes) + listOfNotNull(bookMeta.coverPhotoFileName?.let { "books/${bookMeta.uid}/$it" })
             val extracted = if (parsed.isZip) extractZipPhotos(context, parsed.source, wantedPaths, parsed.password) else emptyMap()
             val cover = bookMeta.coverPhotoFileName?.let { extracted["books/${bookMeta.uid}/$it"] }
-            val bookId = repository.findSharedBookId(bookMeta.uid)
-                ?: repository.createBookWithUid(bookMeta.name, bookMeta.uid, cover)
+            val existingBookId = repository.findSharedBookId(bookMeta.uid)
+            val bookId = existingBookId
+                ?: repository.createBookWithUid(bookMeta.name, bookMeta.uid, cover, bookMeta.sharedBy, bookMeta.sharedAt)
+            if (existingBookId != null && bookMeta.sharedBy != null) repository.setBookSharedBy(existingBookId, bookMeta.sharedBy, bookMeta.sharedAt)
             var added = 0
             var updated = 0
             var unchanged = 0
@@ -514,7 +523,8 @@ object RecipeExporter {
                 when {
                     existing == null -> {
                         val recipeId = repository.saveRecipe(
-                            recipeDto.copy(isFavorite = false).toDraft(bookId, resolvePhotos(recipeDto.uid, recipeDto.photos, extracted))
+                            recipeDto.copy(isFavorite = false, sharedBy = recipeDto.sharedBy ?: bookMeta.sharedBy)
+                                .toDraft(bookId, resolvePhotos(recipeDto.uid, recipeDto.photos, extracted))
                         )
                         applyHealthFromImport(repository, recipeId, recipeDto.health)
                         applyNutritionFromImport(repository, recipeId, recipeDto.nutrition)
@@ -524,7 +534,8 @@ object RecipeExporter {
                     else -> {
                         val photos = resolvePhotos(recipeDto.uid, recipeDto.photos, extracted)
                         repository.saveRecipe(
-                            recipeDto.copy(isFavorite = existing.isFavorite).toDraft(bookId, photos).copy(id = existing.id)
+                            recipeDto.copy(isFavorite = existing.isFavorite, sharedBy = recipeDto.sharedBy ?: bookMeta.sharedBy)
+                                .toDraft(bookId, photos).copy(id = existing.id)
                         )
                         applyHealthFromImport(repository, existing.id, recipeDto.health)
                         applyNutritionFromImport(repository, existing.id, recipeDto.nutrition)
@@ -539,6 +550,43 @@ object RecipeExporter {
             SharedBookImportResult.Error(importErrorMessage(e, R.string.unknown_error))
         } catch (e: OutOfMemoryError) {
             SharedBookImportResult.Error(importErrorMessage(e, R.string.unknown_error))
+        }
+    }
+
+    /**
+     * Saves a recipe shared alone ([writeMigaFile] with forSharing and one recipe), whose photos
+     * [importRecipe] already copied. A recipe this phone already has (same uid) is updated where it
+     * is, only when the shared copy is newer; otherwise it goes into [targetBookId] or a new book
+     * named [newBookName]. Its "shared by" is kept, as for a shared book.
+     */
+    suspend fun importSharedRecipe(
+        repository: RecipeRepository,
+        dto: RecipeExportDto,
+        photos: List<RecipePhoto>,
+        targetBookId: Long?,
+        newBookName: String?
+    ): SharedRecipeImportResult = withContext(Dispatchers.IO) {
+        try {
+            val existing = repository.findRecipeStateByUid(dto.uid)
+            if (existing != null && !existing.inPack) {
+                if (dto.updatedAt != null && existing.updatedAt >= dto.updatedAt) {
+                    return@withContext SharedRecipeImportResult.Success(existing.id, existing.bookId, updated = false, unchanged = true)
+                }
+                repository.saveRecipe(dto.copy(isFavorite = existing.isFavorite).toDraft(existing.bookId, photos).copy(id = existing.id))
+                applyHealthFromImport(repository, existing.id, dto.health)
+                applyNutritionFromImport(repository, existing.id, dto.nutrition)
+                return@withContext SharedRecipeImportResult.Success(existing.id, existing.bookId, updated = true, unchanged = false)
+            }
+            val bookId = targetBookId
+                ?: repository.saveRecipeBook(RecipeBookDraft(name = newBookName?.trim()?.ifBlank { null } ?: L10n.str(R.string.shared_recipes_book), coverPhotoUri = null))
+            val recipeId = repository.saveRecipe(dto.copy(isFavorite = false).toDraft(bookId, photos))
+            applyHealthFromImport(repository, recipeId, dto.health)
+            applyNutritionFromImport(repository, recipeId, dto.nutrition)
+            SharedRecipeImportResult.Success(recipeId, bookId, updated = false, unchanged = false)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            SharedRecipeImportResult.Error(importErrorMessage(e, R.string.unknown_error))
         }
     }
 
@@ -575,7 +623,9 @@ object RecipeExporter {
         coverPhotoFileName = if (book.coverPhotoUri != null) "cover.jpg" else null,
         packId = book.packId.takeIf { withPack },
         packVersion = book.packVersion.takeIf { withPack },
-        packSeries = book.packSeries.takeIf { withPack }
+        packSeries = book.packSeries.takeIf { withPack },
+        sharedBy = book.sharedBy,
+        sharedAt = book.sharedAt
     )
 
     private fun photoSourcesFor(book: RecipeBook?, recipes: List<Recipe>): List<Pair<String, String>> {
@@ -820,4 +870,10 @@ object RecipeExporter {
 sealed interface SharedBookImportResult {
     data class Success(val bookId: Long, val bookName: String, val added: Int, val updated: Int, val unchanged: Int) : SharedBookImportResult
     data class Error(val reason: String) : SharedBookImportResult
+}
+
+/** Result of saving a recipe shared alone, see [RecipeExporter.importSharedRecipe]. */
+sealed interface SharedRecipeImportResult {
+    data class Success(val recipeId: Long, val bookId: Long, val updated: Boolean, val unchanged: Boolean) : SharedRecipeImportResult
+    data class Error(val reason: String) : SharedRecipeImportResult
 }
