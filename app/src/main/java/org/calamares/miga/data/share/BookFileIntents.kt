@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.calamares.miga.data.io.LimitedInputStream
 import org.calamares.miga.data.io.ReadLimits
+import org.calamares.miga.data.remote.ShareLink
 
 /**
  * A Miga file opened from another app (a book shared by WhatsApp, Telegram, the mail or the file
@@ -23,6 +24,9 @@ sealed interface IncomingBookFile {
     /** Copied to the app's cache: the other app's permission to read it does not last. */
     data class Ready(val file: File) : IncomingBookFile
     data object Unreadable : IncomingBookFile
+
+    /** A book link (miga-share.calamares.org/s/<id>#<key>): downloaded and decrypted by the books screen. */
+    data class Link(val link: ShareLink) : IncomingBookFile
 }
 
 /**
@@ -41,6 +45,12 @@ object BookFileIntents {
     /** Returns true when [intent] carries a file for Miga, which is then copied in the background. */
     fun handle(context: Context, intent: Intent?): Boolean {
         intent ?: return false
+        if (intent.action == Intent.ACTION_VIEW) {
+            ShareLink.parse(intent.data)?.let {
+                _event.value = IncomingBookFile.Link(it)
+                return true
+            }
+        }
         val uri: Uri = when (intent.action) {
             Intent.ACTION_VIEW -> intent.data
             Intent.ACTION_SEND -> IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)

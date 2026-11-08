@@ -1223,6 +1223,15 @@
     <string name="importing_book">"Importando libro…"</string>
     <string name="shared_book_imported_x_x_x">"«%1$s»: %2$d recetas nuevas, %3$d actualizadas"</string>
     <string name="shared_file_not_a_book">"Este archivo no es un libro de Miga. Las copias de seguridad completas se restauran desde Ajustes."</string>
+    <string name="share_link">"Compartir enlace"</string>
+    <string name="share_link_preparing_x">"Preparando el enlace de «%1$s»"</string>
+    <string name="share_link_uploading_x">"Subiendo cifrado: %1$d %%"</string>
+    <string name="share_link_message_x_x_x">"Te comparto el libro de recetas «%1$s» de Miga: %2$s\nEl enlace caduca el %3$s."</string>
+    <string name="share_link_failed">"No se pudo crear el enlace. Comprueba la conexión e inténtalo de nuevo."</string>
+    <string name="share_link_too_large">"El libro es demasiado grande para un enlace (máximo 95 MB). Compártelo como archivo."</string>
+    <string name="share_link_too_many">"Has creado muchos enlaces hoy. Inténtalo mañana o compártelo como archivo."</string>
+    <string name="share_link_expired">"El enlace ha caducado o no está disponible. Pide que te lo vuelvan a enviar."</string>
+    <string name="downloading_book">"Descargando libro…"</string>
     <string name="set_up_sync">"Configurar la sincronización"</string>
     <string name="select_packs">"Seleccionar packs"</string>
     <string name="install_x">"Instalar (%1$d)"</string>

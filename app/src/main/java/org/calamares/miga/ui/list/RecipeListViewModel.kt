@@ -480,6 +480,16 @@ class RecipeListViewModel(
         }
     }
 
+    /** "Share link": the book encrypted on a temporary link, sent as text. */
+    fun shareBookLink(context: Context) {
+        viewModelScope.launch {
+            val book = repository.getRecipeBookOnce(bookId) ?: return@launch
+            if (!FileExports.shareBookLink(context, book) { repository.getRecipesForBookOnce(bookId) }) {
+                Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     fun togglePinned() {
         viewModelScope.launch { repository.setRecipeBookPinned(bookId, !uiState.value.isPinned) }
     }
