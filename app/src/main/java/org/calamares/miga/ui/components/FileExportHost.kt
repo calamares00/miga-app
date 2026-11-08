@@ -145,8 +145,25 @@ fun FileExportHost() {
     val saveZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(ExportFormat.MIGA_FILE.mimeType), onSaved)
     val saveImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(ExportFormat.IMAGE.mimeType), onSaved)
 
+    // A book link is sent as text right away.
+    val linkReady = state as? FileExportState.LinkReady
+    LaunchedEffect(linkReady) {
+        if (linkReady != null) {
+            FileExports.shareLink(context, linkReady)
+            FileExports.dismiss()
+        }
+    }
+
+    // "Share book" goes straight to the share sheet instead of asking what to do with the file.
+    LaunchedEffect(ready) {
+        if (ready != null && ready.autoShare) {
+            FileExports.share(context, ready)
+            FileExports.dismiss()
+        }
+    }
+
     when (val current = state) {
-        FileExportState.Idle -> Unit
+        FileExportState.Idle, is FileExportState.LinkReady -> Unit
 
         is FileExportState.Running -> if (!progressHidden) {
             AlertDialog(
@@ -167,7 +184,11 @@ fun FileExportHost() {
                                 progress = { current.current.toFloat() / current.total },
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            Text(FileExports.progressText(current.format, current.current, current.total), style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                if (current.uploading) L10n.str(R.string.share_link_uploading_x, current.current)
+                                else FileExports.progressText(current.format, current.current, current.total),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         } else {
                             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                             Text(L10n.str(R.string.pdf_preparing), style = MaterialTheme.typography.bodyMedium)
@@ -184,7 +205,7 @@ fun FileExportHost() {
             )
         }
 
-        is FileExportState.Ready -> AlertDialog(
+        is FileExportState.Ready -> if (!current.autoShare) AlertDialog(
             onDismissRequest = { FileExports.dismiss() },
             icon = { Icon(formatIcon(current.format), contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             title = { Text(L10n.str(R.string.export_ready_title)) },

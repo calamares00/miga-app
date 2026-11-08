@@ -33,6 +33,9 @@ object ReadLimits {
     /** All the photos extracted from one ZIP. */
     const val ZIP_TOTAL_BYTES = 2048 * MB
 
+    /** A book file shared by someone else (".miga", photos included). */
+    const val SHARED_BOOK_BYTES = 200 * MB
+
     /** catalog.json of a pack catalogue. */
     const val CATALOG_BYTES = 2 * MB
 

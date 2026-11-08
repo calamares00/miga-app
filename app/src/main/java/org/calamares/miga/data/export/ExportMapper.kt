@@ -36,7 +36,8 @@ fun Recipe.toExportDto() = RecipeExportDto(
     rating = rating,
     origin = origin,
     originCountry = originCountry,
-    journal = journal.map { JournalNoteDto(it.text, it.createdAt) }
+    journal = journal.map { JournalNoteDto(it.text, it.createdAt) },
+    updatedAt = updatedAt
 )
 
 /**
