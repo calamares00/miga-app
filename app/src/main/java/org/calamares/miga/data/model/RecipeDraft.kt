@@ -22,7 +22,9 @@ data class RecipeDraft(
     val utensilNames: List<String>,
     /** See Recipe.origin. */
     val origin: String? = null,
-    val originCountry: String? = null
+    val originCountry: String? = null,
+    /** Only set by imports of shared books and recipes; editing keeps the stored value. */
+    val sharedBy: String? = null
 )
 
 fun Recipe.toDraft() = RecipeDraft(

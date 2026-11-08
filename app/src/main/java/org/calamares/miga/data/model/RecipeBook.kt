@@ -13,7 +13,10 @@ data class RecipeBook(
     /** Shown first in the books list (see RecipeBookSummary.isPinned). */
     val isPinned: Boolean = false,
     /** Series of an installed pack, from the catalogue (see RecipeBookEntity.packSeries). */
-    val packSeries: String? = null
+    val packSeries: String? = null,
+    /** Who shared the book with the user, and when (see RecipeBookEntity.sharedBy). */
+    val sharedBy: String? = null,
+    val sharedAt: Long? = null
 ) {
     /**
      * Pack books are read-only: they cannot be renamed, get a new cover or have recipes added or
@@ -38,7 +41,9 @@ data class RecipeBookSummary(
     val syncConnectionId: Long? = null,
     /** Shown first in the books list, with a pin on its cover. */
     val isPinned: Boolean = false,
-    val packSeries: String? = null
+    val packSeries: String? = null,
+    /** Who shared the book with the user (see RecipeBookEntity.sharedBy), shown under its name. */
+    val sharedBy: String? = null
 ) {
     val isPack: Boolean get() = packId != null
     val isSynced: Boolean get() = syncConnectionId != null

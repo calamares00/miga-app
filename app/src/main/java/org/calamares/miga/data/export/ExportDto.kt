@@ -57,7 +57,10 @@ data class BookExportDto(
     /** Set for an installed pack, which is restored as that pack (read-only, updatable from the catalogue). */
     val packId: String? = null,
     val packVersion: Int? = null,
-    val packSeries: String? = null
+    val packSeries: String? = null,
+    /** Who shared the book and when (see RecipeBookEntity.sharedBy); set by "Share book" and kept in backups. */
+    val sharedBy: String? = null,
+    val sharedAt: Long? = null
 )
 
 @Serializable
@@ -92,7 +95,9 @@ data class RecipeExportDto(
     /** Dated personal notes (absent in older files). */
     val journal: List<JournalNoteDto> = emptyList(),
     /** Last change (epoch ms); a shared book only overwrites a recipe that is older here. */
-    val updatedAt: Long? = null
+    val updatedAt: Long? = null,
+    /** Who shared it ("Your name" of whoever sent the file or link); see RecipeEntity.sharedBy. */
+    val sharedBy: String? = null
 )
 
 @Serializable

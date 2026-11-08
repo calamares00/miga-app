@@ -233,7 +233,8 @@ class RecipeRepository(
                         createdAt = now,
                         updatedAt = now,
                         origin = draft.origin?.trim()?.ifEmpty { null },
-                        originCountry = RecipeOrigin.normalizeCountry(draft.originCountry)
+                        originCountry = RecipeOrigin.normalizeCountry(draft.originCountry),
+                        sharedBy = draft.sharedBy
                     )
                 )
             } else {
@@ -274,7 +275,9 @@ class RecipeRepository(
                         nutritionAnalyzedAt = if (keepHealth) existing?.nutritionAnalyzedAt else null,
                         rating = existing?.rating,
                         origin = draft.origin?.trim()?.ifEmpty { null },
-                        originCountry = RecipeOrigin.normalizeCountry(draft.originCountry)
+                        originCountry = RecipeOrigin.normalizeCountry(draft.originCountry),
+                        // Read-only for the user: only a newer shared copy changes it.
+                        sharedBy = draft.sharedBy ?: existing?.sharedBy
                     )
                 )
                 draft.id
@@ -1349,7 +1352,7 @@ class RecipeRepository(
                 RecipeBookSummary(
                     it.book.id, it.book.name, it.book.coverPhotoUri, it.recipeCount,
                     it.book.packId, it.book.packVersion, it.book.syncConnectionId, it.book.isPinned,
-                    it.book.packSeries
+                    it.book.packSeries, it.book.sharedBy
                 )
             }
         }
@@ -1418,7 +1421,10 @@ class RecipeRepository(
                     createdAt = existing?.createdAt ?: now,
                     updatedAt = now,
                     syncConnectionId = existing?.syncConnectionId,
-                    isPinned = existing?.isPinned ?: false
+                    isPinned = existing?.isPinned ?: false,
+                    packSeries = existing?.packSeries,
+                    sharedBy = existing?.sharedBy,
+                    sharedAt = existing?.sharedAt
                 )
             )
             existing?.syncConnectionId?.let {
@@ -1465,7 +1471,13 @@ class RecipeRepository(
      * Used when importing a backup: finds a book by name or creates it. [uid] and [coverPhotoUri]
      * only apply to a new book; an existing book with that name is reused as is, cover included.
      */
-    suspend fun getOrCreateRecipeBookIdByName(name: String, uid: String? = null, coverPhotoUri: String? = null): Long {
+    suspend fun getOrCreateRecipeBookIdByName(
+        name: String,
+        uid: String? = null,
+        coverPhotoUri: String? = null,
+        sharedBy: String? = null,
+        sharedAt: Long? = null
+    ): Long {
         val trimmed = name.trim().ifBlank { L10n.str(R.string.untitled) }
         recipeBookDao.findByName(trimmed)?.let { return it.id }
         return recipeBookDao.insert(
@@ -1473,7 +1485,9 @@ class RecipeRepository(
                 uid = uid?.takeIf { recipeBookDao.findByUid(it) == null } ?: UUID.randomUUID().toString(),
                 name = trimmed,
                 coverPhotoUri = coverPhotoUri,
-                createdAt = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis(),
+                sharedBy = sharedBy,
+                sharedAt = sharedAt
             )
         )
     }
@@ -1482,23 +1496,32 @@ class RecipeRepository(
     suspend fun findSharedBookId(uid: String): Long? = recipeBookDao.findByUid(uid)?.takeIf { it.packId == null }?.id
 
     /** A new book that keeps the shared book's [uid] (unless this phone already uses it), even if another has the same name. */
-    suspend fun createBookWithUid(name: String, uid: String, coverPhotoUri: String?): Long =
+    suspend fun createBookWithUid(name: String, uid: String, coverPhotoUri: String?, sharedBy: String? = null, sharedAt: Long? = null): Long =
         recipeBookDao.insert(
             RecipeBookEntity(
                 uid = uid.takeIf { recipeBookDao.findByUid(it) == null } ?: UUID.randomUUID().toString(),
                 name = name.trim().ifBlank { L10n.str(R.string.untitled) },
                 coverPhotoUri = coverPhotoUri,
-                createdAt = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis(),
+                sharedBy = sharedBy,
+                sharedAt = sharedAt
             )
         )
 
+    /** Who shared the book, after importing a newer copy of it. */
+    suspend fun setBookSharedBy(bookId: Long, sharedBy: String?, sharedAt: Long?) =
+        recipeBookDao.setSharedBy(bookId, sharedBy, sharedAt)
+
+    /** Name of the book a recipe is in (for "you already have it in …"). */
+    suspend fun recipeBookName(bookId: Long): String? = recipeBookDao.getOnce(bookId)?.name
+
     /** What a shared book's import needs to know about a recipe this phone may already have. */
-    data class RecipeImportState(val id: Long, val updatedAt: Long, val isFavorite: Boolean, val inPack: Boolean)
+    data class RecipeImportState(val id: Long, val updatedAt: Long, val isFavorite: Boolean, val inPack: Boolean, val bookId: Long)
 
     suspend fun findRecipeStateByUid(uid: String): RecipeImportState? {
         val recipe = recipeDao.findByUid(uid) ?: return null
         val inPack = recipeBookDao.getOnce(recipe.recipeBookId)?.packId != null
-        return RecipeImportState(recipe.id, recipe.updatedAt, recipe.isFavorite, inPack)
+        return RecipeImportState(recipe.id, recipe.updatedAt, recipe.isFavorite, inPack, recipe.recipeBookId)
     }
 
     // --- Downloadable recipe packs ---
@@ -2179,7 +2202,7 @@ class RecipeRepository(
 }
 
 fun RecipeBookEntity.toDomain() =
-    RecipeBook(id, uid, name, coverPhotoUri, packId, packVersion, syncConnectionId, isPinned, packSeries)
+    RecipeBook(id, uid, name, coverPhotoUri, packId, packVersion, syncConnectionId, isPinned, packSeries, sharedBy, sharedAt)
 
 /**
  * The "?: accessToken" fallback is deliberate: decrypt returns null (it does not throw) for rows
@@ -2248,6 +2271,7 @@ fun RecipeWithDetails.toDomain(): Recipe {
         rating = recipe.rating,
         origin = recipe.origin,
         originCountry = recipe.originCountry,
+        sharedBy = recipe.sharedBy,
         journal = journal.sortedWith(compareByDescending<RecipeNoteEntity> { it.createdAt }.thenByDescending { it.id })
             .map { RecipeNote(it.id, it.text, it.createdAt) }
     )
