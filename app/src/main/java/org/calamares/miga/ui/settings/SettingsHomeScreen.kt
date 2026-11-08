@@ -71,6 +71,7 @@ fun SettingsHomeScreen(
     val aiEnabled by viewModel.aiEnabled.collectAsState()
     val aiProviders by viewModel.aiProvidersSummary.collectAsState()
     val dictationLanguage by viewModel.dictationLanguage.collectAsState()
+    val yourName by viewModel.yourName.collectAsState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     AdaptiveScaffold(
@@ -95,6 +96,13 @@ fun SettingsHomeScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            HomeGroup(
+                listOf(
+                    HomeItem(SettingsSection.PROFILE.icon, SettingsSection.PROFILE.title, yourName.ifBlank { L10n.str(R.string.your_name_not_set) }) {
+                        onOpenSection(SettingsSection.PROFILE)
+                    }
+                )
+            )
             HomeGroup(
                 listOf(
                     HomeItem(SettingsSection.APPEARANCE.icon, SettingsSection.APPEARANCE.title, "${themeMode.label} · ${colorTheme.label}") {

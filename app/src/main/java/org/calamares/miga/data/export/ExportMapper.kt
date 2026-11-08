@@ -37,7 +37,8 @@ fun Recipe.toExportDto() = RecipeExportDto(
     origin = origin,
     originCountry = originCountry,
     journal = journal.map { JournalNoteDto(it.text, it.createdAt) },
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    sharedBy = sharedBy
 )
 
 /**
@@ -66,5 +67,6 @@ fun RecipeExportDto.toDraft(recipeBookId: Long, photos: List<RecipePhoto> = empt
     tagNames = tags,
     utensilNames = utensils,
     origin = origin,
-    originCountry = RecipeOrigin.normalizeCountry(originCountry)
+    originCountry = RecipeOrigin.normalizeCountry(originCountry),
+    sharedBy = sharedBy?.trim()?.take(60)?.ifEmpty { null }
 )
