@@ -470,6 +470,16 @@ class RecipeListViewModel(
         }
     }
 
+    /** "Share book": the book as a ".miga" file, straight to the share sheet. */
+    fun shareBook(context: Context) {
+        viewModelScope.launch {
+            val book = repository.getRecipeBookOnce(bookId) ?: return@launch
+            if (!FileExports.shareBook(context, book) { repository.getRecipesForBookOnce(bookId) }) {
+                Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     fun togglePinned() {
         viewModelScope.launch { repository.setRecipeBookPinned(bookId, !uiState.value.isPinned) }
     }

@@ -41,7 +41,8 @@ sealed interface FileExportState {
      */
     data class Running(val title: String, val format: ExportFormat, val current: Int = 0, val total: Int = 0) : FileExportState
 
-    data class Ready(val title: String, val format: ExportFormat, val file: File) : FileExportState
+    /** [autoShare]: "Share book" opens the share sheet as soon as the file is ready. */
+    data class Ready(val title: String, val format: ExportFormat, val file: File, val autoShare: Boolean = false) : FileExportState
 
     data class Failed(val title: String, val message: String) : FileExportState
 }
@@ -84,6 +85,15 @@ object FileExports {
             }
         }
 
+    /**
+     * "Share book": writes [book] as a ".miga" file for someone else (see RecipeExporter.writeMigaFile
+     * with forSharing) and opens the share sheet as soon as it is ready.
+     */
+    fun shareBook(context: Context, book: RecipeBook, loadRecipes: suspend () -> List<Recipe>): Boolean =
+        start(context, book.name, ExportFormat.MIGA_FILE, autoShare = true) { appContext, onProgress ->
+            RecipeExporter.writeMigaFile(appContext, book.name, book, loadRecipes(), singleRecipe = false, forSharing = true, onPhoto = onProgress)
+        }
+
     /** Several recipes of [book] chosen by the user, under [title] ("Selected recipes"). */
     fun exportSelection(context: Context, title: String, book: RecipeBook?, recipes: List<Recipe>, format: ExportFormat): Boolean =
         start(context, title, format) { appContext, onProgress ->
@@ -99,6 +109,7 @@ object FileExports {
         context: Context,
         title: String,
         format: ExportFormat,
+        autoShare: Boolean = false,
         write: suspend (Context, onProgress: (Int, Int) -> Unit) -> File
     ): Boolean {
         if (isRunning) return false
@@ -125,7 +136,7 @@ object FileExports {
                         status(progressText(format, current, total))
                     }
                 }
-                _state.value = FileExportState.Ready(title, format, file)
+                _state.value = FileExportState.Ready(title, format, file, autoShare)
                 AiKeepAlive.announceIfInBackground(L10n.str(R.string.export_ready_notification_x, title), icon = icon)
             } catch (e: CancellationException) {
                 _state.value = FileExportState.Idle

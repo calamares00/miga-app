@@ -2,6 +2,13 @@ package org.calamares.miga.ui.books
 
 import kotlinx.coroutines.flow.combine
 import android.content.Context
+import android.net.Uri
+import org.calamares.miga.data.export.FileExports
+import org.calamares.miga.data.export.LibraryImportParseResult
+import org.calamares.miga.data.export.RecipeExporter
+import org.calamares.miga.data.export.SharedBookImportResult
+import org.calamares.miga.data.share.BookFileIntents
+import org.calamares.miga.data.share.IncomingBookFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.calamares.miga.BuildConfig
@@ -147,6 +154,80 @@ class RecipeBooksViewModel(
 
     fun dismissSyncMessage() {
         _syncMessage.value = null
+    }
+
+    /** A shared book file waiting for the user to confirm importing it. */
+    data class IncomingBookPrompt(
+        val parsed: LibraryImportParseResult.Success,
+        val bookName: String,
+        val recipeCount: Int,
+        val alreadyHere: Boolean
+    )
+
+    private val _incomingBook = MutableStateFlow<IncomingBookPrompt?>(null)
+    val incomingBook: StateFlow<IncomingBookPrompt?> = _incomingBook
+
+    private val _importingBook = MutableStateFlow(false)
+    val importingBook: StateFlow<Boolean> = _importingBook
+
+    /** A Miga file opened from another app: reads it and asks before importing anything. */
+    fun onIncomingFile(context: Context, event: IncomingBookFile) {
+        BookFileIntents.consume()
+        val appContext = context.applicationContext
+        viewModelScope.launch {
+            val file = (event as? IncomingBookFile.Ready)?.file
+            if (file == null) {
+                _syncMessage.value = L10n.str(R.string.couldnt_open_file)
+                return@launch
+            }
+            when (val parsed = RecipeExporter.parseLibraryImport(appContext, Uri.fromFile(file))) {
+                is LibraryImportParseResult.Success -> {
+                    val book = parsed.dto.books.singleOrNull()
+                    if (book == null) {
+                        _syncMessage.value = L10n.str(R.string.shared_file_not_a_book)
+                    } else {
+                        _incomingBook.value = IncomingBookPrompt(
+                            parsed, book.name, parsed.dto.recipes.size,
+                            alreadyHere = repository.findSharedBookId(book.uid) != null
+                        )
+                    }
+                }
+                is LibraryImportParseResult.NeedsPassword -> _syncMessage.value = L10n.str(R.string.backup_encrypted_restore_in_settings)
+                is LibraryImportParseResult.Error -> _syncMessage.value = L10n.str(R.string.shared_file_not_a_book)
+            }
+        }
+    }
+
+    fun importIncomingBook(context: Context) {
+        val prompt = _incomingBook.value ?: return
+        _incomingBook.value = null
+        val appContext = context.applicationContext
+        _importingBook.value = true
+        viewModelScope.launch {
+            try {
+                _syncMessage.value = when (val result = RecipeExporter.importSharedBook(appContext, prompt.parsed, repository)) {
+                    is SharedBookImportResult.Success ->
+                        L10n.str(R.string.shared_book_imported_x_x_x, result.bookName, result.added, result.updated)
+                    is SharedBookImportResult.Error -> result.reason
+                }
+            } finally {
+                _importingBook.value = false
+            }
+        }
+    }
+
+    fun dismissIncomingBook() {
+        _incomingBook.value = null
+    }
+
+    /** "Share book": the book as a ".miga" file, straight to the share sheet. */
+    fun shareBook(context: Context, summary: RecipeBookSummary) {
+        viewModelScope.launch {
+            val book = repository.getRecipeBookOnce(summary.id) ?: return@launch
+            if (!FileExports.shareBook(context, book) { repository.getRecipesForBookOnce(summary.id) }) {
+                _syncMessage.value = L10n.str(R.string.pdf_already_running)
+            }
+        }
     }
 
     /** Uninstalls the pack of [book] (its book and the recipes still in it). */

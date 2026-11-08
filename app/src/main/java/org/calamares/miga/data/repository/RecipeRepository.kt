@@ -1478,6 +1478,29 @@ class RecipeRepository(
         )
     }
 
+    /** A shared book's book here: the one with [uid], unless it is a pack (packs are never written to). */
+    suspend fun findSharedBookId(uid: String): Long? = recipeBookDao.findByUid(uid)?.takeIf { it.packId == null }?.id
+
+    /** A new book that keeps the shared book's [uid] (unless this phone already uses it), even if another has the same name. */
+    suspend fun createBookWithUid(name: String, uid: String, coverPhotoUri: String?): Long =
+        recipeBookDao.insert(
+            RecipeBookEntity(
+                uid = uid.takeIf { recipeBookDao.findByUid(it) == null } ?: UUID.randomUUID().toString(),
+                name = name.trim().ifBlank { L10n.str(R.string.untitled) },
+                coverPhotoUri = coverPhotoUri,
+                createdAt = System.currentTimeMillis()
+            )
+        )
+
+    /** What a shared book's import needs to know about a recipe this phone may already have. */
+    data class RecipeImportState(val id: Long, val updatedAt: Long, val isFavorite: Boolean, val inPack: Boolean)
+
+    suspend fun findRecipeStateByUid(uid: String): RecipeImportState? {
+        val recipe = recipeDao.findByUid(uid) ?: return null
+        val inPack = recipeBookDao.getOnce(recipe.recipeBookId)?.packId != null
+        return RecipeImportState(recipe.id, recipe.updatedAt, recipe.isFavorite, inPack)
+    }
+
     // --- Downloadable recipe packs ---
 
     /**

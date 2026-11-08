@@ -65,6 +65,7 @@ import org.calamares.miga.data.model.PhotoFrame
 import org.calamares.miga.ui.theme.LocalPhotoFrame
 import androidx.compose.runtime.CompositionLocalProvider
 import org.calamares.miga.data.model.ThemeMode
+import org.calamares.miga.data.share.BookFileIntents
 import org.calamares.miga.data.share.ShoppingIntents
 import org.calamares.miga.ui.StartupGate
 import org.calamares.miga.ui.navigation.Destinations
@@ -91,6 +92,7 @@ class MainActivity : FragmentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         ShoppingIntents.handle(intent)
+        BookFileIntents.handle(this, intent)
         AiJobs.handle(intent)
     }
 
@@ -122,6 +124,7 @@ class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
         if (savedInstanceState == null) {
             ShoppingIntents.handle(intent)
+            BookFileIntents.handle(this, intent)
             AiJobs.handle(intent)
         }
         val settingsRepository = (application as MigaApp).settingsRepository

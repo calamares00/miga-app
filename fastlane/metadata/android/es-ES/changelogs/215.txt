@@ -1,3 +1,4 @@
 Novedades de la versión 1.0.17:
-• En la Biblioteca, si un filtro está vacío ya no se repite el botón: basta el del mensaje.
-• El filtro Servidor aparece siempre. Sin servidor, explica qué es un servidor Miga y cómo comparte libros con tu familia o amigos, con un botón para configurarlo.
+• Compartir libro: envía un libro por WhatsApp, Telegram o correo en un toque. Al abrirlo, Miga lo importa; si ya lo tenías, añade las recetas nuevas y actualiza las cambiadas.
+• En la Biblioteca, un filtro vacío ya no repite el botón.
+• El filtro Servidor aparece siempre y, sin servidor, explica para qué sirve.

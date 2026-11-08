@@ -145,6 +145,14 @@ fun FileExportHost() {
     val saveZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(ExportFormat.MIGA_FILE.mimeType), onSaved)
     val saveImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(ExportFormat.IMAGE.mimeType), onSaved)
 
+    // "Share book" goes straight to the share sheet instead of asking what to do with the file.
+    LaunchedEffect(ready) {
+        if (ready != null && ready.autoShare) {
+            FileExports.share(context, ready)
+            FileExports.dismiss()
+        }
+    }
+
     when (val current = state) {
         FileExportState.Idle -> Unit
 
@@ -184,7 +192,7 @@ fun FileExportHost() {
             )
         }
 
-        is FileExportState.Ready -> AlertDialog(
+        is FileExportState.Ready -> if (!current.autoShare) AlertDialog(
             onDismissRequest = { FileExports.dismiss() },
             icon = { Icon(formatIcon(current.format), contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             title = { Text(L10n.str(R.string.export_ready_title)) },

@@ -1215,6 +1215,14 @@
     <string name="no_server_yet">"Aún no tienes un servidor"</string>
     <string name="no_server_yet_body">"Con un servidor Miga, que instalas en casa o en la nube, tus libros se sincronizan entre tus dispositivos y los compartes con tu familia o amigos: cada uno se une con una invitación y todos veis las mismas recetas, siempre al día."</string>
     <string name="set_up_server">"Configurar servidor"</string>
+    <string name="share_book">"Compartir libro"</string>
+    <string name="import_book_x">"Importar «%1$s»"</string>
+    <string name="x_recipes_count">"%1$d recetas"</string>
+    <string name="shared_book_new_explanation">"Se añadirá como un libro nuevo. Si te lo vuelven a enviar más adelante, se actualizará con los cambios."</string>
+    <string name="shared_book_update_explanation">"Ya tienes este libro: se añadirán las recetas nuevas y se actualizarán las que hayan cambiado. No se borra nada y tus favoritos y valoraciones se mantienen."</string>
+    <string name="importing_book">"Importando libro…"</string>
+    <string name="shared_book_imported_x_x_x">"«%1$s»: %2$d recetas nuevas, %3$d actualizadas"</string>
+    <string name="shared_file_not_a_book">"Este archivo no es un libro de Miga. Las copias de seguridad completas se restauran desde Ajustes."</string>
     <string name="set_up_sync">"Configurar la sincronización"</string>
     <string name="select_packs">"Seleccionar packs"</string>
     <string name="install_x">"Instalar (%1$d)"</string>
