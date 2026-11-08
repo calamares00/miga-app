@@ -8,6 +8,9 @@ import androidx.lifecycle.viewModelScope
 import org.calamares.miga.data.export.PackImportResult
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.remote.CatalogFetchResult
+import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
+import org.calamares.miga.data.remote.PackInstallStats
+import org.calamares.miga.data.remote.PackStatsClient
 import org.calamares.miga.data.remote.PackEntryDto
 import org.calamares.miga.data.remote.PacksCatalogClient
 import org.calamares.miga.data.repository.RecipeRepository
@@ -40,9 +43,16 @@ class PackDetailViewModel(
     private val _installState = MutableStateFlow<InstallState>(InstallState.Idle)
     val installState: StateFlow<InstallState> = _installState
 
+    private val _installStats = MutableStateFlow<Map<String, PackInstallStats>>(emptyMap())
+    /** Installs by family from the anonymous counter; only for the official catalogue. */
+    val installStats: StateFlow<Map<String, PackInstallStats>> = _installStats
+
     init {
         viewModelScope.launch {
             val repoPath = settingsRepository.observePacksCatalogRepo().first()
+            if (repoPath == DEFAULT_PACKS_CATALOG) {
+                launch { PackStatsClient.fetchStats()?.let { _installStats.value = it } }
+            }
             when (val result = PacksCatalogClient.fetchCatalog(repoPath)) {
                 is CatalogFetchResult.Error -> _uiState.value = PackDetailUiState.Error(result.reason)
                 is CatalogFetchResult.Success -> {
@@ -66,7 +76,7 @@ class PackDetailViewModel(
         val state = _uiState.value as? PackDetailUiState.Loaded ?: return
         viewModelScope.launch {
             _installState.value = InstallState.Installing
-            when (val result = PackInstaller.install(context, repository, state.entry)) {
+            when (val result = PackInstaller.install(context, repository, settingsRepository, state.entry)) {
                 is PackImportResult.Success -> {
                     _installState.value = InstallState.Idle
                     onInstalled(state.entry.name)

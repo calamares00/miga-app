@@ -1,6 +1,6 @@
 # Política de privacidad de Miga
 
-Última actualización: 13 de octubre de 2026.
+Última actualización: 8 de noviembre de 2026.
 
 Miga es una app de recetario familiar y lista de la compra. Este documento explica qué datos maneja la app, adónde van y qué control tienes sobre ellos.
 
@@ -46,6 +46,8 @@ Todas se inician por una acción tuya o por una función que has activado. Ningu
    Los proveedores se usan en el orden de prioridad que elijas: si uno falla o no puede leer imágenes, se envía la misma petición al siguiente. El tratamiento de esos datos está sujeto a las condiciones de cada proveedor asociadas a tu clave (algunos modelos gratuitos de OpenRouter pueden usar las peticiones para entrenar). Sin clave configurada no se envía nada. La lista de modelos de OpenRouter se descarga de su catálogo público, sin enviar datos tuyos; la de Gemini, Claude y OpenAI se pide a cada proveedor con tu clave, sin enviar ningún otro dato. Puedes desactivar todas las funciones de IA, o solo la valoración de salud o la estimación nutricional automáticas, en Ajustes → Inteligencia artificial. El contenido generado con IA se marca en la app, puede contener errores y se puede reportar.
 2. **Open Food Facts.** Al escanear un código de barras o buscar un producto por nombre se envía ese código o ese texto a Open Food Facts (base de datos abierta, sin cuenta) para obtener el nombre, la foto y la ficha del producto. Las fotos de producto se descargan de sus servidores. Datos de Open Food Facts bajo licencia ODbL.
 3. **Catálogo de packs de recetas.** Al abrir el catálogo o instalar un pack se descargan un listado público y el archivo del pack desde miga.calamares.org (o desde el catálogo alternativo que configures). No se envían datos tuyos.
+
+   Con el catálogo oficial, la app también lee de stats.miga.calamares.org cuántas veces se ha instalado cada pack y, cuando instalas uno nuevo (no al actualizarlo), envía allí solo el identificador del pack para sumar una instalación. No se envía ningún dato tuyo ni de tu dispositivo. Para contar cada instalación una sola vez al día, el servidor guarda una huella cifrada de la fecha, tu dirección IP y el pack, que no permite recuperar la IP y se borra cada día; solo se conservan totales por pack y día. Puedes desactivarlo en Ajustes → Packs de recetas → Contribuir al contador de instalaciones.
 4. **Servidor de sincronización propio (opcional).** Si añades una conexión a un servidor que alojas tú (miga-server), los libros, recetas y fotos que vincules y, si lo activas, la lista de la compra (con el nombre que pongas como autor) se envían solo a ese servidor. La app sincroniza al abrirse, periódicamente en segundo plano y cada pocos segundos mientras ves una lista compartida. Las invitaciones por QR contienen la dirección del servidor, el espacio compartido y un token de acceso: quien escanee el código puede leer y modificar ese espacio. Si el servidor usa http:// fuera de tu red local, la app te avisa de que la conexión no está cifrada.
 5. **Importar desde una URL.** La app descarga la página que indiques para extraer la receta y, si usas IA, envía su texto al proveedor elegido (ver punto 1).
 6. **Reportes y contacto.** Si reportas un contenido generado con IA o informas de un problema, la app abre tu correo con el mensaje para miga@calamares.org ya escrito; tú decides si lo envías.

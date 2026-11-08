@@ -72,6 +72,7 @@ class SettingsRepository(private val context: Context) {
     private val dictationLanguageKey = stringPreferencesKey("dictation_language")
     private val lastSeenVersionCodeKey = intPreferencesKey("last_seen_version_code")
     private val packsCatalogRepoKey = stringPreferencesKey("packs_catalog_repo")
+    private val packInstallStatsKey = booleanPreferencesKey("pack_install_stats")
     private val dismissedUpdateKey = stringPreferencesKey("dismissed_update_version")
     private val dismissedPackUpdatesKey = stringPreferencesKey("dismissed_pack_updates")
 
@@ -490,6 +491,14 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[packsCatalogRepoKey] = repo.trim() }
     }
 
+    /** Whether installing a pack from the official catalogue adds one to its anonymous counter (on by default). */
+    fun observePackInstallStats(): Flow<Boolean> =
+        context.settingsDataStore.data.map { prefs -> prefs[packInstallStatsKey] ?: true }
+
+    suspend fun setPackInstallStats(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[packInstallStatsKey] = enabled }
+    }
+
     /** Version the user answered "Not now" to; it is not announced again. */
     /** Pack updates ("id:version") the user answered "Not now" to; they are not announced again. */
     suspend fun dismissedPackUpdates(): Set<String> =
@@ -516,7 +525,7 @@ class SettingsRepository(private val context: Context) {
     )
     private val backupBooleanKeys = listOf(
         aiEnabledKey, aiHealthEnabledKey, aiNutritionEnabledKey, shoppingImagesKey, recipeBookListGroupedKey,
-        openRouterModelImagesKey
+        openRouterModelImagesKey, packInstallStatsKey
     )
 
     /** The settings to include in a full backup (only those the user has set). */
