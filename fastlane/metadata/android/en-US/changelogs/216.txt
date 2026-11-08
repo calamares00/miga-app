@@ -1,0 +1,2 @@
+What's new in 1.0.18:
+• Fixed: opening a shared book (.miga file or link) while Miga was already open sometimes did not show the prompt to import it.

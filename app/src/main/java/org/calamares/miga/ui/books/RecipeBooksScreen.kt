@@ -14,6 +14,10 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Checkbox
+import kotlinx.coroutines.flow.filterNotNull
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Link
@@ -172,9 +176,13 @@ fun RecipeBooksScreen(
     val incomingBook by viewModel.incomingBook.collectAsState()
     val importingBook by viewModel.importingBook.collectAsState()
     val downloadingBook by viewModel.downloadingBook.collectAsState()
-    val incomingFile by BookFileIntents.event.collectAsState()
-    LaunchedEffect(incomingFile) {
-        incomingFile?.let { viewModel.onIncomingFile(context, it) }
+    // Only the visible Miga takes the file: opening it from WhatsApp starts a second Miga in
+    // WhatsApp's task, and the one left in the background must not take it and ask there, unseen.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            BookFileIntents.event.filterNotNull().collect { viewModel.onIncomingFile(context, it) }
+        }
     }
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(syncMessage) {

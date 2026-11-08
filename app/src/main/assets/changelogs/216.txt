@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.18:
+• Corregido: al abrir un libro compartido (archivo .miga o enlace) con Miga ya abierta, a veces no aparecía la pregunta para importarlo.
