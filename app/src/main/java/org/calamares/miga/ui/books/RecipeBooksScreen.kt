@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Checkbox
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Link
 import org.calamares.miga.data.share.BookFileIntents
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarHost
@@ -170,6 +171,7 @@ fun RecipeBooksScreen(
     val syncMessage by viewModel.syncMessage.collectAsState()
     val incomingBook by viewModel.incomingBook.collectAsState()
     val importingBook by viewModel.importingBook.collectAsState()
+    val downloadingBook by viewModel.downloadingBook.collectAsState()
     val incomingFile by BookFileIntents.event.collectAsState()
     LaunchedEffect(incomingFile) {
         incomingFile?.let { viewModel.onIncomingFile(context, it) }
@@ -311,6 +313,7 @@ fun RecipeBooksScreen(
                                     onTogglePin = { viewModel.togglePinned(book) },
                                     onUninstall = { packToUninstall = book },
                                     onShare = { viewModel.shareBook(context, book) },
+                                    onShareLink = { viewModel.shareBookLink(context, book) },
                                     // Pinning moves the book to the top; animate it instead of jumping.
                                     modifier = Modifier.animateItemPlacement()
                                 ) { openMenu ->
@@ -342,6 +345,7 @@ fun RecipeBooksScreen(
                                     onTogglePin = { viewModel.togglePinned(book) },
                                     onUninstall = { packToUninstall = book },
                                     onShare = { viewModel.shareBook(context, book) },
+                                    onShareLink = { viewModel.shareBookLink(context, book) },
                                     // Pinning moves the book to the top; animate it instead of jumping.
                                     modifier = Modifier.animateItemPlacement()
                                 ) { openMenu ->
@@ -376,10 +380,10 @@ fun RecipeBooksScreen(
             dismissButton = { TextButton(onClick = { viewModel.dismissIncomingBook() }) { Text(L10n.str(R.string.cancel)) } }
         )
     }
-    if (importingBook) {
+    if (importingBook || downloadingBook) {
         AlertDialog(
             onDismissRequest = {},
-            title = { Text(L10n.str(R.string.importing_book)) },
+            title = { Text(L10n.str(if (downloadingBook) R.string.downloading_book else R.string.importing_book)) },
             text = { LinearProgressIndicator(modifier = Modifier.fillMaxWidth()) },
             confirmButton = {}
         )
@@ -513,6 +517,7 @@ private fun BookMenuHost(
     onTogglePin: () -> Unit,
     onUninstall: () -> Unit,
     onShare: () -> Unit,
+    onShareLink: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable (openMenu: () -> Unit) -> Unit
 ) {
@@ -545,6 +550,11 @@ private fun BookMenuHost(
                     text = { Text(L10n.str(R.string.share_book)) },
                     leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
                     onClick = { showMenu = false; onShare() }
+                )
+                DropdownMenuItem(
+                    text = { Text(L10n.str(R.string.share_link)) },
+                    leadingIcon = { Icon(Icons.Filled.Link, contentDescription = null) },
+                    onClick = { showMenu = false; onShareLink() }
                 )
             }
         }

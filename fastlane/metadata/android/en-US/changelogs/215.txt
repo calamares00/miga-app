@@ -1,4 +1,4 @@
 What's new in 1.0.17:
-• Share book: send a book by WhatsApp, Telegram or mail in one tap. Opening it, Miga imports it; if you had it already, it adds new recipes and updates changed ones.
-• In the Library, an empty filter no longer repeats its button.
-• The Server filter is always shown and, without a server, explains what it is for.
+• Share book: send it as a file by WhatsApp, Telegram or mail; opening it, Miga imports it and, if you had it, adds what's new and updates what changed.
+• Share link: the book is encrypted on your phone and shared with a link that expires after 7 days, ideal for books with many photos.
+• Library: empty filters don't repeat their button and Server explains what it's for.

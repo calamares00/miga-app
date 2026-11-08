@@ -2,6 +2,8 @@ package org.calamares.miga.ui.books
 
 import kotlinx.coroutines.flow.combine
 import android.content.Context
+import org.calamares.miga.data.remote.ShareLinkClient
+import java.io.File
 import android.net.Uri
 import org.calamares.miga.data.export.FileExports
 import org.calamares.miga.data.export.LibraryImportParseResult
@@ -170,17 +172,37 @@ class RecipeBooksViewModel(
     private val _importingBook = MutableStateFlow(false)
     val importingBook: StateFlow<Boolean> = _importingBook
 
+    private val _downloadingBook = MutableStateFlow(false)
+    /** True while a book link is being downloaded, before asking whether to import it. */
+    val downloadingBook: StateFlow<Boolean> = _downloadingBook
+
     /** A Miga file opened from another app: reads it and asks before importing anything. */
     fun onIncomingFile(context: Context, event: IncomingBookFile) {
         BookFileIntents.consume()
         val appContext = context.applicationContext
         viewModelScope.launch {
-            val file = (event as? IncomingBookFile.Ready)?.file
+            var password: CharArray? = null
+            val file = when (event) {
+                is IncomingBookFile.Ready -> event.file
+                is IncomingBookFile.Link -> {
+                    _downloadingBook.value = true
+                    val dir = File(appContext.cacheDir, "incoming").apply { mkdirs() }
+                    val target = File(dir, "${event.link.id}.miga")
+                    val ok = try { ShareLinkClient.download(event.link, target) } finally { _downloadingBook.value = false }
+                    if (!ok) {
+                        _syncMessage.value = L10n.str(R.string.share_link_expired)
+                        return@launch
+                    }
+                    password = event.link.key.toCharArray()
+                    target
+                }
+                IncomingBookFile.Unreadable -> null
+            }
             if (file == null) {
                 _syncMessage.value = L10n.str(R.string.couldnt_open_file)
                 return@launch
             }
-            when (val parsed = RecipeExporter.parseLibraryImport(appContext, Uri.fromFile(file))) {
+            when (val parsed = RecipeExporter.parseLibraryImport(appContext, Uri.fromFile(file), password)) {
                 is LibraryImportParseResult.Success -> {
                     val book = parsed.dto.books.singleOrNull()
                     if (book == null) {
@@ -218,6 +240,16 @@ class RecipeBooksViewModel(
 
     fun dismissIncomingBook() {
         _incomingBook.value = null
+    }
+
+    /** "Share link": the book encrypted on a temporary link, sent as text. */
+    fun shareBookLink(context: Context, summary: RecipeBookSummary) {
+        viewModelScope.launch {
+            val book = repository.getRecipeBookOnce(summary.id) ?: return@launch
+            if (!FileExports.shareBookLink(context, book) { repository.getRecipesForBookOnce(summary.id) }) {
+                _syncMessage.value = L10n.str(R.string.pdf_already_running)
+            }
+        }
     }
 
     /** "Share book": the book as a ".miga" file, straight to the share sheet. */
