@@ -1,5 +1,7 @@
 package org.calamares.miga.data.export
 
+import org.calamares.miga.data.remote.ShareUploadResult
+import org.calamares.miga.data.remote.ShareLinkClient
 import android.content.Context
 import android.net.Uri
 import kotlinx.coroutines.CancellationException
@@ -39,9 +41,20 @@ sealed interface FileExportState {
     /**
      * Writing [title]: [current] of [total] pages (PDF) or photos (Miga file) once known, 0 before.
      */
-    data class Running(val title: String, val format: ExportFormat, val current: Int = 0, val total: Int = 0) : FileExportState
+    data class Running(
+        val title: String,
+        val format: ExportFormat,
+        val current: Int = 0,
+        val total: Int = 0,
+        /** Sending a book link: [current] is then the percentage uploaded. */
+        val uploading: Boolean = false
+    ) : FileExportState
 
-    data class Ready(val title: String, val format: ExportFormat, val file: File) : FileExportState
+    /** A book link ready to send ("Share link"): opens the share sheet with [url] at once. */
+    data class LinkReady(val title: String, val url: String, val expiresAt: Long) : FileExportState
+
+    /** [autoShare]: "Share book" opens the share sheet as soon as the file is ready. */
+    data class Ready(val title: String, val format: ExportFormat, val file: File, val autoShare: Boolean = false) : FileExportState
 
     data class Failed(val title: String, val message: String) : FileExportState
 }
@@ -84,6 +97,75 @@ object FileExports {
             }
         }
 
+    /**
+     * "Share book": writes [book] as a ".miga" file for someone else (see RecipeExporter.writeMigaFile
+     * with forSharing) and opens the share sheet as soon as it is ready.
+     */
+    fun shareBook(context: Context, book: RecipeBook, loadRecipes: suspend () -> List<Recipe>): Boolean =
+        start(context, book.name, ExportFormat.MIGA_FILE, autoShare = true) { appContext, onProgress ->
+            RecipeExporter.writeMigaFile(appContext, book.name, book, loadRecipes(), singleRecipe = false, forSharing = true, onPhoto = onProgress)
+        }
+
+    /**
+     * "Share link": writes [book] like [shareBook], encrypts it with a new key, uploads it to
+     * miga-share.calamares.org and offers the link (the key goes only in the link's fragment).
+     */
+    fun shareBookLink(context: Context, book: RecipeBook, loadRecipes: suspend () -> List<Recipe>): Boolean {
+        if (isRunning) return false
+        val appContext = context.applicationContext
+        val title = book.name
+        val format = ExportFormat.MIGA_FILE
+        _state.value = FileExportState.Running(title, format)
+        val notificationTitle = L10n.str(R.string.share_link_preparing_x, title)
+        val icon = R.drawable.ic_notification_export
+        job = scope.launch {
+            try {
+                val result = AiKeepAlive.hold(notificationTitle, icon = icon) {
+                    status(L10n.str(R.string.pdf_preparing))
+                    val coroutineJob = coroutineContext.job
+                    val file = RecipeExporter.writeMigaFile(appContext, title, book, loadRecipes(), singleRecipe = false, onPhoto = { current, total ->
+                        coroutineJob.ensureActive()
+                        _state.value = FileExportState.Running(title, format, current, total)
+                        progress(current, total)
+                        status(progressText(format, current, total))
+                    }, forSharing = true)
+                    val encrypted = File(file.parentFile, file.name + ".enc")
+                    val key = withContext(Dispatchers.IO) { ShareLinkClient.encrypt(file, encrypted) }
+                    try {
+                        ShareLinkClient.upload(encrypted, key) { sent, total ->
+                            coroutineJob.ensureActive()
+                            val percent = (sent * 100 / total.coerceAtLeast(1)).toInt()
+                            _state.value = FileExportState.Running(title, format, percent, 100, uploading = true)
+                            progress(percent, 100)
+                            status(L10n.str(R.string.share_link_uploading_x, percent))
+                        }
+                    } finally {
+                        encrypted.delete()
+                        file.delete()
+                    }
+                }
+                _state.value = when (result) {
+                    is ShareUploadResult.Success -> FileExportState.LinkReady(title, result.link.url, result.expiresAt)
+                    is ShareUploadResult.Error -> FileExportState.Failed(
+                        title,
+                        L10n.str(
+                            when (result.code) {
+                                413 -> R.string.share_link_too_large
+                                429 -> R.string.share_link_too_many
+                                else -> R.string.share_link_failed
+                            }
+                        )
+                    )
+                }
+            } catch (e: CancellationException) {
+                _state.value = FileExportState.Idle
+            } catch (e: Throwable) {
+                _state.value = FileExportState.Failed(title, e.message ?: e::class.simpleName.orEmpty())
+            }
+        }
+        return true
+    }
+
     /** Several recipes of [book] chosen by the user, under [title] ("Selected recipes"). */
     fun exportSelection(context: Context, title: String, book: RecipeBook?, recipes: List<Recipe>, format: ExportFormat): Boolean =
         start(context, title, format) { appContext, onProgress ->
@@ -99,6 +181,7 @@ object FileExports {
         context: Context,
         title: String,
         format: ExportFormat,
+        autoShare: Boolean = false,
         write: suspend (Context, onProgress: (Int, Int) -> Unit) -> File
     ): Boolean {
         if (isRunning) return false
@@ -125,7 +208,7 @@ object FileExports {
                         status(progressText(format, current, total))
                     }
                 }
-                _state.value = FileExportState.Ready(title, format, file)
+                _state.value = FileExportState.Ready(title, format, file, autoShare)
                 AiKeepAlive.announceIfInBackground(L10n.str(R.string.export_ready_notification_x, title), icon = icon)
             } catch (e: CancellationException) {
                 _state.value = FileExportState.Idle
@@ -152,6 +235,17 @@ object FileExports {
     /** Closes the result (ready or failed). The file stays in the cache until the next export or a cache clean-up. */
     fun dismiss() {
         if (!isRunning) _state.value = FileExportState.Idle
+    }
+
+    /** Sends [link] as text (WhatsApp, Telegram, mail…), with when it expires. */
+    fun shareLink(context: Context, link: FileExportState.LinkReady) {
+        val date = java.text.DateFormat.getDateInstance(java.text.DateFormat.LONG, L10n.locale()).format(java.util.Date(link.expiresAt))
+        val text = L10n.str(R.string.share_link_message_x_x_x, link.title, link.url, date)
+        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(android.content.Intent.EXTRA_TEXT, text)
+        }
+        context.startActivity(android.content.Intent.createChooser(intent, L10n.str(R.string.share_link)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
     fun share(context: Context, ready: FileExportState.Ready) {

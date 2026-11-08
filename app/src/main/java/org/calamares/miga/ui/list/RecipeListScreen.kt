@@ -56,6 +56,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
@@ -269,6 +271,18 @@ fun RecipeListScreen(
                                 onClick = { showMenu = false; viewModel.togglePinned() }
                             )
                             HorizontalDivider()
+                            if (!uiState.isPackBook) {
+                                DropdownMenuItem(
+                                    text = { Text(L10n.str(R.string.share_book)) },
+                                    leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                                    onClick = { showMenu = false; viewModel.shareBook(context) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(L10n.str(R.string.share_link)) },
+                                    leadingIcon = { Icon(Icons.Filled.Link, contentDescription = null) },
+                                    onClick = { showMenu = false; viewModel.shareBookLink(context) }
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text(L10n.str(R.string.export_book_ellipsis)) },
                                 leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },

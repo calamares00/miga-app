@@ -62,6 +62,10 @@ Exportar (JSON, ZIP, PDF), compartir recetas o listas y las copias de seguridad 
 
 Si proteges una copia de seguridad con contraseña, se cifra en tu dispositivo con AES-256-GCM y una clave derivada de la contraseña (PBKDF2). La contraseña no se guarda ni se envía a ningún sitio; sin ella nadie, tampoco el desarrollador, puede abrir la copia.
 
+Al compartir un libro como archivo («Compartir libro») no se incluyen tus favoritos, valoraciones ni notas del diario.
+
+Con «Compartir enlace», el libro se cifra en tu dispositivo (AES-256-GCM) con una clave aleatoria y se sube cifrado a miga-share.calamares.org, donde se guarda 7 días y después se borra solo. La clave va únicamente en el propio enlace, tras el símbolo #, que los navegadores no envían al servidor: ni el servidor ni el desarrollador pueden leer el libro, solo quien tenga el enlace completo. Para limitar el número de enlaces por día, el servidor guarda una huella cifrada de la fecha y la dirección IP que se borra cada día.
+
 ## Conservación y borrado
 
 Los datos se conservan mientras tengas la app instalada. Puedes:

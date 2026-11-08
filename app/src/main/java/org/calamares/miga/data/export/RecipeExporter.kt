@@ -193,20 +193,29 @@ object RecipeExporter {
         book: RecipeBook?,
         recipes: List<Recipe>,
         singleRecipe: Boolean,
-        onPhoto: (Int, Int) -> Unit
+        onPhoto: (Int, Int) -> Unit,
+        /**
+         * A book sent to someone else ("Share book"): a ".miga" file without what is personal
+         * (favourites, ratings, the cooking journal), which [importSharedBook] merges into the
+         * same book on the other phone.
+         */
+        forSharing: Boolean = false
     ): File = withContext(Dispatchers.IO) {
+        fun dto(recipe: Recipe) = recipe.toExportDto().let {
+            if (forSharing) it.copy(isFavorite = false, rating = null, journal = emptyList()) else it
+        }
         val manifest = if (singleRecipe) {
-            json.encodeToString(recipes.single().toExportDto())
+            json.encodeToString(dto(recipes.single()))
         } else {
             json.encodeToString(
                 LibraryExportDto(
                     exportedAt = System.currentTimeMillis(),
                     books = listOfNotNull(book?.let { bookExportDto(it) }),
-                    recipes = recipes.map { it.toExportDto() }
+                    recipes = recipes.map { dto(it) }
                 )
             )
         }
-        val file = File(exportsDir(context), sanitizeFileName(fileName) + ".zip")
+        val file = File(exportsDir(context), sanitizeFileName(fileName) + if (forSharing) ".miga" else ".zip")
         try {
             file.outputStream().use { output ->
                 writeZipToStream(context, output, manifest, photoSourcesFor(if (singleRecipe) null else book, recipes), onPhoto)
@@ -473,6 +482,63 @@ object RecipeExporter {
             PackImportResult.Error(importErrorMessage(e, R.string.unknown_error))
         } catch (e: OutOfMemoryError) {
             PackImportResult.Error(importErrorMessage(e, R.string.unknown_error))
+        }
+    }
+
+    /**
+     * Merges a book shared by someone else ([writeMigaFile] with forSharing) into the same book
+     * here: found by its uid (a new book otherwise, even if another one has the same name), new
+     * recipes added and those that changed updated (only when the file's copy is newer), so
+     * sending the file again works as a manual sync. Nothing is deleted and what is personal here
+     * (favourite, rating, journal) stays.
+     */
+    suspend fun importSharedBook(
+        context: Context,
+        parsed: LibraryImportParseResult.Success,
+        repository: RecipeRepository
+    ): SharedBookImportResult = withContext(Dispatchers.IO) {
+        try {
+            val dto = parsed.dto
+            val bookMeta = dto.books.singleOrNull()
+                ?: return@withContext SharedBookImportResult.Error(L10n.str(R.string.shared_file_not_a_book))
+            val wantedPaths = photoPaths(dto.recipes) + listOfNotNull(bookMeta.coverPhotoFileName?.let { "books/${bookMeta.uid}/$it" })
+            val extracted = if (parsed.isZip) extractZipPhotos(context, parsed.source, wantedPaths, parsed.password) else emptyMap()
+            val cover = bookMeta.coverPhotoFileName?.let { extracted["books/${bookMeta.uid}/$it"] }
+            val bookId = repository.findSharedBookId(bookMeta.uid)
+                ?: repository.createBookWithUid(bookMeta.name, bookMeta.uid, cover)
+            var added = 0
+            var updated = 0
+            var unchanged = 0
+            dto.recipes.forEach { recipeDto ->
+                val existing = repository.findRecipeStateByUid(recipeDto.uid)
+                when {
+                    existing == null -> {
+                        val recipeId = repository.saveRecipe(
+                            recipeDto.copy(isFavorite = false).toDraft(bookId, resolvePhotos(recipeDto.uid, recipeDto.photos, extracted))
+                        )
+                        applyHealthFromImport(repository, recipeId, recipeDto.health)
+                        applyNutritionFromImport(repository, recipeId, recipeDto.nutrition)
+                        added++
+                    }
+                    existing.inPack || (recipeDto.updatedAt != null && existing.updatedAt >= recipeDto.updatedAt) -> unchanged++
+                    else -> {
+                        val photos = resolvePhotos(recipeDto.uid, recipeDto.photos, extracted)
+                        repository.saveRecipe(
+                            recipeDto.copy(isFavorite = existing.isFavorite).toDraft(bookId, photos).copy(id = existing.id)
+                        )
+                        applyHealthFromImport(repository, existing.id, recipeDto.health)
+                        applyNutritionFromImport(repository, existing.id, recipeDto.nutrition)
+                        updated++
+                    }
+                }
+            }
+            SharedBookImportResult.Success(bookId, bookMeta.name, added, updated, unchanged)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            SharedBookImportResult.Error(importErrorMessage(e, R.string.unknown_error))
+        } catch (e: OutOfMemoryError) {
+            SharedBookImportResult.Error(importErrorMessage(e, R.string.unknown_error))
         }
     }
 
@@ -748,4 +814,10 @@ object RecipeExporter {
             appendLine(L10n.str(R.string.source) + ": " + recipe.source)
         }
     }
+}
+
+/** Result of merging a shared book file, see [RecipeExporter.importSharedBook]. */
+sealed interface SharedBookImportResult {
+    data class Success(val bookId: Long, val bookName: String, val added: Int, val updated: Int, val unchanged: Int) : SharedBookImportResult
+    data class Error(val reason: String) : SharedBookImportResult
 }

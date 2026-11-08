@@ -14,6 +14,10 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Checkbox
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Link
+import org.calamares.miga.data.share.BookFileIntents
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.CircularProgressIndicator
@@ -159,15 +163,19 @@ fun RecipeBooksScreen(
         viewModel.checkPackUpdates()
     }
 
-    // Without any sync connection there are no server books, so that filter is not offered.
+    // The server filter is always offered: without a connection it explains what a server is for.
     val hasServer = connectionNames.isNotEmpty()
-    LaunchedEffect(hasServer) {
-        if (!hasServer && filter == BookFilter.SERVER) viewModel.setFilter(BookFilter.ALL)
-    }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val syncing by viewModel.syncing.collectAsState()
     val syncMessage by viewModel.syncMessage.collectAsState()
+    val incomingBook by viewModel.incomingBook.collectAsState()
+    val importingBook by viewModel.importingBook.collectAsState()
+    val downloadingBook by viewModel.downloadingBook.collectAsState()
+    val incomingFile by BookFileIntents.event.collectAsState()
+    LaunchedEffect(incomingFile) {
+        incomingFile?.let { viewModel.onIncomingFile(context, it) }
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(syncMessage) {
         syncMessage?.let {
@@ -230,13 +238,17 @@ fun RecipeBooksScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             // The button follows the filter: packs come from the catalogue and server books from a sync.
-            when (filter) {
-                BookFilter.PACKS -> ExtendedFloatingActionButton(
+            // An empty filter already shows its own button in the message; a second one would repeat it.
+            val filterEmpty = loadedBooks != null && books.isNotEmpty() && sections.isEmpty()
+            when {
+                filterEmpty && filter != BookFilter.SERVER -> Unit
+                filter == BookFilter.SERVER && !hasServer -> Unit
+                filter == BookFilter.PACKS -> ExtendedFloatingActionButton(
                     onClick = onExplorePacks,
                     icon = { Icon(Icons.Filled.Add, null) },
                     text = { Text(L10n.str(R.string.add_pack)) }
                 )
-                BookFilter.SERVER -> ExtendedFloatingActionButton(
+                filter == BookFilter.SERVER -> ExtendedFloatingActionButton(
                     onClick = { viewModel.syncNow(context) },
                     icon = {
                         if (syncing) CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
@@ -267,11 +279,12 @@ fun RecipeBooksScreen(
                     OutlinedButton(onClick = onExplorePacks) { Text(L10n.str(R.string.explore_recipe_packs)) }
                 }
             } else {
-                BookFilterChips(filter, books, showServer = hasServer, onSelect = viewModel::setFilter)
+                BookFilterChips(filter, books, onSelect = viewModel::setFilter)
                 if (updatingPacks) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp))
                 if (sections.isEmpty()) {
                     FilterEmptyState(
                         filter,
+                        hasServer = hasServer,
                         onExplorePacks = onExplorePacks,
                         onAddBookClick = onAddBookClick,
                         onOpenSync = onOpenSync,
@@ -299,6 +312,8 @@ fun RecipeBooksScreen(
                                     onEdit = { onEditBookClick(book.id) },
                                     onTogglePin = { viewModel.togglePinned(book) },
                                     onUninstall = { packToUninstall = book },
+                                    onShare = { viewModel.shareBook(context, book) },
+                                    onShareLink = { viewModel.shareBookLink(context, book) },
                                     // Pinning moves the book to the top; animate it instead of jumping.
                                     modifier = Modifier.animateItemPlacement()
                                 ) { openMenu ->
@@ -329,6 +344,8 @@ fun RecipeBooksScreen(
                                     onEdit = { onEditBookClick(book.id) },
                                     onTogglePin = { viewModel.togglePinned(book) },
                                     onUninstall = { packToUninstall = book },
+                                    onShare = { viewModel.shareBook(context, book) },
+                                    onShareLink = { viewModel.shareBookLink(context, book) },
                                     // Pinning moves the book to the top; animate it instead of jumping.
                                     modifier = Modifier.animateItemPlacement()
                                 ) { openMenu ->
@@ -346,6 +363,30 @@ fun RecipeBooksScreen(
                 }
             }
         }
+    }
+
+    incomingBook?.let { prompt ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissIncomingBook() },
+            icon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
+            title = { Text(L10n.str(R.string.import_book_x, prompt.bookName)) },
+            text = {
+                Text(
+                    L10n.str(R.string.x_recipes_count, prompt.recipeCount) + "\n\n" +
+                        L10n.str(if (prompt.alreadyHere) R.string.shared_book_update_explanation else R.string.shared_book_new_explanation)
+                )
+            },
+            confirmButton = { TextButton(onClick = { viewModel.importIncomingBook(context) }) { Text(L10n.str(R.string.import_action)) } },
+            dismissButton = { TextButton(onClick = { viewModel.dismissIncomingBook() }) { Text(L10n.str(R.string.cancel)) } }
+        )
+    }
+    if (importingBook || downloadingBook) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(L10n.str(if (downloadingBook) R.string.downloading_book else R.string.importing_book)) },
+            text = { LinearProgressIndicator(modifier = Modifier.fillMaxWidth()) },
+            confirmButton = {}
+        )
     }
 
     packToUninstall?.let { book ->
@@ -475,6 +516,8 @@ private fun BookMenuHost(
     onEdit: () -> Unit,
     onTogglePin: () -> Unit,
     onUninstall: () -> Unit,
+    onShare: () -> Unit,
+    onShareLink: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable (openMenu: () -> Unit) -> Unit
 ) {
@@ -503,6 +546,16 @@ private fun BookMenuHost(
                     leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
                     onClick = { showMenu = false; onEdit() }
                 )
+                DropdownMenuItem(
+                    text = { Text(L10n.str(R.string.share_book)) },
+                    leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                    onClick = { showMenu = false; onShare() }
+                )
+                DropdownMenuItem(
+                    text = { Text(L10n.str(R.string.share_link)) },
+                    leadingIcon = { Icon(Icons.Filled.Link, contentDescription = null) },
+                    onClick = { showMenu = false; onShareLink() }
+                )
             }
         }
     }
@@ -510,12 +563,12 @@ private fun BookMenuHost(
 
 /** All, my books, packs, server: which kind of book the list shows, each with how many books it has. */
 @Composable
-private fun BookFilterChips(selected: BookFilter, books: List<RecipeBookSummary>, showServer: Boolean, onSelect: (BookFilter) -> Unit) {
+private fun BookFilterChips(selected: BookFilter, books: List<RecipeBookSummary>, onSelect: (BookFilter) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        BookFilter.entries.filter { showServer || it != BookFilter.SERVER }.forEach { filter ->
+        BookFilter.entries.forEach { filter ->
             FilterChip(
                 selected = filter == selected,
                 onClick = { onSelect(filter) },
@@ -553,6 +606,7 @@ private fun SectionHeader(title: String, level: Int) {
 @Composable
 private fun FilterEmptyState(
     filter: BookFilter,
+    hasServer: Boolean,
     onExplorePacks: () -> Unit,
     onAddBookClick: () -> Unit,
     onOpenSync: () -> Unit,
@@ -575,13 +629,19 @@ private fun FilterEmptyState(
         ) {
             Button(onClick = onAddBookClick) { Text(L10n.str(R.string.new_book)) }
         }
-        BookFilter.SERVER -> EmptyState(
+        // With a server but no books yet, the "Sync" button below is the action.
+        BookFilter.SERVER -> if (hasServer) EmptyState(
             icon = Icons.Filled.Sync,
             title = L10n.str(R.string.no_server_books),
             body = L10n.str(R.string.no_server_books_body),
             modifier = modifier
+        ) else EmptyState(
+            icon = Icons.Filled.Sync,
+            title = L10n.str(R.string.no_server_yet),
+            body = L10n.str(R.string.no_server_yet_body),
+            modifier = modifier
         ) {
-            Button(onClick = onOpenSync) { Text(L10n.str(R.string.set_up_sync)) }
+            Button(onClick = onOpenSync) { Text(L10n.str(R.string.set_up_server)) }
         }
         BookFilter.ALL -> Unit
     }
