@@ -14,6 +14,9 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import org.calamares.miga.L10n
@@ -163,6 +166,15 @@ fun RecipeBooksScreen(
     }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val syncing by viewModel.syncing.collectAsState()
+    val syncMessage by viewModel.syncMessage.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(syncMessage) {
+        syncMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.dismissSyncMessage()
+        }
+    }
 
     // Lazy lists keep their position by item key: after "Packs", going back to "All" would stay on
     // the packs header and hide the books above it. A new filter always starts from the top.
@@ -215,12 +227,29 @@ fun RecipeBooksScreen(
                 }
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddBookClick,
-                icon = { Icon(Icons.Filled.Add, null) },
-                text = { Text(L10n.str(R.string.new_book)) }
-            )
+            // The button follows the filter: packs come from the catalogue and server books from a sync.
+            when (filter) {
+                BookFilter.PACKS -> ExtendedFloatingActionButton(
+                    onClick = onExplorePacks,
+                    icon = { Icon(Icons.Filled.Add, null) },
+                    text = { Text(L10n.str(R.string.add_pack)) }
+                )
+                BookFilter.SERVER -> ExtendedFloatingActionButton(
+                    onClick = { viewModel.syncNow(context) },
+                    icon = {
+                        if (syncing) CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        else Icon(Icons.Filled.Sync, null)
+                    },
+                    text = { Text(L10n.str(if (syncing) R.string.syncing_now else R.string.sync_books)) }
+                )
+                else -> ExtendedFloatingActionButton(
+                    onClick = onAddBookClick,
+                    icon = { Icon(Icons.Filled.Add, null) },
+                    text = { Text(L10n.str(R.string.new_book)) }
+                )
+            }
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {

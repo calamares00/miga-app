@@ -1193,6 +1193,14 @@
     <string name="books_filter_packs">"Packs"</string>
     <string name="books_filter_mine">"Mis libros"</string>
     <string name="books_filter_server">"Servidor"</string>
+    <string name="add_pack">"Añadir pack"</string>
+    <string name="sync_books">"Sincronizar"</string>
+    <string name="syncing_now">"Sincronizando…"</string>
+    <string name="sync_finished">"Sincronización completada"</string>
+    <string name="sync_failed_x">"No se pudo sincronizar: %1$s"</string>
+    <string name="packs_filter_all">"Todos"</string>
+    <string name="packs_filter_installed">"Instalados"</string>
+    <string name="packs_filter_not_installed">"Sin instalar"</string>
     <string name="no_packs_installed">"No tienes packs instalados"</string>
     <string name="no_packs_installed_body">"Los packs son libros de recetas listos para usar: cocinas del mundo, freidora de aire, Navidad y más. Instálalos desde el catálogo."</string>
     <string name="open_pack_catalogue">"Ver el catálogo de packs"</string>
