@@ -1224,6 +1224,15 @@
     <string name="importing_book">"Importing book…"</string>
     <string name="shared_book_imported_x_x_x">"\"%1$s\": %2$d new recipes, %3$d updated"</string>
     <string name="shared_file_not_a_book">"This file is not a Miga book. Full backups are restored from Settings."</string>
+    <string name="share_link">"Share link"</string>
+    <string name="share_link_preparing_x">"Preparing the link to \"%1$s\""</string>
+    <string name="share_link_uploading_x">"Uploading encrypted: %1$d %%"</string>
+    <string name="share_link_message_x_x_x">"Here is the Miga recipe book \"%1$s\": %2$s\nThe link expires on %3$s."</string>
+    <string name="share_link_failed">"Couldn't create the link. Check your connection and try again."</string>
+    <string name="share_link_too_large">"The book is too large for a link (95 MB at most). Share it as a file."</string>
+    <string name="share_link_too_many">"You have created many links today. Try again tomorrow or share it as a file."</string>
+    <string name="share_link_expired">"The link has expired or is not available. Ask for it to be sent again."</string>
+    <string name="downloading_book">"Downloading book…"</string>
     <string name="set_up_sync">"Set up sync"</string>
     <string name="select_packs">"Select packs"</string>
     <string name="install_x">"Install (%1$d)"</string>
