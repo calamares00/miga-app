@@ -247,6 +247,13 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setPacksCatalogRepo(repo) }
     }
 
+    val packInstallStats: StateFlow<Boolean> = settingsRepository.observePackInstallStats()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setPackInstallStats(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setPackInstallStats(enabled) }
+    }
+
     val ttsVoiceName: StateFlow<String?> = settingsRepository.observeTtsVoiceName()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 

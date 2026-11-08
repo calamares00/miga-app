@@ -1,0 +1,3 @@
+Novedades de la versión 1.0.16:
+• El catálogo y la ficha de cada pack muestran cuántas veces se ha instalado (sumando su versión en español y en inglés).
+• Al instalar un pack nuevo del catálogo oficial se suma una instalación anónima, sin datos tuyos ni de tu móvil. Se puede desactivar en Ajustes → Packs de recetas.

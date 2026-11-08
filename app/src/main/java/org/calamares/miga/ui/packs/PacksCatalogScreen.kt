@@ -3,6 +3,7 @@ package org.calamares.miga.ui.packs
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.L10n
 import org.calamares.miga.R
+import org.calamares.miga.data.remote.statsKey
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -103,6 +104,7 @@ fun PacksCatalogScreen(
     val message by viewModel.message.collectAsState()
     val collapsed by viewModel.collapsedSeries.collectAsState()
     val statusFilter by viewModel.statusFilter.collectAsState()
+    val installStats by viewModel.installStats.collectAsState()
     var query by remember { mutableStateOf("") }
     var confirmUninstall by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -299,6 +301,7 @@ fun PacksCatalogScreen(
                                 items(updates, key = { "update/" + it.entry.id }) { item ->
                                     PackListCard(
                                         item = item,
+                                        installs = installsLabel(installStats[item.entry.statsKey]),
                                         selecting = selecting,
                                         selected = item.entry.id in selected,
                                         onClick = {
@@ -326,6 +329,7 @@ fun PacksCatalogScreen(
                                 if (!folded) items(group, key = { it.entry.id }) { item ->
                                     PackListCard(
                                         item = item,
+                                        installs = installsLabel(installStats[item.entry.statsKey]),
                                         selecting = selecting,
                                         selected = item.entry.id in selected,
                                         onClick = {
@@ -401,6 +405,7 @@ private fun SeriesHeader(title: String, count: Int, collapsed: Boolean, onToggle
 @Composable
 private fun PackListCard(
     item: PackListItem,
+    installs: String?,
     selecting: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
@@ -452,7 +457,7 @@ private fun PackListCard(
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(text = item.entry.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
                 Text(
-                    text = L10n.str(R.string.x_x_recipes, item.entry.author, item.entry.recipeCount),
+                    text = listOfNotNull(L10n.str(R.string.x_x_recipes, item.entry.author, item.entry.recipeCount), installs).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

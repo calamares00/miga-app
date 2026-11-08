@@ -8,6 +8,9 @@ import org.calamares.miga.R
 import org.calamares.miga.data.export.PackImportResult
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.remote.CatalogFetchResult
+import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
+import org.calamares.miga.data.remote.PackInstallStats
+import org.calamares.miga.data.remote.PackStatsClient
 import org.calamares.miga.data.remote.PackEntryDto
 import org.calamares.miga.data.remote.PacksCatalogClient
 import org.calamares.miga.data.remote.visibleFor
@@ -116,6 +119,10 @@ class PacksCatalogViewModel(
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message
 
+    private val _installStats = MutableStateFlow<Map<String, PackInstallStats>>(emptyMap())
+    /** Installs by family from the anonymous counter; only for the official catalogue. */
+    val installStats: StateFlow<Map<String, PackInstallStats>> = _installStats
+
     init {
         refresh()
     }
@@ -124,6 +131,9 @@ class PacksCatalogViewModel(
         viewModelScope.launch {
             catalog.value = CatalogLoad.Loading
             val repoPath = settingsRepository.observePacksCatalogRepo().first()
+            if (repoPath == DEFAULT_PACKS_CATALOG) {
+                launch { PackStatsClient.fetchStats()?.let { _installStats.value = it } }
+            }
             when (val result = PacksCatalogClient.fetchCatalog(repoPath)) {
                 is CatalogFetchResult.Error -> catalog.value = CatalogLoad.Error(result.reason)
                 is CatalogFetchResult.Success -> {
@@ -170,7 +180,7 @@ class PacksCatalogViewModel(
             val failed = mutableListOf<String>()
             items.forEachIndexed { index, item ->
                 _progress.value = BatchProgress(index, items.size, uninstalling = false)
-                val result = PackInstaller.install(appContext, repository, item.entry)
+                val result = PackInstaller.install(appContext, repository, settingsRepository, item.entry)
                 if (result is PackImportResult.Error) failed += item.entry.name
             }
             _progress.value = null
@@ -189,7 +199,7 @@ class PacksCatalogViewModel(
         if (entries.isEmpty() || _progress.value != null) return
         val appContext = context.applicationContext
         viewModelScope.launch {
-            val failed = PackInstaller.installAll(appContext, repository, entries) { done, total ->
+            val failed = PackInstaller.installAll(appContext, repository, settingsRepository, entries) { done, total ->
                 _progress.value = BatchProgress(done, total, uninstalling = false)
             }
             _progress.value = null

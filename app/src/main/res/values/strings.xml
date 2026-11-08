@@ -1202,6 +1202,10 @@
     <string name="packs_filter_all">"All"</string>
     <string name="packs_filter_installed">"Installed"</string>
     <string name="packs_filter_not_installed">"Not installed"</string>
+    <string name="one_install">"1 install"</string>
+    <string name="x_installs">"%1$s installs"</string>
+    <string name="contribute_pack_counter">"Contribute to the install counter"</string>
+    <string name="contribute_pack_counter_description">"Installing a pack from the official catalogue adds one anonymous install, to show which packs people like. Nothing about you or your phone is sent."</string>
     <string name="no_packs_installed">"No packs installed"</string>
     <string name="no_packs_installed_body">"Packs are ready-made recipe books: world cuisines, air fryer, Christmas and more. Install them from the catalogue."</string>
     <string name="open_pack_catalogue">"Browse the pack catalogue"</string>
