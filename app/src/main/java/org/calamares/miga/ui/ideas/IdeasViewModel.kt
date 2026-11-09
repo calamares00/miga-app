@@ -103,16 +103,23 @@ class IdeasViewModel(
         _filters.value = IdeasFilters()
     }
 
-    /** Asks for ideas with the chosen options. */
-    fun askWithFilters() {
+    /**
+     * Sends what the bar at the bottom holds: the typed [question], the chosen options, or both. The
+     * options are cleared once sent, like an attachment, so a follow-up does not repeat them.
+     */
+    fun send(question: String) {
+        val trimmed = question.trim().take(MAX_IDEAS_QUESTION_CHARS)
         val filters = _filters.value
-        if (filters.isEmpty) return
-        ask(filtersLabel(filters), "", filters)
+        if (trimmed.isEmpty() && filters.isEmpty) return
+        if (_entries.value.any { it.state == IdeasEntryState.Loading }) return
+        val label = listOf(filtersLabel(filters), trimmed).filter { it.isNotBlank() }.joinToString(" · ")
+        ask(label, trimmed, filters.takeIf { !it.isEmpty })
+        _filters.value = IdeasFilters()
     }
 
-    fun askQuestion(question: String) {
-        val trimmed = question.trim().take(MAX_IDEAS_QUESTION_CHARS)
-        if (trimmed.isNotEmpty()) ask(trimmed, trimmed, null)
+    /** One of the ready-made ideas of the start screen, asked at once. */
+    fun askPreset(filters: IdeasFilters) {
+        ask(filtersLabel(filters), "", filters)
     }
 
     fun retry(entryId: Int) {
