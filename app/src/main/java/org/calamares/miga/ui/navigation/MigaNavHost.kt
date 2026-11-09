@@ -390,7 +390,8 @@ private fun NavGraphBuilder.screens(
         RecipeBookEditorScreen(
             viewModel = viewModel,
             onSaved = { navController.popBackStack() },
-            onCancel = { navController.popBackStack() }
+            onCancel = { navController.popBackStack() },
+            onDeleted = { if (!navController.popBackStack(Destinations.BOOKS_ROUTE, inclusive = false)) navController.popBackStack() }
         )
     }
 
@@ -418,7 +419,8 @@ private fun NavGraphBuilder.screens(
             onAddRecipeFromPhoto = { photoUris -> navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUris = photoUris)) },
             onAddRecipesBulk = { photoUris -> navController.navigate(Destinations.bulkImport(bookId = bookId, photoUris = photoUris)) },
             onSearchDishClick = { navController.navigate(Destinations.dishSearch(bookId)) },
-            onAddRecipeFromUrl = { url -> navController.navigate(Destinations.editor(bookId = bookId, sourceRecipeUrl = url)) }
+            onAddRecipeFromUrl = { url -> navController.navigate(Destinations.editor(bookId = bookId, sourceRecipeUrl = url)) },
+            onEditBookClick = { navController.navigate(Destinations.bookEditor(bookId)) }
         )
     }
 

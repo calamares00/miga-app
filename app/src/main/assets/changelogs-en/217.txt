@@ -1,0 +1,5 @@
+What's new in 1.0.19:
+• Same menus for books and recipes: long press to select, then Edit (one), Share, Delete and More at the top.
+• Select several books: pin, delete or share them together in one file or link.
+• One Share button: send to someone, link, PDF, image, text or a copy.
+• Pack recipes cannot be moved or deleted; they can be copied to your books.
