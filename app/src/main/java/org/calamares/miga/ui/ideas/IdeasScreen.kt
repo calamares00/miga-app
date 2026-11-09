@@ -1,5 +1,12 @@
 package org.calamares.miga.ui.ideas
 
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ArrowDropDown
 import org.calamares.miga.ui.theme.recipePhotoFrame
 import androidx.compose.animation.AnimatedVisibility
 import org.calamares.miga.ui.components.AdaptiveScaffold
@@ -96,10 +103,10 @@ import org.calamares.miga.ui.components.AiProgressView
 import org.calamares.miga.ui.components.ErrorMessage
 
 /**
- * Ideas: AI recommendations based on the user's recipes. A "What do you fancy?" panel combines
- * options (meal, style, kind of dish, utensil) into one request, and the field at the bottom takes
- * any question, including cooking advice. Answers form a conversation; recommended recipes open
- * their detail and new dishes can be created with the AI.
+ * Ideas: AI recommendations based on the user's recipes. It opens on ready-made ideas asked with
+ * one tap; the bar at the bottom combines options (meal, style, kind of dish, utensil, each a
+ * dropdown) with any typed question, including cooking advice. Answers form a conversation;
+ * recommended recipes open their detail and new dishes can be created with the AI.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,22 +125,20 @@ fun IdeasScreen(
     var question by remember { mutableStateOf("") }
     var dishToCreate by remember { mutableStateOf<NewDishIdea?>(null) }
     var addingUtensil by remember { mutableStateOf(false) }
-    // The options panel folds away once there is a conversation, to leave room for the answers.
-    var optionsExpanded by rememberSaveable { mutableStateOf(true) }
+    var openGroup by remember { mutableStateOf<FilterGroup?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val busy = entries.any { it.state == IdeasEntryState.Loading }
 
     LaunchedEffect(entries.size) {
-        if (entries.isNotEmpty()) listState.animateScrollToItem(entries.size)
+        if (entries.isNotEmpty()) listState.animateScrollToItem(entries.size - 1)
     }
 
     fun send() {
-        if (question.isBlank() || busy) return
-        viewModel.askQuestion(question)
+        if (busy || (question.isBlank() && filters.isEmpty)) return
+        viewModel.send(question)
         question = ""
-        optionsExpanded = false
     }
 
     AdaptiveScaffold(
@@ -150,7 +155,7 @@ fun IdeasScreen(
                 },
                 actions = {
                     if (entries.isNotEmpty() && !busy) {
-                        IconButton(onClick = { viewModel.clear(); optionsExpanded = true }) {
+                        IconButton(onClick = { viewModel.clear() }) {
                             Icon(Icons.Filled.DeleteSweep, contentDescription = L10n.str(R.string.ideas_new_conversation))
                         }
                     }
@@ -165,26 +170,10 @@ fun IdeasScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                item(key = "options") {
-                    OptionsPanel(
-                        filters = filters,
-                        utensils = utensils,
-                        expanded = optionsExpanded || entries.isEmpty(),
-                        collapsible = entries.isNotEmpty(),
-                        showIntro = entries.isEmpty(),
-                        busy = busy,
-                        onToggleExpanded = { optionsExpanded = !optionsExpanded },
-                        onMeal = viewModel::setMeal,
-                        onStyle = viewModel::toggleStyle,
-                        onDish = viewModel::toggleDish,
-                        onUtensil = viewModel::toggleUtensil,
-                        onAddUtensil = { addingUtensil = true },
-                        onClear = viewModel::clearFilters,
-                        onAsk = {
-                            viewModel.askWithFilters()
-                            optionsExpanded = false
-                        }
-                    )
+                if (entries.isEmpty()) {
+                    item(key = "welcome") {
+                        IdeasWelcome(enabled = !busy, onPreset = viewModel::askPreset)
+                    }
                 }
                 items(entries, key = { it.id }) { entry ->
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -215,28 +204,56 @@ fun IdeasScreen(
                     }
                 }
             }
+            // Everything to ask sits here, within reach of the thumb: the options as dropdowns and
+            // the field. One send button takes the text, the options or both.
             Surface(color = MaterialTheme.colorScheme.background, tonalElevation = 2.dp) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(vertical = 8.dp)
                 ) {
-                    OutlinedTextField(
-                        value = question,
-                        onValueChange = { question = it.take(MAX_IDEAS_QUESTION_CHARS) },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text(L10n.str(R.string.ideas_ask_placeholder)) },
-                        maxLines = 4
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    FilledIconButton(onClick = ::send, enabled = question.isNotBlank() && !busy) {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = L10n.str(R.string.ideas_send))
+                    FilterBar(filters = filters, onOpen = { openGroup = it }, onClear = viewModel::clearFilters)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = question,
+                            onValueChange = { question = it.take(MAX_IDEAS_QUESTION_CHARS) },
+                            modifier = Modifier.weight(1f),
+                            placeholder = {
+                                Text(L10n.str(if (filters.isEmpty) R.string.ideas_ask_placeholder else R.string.ideas_details_placeholder))
+                            },
+                            shape = RoundedCornerShape(24.dp),
+                            maxLines = 4
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        FilledIconButton(
+                            onClick = ::send,
+                            enabled = (question.isNotBlank() || !filters.isEmpty) && !busy,
+                            modifier = Modifier.size(52.dp)
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = L10n.str(R.string.ideas_send))
+                        }
                     }
                 }
             }
         }
+    }
+
+    openGroup?.let { group ->
+        FilterGroupSheet(
+            group = group,
+            filters = filters,
+            utensils = utensils,
+            onMeal = viewModel::setMeal,
+            onStyle = viewModel::toggleStyle,
+            onDish = viewModel::toggleDish,
+            onUtensil = viewModel::toggleUtensil,
+            onAddUtensil = { addingUtensil = true },
+            onDismiss = { openGroup = null }
+        )
     }
 
     if (addingUtensil) {
@@ -293,93 +310,170 @@ fun IdeasScreen(
     }
 }
 
-/**
- * "What do you fancy?" panel: groups of options that combine into one request. It folds into its
- * header when [collapsible] (there is a conversation) and the user closes it.
- */
-@OptIn(ExperimentalLayoutApi::class)
+/** The groups of options, each a dropdown in the bar above the field. */
+private enum class FilterGroup { MEAL, STYLE, DISH, UTENSIL }
+
+/** A ready-made idea of the start screen: asked at once with a tap. */
+private data class IdeaPreset(val emoji: String, val title: String, val subtitle: String, val filters: IdeasFilters)
+
+/** Ready-made ideas; the first follows the time of day (breakfast, lunch or dinner). */
+private fun ideaPresets(): List<IdeaPreset> {
+    val hour = java.time.LocalTime.now().hour
+    val (nowTitle, nowMeal) = when (hour) {
+        in 5..11 -> R.string.ideas_preset_breakfast to IdeasMeal.BREAKFAST
+        in 12..16 -> R.string.ideas_preset_lunch to IdeasMeal.LUNCH
+        else -> R.string.ideas_preset_dinner to IdeasMeal.DINNER
+    }
+    return listOf(
+        IdeaPreset(mealEmoji(nowMeal), L10n.str(nowTitle), L10n.str(R.string.ideas_preset_now_desc), IdeasFilters(meal = nowMeal)),
+        IdeaPreset(mealEmoji(IdeasMeal.WEEKLY_MENU), L10n.str(R.string.ideas_weekly_menu), L10n.str(R.string.ideas_preset_week_desc), IdeasFilters(meal = IdeasMeal.WEEKLY_MENU)),
+        IdeaPreset("⚡", L10n.str(R.string.ideas_preset_quick), L10n.str(R.string.ideas_preset_quick_desc), IdeasFilters(styles = setOf(IdeasStyle.QUICK))),
+        IdeaPreset("🥗", L10n.str(R.string.ideas_preset_healthy), L10n.str(R.string.ideas_preset_healthy_desc), IdeasFilters(styles = setOf(IdeasStyle.HEALTHY))),
+        IdeaPreset(seasonEmoji(), L10n.str(R.string.ideas_seasonal), L10n.str(R.string.ideas_preset_season_desc), IdeasFilters(styles = setOf(IdeasStyle.SEASONAL))),
+        IdeaPreset(mealEmoji(IdeasMeal.DESSERT), L10n.str(R.string.ideas_preset_dessert), L10n.str(R.string.ideas_preset_dessert_desc), IdeasFilters(meal = IdeasMeal.DESSERT))
+    )
+}
+
+/** Start screen: a short header and ready-made ideas in two columns, without scrolling to reach anything. */
 @Composable
-private fun OptionsPanel(
+private fun IdeasWelcome(enabled: Boolean, onPreset: (IdeasFilters) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+            Box(
+                modifier = Modifier.size(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(L10n.str(R.string.ideas_what_do_you_fancy), style = MaterialTheme.typography.titleLarge)
+                Text(
+                    L10n.str(R.string.ideas_intro_short),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        ideaPresets().chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.height(IntrinsicSize.Min)) {
+                row.forEach { preset ->
+                    PresetCard(preset, enabled, Modifier.weight(1f).fillMaxHeight()) { onPreset(preset.filters) }
+                }
+            }
+        }
+        Text(
+            L10n.str(R.string.ideas_bar_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+    }
+}
+
+@Composable
+private fun PresetCard(preset: IdeaPreset, enabled: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = modifier
+    ) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(preset.emoji, style = MaterialTheme.typography.headlineSmall)
+            Text(preset.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(preset.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/**
+ * The options as four dropdowns in one row (scrolls sideways on narrow screens). Each shows what is
+ * chosen in it; a last chip clears them all.
+ */
+@Composable
+private fun FilterBar(filters: IdeasFilters, onOpen: (FilterGroup) -> Unit, onClear: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        FilterGroup.entries.forEach { group ->
+            val chosen = when (group) {
+                FilterGroup.MEAL -> listOfNotNull(filters.meal?.let { mealLabel(it) })
+                FilterGroup.STYLE -> filters.styles.map { styleLabel(it) }
+                FilterGroup.DISH -> filters.dishes.map { dishLabel(it) }
+                FilterGroup.UTENSIL -> filters.utensils
+            }
+            val label = when (chosen.size) {
+                0 -> groupTitle(group)
+                1 -> chosen.single()
+                else -> "${groupTitle(group)} · ${chosen.size}"
+            }
+            FilterChip(
+                selected = chosen.isNotEmpty(),
+                onClick = { onOpen(group) },
+                label = { Text(label, maxLines = 1) },
+                trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null, modifier = Modifier.size(18.dp)) }
+            )
+        }
+        if (!filters.isEmpty) {
+            IconButton(onClick = onClear) {
+                Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.ideas_clear))
+            }
+        }
+    }
+}
+
+private fun groupTitle(group: FilterGroup): String = L10n.str(
+    when (group) {
+        FilterGroup.MEAL -> R.string.ideas_filter_meal
+        FilterGroup.STYLE -> R.string.ideas_group_style
+        FilterGroup.DISH -> R.string.ideas_filter_dish
+        FilterGroup.UTENSIL -> R.string.ideas_filter_utensil
+    }
+)
+
+/** The options of one group; changes apply at once and "Done" closes it. */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun FilterGroupSheet(
+    group: FilterGroup,
     filters: IdeasFilters,
     utensils: List<String>,
-    expanded: Boolean,
-    collapsible: Boolean,
-    showIntro: Boolean,
-    busy: Boolean,
-    onToggleExpanded: () -> Unit,
     onMeal: (IdeasMeal) -> Unit,
     onStyle: (IdeasStyle) -> Unit,
     onDish: (IdeasDish) -> Unit,
     onUtensil: (String) -> Unit,
     onAddUtensil: () -> Unit,
-    onClear: () -> Unit,
-    onAsk: () -> Unit
+    onDismiss: () -> Unit
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable(enabled = collapsible, onClick = onToggleExpanded),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(L10n.str(R.string.ideas_what_do_you_fancy), style = MaterialTheme.typography.titleMedium)
-                    if (!expanded && !filters.isEmpty) {
-                        Text(
-                            filtersLabel(filters),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-                if (collapsible) {
-                    val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "optionsArrow")
-                    Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.rotate(rotation))
-                }
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(groupTitle(group), style = MaterialTheme.typography.titleLarge)
+            if (group == FilterGroup.MEAL || group == FilterGroup.UTENSIL) {
+                Text(
+                    L10n.str(if (group == FilterGroup.MEAL) R.string.ideas_filter_meal_hint else R.string.ideas_filter_utensil_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            AnimatedVisibility(visible = expanded) {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.padding(top = 12.dp)) {
-                    if (showIntro) {
-                        Text(
-                            L10n.str(R.string.ideas_intro),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                when (group) {
+                    FilterGroup.MEAL -> IdeasMeal.entries.forEach { meal ->
+                        FilterChip(selected = filters.meal == meal, onClick = { onMeal(meal) }, label = { Text("${mealEmoji(meal)}  ${mealLabel(meal)}") })
                     }
-                    OptionGroup(L10n.str(R.string.ideas_group_meal)) {
-                        IdeasMeal.entries.forEach { meal ->
-                            OptionChip("${mealEmoji(meal)}  ${mealLabel(meal)}", filters.meal == meal) { onMeal(meal) }
-                        }
+                    FilterGroup.STYLE -> IdeasStyle.entries.forEach { style ->
+                        val label = if (style == IdeasStyle.SEASONAL) "${seasonEmoji()}  ${styleLabel(style)}" else styleLabel(style)
+                        FilterChip(selected = style in filters.styles, onClick = { onStyle(style) }, label = { Text(label) })
                     }
-                    OptionGroup(L10n.str(R.string.ideas_group_style)) {
-                        IdeasStyle.entries.forEach { style ->
-                            val label = if (style == IdeasStyle.SEASONAL) "${seasonEmoji()}  ${styleLabel(style)}" else styleLabel(style)
-                            OptionChip(label, style in filters.styles) { onStyle(style) }
-                        }
+                    FilterGroup.DISH -> IdeasDish.entries.forEach { dish ->
+                        FilterChip(selected = dish in filters.dishes, onClick = { onDish(dish) }, label = { Text(dishLabel(dish)) })
                     }
-                    OptionGroup(L10n.str(R.string.ideas_group_dish)) {
-                        IdeasDish.entries.forEach { dish ->
-                            OptionChip(dishLabel(dish), dish in filters.dishes) { onDish(dish) }
-                        }
-                    }
-                    OptionGroup(L10n.str(R.string.ideas_group_utensil)) {
+                    FilterGroup.UTENSIL -> {
                         utensils.forEach { name ->
-                            OptionChip(name, filters.utensils.any { it.equals(name, ignoreCase = true) }) { onUtensil(name) }
+                            FilterChip(selected = filters.utensils.any { it.equals(name, ignoreCase = true) }, onClick = { onUtensil(name) }, label = { Text(name) })
                         }
                         FilterChip(
                             selected = false,
@@ -388,42 +482,13 @@ private fun OptionsPanel(
                             leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp)) }
                         )
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            if (filters.isEmpty) L10n.str(R.string.ideas_combine_hint) else filtersLabel(filters),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.weight(1f),
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (!filters.isEmpty) {
-                            TextButton(onClick = onClear) { Text(L10n.str(R.string.ideas_clear)) }
-                        }
-                    }
-                    Button(onClick = onAsk, enabled = !filters.isEmpty && !busy, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                        ButtonContent(Icons.Filled.AutoAwesome, L10n.str(R.string.ideas_ask_button))
-                    }
                 }
+            }
+            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                Text(L10n.str(R.string.ideas_done))
             }
         }
     }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun OptionGroup(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
-            content()
-        }
-    }
-}
-
-@Composable
-private fun OptionChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    FilterChip(selected = selected, onClick = onClick, label = { Text(label) })
 }
 
 @Composable
