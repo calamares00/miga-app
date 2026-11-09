@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.detail
 
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -96,7 +98,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import org.calamares.miga.data.export.RecipeExporter
 import org.calamares.miga.data.export.FileExports
-import org.calamares.miga.ui.components.ExportFormatDialog
+import org.calamares.miga.ui.components.ShareSheet
+import org.calamares.miga.data.export.ShareAction
 import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.HealthColorLevel
 import org.calamares.miga.data.model.Recipe
@@ -167,8 +170,9 @@ fun RecipeDetailScreen(
     val context = LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
-    var showMoveDialog by remember { mutableStateOf(false) }
-    var showExportDialog by remember { mutableStateOf(false) }
+    /** Choosing a book to move (false) or copy (true) the recipe to; null when not asked. */
+    var bookDialogCopies by remember { mutableStateOf<Boolean?>(null) }
+    var showShareSheet by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
     /**
@@ -265,6 +269,10 @@ fun RecipeDetailScreen(
                         tint = if (current?.isFavorite == true) MaterialTheme.colorScheme.primary else LocalContentColor.current
                     )
                 }
+                HeaderIconButton(onPhoto = onPhoto, onClick = { showShareSheet = true }) {
+                    Icon(Icons.Filled.Share, contentDescription = L10n.str(R.string.share))
+                }
+                // The same as "More actions" of one selected recipe; a pack recipe is only copied.
                 Box {
                     HeaderIconButton(onPhoto = onPhoto, onClick = { showMenu = true }) {
                         Icon(Icons.Filled.MoreVert, contentDescription = L10n.str(R.string.more_options))
@@ -283,32 +291,22 @@ fun RecipeDetailScreen(
                                     }
                                 )
                             }
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text(L10n.str(R.string.move_another_book)) },
+                                leadingIcon = { Icon(Icons.Filled.Folder, null) },
+                                onClick = { showMenu = false; bookDialogCopies = false }
+                            )
                         }
                         DropdownMenuItem(
-                            text = { Text(L10n.str(R.string.share_recipe_file)) },
-                            leadingIcon = { Icon(Icons.Filled.Share, null) },
-                            onClick = {
-                                showMenu = false
-                                recipe?.let { if (!FileExports.shareRecipe(context, it)) Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show() }
-                            }
+                            text = { Text(L10n.str(R.string.bulk_copy)) },
+                            leadingIcon = { Icon(Icons.Filled.ContentCopy, null) },
+                            onClick = { showMenu = false; bookDialogCopies = true }
                         )
                         DropdownMenuItem(
-                            text = { Text(L10n.str(R.string.share_link)) },
-                            leadingIcon = { Icon(Icons.Filled.Link, null) },
-                            onClick = {
-                                showMenu = false
-                                recipe?.let { if (!FileExports.shareRecipeLink(context, it)) Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show() }
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(L10n.str(R.string.export_ellipsis)) },
-                            leadingIcon = { Icon(Icons.Filled.FileDownload, null) },
-                            onClick = { showMenu = false; showExportDialog = true }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(L10n.str(R.string.move_another_book)) },
-                            leadingIcon = { Icon(Icons.Filled.SwapHoriz, null) },
-                            onClick = { showMenu = false; showMoveDialog = true }
+                            text = { Text(L10n.str(R.string.bulk_add_to_shopping)) },
+                            leadingIcon = { Icon(Icons.Filled.ShoppingCart, null) },
+                            onClick = { showMenu = false; addToShoppingList() }
                         )
                         if (!currentBookIsPack) {
                             HorizontalDivider()
@@ -364,30 +362,30 @@ fun RecipeDetailScreen(
         )
     }
 
-    val recipeForMove = recipe
-    if (showExportDialog) {
+    if (showShareSheet) {
         recipe?.let { current ->
             val accent = MaterialTheme.colorScheme.primary.toArgb()
-            ExportFormatDialog(
+            ShareSheet(
                 title = current.name,
-                offerImage = true,
-                onFormat = { format ->
-                    showExportDialog = false
-                    if (!FileExports.exportRecipe(context, current, format, accent)) {
+                actions = ShareAction.entries.toList(),
+                onAction = { action ->
+                    if (!FileExports.shareRecipeAs(context, current, action, accent)) {
                         Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
                     }
                 },
-                onText = { showExportDialog = false; RecipeExporter.shareAsText(context, current) },
-                onDismiss = { showExportDialog = false }
+                onDismiss = { showShareSheet = false }
             )
         }
     }
 
-    if (showMoveDialog && recipeForMove != null) {
+    val recipeForMove = recipe
+    val copying = bookDialogCopies
+    if (copying != null && recipeForMove != null) {
         val otherBooks = recipeBooks.filter { it.id != recipeForMove.recipeBookId && !it.isPack }
+        val dialogTitle = L10n.str(if (copying) R.string.bulk_copy else R.string.move_another_book)
         AlertDialog(
-            onDismissRequest = { showMoveDialog = false },
-            title = { Text(L10n.str(R.string.move_another_book)) },
+            onDismissRequest = { bookDialogCopies = null },
+            title = { Text(dialogTitle) },
             text = {
                 if (otherBooks.isEmpty()) {
                     Text(L10n.str(R.string.dont_have_other_recipe_books))
@@ -398,8 +396,13 @@ fun RecipeDetailScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        showMoveDialog = false
-                                        viewModel.moveToBook(book.id)
+                                        bookDialogCopies = null
+                                        if (copying) {
+                                            viewModel.copyToBook(context, book.id)
+                                            Toast.makeText(context, L10n.str(R.string.recipe_copied_to_x, book.name), Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            viewModel.moveToBook(book.id)
+                                        }
                                     }
                                     .padding(vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -412,7 +415,7 @@ fun RecipeDetailScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showMoveDialog = false }) { Text(L10n.str(R.string.close)) }
+                TextButton(onClick = { bookDialogCopies = null }) { Text(L10n.str(R.string.close)) }
             }
         )
     }

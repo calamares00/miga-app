@@ -55,7 +55,8 @@ import org.calamares.miga.data.model.RecipeSummary
 /**
  * Recipe card for the list views (Normal and Compact). [compact] hides the photo to give the title
  * more width and make the list denser. In multi-select mode the photo slot becomes a checkbox and
- * quick actions are hidden.
+ * the favourite button is hidden. Editing, deleting and the rest go through the selection (long
+ * press), the same as for books.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -67,13 +68,8 @@ fun RecipeCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onToggleFavorite: () -> Unit,
-    onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit,
-    readOnly: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    var showMenu by remember { mutableStateOf(false) }
-
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -161,30 +157,6 @@ fun RecipeCard(
                         contentDescription = L10n.str(R.string.favourite),
                         tint = if (recipe.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-
-                if (!readOnly) {
-                    Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(
-                                imageVector = Icons.Filled.MoreVert,
-                                contentDescription = L10n.str(R.string.more_options),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            DropdownMenuItem(
-                                text = { Text(L10n.str(R.string.edit)) },
-                                leadingIcon = { Icon(Icons.Filled.Edit, null) },
-                                onClick = { showMenu = false; onEditClick() }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(L10n.str(R.string.delete), color = MaterialTheme.colorScheme.error) },
-                                leadingIcon = { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) },
-                                onClick = { showMenu = false; onDeleteClick() }
-                            )
-                        }
-                    }
                 }
             }
         }

@@ -1,0 +1,5 @@
+Novedades de la versión 1.0.19:
+• Libros y recetas con los mismos menús: pulsación larga para seleccionar (también varios libros) y arriba Editar, Compartir, Eliminar y Más.
+• Un único Compartir: enviar, enlace, PDF, imagen, texto o copia.
+• Ideas rehecha: ideas rápidas de un toque, y filtros y pregunta juntos abajo.
+• Las recetas de pack no se mueven ni se eliminan; se pueden copiar a tus libros.
