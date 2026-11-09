@@ -194,10 +194,12 @@ class RecipeRepository(
     }
 
     /**
-     * No-op when [newBookId] is a pack book, since content cannot be added to one. Moving a recipe
-     * out of a pack is allowed.
+     * No-op when either book is a pack: pack recipes are read-only (they can be copied, see
+     * [copyRecipeToBook]) and content cannot be added to a pack.
      */
     suspend fun moveRecipeToBook(recipeId: Long, newBookId: Long) {
+        val recipe = recipeDao.getRecipeOnce(recipeId) ?: return
+        if (recipeBookDao.getOnce(recipe.recipeBookId)?.packId != null) return
         if (recipeBookDao.getOnce(newBookId)?.packId != null) return
         recipeDao.updateRecipeBook(recipeId, newBookId)
     }

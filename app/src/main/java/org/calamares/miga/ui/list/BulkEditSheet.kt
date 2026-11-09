@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material3.AlertDialog
@@ -49,9 +50,10 @@ import org.calamares.miga.data.model.RecipeBookSummary
 private enum class BulkDialog { CATEGORY, DIFFICULTY, SERVINGS, SOURCE, MOVE, COPY }
 
 /**
- * Bulk actions on the selected recipes of a book. Actions that need a value (category, difficulty,
- * servings, source, target book) ask for it in a dialog; applying closes everything and the screen
- * shows the result.
+ * "More actions" of the selected recipes of a book: organise, change, favourite, use. Actions that
+ * need a value (category, difficulty, servings, source, target book) ask for it in a dialog;
+ * applying closes everything and the screen shows the result. In a pack ([readOnly]) only what does
+ * not change the pack is offered: copying to one's own book, favourites and the shopping list.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,7 +71,14 @@ fun BulkEditSheet(
     onMove: (Long) -> Unit,
     onCopy: (Long) -> Unit,
     onShopping: () -> Unit,
-    onRecalculateAi: () -> Unit
+    onRecalculateAi: () -> Unit,
+    readOnly: Boolean = false,
+    /** Every selected recipe is a favourite: the one favourite row then removes them. */
+    allFavorite: Boolean = false,
+    /** Null when everything is already selected. */
+    onSelectAll: (() -> Unit)? = null,
+    /** "Improve recipes" with the cooking assistant; null when it is off. */
+    onPolish: (() -> Unit)? = null
 ) {
     var dialog by remember { mutableStateOf<BulkDialog?>(null) }
 
@@ -80,25 +89,40 @@ fun BulkEditSheet(
     }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 24.dp)) {
+        Column(modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 24.dp).verticalScroll(rememberScrollState())) {
             Text(
-                L10n.str(R.string.bulk_edit_title, count),
+                L10n.str(R.string.more_actions),
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
             )
-            BulkRow(Icons.Filled.Category, L10n.str(R.string.bulk_change_category)) { dialog = BulkDialog.CATEGORY }
-            BulkRow(Icons.Filled.SignalCellularAlt, L10n.str(R.string.bulk_change_difficulty)) { dialog = BulkDialog.DIFFICULTY }
-            BulkRow(Icons.Filled.People, L10n.str(R.string.bulk_change_servings)) { dialog = BulkDialog.SERVINGS }
-            BulkRow(Icons.Filled.Link, L10n.str(R.string.bulk_change_source)) { dialog = BulkDialog.SOURCE }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-            BulkRow(Icons.Filled.Favorite, L10n.str(R.string.bulk_favorite_on)) { done { onFavorite(true) } }
-            BulkRow(Icons.Filled.FavoriteBorder, L10n.str(R.string.bulk_favorite_off)) { done { onFavorite(false) } }
-            BulkRow(Icons.Filled.Folder, L10n.str(R.string.move_another_book)) { dialog = BulkDialog.MOVE }
+            Text(
+                selectedRecipesText(count),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+            )
+            onSelectAll?.let { selectAll -> BulkRow(Icons.Filled.SelectAll, L10n.str(R.string.select_all)) { selectAll(); onDismiss() } }
+            if (!readOnly) BulkRow(Icons.Filled.Folder, L10n.str(R.string.move_another_book)) { dialog = BulkDialog.MOVE }
             BulkRow(Icons.Filled.ContentCopy, L10n.str(R.string.bulk_copy)) { dialog = BulkDialog.COPY }
+            if (!readOnly) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                BulkRow(Icons.Filled.Category, L10n.str(R.string.bulk_change_category)) { dialog = BulkDialog.CATEGORY }
+                BulkRow(Icons.Filled.SignalCellularAlt, L10n.str(R.string.bulk_change_difficulty)) { dialog = BulkDialog.DIFFICULTY }
+                BulkRow(Icons.Filled.People, L10n.str(R.string.bulk_change_servings)) { dialog = BulkDialog.SERVINGS }
+                BulkRow(Icons.Filled.Link, L10n.str(R.string.bulk_change_source)) { dialog = BulkDialog.SOURCE }
+            }
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            if (allFavorite) {
+                BulkRow(Icons.Filled.FavoriteBorder, L10n.str(R.string.bulk_favorite_off)) { done { onFavorite(false) } }
+            } else {
+                BulkRow(Icons.Filled.Favorite, L10n.str(R.string.bulk_favorite_on)) { done { onFavorite(true) } }
+            }
             BulkRow(Icons.Filled.ShoppingCart, L10n.str(R.string.bulk_add_to_shopping)) { done(onShopping) }
-            if (aiAvailable) {
-                BulkRow(Icons.Filled.AutoAwesome, L10n.str(R.string.bulk_recalculate_ai)) { done(onRecalculateAi) }
+            if (!readOnly) {
+                onPolish?.let { polish -> BulkRow(Icons.Filled.AutoAwesome, L10n.str(R.string.bulk_polish_action)) { done(polish) } }
+                if (aiAvailable) {
+                    BulkRow(Icons.Filled.AutoAwesome, L10n.str(R.string.bulk_recalculate_ai)) { done(onRecalculateAi) }
+                }
             }
         }
     }
@@ -278,3 +302,7 @@ private fun SourceDialog(onApply: (String) -> Unit, onDismiss: () -> Unit) {
         dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
 }
+
+/** "1 selected" / "3 selected", for the selection bar and this sheet. */
+fun selectedRecipesText(count: Int): String =
+    if (count == 1) L10n.str(R.string.one_selected_recipe) else L10n.str(R.string.n_selected, count)

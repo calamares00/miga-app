@@ -1,5 +1,9 @@
 package org.calamares.miga.ui.list
 
+import org.calamares.miga.ui.components.ShareSheet
+import org.calamares.miga.data.export.ShareAction
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.material.icons.filled.AutoAwesome
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.GRID_CONTENT_WIDTH
@@ -99,9 +103,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.model.RecipeListViewMode
-import org.calamares.miga.data.model.RecipeSummary
 import org.calamares.miga.ui.common.BACKUP_MIME_TYPES
-import org.calamares.miga.ui.components.ExportFormatDialog
 import org.calamares.miga.ui.components.FilterSheetContent
 import org.calamares.miga.ui.components.ImportRecipesDialog
 import org.calamares.miga.ui.components.NewRecipeSourceSheet
@@ -124,7 +126,8 @@ fun RecipeListScreen(
     onSearchDishClick: () -> Unit,
     onAddRecipeFromUrl: (String) -> Unit,
     /** Improve the selected recipes with AI, all together (see BulkPolishScreen). */
-    onPolishRecipes: (List<Long>) -> Unit = {}
+    onPolishRecipes: (List<Long>) -> Unit = {},
+    onEditBookClick: () -> Unit = {}
 ) {
     val aiEnabled = rememberAiReady()
     val uiState by viewModel.uiState.collectAsState()
@@ -138,10 +141,9 @@ fun RecipeListScreen(
     var showFilters by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showViewModeMenu by remember { mutableStateOf(false) }
-    var recipeToDelete by remember { mutableStateOf<RecipeSummary?>(null) }
     var showDeleteSelectedConfirm by remember { mutableStateOf(false) }
-    /** Export asked for the selected recipes (true) or the whole book (false); null when not asked. */
-    var exportSelectionOnly by remember { mutableStateOf<Boolean?>(null) }
+    /** "Share" asked for the selected recipes (true) or the whole book (false); null when not asked. */
+    var shareSelectionOnly by remember { mutableStateOf<Boolean?>(null) }
     val pendingCollection by viewModel.pendingCollection.collectAsState()
     // The search field and filters show only when asked for with the search icon (or while a
     // search or filter is applied), so the book opens straight onto its recipes.
@@ -154,6 +156,7 @@ fun RecipeListScreen(
         searchOpen = false
     }
     BackHandler(enabled = searchVisible && !selectionMode) { closeSearch() }
+    BackHandler(enabled = selectionMode) { viewModel.clearSelection() }
     val targetBooks by viewModel.targetBooks.collectAsState()
     var showBulkEditSheet by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
@@ -194,32 +197,33 @@ fun RecipeListScreen(
             if (selectionMode) {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                    title = { Text(L10n.str(R.string.n_selected, selectedIds.size)) },
+                    title = { Text(selectedRecipesText(selectedIds.size), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     navigationIcon = {
                         IconButton(onClick = viewModel::clearSelection) {
                             Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel_selection))
                         }
                     },
+                    // The same bar as for books: edit (one), share, delete, and the rest under "More".
                     actions = {
-                        IconButton(onClick = viewModel::selectAll) {
-                            Icon(Icons.Filled.SelectAll, contentDescription = L10n.str(R.string.select_all))
-                        }
-                        IconButton(onClick = { showBulkEditSheet = true }) {
-                            Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.bulk_edit))
-                        }
-                        if (aiEnabled) {
+                        if (!uiState.isPackBook && selectedIds.size == 1) {
                             IconButton(onClick = {
-                                onPolishRecipes(selectedIds.toList())
+                                val id = selectedIds.single()
                                 viewModel.clearSelection()
+                                onEditRecipeClick(id)
                             }) {
-                                Icon(Icons.Filled.AutoAwesome, contentDescription = L10n.str(R.string.bulk_polish_action))
+                                Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.edit))
                             }
                         }
-                        IconButton(onClick = { exportSelectionOnly = true }) {
-                            Icon(Icons.Filled.FileDownload, contentDescription = L10n.str(R.string.export_selected))
+                        IconButton(onClick = { shareSelectionOnly = true }) {
+                            Icon(Icons.Filled.Share, contentDescription = L10n.str(R.string.share))
                         }
-                        IconButton(onClick = { showDeleteSelectedConfirm = true }) {
-                            Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete_selected))
+                        if (!uiState.isPackBook) {
+                            IconButton(onClick = { showDeleteSelectedConfirm = true }) {
+                                Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete_selected))
+                            }
+                        }
+                        IconButton(onClick = { showBulkEditSheet = true }) {
+                            Icon(Icons.Filled.MoreVert, contentDescription = L10n.str(R.string.more_actions))
                         }
                     }
                 )
@@ -265,28 +269,22 @@ fun RecipeListScreen(
                                 )
                                 HorizontalDivider()
                             }
+                            if (!uiState.isPackBook) {
+                                DropdownMenuItem(
+                                    text = { Text(L10n.str(R.string.edit_book)) },
+                                    leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                                    onClick = { showMenu = false; onEditBookClick() }
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text(L10n.str(if (uiState.isPinned) R.string.unpin_this_book else R.string.pin_this_book)) },
                                 leadingIcon = { Icon(if (uiState.isPinned) Icons.Outlined.PushPin else Icons.Filled.PushPin, contentDescription = null) },
                                 onClick = { showMenu = false; viewModel.togglePinned() }
                             )
-                            HorizontalDivider()
-                            if (!uiState.isPackBook) {
-                                DropdownMenuItem(
-                                    text = { Text(L10n.str(R.string.share_book)) },
-                                    leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
-                                    onClick = { showMenu = false; viewModel.shareBook(context) }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(L10n.str(R.string.share_link)) },
-                                    leadingIcon = { Icon(Icons.Filled.Link, contentDescription = null) },
-                                    onClick = { showMenu = false; viewModel.shareBookLink(context) }
-                                )
-                            }
                             DropdownMenuItem(
-                                text = { Text(L10n.str(R.string.export_book_ellipsis)) },
-                                leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
-                                onClick = { showMenu = false; exportSelectionOnly = false }
+                                text = { Text(L10n.str(R.string.share)) },
+                                leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                                onClick = { showMenu = false; shareSelectionOnly = false }
                             )
                         }
                     }
@@ -376,7 +374,7 @@ fun RecipeListScreen(
                                 onClick = {
                                     if (selectionMode) viewModel.toggleSelection(recipe.id) else onRecipeClick(recipe.id)
                                 },
-                                onLongClick = { if (!uiState.isPackBook) viewModel.startSelection(recipe.id) },
+                                onLongClick = { viewModel.startSelection(recipe.id) },
                                 onToggleFavorite = { viewModel.toggleFavorite(recipe.id, recipe.isFavorite) }
                             )
                         }
@@ -405,14 +403,11 @@ fun RecipeListScreen(
                                 compact = viewMode == RecipeListViewMode.COMPACT,
                                 selectionMode = selectionMode,
                                 isSelected = recipe.id in selectedIds,
-                                readOnly = uiState.isPackBook,
                                 onClick = {
                                     if (selectionMode) viewModel.toggleSelection(recipe.id) else onRecipeClick(recipe.id)
                                 },
-                                onLongClick = { if (!uiState.isPackBook) viewModel.startSelection(recipe.id) },
-                                onToggleFavorite = { viewModel.toggleFavorite(recipe.id, recipe.isFavorite) },
-                                onEditClick = { onEditRecipeClick(recipe.id) },
-                                onDeleteClick = { recipeToDelete = recipe }
+                                onLongClick = { viewModel.startSelection(recipe.id) },
+                                onToggleFavorite = { viewModel.toggleFavorite(recipe.id, recipe.isFavorite) }
                             )
                         }
                     }
@@ -422,14 +417,30 @@ fun RecipeListScreen(
         }
     }
 
-    exportSelectionOnly?.let { selectionOnly ->
-        ExportFormatDialog(
-            title = if (selectionOnly) L10n.str(R.string.file_name_selected_recipes) else uiState.bookName,
-            onFormat = { format ->
-                exportSelectionOnly = null
-                if (selectionOnly) viewModel.exportSelected(context, format) else viewModel.exportBook(context, format)
+    shareSelectionOnly?.let { selectionOnly ->
+        val accent = MaterialTheme.colorScheme.primary.toArgb()
+        val single = selectionOnly && selectedIds.size == 1
+        val actions = when {
+            // One recipe: every option, as on the recipe itself.
+            single -> ShareAction.entries.toList()
+            // Several recipes: one document or one copy (a recipe is sent to someone one at a time).
+            selectionOnly -> listOf(ShareAction.PDF, ShareAction.SAVE_COPY)
+            // The whole book; a pack is not sent (whoever receives it can install it).
+            uiState.isPackBook -> listOf(ShareAction.PDF, ShareAction.SAVE_COPY)
+            else -> listOf(ShareAction.SEND_FILE, ShareAction.LINK, ShareAction.PDF, ShareAction.SAVE_COPY)
+        }
+        val title = when {
+            single -> uiState.groups.flatMap { it.recipes }.firstOrNull { it.id in selectedIds }?.name.orEmpty()
+            selectionOnly -> selectedRecipesText(selectedIds.size)
+            else -> uiState.bookName
+        }
+        ShareSheet(
+            title = title,
+            actions = actions,
+            onAction = { action ->
+                if (selectionOnly) viewModel.shareSelectedAs(context, action, accent) else viewModel.shareBookAs(context, action)
             },
-            onDismiss = { exportSelectionOnly = null }
+            onDismiss = { shareSelectionOnly = null }
         )
     }
 
@@ -562,23 +573,6 @@ fun RecipeListScreen(
         )
     }
 
-    recipeToDelete?.let { recipe ->
-        AlertDialog(
-            onDismissRequest = { recipeToDelete = null },
-            title = { Text(L10n.str(R.string.delete_recipe)) },
-            text = { Text(L10n.str(R.string.sure_want_delete_x_cant, recipe.name)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deleteRecipe(recipe.id)
-                    recipeToDelete = null
-                }) { Text(L10n.str(R.string.delete_2), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { recipeToDelete = null }) { Text(L10n.str(R.string.cancel)) }
-            }
-        )
-    }
-
     if (showBulkEditSheet && selectionMode) {
         val categoryNames by viewModel.categoryNames.collectAsState()
         val targetBooks by viewModel.targetBooks.collectAsState()
@@ -598,7 +592,14 @@ fun RecipeListScreen(
             onMove = { viewModel.bulkMoveTo(it, showMessage) },
             onCopy = { viewModel.bulkCopyTo(context, it, showMessage) },
             onShopping = { viewModel.bulkAddToShoppingList(showMessage) },
-            onRecalculateAi = { viewModel.bulkRecalculateAi(showMessage) }
+            onRecalculateAi = { viewModel.bulkRecalculateAi(showMessage) },
+            readOnly = uiState.isPackBook,
+            allFavorite = uiState.groups.flatMap { it.recipes }.filter { it.id in selectedIds }.all { it.isFavorite },
+            onSelectAll = viewModel::selectAll.takeIf { selectedIds.size < uiState.groups.sumOf { it.recipes.size } },
+            onPolish = {
+                onPolishRecipes(selectedIds.toList())
+                viewModel.clearSelection()
+            }.takeIf { aiEnabled }
         )
     }
 

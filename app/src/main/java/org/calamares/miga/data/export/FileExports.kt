@@ -36,6 +36,28 @@ enum class ExportFormat(val mimeType: String) {
     IMAGE("image/jpeg")
 }
 
+/** The options of the "Share" sheet (see ShareSheet), the same for books, recipes and selections. */
+enum class ShareAction {
+    /** A ".miga" file for someone else, merged on their phone. */
+    SEND_FILE,
+
+    /** The same, encrypted on a link that lasts 7 days. */
+    LINK,
+    PDF,
+
+    /** A picture for social networks: one recipe only. */
+    IMAGE,
+
+    /** Plain text: one recipe only. */
+    TEXT,
+
+    /** A Miga file (.zip) to keep or import later, with favourites and ratings. */
+    SAVE_COPY
+}
+
+/** What a link holds, for the message sent with it. */
+enum class SharedKind { BOOK, BOOKS, RECIPE }
+
 /** Where an export is; see [FileExports]. */
 sealed interface FileExportState {
     data object Idle : FileExportState
@@ -52,8 +74,8 @@ sealed interface FileExportState {
         val uploading: Boolean = false
     ) : FileExportState
 
-    /** A book or recipe link ready to send ("Share link"): opens the share sheet with [url] at once. */
-    data class LinkReady(val title: String, val url: String, val expiresAt: Long, val isBook: Boolean = true) : FileExportState
+    /** A link ready to send ("Create link"): opens the share sheet with [url] at once. */
+    data class LinkReady(val title: String, val url: String, val expiresAt: Long, val kind: SharedKind = SharedKind.BOOK) : FileExportState
 
     /** "Your name" is empty: asked before sharing [title], so whoever receives it sees who sent it. */
     data class NeedsName(val title: String) : FileExportState
@@ -87,7 +109,7 @@ object FileExports {
         start(context, recipe.name, format) { appContext, onProgress ->
             when (format) {
                 ExportFormat.PDF -> RecipeExporter.writeRecipePdf(appContext, recipe, onProgress)
-                ExportFormat.MIGA_FILE -> RecipeExporter.writeMigaFile(appContext, recipe.name, null, listOf(recipe), singleRecipe = true, onProgress)
+                ExportFormat.MIGA_FILE -> RecipeExporter.writeMigaFile(appContext, recipe.name, emptyList(), listOf(recipe), singleRecipe = true, onProgress)
                 ExportFormat.IMAGE -> RecipeExporter.writeRecipeImage(appContext, recipe, accent)
             }
         }
@@ -97,47 +119,56 @@ object FileExports {
         start(context, book.name, format) { appContext, onProgress ->
             when (format) {
                 ExportFormat.PDF -> RecipeExporter.writeBookPdf(appContext, book, loadRecipes(), onProgress)
-                ExportFormat.MIGA_FILE -> RecipeExporter.writeMigaFile(appContext, book.name, book, loadRecipes(), singleRecipe = false, onProgress)
+                ExportFormat.MIGA_FILE -> RecipeExporter.writeMigaFile(appContext, book.name, listOf(book), loadRecipes(), singleRecipe = false, onProgress)
                 ExportFormat.IMAGE -> error("A book is not exported as an image")
             }
         }
 
     /**
-     * "Share book": writes [book] as a ".miga" file for someone else (see RecipeExporter.writeMigaFile
-     * with forSharing) and opens the share sheet as soon as it is ready. Signed with "Your name",
-     * asked first when it is empty (see [NeedsName]).
+     * "Send to someone": writes [books] (one or several) as a ".miga" file for someone else (see
+     * RecipeExporter.writeMigaFile with forSharing) and opens the share sheet as soon as it is
+     * ready. Signed with "Your name", asked first when it is empty (see [NeedsName]).
      */
-    fun shareBook(context: Context, book: RecipeBook, loadRecipes: suspend () -> List<Recipe>): Boolean =
-        withSenderName(context, book.name) { sender ->
-            start(context, book.name, ExportFormat.MIGA_FILE, autoShare = true) { appContext, onProgress ->
-                RecipeExporter.writeMigaFile(appContext, book.name, book, loadRecipes(), singleRecipe = false, onPhoto = onProgress, forSharing = true, sharedBy = sender)
+    fun shareBooks(context: Context, books: List<RecipeBook>, loadRecipes: suspend () -> List<Recipe>): Boolean {
+        val title = booksTitle(books)
+        return withSenderName(context, title) { sender ->
+            start(context, title, ExportFormat.MIGA_FILE, autoShare = true) { appContext, onProgress ->
+                RecipeExporter.writeMigaFile(appContext, title, books, loadRecipes(), singleRecipe = false, onPhoto = onProgress, forSharing = true, sharedBy = sender)
             }
         }
+    }
+
+    /** One book by its name; several as "3 books". */
+    private fun booksTitle(books: List<RecipeBook>): String =
+        books.singleOrNull()?.name ?: L10n.str(R.string.n_books, books.size)
 
     /** "Share recipe": one recipe as a ".miga" file, imported into a book chosen by whoever receives it. */
     fun shareRecipe(context: Context, recipe: Recipe): Boolean =
         withSenderName(context, recipe.name) { sender ->
             start(context, recipe.name, ExportFormat.MIGA_FILE, autoShare = true) { appContext, onProgress ->
-                RecipeExporter.writeMigaFile(appContext, recipe.name, null, listOf(recipe), singleRecipe = true, onPhoto = onProgress, forSharing = true, sharedBy = sender)
+                RecipeExporter.writeMigaFile(appContext, recipe.name, emptyList(), listOf(recipe), singleRecipe = true, onPhoto = onProgress, forSharing = true, sharedBy = sender)
             }
         }
 
     /**
-     * "Share link": writes [book] like [shareBook], encrypts it with a new key, uploads it to
-     * miga-share.calamares.org and offers the link (the key goes only in the link's fragment).
+     * "Create link": writes [books] like [shareBooks], encrypts them with a new key, uploads them
+     * to miga-share.calamares.org and offers the link (the key goes only in the link's fragment).
      */
-    fun shareBookLink(context: Context, book: RecipeBook, loadRecipes: suspend () -> List<Recipe>): Boolean =
-        withSenderName(context, book.name) { sender ->
-            startLink(context, book.name, isBook = true) { appContext, onPhoto ->
-                RecipeExporter.writeMigaFile(appContext, book.name, book, loadRecipes(), singleRecipe = false, onPhoto = onPhoto, forSharing = true, sharedBy = sender)
+    fun shareBooksLink(context: Context, books: List<RecipeBook>, loadRecipes: suspend () -> List<Recipe>): Boolean {
+        val title = booksTitle(books)
+        val kind = if (books.size == 1) SharedKind.BOOK else SharedKind.BOOKS
+        return withSenderName(context, title) { sender ->
+            startLink(context, title, kind) { appContext, onPhoto ->
+                RecipeExporter.writeMigaFile(appContext, title, books, loadRecipes(), singleRecipe = false, onPhoto = onPhoto, forSharing = true, sharedBy = sender)
             }
         }
+    }
 
-    /** "Share link" of one recipe, like [shareBookLink]. */
+    /** "Create link" of one recipe, like [shareBooksLink]. */
     fun shareRecipeLink(context: Context, recipe: Recipe): Boolean =
         withSenderName(context, recipe.name) { sender ->
-            startLink(context, recipe.name, isBook = false) { appContext, onPhoto ->
-                RecipeExporter.writeMigaFile(appContext, recipe.name, null, listOf(recipe), singleRecipe = true, onPhoto = onPhoto, forSharing = true, sharedBy = sender)
+            startLink(context, recipe.name, SharedKind.RECIPE) { appContext, onPhoto ->
+                RecipeExporter.writeMigaFile(appContext, recipe.name, emptyList(), listOf(recipe), singleRecipe = true, onPhoto = onPhoto, forSharing = true, sharedBy = sender)
             }
         }
 
@@ -179,7 +210,7 @@ object FileExports {
     private fun startLink(
         context: Context,
         title: String,
-        isBook: Boolean,
+        kind: SharedKind,
         write: suspend (Context, onPhoto: (Int, Int) -> Unit) -> File
     ) {
         if (isRunning) return
@@ -215,7 +246,7 @@ object FileExports {
                     }
                 }
                 _state.value = when (result) {
-                    is ShareUploadResult.Success -> FileExportState.LinkReady(title, result.link.url, result.expiresAt, isBook)
+                    is ShareUploadResult.Success -> FileExportState.LinkReady(title, result.link.url, result.expiresAt, kind)
                     is ShareUploadResult.Error -> FileExportState.Failed(
                         title,
                         L10n.str(
@@ -235,12 +266,38 @@ object FileExports {
         }
     }
 
+    /**
+     * Runs a "Share" option for one recipe. False, without doing anything, when another export is
+     * running. [accent] colours the picture.
+     */
+    fun shareRecipeAs(context: Context, recipe: Recipe, action: ShareAction, accent: Int): Boolean = when (action) {
+        ShareAction.SEND_FILE -> shareRecipe(context, recipe)
+        ShareAction.LINK -> shareRecipeLink(context, recipe)
+        ShareAction.PDF -> exportRecipe(context, recipe, ExportFormat.PDF)
+        ShareAction.IMAGE -> exportRecipe(context, recipe, ExportFormat.IMAGE, accent)
+        ShareAction.TEXT -> { RecipeExporter.shareAsText(context, recipe); true }
+        ShareAction.SAVE_COPY -> exportRecipe(context, recipe, ExportFormat.MIGA_FILE)
+    }
+
+    /**
+     * Runs a "Share" option for one or several books ([loadRecipes] loads all their recipes). PDF and
+     * the copy are for one book; a picture or text, never.
+     */
+    fun shareBooksAs(context: Context, books: List<RecipeBook>, action: ShareAction, loadRecipes: suspend () -> List<Recipe>): Boolean =
+        when (action) {
+            ShareAction.SEND_FILE -> shareBooks(context, books, loadRecipes)
+            ShareAction.LINK -> shareBooksLink(context, books, loadRecipes)
+            ShareAction.PDF -> exportBook(context, books.single(), ExportFormat.PDF, loadRecipes)
+            ShareAction.SAVE_COPY -> exportBook(context, books.single(), ExportFormat.MIGA_FILE, loadRecipes)
+            ShareAction.IMAGE, ShareAction.TEXT -> error("A book is shared as a file, a link, a PDF or a copy")
+        }
+
     /** Several recipes of [book] chosen by the user, under [title] ("Selected recipes"). */
     fun exportSelection(context: Context, title: String, book: RecipeBook?, recipes: List<Recipe>, format: ExportFormat): Boolean =
         start(context, title, format) { appContext, onProgress ->
             when (format) {
                 ExportFormat.PDF -> RecipeExporter.writeRecipesPdf(appContext, title, recipes, onProgress)
-                ExportFormat.MIGA_FILE -> RecipeExporter.writeMigaFile(appContext, title, book, recipes, singleRecipe = false, onProgress)
+                ExportFormat.MIGA_FILE -> RecipeExporter.writeMigaFile(appContext, title, listOfNotNull(book), recipes, singleRecipe = false, onProgress)
                 ExportFormat.IMAGE -> error("A selection is not exported as an image")
             }
         }
@@ -309,7 +366,12 @@ object FileExports {
     /** Sends [link] as text (WhatsApp, Telegram, mail…), with when it expires. */
     fun shareLink(context: Context, link: FileExportState.LinkReady) {
         val date = java.text.DateFormat.getDateInstance(java.text.DateFormat.LONG, L10n.locale()).format(java.util.Date(link.expiresAt))
-        val text = L10n.str(if (link.isBook) R.string.share_link_message_x_x_x else R.string.share_recipe_link_message_x_x_x, link.title, link.url, date)
+        val message = when (link.kind) {
+            SharedKind.BOOK -> R.string.share_link_message_x_x_x
+            SharedKind.BOOKS -> R.string.share_books_link_message_x_x_x
+            SharedKind.RECIPE -> R.string.share_recipe_link_message_x_x_x
+        }
+        val text = L10n.str(message, link.title, link.url, date)
         val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(android.content.Intent.EXTRA_TEXT, text)

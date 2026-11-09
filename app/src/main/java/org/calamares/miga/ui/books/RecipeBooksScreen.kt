@@ -1,5 +1,13 @@
 package org.calamares.miga.ui.books
 
+import org.calamares.miga.ui.components.ShareSheet
+import org.calamares.miga.data.export.ShareAction
+import androidx.compose.material.icons.filled.SelectAll
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.foundation.border
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.IconButtonDefaults
@@ -151,7 +159,14 @@ fun RecipeBooksScreen(
     val filter by viewModel.filter.collectAsState()
     val connectionNames by viewModel.connectionNames.collectAsState()
     var showViewModeMenu by remember { mutableStateOf(false) }
-    var packToUninstall by remember { mutableStateOf<RecipeBookSummary?>(null) }
+    val selectedIds by viewModel.selectedBookIds.collectAsState()
+    val selectionMode = selectedIds.isNotEmpty()
+    val selectedBooks = books.filter { it.id in selectedIds }
+    var showSelectionMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showShareSheet by remember { mutableStateOf(false) }
+    BackHandler(enabled = selectionMode) { viewModel.clearSelection() }
+    val haptics = LocalHapticFeedback.current
     val labels = BookSectionLabels(
         myBooks = L10n.str(R.string.books_group_mine),
         server = L10n.str(R.string.books_group_server),
@@ -210,7 +225,56 @@ fun RecipeBooksScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars).exclude(WindowInsets.ime),
         topBar = {
-            TopAppBar(
+            if (selectionMode) {
+                // The same bar as for recipes: edit (one), share, delete, and the rest under "More".
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                    title = { Text(selectedBooksText(selectedIds.size), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    navigationIcon = {
+                        IconButton(onClick = viewModel::clearSelection) {
+                            Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel_selection))
+                        }
+                    },
+                    actions = {
+                        val single = selectedBooks.singleOrNull()
+                        if (single != null && !single.isPack) {
+                            IconButton(onClick = { viewModel.clearSelection(); onEditBookClick(single.id) }) {
+                                Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.edit_book))
+                            }
+                        }
+                        // Packs are not sent: whoever receives them can install them from the catalogue.
+                        if (selectedBooks.none { it.isPack }) {
+                            IconButton(onClick = { showShareSheet = true }) {
+                                Icon(Icons.Filled.Share, contentDescription = L10n.str(R.string.share))
+                            }
+                        }
+                        IconButton(onClick = { showDeleteConfirm = true }) {
+                            Icon(Icons.Filled.Delete, contentDescription = L10n.str(if (selectedBooks.all { it.isPack }) R.string.uninstall else R.string.delete_2))
+                        }
+                        Box {
+                            IconButton(onClick = { showSelectionMenu = true }) {
+                                Icon(Icons.Filled.MoreVert, contentDescription = L10n.str(R.string.more_actions))
+                            }
+                            DropdownMenu(expanded = showSelectionMenu, onDismissRequest = { showSelectionMenu = false }) {
+                                val allPinned = selectedBooks.all { it.isPinned }
+                                DropdownMenuItem(
+                                    text = { Text(L10n.str(if (allPinned) R.string.unpin_book else R.string.pin_book)) },
+                                    leadingIcon = { Icon(if (allPinned) Icons.Outlined.PushPin else Icons.Filled.PushPin, contentDescription = null) },
+                                    onClick = { showSelectionMenu = false; viewModel.togglePinnedSelected() }
+                                )
+                                val shownIds = sections.flatMap { section -> section.books.map { it.id } }
+                                if (!selectedIds.containsAll(shownIds)) {
+                                    DropdownMenuItem(
+                                        text = { Text(L10n.str(R.string.select_all_books)) },
+                                        leadingIcon = { Icon(Icons.Filled.SelectAll, contentDescription = null) },
+                                        onClick = { showSelectionMenu = false; viewModel.selectBooks(shownIds) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                )
+            } else TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     scrolledContainerColor = MaterialTheme.colorScheme.surface
@@ -253,6 +317,7 @@ fun RecipeBooksScreen(
             // An empty filter already shows its own button in the message; a second one would repeat it.
             val filterEmpty = loadedBooks != null && books.isNotEmpty() && sections.isEmpty()
             when {
+                selectionMode -> Unit
                 filterEmpty && filter != BookFilter.SERVER -> Unit
                 filter == BookFilter.SERVER && !hasServer -> Unit
                 filter == BookFilter.PACKS -> ExtendedFloatingActionButton(
@@ -319,23 +384,18 @@ fun RecipeBooksScreen(
                                 }
                             }
                             items(section.books, key = { it.id }) { book ->
-                                BookMenuHost(
-                                    book,
-                                    onEdit = { onEditBookClick(book.id) },
-                                    onTogglePin = { viewModel.togglePinned(book) },
-                                    onUninstall = { packToUninstall = book },
-                                    onShare = { viewModel.shareBook(context, book) },
-                                    onShareLink = { viewModel.shareBookLink(context, book) },
+                                RecipeBookCard(
+                                    book = book,
+                                    selectionMode = selectionMode,
+                                    isSelected = book.id in selectedIds,
+                                    onClick = { if (selectionMode) viewModel.toggleSelection(book.id) else onBookClick(book.id) },
+                                    onLongClick = {
+                                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (selectionMode) viewModel.toggleSelection(book.id) else viewModel.startSelection(book.id)
+                                    },
                                     // Pinning moves the book to the top; animate it instead of jumping.
                                     modifier = Modifier.animateItemPlacement()
-                                ) { openMenu ->
-                                    RecipeBookCard(
-                                        book = book,
-                                        onClick = { onBookClick(book.id) },
-                                        onLongClick = openMenu,
-                                        onEditClick = { onEditBookClick(book.id) }
-                                    )
-                                }
+                                )
                             }
                         }
                     }
@@ -351,24 +411,18 @@ fun RecipeBooksScreen(
                                 item(key = "header/${section.key}", contentType = "header") { SectionHeader(title, section.level) }
                             }
                             items(section.books, key = { it.id }) { book ->
-                                BookMenuHost(
-                                    book,
-                                    onEdit = { onEditBookClick(book.id) },
-                                    onTogglePin = { viewModel.togglePinned(book) },
-                                    onUninstall = { packToUninstall = book },
-                                    onShare = { viewModel.shareBook(context, book) },
-                                    onShareLink = { viewModel.shareBookLink(context, book) },
-                                    // Pinning moves the book to the top; animate it instead of jumping.
+                                RecipeBookRow(
+                                    book = book,
+                                    compact = viewMode == RecipeListViewMode.COMPACT,
+                                    selectionMode = selectionMode,
+                                    isSelected = book.id in selectedIds,
+                                    onClick = { if (selectionMode) viewModel.toggleSelection(book.id) else onBookClick(book.id) },
+                                    onLongClick = {
+                                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (selectionMode) viewModel.toggleSelection(book.id) else viewModel.startSelection(book.id)
+                                    },
                                     modifier = Modifier.animateItemPlacement()
-                                ) { openMenu ->
-                                    RecipeBookRow(
-                                        book = book,
-                                        compact = viewMode == RecipeListViewMode.COMPACT,
-                                        onClick = { onBookClick(book.id) },
-                                        onLongClick = openMenu,
-                                        onEditClick = { onEditBookClick(book.id) }
-                                    )
-                                }
+                                )
                             }
                         }
                     }
@@ -381,9 +435,16 @@ fun RecipeBooksScreen(
         AlertDialog(
             onDismissRequest = { viewModel.dismissIncomingBook() },
             icon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
-            title = { Text(L10n.str(R.string.import_book_x, prompt.bookName)) },
+            title = {
+                Text(
+                    if (prompt.bookNames.size > 1) L10n.str(R.string.import_books_x, prompt.bookNames.size)
+                    else L10n.str(R.string.import_book_x, prompt.bookName)
+                )
+            },
             text = {
                 Text(
+                    // Several books: their names first, one per line.
+                    prompt.bookNames.takeIf { it.size > 1 }?.joinToString("\n", postfix = "\n\n") { "• $it" }.orEmpty() +
                     listOfNotNull(
                         sharedByLine(prompt.sharedBy, prompt.sharedAt),
                         L10n.str(R.string.x_recipes_count, prompt.recipeCount)
@@ -412,19 +473,49 @@ fun RecipeBooksScreen(
         )
     }
 
-    packToUninstall?.let { book ->
+    if (showDeleteConfirm && selectedBooks.isNotEmpty()) {
+        val packs = selectedBooks.count { it.isPack }
+        val own = selectedBooks.size - packs
         AlertDialog(
-            onDismissRequest = { packToUninstall = null },
-            title = { Text(L10n.str(R.string.uninstall_pack)) },
-            text = { Text(L10n.str(R.string.sure_want_uninstall_x_recipes, book.name)) },
+            onDismissRequest = { showDeleteConfirm = false },
+            title = {
+                Text(
+                    when {
+                        own == 0 && packs == 1 -> L10n.str(R.string.uninstall_pack)
+                        own == 0 -> L10n.str(R.string.uninstall_packs_title_x, packs)
+                        selectedBooks.size == 1 -> L10n.str(R.string.delete_book_title_x, selectedBooks.single().name)
+                        else -> L10n.str(R.string.delete_books_title_x, selectedBooks.size)
+                    }
+                )
+            },
+            text = {
+                Text(
+                    listOfNotNull(
+                        L10n.str(R.string.delete_books_body).takeIf { own > 0 },
+                        if (packs == 1 && own == 0) L10n.str(R.string.sure_want_uninstall_x_recipes, selectedBooks.single().name)
+                        else L10n.str(R.string.uninstall_packs_body).takeIf { packs > 0 }
+                    ).joinToString("\n\n")
+                )
+            },
             confirmButton = {
-                TextButton(onClick = { viewModel.uninstallPack(book); packToUninstall = null }) {
-                    Text(L10n.str(R.string.uninstall), color = MaterialTheme.colorScheme.error)
+                TextButton(onClick = { showDeleteConfirm = false; viewModel.deleteSelected() }) {
+                    Text(L10n.str(if (own == 0) R.string.uninstall else R.string.delete_2), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { packToUninstall = null }) { Text(L10n.str(R.string.cancel)) }
+                TextButton(onClick = { showDeleteConfirm = false }) { Text(L10n.str(R.string.cancel)) }
             }
+        )
+    }
+
+    if (showShareSheet && selectedBooks.isNotEmpty()) {
+        ShareSheet(
+            title = selectedBooks.singleOrNull()?.name ?: L10n.str(R.string.n_books, selectedBooks.size),
+            // Several books go together in one file or link; a PDF or a copy is of one book.
+            actions = if (selectedBooks.size == 1) listOf(ShareAction.SEND_FILE, ShareAction.LINK, ShareAction.PDF, ShareAction.SAVE_COPY)
+            else listOf(ShareAction.SEND_FILE, ShareAction.LINK),
+            onAction = { action -> viewModel.shareSelectedAs(context, action) },
+            onDismiss = { showShareSheet = false }
         )
     }
 
@@ -526,61 +617,6 @@ fun RecipeBooksScreen(
                 }
             }
         )
-    }
-}
-
-/**
- * Wraps a book with its long-press menu (pin to the top, edit). [content] gets the function that
- * opens the menu, to call on long press.
- */
-@Composable
-private fun BookMenuHost(
-    book: RecipeBookSummary,
-    onEdit: () -> Unit,
-    onTogglePin: () -> Unit,
-    onUninstall: () -> Unit,
-    onShare: () -> Unit,
-    onShareLink: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable (openMenu: () -> Unit) -> Unit
-) {
-    var showMenu by remember { mutableStateOf(false) }
-    val haptics = LocalHapticFeedback.current
-    Box(modifier = modifier) {
-        content {
-            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-            showMenu = true
-        }
-        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-            DropdownMenuItem(
-                text = { Text(L10n.str(if (book.isPinned) R.string.unpin_book else R.string.pin_book)) },
-                leadingIcon = { Icon(if (book.isPinned) Icons.Outlined.PushPin else Icons.Filled.PushPin, contentDescription = null) },
-                onClick = { showMenu = false; onTogglePin() }
-            )
-            if (book.isPack) {
-                DropdownMenuItem(
-                    text = { Text(L10n.str(R.string.uninstall_pack)) },
-                    leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
-                    onClick = { showMenu = false; onUninstall() }
-                )
-            } else {
-                DropdownMenuItem(
-                    text = { Text(L10n.str(R.string.edit_book)) },
-                    leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                    onClick = { showMenu = false; onEdit() }
-                )
-                DropdownMenuItem(
-                    text = { Text(L10n.str(R.string.share_book)) },
-                    leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
-                    onClick = { showMenu = false; onShare() }
-                )
-                DropdownMenuItem(
-                    text = { Text(L10n.str(R.string.share_link)) },
-                    leadingIcon = { Icon(Icons.Filled.Link, contentDescription = null) },
-                    onClick = { showMenu = false; onShareLink() }
-                )
-            }
-        }
     }
 }
 
@@ -760,9 +796,10 @@ private fun PinnedBadge() {
 @Composable
 private fun RecipeBookCard(
     book: RecipeBookSummary,
+    selectionMode: Boolean,
+    isSelected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onEditClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -770,6 +807,7 @@ private fun RecipeBookCard(
             .fillMaxWidth()
             .aspectRatio(0.72f)
             .clip(RoundedCornerShape(20.dp))
+            .then(if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp)) else Modifier)
             .background(bookPlaceholderBrush(book.name))
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
     ) {
@@ -831,15 +869,7 @@ private fun RecipeBookCard(
                 book.isSynced -> BookBadge(Icons.Filled.Sync, L10n.str(R.string.synced_server))
             }
             Spacer(modifier = Modifier.weight(1f))
-            if (!book.isPack) {
-                IconButton(
-                    onClick = onEditClick,
-                    modifier = Modifier.size(36.dp),
-                    colors = IconButtonDefaults.iconButtonColors(containerColor = Color.Black.copy(alpha = 0.35f), contentColor = Color.White)
-                ) {
-                    Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.edit_book), modifier = Modifier.size(18.dp))
-                }
-            }
+            if (selectionMode) SelectionMark(isSelected, onCover = true)
         }
     }
 }
@@ -873,9 +903,10 @@ private fun bookViewModeIcon(mode: RecipeListViewMode): ImageVector = when (mode
 private fun RecipeBookRow(
     book: RecipeBookSummary,
     compact: Boolean,
+    selectionMode: Boolean,
+    isSelected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onEditClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -888,7 +919,10 @@ private fun RecipeBookRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (!compact) {
+            // As on recipe cards, the cover gives way to the selection mark.
+            if (selectionMode) {
+                SelectionMark(isSelected, onCover = false)
+            } else if (!compact) {
                 Box(
                     modifier = Modifier
                         .size(56.dp)
@@ -957,12 +991,27 @@ private fun RecipeBookRow(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-
-            if (!book.isPack) {
-                IconButton(onClick = onEditClick) {
-                    Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.edit_book), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
         }
     }
 }
+
+/** Selected or not, while selecting books: on a cover ([onCover]) it gets a dark backing to stand out. */
+@Composable
+private fun SelectionMark(selected: Boolean, onCover: Boolean) {
+    val icon = if (selected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked
+    val description = L10n.str(if (selected) R.string.selected else R.string.not_selected)
+    if (onCover) {
+        Box(
+            modifier = Modifier.size(30.dp).clip(CircleShape).background(if (selected) Color.White else Color.Black.copy(alpha = 0.35f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = description, tint = if (selected) MaterialTheme.colorScheme.primary else Color.White)
+        }
+    } else {
+        Icon(icon, contentDescription = description, tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** "1 selected" / "3 selected", for the selection bar. */
+private fun selectedBooksText(count: Int): String =
+    if (count == 1) L10n.str(R.string.one_selected_book) else L10n.str(R.string.n_selected_books, count)

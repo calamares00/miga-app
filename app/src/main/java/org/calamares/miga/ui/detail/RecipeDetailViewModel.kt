@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.data.repository.copyRecipeToBook
+import android.content.Context
 import org.calamares.miga.ui.navigation.Destinations
 import org.calamares.miga.R
 import org.calamares.miga.L10n
@@ -392,6 +394,12 @@ class RecipeDetailViewModel(
 
     fun moveToBook(newBookId: Long) {
         viewModelScope.launch { repository.moveRecipeToBook(recipeId, newBookId) }
+    }
+
+    /** A copy in [targetBookId] (with its own photos): how a pack recipe goes into one's own book. */
+    fun copyToBook(context: Context, targetBookId: Long) {
+        val current = recipe.value ?: return
+        viewModelScope.launch { repository.copyRecipeToBook(context, current, targetBookId) }
     }
 
     fun addIngredientsToShoppingList() {
