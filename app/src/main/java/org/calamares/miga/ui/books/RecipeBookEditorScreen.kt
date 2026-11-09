@@ -61,7 +61,9 @@ import org.calamares.miga.ui.components.PhotoSourceSheet
 fun RecipeBookEditorScreen(
     viewModel: RecipeBookEditorViewModel,
     onSaved: () -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    /** After deleting the book: back to the books, not to the book's own (now gone) recipe list. */
+    onDeleted: () -> Unit = onSaved
 ) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -258,7 +260,7 @@ fun RecipeBookEditorScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
-                    viewModel.delete(onDeleted = onSaved)
+                    viewModel.delete(onDeleted = onDeleted)
                 }) { Text(if (viewModel.isPack) L10n.str(R.string.uninstall) else L10n.str(R.string.delete_2), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {

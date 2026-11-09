@@ -1,0 +1,5 @@
+What's new in 1.0.19:
+• Books and recipes share the same menus: long press to select (several books too), then Edit, Share, Delete and More at the top.
+• One Share: send, link, PDF, image, text or a copy.
+• Ideas redone: one-tap quick ideas, and filters and question together at the bottom.
+• Pack recipes cannot be moved or deleted; they can be copied to your books.
