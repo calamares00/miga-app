@@ -6,6 +6,7 @@ import android.content.Context
 import android.widget.Toast
 import org.calamares.miga.data.export.ExportFormat
 import org.calamares.miga.data.export.FileExports
+import org.calamares.miga.data.export.ShareAction
 import org.calamares.miga.data.export.LibraryImportResult
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -24,6 +25,7 @@ import org.calamares.miga.data.model.RecipeDraft
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.formatIngredientText
 import org.calamares.miga.data.model.toDraft
+import org.calamares.miga.data.repository.copyRecipeToBook
 import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.ai.aiCandidates
@@ -144,21 +146,25 @@ class RecipeListViewModel(
         }
     }
 
-    fun exportSelected(context: Context, format: ExportFormat) {
+    /**
+     * A "Share" option for the selection: one recipe offers every option (see
+     * FileExports.shareRecipeAs); several, a PDF or a copy.
+     */
+    fun shareSelectedAs(context: Context, action: ShareAction, accent: Int) {
         viewModelScope.launch {
             val ids = _selectedIds.value
             val book = repository.getRecipeBookOnce(bookId)
             val recipes = repository.getRecipesForBookOnce(bookId).filter { it.id in ids }
-            if (recipes.isNotEmpty()) {
-                val started = if (recipes.size == 1) {
-                    FileExports.exportRecipe(context, recipes.single(), format)
-                } else {
-                    FileExports.exportSelection(context, L10n.str(R.string.file_name_selected_recipes), book, recipes, format)
-                }
-                if (!started) {
-                    Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
-                    return@launch
-                }
+            if (recipes.isEmpty()) return@launch
+            val started = when {
+                recipes.size == 1 -> FileExports.shareRecipeAs(context, recipes.single(), action, accent)
+                action == ShareAction.PDF -> FileExports.exportSelection(context, L10n.str(R.string.file_name_selected_recipes), book, recipes, ExportFormat.PDF)
+                action == ShareAction.SAVE_COPY -> FileExports.exportSelection(context, L10n.str(R.string.file_name_selected_recipes), book, recipes, ExportFormat.MIGA_FILE)
+                else -> return@launch
+            }
+            if (!started) {
+                Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
+                return@launch
             }
             _selectedIds.value = emptySet()
         }
@@ -253,19 +259,9 @@ class RecipeListViewModel(
      * one never leaves the other without a photo.
      */
     fun bulkCopyTo(context: Context, targetBookId: Long, onMessage: (String) -> Unit) {
-        val appContext = context.applicationContext
         viewModelScope.launch {
             val recipes = takeSelectedRecipes()
-            recipes.forEach { recipe ->
-                val photos = withContext(Dispatchers.IO) {
-                    recipe.photos.mapNotNull { photo ->
-                        PhotoStorage.readBytes(photo.uri)
-                            ?.let { bytes -> PhotoStorage.copyBytesToInternalStorage(appContext, bytes) }
-                            ?.let { RecipePhoto(it, photo.isCover) }
-                    }
-                }
-                repository.saveRecipe(recipe.toDraft().copy(id = 0L, uid = null, recipeBookId = targetBookId, photos = photos))
-            }
+            recipes.forEach { repository.copyRecipeToBook(context, it, targetBookId) }
             onMessage(L10n.str(R.string.bulk_copied_n, recipes.size))
         }
     }
@@ -453,38 +449,11 @@ class RecipeListViewModel(
         viewModelScope.launch { repository.toggleFavorite(id, !current) }
     }
 
-    fun deleteRecipe(id: Long) {
-        viewModelScope.launch { repository.deleteRecipe(id) }
-    }
-
-    /**
-     * Starts exporting the whole book in [FileExports], which outlives this screen, shows the
-     * progress and offers to save or share the file when it is ready.
-     */
-    fun exportBook(context: Context, format: ExportFormat) {
+    /** A "Share" option for the whole book (see FileExports.shareBooksAs). */
+    fun shareBookAs(context: Context, action: ShareAction) {
         viewModelScope.launch {
             val book = repository.getRecipeBookOnce(bookId) ?: return@launch
-            if (!FileExports.exportBook(context, book, format) { repository.getRecipesForBookOnce(bookId) }) {
-                Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    /** "Share book": the book as a ".miga" file, straight to the share sheet. */
-    fun shareBook(context: Context) {
-        viewModelScope.launch {
-            val book = repository.getRecipeBookOnce(bookId) ?: return@launch
-            if (!FileExports.shareBook(context, book) { repository.getRecipesForBookOnce(bookId) }) {
-                Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    /** "Share link": the book encrypted on a temporary link, sent as text. */
-    fun shareBookLink(context: Context) {
-        viewModelScope.launch {
-            val book = repository.getRecipeBookOnce(bookId) ?: return@launch
-            if (!FileExports.shareBookLink(context, book) { repository.getRecipesForBookOnce(bookId) }) {
+            if (!FileExports.shareBooksAs(context, listOf(book), action) { repository.getRecipesForBookOnce(bookId) }) {
                 Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
             }
         }

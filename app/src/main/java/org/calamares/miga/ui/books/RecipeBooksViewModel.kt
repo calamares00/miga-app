@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.books
 
+import org.calamares.miga.data.repository.RecipeBookNotEmptyException
+import org.calamares.miga.data.export.ShareAction
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.combine
 import android.content.Context
 import org.calamares.miga.data.local.PhotoStorage
@@ -163,10 +166,12 @@ class RecipeBooksViewModel(
         _syncMessage.value = null
     }
 
-    /** A shared book file waiting for the user to confirm importing it. */
+    /** A shared book file (one or several books) waiting for the user to confirm importing it. */
     data class IncomingBookPrompt(
         val parsed: LibraryImportParseResult.Success,
         val bookName: String,
+        /** Names of every book when the file holds several; just [bookName] otherwise. */
+        val bookNames: List<String> = listOf(bookName),
         val recipeCount: Int,
         val alreadyHere: Boolean,
         val sharedBy: String?,
@@ -226,13 +231,15 @@ class RecipeBooksViewModel(
             when (val result = RecipeExporter.importRecipe(appContext, Uri.fromFile(file), password)) {
                 is RecipeImportResult.Collection -> {
                     val parsed = result.parsed
-                    val book = parsed.dto.books.singleOrNull()
+                    val book = parsed.dto.books.firstOrNull()
                     if (book == null) {
                         _syncMessage.value = L10n.str(R.string.shared_file_not_a_book)
                     } else {
                         _incomingBook.value = IncomingBookPrompt(
-                            parsed, book.name, parsed.dto.recipes.size,
-                            alreadyHere = repository.findSharedBookId(book.uid) != null,
+                            parsed, book.name,
+                            bookNames = parsed.dto.books.map { it.name },
+                            recipeCount = parsed.dto.recipes.size,
+                            alreadyHere = parsed.dto.books.any { repository.findSharedBookId(it.uid) != null },
                             sharedBy = book.sharedBy,
                             sharedAt = book.sharedAt
                         )
@@ -259,7 +266,8 @@ class RecipeBooksViewModel(
             try {
                 _syncMessage.value = when (val result = RecipeExporter.importSharedBook(appContext, prompt.parsed, repository)) {
                     is SharedBookImportResult.Success ->
-                        L10n.str(R.string.shared_book_imported_x_x_x, result.bookName, result.added, result.updated)
+                        if (result.bookCount > 1) L10n.str(R.string.shared_books_imported_x_x_x, result.bookCount, result.added, result.updated)
+                        else L10n.str(R.string.shared_book_imported_x_x_x, result.bookName, result.added, result.updated)
                     is SharedBookImportResult.Error -> result.reason
                 }
             } finally {
@@ -305,34 +313,79 @@ class RecipeBooksViewModel(
         _incomingRecipe.value = null
     }
 
-    /** "Share link": the book encrypted on a temporary link, sent as text. */
-    fun shareBookLink(context: Context, summary: RecipeBookSummary) {
+    // --- Selection of books (long press), the same as for recipes ---
+
+    private val _selectedBookIds = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedBookIds: StateFlow<Set<Long>> = _selectedBookIds
+
+    fun startSelection(id: Long) {
+        _selectedBookIds.value = setOf(id)
+    }
+
+    fun toggleSelection(id: Long) {
+        _selectedBookIds.update { current -> if (id in current) current - id else current + id }
+    }
+
+    fun selectBooks(ids: Collection<Long>) {
+        _selectedBookIds.value = ids.toSet()
+    }
+
+    fun clearSelection() {
+        _selectedBookIds.value = emptySet()
+    }
+
+    private fun selectedBooks(): List<RecipeBookSummary> {
+        val ids = _selectedBookIds.value
+        return books.value.orEmpty().filter { it.id in ids }
+    }
+
+    /** Pins the selected books, or unpins them when they all are pinned already. */
+    fun togglePinnedSelected() {
+        val selected = selectedBooks()
+        val pin = !selected.all { it.isPinned }
+        clearSelection()
+        viewModelScope.launch { selected.forEach { repository.setRecipeBookPinned(it.id, pin) } }
+    }
+
+    /**
+     * Deletes the selected books: packs are uninstalled with their recipes; one's own books only
+     * when empty, as from the book editor (their recipes are moved or deleted first).
+     */
+    fun deleteSelected() {
+        val selected = selectedBooks()
+        clearSelection()
         viewModelScope.launch {
-            val book = repository.getRecipeBookOnce(summary.id) ?: return@launch
-            if (!FileExports.shareBookLink(context, book) { repository.getRecipesForBookOnce(summary.id) }) {
-                _syncMessage.value = L10n.str(R.string.pdf_already_running)
+            var deleted = 0
+            var kept = 0
+            selected.forEach { book ->
+                if (book.isPack) {
+                    repository.uninstallPack(book.id)
+                    deleted++
+                } else {
+                    try {
+                        repository.deleteRecipeBook(book.id)
+                        deleted++
+                    } catch (e: RecipeBookNotEmptyException) {
+                        kept++
+                    }
+                }
             }
+            _syncMessage.value = listOfNotNull(
+                L10n.str(R.string.books_deleted_n, deleted).takeIf { deleted > 0 },
+                L10n.str(R.string.books_not_deleted_n, kept).takeIf { kept > 0 }
+            ).joinToString(". ")
         }
     }
 
-    /** "Share book": the book as a ".miga" file, straight to the share sheet. */
-    fun shareBook(context: Context, summary: RecipeBookSummary) {
+    /** A "Share" option for the selected books (see FileExports.shareBooksAs); packs are not sent. */
+    fun shareSelectedAs(context: Context, action: ShareAction) {
+        val ids = selectedBooks().filter { !it.isPack }.map { it.id }
+        if (ids.isEmpty()) return
         viewModelScope.launch {
-            val book = repository.getRecipeBookOnce(summary.id) ?: return@launch
-            if (!FileExports.shareBook(context, book) { repository.getRecipesForBookOnce(summary.id) }) {
-                _syncMessage.value = L10n.str(R.string.pdf_already_running)
-            }
+            val books = ids.mapNotNull { repository.getRecipeBookOnce(it) }
+            val started = FileExports.shareBooksAs(context, books, action) { ids.flatMap { repository.getRecipesForBookOnce(it) } }
+            if (started) clearSelection() else _syncMessage.value = L10n.str(R.string.pdf_already_running)
         }
-    }
-
-    /** Uninstalls the pack of [book] (its book and the recipes still in it). */
-    fun uninstallPack(book: RecipeBookSummary) {
-        if (!book.isPack) return
-        viewModelScope.launch { repository.uninstallPack(book.id) }
-    }
-
-    fun togglePinned(book: RecipeBookSummary) {
-        viewModelScope.launch { repository.setRecipeBookPinned(book.id, !book.isPinned) }
     }
 
     fun setViewMode(mode: RecipeListViewMode) {

@@ -184,14 +184,14 @@ object RecipeExporter {
 
     /**
      * Writes recipes as a Miga file to import them later on this or another phone: always a ZIP
-     * with the photos (and the book's cover when exporting a [book]). One recipe keeps the single
-     * recipe format older versions import; several, a book or a selection, the library format,
-     * which the "From file" import of a book and the backup restore both read.
+     * with the photos (and the covers of the [books] exported). One recipe keeps the single recipe
+     * format older versions import; several, books or a selection, the library format, which the
+     * "From file" import of a book and the backup restore both read.
      */
     suspend fun writeMigaFile(
         context: Context,
         fileName: String,
-        book: RecipeBook?,
+        books: List<RecipeBook>,
         recipes: List<Recipe>,
         singleRecipe: Boolean,
         onPhoto: (Int, Int) -> Unit,
@@ -217,7 +217,7 @@ object RecipeExporter {
             json.encodeToString(
                 LibraryExportDto(
                     exportedAt = System.currentTimeMillis(),
-                    books = listOfNotNull(book?.let { bookDto(it) }),
+                    books = books.map { bookDto(it) },
                     recipes = recipes.map { dto(it) }
                 )
             )
@@ -225,7 +225,7 @@ object RecipeExporter {
         val file = File(exportsDir(context), sanitizeFileName(fileName) + if (forSharing) ".miga" else ".zip")
         try {
             file.outputStream().use { output ->
-                writeZipToStream(context, output, manifest, photoSourcesFor(if (singleRecipe) null else book, recipes), onPhoto)
+                writeZipToStream(context, output, manifest, photoSourcesFor(if (singleRecipe) emptyList() else books, recipes), onPhoto)
             }
         } catch (e: Exception) {
             file.delete()
@@ -493,11 +493,11 @@ object RecipeExporter {
     }
 
     /**
-     * Merges a book shared by someone else ([writeMigaFile] with forSharing) into the same book
-     * here: found by its uid (a new book otherwise, even if another one has the same name), new
-     * recipes added and those that changed updated (only when the file's copy is newer), so
-     * sending the file again works as a manual sync. Nothing is deleted and what is personal here
-     * (favourite, rating, journal) stays.
+     * Merges the books shared by someone else ([writeMigaFile] with forSharing; one or several)
+     * into the same books here: each found by its uid (a new book otherwise, even if another one has
+     * the same name), new recipes added and those that changed updated (only when the file's copy
+     * is newer), so sending the file again works as a manual sync. Nothing is deleted and what is
+     * personal here (favourite, rating, journal) stays.
      */
     suspend fun importSharedBook(
         context: Context,
@@ -506,44 +506,50 @@ object RecipeExporter {
     ): SharedBookImportResult = withContext(Dispatchers.IO) {
         try {
             val dto = parsed.dto
-            val bookMeta = dto.books.singleOrNull()
-                ?: return@withContext SharedBookImportResult.Error(L10n.str(R.string.shared_file_not_a_book))
-            val wantedPaths = photoPaths(dto.recipes) + listOfNotNull(bookMeta.coverPhotoFileName?.let { "books/${bookMeta.uid}/$it" })
+            if (dto.books.isEmpty()) return@withContext SharedBookImportResult.Error(L10n.str(R.string.shared_file_not_a_book))
+            val wantedPaths = photoPaths(dto.recipes) +
+                dto.books.mapNotNull { book -> book.coverPhotoFileName?.let { "books/${book.uid}/$it" } }
             val extracted = if (parsed.isZip) extractZipPhotos(context, parsed.source, wantedPaths, parsed.password) else emptyMap()
-            val cover = bookMeta.coverPhotoFileName?.let { extracted["books/${bookMeta.uid}/$it"] }
-            val existingBookId = repository.findSharedBookId(bookMeta.uid)
-            val bookId = existingBookId
-                ?: repository.createBookWithUid(bookMeta.name, bookMeta.uid, cover, bookMeta.sharedBy, bookMeta.sharedAt)
-            if (existingBookId != null && bookMeta.sharedBy != null) repository.setBookSharedBy(existingBookId, bookMeta.sharedBy, bookMeta.sharedAt)
+            // Recipes name their book; one that names none of them goes into the first.
+            val recipesByBook = dto.recipes.groupBy { recipe -> dto.books.firstOrNull { it.name == recipe.recipeBookName } ?: dto.books.first() }
+            var firstBookId = 0L
             var added = 0
             var updated = 0
             var unchanged = 0
-            dto.recipes.forEach { recipeDto ->
-                val existing = repository.findRecipeStateByUid(recipeDto.uid)
-                when {
-                    existing == null -> {
-                        val recipeId = repository.saveRecipe(
-                            recipeDto.copy(isFavorite = false, sharedBy = recipeDto.sharedBy ?: bookMeta.sharedBy)
-                                .toDraft(bookId, resolvePhotos(recipeDto.uid, recipeDto.photos, extracted))
-                        )
-                        applyHealthFromImport(repository, recipeId, recipeDto.health)
-                        applyNutritionFromImport(repository, recipeId, recipeDto.nutrition)
-                        added++
-                    }
-                    existing.inPack || (recipeDto.updatedAt != null && existing.updatedAt >= recipeDto.updatedAt) -> unchanged++
-                    else -> {
-                        val photos = resolvePhotos(recipeDto.uid, recipeDto.photos, extracted)
-                        repository.saveRecipe(
-                            recipeDto.copy(isFavorite = existing.isFavorite, sharedBy = recipeDto.sharedBy ?: bookMeta.sharedBy)
-                                .toDraft(bookId, photos).copy(id = existing.id)
-                        )
-                        applyHealthFromImport(repository, existing.id, recipeDto.health)
-                        applyNutritionFromImport(repository, existing.id, recipeDto.nutrition)
-                        updated++
+            dto.books.forEach { bookMeta ->
+                val cover = bookMeta.coverPhotoFileName?.let { extracted["books/${bookMeta.uid}/$it"] }
+                val existingBookId = repository.findSharedBookId(bookMeta.uid)
+                val bookId = existingBookId
+                    ?: repository.createBookWithUid(bookMeta.name, bookMeta.uid, cover, bookMeta.sharedBy, bookMeta.sharedAt)
+                if (existingBookId != null && bookMeta.sharedBy != null) repository.setBookSharedBy(existingBookId, bookMeta.sharedBy, bookMeta.sharedAt)
+                if (firstBookId == 0L) firstBookId = bookId
+                recipesByBook[bookMeta].orEmpty().forEach { recipeDto ->
+                    val existing = repository.findRecipeStateByUid(recipeDto.uid)
+                    when {
+                        existing == null -> {
+                            val recipeId = repository.saveRecipe(
+                                recipeDto.copy(isFavorite = false, sharedBy = recipeDto.sharedBy ?: bookMeta.sharedBy)
+                                    .toDraft(bookId, resolvePhotos(recipeDto.uid, recipeDto.photos, extracted))
+                            )
+                            applyHealthFromImport(repository, recipeId, recipeDto.health)
+                            applyNutritionFromImport(repository, recipeId, recipeDto.nutrition)
+                            added++
+                        }
+                        existing.inPack || (recipeDto.updatedAt != null && existing.updatedAt >= recipeDto.updatedAt) -> unchanged++
+                        else -> {
+                            val photos = resolvePhotos(recipeDto.uid, recipeDto.photos, extracted)
+                            repository.saveRecipe(
+                                recipeDto.copy(isFavorite = existing.isFavorite, sharedBy = recipeDto.sharedBy ?: bookMeta.sharedBy)
+                                    .toDraft(bookId, photos).copy(id = existing.id)
+                            )
+                            applyHealthFromImport(repository, existing.id, recipeDto.health)
+                            applyNutritionFromImport(repository, existing.id, recipeDto.nutrition)
+                            updated++
+                        }
                     }
                 }
             }
-            SharedBookImportResult.Success(bookId, bookMeta.name, added, updated, unchanged)
+            SharedBookImportResult.Success(firstBookId, dto.books.first().name, added, updated, unchanged, bookCount = dto.books.size)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -628,8 +634,8 @@ object RecipeExporter {
         sharedAt = book.sharedAt
     )
 
-    private fun photoSourcesFor(book: RecipeBook?, recipes: List<Recipe>): List<Pair<String, String>> {
-        val bookCover = book?.coverPhotoUri?.let { listOf("books/${book.uid}/cover.jpg" to it) } ?: emptyList()
+    private fun photoSourcesFor(books: List<RecipeBook>, recipes: List<Recipe>): List<Pair<String, String>> {
+        val bookCover = books.mapNotNull { book -> book.coverPhotoUri?.let { "books/${book.uid}/cover.jpg" to it } }
         val recipePhotos = recipes.flatMap { recipe -> recipe.photos.mapIndexed { index, photo -> "recipes/${recipe.uid}/$index.jpg" to photo.uri } }
         return bookCover + recipePhotos
     }
@@ -868,7 +874,8 @@ object RecipeExporter {
 
 /** Result of merging a shared book file, see [RecipeExporter.importSharedBook]. */
 sealed interface SharedBookImportResult {
-    data class Success(val bookId: Long, val bookName: String, val added: Int, val updated: Int, val unchanged: Int) : SharedBookImportResult
+    /** [bookId] and [bookName] are those of the first book when the file held several ([bookCount]). */
+    data class Success(val bookId: Long, val bookName: String, val added: Int, val updated: Int, val unchanged: Int, val bookCount: Int = 1) : SharedBookImportResult
     data class Error(val reason: String) : SharedBookImportResult
 }
 

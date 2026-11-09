@@ -55,46 +55,48 @@ import org.calamares.miga.R
 import org.calamares.miga.data.export.ExportFormat
 import org.calamares.miga.data.export.FileExportState
 import org.calamares.miga.data.export.FileExports
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import org.calamares.miga.data.export.ShareAction
 
 /**
- * The one "Export" choice of a recipe, a selection or a book: PDF to read or send, or a Miga file
- * to import later (plus plain text for a single recipe when [onText] is given).
+ * The one "Share" sheet of a book, several books, a recipe or a selection: only the [actions] that
+ * apply are offered, always in the same order and with the same words.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExportFormatDialog(
-    title: String,
-    onFormat: (ExportFormat) -> Unit,
-    onDismiss: () -> Unit,
-    onText: (() -> Unit)? = null,
-    /** Offers the picture for social networks (a single recipe only). */
-    offerImage: Boolean = false
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
-        title = { Text(L10n.str(R.string.export_x, title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(L10n.str(R.string.export_choose_format), style = MaterialTheme.typography.bodyMedium)
-                ExportOption(Icons.Filled.PictureAsPdf, L10n.str(R.string.export_format_pdf), L10n.str(R.string.export_format_pdf_desc)) {
-                    onFormat(ExportFormat.PDF)
+fun ShareSheet(title: String, actions: List<ShareAction>, onAction: (ShareAction) -> Unit, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 24.dp).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                L10n.str(R.string.share_x, title),
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            ShareAction.entries.filter { it in actions }.forEach { action ->
+                val (icon, name, description) = when (action) {
+                    ShareAction.SEND_FILE -> Triple(Icons.Filled.Share, R.string.share_action_send, R.string.share_action_send_desc)
+                    ShareAction.LINK -> Triple(Icons.Filled.Link, R.string.share_action_link, R.string.share_action_link_desc)
+                    ShareAction.PDF -> Triple(Icons.Filled.PictureAsPdf, R.string.export_format_pdf, R.string.export_format_pdf_desc)
+                    ShareAction.IMAGE -> Triple(Icons.Filled.Image, R.string.export_format_image, R.string.export_format_image_desc)
+                    ShareAction.TEXT -> Triple(Icons.Filled.ShortText, R.string.export_format_text, R.string.export_format_text_desc)
+                    ShareAction.SAVE_COPY -> Triple(Icons.Filled.Archive, R.string.share_action_copy, R.string.export_format_miga_desc)
                 }
-                ExportOption(Icons.Filled.Archive, L10n.str(R.string.export_format_miga), L10n.str(R.string.export_format_miga_desc)) {
-                    onFormat(ExportFormat.MIGA_FILE)
-                }
-                if (offerImage) {
-                    ExportOption(Icons.Filled.Image, L10n.str(R.string.export_format_image), L10n.str(R.string.export_format_image_desc)) {
-                        onFormat(ExportFormat.IMAGE)
-                    }
-                }
-                if (onText != null) {
-                    ExportOption(Icons.Filled.ShortText, L10n.str(R.string.export_format_text), L10n.str(R.string.export_format_text_desc), onText)
+                ExportOption(icon, L10n.str(name), L10n.str(description)) {
+                    onDismiss()
+                    onAction(action)
                 }
             }
-        },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
-    )
+        }
+    }
 }
 
 @Composable

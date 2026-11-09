@@ -16,6 +16,7 @@ import org.calamares.miga.data.export.IngredientGroupDto
 import org.calamares.miga.data.local.AppDatabase
 import org.calamares.miga.data.local.entity.RecipeBookEntity
 import org.calamares.miga.data.repository.RecipeRepository
+import org.calamares.miga.data.repository.copyRecipeToBook
 import org.calamares.miga.data.share.BookFileIntents
 import org.calamares.miga.data.share.IncomingBookFile
 import org.junit.After
@@ -60,7 +61,7 @@ class SharedBookFlowTest {
 
     private suspend fun shareFrom(repository: RecipeRepository, bookId: Long, sharedBy: String? = "Ana"): java.io.File {
         val book = repository.getRecipeBookOnce(bookId)!!
-        val file = RecipeExporter.writeMigaFile(context, book.name, book, repository.getRecipesForBookOnce(bookId), singleRecipe = false, onPhoto = { _, _ -> }, forSharing = true, sharedBy = sharedBy)
+        val file = RecipeExporter.writeMigaFile(context, book.name, listOf(book), repository.getRecipesForBookOnce(bookId), singleRecipe = false, onPhoto = { _, _ -> }, forSharing = true, sharedBy = sharedBy)
         assertTrue(file.name.endsWith(".miga"))
         return file
     }
@@ -117,7 +118,7 @@ class SharedBookFlowTest {
 
     private suspend fun shareRecipe(repository: RecipeRepository, recipeId: Long, sharedBy: String?): java.io.File {
         val recipe = repository.observeRecipe(recipeId).first()!!
-        return RecipeExporter.writeMigaFile(context, recipe.name, null, listOf(recipe), singleRecipe = true, onPhoto = { _, _ -> }, forSharing = true, sharedBy = sharedBy)
+        return RecipeExporter.writeMigaFile(context, recipe.name, emptyList(), listOf(recipe), singleRecipe = true, onPhoto = { _, _ -> }, forSharing = true, sharedBy = sharedBy)
     }
 
     private suspend fun receiveRecipe(file: java.io.File): RecipeImportResult.Success {
@@ -154,5 +155,47 @@ class SharedBookFlowTest {
         assertTrue(again.unchanged)
         assertEquals(intoExisting.recipeId, again.recipeId)
         assertEquals(2, receiverRepo.getAllRecipeBooksOnce().size)
+    }
+
+    @Test
+    fun `several books shared together are imported as separate books`() = runBlocking {
+        val senderRepo = RecipeRepository(sender)
+        val receiverRepo = RecipeRepository(receiver)
+        val familia = sender.recipeBookDao().insert(RecipeBookEntity(uid = "book-1", name = "Familia", coverPhotoUri = null, createdAt = 0L))
+        val postres = sender.recipeBookDao().insert(RecipeBookEntity(uid = "book-2", name = "Postres", coverPhotoUri = null, createdAt = 0L))
+        senderRepo.saveRecipe(recipe("r1", "Paella", 1000).toDraft(familia))
+        senderRepo.saveRecipe(recipe("r2", "Flan", 1000).copy(recipeBookName = "Postres").toDraft(postres))
+        senderRepo.saveRecipe(recipe("r3", "Natillas", 1000).copy(recipeBookName = "Postres").toDraft(postres))
+
+        val books = listOf(senderRepo.getRecipeBookOnce(familia)!!, senderRepo.getRecipeBookOnce(postres)!!)
+        val recipes = senderRepo.getRecipesForBookOnce(familia) + senderRepo.getRecipesForBookOnce(postres)
+        val file = RecipeExporter.writeMigaFile(context, "2 libros", books, recipes, singleRecipe = false, onPhoto = { _, _ -> }, forSharing = true, sharedBy = "Ana")
+
+        val result = RecipeExporter.importSharedBook(context, receive(file), receiverRepo)
+        result as SharedBookImportResult.Success
+        assertEquals(2, result.bookCount)
+        assertEquals(3, result.added)
+        val received = receiverRepo.getAllRecipeBooksOnce().associateBy { it.name }
+        assertEquals(setOf("Familia", "Postres"), received.keys)
+        assertEquals(setOf("Paella"), receiverRepo.getRecipesForBookOnce(received.getValue("Familia").id).map { it.name }.toSet())
+        assertEquals(setOf("Flan", "Natillas"), receiverRepo.getRecipesForBookOnce(received.getValue("Postres").id).map { it.name }.toSet())
+        assertTrue(received.values.all { it.sharedBy == "Ana" })
+    }
+
+    @Test
+    fun `pack recipes cannot be moved out of the pack, only copied`() = runBlocking {
+        val repo = RecipeRepository(receiver)
+        val pack = receiver.recipeBookDao().insert(RecipeBookEntity(uid = "pack", name = "Pack", coverPhotoUri = null, createdAt = 0L, packId = "arroces"))
+        val mine = receiver.recipeBookDao().insert(RecipeBookEntity(uid = "mine", name = "Mías", coverPhotoUri = null, createdAt = 0L))
+        // Saving into a pack is blocked too, so the recipe is put there directly, as a pack install does.
+        val recipeId = repo.saveRecipe(recipe("p1", "Arroz negro", 1000).toDraft(mine))
+        receiver.recipeDao().updateRecipeBook(recipeId, pack)
+
+        repo.moveRecipeToBook(recipeId, mine)
+        assertEquals(pack, repo.observeRecipe(recipeId).first()!!.recipeBookId)
+
+        val copyId = repo.copyRecipeToBook(context, repo.observeRecipe(recipeId).first()!!, mine)
+        assertEquals(mine, repo.observeRecipe(copyId).first()!!.recipeBookId)
+        assertEquals(pack, repo.observeRecipe(recipeId).first()!!.recipeBookId)
     }
 }
