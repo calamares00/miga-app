@@ -1,0 +1,2 @@
+What's new in 1.0.21:
+• Updated app components (Android, Compose, saved settings and background sync): more stability and security fixes.
