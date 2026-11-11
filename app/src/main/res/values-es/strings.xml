@@ -1294,4 +1294,5 @@
     <string name="shortcut_add_shopping_short">"Compra"</string>
     <string name="shortcut_new_recipe">"Nueva receta"</string>
     <string name="shortcut_new_recipe_short">"Nueva receta"</string>
+    <string name="choose_recipe_to_see_it">"Elige una receta para verla aquí"</string>
 </resources>
