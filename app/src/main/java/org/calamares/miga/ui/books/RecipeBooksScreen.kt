@@ -79,6 +79,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -211,13 +214,14 @@ fun RecipeBooksScreen(
         }
     }
 
-    // Lazy lists keep their position by item key: after "Packs", going back to "All" would stay on
-    // the packs header and hide the books above it. A new filter always starts from the top.
-    val gridState = rememberLazyGridState()
-    val listState = rememberLazyListState()
+    // One page per filter, so a horizontal swipe moves to the next or previous one. At the first
+    // and last filter the list stretches (the usual end-of-list effect) instead of wrapping round.
+    val filterPager = rememberPagerState(initialPage = filter.ordinal) { BookFilter.entries.size }
+    LaunchedEffect(filterPager) {
+        snapshotFlow { filterPager.settledPage }.collect { page -> viewModel.setFilter(BookFilter.entries[page]) }
+    }
     LaunchedEffect(filter) {
-        gridState.scrollToItem(0)
-        listState.scrollToItem(0)
+        if (filterPager.settledPage != filter.ordinal) filterPager.animateScrollToPage(filter.ordinal)
     }
 
     AdaptiveScaffold(
@@ -358,71 +362,88 @@ fun RecipeBooksScreen(
             } else {
                 BookFilterChips(filter, books, onSelect = viewModel::setFilter)
                 if (updatingPacks) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp))
-                if (sections.isEmpty()) {
-                    FilterEmptyState(
-                        filter,
-                        hasServer = hasServer,
-                        onExplorePacks = onExplorePacks,
-                        onAddBookClick = onAddBookClick,
-                        onOpenSync = onOpenSync,
-                        modifier = Modifier.fillMaxSize().weight(1f)
-                    )
-                } else if (viewMode == RecipeListViewMode.GRID) {
-                    LazyVerticalGrid(
-                        state = gridState,
-                        columns = GridCells.Adaptive(150.dp),
-                        // Bottom padding so the "New book" button does not cover the last row.
-                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        sections.forEach { section ->
-                            section.title?.let { title ->
-                                item(key = "header/${section.key}", span = { GridItemSpan(maxLineSpan) }, contentType = "header") {
-                                    SectionHeader(title, section.level)
+                HorizontalPager(
+                    state = filterPager,
+                    // While choosing books a swipe would change what "select all" means.
+                    userScrollEnabled = !selectionMode,
+                    verticalAlignment = Alignment.Top,
+                    key = { page -> BookFilter.entries[page].name },
+                    modifier = Modifier.weight(1f)
+                ) { page ->
+                    val pageFilter = BookFilter.entries[page]
+                    // Each page lists its own filter; a page left behind is dropped, so coming back
+                    // to a filter always starts from the top.
+                    val pageSections = remember(books, pageFilter, grouped, connectionNames, labels) {
+                        bookSections(books, pageFilter, grouped, connectionNames, labels)
+                    }
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        if (pageSections.isEmpty()) {
+                            FilterEmptyState(
+                                pageFilter,
+                                hasServer = hasServer,
+                                onExplorePacks = onExplorePacks,
+                                onAddBookClick = onAddBookClick,
+                                onOpenSync = onOpenSync,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else if (viewMode == RecipeListViewMode.GRID) {
+                            LazyVerticalGrid(
+                                state = rememberLazyGridState(),
+                                columns = GridCells.Adaptive(150.dp),
+                                // Bottom padding so the "New book" button does not cover the last row.
+                                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                pageSections.forEach { section ->
+                                    section.title?.let { title ->
+                                        item(key = "header/${section.key}", span = { GridItemSpan(maxLineSpan) }, contentType = "header") {
+                                            SectionHeader(title, section.level)
+                                        }
+                                    }
+                                    items(section.books, key = { it.id }) { book ->
+                                        RecipeBookCard(
+                                            book = book,
+                                            selectionMode = selectionMode,
+                                            isSelected = book.id in selectedIds,
+                                            onClick = { if (selectionMode) viewModel.toggleSelection(book.id) else onBookClick(book.id) },
+                                            onLongClick = {
+                                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                if (selectionMode) viewModel.toggleSelection(book.id) else viewModel.startSelection(book.id)
+                                            },
+                                            // Pinning moves the book to the top; animate it instead of jumping.
+                                            modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null)
+                                        )
+                                    }
                                 }
                             }
-                            items(section.books, key = { it.id }) { book ->
-                                RecipeBookCard(
-                                    book = book,
-                                    selectionMode = selectionMode,
-                                    isSelected = book.id in selectedIds,
-                                    onClick = { if (selectionMode) viewModel.toggleSelection(book.id) else onBookClick(book.id) },
-                                    onLongClick = {
-                                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        if (selectionMode) viewModel.toggleSelection(book.id) else viewModel.startSelection(book.id)
-                                    },
-                                    // Pinning moves the book to the top; animate it instead of jumping.
-                                    modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null)
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    LazyColumn(
-                        state = listState,
-                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        sections.forEach { section ->
-                            section.title?.let { title ->
-                                item(key = "header/${section.key}", contentType = "header") { SectionHeader(title, section.level) }
-                            }
-                            items(section.books, key = { it.id }) { book ->
-                                RecipeBookRow(
-                                    book = book,
-                                    compact = viewMode == RecipeListViewMode.COMPACT,
-                                    selectionMode = selectionMode,
-                                    isSelected = book.id in selectedIds,
-                                    onClick = { if (selectionMode) viewModel.toggleSelection(book.id) else onBookClick(book.id) },
-                                    onLongClick = {
-                                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        if (selectionMode) viewModel.toggleSelection(book.id) else viewModel.startSelection(book.id)
-                                    },
-                                    modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null)
-                                )
+                        } else {
+                            LazyColumn(
+                                state = rememberLazyListState(),
+                                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                pageSections.forEach { section ->
+                                    section.title?.let { title ->
+                                        item(key = "header/${section.key}", contentType = "header") { SectionHeader(title, section.level) }
+                                    }
+                                    items(section.books, key = { it.id }) { book ->
+                                        RecipeBookRow(
+                                            book = book,
+                                            compact = viewMode == RecipeListViewMode.COMPACT,
+                                            selectionMode = selectionMode,
+                                            isSelected = book.id in selectedIds,
+                                            onClick = { if (selectionMode) viewModel.toggleSelection(book.id) else onBookClick(book.id) },
+                                            onLongClick = {
+                                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                if (selectionMode) viewModel.toggleSelection(book.id) else viewModel.startSelection(book.id)
+                                            },
+                                            modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

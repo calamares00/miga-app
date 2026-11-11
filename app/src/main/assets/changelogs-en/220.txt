@@ -1,0 +1,3 @@
+What's new in 1.0.22:
+• Books: swipe left or right to move between filters (All, My books, Packs, Server).
+• Shopping: fixed the catalogue, templates and other menus that kept bouncing up and down after being dragged up.
