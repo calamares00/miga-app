@@ -1,0 +1,3 @@
+Novedades de la versión 1.0.22:
+• Libros: desliza a izquierda o derecha para pasar de un filtro a otro (Todos, Mis libros, Packs, Servidor).
+• Compra: arreglado el catálogo, las plantillas y otros menús que, al subirlos con el dedo, se quedaban rebotando solos.
