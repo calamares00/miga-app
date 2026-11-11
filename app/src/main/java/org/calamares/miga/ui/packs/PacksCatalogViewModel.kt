@@ -68,7 +68,7 @@ class PacksCatalogViewModel(
      * The catalogue joined with the installed books, so installing or uninstalling (here, on the
      * pack page or from the books list) shows at once without downloading the catalogue again.
      */
-    val uiState: StateFlow<CatalogUiState> = combine(catalog, repository.observeRecipeBooks()) { load, books ->
+    val uiState: StateFlow<CatalogUiState> = combine(catalog, repository.books.observeRecipeBooks()) { load, books ->
         when (load) {
             is CatalogLoad.Loading -> CatalogUiState.Loading
             is CatalogLoad.Error -> CatalogUiState.Error(load.reason)
@@ -139,7 +139,7 @@ class PacksCatalogViewModel(
                 is CatalogFetchResult.Success -> {
                     // The user opened the catalogue, so its data may be used: packs installed before
                     // series existed get theirs for the books list.
-                    repository.updatePackSeries(result.packs.associate { it.id to it.series })
+                    repository.books.updatePackSeries(result.packs.associate { it.id to it.series })
                     catalog.value = CatalogLoad.Loaded(result.packs)
                 }
             }
@@ -218,7 +218,7 @@ class PacksCatalogViewModel(
         viewModelScope.launch {
             items.forEachIndexed { index, item ->
                 _progress.value = BatchProgress(index, items.size, uninstalling = true)
-                repository.uninstallPackById(item.entry.id)
+                repository.books.uninstallPackById(item.entry.id)
             }
             _progress.value = null
             clearSelection()

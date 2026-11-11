@@ -3,7 +3,6 @@ package org.calamares.miga.data.remote
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -17,6 +16,7 @@ import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.ensureActive
+import org.calamares.miga.data.support.AppDispatchers
 
 @Serializable
 data class PackEntryDto(
@@ -105,7 +105,7 @@ object PacksCatalogClient {
     fun resolveUrl(catalogUrl: String, ref: String): String =
         runCatching { URI(catalogUrl).resolve(ref.trim()).toString() }.getOrDefault(ref)
 
-    suspend fun fetchCatalog(repoPath: String): CatalogFetchResult = withContext(Dispatchers.IO) {
+    suspend fun fetchCatalog(repoPath: String): CatalogFetchResult = withContext(AppDispatchers.io) {
         if (repoPath.isBlank()) {
             return@withContext CatalogFetchResult.Error(L10n.str(R.string.set_up_catalogue_settings))
         }
@@ -155,7 +155,7 @@ object PacksCatalogClient {
      * Downloads a pack ZIP ([PackEntryDto.downloadUrl]) of at most [MAX_PACK_BYTES] and checks it
      * against [sha256] when the catalogue gives one.
      */
-    suspend fun downloadPackZip(url: String, sha256: String? = null): PackDownloadResult = withContext(Dispatchers.IO) {
+    suspend fun downloadPackZip(url: String, sha256: String? = null): PackDownloadResult = withContext(AppDispatchers.io) {
         if (!isHttps(url)) return@withContext PackDownloadResult.NotHttps
         try {
             val connection = URL(url).openConnection() as HttpURLConnection

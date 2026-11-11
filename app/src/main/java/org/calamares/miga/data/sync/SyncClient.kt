@@ -4,7 +4,6 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.model.SyncConnection
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
@@ -16,6 +15,7 @@ import org.calamares.miga.data.io.readBytesAtMost
 import org.calamares.miga.data.io.readTextAtMost
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.ensureActive
+import org.calamares.miga.data.support.AppDispatchers
 
 sealed interface SyncPingResult {
     data object Success : SyncPingResult
@@ -66,7 +66,7 @@ object SyncClient {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun ping(connection: SyncConnection): SyncPingResult = withContext(Dispatchers.IO) {
+    suspend fun ping(connection: SyncConnection): SyncPingResult = withContext(AppDispatchers.io) {
         try {
             val result = request(connection, "GET", "/sync/ping", body = null)
             when {
@@ -82,7 +82,7 @@ object SyncClient {
         }
     }
 
-    suspend fun fetchChanges(connection: SyncConnection, since: Long): SyncFetchResult = withContext(Dispatchers.IO) {
+    suspend fun fetchChanges(connection: SyncConnection, since: Long): SyncFetchResult = withContext(AppDispatchers.io) {
         try {
             val result = request(connection, "GET", "/sync/changes?since=$since&limit=$CHANGES_PAGE_SIZE", body = null)
             if (result.code != HttpURLConnection.HTTP_OK) {
@@ -103,7 +103,7 @@ object SyncClient {
     suspend fun pushShoppingList(connection: SyncConnection, dto: ShoppingListSyncDto): SyncPushResult<ShoppingListSyncDto> =
         pushJson(connection, "PUT", "/sync/shopping-lists/${dto.uid}", ShoppingListSyncDto.serializer(), dto, ShoppingListSyncDto.serializer())
 
-    suspend fun deleteShoppingList(connection: SyncConnection, uid: String, at: Long): SyncPushResult<ShoppingListSyncDto> = withContext(Dispatchers.IO) {
+    suspend fun deleteShoppingList(connection: SyncConnection, uid: String, at: Long): SyncPushResult<ShoppingListSyncDto> = withContext(AppDispatchers.io) {
         try {
             val result = request(connection, "DELETE", "/sync/shopping-lists/$uid?at=$at", body = null)
             if (result.code == HttpURLConnection.HTTP_NOT_FOUND) {
@@ -123,7 +123,7 @@ object SyncClient {
      * A 404 (the server never knew the item) counts as an applied deletion: there is nothing to
      * delete there.
      */
-    suspend fun deleteShoppingItem(connection: SyncConnection, uid: String, at: Long): SyncPushResult<ShoppingItemSyncDto> = withContext(Dispatchers.IO) {
+    suspend fun deleteShoppingItem(connection: SyncConnection, uid: String, at: Long): SyncPushResult<ShoppingItemSyncDto> = withContext(AppDispatchers.io) {
         try {
             val result = request(connection, "DELETE", "/sync/shopping/$uid?at=$at", body = null)
             if (result.code == HttpURLConnection.HTTP_NOT_FOUND) {
@@ -143,7 +143,7 @@ object SyncClient {
      * Asks the server for a new token for the same namespace to invite another device (see
      * SyncInviteCodec).
      */
-    suspend fun createInvitation(connection: SyncConnection, label: String): SyncInvitationResult = withContext(Dispatchers.IO) {
+    suspend fun createInvitation(connection: SyncConnection, label: String): SyncInvitationResult = withContext(AppDispatchers.io) {
         try {
             val body = json.encodeToString(CreateInvitationRequest.serializer(), CreateInvitationRequest(label)).toByteArray()
             val result = request(connection, "POST", "/sync/invitations", body = body)
@@ -175,7 +175,7 @@ object SyncClient {
         pushJson<Unit, RecipeSyncDto>(connection, "DELETE", "/sync/recipes/$uid?at=$at", null, null, RecipeSyncDto.serializer())
 
     suspend fun uploadBookCover(connection: SyncConnection, bookUid: String, bytes: ByteArray): Boolean =
-        withContext(Dispatchers.IO) {
+        withContext(AppDispatchers.io) {
             try {
                 val result = request(connection, "PUT", "/sync/books/$bookUid/cover", body = bytes, contentType = "image/jpeg", timeoutMillis = PHOTO_TIMEOUT_MILLIS)
                 result.code == HttpURLConnection.HTTP_NO_CONTENT
@@ -187,7 +187,7 @@ object SyncClient {
             }
         }
 
-    suspend fun downloadBookCover(connection: SyncConnection, bookUid: String): ByteArray? = withContext(Dispatchers.IO) {
+    suspend fun downloadBookCover(connection: SyncConnection, bookUid: String): ByteArray? = withContext(AppDispatchers.io) {
         try {
             val result = requestBinary(connection, "GET", "/sync/books/$bookUid/cover", timeoutMillis = PHOTO_TIMEOUT_MILLIS)
             if (result?.code == HttpURLConnection.HTTP_OK) result.bytes else null
@@ -208,7 +208,7 @@ object SyncClient {
         isCover: Boolean,
         position: Int,
         updatedAt: Long
-    ): SyncPushResult<PhotoMetaDto> = withContext(Dispatchers.IO) {
+    ): SyncPushResult<PhotoMetaDto> = withContext(AppDispatchers.io) {
         try {
             val path = "/sync/recipes/$recipeUid/photos/$photoUid?isCover=$isCover&position=$position&updatedAt=$updatedAt"
             val result = request(connection, "PUT", path, body = bytes, contentType = contentType, timeoutMillis = PHOTO_TIMEOUT_MILLIS)
@@ -221,7 +221,7 @@ object SyncClient {
         }
     }
 
-    suspend fun downloadPhoto(connection: SyncConnection, recipeUid: String, photoUid: String): PhotoDownloadResult = withContext(Dispatchers.IO) {
+    suspend fun downloadPhoto(connection: SyncConnection, recipeUid: String, photoUid: String): PhotoDownloadResult = withContext(AppDispatchers.io) {
         try {
             val result = requestBinary(connection, "GET", "/sync/recipes/$recipeUid/photos/$photoUid", timeoutMillis = PHOTO_TIMEOUT_MILLIS)
             when {
@@ -248,7 +248,7 @@ object SyncClient {
         requestSerializer: SerializationStrategy<Req>?,
         requestBody: Req?,
         conflictSerializer: DeserializationStrategy<Res>
-    ): SyncPushResult<Res> = withContext(Dispatchers.IO) {
+    ): SyncPushResult<Res> = withContext(AppDispatchers.io) {
         try {
             val bodyBytes = if (requestSerializer != null && requestBody != null) {
                 json.encodeToString(requestSerializer, requestBody).toByteArray()

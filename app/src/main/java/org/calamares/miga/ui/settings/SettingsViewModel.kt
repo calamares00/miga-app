@@ -93,13 +93,13 @@ class SettingsViewModel(
     fun exportLibrary(context: Context, destination: Uri, password: CharArray?, contents: BackupContents, onDone: (String) -> Unit) {
         viewModelScope.launch {
             val message = try {
-                val books = repository.getAllRecipeBooksOnce().filter { book ->
+                val books = repository.books.getAllRecipeBooksOnce().filter { book ->
                     (contents.serverBooks || book.syncConnectionId == null) && (contents.packs || book.packId == null)
                 }
                 val bookIds = books.map { it.id }.toSet()
                 val recipes = repository.getAllRecipesOnce().filter { it.recipeBookId in bookIds }
-                val templates = repository.observeShoppingTemplates().first()
-                val stores = repository.observeShoppingStores().first()
+                val templates = repository.shopping.observeShoppingTemplates().first()
+                val stores = repository.shopping.observeShoppingStores().first()
                 val settings = if (contents.settings) settingsRepository.exportForBackup() else null
                 RecipeExporter.exportLibrary(context, destination, books, recipes, templates, stores, settings, password)
                 L10n.str(if (password != null) R.string.backup_exported_encrypted else R.string.backup_exported)
@@ -133,7 +133,7 @@ class SettingsViewModel(
     fun confirmLibraryImport(context: Context, parsed: LibraryImportParseResult.Success, wipeFirst: Boolean, onMessage: (String) -> Unit) {
         viewModelScope.launch {
             val wipeMessage = if (wipeFirst) {
-                val result = repository.wipeUserRecipesAndBooks()
+                val result = repository.books.wipeUserRecipesAndBooks()
                 L10n.str(R.string.deleted_x_book_x_recipe, result.bookCount, result.recipeCount)
             } else ""
             val result = try {
@@ -151,7 +151,7 @@ class SettingsViewModel(
         }
     }
 
-    val books: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
+    val books: StateFlow<List<RecipeBookSummary>> = repository.books.observeRecipeBooks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val geminiApiKey: StateFlow<String> = settingsRepository.observeGeminiApiKey()

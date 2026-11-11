@@ -28,7 +28,7 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         val app = applicationContext as MigaApp
         val repository = app.repository
         val syncEngine = SyncEngine(repository)
-        repository.observeSyncConnections().first().forEach { connection ->
+        repository.sync.observeSyncConnections().first().forEach { connection ->
             syncEngine.syncConnection(applicationContext, connection.id)
         }
         return Result.success()

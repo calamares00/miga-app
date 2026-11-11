@@ -57,7 +57,7 @@ class IdeasViewModel(
     val recipes: StateFlow<Map<Long, Recipe>> = _recipes
 
     /** Books a new recipe can be created in (packs are read-only). */
-    val targetBooks: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
+    val targetBooks: StateFlow<List<RecipeBookSummary>> = repository.books.observeRecipeBooks()
         .map { books -> books.filter { !it.isPack } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -135,7 +135,7 @@ class IdeasViewModel(
     fun addToShoppingList(answer: IdeasAnswer, onDone: (String) -> Unit) {
         viewModelScope.launch {
             val recipes = answer.recipeIds.mapNotNull { _recipes.value[it] }
-            repository.addIngredientsToShoppingList(recipes.flatMap { recipe -> recipe.ingredientGroups.flatMap { it.ingredients } })
+            repository.shopping.addIngredientsToShoppingList(recipes.flatMap { recipe -> recipe.ingredientGroups.flatMap { it.ingredients } })
             onDone(L10n.str(R.string.ideas_added_to_shopping_n, recipes.size))
         }
     }

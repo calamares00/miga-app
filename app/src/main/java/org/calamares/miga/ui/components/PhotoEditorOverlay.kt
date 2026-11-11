@@ -72,11 +72,11 @@ import kotlinx.coroutines.launch
 import org.calamares.miga.MigaApp
 import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.data.local.PhotoStorage
+import org.calamares.miga.data.support.AppDispatchers
 import org.calamares.miga.data.vision.PhotoEnhanceResult
 import org.calamares.miga.data.vision.applyAdjustments
 import org.calamares.miga.data.vision.suggestPhotoAdjustments
 import kotlin.math.roundToInt
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private enum class DragMode { NONE, MOVE, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
@@ -121,7 +121,7 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
             ) { ai -> ai.suggestPhotoAdjustments(photo) }
             when (result) {
                 is PhotoEnhanceResult.Success -> {
-                    val improved = withContext(Dispatchers.Default) { applyAdjustments(photo, result.adjustments) }
+                    val improved = withContext(AppDispatchers.default) { applyAdjustments(photo, result.adjustments) }
                     // The user may have rotated it meanwhile: the result is only kept for the photo it was made from.
                     if (bitmap === photo) {
                         original = photo
@@ -136,7 +136,7 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
     }
 
     LaunchedEffect(sourceUri) {
-        val loaded = withContext(Dispatchers.IO) { PhotoStorage.loadBitmap(context, sourceUri) }
+        val loaded = withContext(AppDispatchers.io) { PhotoStorage.loadBitmap(context, sourceUri) }
         bitmap = loaded
         loadFailed = loaded == null
     }

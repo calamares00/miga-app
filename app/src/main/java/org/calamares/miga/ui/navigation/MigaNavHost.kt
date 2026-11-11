@@ -238,7 +238,7 @@ fun MigaNavHost(initialRoute: String? = null) {
     LaunchedEffect(newRecipeRequested) {
         if (newRecipeRequested) {
             AppShortcuts.consume()
-            val book = repository.getAllRecipeBooksOnce().filterNot { it.isPack }.let { own ->
+            val book = repository.books.getAllRecipeBooksOnce().filterNot { it.isPack }.let { own ->
                 own.firstOrNull { it.isPinned } ?: own.firstOrNull()
             }
             navController.navigate(Destinations.BOOKS_ROUTE) {

@@ -122,7 +122,7 @@ class GlobalSearchViewModel(
             val ids = _selectedIds.value
             val recipes = repository.getAllRecipesOnce().filter { it.id in ids }
             val allIngredients = recipes.flatMap { recipe -> recipe.ingredientGroups.flatMap { it.ingredients } }
-            repository.addIngredientsToShoppingList(allIngredients)
+            repository.shopping.addIngredientsToShoppingList(allIngredients)
             _selectedIds.value = emptySet()
         }
     }

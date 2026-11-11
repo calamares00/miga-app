@@ -23,6 +23,7 @@ import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.RecipeBook
 import java.io.File
+import org.calamares.miga.data.support.AppDispatchers
 
 /** What an export produces. */
 enum class ExportFormat(val mimeType: String) {
@@ -231,7 +232,7 @@ object FileExports {
                         status(progressText(format, current, total))
                     }
                     val encrypted = File(file.parentFile, file.name + ".enc")
-                    val key = withContext(Dispatchers.IO) { ShareLinkClient.encrypt(file, encrypted) }
+                    val key = withContext(AppDispatchers.io) { ShareLinkClient.encrypt(file, encrypted) }
                     try {
                         ShareLinkClient.upload(encrypted, key) { sent, total ->
                             coroutineJob.ensureActive()
@@ -384,7 +385,7 @@ object FileExports {
     }
 
     /** Copies the exported [file] to [destination], picked by the user with the system file picker. */
-    suspend fun saveTo(context: Context, file: File, destination: Uri): Boolean = withContext(Dispatchers.IO) {
+    suspend fun saveTo(context: Context, file: File, destination: Uri): Boolean = withContext(AppDispatchers.io) {
         try {
             context.contentResolver.openOutputStream(destination)?.use { output ->
                 file.inputStream().use { it.copyTo(output) }

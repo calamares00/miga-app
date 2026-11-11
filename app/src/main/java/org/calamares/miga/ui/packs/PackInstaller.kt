@@ -13,25 +13,25 @@ import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.remote.CatalogFetchResult
 import org.calamares.miga.data.remote.visibleFor
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
 import org.calamares.miga.data.remote.PackStatsClient
+import org.calamares.miga.data.support.AppDispatchers
 
 /** Downloads and installs packs, for the pack page and for several packs from the catalogue. */
 object PackInstaller {
 
     /** Install reports outlive the screen that installed the pack and never delay it. */
-    private val reportScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val reportScope = CoroutineScope(SupervisorJob() + AppDispatchers.io)
 
     /**
      * The installed packs that have a newer version in the catalogue, in the app language's list
      * (see visibleFor). Null when the catalogue cannot be read (offline, catalogue down).
      */
     suspend fun findUpdates(repository: RecipeRepository, settingsRepository: SettingsRepository): List<PackEntryDto>? {
-        val installed = repository.getAllRecipeBooksOnce()
+        val installed = repository.books.getAllRecipeBooksOnce()
             .mapNotNull { book -> book.packId?.let { it to (book.packVersion ?: 0) } }
             .toMap()
         if (installed.isEmpty()) return emptyList()
@@ -68,7 +68,7 @@ object PackInstaller {
         settingsRepository: SettingsRepository,
         entry: PackEntryDto
     ): PackImportResult {
-        val isNewInstall = repository.findRecipeBookByPackId(entry.id) == null
+        val isNewInstall = repository.books.findRecipeBookByPackId(entry.id) == null
         val bytes = when (val download = PacksCatalogClient.downloadPackZip(entry.downloadUrl, entry.sha256)) {
             is PackDownloadResult.Success -> download.bytes
             PackDownloadResult.Failed -> return PackImportResult.Error(L10n.str(R.string.couldnt_download_pack_check_connection))
