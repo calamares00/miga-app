@@ -1,6 +1,9 @@
 package org.calamares.miga.data.remote
 
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PacksCatalogClientTest {
@@ -35,5 +38,27 @@ class PacksCatalogClientTest {
         assertEquals(listOf("tapas", "basics", "navidad"), packs.visibleFor("es", emptySet()).map { it.id })
         assertEquals(listOf("tapas-en", "basics"), packs.visibleFor("en", emptySet()).map { it.id })
         assertEquals(listOf("tapas-en", "basics", "navidad"), packs.visibleFor("EN", setOf("navidad")).map { it.id })
+    }
+
+    @Test
+    fun `only https catalogues and packs are accepted`() {
+        assertTrue(PacksCatalogClient.isHttps("https://example.org/a.zip"))
+        assertTrue(PacksCatalogClient.isHttps(" HTTPS://example.org/a.zip"))
+        assertFalse(PacksCatalogClient.isHttps("http://example.org/a.zip"))
+        assertFalse(PacksCatalogClient.isHttps("ftp://example.org/a.zip"))
+        assertEquals(PackDownloadResult.NotHttps, runBlocking { PacksCatalogClient.downloadPackZip("http://example.org/a.zip") })
+    }
+
+    @Test
+    fun `a pack is checked against the hash of its catalogue, when there is one`() {
+        val bytes = "miga".toByteArray()
+        val hash = "0f3a2e7f1c36d9d4cd4b6b4a09f1be5f5bd3b1b6d7b5dd36a34ac4a5a3f7b2d1"
+        val real = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        assertTrue(PacksCatalogClient.matchesSha256(bytes, null))
+        assertTrue(PacksCatalogClient.matchesSha256(bytes, " "))
+        assertTrue(PacksCatalogClient.matchesSha256(bytes, real))
+        assertTrue(PacksCatalogClient.matchesSha256(bytes, real.uppercase()))
+        assertFalse(PacksCatalogClient.matchesSha256(bytes, hash))
+        assertFalse(PacksCatalogClient.matchesSha256(bytes + 1, real))
     }
 }

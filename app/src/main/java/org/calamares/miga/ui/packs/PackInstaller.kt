@@ -5,6 +5,7 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.export.PackImportResult
 import org.calamares.miga.data.export.RecipeExporter
+import org.calamares.miga.data.remote.PackDownloadResult
 import org.calamares.miga.data.remote.PackEntryDto
 import org.calamares.miga.data.remote.PacksCatalogClient
 import org.calamares.miga.data.repository.RecipeRepository
@@ -68,8 +69,12 @@ object PackInstaller {
         entry: PackEntryDto
     ): PackImportResult {
         val isNewInstall = repository.findRecipeBookByPackId(entry.id) == null
-        val bytes = PacksCatalogClient.downloadPackZip(entry.downloadUrl)
-            ?: return PackImportResult.Error(L10n.str(R.string.couldnt_download_pack_check_connection))
+        val bytes = when (val download = PacksCatalogClient.downloadPackZip(entry.downloadUrl, entry.sha256)) {
+            is PackDownloadResult.Success -> download.bytes
+            PackDownloadResult.Failed -> return PackImportResult.Error(L10n.str(R.string.couldnt_download_pack_check_connection))
+            PackDownloadResult.ChecksumMismatch -> return PackImportResult.Error(L10n.str(R.string.pack_checksum_mismatch))
+            PackDownloadResult.NotHttps -> return PackImportResult.Error(L10n.str(R.string.catalogue_needs_https))
+        }
         val result = RecipeExporter.importPackFromBytes(context, bytes, repository, entry.id, entry.latestVersion, entry.series)
         if (result is PackImportResult.Success && isNewInstall) {
             reportScope.launch {

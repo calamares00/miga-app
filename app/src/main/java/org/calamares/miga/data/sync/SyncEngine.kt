@@ -45,20 +45,28 @@ class SyncEngine(private val repository: RecipeRepository) {
         val connection = repository.getSyncConnectionOnce(connectionId)
             ?: return SyncOutcome.Error(L10n.str(R.string.connection_not_found))
 
-        val pulled = when (val fetch = SyncClient.fetchChanges(connection, connection.lastSyncedRevision)) {
-            is SyncFetchResult.Error -> {
-                repository.markSyncError(connectionId, fetch.reason)
-                return SyncOutcome.Error(fetch.reason)
+        // The server answers in pages (older servers send everything at once): each one is applied
+        // and its cursor saved, so a sync cut half-way goes on from there.
+        var pulled = 0
+        var since = connection.lastSyncedRevision
+        while (true) {
+            val changes = when (val fetch = SyncClient.fetchChanges(connection, since)) {
+                is SyncFetchResult.Error -> {
+                    repository.markSyncError(connectionId, fetch.reason)
+                    return SyncOutcome.Error(fetch.reason)
+                }
+                is SyncFetchResult.Success -> fetch.changes
             }
-            is SyncFetchResult.Success -> {
-                val failedPhotoRevisions = applyChanges(context, connection, fetch.changes)
-                if (connection.syncShopping) applyRemoteShopping(fetch.changes)
-                // If a photo could not be downloaded because of a transient failure the cursor does
-                // not move past it, so the next sync retries it (applying changes is idempotent)
-                // instead of losing it.
-                repository.markSyncSuccess(connectionId, SyncCursor.next(fetch.changes.latestRevision, failedPhotoRevisions))
-                fetch.changes.books.size + fetch.changes.recipes.size + fetch.changes.photos.size
-            }
+            val failedPhotoRevisions = applyChanges(context, connection, changes)
+            if (connection.syncShopping) applyRemoteShopping(changes)
+            // If a photo could not be downloaded because of a transient failure the cursor does
+            // not move past it, so the next sync retries it (applying changes is idempotent)
+            // instead of losing it.
+            val cursor = SyncCursor.next(changes.latestRevision, failedPhotoRevisions)
+            repository.markSyncSuccess(connectionId, cursor)
+            pulled += changes.books.size + changes.recipes.size + changes.photos.size
+            if (!SyncCursor.hasNextPage(changes.hasMore, since, cursor, failedPhotoRevisions)) break
+            since = cursor
         }
 
         var pushed = 0
@@ -91,15 +99,21 @@ class SyncEngine(private val repository: RecipeRepository) {
         if (!connection.shoppingPulled) {
             if (connection.lastSyncedRevision == 0L) {
                 repository.markShoppingInitialPullDone(connection.id) // the regular pull already started from scratch
-            } else when (val full = SyncClient.fetchChanges(connection, 0)) {
-                is SyncFetchResult.Error -> {
-                    repository.markSyncError(connection.id, full.reason)
-                    return 0
+            } else {
+                var since = 0L
+                while (true) {
+                    val changes = when (val full = SyncClient.fetchChanges(connection, since)) {
+                        is SyncFetchResult.Error -> {
+                            repository.markSyncError(connection.id, full.reason)
+                            return 0
+                        }
+                        is SyncFetchResult.Success -> full.changes
+                    }
+                    applyRemoteShopping(changes)
+                    if (!SyncCursor.hasNextPage(changes.hasMore, since, changes.latestRevision, emptyList())) break
+                    since = changes.latestRevision
                 }
-                is SyncFetchResult.Success -> {
-                    applyRemoteShopping(full.changes)
-                    repository.markShoppingInitialPullDone(connection.id)
-                }
+                repository.markShoppingInitialPullDone(connection.id)
             }
         }
         var pushed = 0
