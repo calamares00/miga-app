@@ -28,7 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,6 +63,7 @@ import org.calamares.miga.data.model.ColorTheme
 import org.calamares.miga.data.model.PhotoFrame
 import org.calamares.miga.ui.theme.LocalPhotoFrame
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.share.BookFileIntents
 import org.calamares.miga.data.share.ShoppingIntents
@@ -129,18 +129,18 @@ class MainActivity : FragmentActivity() {
         }
         val settingsRepository = (application as MigaApp).settingsRepository
         setContent {
-            val themeMode by settingsRepository.observeThemeMode().collectAsState(initial = ThemeMode.SYSTEM)
+            val themeMode by settingsRepository.observeThemeMode().collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
             val darkTheme = when (themeMode) {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
             }
-            val colorTheme by settingsRepository.observeColorTheme().collectAsState(initial = ColorTheme.DEFAULT)
-            val photoFrame by settingsRepository.observePhotoFrame().collectAsState(initial = PhotoFrame.DEFAULT)
-            val biometricLockEnabled by settingsRepository.observeBiometricLockEnabled().collectAsState(initial = null)
+            val colorTheme by settingsRepository.observeColorTheme().collectAsStateWithLifecycle(initialValue = ColorTheme.DEFAULT)
+            val photoFrame by settingsRepository.observePhotoFrame().collectAsStateWithLifecycle(initialValue = PhotoFrame.DEFAULT)
+            val biometricLockEnabled by settingsRepository.observeBiometricLockEnabled().collectAsStateWithLifecycle(initialValue = null)
             // These start as null while the settings load; the splash stays on screen meanwhile so
             // neither the lock screen nor the content flashes.
-            val onboardingDone by settingsRepository.observeOnboardingDone().collectAsState(initial = null)
+            val onboardingDone by settingsRepository.observeOnboardingDone().collectAsStateWithLifecycle(initialValue = null)
             var welcomeDestination by remember { mutableStateOf<String?>(null) }
             var unlocked by remember { mutableStateOf(false) }
             val lifecycleOwner = LocalLifecycleOwner.current
@@ -165,7 +165,7 @@ class MainActivity : FragmentActivity() {
             // Start screen (logo, name and slogan) over the first screen: shown for a moment and
             // until that screen has its content, with a limit so a slow start never hangs on it.
             // Not shown again when the activity is recreated (rotation, language change).
-            val firstContentReady by StartupGate.ready.collectAsState()
+            val firstContentReady by StartupGate.ready.collectAsStateWithLifecycle()
             var minTimeElapsed by remember { mutableStateOf(savedInstanceState != null) }
             var timedOut by remember { mutableStateOf(savedInstanceState != null) }
             LaunchedEffect(Unit) {
@@ -179,7 +179,7 @@ class MainActivity : FragmentActivity() {
             // The first time an AI task runs, ask for the notification permission (Android 13+)
             // so its progress shows in the status bar and the user learns when it has finished.
             val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-            val aiRunning by AiKeepAlive.running.collectAsState()
+            val aiRunning by AiKeepAlive.running.collectAsStateWithLifecycle()
             LaunchedEffect(aiRunning) {
                 if (aiRunning && shouldAskNotificationPermission()) {
                     notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)

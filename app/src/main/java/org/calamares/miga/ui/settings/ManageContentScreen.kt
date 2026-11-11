@@ -45,7 +45,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +56,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -126,10 +126,10 @@ fun ManageContentScreen(
     onOpenRecipes: (title: String, filter: RecipeFilter) -> Unit
 ) {
     val kind = viewModel.kind
-    val loaded by viewModel.items.collectAsState()
+    val loaded by viewModel.items.collectAsStateWithLifecycle()
     val all = loaded.orEmpty()
-    val ingredientCategories by viewModel.ingredientCategories.collectAsState()
-    val categoryChoices by viewModel.categoryChoices.collectAsState()
+    val ingredientCategories by viewModel.ingredientCategories.collectAsStateWithLifecycle()
+    val categoryChoices by viewModel.categoryChoices.collectAsStateWithLifecycle()
 
     var searching by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
