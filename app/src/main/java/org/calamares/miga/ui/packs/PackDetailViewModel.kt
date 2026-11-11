@@ -60,8 +60,8 @@ class PackDetailViewModel(
                     _uiState.value = if (entry == null) {
                         PackDetailUiState.Error(L10n.str(R.string.pack_no_longer_catalogue))
                     } else {
-                        repository.updatePackSeries(mapOf(entry.id to entry.series))
-                        PackDetailUiState.Loaded(entry, repository.findRecipeBookByPackId(packId)?.packVersion)
+                        repository.books.updatePackSeries(mapOf(entry.id to entry.series))
+                        PackDetailUiState.Loaded(entry, repository.books.findRecipeBookByPackId(packId)?.packVersion)
                     }
                 }
             }
@@ -91,7 +91,7 @@ class PackDetailViewModel(
         val state = _uiState.value as? PackDetailUiState.Loaded ?: return
         viewModelScope.launch {
             _installState.value = InstallState.Installing
-            repository.uninstallPackById(packId)
+            repository.books.uninstallPackById(packId)
             _uiState.value = state.copy(installedVersion = null)
             _installState.value = InstallState.Idle
         }

@@ -51,10 +51,10 @@ class ShoppingListViewModel(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    val groups: StateFlow<List<ShoppingListGroup>> = repository.observeShoppingList()
+    val groups: StateFlow<List<ShoppingListGroup>> = repository.shopping.observeShoppingList()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val history: StateFlow<List<ShoppingSuggestion>> = repository.observeShoppingHistory()
+    val history: StateFlow<List<ShoppingSuggestion>> = repository.shopping.observeShoppingHistory()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val catalogNames: StateFlow<List<String>> = repository.observeIngredientNames()
@@ -63,7 +63,7 @@ class ShoppingListViewModel(
     val catalog: StateFlow<List<IngredientCatalogItem>> = repository.observeIngredientCatalogWithCategory()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val templates: StateFlow<List<ShoppingTemplate>> = repository.observeShoppingTemplates()
+    val templates: StateFlow<List<ShoppingTemplate>> = repository.shopping.observeShoppingTemplates()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val imagesEnabled: StateFlow<Boolean> = settingsRepository.observeShoppingImagesEnabled()
@@ -71,11 +71,11 @@ class ShoppingListViewModel(
 
     private val syncEngine = SyncEngine(repository)
 
-    val lists: StateFlow<List<ShoppingListInfo>> = repository.observeShoppingLists()
+    val lists: StateFlow<List<ShoppingListInfo>> = repository.shopping.observeShoppingLists()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf(ShoppingListInfo(DEFAULT_SHOPPING_LIST_UID, L10n.str(R.string.shopping))))
 
     /** Pending items per list (uid to count), shown on the list tabs. */
-    val listCounts: StateFlow<Map<String, Int>> = repository.observeShoppingListPendingCounts()
+    val listCounts: StateFlow<Map<String, Int>> = repository.shopping.observeShoppingListPendingCounts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     private val _searchState = MutableStateFlow<ProductSearchState>(ProductSearchState.Idle)
@@ -104,7 +104,7 @@ class ShoppingListViewModel(
      * Adds a product picked from the search to the current list, with its photo and product sheet.
      */
     fun addSearchedProduct(product: ScannedProduct) {
-        viewModelScope.launch { repository.addScannedShoppingProduct(product.name, product.imageUrl, product.info) }
+        viewModelScope.launch { repository.shopping.addScannedShoppingProduct(product.name, product.imageUrl, product.info) }
     }
 
     val selectedListUid: StateFlow<String> = settingsRepository.observeShoppingListUid()
@@ -120,18 +120,18 @@ class ShoppingListViewModel(
 
     fun createList(name: String) {
         viewModelScope.launch {
-            repository.createShoppingList(name)?.let { settingsRepository.setShoppingListUid(it) }
+            repository.shopping.createShoppingList(name)?.let { settingsRepository.setShoppingListUid(it) }
         }
     }
 
     fun renameList(uid: String, name: String) {
-        viewModelScope.launch { repository.renameShoppingList(uid, name) }
+        viewModelScope.launch { repository.shopping.renameShoppingList(uid, name) }
     }
 
     fun deleteList(uid: String) {
         viewModelScope.launch {
             if (selectedListUid.value == uid) settingsRepository.setShoppingListUid(DEFAULT_SHOPPING_LIST_UID)
-            repository.deleteShoppingList(uid)
+            repository.shopping.deleteShoppingList(uid)
         }
     }
 
@@ -141,7 +141,7 @@ class ShoppingListViewModel(
 
     /** Syncs the connection that shares the lists, if any. The screen repeats it while visible. */
     suspend fun syncSharedListsOnce(context: Context) {
-        val connectionId = repository.getShoppingSyncConnectionId() ?: return
+        val connectionId = repository.shopping.getShoppingSyncConnectionId() ?: return
         syncEngine.syncConnection(context, connectionId)
     }
 
@@ -156,7 +156,7 @@ class ShoppingListViewModel(
 
     init {
         viewModelScope.launch {
-            repository.observeShoppingListSnapshots()
+            repository.shopping.observeShoppingListSnapshots()
                 .collect { (listUid, snapshot) ->
                     val items = snapshot.flatMap { it.items }
                     val me = settingsRepository.observeShoppingAuthor().first()
@@ -175,7 +175,7 @@ class ShoppingListViewModel(
         }
     }
 
-    val stores: StateFlow<List<ShoppingStore>> = repository.observeShoppingStores()
+    val stores: StateFlow<List<ShoppingStore>> = repository.shopping.observeShoppingStores()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val selectedStoreId: StateFlow<Long> = settingsRepository.observeShoppingStoreId()
@@ -196,14 +196,14 @@ class ShoppingListViewModel(
 
     fun saveStore(store: ShoppingStore, select: Boolean) {
         viewModelScope.launch {
-            val id = repository.saveShoppingStore(store)
+            val id = repository.shopping.saveShoppingStore(store)
             if (select && id != 0L) settingsRepository.setShoppingStoreId(id)
         }
     }
 
     fun deleteStore(id: Long) {
         viewModelScope.launch {
-            repository.deleteShoppingStore(id)
+            repository.shopping.deleteShoppingStore(id)
             if (selectedStoreId.value == id) settingsRepository.setShoppingStoreId(0L)
         }
     }
@@ -220,7 +220,7 @@ class ShoppingListViewModel(
         val key = name.trim().lowercase()
         val existing = groups.value.flatMap { it.items }.firstOrNull { !it.checked && it.name.trim().lowercase() == key }
         if (existing != null) {
-            viewModelScope.launch { repository.deleteShoppingListItem(existing.id) }
+            viewModelScope.launch { repository.shopping.deleteShoppingListItem(existing.id) }
         } else {
             addParsedEntries(listOf(ParsedShoppingEntry(name.trim(), null, null)))
         }
@@ -234,7 +234,7 @@ class ShoppingListViewModel(
         viewModelScope.launch {
             when (val result = OpenFoodFactsClient.lookup(barcode)) {
                 is ProductLookupResult.Found -> {
-                    repository.addScannedShoppingProduct(result.product.name, result.product.imageUrl, result.product.info)
+                    repository.shopping.addScannedShoppingProduct(result.product.name, result.product.imageUrl, result.product.info)
                     onResult(L10n.str(R.string.added_x, result.product.name))
                 }
                 ProductLookupResult.NotFound -> onResult(L10n.str(R.string.product_not_found_open_food_2, barcode))
@@ -247,19 +247,19 @@ class ShoppingListViewModel(
     fun saveTemplate(name: String) {
         val items = groups.value.flatMap { it.items }.map { TemplateItem(it.name, it.quantity, it.unit, it.imageUrl, it.productInfo) }
         if (items.isEmpty() || name.isBlank()) return
-        viewModelScope.launch { repository.saveShoppingTemplate(name, items) }
+        viewModelScope.launch { repository.shopping.saveShoppingTemplate(name, items) }
     }
 
     /** Creates an empty template (or one holding [first]) and passes its id to [onCreated]. */
     fun createTemplate(name: String, first: TemplateItem? = null, onCreated: (Long) -> Unit = {}) {
         if (name.isBlank()) return
         viewModelScope.launch {
-            repository.saveShoppingTemplate(name, listOfNotNull(first))?.let(onCreated)
+            repository.shopping.saveShoppingTemplate(name, listOfNotNull(first))?.let(onCreated)
         }
     }
 
     fun addToTemplate(templateId: Long, item: TemplateItem) {
-        viewModelScope.launch { repository.updateShoppingTemplateItems(templateId) { ShoppingTemplateCodec.upsert(it, item) } }
+        viewModelScope.launch { repository.shopping.updateShoppingTemplateItems(templateId) { ShoppingTemplateCodec.upsert(it, item) } }
     }
 
     /**
@@ -270,7 +270,7 @@ class ShoppingListViewModel(
         val entries = ShoppingEntryParser.parse(text)
         if (entries.isEmpty()) return 0
         viewModelScope.launch {
-            repository.updateShoppingTemplateItems(templateId) { current ->
+            repository.shopping.updateShoppingTemplateItems(templateId) { current ->
                 entries.fold(current) { acc, entry -> ShoppingTemplateCodec.upsert(acc, TemplateItem.of(entry)) }
             }
         }
@@ -279,14 +279,14 @@ class ShoppingListViewModel(
 
     fun removeFromTemplate(templateId: Long, index: Int) {
         viewModelScope.launch {
-            repository.updateShoppingTemplateItems(templateId) { current ->
+            repository.shopping.updateShoppingTemplateItems(templateId) { current ->
                 if (index in current.indices) current.filterIndexed { i, _ -> i != index } else current
             }
         }
     }
 
     fun renameTemplate(templateId: Long, name: String) {
-        viewModelScope.launch { repository.renameShoppingTemplate(templateId, name) }
+        viewModelScope.launch { repository.shopping.renameShoppingTemplate(templateId, name) }
     }
 
     /**
@@ -307,32 +307,32 @@ class ShoppingListViewModel(
     }
 
     fun applyTemplate(template: ShoppingTemplate) {
-        viewModelScope.launch { repository.applyShoppingTemplate(template.items) }
+        viewModelScope.launch { repository.shopping.applyShoppingTemplate(template.items) }
     }
 
     fun deleteTemplate(id: Long) {
-        viewModelScope.launch { repository.deleteShoppingTemplate(id) }
+        viewModelScope.launch { repository.shopping.deleteShoppingTemplate(id) }
     }
 
     fun setChecked(id: Long, checked: Boolean) {
-        viewModelScope.launch { repository.setShoppingListItemChecked(id, checked) }
+        viewModelScope.launch { repository.shopping.setShoppingListItemChecked(id, checked) }
     }
 
     /** Saves the item editor (see ShoppingItemEditorSheet); [aisle] null means no aisle. */
     fun updateItem(id: Long, name: String, quantity: Double?, unit: String?, aisle: String?) {
-        viewModelScope.launch { repository.updateShoppingListItem(id, name, quantity, unit, aisle) }
+        viewModelScope.launch { repository.shopping.updateShoppingListItem(id, name, quantity, unit, aisle) }
     }
 
     /** [onDeleted] is called once removed, to offer "Undo" through [restoreItem]. */
     fun deleteItem(item: ShoppingListItem, onDeleted: () -> Unit) {
         viewModelScope.launch {
-            repository.deleteShoppingListItem(item.id)
+            repository.shopping.deleteShoppingListItem(item.id)
             onDeleted()
         }
     }
 
     fun restoreItem(item: ShoppingListItem) {
-        viewModelScope.launch { repository.restoreShoppingListItem(item) }
+        viewModelScope.launch { repository.shopping.restoreShoppingListItem(item) }
     }
 
     /**
@@ -347,7 +347,7 @@ class ShoppingListViewModel(
     fun addParsedEntries(entries: List<ParsedShoppingEntry>) {
         if (entries.isEmpty()) return
         viewModelScope.launch {
-            repository.addShoppingListEntries(entries.map { Ingredient(it.name, it.quantity, it.unit) })
+            repository.shopping.addShoppingListEntries(entries.map { Ingredient(it.name, it.quantity, it.unit) })
         }
     }
 
@@ -366,11 +366,11 @@ class ShoppingListViewModel(
         groups.value.flatMap { it.items }.filter { !it.checked }.map { ParsedShoppingEntry(it.name, it.quantity, it.unit) }
 
     fun clearAll() {
-        viewModelScope.launch { repository.clearShoppingList() }
+        viewModelScope.launch { repository.shopping.clearShoppingList() }
     }
 
     fun clearChecked() {
-        viewModelScope.launch { repository.clearCheckedShoppingListItems() }
+        viewModelScope.launch { repository.shopping.clearCheckedShoppingListItems() }
     }
 
     fun share(context: Context) {

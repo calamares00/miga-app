@@ -7,7 +7,6 @@ import androidx.core.content.IntentCompat
 import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +14,7 @@ import kotlinx.coroutines.launch
 import org.calamares.miga.data.io.LimitedInputStream
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.remote.ShareLink
+import org.calamares.miga.data.support.AppDispatchers
 
 /**
  * A Miga file opened from another app (a book shared by WhatsApp, Telegram, the mail or the file
@@ -38,7 +38,7 @@ object BookFileIntents {
     /** Types other apps give a ".miga" file: a ZIP inside, but often reported as a generic file. */
     private val FILE_TYPES = setOf("application/zip", "application/x-zip-compressed", "application/octet-stream", "application/x-miga")
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + AppDispatchers.io)
     private val _event = MutableStateFlow<IncomingBookFile?>(null)
     val event: StateFlow<IncomingBookFile?> = _event
 

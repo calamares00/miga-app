@@ -5,7 +5,6 @@ import org.calamares.miga.R
 import org.calamares.miga.BuildConfig
 import org.calamares.miga.data.model.ProductInfo
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -20,6 +19,7 @@ import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.ensureActive
+import org.calamares.miga.data.support.AppDispatchers
 
 data class ScannedProduct(val barcode: String, val name: String, val imageUrl: String?, val info: ProductInfo)
 
@@ -45,7 +45,7 @@ object OpenFoodFactsClient {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun lookup(barcode: String): ProductLookupResult = withContext(Dispatchers.IO) {
+    suspend fun lookup(barcode: String): ProductLookupResult = withContext(AppDispatchers.io) {
         if (!isValidBarcode(barcode)) return@withContext ProductLookupResult.NotFound
         try {
             val connection = URL("$OFF_BASE/$barcode.json?fields=$PRODUCT_FIELDS").openConnection() as HttpURLConnection
@@ -76,7 +76,7 @@ object OpenFoodFactsClient {
      * asks clients not to search on every keystroke, so this is only called on submit. With
      * [spainOnly] only products sold in Spain are returned.
      */
-    suspend fun search(query: String, spainOnly: Boolean): ProductSearchResult = withContext(Dispatchers.IO) {
+    suspend fun search(query: String, spainOnly: Boolean): ProductSearchResult = withContext(AppDispatchers.io) {
         val trimmed = query.trim()
         if (trimmed.length < 2) return@withContext ProductSearchResult.Success(emptyList())
         try {
