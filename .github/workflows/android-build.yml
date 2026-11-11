@@ -17,19 +17,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@v6
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Make gradlew executable
         run: chmod +x gradlew
@@ -65,7 +65,7 @@ jobs:
 
       - name: Upload unit test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: miga-unit-test-report-${{ steps.ref.outputs.safe_ref }}-${{ steps.ref.outputs.short_sha }}
           path: app/build/reports/tests/testDebugUnitTest
@@ -74,7 +74,7 @@ jobs:
 
   # Compiles (and, depending on the branch, packages) the app. The mode decides what is built:
   # release: direct push to main (usually after merging a PR) -> full signed build.
-  # pr_check: pull request to main -> checks only (lint + compile), nothing to publish.
+  # pr_check: pull request to main -> checks only (compile), nothing to publish.
   # dev_debug: push to any other branch, or a manual run -> a quick debug APK only.
   # Files ready to publish are left in dist/ and uploaded as an artifact so the publish job
   # (which runs on another runner) can download them without rebuilding.
@@ -89,7 +89,7 @@ jobs:
       short_sha: ${{ steps.mode.outputs.short_sha }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Read app version
         id: version
@@ -98,7 +98,7 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       # release: direct push to main (usually after merging a PR) -> full build + Release.
-      # pr_check: pull request to main -> checks only (lint + compile), nothing is published.
+      # pr_check: pull request to main -> checks only (compile), nothing is published.
       # dev_debug: push to any other branch, or a manual run -> a quick debug APK only.
       - name: Determine build mode
         id: mode
@@ -116,16 +116,16 @@ jobs:
           echo "short_sha=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@v6
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Make gradlew executable
         run: chmod +x gradlew
@@ -144,10 +144,11 @@ jobs:
         if: steps.mode.outputs.mode != 'release'
         run: ./gradlew :app:bundleRelease --stacktrace
 
-      # --- pull request to main: lint + check compilation ---
-      - name: Lint (pull request)
-        if: steps.mode.outputs.mode == 'pr_check'
+      # On every branch, not only on pull requests: a lint error is cheaper to fix where it appears.
+      - name: Lint
         run: ./gradlew :app:lintDebug --stacktrace
+
+      # --- pull request to main: check compilation ---
 
       - name: Build debug APK (pull request)
         if: steps.mode.outputs.mode == 'pr_check'
@@ -155,7 +156,7 @@ jobs:
 
       - name: Upload debug APK (pull request)
         if: steps.mode.outputs.mode == 'pr_check'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: miga-debug-pr${{ github.event.pull_request.number }}
           path: app/build/outputs/apk/debug/*.apk
@@ -169,7 +170,7 @@ jobs:
 
       - name: Upload debug APK (rama de desarrollo)
         if: steps.mode.outputs.mode == 'dev_debug'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: miga-debug-${{ steps.mode.outputs.safe_ref }}
           path: app/build/outputs/apk/debug/*.apk
@@ -197,7 +198,7 @@ jobs:
 
       - name: Upload beta dist (para el job publish)
         if: steps.mode.outputs.mode == 'dev_debug'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: miga-beta-dist-${{ steps.mode.outputs.safe_ref }}
           path: dist/*
@@ -288,7 +289,7 @@ jobs:
 
       - name: Upload build artifacts
         if: steps.mode.outputs.mode == 'release'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: miga-builds-v${{ steps.version.outputs.version }}
           path: dist/*
@@ -315,7 +316,7 @@ jobs:
 
       - name: Upload Google Play extras
         if: steps.mode.outputs.mode == 'release'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: miga-play-v${{ steps.version.outputs.version }}
           path: play/
@@ -359,14 +360,14 @@ jobs:
 
       - name: Download beta dist
         if: needs.build.outputs.mode == 'dev_debug' && steps.latest.outputs.publish == 'true'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: miga-beta-dist-${{ needs.build.outputs.safe_ref }}
           path: dist
 
       - name: Publish beta-latest Release
         if: needs.build.outputs.mode == 'dev_debug' && steps.latest.outputs.publish == 'true'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: beta-latest
           name: "Miga v${{ needs.build.outputs.version }} (beta · ${{ github.ref_name }} · ${{ needs.build.outputs.short_sha }})"
@@ -399,14 +400,14 @@ jobs:
       # --- push to main: stable GitHub Release with everything build left in dist/ ---
       - name: Download release dist
         if: needs.build.outputs.mode == 'release'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: miga-builds-v${{ needs.build.outputs.version }}
           path: dist
 
       - name: Create GitHub Release
         if: needs.build.outputs.mode == 'release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ needs.build.outputs.version }}
           name: Miga v${{ needs.build.outputs.version }}
@@ -435,7 +436,7 @@ jobs:
 
       - name: Download Google Play extras
         if: steps.play.outputs.upload == 'true'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: miga-play-v${{ needs.build.outputs.version }}
           path: play
