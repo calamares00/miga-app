@@ -1288,4 +1288,6 @@
     <string name="couldnt_install_packs_x">"No se pudieron instalar: %1$s. Comprueba la conexión e inténtalo de nuevo."</string>
     <string name="uninstall_x_packs">"¿Desinstalar packs (%1$d)?"</string>
     <string name="uninstall_packs_explanation">"Se borrarán de este dispositivo sus libros y las recetas que sigan en ellos. Las recetas que hayas movido a otros libros se conservan, y podrás volver a instalar los packs desde el catálogo."</string>
+    <string name="catalogue_needs_https">"El catálogo y sus packs tienen que usar https://"</string>
+    <string name="pack_checksum_mismatch">"El pack descargado no coincide con el del catálogo y no se ha instalado. Inténtalo de nuevo más tarde."</string>
 </resources>
