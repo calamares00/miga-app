@@ -1,11 +1,14 @@
 package org.calamares.miga
 
 import android.app.Activity
+import android.app.LocaleManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.os.Build
+import android.os.LocaleList
 import androidx.annotation.StringRes
 import java.util.Locale
 import kotlin.system.exitProcess
@@ -28,18 +31,27 @@ enum class AppLanguage(val tag: String?) {
  * through [str], which works anywhere: composables, ViewModels or network clients. The language is
  * stored in SharedPreferences so it can be read synchronously at startup. Changing it restarts the
  * process so that texts already computed in enums and objects are rebuilt in the new language.
+ *
+ * On Android 13+ the same choice is the app language of the system settings (see
+ * res/xml/locales_config.xml): it is sent there when chosen here and read back from there.
  */
 object L10n {
     private const val PREFS = "miga_locale"
     private const val KEY_LANGUAGE = "app_language"
+    private const val KEY_SYSTEM_SYNCED = "system_synced"
 
     private lateinit var app: Context
     private var forcedResources: Resources? = null
     private var forcedLocale: Locale? = null
 
+    /** Language the process started with: a different one later means the texts must be rebuilt. */
+    private var startedWith: AppLanguage? = null
+
     /** Must be called as early as possible (Application.attachBaseContext). */
     fun init(context: Context) {
         app = context.applicationContext ?: context
+        syncWithSystem(context)
+        startedWith = language(context)
         forcedLocale = language(context).tag?.let { Locale.forLanguageTag(it) }
         forcedResources = forcedLocale?.let { localized(context, it).resources }
     }
@@ -50,7 +62,48 @@ object L10n {
     /** Stores the language and restarts the app to apply it. */
     fun setLanguage(activity: Activity, language: AppLanguage) {
         activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_LANGUAGE, language.tag).commit()
+        setSystemAppLanguage(activity, language)
         restart(activity)
+    }
+
+    /**
+     * True when the language was changed in the system settings while the app was running: the
+     * activity then restarts the app (see [restart]), as when it is changed in the app.
+     */
+    fun changedOutside(context: Context): Boolean {
+        syncWithSystem(context)
+        return startedWith != null && language(context) != startedWith
+    }
+
+    /**
+     * Android 13+: keeps the stored language equal to the app language of the system settings.
+     * The first time, a language already chosen in the app is sent to the system instead.
+     */
+    private fun syncWithSystem(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        runCatching {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            if (!prefs.getBoolean(KEY_SYSTEM_SYNCED, false)) {
+                prefs.edit().putBoolean(KEY_SYSTEM_SYNCED, true).commit()
+                val chosen = language(context)
+                if (chosen != AppLanguage.SYSTEM) {
+                    setSystemAppLanguage(context, chosen)
+                    return
+                }
+            }
+            val manager = context.getSystemService(LocaleManager::class.java) ?: return
+            val locales = manager.applicationLocales
+            val system = if (locales.isEmpty) AppLanguage.SYSTEM else AppLanguage.fromTag(locales[0].language)
+            if (system != language(context)) prefs.edit().putString(KEY_LANGUAGE, system.tag).commit()
+        }
+    }
+
+    private fun setSystemAppLanguage(context: Context, language: AppLanguage) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        runCatching {
+            context.getSystemService(LocaleManager::class.java)?.applicationLocales =
+                language.tag?.let { LocaleList.forLanguageTags(it) } ?: LocaleList.getEmptyLocaleList()
+        }
     }
 
     /**
@@ -87,7 +140,7 @@ object L10n {
         return base.createConfigurationContext(config)
     }
 
-    private fun restart(activity: Activity) {
+    fun restart(activity: Activity) {
         val intent = Intent.makeRestartActivityTask(ComponentName(activity, MainActivity::class.java))
         activity.startActivity(intent)
         exitProcess(0)

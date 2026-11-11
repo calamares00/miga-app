@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shown on a long press of the app icon. The actions are handled in MainActivity (see
+     ShoppingIntents and AppShortcuts). -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="add_shopping"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add_shopping"
+        android:shortcutShortLabel="@string/shortcut_add_shopping_short"
+        android:shortcutLongLabel="@string/shortcut_add_shopping">
+        <intent
+            android:action="org.calamares.miga.action.SHOPPING_QUICK_ADD"
+            android:targetPackage="org.calamares.miga"
+            android:targetClass="org.calamares.miga.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="new_recipe"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_new_recipe"
+        android:shortcutShortLabel="@string/shortcut_new_recipe_short"
+        android:shortcutLongLabel="@string/shortcut_new_recipe">
+        <intent
+            android:action="org.calamares.miga.action.NEW_RECIPE"
+            android:targetPackage="org.calamares.miga"
+            android:targetClass="org.calamares.miga.MainActivity" />
+    </shortcut>
+</shortcuts>

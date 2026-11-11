@@ -65,6 +65,7 @@ import org.calamares.miga.ui.theme.LocalPhotoFrame
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.data.model.ThemeMode
+import org.calamares.miga.data.share.AppShortcuts
 import org.calamares.miga.data.share.BookFileIntents
 import org.calamares.miga.data.share.ShoppingIntents
 import org.calamares.miga.ui.StartupGate
@@ -92,6 +93,7 @@ class MainActivity : FragmentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         ShoppingIntents.handle(intent)
+        AppShortcuts.handle(intent)
         BookFileIntents.handle(this, intent)
         AiJobs.handle(intent)
     }
@@ -121,9 +123,15 @@ class MainActivity : FragmentActivity() {
         // The system splash only lasts until the settings load; the start screen below follows.
         installSplashScreen().setKeepOnScreenCondition { !startScreenReady }
         super.onCreate(savedInstanceState)
+        // App language changed in the system settings (Android 13+) with the app running.
+        if (L10n.changedOutside(this)) {
+            L10n.restart(this)
+            return
+        }
         enableEdgeToEdge()
         if (savedInstanceState == null) {
             ShoppingIntents.handle(intent)
+            AppShortcuts.handle(intent)
             BookFileIntents.handle(this, intent)
             AiJobs.handle(intent)
         }
