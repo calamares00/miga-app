@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.21:
+• Componentes de la app actualizados (Android, Compose, ajustes guardados y sincronización en segundo plano): más estabilidad y correcciones de seguridad.
