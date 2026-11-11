@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 class SettingsViewModel(
     private val repository: RecipeRepository,
@@ -102,6 +103,8 @@ class SettingsViewModel(
                 val settings = if (contents.settings) settingsRepository.exportForBackup() else null
                 RecipeExporter.exportLibrary(context, destination, books, recipes, templates, stores, settings, password)
                 L10n.str(if (password != null) R.string.backup_exported_encrypted else R.string.backup_exported)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 L10n.str(R.string.couldnt_export_x, e.message ?: e::class.simpleName.orEmpty())
             } finally {

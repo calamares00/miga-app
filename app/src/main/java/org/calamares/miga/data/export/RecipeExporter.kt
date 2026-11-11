@@ -48,6 +48,8 @@ import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val MANIFEST = "manifest.json"
 
@@ -337,6 +339,7 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             RecipeImportResult.Error(importErrorMessage(e, R.string.unknown_error))
         } catch (e: OutOfMemoryError) {
             RecipeImportResult.Error(importErrorMessage(e, R.string.unknown_error))
@@ -365,6 +368,7 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             LibraryImportParseResult.Error(importErrorMessage(e, R.string.file_isnt_valid_backup))
         } catch (e: OutOfMemoryError) {
             LibraryImportParseResult.Error(importErrorMessage(e, R.string.file_isnt_valid_backup))
@@ -439,6 +443,7 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             LibraryImportResult.Error(importErrorMessage(e, R.string.unknown_error))
         } catch (e: OutOfMemoryError) {
             LibraryImportResult.Error(importErrorMessage(e, R.string.unknown_error))
@@ -486,6 +491,7 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             PackImportResult.Error(importErrorMessage(e, R.string.unknown_error))
         } catch (e: OutOfMemoryError) {
             PackImportResult.Error(importErrorMessage(e, R.string.unknown_error))
@@ -553,6 +559,7 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             SharedBookImportResult.Error(importErrorMessage(e, R.string.unknown_error))
         } catch (e: OutOfMemoryError) {
             SharedBookImportResult.Error(importErrorMessage(e, R.string.unknown_error))
@@ -592,6 +599,7 @@ object RecipeExporter {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             SharedRecipeImportResult.Error(importErrorMessage(e, R.string.unknown_error))
         }
     }
