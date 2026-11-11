@@ -45,6 +45,7 @@ import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -1042,7 +1043,7 @@ private fun ShoppingListsSheet(
                         .fillMaxWidth()
                         .clip(MaterialTheme.shapes.medium)
                         .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
-                        .clickable { saveAuthor(); onSelect(list.uid) }
+                        .selectable(selected = selected, role = Role.RadioButton) { saveAuthor(); onSelect(list.uid) }
                         .padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

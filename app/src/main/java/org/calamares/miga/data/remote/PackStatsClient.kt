@@ -9,6 +9,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 /** Install counter of the official pack catalogue (calamares00/miga-stats). */
 const val PACK_STATS_URL = "https://stats.miga.calamares.org"
@@ -51,6 +53,7 @@ object PackStatsClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             null
         }
     }
@@ -71,6 +74,7 @@ object PackStatsClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             false
         }
     }

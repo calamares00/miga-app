@@ -15,6 +15,8 @@ import java.net.URL
 import java.security.MessageDigest
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 @Serializable
 data class PackEntryDto(
@@ -137,6 +139,7 @@ object PacksCatalogClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             CatalogFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
@@ -171,6 +174,7 @@ object PacksCatalogClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             PackDownloadResult.Failed
         }
     }
