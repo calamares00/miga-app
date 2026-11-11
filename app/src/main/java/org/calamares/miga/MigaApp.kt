@@ -17,7 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-class MigaApp : Application() {
+open class MigaApp : Application() {
 
     private val applicationScope = CoroutineScope(SupervisorJob() + AppDispatchers.io)
 
@@ -76,8 +76,11 @@ class MigaApp : Application() {
                 settingsRepository.setDefaultsSetUp()
             }
         }
-        SyncWorker.enqueuePeriodic(this)
+        schedulePeriodicSync()
     }
+
+    /** Apart so the interface tests, which have no WorkManager, can start the app without it. */
+    protected open fun schedulePeriodicSync() = SyncWorker.enqueuePeriodic(this)
 
     /**
      * Best effort: if it fails (offline, server down) the outbox is retried by the next manual,
