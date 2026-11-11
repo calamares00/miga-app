@@ -42,7 +42,7 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
 
     private val syncEngine = SyncEngine(repository)
 
-    val connections: StateFlow<List<SyncConnection>> = repository.observeSyncConnections()
+    val connections: StateFlow<List<SyncConnection>> = repository.sync.observeSyncConnections()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _syncingConnectionIds = MutableStateFlow<Set<Long>>(emptySet())
@@ -55,8 +55,8 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
     fun syncNow(context: Context, connectionId: Long) {
         viewModelScope.launch {
             _syncingConnectionIds.value = _syncingConnectionIds.value + connectionId
-            repository.resetSyncCursor(connectionId) // manual repair: download everything again to recover lost photos
-            repository.enqueueFullConnectionResync(connectionId)
+            repository.sync.resetSyncCursor(connectionId) // manual repair: download everything again to recover lost photos
+            repository.sync.enqueueFullConnectionResync(connectionId)
             syncEngine.syncConnection(context, connectionId)
             _syncingConnectionIds.value = _syncingConnectionIds.value - connectionId
         }
@@ -102,7 +102,7 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
      */
     fun setShoppingSync(connectionId: Long, enabled: Boolean) {
         viewModelScope.launch {
-            repository.setShoppingSyncConnection(if (enabled) connectionId else null)
+            repository.shopping.setShoppingSyncConnection(if (enabled) connectionId else null)
         }
     }
 
@@ -125,8 +125,8 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
             when (val ping = SyncClient.ping(candidate)) {
                 is SyncPingResult.Error -> _message.value = L10n.str(R.string.couldnt_join_x, ping.reason)
                 is SyncPingResult.Success -> {
-                    val id = repository.addSyncConnection(label.ifBlank { invite.namespaceId }, invite.serverUrl, invite.namespaceId, invite.token)
-                    if (syncShopping) repository.setShoppingSyncConnection(id)
+                    val id = repository.sync.addSyncConnection(label.ifBlank { invite.namespaceId }, invite.serverUrl, invite.namespaceId, invite.token)
+                    if (syncShopping) repository.shopping.setShoppingSyncConnection(id)
                     _syncingConnectionIds.value = _syncingConnectionIds.value + id
                     syncEngine.syncConnection(context, id)
                     _syncingConnectionIds.value = _syncingConnectionIds.value - id
@@ -166,13 +166,13 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
 
     fun addConnection(label: String, serverUrl: String, namespaceId: String, accessToken: String) {
         viewModelScope.launch {
-            repository.addSyncConnection(label, serverUrl, namespaceId, accessToken)
+            repository.sync.addSyncConnection(label, serverUrl, namespaceId, accessToken)
         }
     }
 
     fun removeConnection(id: Long) {
         viewModelScope.launch {
-            repository.removeSyncConnection(id)
+            repository.sync.removeSyncConnection(id)
         }
     }
 }

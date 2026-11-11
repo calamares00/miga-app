@@ -1,7 +1,6 @@
 package org.calamares.miga.ui.editor
 
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
 import org.calamares.miga.data.local.DishPhotoCropper
 import org.calamares.miga.data.ai.aiCandidates
 import org.calamares.miga.data.ai.AiKeepAlive
@@ -33,6 +32,7 @@ import org.calamares.miga.data.search.RecipeUrlFetcher
 import org.calamares.miga.data.search.UrlFetchResult
 import org.calamares.miga.data.search.generateRecipe
 import org.calamares.miga.data.search.importRecipeFromPage
+import org.calamares.miga.data.support.AppDispatchers
 import org.calamares.miga.data.vision.RecipeVisionResult
 import org.calamares.miga.data.vision.RecipeVisionResultDto
 import org.calamares.miga.data.ai.AiImage
@@ -257,7 +257,7 @@ class RecipeEditorViewModel(
         applyVisionResult(recipe)
         // Dish photos located by the AI: cropped, cleaned up and added to the recipe.
         if (recipe.dishPhotos.isNotEmpty()) progress?.step(L10n.str(R.string.ai_step_cropping_photo))
-        val dishPhotoUris = withContext(Dispatchers.IO) { DishPhotoCropper.extract(appContext, sourceUris, recipe.dishPhotos) }
+        val dishPhotoUris = withContext(AppDispatchers.io) { DishPhotoCropper.extract(appContext, sourceUris, recipe.dishPhotos) }
         dishPhotoUris.forEach { addPhoto(it) }
         _visionState.value = VisionState.Loaded
     }
@@ -285,7 +285,7 @@ class RecipeEditorViewModel(
             val created = mutableListOf<String>()
             AiKeepAlive.hold(L10n.str(R.string.ai_task_reading_photo)) {
                 recipes.forEach { recipe ->
-                    val dishPhotoUris = withContext(Dispatchers.IO) {
+                    val dishPhotoUris = withContext(AppDispatchers.io) {
                         DishPhotoCropper.extract(detected.appContext, detected.sourceUris, recipe.dishPhotos)
                     }
                     val draft = recipe.matchedTo(known).toRecipeDraft(bookId)

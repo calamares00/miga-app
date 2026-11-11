@@ -1,12 +1,12 @@
 package org.calamares.miga.data.ai
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.net.URLEncoder
+import org.calamares.miga.data.support.AppDispatchers
 
 @Serializable
 internal data class OpenAiModelsResponse(val data: List<OpenAiModelDto> = emptyList())
@@ -48,7 +48,7 @@ object ProviderModels {
         val key = provider to apiKey.trim()
         if (key.second.isEmpty() || provider == AiProvider.OPENROUTER) return null
         mutex.withLock { cache[key]?.let { return it } }
-        val fetched = withContext(Dispatchers.IO) {
+        val fetched = withContext(AppDispatchers.io) {
             runCatching { download(provider, key.second) }.getOrNull()
         }?.takeIf { it.isNotEmpty() } ?: return null
         mutex.withLock { cache[key] = fetched }

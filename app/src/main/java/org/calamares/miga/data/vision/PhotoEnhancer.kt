@@ -1,7 +1,6 @@
 package org.calamares.miga.data.vision
 
 import android.graphics.Bitmap
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.calamares.miga.data.ai.AiCandidate
@@ -16,6 +15,7 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.ensureActive
+import org.calamares.miga.data.support.AppDispatchers
 
 /** Small: the answer is a handful of numbers, but reasoning models spend part of it thinking. */
 private const val ENHANCE_MAX_TOKENS = 1024
@@ -70,7 +70,7 @@ sealed interface PhotoEnhanceResult {
 
 /** Asks the model how [photo] should be corrected; see [PhotoAdjustments]. */
 suspend fun AiCandidate.suggestPhotoAdjustments(photo: Bitmap): PhotoEnhanceResult {
-    val jpeg = withContext(Dispatchers.Default) {
+    val jpeg = withContext(AppDispatchers.default) {
         ByteArrayOutputStream().use { out ->
             scaleToFit(photo, ENHANCE_PREVIEW_DIMENSION).compress(Bitmap.CompressFormat.JPEG, 80, out)
             out.toByteArray()

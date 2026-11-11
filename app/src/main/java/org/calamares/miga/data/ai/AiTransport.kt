@@ -13,7 +13,6 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import java.net.HttpURLConnection
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -21,6 +20,7 @@ import kotlin.coroutines.resumeWithException
 import java.net.URL
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
+import org.calamares.miga.data.support.AppDispatchers
 
 /** An image already in memory, ready to be sent to a model that can read images. */
 class AiImage(val bytes: ByteArray, val mimeType: String)
@@ -186,9 +186,9 @@ internal suspend fun postJson(url: String, body: String, headers: Map<String, St
         }
     }
 
-private val HTTP_EXECUTOR = Dispatchers.IO.asExecutor()
+private val HTTP_EXECUTOR = AppDispatchers.io.asExecutor()
 
-/** Blocking GET; call it from Dispatchers.IO. Network failures are thrown as IOException. */
+/** Blocking GET; call it from AppDispatchers.io. Network failures are thrown as IOException. */
 internal fun getJson(url: String, headers: Map<String, String>, timeoutMillis: Int): HttpResponse {
     val connection = URL(url).openConnection() as HttpURLConnection
     try {

@@ -10,16 +10,16 @@ import org.calamares.miga.data.local.AppDatabase
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.repository.ShoppingContext
+import org.calamares.miga.data.support.AppDispatchers
 import org.calamares.miga.data.sync.SyncEngine
 import org.calamares.miga.data.sync.SyncWorker
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class MigaApp : Application() {
 
-    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val applicationScope = CoroutineScope(SupervisorJob() + AppDispatchers.io)
 
     val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
@@ -57,7 +57,7 @@ class MigaApp : Application() {
         AiKeepAlive.init(this)
         applicationScope.launch {
             settingsRepository.encryptStoredApiKeys()
-            repository.ensurePhotoUids()
+            repository.sync.ensurePhotoUids()
             val appLanguage = if (L10n.locale().language == "es") "es" else "en"
             var seedLanguage = settingsRepository.seedLanguage(appLanguage)
             // The default catalogue follows the app language: created in one language, it is

@@ -3,7 +3,6 @@
 package org.calamares.miga.data.ai
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -12,6 +11,7 @@ import kotlinx.serialization.Serializable
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.support.AiErrors
+import org.calamares.miga.data.support.AppDispatchers
 import org.calamares.miga.data.support.ErrorDetail
 import java.util.Base64
 import kotlin.coroutines.coroutineContext
@@ -61,7 +61,7 @@ internal data class AnthropicErrorDetail(val message: String? = null)
 /** Anthropic Messages API (Claude). */
 internal object AnthropicTransport : AiTransport {
 
-    override suspend fun complete(request: AiRequest, apiKey: String, model: String): AiText = withContext(Dispatchers.IO) {
+    override suspend fun complete(request: AiRequest, apiKey: String, model: String): AiText = withContext(AppDispatchers.io) {
         try {
             val content = request.images.map {
                 AnthropicContentBlock(
