@@ -52,6 +52,8 @@ sealed interface SyncPushResult<T> {
 }
 
 private const val TIMEOUT_MILLIS = 8000
+/** Changes asked for in one request; servers before 1.1.0 ignore it and send them all. */
+private const val CHANGES_PAGE_SIZE = 500
 private const val PHOTO_TIMEOUT_MILLIS = 30000
 
 /**
@@ -79,7 +81,7 @@ object SyncClient {
 
     suspend fun fetchChanges(connection: SyncConnection, since: Long): SyncFetchResult = withContext(Dispatchers.IO) {
         try {
-            val result = request(connection, "GET", "/sync/changes?since=$since", body = null)
+            val result = request(connection, "GET", "/sync/changes?since=$since&limit=$CHANGES_PAGE_SIZE", body = null)
             if (result.code != HttpURLConnection.HTTP_OK) {
                 return@withContext SyncFetchResult.Error(errorMessageFor(result))
             }
