@@ -112,6 +112,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.calamares.miga.data.share.AppShortcuts
 import org.calamares.miga.data.share.ShoppingIntents
 import org.calamares.miga.ui.shoppinglist.ShoppingListScreen
 import org.calamares.miga.ui.shoppinglist.ShoppingListViewModel
@@ -226,6 +227,25 @@ fun MigaNavHost(initialRoute: String? = null) {
                 launchSingleTop = true
                 restoreState = true
             }
+        }
+    }
+
+    /**
+     * "New recipe" app shortcut: the editor opens in the user's first book (pinned ones first), or
+     * the books tab when there is none to write in yet.
+     */
+    val newRecipeRequested by AppShortcuts.newRecipe.collectAsStateWithLifecycle()
+    LaunchedEffect(newRecipeRequested) {
+        if (newRecipeRequested) {
+            AppShortcuts.consume()
+            val book = repository.getAllRecipeBooksOnce().filterNot { it.isPack }.let { own ->
+                own.firstOrNull { it.isPinned } ?: own.firstOrNull()
+            }
+            navController.navigate(Destinations.BOOKS_ROUTE) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+            }
+            if (book != null) navController.navigate(Destinations.editor(bookId = book.id)) { launchSingleTop = true }
         }
     }
 
