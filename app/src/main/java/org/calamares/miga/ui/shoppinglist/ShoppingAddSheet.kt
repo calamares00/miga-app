@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -174,6 +173,7 @@ import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.calamares.miga.ui.components.sheetContentHeight
 
 /**
  * Tabs of the "Add" sheet: everything other than typing, dictating or scanning lives here instead
@@ -204,7 +204,7 @@ internal fun ShoppingAddSheet(
     val catalog by viewModel.catalog.collectAsStateWithLifecycle()
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.fillMaxHeight(0.92f)) {
+        Column(modifier = Modifier.height(sheetContentHeight(0.92f))) {
             TabRow(selectedTabIndex = tab.ordinal, containerColor = Color.Transparent) {
                 AddTab.entries.forEach { entry ->
                     Tab(selected = tab == entry, onClick = { tab = entry }, text = { Text(entry.title, maxLines = 1) })
