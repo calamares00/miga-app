@@ -1,12 +1,12 @@
 package org.calamares.miga.data.repository
 
 import android.content.Context
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.model.toDraft
 import org.calamares.miga.data.local.PhotoStorage
+import org.calamares.miga.data.support.AppDispatchers
 
 /**
  * Copies [recipe] into [targetBookId] as a new recipe with its own photo copies, so deleting one
@@ -14,7 +14,7 @@ import org.calamares.miga.data.local.PhotoStorage
  */
 suspend fun RecipeRepository.copyRecipeToBook(context: Context, recipe: Recipe, targetBookId: Long): Long {
     val appContext = context.applicationContext
-    val photos = withContext(Dispatchers.IO) {
+    val photos = withContext(AppDispatchers.io) {
         recipe.photos.mapNotNull { photo ->
             PhotoStorage.readBytes(photo.uri)
                 ?.let { bytes -> PhotoStorage.copyBytesToInternalStorage(appContext, bytes) }

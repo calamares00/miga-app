@@ -3,12 +3,14 @@ package org.calamares.miga.data.remote
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
+import org.calamares.miga.data.support.AppDispatchers
 
 /** Install counter of the official pack catalogue (calamares00/miga-stats). */
 const val PACK_STATS_URL = "https://stats.miga.calamares.org"
@@ -35,7 +37,7 @@ object PackStatsClient {
     private val json = Json { ignoreUnknownKeys = true }
 
     /** Installs by family, or null when the counter cannot be read. */
-    suspend fun fetchStats(): Map<String, PackInstallStats>? = withContext(Dispatchers.IO) {
+    suspend fun fetchStats(): Map<String, PackInstallStats>? = withContext(AppDispatchers.io) {
         try {
             val connection = URL("$PACK_STATS_URL/v1/stats").openConnection() as HttpURLConnection
             connection.connectTimeout = TIMEOUT_MILLIS
@@ -51,12 +53,13 @@ object PackStatsClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             null
         }
     }
 
     /** Adds one install of [packId]; true when the counter answered. */
-    suspend fun reportInstall(packId: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun reportInstall(packId: String): Boolean = withContext(AppDispatchers.io) {
         if (!packId.matches(Regex("[a-z0-9-]{1,64}"))) return@withContext false
         try {
             val connection = URL("$PACK_STATS_URL/v1/packs/$packId/install").openConnection() as HttpURLConnection
@@ -71,6 +74,7 @@ object PackStatsClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             false
         }
     }

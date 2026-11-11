@@ -85,7 +85,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -103,6 +102,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.BuildConfig
 import org.calamares.miga.data.export.LibraryImportParseResult
 import org.calamares.miga.data.export.RecipeExportDto
@@ -136,22 +136,22 @@ fun SettingsSectionScreen(
     onOpenPacksCatalog: () -> Unit,
     onOpenSyncConnections: () -> Unit
 ) {
-    val themeMode by viewModel.themeMode.collectAsState()
-    val colorTheme by viewModel.colorTheme.collectAsState()
-    val photoFrame by viewModel.photoFrame.collectAsState()
-    val contentSummary by viewModel.contentSummary.collectAsState()
-    val samplePhoto by viewModel.samplePhoto.collectAsState()
-    val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
-    val books by viewModel.books.collectAsState()
-    val packsCatalogRepo by viewModel.packsCatalogRepo.collectAsState()
-    val packInstallStats by viewModel.packInstallStats.collectAsState()
-    val yourName by viewModel.yourName.collectAsState()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val colorTheme by viewModel.colorTheme.collectAsStateWithLifecycle()
+    val photoFrame by viewModel.photoFrame.collectAsStateWithLifecycle()
+    val contentSummary by viewModel.contentSummary.collectAsStateWithLifecycle()
+    val samplePhoto by viewModel.samplePhoto.collectAsStateWithLifecycle()
+    val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsStateWithLifecycle()
+    val books by viewModel.books.collectAsStateWithLifecycle()
+    val packsCatalogRepo by viewModel.packsCatalogRepo.collectAsStateWithLifecycle()
+    val packInstallStats by viewModel.packInstallStats.collectAsStateWithLifecycle()
+    val yourName by viewModel.yourName.collectAsStateWithLifecycle()
     var dictationMenuExpanded by remember { mutableStateOf(false) }
-    val dictationLanguage by viewModel.dictationLanguage.collectAsState()
-    val aiEnabled by viewModel.aiEnabled.collectAsState()
-    val aiHealthEnabled by viewModel.aiHealthEnabled.collectAsState()
-    val aiNutritionEnabled by viewModel.aiNutritionEnabled.collectAsState()
-    val ttsVoiceName by viewModel.ttsVoiceName.collectAsState()
+    val dictationLanguage by viewModel.dictationLanguage.collectAsStateWithLifecycle()
+    val aiEnabled by viewModel.aiEnabled.collectAsStateWithLifecycle()
+    val aiHealthEnabled by viewModel.aiHealthEnabled.collectAsStateWithLifecycle()
+    val aiNutritionEnabled by viewModel.aiNutritionEnabled.collectAsStateWithLifecycle()
+    val ttsVoiceName by viewModel.ttsVoiceName.collectAsStateWithLifecycle()
     var voiceMenuExpanded by remember { mutableStateOf(false) }
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
     var availableVoices by remember { mutableStateOf<List<Voice>>(emptyList()) }

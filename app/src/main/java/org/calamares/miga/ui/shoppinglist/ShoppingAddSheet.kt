@@ -110,7 +110,6 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -141,6 +140,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import org.calamares.miga.data.model.AdditiveRisk
 import org.calamares.miga.data.model.DEFAULT_SHOPPING_LIST_UID
@@ -201,7 +201,7 @@ internal fun ShoppingAddSheet(
     onDismiss: () -> Unit
 ) {
     var tab by remember { mutableStateOf(initialTab) }
-    val catalog by viewModel.catalog.collectAsState()
+    val catalog by viewModel.catalog.collectAsStateWithLifecycle()
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.fillMaxHeight(0.92f)) {
@@ -379,7 +379,7 @@ internal fun ProductSearchContent(
     onAdd: (ScannedProduct) -> Unit,
     onSaveToTemplate: ((ScannedProduct) -> Unit)?
 ) {
-    val state by viewModel.searchState.collectAsState()
+    val state by viewModel.searchState.collectAsStateWithLifecycle()
     var query by remember { mutableStateOf(initialQuery) }
     var spainOnly by remember { mutableStateOf(true) }
     var addedBarcodes by remember { mutableStateOf(setOf<String>()) }

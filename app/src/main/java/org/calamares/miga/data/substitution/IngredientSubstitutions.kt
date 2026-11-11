@@ -10,6 +10,8 @@ import org.calamares.miga.data.ai.complete
 import org.calamares.miga.data.ai.decodeAiJson
 import org.calamares.miga.data.ai.outputLanguageInstruction
 import org.calamares.miga.data.support.AiErrors
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val SUBSTITUTION_MAX_TOKENS = 1024
 
@@ -45,6 +47,7 @@ suspend fun AiCandidate.suggestSubstitutes(ingredientName: String, recipeName: S
                 SubstitutionResult.Success(substitutions)
             }
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             SubstitutionResult.Error(AiErrors.badResponse(e, result.text))
         }
     }

@@ -153,7 +153,7 @@ class RecipeListViewModel(
     fun shareSelectedAs(context: Context, action: ShareAction, accent: Int) {
         viewModelScope.launch {
             val ids = _selectedIds.value
-            val book = repository.getRecipeBookOnce(bookId)
+            val book = repository.books.getRecipeBookOnce(bookId)
             val recipes = repository.getRecipesForBookOnce(bookId).filter { it.id in ids }
             if (recipes.isEmpty()) return@launch
             val started = when {
@@ -177,7 +177,7 @@ class RecipeListViewModel(
     }
 
     /** Books recipes can be moved or copied to: all except this one and packs (read-only). */
-    val targetBooks: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
+    val targetBooks: StateFlow<List<RecipeBookSummary>> = repository.books.observeRecipeBooks()
         .map { books -> books.filter { it.id != bookId && !it.isPack } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -269,7 +269,7 @@ class RecipeListViewModel(
     fun bulkAddToShoppingList(onMessage: (String) -> Unit) {
         viewModelScope.launch {
             val recipes = takeSelectedRecipes()
-            repository.addIngredientsToShoppingList(recipes.flatMap { recipe -> recipe.ingredientGroups.flatMap { it.ingredients } })
+            repository.shopping.addIngredientsToShoppingList(recipes.flatMap { recipe -> recipe.ingredientGroups.flatMap { it.ingredients } })
             onMessage(L10n.str(R.string.bulk_added_to_shopping_n, recipes.size))
         }
     }
@@ -281,7 +281,7 @@ class RecipeListViewModel(
     fun bulkRecalculateAi(onMessage: (String) -> Unit) {
         viewModelScope.launch {
             // Pack recipes come with fixed values and are never recalculated.
-            if (repository.getRecipeBookOnce(bookId)?.isPack == true) return@launch
+            if (repository.books.getRecipeBookOnce(bookId)?.isPack == true) return@launch
             val recipes = takeSelectedRecipes()
             if (settingsRepository.aiCandidates().isEmpty()) {
                 onMessage(L10n.str(R.string.ai_no_provider))
@@ -407,7 +407,7 @@ class RecipeListViewModel(
         filterOptions
     ) { recipes, filter, options -> RecipeListBase(recipes, filter, options) }
 
-    val uiState: StateFlow<RecipeListUiState> = combine(base, repository.observeRecipeBook(bookId)) { data, book ->
+    val uiState: StateFlow<RecipeListUiState> = combine(base, repository.books.observeRecipeBook(bookId)) { data, book ->
         RecipeListUiState(
             isLoading = false,
             bookName = book?.name.orEmpty(),
@@ -452,7 +452,7 @@ class RecipeListViewModel(
     /** A "Share" option for the whole book (see FileExports.shareBooksAs). */
     fun shareBookAs(context: Context, action: ShareAction) {
         viewModelScope.launch {
-            val book = repository.getRecipeBookOnce(bookId) ?: return@launch
+            val book = repository.books.getRecipeBookOnce(bookId) ?: return@launch
             if (!FileExports.shareBooksAs(context, listOf(book), action) { repository.getRecipesForBookOnce(bookId) }) {
                 Toast.makeText(context, L10n.str(R.string.pdf_already_running), Toast.LENGTH_SHORT).show()
             }
@@ -460,7 +460,7 @@ class RecipeListViewModel(
     }
 
     fun togglePinned() {
-        viewModelScope.launch { repository.setRecipeBookPinned(bookId, !uiState.value.isPinned) }
+        viewModelScope.launch { repository.books.setRecipeBookPinned(bookId, !uiState.value.isPinned) }
     }
 
     private fun buildGroups(recipes: List<Recipe>, filter: RecipeFilter): List<RecipeGroup> {

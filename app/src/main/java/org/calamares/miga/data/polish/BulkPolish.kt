@@ -66,7 +66,7 @@ object BulkPolish {
         if (isRunning) return false
         this.repository = repository
         this.settings = settings
-        val packBooks = repository.observeRecipeBooks().first().filter { it.isPack }.map { it.id }.toSet()
+        val packBooks = repository.books.observeRecipeBooks().first().filter { it.isPack }.map { it.id }.toSet()
         val recipes = recipeIds.mapNotNull { repository.observeRecipe(it).first() }.filter { it.recipeBookId !in packBooks }
         _items.value = recipes.map { BulkPolishItem(it, BulkPolishState.Queued) }
         run()

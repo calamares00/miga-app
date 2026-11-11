@@ -80,7 +80,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -142,6 +141,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.displayCategoryName
 
@@ -155,15 +155,15 @@ fun RecipeDetailScreen(
     onOpenCookMode: (recipe: Recipe, ttsVoiceName: String?) -> Unit,
     onOpenPhoto: (recipe: Recipe, index: Int) -> Unit
 ) {
-    val recipe by viewModel.recipe.collectAsState()
-    val recipeBooks by viewModel.recipeBooks.collectAsState()
-    val ttsVoiceName by viewModel.ttsVoiceName.collectAsState()
-    val healthState by viewModel.healthState.collectAsState()
-    val canRecalculateAnalysis by viewModel.canRecalculateAnalysis.collectAsState()
-    val nutritionState by viewModel.nutritionState.collectAsState()
-    val substitutionDialogState by viewModel.substitutionDialogState.collectAsState()
-    val polishState by viewModel.polishState.collectAsState()
-    val polishInBackground by viewModel.polishInBackground.collectAsState()
+    val recipe by viewModel.recipe.collectAsStateWithLifecycle()
+    val recipeBooks by viewModel.recipeBooks.collectAsStateWithLifecycle()
+    val ttsVoiceName by viewModel.ttsVoiceName.collectAsStateWithLifecycle()
+    val healthState by viewModel.healthState.collectAsStateWithLifecycle()
+    val canRecalculateAnalysis by viewModel.canRecalculateAnalysis.collectAsStateWithLifecycle()
+    val nutritionState by viewModel.nutritionState.collectAsStateWithLifecycle()
+    val substitutionDialogState by viewModel.substitutionDialogState.collectAsStateWithLifecycle()
+    val polishState by viewModel.polishState.collectAsStateWithLifecycle()
+    val polishInBackground by viewModel.polishInBackground.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val aiEnabled = rememberAiReady()

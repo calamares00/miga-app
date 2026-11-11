@@ -69,7 +69,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -84,6 +83,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.calamares.miga.L10n
@@ -116,12 +116,12 @@ fun IdeasScreen(
     onRecipeClick: (Long) -> Unit,
     onCreateDish: (bookId: Long, dish: NewDishIdea) -> Unit
 ) {
-    val entries by viewModel.entries.collectAsState()
-    val recipes by viewModel.recipes.collectAsState()
-    val books by viewModel.targetBooks.collectAsState()
-    val filters by viewModel.filters.collectAsState()
-    val utensils by viewModel.utensilOptions.collectAsState()
-    val progress by viewModel.progress.collectAsState()
+    val entries by viewModel.entries.collectAsStateWithLifecycle()
+    val recipes by viewModel.recipes.collectAsStateWithLifecycle()
+    val books by viewModel.targetBooks.collectAsStateWithLifecycle()
+    val filters by viewModel.filters.collectAsStateWithLifecycle()
+    val utensils by viewModel.utensilOptions.collectAsStateWithLifecycle()
+    val progress by viewModel.progress.collectAsStateWithLifecycle()
     var question by remember { mutableStateOf("") }
     var dishToCreate by remember { mutableStateOf<NewDishIdea?>(null) }
     var addingUtensil by remember { mutableStateOf(false) }

@@ -63,7 +63,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -96,6 +95,7 @@ import org.calamares.miga.ui.dishsearch.DishSearchScreen
 import org.calamares.miga.ui.dishsearch.DishSearchViewModel
 import org.calamares.miga.ui.editor.RecipeEditorScreen
 import org.calamares.miga.ui.editor.RecipeEditorViewModel
+import org.calamares.miga.ui.list.BookPanes
 import org.calamares.miga.ui.list.RecipeListScreen
 import org.calamares.miga.ui.list.RecipeListViewModel
 import org.calamares.miga.ui.packs.PackDetailScreen
@@ -112,6 +112,8 @@ import kotlinx.coroutines.flow.filterNotNull
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.calamares.miga.data.share.AppShortcuts
 import org.calamares.miga.data.share.ShoppingIntents
 import org.calamares.miga.ui.shoppinglist.ShoppingListScreen
 import org.calamares.miga.ui.shoppinglist.ShoppingListViewModel
@@ -218,7 +220,7 @@ fun MigaNavHost(initialRoute: String? = null) {
     /**
      * Text shared to Miga or the widget button: go to the shopping tab, which consumes the event.
      */
-    val shoppingEvent by ShoppingIntents.event.collectAsState()
+    val shoppingEvent by ShoppingIntents.event.collectAsStateWithLifecycle()
     LaunchedEffect(shoppingEvent) {
         if (shoppingEvent != null) {
             navController.navigate(Destinations.SHOPPING_LIST_ROUTE) {
@@ -226,6 +228,25 @@ fun MigaNavHost(initialRoute: String? = null) {
                 launchSingleTop = true
                 restoreState = true
             }
+        }
+    }
+
+    /**
+     * "New recipe" app shortcut: the editor opens in the user's first book (pinned ones first), or
+     * the books tab when there is none to write in yet.
+     */
+    val newRecipeRequested by AppShortcuts.newRecipe.collectAsStateWithLifecycle()
+    LaunchedEffect(newRecipeRequested) {
+        if (newRecipeRequested) {
+            AppShortcuts.consume()
+            val book = repository.books.getAllRecipeBooksOnce().filterNot { it.isPack }.let { own ->
+                own.firstOrNull { it.isPinned } ?: own.firstOrNull()
+            }
+            navController.navigate(Destinations.BOOKS_ROUTE) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+            }
+            if (book != null) navController.navigate(Destinations.editor(bookId = book.id)) { launchSingleTop = true }
         }
     }
 
@@ -245,7 +266,7 @@ fun MigaNavHost(initialRoute: String? = null) {
     }
 
     /** A notification of finished AI work (a recipe improved with AI): open where its result is. */
-    val openRoute by AiJobs.openRoute.collectAsState()
+    val openRoute by AiJobs.openRoute.collectAsStateWithLifecycle()
     LaunchedEffect(openRoute) {
         openRoute?.let { route ->
             AiJobs.consumeOpenRoute()
@@ -405,22 +426,41 @@ private fun NavGraphBuilder.screens(
             factory = viewModelFactory { initializer { RecipeListViewModel(repository, bookId, settingsRepository) } }
         )
         val polishRecipes = rememberPolishRecipes(navController, repository, settingsRepository)
-        RecipeListScreen(
-            viewModel = viewModel,
-            onBack = { navController.popBackStack() },
-            onPolishRecipes = polishRecipes,
-            onRecipeClick = { id ->
-                // The book's recipes in the order shown, to swipe to the next or previous one.
-                val shownIds = viewModel.uiState.value.groups.flatMap { group -> group.recipes.map { it.id } }
-                navController.navigate(Destinations.detail(id, shownIds))
+        val editRecipe = { id: Long -> navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = id)) }
+        BookPanes(
+            list = { onRecipeClickInPane ->
+                RecipeListScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onPolishRecipes = polishRecipes,
+                    onRecipeClick = onRecipeClickInPane ?: { id ->
+                        // The book's recipes in the order shown, to swipe to the next or previous one.
+                        val shownIds = viewModel.uiState.value.groups.flatMap { group -> group.recipes.map { it.id } }
+                        navController.navigate(Destinations.detail(id, shownIds))
+                    },
+                    onEditRecipeClick = editRecipe,
+                    onAddRecipeClick = { navController.navigate(Destinations.editor(bookId = bookId)) },
+                    onAddRecipeFromPhoto = { photoUris -> navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUris = photoUris)) },
+                    onAddRecipesBulk = { photoUris -> navController.navigate(Destinations.bulkImport(bookId = bookId, photoUris = photoUris)) },
+                    onSearchDishClick = { navController.navigate(Destinations.dishSearch(bookId)) },
+                    onAddRecipeFromUrl = { url -> navController.navigate(Destinations.editor(bookId = bookId, sourceRecipeUrl = url)) },
+                    onEditBookClick = { navController.navigate(Destinations.bookEditor(bookId)) }
+                )
             },
-            onEditRecipeClick = { navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = it)) },
-            onAddRecipeClick = { navController.navigate(Destinations.editor(bookId = bookId)) },
-            onAddRecipeFromPhoto = { photoUris -> navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUris = photoUris)) },
-            onAddRecipesBulk = { photoUris -> navController.navigate(Destinations.bulkImport(bookId = bookId, photoUris = photoUris)) },
-            onSearchDishClick = { navController.navigate(Destinations.dishSearch(bookId)) },
-            onAddRecipeFromUrl = { url -> navController.navigate(Destinations.editor(bookId = bookId, sourceRecipeUrl = url)) },
-            onEditBookClick = { navController.navigate(Destinations.bookEditor(bookId)) }
+            detail = { recipeId, onClose ->
+                RecipeDetailPager(
+                    recipeIds = listOf(recipeId),
+                    initialRecipeId = recipeId,
+                    viewModelFor = { id ->
+                        viewModel(
+                            key = "detail_$id",
+                            factory = viewModelFactory { initializer { RecipeDetailViewModel(repository, id, settingsRepository) } }
+                        )
+                    },
+                    onBack = onClose,
+                    onEdit = editRecipe
+                )
+            }
         )
     }
 

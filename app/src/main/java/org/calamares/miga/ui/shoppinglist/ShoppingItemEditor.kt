@@ -37,7 +37,7 @@ import org.calamares.miga.data.model.formatQuantity
 
 /**
  * Edits an item of the list: name, quantity, unit and aisle. The aisle is remembered for that name
- * (see RecipeRepository.updateShoppingListItem). Also the place to delete it outside shop mode.
+ * (see RecipeRepository.shopping.updateShoppingListItem). Also the place to delete it outside shop mode.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
