@@ -3,13 +3,15 @@ package org.calamares.miga.data.remote
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
+import org.calamares.miga.data.support.AppDispatchers
 
 /** A published version of Miga: its version name ("1.0.6") and its GitHub page. */
 data class AppRelease(val versionName: String, val pageUrl: String)
@@ -34,7 +36,7 @@ object AppUpdateClient {
     private val json = Json { ignoreUnknownKeys = true }
 
     /** The latest stable release, or null when it cannot be read (offline, rate limit...). */
-    suspend fun fetchLatest(): AppRelease? = withContext(Dispatchers.IO) {
+    suspend fun fetchLatest(): AppRelease? = withContext(AppDispatchers.io) {
         try {
             val connection = URL(LATEST_RELEASE_URL).openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
@@ -56,6 +58,7 @@ object AppUpdateClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             null
         }
     }

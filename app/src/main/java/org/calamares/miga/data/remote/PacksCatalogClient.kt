@@ -3,7 +3,6 @@ package org.calamares.miga.data.remote
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -12,8 +11,12 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
+import java.security.MessageDigest
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
+import org.calamares.miga.data.support.AppDispatchers
 
 @Serializable
 data class PackEntryDto(
@@ -32,7 +35,9 @@ data class PackEntryDto(
     /** Series the pack belongs to ("Cocina del mundo", "Specials"...), used to group packs. */
     val series: String? = null,
     /** Shared by the Spanish and English versions of a pack; the install counter adds them up. */
-    val family: String? = null
+    val family: String? = null,
+    /** SHA-256 of the ZIP in hexadecimal; a download that does not match is refused. */
+    val sha256: String? = null
 )
 
 /**
@@ -47,6 +52,17 @@ private data class CatalogDto(
     val schemaVersion: Int = 1,
     val packs: List<PackEntryDto> = emptyList()
 )
+
+/** Outcome of [PacksCatalogClient.downloadPackZip]. */
+sealed interface PackDownloadResult {
+    class Success(val bytes: ByteArray) : PackDownloadResult
+    /** Network failure, an error from the server or a ZIP over the size limit. */
+    data object Failed : PackDownloadResult
+    /** The ZIP is not the one its catalogue describes. */
+    data object ChecksumMismatch : PackDownloadResult
+    /** The address is not https. */
+    data object NotHttps : PackDownloadResult
+}
 
 sealed interface CatalogFetchResult {
     data class Success(val packs: List<PackEntryDto>) : CatalogFetchResult
@@ -89,12 +105,13 @@ object PacksCatalogClient {
     fun resolveUrl(catalogUrl: String, ref: String): String =
         runCatching { URI(catalogUrl).resolve(ref.trim()).toString() }.getOrDefault(ref)
 
-    suspend fun fetchCatalog(repoPath: String): CatalogFetchResult = withContext(Dispatchers.IO) {
+    suspend fun fetchCatalog(repoPath: String): CatalogFetchResult = withContext(AppDispatchers.io) {
         if (repoPath.isBlank()) {
             return@withContext CatalogFetchResult.Error(L10n.str(R.string.set_up_catalogue_settings))
         }
         try {
             val catalogUrl = catalogUrlFor(repoPath)
+            if (!isHttps(catalogUrl)) return@withContext CatalogFetchResult.Error(L10n.str(R.string.catalogue_needs_https))
             val connection = URL(catalogUrl).openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = TIMEOUT_MILLIS
@@ -122,32 +139,51 @@ object PacksCatalogClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             CatalogFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
 
     /**
-     * Downloads a pack ZIP ([PackEntryDto.downloadUrl]). Returns null on failure or when it exceeds
-     * [MAX_PACK_BYTES].
+     * Catalogues and packs only travel over https: a pack is recipes and photos that end up in the
+     * user's books, and over plain http anyone on the way could swap them. (HttpURLConnection never
+     * follows a redirect from https to http.)
      */
-    suspend fun downloadPackZip(url: String): ByteArray? = withContext(Dispatchers.IO) {
+    fun isHttps(url: String): Boolean = url.trim().startsWith("https://", ignoreCase = true)
+
+    /**
+     * Downloads a pack ZIP ([PackEntryDto.downloadUrl]) of at most [MAX_PACK_BYTES] and checks it
+     * against [sha256] when the catalogue gives one.
+     */
+    suspend fun downloadPackZip(url: String, sha256: String? = null): PackDownloadResult = withContext(AppDispatchers.io) {
+        if (!isHttps(url)) return@withContext PackDownloadResult.NotHttps
         try {
             val connection = URL(url).openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = TIMEOUT_MILLIS
             connection.readTimeout = DOWNLOAD_TIMEOUT_MILLIS
             try {
-                if (connection.responseCode != HttpURLConnection.HTTP_OK) return@withContext null
-                if (connection.contentLengthLong > MAX_PACK_BYTES) return@withContext null
-                connection.inputStream.use { input -> readAtMost(input, MAX_PACK_BYTES) }
+                if (connection.responseCode != HttpURLConnection.HTTP_OK) return@withContext PackDownloadResult.Failed
+                if (connection.contentLengthLong > MAX_PACK_BYTES) return@withContext PackDownloadResult.Failed
+                val bytes = connection.inputStream.use { input -> readAtMost(input, MAX_PACK_BYTES) }
+                    ?: return@withContext PackDownloadResult.Failed
+                if (matchesSha256(bytes, sha256)) PackDownloadResult.Success(bytes) else PackDownloadResult.ChecksumMismatch
             } finally {
                 connection.disconnect()
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            null
+            coroutineContext.ensureActive()
+            PackDownloadResult.Failed
         }
+    }
+
+    /** True when [expected] is blank (the catalogue gives no hash) or is the SHA-256 of [bytes]. */
+    fun matchesSha256(bytes: ByteArray, expected: String?): Boolean {
+        if (expected.isNullOrBlank()) return true
+        val actual = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        return actual.equals(expected.trim(), ignoreCase = true)
     }
 
     /** Reads the whole stream, or returns null when it is longer than [limit] bytes. */

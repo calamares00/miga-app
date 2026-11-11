@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.collectAsState
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.lazy.items
@@ -50,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.support.ErrorDetail
@@ -92,16 +92,16 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val settings = remember { (context.applicationContext as MigaApp).settingsRepository }
     val scope = rememberCoroutineScope()
-    val order by settings.observeProviderOrder().collectAsState(initial = AiProvider.entries.toList())
-    val disabled by settings.observeDisabledProviders().collectAsState(initial = emptySet())
-    val geminiKey by settings.observeGeminiApiKey().collectAsState(initial = "")
-    val anthropicKey by settings.observeAnthropicApiKey().collectAsState(initial = "")
-    val openRouterKey by settings.observeOpenRouterApiKey().collectAsState(initial = "")
-    val geminiModel by settings.observeGeminiModel().collectAsState(initial = DEFAULT_GEMINI_MODEL)
-    val anthropicModel by settings.observeAnthropicModel().collectAsState(initial = DEFAULT_ANTHROPIC_MODEL)
-    val openRouterModel by settings.observeOpenRouterModel().collectAsState(initial = "")
-    val openAiKey by settings.observeOpenAiApiKey().collectAsState(initial = "")
-    val openAiModel by settings.observeOpenAiModel().collectAsState(initial = DEFAULT_OPENAI_MODEL)
+    val order by settings.observeProviderOrder().collectAsStateWithLifecycle(initialValue = AiProvider.entries.toList())
+    val disabled by settings.observeDisabledProviders().collectAsStateWithLifecycle(initialValue = emptySet())
+    val geminiKey by settings.observeGeminiApiKey().collectAsStateWithLifecycle(initialValue = "")
+    val anthropicKey by settings.observeAnthropicApiKey().collectAsStateWithLifecycle(initialValue = "")
+    val openRouterKey by settings.observeOpenRouterApiKey().collectAsStateWithLifecycle(initialValue = "")
+    val geminiModel by settings.observeGeminiModel().collectAsStateWithLifecycle(initialValue = DEFAULT_GEMINI_MODEL)
+    val anthropicModel by settings.observeAnthropicModel().collectAsStateWithLifecycle(initialValue = DEFAULT_ANTHROPIC_MODEL)
+    val openRouterModel by settings.observeOpenRouterModel().collectAsStateWithLifecycle(initialValue = "")
+    val openAiKey by settings.observeOpenAiApiKey().collectAsStateWithLifecycle(initialValue = "")
+    val openAiModel by settings.observeOpenAiModel().collectAsStateWithLifecycle(initialValue = DEFAULT_OPENAI_MODEL)
     /** Models of the user's account for the providers that list them (see ProviderModels). */
     val accountModels = remember { mutableStateMapOf<AiProvider, List<String>>() }
     LaunchedEffect(geminiKey, anthropicKey, openAiKey) {

@@ -45,6 +45,7 @@ import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -114,7 +115,6 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -145,6 +145,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import org.calamares.miga.data.model.AdditiveRisk
 import org.calamares.miga.data.model.DEFAULT_SHOPPING_LIST_UID
@@ -191,19 +192,19 @@ private const val SHARED_SYNC_INTERVAL_MILLIS = 20_000L
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShoppingListScreen(viewModel: ShoppingListViewModel) {
-    val groups by viewModel.groups.collectAsState()
-    val history by viewModel.history.collectAsState()
-    val catalogNames by viewModel.catalogNames.collectAsState()
-    val templates by viewModel.templates.collectAsState()
-    val imagesEnabled by viewModel.imagesEnabled.collectAsState()
-    val stores by viewModel.stores.collectAsState()
-    val selectedStore by viewModel.selectedStore.collectAsState()
-    val categoryNames by viewModel.ingredientCategoryNames.collectAsState()
-    val lists by viewModel.lists.collectAsState()
-    val listCounts by viewModel.listCounts.collectAsState()
-    val selectedListUid by viewModel.selectedListUid.collectAsState()
-    val author by viewModel.author.collectAsState()
-    val intentEvent by ShoppingIntents.event.collectAsState()
+    val groups by viewModel.groups.collectAsStateWithLifecycle()
+    val history by viewModel.history.collectAsStateWithLifecycle()
+    val catalogNames by viewModel.catalogNames.collectAsStateWithLifecycle()
+    val templates by viewModel.templates.collectAsStateWithLifecycle()
+    val imagesEnabled by viewModel.imagesEnabled.collectAsStateWithLifecycle()
+    val stores by viewModel.stores.collectAsStateWithLifecycle()
+    val selectedStore by viewModel.selectedStore.collectAsStateWithLifecycle()
+    val categoryNames by viewModel.ingredientCategoryNames.collectAsStateWithLifecycle()
+    val lists by viewModel.lists.collectAsStateWithLifecycle()
+    val listCounts by viewModel.listCounts.collectAsStateWithLifecycle()
+    val selectedListUid by viewModel.selectedListUid.collectAsStateWithLifecycle()
+    val author by viewModel.author.collectAsStateWithLifecycle()
+    val intentEvent by ShoppingIntents.event.collectAsStateWithLifecycle()
     val currentListName = lists.firstOrNull { it.uid == selectedListUid }?.name ?: L10n.str(R.string.shopping)
 
     var quickText by remember { mutableStateOf("") }
@@ -1042,7 +1043,7 @@ private fun ShoppingListsSheet(
                         .fillMaxWidth()
                         .clip(MaterialTheme.shapes.medium)
                         .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
-                        .clickable { saveAuthor(); onSelect(list.uid) }
+                        .selectable(selected = selected, role = Role.RadioButton) { saveAuthor(); onSelect(list.uid) }
                         .padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

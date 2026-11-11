@@ -96,7 +96,7 @@ class RecipeDetailViewModel(
     val ttsVoiceName: StateFlow<String?> = settingsRepository.observeTtsVoiceName()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val recipeBooks: StateFlow<List<RecipeBookSummary>> = repository.observeRecipeBooks()
+    val recipeBooks: StateFlow<List<RecipeBookSummary>> = repository.books.observeRecipeBooks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _healthState = MutableStateFlow<HealthState>(HealthState.Idle)
@@ -115,12 +115,12 @@ class RecipeDetailViewModel(
     val canRecalculateAnalysis: StateFlow<Boolean> = combine(
         settingsRepository.observeAiReady(),
         recipe.filterNotNull().map { it.recipeBookId }.distinctUntilChanged()
-            .flatMapLatest { bookId -> repository.observeRecipeBook(bookId) }
+            .flatMapLatest { bookId -> repository.books.observeRecipeBook(bookId) }
             .map { it?.isPack == true }
     ) { ready, isPack -> ready && !isPack }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    private suspend fun isPackRecipe(recipe: Recipe): Boolean = repository.getRecipeBookOnce(recipe.recipeBookId)?.isPack == true
+    private suspend fun isPackRecipe(recipe: Recipe): Boolean = repository.books.getRecipeBookOnce(recipe.recipeBookId)?.isPack == true
 
     /**
      * Shows the saved health rating, or creates it with the assistant when there is none. Values
@@ -404,7 +404,7 @@ class RecipeDetailViewModel(
 
     fun addIngredientsToShoppingList() {
         val current = recipe.value ?: return
-        viewModelScope.launch { repository.addIngredientsToShoppingList(current.ingredientGroups.flatMap { it.ingredients }) }
+        viewModelScope.launch { repository.shopping.addIngredientsToShoppingList(current.ingredientGroups.flatMap { it.ingredients }) }
     }
 
     fun deleteRecipe(onDeleted: () -> Unit) {

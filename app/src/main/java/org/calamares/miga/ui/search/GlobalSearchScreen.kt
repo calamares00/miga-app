@@ -67,7 +67,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,6 +78,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import org.calamares.miga.ui.components.FilterSheetContent
 
@@ -96,9 +96,9 @@ fun GlobalSearchScreen(
     onPolishRecipes: ((List<Long>) -> Unit)? = null
 ) {
     val aiEnabled = rememberAiReady()
-    val uiState by viewModel.uiState.collectAsState()
-    val filter by viewModel.filter.collectAsState()
-    val selectedIds by viewModel.selectedIds.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val filter by viewModel.filter.collectAsStateWithLifecycle()
+    val selectedIds by viewModel.selectedIds.collectAsStateWithLifecycle()
     val selectionMode = selectedIds.isNotEmpty()
     var showFilters by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)

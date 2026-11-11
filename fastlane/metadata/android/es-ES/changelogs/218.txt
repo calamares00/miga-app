@@ -1,0 +1,6 @@
+Novedades de la versión 1.0.20:
+• Tabletas: en un libro, la lista y la receta se ven una al lado de la otra.
+• Accesos directos desde el icono: añadir a la compra y nueva receta.
+• El idioma de la app también se elige en los ajustes del sistema; icono adaptado al tema del móvil.
+• Los packs se descargan solo por conexión segura y se comprueba que llegan intactos.
+• Sincronización más ligera con bibliotecas grandes y mejoras internas de estabilidad.

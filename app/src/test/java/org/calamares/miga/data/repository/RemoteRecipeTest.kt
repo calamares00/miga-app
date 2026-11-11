@@ -43,7 +43,7 @@ class RemoteRecipeTest {
 
     @Test
     fun `a synced recipe keeps its optional ingredients`() = runBlocking {
-        val id = repository.applyRemoteRecipeUpsert(
+        val id = repository.sync.applyRemoteRecipeUpsert(
             RecipeSyncDto(
                 uid = "r1",
                 bookUid = "book",

@@ -88,7 +88,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -101,6 +100,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.ui.common.BACKUP_MIME_TYPES
@@ -130,13 +130,13 @@ fun RecipeListScreen(
     onEditBookClick: () -> Unit = {}
 ) {
     val aiEnabled = rememberAiReady()
-    val uiState by viewModel.uiState.collectAsState()
-    val filter by viewModel.filter.collectAsState()
-    val viewMode by viewModel.viewMode.collectAsState()
-    val collapsedCategories by viewModel.collapsedCategories.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val filter by viewModel.filter.collectAsStateWithLifecycle()
+    val viewMode by viewModel.viewMode.collectAsStateWithLifecycle()
+    val collapsedCategories by viewModel.collapsedCategories.collectAsStateWithLifecycle()
     // While searching or filtering every category is shown open, so no result is hidden.
     val collapsingEnabled = filter.query.isBlank() && !filter.isActive
-    val selectedIds by viewModel.selectedIds.collectAsState()
+    val selectedIds by viewModel.selectedIds.collectAsStateWithLifecycle()
     val selectionMode = selectedIds.isNotEmpty()
     var showFilters by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
@@ -144,7 +144,7 @@ fun RecipeListScreen(
     var showDeleteSelectedConfirm by remember { mutableStateOf(false) }
     /** "Share" asked for the selected recipes (true) or the whole book (false); null when not asked. */
     var shareSelectionOnly by remember { mutableStateOf<Boolean?>(null) }
-    val pendingCollection by viewModel.pendingCollection.collectAsState()
+    val pendingCollection by viewModel.pendingCollection.collectAsStateWithLifecycle()
     // The search field and filters show only when asked for with the search icon (or while a
     // search or filter is applied), so the book opens straight onto its recipes.
     var searchOpen by rememberSaveable { mutableStateOf(false) }
@@ -157,7 +157,7 @@ fun RecipeListScreen(
     }
     BackHandler(enabled = searchVisible && !selectionMode) { closeSearch() }
     BackHandler(enabled = selectionMode) { viewModel.clearSelection() }
-    val targetBooks by viewModel.targetBooks.collectAsState()
+    val targetBooks by viewModel.targetBooks.collectAsStateWithLifecycle()
     var showBulkEditSheet by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
     var showNewRecipeSheet by remember { mutableStateOf(false) }
@@ -574,9 +574,9 @@ fun RecipeListScreen(
     }
 
     if (showBulkEditSheet && selectionMode) {
-        val categoryNames by viewModel.categoryNames.collectAsState()
-        val targetBooks by viewModel.targetBooks.collectAsState()
-        val aiRecalculation by viewModel.aiRecalculationAvailable.collectAsState()
+        val categoryNames by viewModel.categoryNames.collectAsStateWithLifecycle()
+        val targetBooks by viewModel.targetBooks.collectAsStateWithLifecycle()
+        val aiRecalculation by viewModel.aiRecalculationAvailable.collectAsStateWithLifecycle()
         val showMessage: (String) -> Unit = { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
         BulkEditSheet(
             count = selectedIds.size,

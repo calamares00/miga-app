@@ -1,7 +1,6 @@
 package org.calamares.miga.ui.bulkimport
 
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
 import org.calamares.miga.data.model.RecipePhoto
 import org.calamares.miga.data.local.DishPhotoCropper
 import org.calamares.miga.data.ai.aiCandidates
@@ -15,6 +14,7 @@ import androidx.lifecycle.viewModelScope
 import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.repository.RecipeRepository
+import org.calamares.miga.data.support.AppDispatchers
 import org.calamares.miga.data.vision.RecipeExtractionResult
 import org.calamares.miga.data.ai.AiImage
 import org.calamares.miga.data.ai.AiKeepAlive
@@ -139,7 +139,7 @@ class BulkImportViewModel(
                 val created = mutableListOf<String>()
                 val saved = recipes.map { recipe ->
                     if (recipe.dishPhotos.isNotEmpty()) progress.step(L10n.str(R.string.ai_step_cropping_photo))
-                    val dishPhotoUris = withContext(Dispatchers.IO) {
+                    val dishPhotoUris = withContext(AppDispatchers.io) {
                         DishPhotoCropper.extract(context.applicationContext, listOf(uri), recipe.dishPhotos)
                     }
                     progress.step(L10n.str(R.string.ai_step_saving_recipe))

@@ -40,7 +40,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.ui.components.rememberSettingText
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -77,17 +77,17 @@ import org.calamares.miga.ui.components.moved
  */
 @Composable
 fun AiProvidersSettings(viewModel: SettingsViewModel) {
-    val order by viewModel.providerOrder.collectAsState()
-    val geminiApiKey by viewModel.geminiApiKey.collectAsState()
-    val geminiModel by viewModel.geminiModel.collectAsState()
-    val anthropicApiKey by viewModel.anthropicApiKey.collectAsState()
-    val anthropicModel by viewModel.anthropicModel.collectAsState()
-    val openRouterApiKey by viewModel.openRouterApiKey.collectAsState()
-    val openRouterModel by viewModel.openRouterModel.collectAsState()
-    val openRouterModelImages by viewModel.openRouterModelImages.collectAsState()
-    val openAiApiKey by viewModel.openAiApiKey.collectAsState()
-    val openAiModel by viewModel.openAiModel.collectAsState()
-    val disabledProviders by viewModel.disabledProviders.collectAsState()
+    val order by viewModel.providerOrder.collectAsStateWithLifecycle()
+    val geminiApiKey by viewModel.geminiApiKey.collectAsStateWithLifecycle()
+    val geminiModel by viewModel.geminiModel.collectAsStateWithLifecycle()
+    val anthropicApiKey by viewModel.anthropicApiKey.collectAsStateWithLifecycle()
+    val anthropicModel by viewModel.anthropicModel.collectAsStateWithLifecycle()
+    val openRouterApiKey by viewModel.openRouterApiKey.collectAsStateWithLifecycle()
+    val openRouterModel by viewModel.openRouterModel.collectAsStateWithLifecycle()
+    val openRouterModelImages by viewModel.openRouterModelImages.collectAsStateWithLifecycle()
+    val openAiApiKey by viewModel.openAiApiKey.collectAsStateWithLifecycle()
+    val openAiModel by viewModel.openAiModel.collectAsStateWithLifecycle()
+    val disabledProviders by viewModel.disabledProviders.collectAsStateWithLifecycle()
     var expanded by rememberSaveable { mutableStateOf<AiProvider?>(null) }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

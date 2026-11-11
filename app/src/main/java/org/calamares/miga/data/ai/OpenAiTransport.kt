@@ -3,7 +3,6 @@
 package org.calamares.miga.data.ai
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -12,8 +11,11 @@ import kotlinx.serialization.Serializable
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.support.AiErrors
+import org.calamares.miga.data.support.AppDispatchers
 import org.calamares.miga.data.support.ErrorDetail
 import java.util.Base64
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val OPENAI_CHAT_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 private const val TIMEOUT_MILLIS = 90_000
@@ -69,7 +71,7 @@ internal object OpenAiTransport : AiTransport {
 
     private val name = AiProvider.OPENAI.shortName
 
-    override suspend fun complete(request: AiRequest, apiKey: String, model: String): AiText = withContext(Dispatchers.IO) {
+    override suspend fun complete(request: AiRequest, apiKey: String, model: String): AiText = withContext(AppDispatchers.io) {
         try {
             val parts = request.images.map {
                 OpenAiPart(
@@ -92,6 +94,7 @@ internal object OpenAiTransport : AiTransport {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             AiText.Error(AiErrors.exception(e))
         }
     }

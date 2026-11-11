@@ -85,7 +85,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -99,6 +98,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.model.Difficulty
@@ -118,14 +118,14 @@ fun RecipeEditorScreen(
     onCancel: () -> Unit
 ) {
     val context = LocalContext.current
-    val availableCategories by viewModel.availableCategories.collectAsState()
-    val availableTags by viewModel.availableTags.collectAsState()
-    val availableUtensils by viewModel.availableUtensils.collectAsState()
-    val popularTags by viewModel.popularTags.collectAsState()
-    val popularUtensils by viewModel.popularUtensils.collectAsState()
-    val visionState by viewModel.visionState.collectAsState()
-    val aiProgress by viewModel.aiProgress.collectAsState()
-    val detectedRecipes by viewModel.detectedRecipes.collectAsState()
+    val availableCategories by viewModel.availableCategories.collectAsStateWithLifecycle()
+    val availableTags by viewModel.availableTags.collectAsStateWithLifecycle()
+    val availableUtensils by viewModel.availableUtensils.collectAsStateWithLifecycle()
+    val popularTags by viewModel.popularTags.collectAsStateWithLifecycle()
+    val popularUtensils by viewModel.popularUtensils.collectAsStateWithLifecycle()
+    val visionState by viewModel.visionState.collectAsStateWithLifecycle()
+    val aiProgress by viewModel.aiProgress.collectAsStateWithLifecycle()
+    val detectedRecipes by viewModel.detectedRecipes.collectAsStateWithLifecycle()
     var visionErrorDismissed by remember { mutableStateOf(false) }
     var showVisionErrorDialog by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }

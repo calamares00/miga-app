@@ -13,6 +13,8 @@ import org.calamares.miga.data.ai.decodeAiJson
 import org.calamares.miga.data.model.ContentItem
 import org.calamares.miga.data.model.ContentKind
 import org.calamares.miga.data.support.AiErrors
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val CLEANUP_MAX_TOKENS = 4096
 
@@ -49,6 +51,7 @@ suspend fun AiCandidate.suggestContentCleanup(
     return try {
         AiCleanupResult.Success(decodeAiJson(AiCleanupDto.serializer(), text).toProposals(content, alreadyProposed))
     } catch (e: Exception) {
+        coroutineContext.ensureActive()
         AiCleanupResult.Error(AiErrors.badResponse(e, text))
     }
 }

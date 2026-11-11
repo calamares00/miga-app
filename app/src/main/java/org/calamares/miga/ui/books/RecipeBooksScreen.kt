@@ -112,7 +112,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -127,6 +126,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipeListViewMode
@@ -143,23 +143,23 @@ fun RecipeBooksScreen(
     onOpenIdeas: () -> Unit = {},
     onOpenSync: () -> Unit = {}
 ) {
-    val loadedBooks by viewModel.books.collectAsState()
+    val loadedBooks by viewModel.books.collectAsStateWithLifecycle()
     val books = loadedBooks.orEmpty()
     LaunchedEffect(loadedBooks != null) {
         if (loadedBooks != null) StartupGate.contentReady()
     }
-    val aiReady by viewModel.aiReady.collectAsState()
-    val changelogAnnouncement by viewModel.changelogAnnouncement.collectAsState()
-    val crashReport by viewModel.crashReport.collectAsState()
-    val availableUpdate by viewModel.availableUpdate.collectAsState()
-    val packUpdates by viewModel.packUpdates.collectAsState()
-    val updatingPacks by viewModel.updatingPacks.collectAsState()
-    val viewMode by viewModel.viewMode.collectAsState()
-    val grouped by viewModel.grouped.collectAsState()
-    val filter by viewModel.filter.collectAsState()
-    val connectionNames by viewModel.connectionNames.collectAsState()
+    val aiReady by viewModel.aiReady.collectAsStateWithLifecycle()
+    val changelogAnnouncement by viewModel.changelogAnnouncement.collectAsStateWithLifecycle()
+    val crashReport by viewModel.crashReport.collectAsStateWithLifecycle()
+    val availableUpdate by viewModel.availableUpdate.collectAsStateWithLifecycle()
+    val packUpdates by viewModel.packUpdates.collectAsStateWithLifecycle()
+    val updatingPacks by viewModel.updatingPacks.collectAsStateWithLifecycle()
+    val viewMode by viewModel.viewMode.collectAsStateWithLifecycle()
+    val grouped by viewModel.grouped.collectAsStateWithLifecycle()
+    val filter by viewModel.filter.collectAsStateWithLifecycle()
+    val connectionNames by viewModel.connectionNames.collectAsStateWithLifecycle()
     var showViewModeMenu by remember { mutableStateOf(false) }
-    val selectedIds by viewModel.selectedBookIds.collectAsState()
+    val selectedIds by viewModel.selectedBookIds.collectAsStateWithLifecycle()
     val selectionMode = selectedIds.isNotEmpty()
     val selectedBooks = books.filter { it.id in selectedIds }
     var showSelectionMenu by remember { mutableStateOf(false) }
@@ -189,12 +189,12 @@ fun RecipeBooksScreen(
     val hasServer = connectionNames.isNotEmpty()
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val syncing by viewModel.syncing.collectAsState()
-    val syncMessage by viewModel.syncMessage.collectAsState()
-    val incomingBook by viewModel.incomingBook.collectAsState()
-    val incomingRecipe by viewModel.incomingRecipe.collectAsState()
-    val importingBook by viewModel.importingBook.collectAsState()
-    val downloadingBook by viewModel.downloadingBook.collectAsState()
+    val syncing by viewModel.syncing.collectAsStateWithLifecycle()
+    val syncMessage by viewModel.syncMessage.collectAsStateWithLifecycle()
+    val incomingBook by viewModel.incomingBook.collectAsStateWithLifecycle()
+    val incomingRecipe by viewModel.incomingRecipe.collectAsStateWithLifecycle()
+    val importingBook by viewModel.importingBook.collectAsStateWithLifecycle()
+    val downloadingBook by viewModel.downloadingBook.collectAsStateWithLifecycle()
     // Only the visible Miga takes the file: opening it from WhatsApp starts a second Miga in
     // WhatsApp's task, and the one left in the background must not take it and ask there, unseen.
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -394,7 +394,7 @@ fun RecipeBooksScreen(
                                         if (selectionMode) viewModel.toggleSelection(book.id) else viewModel.startSelection(book.id)
                                     },
                                     // Pinning moves the book to the top; animate it instead of jumping.
-                                    modifier = Modifier.animateItemPlacement()
+                                    modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null)
                                 )
                             }
                         }
@@ -421,7 +421,7 @@ fun RecipeBooksScreen(
                                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                         if (selectionMode) viewModel.toggleSelection(book.id) else viewModel.startSelection(book.id)
                                     },
-                                    modifier = Modifier.animateItemPlacement()
+                                    modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null)
                                 )
                             }
                         }

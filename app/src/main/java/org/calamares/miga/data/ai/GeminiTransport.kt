@@ -3,7 +3,6 @@
 package org.calamares.miga.data.ai
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -12,8 +11,11 @@ import kotlinx.serialization.Serializable
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.support.AiErrors
+import org.calamares.miga.data.support.AppDispatchers
 import org.calamares.miga.data.support.ErrorDetail
 import java.util.Base64
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val GEMINI_ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 private const val TIMEOUT_MILLIS = 60_000
@@ -58,7 +60,7 @@ internal data class GeminiErrorDetail(val message: String? = null)
 /** Google Gemini REST API (generateContent). */
 internal object GeminiTransport : AiTransport {
 
-    override suspend fun complete(request: AiRequest, apiKey: String, model: String): AiText = withContext(Dispatchers.IO) {
+    override suspend fun complete(request: AiRequest, apiKey: String, model: String): AiText = withContext(AppDispatchers.io) {
         try {
             val parts = request.images.map {
                 GeminiPart(inlineData = GeminiInlineData(it.mimeType, Base64.getEncoder().encodeToString(it.bytes)))
@@ -93,6 +95,7 @@ internal object GeminiTransport : AiTransport {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             AiText.Error(AiErrors.exception(e))
         }
     }

@@ -60,7 +60,7 @@ class SharedBookFlowTest {
     )
 
     private suspend fun shareFrom(repository: RecipeRepository, bookId: Long, sharedBy: String? = "Ana"): java.io.File {
-        val book = repository.getRecipeBookOnce(bookId)!!
+        val book = repository.books.getRecipeBookOnce(bookId)!!
         val file = RecipeExporter.writeMigaFile(context, book.name, listOf(book), repository.getRecipesForBookOnce(bookId), singleRecipe = false, onPhoto = { _, _ -> }, forSharing = true, sharedBy = sharedBy)
         assertTrue(file.name.endsWith(".miga"))
         return file
@@ -96,11 +96,11 @@ class SharedBookFlowTest {
         val received = receiverRepo.getRecipesForBookOnce(first.bookId)
         assertEquals(setOf("Paella", "Tortilla"), received.map { it.name }.toSet())
         assertTrue("favourites are not shared", received.none { it.isFavorite })
-        val receivedBook = receiverRepo.getRecipeBookOnce(first.bookId)!!
+        val receivedBook = receiverRepo.books.getRecipeBookOnce(first.bookId)!!
         assertEquals("Ana", receivedBook.sharedBy)
         assertNotNull(receivedBook.sharedAt)
         assertTrue("every recipe keeps who shared it", received.all { it.sharedBy == "Ana" })
-        assertNull("the sender's own book is not marked", senderRepo.getRecipeBookOnce(bookId)!!.sharedBy)
+        assertNull("the sender's own book is not marked", senderRepo.books.getRecipeBookOnce(bookId)!!.sharedBy)
 
         // The sender edits one recipe and adds another, then sends the book again.
         Thread.sleep(5)
@@ -113,7 +113,7 @@ class SharedBookFlowTest {
         assertEquals(1, second.added)
         assertEquals(1, second.updated)
         assertEquals(setOf("Paella valenciana", "Tortilla", "Gazpacho"), receiverRepo.getRecipesForBookOnce(first.bookId).map { it.name }.toSet())
-        assertEquals(1, receiverRepo.getAllRecipeBooksOnce().size)
+        assertEquals(1, receiverRepo.books.getAllRecipeBooksOnce().size)
     }
 
     private suspend fun shareRecipe(repository: RecipeRepository, recipeId: Long, sharedBy: String?): java.io.File {
@@ -141,12 +141,12 @@ class SharedBookFlowTest {
         intoExisting as SharedRecipeImportResult.Success
         assertEquals(mine, intoExisting.bookId)
         assertEquals("Ana", receiverRepo.observeRecipe(intoExisting.recipeId).first()!!.sharedBy)
-        assertNull("the book itself was not shared", receiverRepo.getRecipeBookOnce(mine)!!.sharedBy)
+        assertNull("the book itself was not shared", receiverRepo.books.getRecipeBookOnce(mine)!!.sharedBy)
 
         val tortilla = receiveRecipe(shareRecipe(senderRepo, tortillaId, null))
         val intoNew = RecipeExporter.importSharedRecipe(receiverRepo, tortilla.recipe, tortilla.photos, targetBookId = null, newBookName = "De Ana")
         intoNew as SharedRecipeImportResult.Success
-        assertEquals("De Ana", receiverRepo.getRecipeBookOnce(intoNew.bookId)!!.name)
+        assertEquals("De Ana", receiverRepo.books.getRecipeBookOnce(intoNew.bookId)!!.name)
         assertNull(receiverRepo.observeRecipe(intoNew.recipeId).first()!!.sharedBy)
 
         // Sent again unchanged: nothing is duplicated.
@@ -154,7 +154,7 @@ class SharedBookFlowTest {
         again as SharedRecipeImportResult.Success
         assertTrue(again.unchanged)
         assertEquals(intoExisting.recipeId, again.recipeId)
-        assertEquals(2, receiverRepo.getAllRecipeBooksOnce().size)
+        assertEquals(2, receiverRepo.books.getAllRecipeBooksOnce().size)
     }
 
     @Test
@@ -167,7 +167,7 @@ class SharedBookFlowTest {
         senderRepo.saveRecipe(recipe("r2", "Flan", 1000).copy(recipeBookName = "Postres").toDraft(postres))
         senderRepo.saveRecipe(recipe("r3", "Natillas", 1000).copy(recipeBookName = "Postres").toDraft(postres))
 
-        val books = listOf(senderRepo.getRecipeBookOnce(familia)!!, senderRepo.getRecipeBookOnce(postres)!!)
+        val books = listOf(senderRepo.books.getRecipeBookOnce(familia)!!, senderRepo.books.getRecipeBookOnce(postres)!!)
         val recipes = senderRepo.getRecipesForBookOnce(familia) + senderRepo.getRecipesForBookOnce(postres)
         val file = RecipeExporter.writeMigaFile(context, "2 libros", books, recipes, singleRecipe = false, onPhoto = { _, _ -> }, forSharing = true, sharedBy = "Ana")
 
@@ -175,7 +175,7 @@ class SharedBookFlowTest {
         result as SharedBookImportResult.Success
         assertEquals(2, result.bookCount)
         assertEquals(3, result.added)
-        val received = receiverRepo.getAllRecipeBooksOnce().associateBy { it.name }
+        val received = receiverRepo.books.getAllRecipeBooksOnce().associateBy { it.name }
         assertEquals(setOf("Familia", "Postres"), received.keys)
         assertEquals(setOf("Paella"), receiverRepo.getRecipesForBookOnce(received.getValue("Familia").id).map { it.name }.toSet())
         assertEquals(setOf("Flan", "Natillas"), receiverRepo.getRecipesForBookOnce(received.getValue("Postres").id).map { it.name }.toSet())

@@ -1,9 +1,9 @@
 package org.calamares.miga.ui.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.MigaApp
 import org.calamares.miga.data.voice.DictationLanguages
 
@@ -12,6 +12,6 @@ import org.calamares.miga.data.voice.DictationLanguages
 fun rememberDictationLanguage(): String {
     val context = LocalContext.current
     val settings = (context.applicationContext as MigaApp).settingsRepository
-    val tag by settings.observeDictationLanguage().collectAsState(initial = DictationLanguages.DEFAULT)
+    val tag by settings.observeDictationLanguage().collectAsStateWithLifecycle(initialValue = DictationLanguages.DEFAULT)
     return tag
 }

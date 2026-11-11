@@ -3,13 +3,15 @@ package org.calamares.miga.data.search
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.charset.Charset
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
+import org.calamares.miga.data.support.AppDispatchers
 
 private const val TIMEOUT_MILLIS = 15000
 private const val MAX_PAGE_TEXT_CHARS = 20000
@@ -27,7 +29,7 @@ sealed interface UrlFetchResult {
  * the model interprets the text, the same way it does with a photo.
  */
 object RecipeUrlFetcher {
-    suspend fun fetchReadableText(url: String): UrlFetchResult = withContext(Dispatchers.IO) {
+    suspend fun fetchReadableText(url: String): UrlFetchResult = withContext(AppDispatchers.io) {
         try {
             var target = URL(url.trim())
             for (attempt in 0..MAX_REDIRECTS) {
@@ -65,6 +67,7 @@ object RecipeUrlFetcher {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             UrlFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.couldnt_download_page))
         }
     }

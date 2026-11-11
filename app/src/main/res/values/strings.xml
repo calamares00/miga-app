@@ -1289,4 +1289,11 @@
     <string name="couldnt_install_packs_x">"Couldn't install: %1$s. Check your connection and try again."</string>
     <string name="uninstall_x_packs">"Uninstall packs (%1$d)?"</string>
     <string name="uninstall_packs_explanation">"Their books and the recipes still in them will be removed from this device. Recipes you moved to other books are kept, and you can reinstall the packs from the catalogue."</string>
+    <string name="catalogue_needs_https">"The catalogue and its packs must use https://"</string>
+    <string name="pack_checksum_mismatch">"The downloaded pack doesn't match the one in the catalogue and wasn't installed. Try again later."</string>
+    <string name="shortcut_add_shopping">"Add to shopping list"</string>
+    <string name="shortcut_add_shopping_short">"Shopping"</string>
+    <string name="shortcut_new_recipe">"New recipe"</string>
+    <string name="shortcut_new_recipe_short">"New recipe"</string>
+    <string name="choose_recipe_to_see_it">"Choose a recipe to see it here"</string>
 </resources>

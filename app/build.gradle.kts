@@ -1,9 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
+    alias(libs.plugins.roborazzi)
 }
 
 android {
@@ -17,8 +19,8 @@ android {
         // versionCode goes up on every commit (Play requires it to always grow). versionName is the
         // public version and only changes when a new version is released (1.0.0, 1.0.1, 1.1.0...),
         // with release notes in assets/changelogs and fastlane/.../changelogs (<versionCode>.txt).
-        versionCode = 217
-        versionName = "1.0.19"
+        versionCode = 218
+        versionName = "1.0.20"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -105,17 +107,15 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        }
     }
 
     buildFeatures {
         compose = true
         buildConfig = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
     }
 
     // Room schemas, one JSON per database version, read by the migration tests (see room {} below).
@@ -146,6 +146,7 @@ dependencies {
     implementation(libs.core.ktx)
     implementation(libs.core.splashscreen)
     implementation(libs.lifecycle.runtime.ktx)
+    implementation(libs.lifecycle.runtime.compose)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.activity.compose)
 
@@ -178,4 +179,10 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.room.testing)
+    // Interface tests of whole screens, also on the JVM with Robolectric, and their reference
+    // screenshots (src/test/snapshots; ./gradlew recordRoborazziDebug / verifyRoborazziDebug).
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.roborazzi)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

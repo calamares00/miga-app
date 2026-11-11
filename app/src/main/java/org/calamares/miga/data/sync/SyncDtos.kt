@@ -114,7 +114,9 @@ data class ChangesResponseDto(
     val recipes: List<RecipeSyncDto> = emptyList(),
     val photos: List<PhotoMetaDto> = emptyList(),
     val shoppingItems: List<ShoppingItemSyncDto> = emptyList(),
-    val shoppingLists: List<ShoppingListSyncDto> = emptyList()
+    val shoppingLists: List<ShoppingListSyncDto> = emptyList(),
+    /** More changes follow: ask again from [latestRevision]. Servers before 1.1.0 never set it. */
+    val hasMore: Boolean = false
 )
 
 @Serializable

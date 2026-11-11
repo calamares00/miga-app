@@ -7,7 +7,6 @@ import java.net.URL
 import java.security.SecureRandom
 import java.util.Base64
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -15,6 +14,9 @@ import org.calamares.miga.data.export.BackupCrypto
 import org.calamares.miga.data.io.LimitedInputStream
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
+import org.calamares.miga.data.support.AppDispatchers
 
 /** Encrypted book links (calamares00/miga-stats, shares.js). */
 const val SHARE_LINK_HOST = "miga-share.calamares.org"
@@ -74,7 +76,7 @@ object ShareLinkClient {
 
     /** Uploads the already encrypted [encrypted] and returns the link with [key]. */
     suspend fun upload(encrypted: File, key: String, onProgress: (sent: Long, total: Long) -> Unit): ShareUploadResult =
-        withContext(Dispatchers.IO) {
+        withContext(AppDispatchers.io) {
             try {
                 val connection = URL("$SHARE_BASE/v1/shares").openConnection() as HttpURLConnection
                 try {
@@ -108,12 +110,13 @@ object ShareLinkClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                coroutineContext.ensureActive()
                 ShareUploadResult.Error(null)
             }
         }
 
     /** Downloads the encrypted book of [link] to [destination]; false when it is gone or unreachable. */
-    suspend fun download(link: ShareLink, destination: File): Boolean = withContext(Dispatchers.IO) {
+    suspend fun download(link: ShareLink, destination: File): Boolean = withContext(AppDispatchers.io) {
         try {
             val connection = URL("$SHARE_BASE/v1/shares/${link.id}").openConnection() as HttpURLConnection
             try {
@@ -130,6 +133,7 @@ object ShareLinkClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             destination.delete()
             false
         }
