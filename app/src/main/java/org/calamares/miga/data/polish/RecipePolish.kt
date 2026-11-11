@@ -18,6 +18,8 @@ import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.StepGroup
 import org.calamares.miga.data.support.AiErrors
 import org.calamares.miga.data.vision.RECIPE_MAX_TOKENS
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 /** What the model returns: the recipe's texts rewritten, and what it changed. */
 @Serializable
@@ -58,6 +60,7 @@ suspend fun AiCandidate.polishRecipe(recipe: Recipe): RecipePolishResult {
         val dto = decodeAiJson(PolishedRecipeDto.serializer(), text)
         RecipePolishResult.Success(dto.toPolished(recipe))
     } catch (e: Exception) {
+        coroutineContext.ensureActive()
         RecipePolishResult.Error(AiErrors.badResponse(e, text))
     }
 }

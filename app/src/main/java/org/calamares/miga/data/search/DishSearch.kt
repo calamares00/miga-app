@@ -8,6 +8,8 @@ import org.calamares.miga.data.ai.complete
 import org.calamares.miga.data.ai.decodeAiJson
 import org.calamares.miga.data.ai.outputLanguageInstruction
 import org.calamares.miga.data.support.AiErrors
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val SEARCH_MAX_TOKENS = 2048
 
@@ -41,6 +43,7 @@ suspend fun AiCandidate.searchDishes(query: String): DishSearchResult =
                 dto.dishes.filter { it.name.isNotBlank() }.map { DishSuggestion(it.name, it.description, it.origin) }
             )
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             DishSearchResult.Error(AiErrors.badResponse(e, result.text))
         }
     }

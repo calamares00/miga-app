@@ -18,6 +18,8 @@ import java.net.URL
 import java.net.URLEncoder
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 data class ScannedProduct(val barcode: String, val name: String, val imageUrl: String?, val info: ProductInfo)
 
@@ -64,6 +66,7 @@ object OpenFoodFactsClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             ProductLookupResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.couldnt_reach_open_food_facts))
         }
     }
@@ -97,6 +100,7 @@ object OpenFoodFactsClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             ProductSearchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.couldnt_search_open_food_facts))
         }
     }

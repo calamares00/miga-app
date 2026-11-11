@@ -14,6 +14,8 @@ import org.calamares.miga.data.support.AiErrors
 import java.io.ByteArrayOutputStream
 import kotlin.math.pow
 import kotlin.math.roundToInt
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 /** Small: the answer is a handful of numbers, but reasoning models spend part of it thinking. */
 private const val ENHANCE_MAX_TOKENS = 1024
@@ -80,6 +82,7 @@ suspend fun AiCandidate.suggestPhotoAdjustments(photo: Bitmap): PhotoEnhanceResu
         is AiText.Success -> try {
             PhotoEnhanceResult.Success(decodeAiJson(PhotoAdjustments.serializer(), answer.text).clamped())
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             PhotoEnhanceResult.Error(AiErrors.badResponse(e, answer.text))
         }
     }

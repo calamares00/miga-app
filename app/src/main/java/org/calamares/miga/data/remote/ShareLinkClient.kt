@@ -15,6 +15,8 @@ import org.calamares.miga.data.export.BackupCrypto
 import org.calamares.miga.data.io.LimitedInputStream
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 /** Encrypted book links (calamares00/miga-stats, shares.js). */
 const val SHARE_LINK_HOST = "miga-share.calamares.org"
@@ -108,6 +110,7 @@ object ShareLinkClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                coroutineContext.ensureActive()
                 ShareUploadResult.Error(null)
             }
         }
@@ -130,6 +133,7 @@ object ShareLinkClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             destination.delete()
             false
         }

@@ -14,6 +14,8 @@ import org.calamares.miga.R
 import org.calamares.miga.data.support.AiErrors
 import org.calamares.miga.data.support.ErrorDetail
 import java.util.Base64
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val GEMINI_ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 private const val TIMEOUT_MILLIS = 60_000
@@ -93,6 +95,7 @@ internal object GeminiTransport : AiTransport {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             AiText.Error(AiErrors.exception(e))
         }
     }

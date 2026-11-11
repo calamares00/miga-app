@@ -14,6 +14,8 @@ import org.calamares.miga.R
 import org.calamares.miga.data.support.AiErrors
 import org.calamares.miga.data.support.ErrorDetail
 import java.util.Base64
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages"
 private const val ANTHROPIC_VERSION = "2023-06-01"
@@ -92,6 +94,7 @@ internal object AnthropicTransport : AiTransport {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             AiText.Error(AiErrors.exception(e))
         }
     }

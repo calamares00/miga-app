@@ -10,6 +10,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 /** A published version of Miga: its version name ("1.0.6") and its GitHub page. */
 data class AppRelease(val versionName: String, val pageUrl: String)
@@ -56,6 +58,7 @@ object AppUpdateClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             null
         }
     }

@@ -9,6 +9,8 @@ import org.calamares.miga.data.ai.decodeAiJson
 import org.calamares.miga.data.ai.outputLanguageInstruction
 import org.calamares.miga.data.model.HealthColorLevel
 import org.calamares.miga.data.support.AiErrors
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val HEALTH_MAX_TOKENS = 1024
 
@@ -29,6 +31,7 @@ suspend fun AiCandidate.analyzeHealthiness(ingredientsText: String, stepsText: S
             val level = runCatching { HealthColorLevel.valueOf(dto.colorLevel.uppercase()) }.getOrDefault(HealthColorLevel.YELLOW)
             RecipeHealthResult.Success(level, dto.description)
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             RecipeHealthResult.Error(AiErrors.badResponse(e, result.text))
         }
     }

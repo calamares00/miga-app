@@ -8,6 +8,8 @@ import org.calamares.miga.data.ai.complete
 import org.calamares.miga.data.ai.decodeAiJson
 import org.calamares.miga.data.ai.outputLanguageInstruction
 import org.calamares.miga.data.support.AiErrors
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val NUTRITION_MAX_TOKENS = 1024
 
@@ -33,6 +35,7 @@ suspend fun AiCandidate.analyzeNutrition(ingredientsText: String, stepsText: Str
             val dto = decodeAiJson(RecipeNutritionResultDto.serializer(), result.text)
             RecipeNutritionResult.Success(dto.caloriesPerServing, dto.proteinGrams, dto.carbsGrams, dto.fatGrams)
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             RecipeNutritionResult.Error(AiErrors.badResponse(e, result.text))
         }
     }

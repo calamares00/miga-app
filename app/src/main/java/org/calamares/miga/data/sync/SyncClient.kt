@@ -14,6 +14,8 @@ import java.net.URL
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readBytesAtMost
 import org.calamares.miga.data.io.readTextAtMost
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 sealed interface SyncPingResult {
     data object Success : SyncPingResult
@@ -75,6 +77,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             SyncPingResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.couldnt_connect_server))
         }
     }
@@ -89,6 +92,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             SyncFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
@@ -110,6 +114,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             SyncPushResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
@@ -129,6 +134,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             SyncPushResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
@@ -151,6 +157,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             SyncInvitationResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
@@ -175,6 +182,7 @@ object SyncClient {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                coroutineContext.ensureActive()
                 false
             }
         }
@@ -186,6 +194,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             null
         }
     }
@@ -207,6 +216,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             SyncPushResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
@@ -223,6 +233,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             PhotoDownloadResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
@@ -249,6 +260,7 @@ object SyncClient {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             SyncPushResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }

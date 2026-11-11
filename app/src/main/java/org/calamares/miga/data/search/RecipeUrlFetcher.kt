@@ -10,6 +10,8 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.charset.Charset
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val TIMEOUT_MILLIS = 15000
 private const val MAX_PAGE_TEXT_CHARS = 20000
@@ -65,6 +67,7 @@ object RecipeUrlFetcher {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             UrlFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.couldnt_download_page))
         }
     }

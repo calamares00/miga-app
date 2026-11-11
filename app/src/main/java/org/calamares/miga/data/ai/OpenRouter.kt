@@ -22,6 +22,8 @@ import java.net.URL
 import java.util.Base64
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val OPENROUTER_CHAT_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 private const val OPENROUTER_MODELS_ENDPOINT = "https://openrouter.ai/api/v1/models"
@@ -131,6 +133,7 @@ internal object OpenRouterTransport : AiTransport {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             AiText.Error(AiErrors.exception(e))
         }
     }
