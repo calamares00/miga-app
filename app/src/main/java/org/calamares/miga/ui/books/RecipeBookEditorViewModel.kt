@@ -53,7 +53,7 @@ class RecipeBookEditorViewModel(
      */
     var syncConnectionId by mutableStateOf<Long?>(null)
         private set
-    val availableSyncConnections: StateFlow<List<SyncConnection>> = repository.observeSyncConnections()
+    val availableSyncConnections: StateFlow<List<SyncConnection>> = repository.sync.observeSyncConnections()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     var isSyncingNow by mutableStateOf(false)
         private set
@@ -64,7 +64,7 @@ class RecipeBookEditorViewModel(
     init {
         if (isEditing) {
             viewModelScope.launch {
-                repository.observeRecipeBook(bookId).first()?.let { book ->
+                repository.books.observeRecipeBook(bookId).first()?.let { book ->
                     name = book.name
                     coverPhotoUri = book.coverPhotoUri
                     isPack = book.isPack
@@ -91,7 +91,7 @@ class RecipeBookEditorViewModel(
         }
         viewModelScope.launch {
             isSaving = true
-            repository.saveRecipeBook(
+            repository.books.saveRecipeBook(
                 RecipeBookDraft(id = if (isEditing) bookId else 0L, name = name, coverPhotoUri = coverPhotoUri)
             )
             isSaving = false
@@ -104,13 +104,13 @@ class RecipeBookEditorViewModel(
         viewModelScope.launch {
             isDeleting = true
             if (isPack) {
-                repository.uninstallPack(bookId)
+                repository.books.uninstallPack(bookId)
                 isDeleting = false
                 onDeleted()
                 return@launch
             }
             try {
-                repository.deleteRecipeBook(bookId)
+                repository.books.deleteRecipeBook(bookId)
                 onDeleted()
             } catch (e: RecipeBookNotEmptyException) {
                 deleteError = if (e.recipeCount == 1) L10n.str(R.string.book_not_empty_one)
@@ -128,7 +128,7 @@ class RecipeBookEditorViewModel(
     fun linkToSyncConnection(connectionId: Long) {
         if (!isEditing || isPack) return
         viewModelScope.launch {
-            repository.linkBookToSyncConnection(bookId, connectionId)
+            repository.sync.linkBookToSyncConnection(bookId, connectionId)
             syncConnectionId = connectionId
         }
     }
@@ -137,7 +137,7 @@ class RecipeBookEditorViewModel(
     fun unlinkFromSyncConnection() {
         if (!isEditing) return
         viewModelScope.launch {
-            repository.unlinkBookFromSyncConnection(bookId)
+            repository.sync.unlinkBookFromSyncConnection(bookId)
             syncConnectionId = null
         }
     }
@@ -147,11 +147,11 @@ class RecipeBookEditorViewModel(
         viewModelScope.launch {
             isSyncingNow = true
             syncNowError = null
-            repository.resetSyncCursor(connectionId) // manual repair: download everything again to recover lost photos
-            repository.enqueueFullBookResync(bookId, connectionId)
+            repository.sync.resetSyncCursor(connectionId) // manual repair: download everything again to recover lost photos
+            repository.sync.enqueueFullBookResync(bookId, connectionId)
             when (val outcome = syncEngine.syncConnection(context, connectionId)) {
                 is SyncOutcome.Error -> syncNowError = outcome.reason
-                is SyncOutcome.Success -> repository.observeRecipeBook(bookId).first()?.let { book ->
+                is SyncOutcome.Success -> repository.books.observeRecipeBook(bookId).first()?.let { book ->
                     name = book.name
                     coverPhotoUri = book.coverPhotoUri
                     initialSnapshot = BookSnapshot(name, coverPhotoUri)

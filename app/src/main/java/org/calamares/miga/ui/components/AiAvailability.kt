@@ -1,10 +1,10 @@
 package org.calamares.miga.ui.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.MigaApp
 
 /**
@@ -15,7 +15,7 @@ import org.calamares.miga.MigaApp
 fun rememberAiEnabled(): Boolean {
     val context = LocalContext.current
     val flow = remember { (context.applicationContext as MigaApp).settingsRepository.observeAiEnabled() }
-    val enabled by flow.collectAsState(initial = true)
+    val enabled by flow.collectAsStateWithLifecycle(initialValue = true)
     return enabled
 }
 
@@ -28,6 +28,6 @@ fun rememberAiEnabled(): Boolean {
 fun rememberAiReady(): Boolean {
     val context = LocalContext.current
     val flow = remember { (context.applicationContext as MigaApp).settingsRepository.observeAiReady() }
-    val ready by flow.collectAsState(initial = false)
+    val ready by flow.collectAsStateWithLifecycle(initialValue = false)
     return ready
 }

@@ -3,7 +3,6 @@
 package org.calamares.miga.data.ai
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -16,12 +15,15 @@ import kotlinx.serialization.json.JsonPrimitive
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.support.AiErrors
+import org.calamares.miga.data.support.AppDispatchers
 import org.calamares.miga.data.support.ErrorDetail
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Base64
 import org.calamares.miga.data.io.ReadLimits
 import org.calamares.miga.data.io.readTextAtMost
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val OPENROUTER_CHAT_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 private const val OPENROUTER_MODELS_ENDPOINT = "https://openrouter.ai/api/v1/models"
@@ -106,7 +108,7 @@ internal object OpenRouterTransport : AiTransport {
 
     private val name = AiProvider.OPENROUTER.shortName
 
-    override suspend fun complete(request: AiRequest, apiKey: String, model: String): AiText = withContext(Dispatchers.IO) {
+    override suspend fun complete(request: AiRequest, apiKey: String, model: String): AiText = withContext(AppDispatchers.io) {
         try {
             val parts = request.images.map {
                 OpenRouterPart(
@@ -131,6 +133,7 @@ internal object OpenRouterTransport : AiTransport {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             AiText.Error(AiErrors.exception(e))
         }
     }
@@ -231,7 +234,7 @@ object OpenRouterModels {
     /** Text-output models with free ones first, or the last cached list (or null) when offline. */
     suspend fun fetch(forceRefresh: Boolean = false): List<OpenRouterModel>? = mutex.withLock {
         if (!forceRefresh) cache?.let { return@withLock it }
-        val fetched = withContext(Dispatchers.IO) { download() }
+        val fetched = withContext(AppDispatchers.io) { download() }
         if (fetched != null) cache = fetched
         fetched ?: cache
     }

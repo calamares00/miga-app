@@ -1,0 +1,6 @@
+What's new in 1.0.20:
+• Tablets: in a book, the list and the recipe are shown side by side.
+• Shortcuts from the icon: add to the shopping list and new recipe.
+• The app language can also be chosen in the system settings; themed icon.
+• Packs are downloaded over a secure connection only and checked to arrive intact.
+• Lighter sync for large libraries and internal stability improvements.

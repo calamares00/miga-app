@@ -13,6 +13,8 @@ import org.calamares.miga.data.support.AiErrors
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val IDEAS_MAX_TOKENS = 6000
 /** Recipes described to the AI; beyond this the favourite and most cooked ones are preferred. */
@@ -117,6 +119,7 @@ suspend fun AiCandidate.askIdeas(
         is AiText.Success -> try {
             IdeasResult.Success(decodeAiJson(IdeasAnswerDto.serializer(), result.text).toAnswer(recipes.associate { it.id to it.name }))
         } catch (e: Exception) {
+            coroutineContext.ensureActive()
             IdeasResult.Error(AiErrors.badResponse(e, result.text))
         }
     }

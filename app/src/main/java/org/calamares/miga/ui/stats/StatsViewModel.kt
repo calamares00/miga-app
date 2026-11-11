@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.annotation.ExperimentalCoilApi
 import coil.imageLoader
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -18,6 +17,7 @@ import org.calamares.miga.data.stats.LibraryStats
 import org.calamares.miga.data.stats.LibraryStatsCalculator
 import org.calamares.miga.data.stats.StorageUsage
 import org.calamares.miga.data.stats.StorageUsageScanner
+import org.calamares.miga.data.support.AppDispatchers
 
 /** Name of Coil's disk cache folder inside the cache directory. */
 private const val IMAGE_CACHE_DIR = "image_cache"
@@ -47,8 +47,8 @@ class StatsViewModel(
     init {
         viewModelScope.launch {
             val recipes = repository.getAllRecipesOnce()
-            val books = repository.getAllRecipeBooksOnce()
-            val stats = withContext(Dispatchers.Default) {
+            val books = repository.books.getAllRecipeBooksOnce()
+            val stats = withContext(AppDispatchers.default) {
                 LibraryStatsCalculator.compute(
                     recipes = recipes,
                     books = books,
@@ -65,13 +65,13 @@ class StatsViewModel(
     /** File names of the photos used by a recipe or a book cover. */
     private suspend fun referencedPhotoNames(): Set<String> {
         val recipes = repository.getAllRecipesOnce()
-        val books = repository.getAllRecipeBooksOnce()
+        val books = repository.books.getAllRecipeBooksOnce()
         return StorageUsageScanner.referencedNames(recipes.flatMap { recipe -> recipe.photos.map { it.uri } } + books.map { it.coverPhotoUri })
     }
 
     private suspend fun measureStorage() {
         val referenced = referencedPhotoNames()
-        val usage = withContext(Dispatchers.IO) { StorageUsageScanner.scan(appContext, referenced, System.currentTimeMillis()) }
+        val usage = withContext(AppDispatchers.io) { StorageUsageScanner.scan(appContext, referenced, System.currentTimeMillis()) }
         _uiState.update { it.copy(storage = usage, storageBusy = false) }
     }
 
@@ -80,7 +80,7 @@ class StatsViewModel(
         if (_uiState.value.storageBusy) return
         _uiState.update { it.copy(storageBusy = true) }
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(AppDispatchers.io) {
                 val loader = appContext.imageLoader
                 loader.memoryCache?.clear()
                 loader.diskCache?.clear()
@@ -97,7 +97,7 @@ class StatsViewModel(
         viewModelScope.launch {
             // Read again right before deleting, so a photo added meanwhile is never removed.
             val referenced = referencedPhotoNames()
-            val deleted = withContext(Dispatchers.IO) {
+            val deleted = withContext(AppDispatchers.io) {
                 StorageUsageScanner.deleteUnusedPhotos(appContext, referenced, System.currentTimeMillis())
             }
             measureStorage()

@@ -35,7 +35,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +43,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.BuildConfig
 import org.calamares.miga.data.voice.DictationLanguages
 
@@ -65,13 +65,13 @@ fun SettingsHomeScreen(
     onHelp: () -> Unit,
     onAbout: () -> Unit
 ) {
-    val themeMode by viewModel.themeMode.collectAsState()
-    val colorTheme by viewModel.colorTheme.collectAsState()
-    val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsState()
-    val aiEnabled by viewModel.aiEnabled.collectAsState()
-    val aiProviders by viewModel.aiProvidersSummary.collectAsState()
-    val dictationLanguage by viewModel.dictationLanguage.collectAsState()
-    val yourName by viewModel.yourName.collectAsState()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val colorTheme by viewModel.colorTheme.collectAsStateWithLifecycle()
+    val biometricLockEnabled by viewModel.biometricLockEnabled.collectAsStateWithLifecycle()
+    val aiEnabled by viewModel.aiEnabled.collectAsStateWithLifecycle()
+    val aiProviders by viewModel.aiProvidersSummary.collectAsStateWithLifecycle()
+    val dictationLanguage by viewModel.dictationLanguage.collectAsStateWithLifecycle()
+    val yourName by viewModel.yourName.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     AdaptiveScaffold(

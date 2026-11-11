@@ -61,7 +61,7 @@ class RecipeBooksViewModel(
     private var autoSyncStarted = false
 
     /** Null until the books have loaded, so the screen does not show "no books yet" meanwhile. */
-    val books: StateFlow<List<RecipeBookSummary>?> = repository.observeRecipeBooks()
+    val books: StateFlow<List<RecipeBookSummary>?> = repository.books.observeRecipeBooks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val viewMode: StateFlow<RecipeListViewMode> = settingsRepository.observeRecipeBookListViewMode()
@@ -76,7 +76,7 @@ class RecipeBooksViewModel(
     val filter: StateFlow<BookFilter> = _filter
 
     /** Names of the sync connections, for the subgroups of server books. */
-    val connectionNames: StateFlow<Map<Long, String>> = repository.observeSyncConnections()
+    val connectionNames: StateFlow<Map<Long, String>> = repository.sync.observeSyncConnections()
         .map { connections -> connections.associate { it.id to it.label } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
@@ -152,7 +152,7 @@ class RecipeBooksViewModel(
         val appContext = context.applicationContext
         viewModelScope.launch {
             try {
-                val errors = repository.observeSyncConnections().first().mapNotNull { connection ->
+                val errors = repository.sync.observeSyncConnections().first().mapNotNull { connection ->
                     (syncEngine.syncConnection(appContext, connection.id) as? SyncOutcome.Error)?.reason
                 }
                 _syncMessage.value = if (errors.isEmpty()) L10n.str(R.string.sync_finished) else L10n.str(R.string.sync_failed_x, errors.first())
@@ -239,17 +239,17 @@ class RecipeBooksViewModel(
                             parsed, book.name,
                             bookNames = parsed.dto.books.map { it.name },
                             recipeCount = parsed.dto.recipes.size,
-                            alreadyHere = parsed.dto.books.any { repository.findSharedBookId(it.uid) != null },
+                            alreadyHere = parsed.dto.books.any { repository.books.findSharedBookId(it.uid) != null },
                             sharedBy = book.sharedBy,
                             sharedAt = book.sharedAt
                         )
                     }
                 }
                 is RecipeImportResult.Success -> {
-                    val existing = repository.findRecipeStateByUid(result.recipe.uid)?.takeIf { !it.inPack }
+                    val existing = repository.books.findRecipeStateByUid(result.recipe.uid)?.takeIf { !it.inPack }
                     _incomingRecipe.value = IncomingRecipePrompt(
                         result.recipe, result.photos,
-                        existingBookName = existing?.let { repository.recipeBookName(it.bookId) }
+                        existingBookName = existing?.let { repository.books.recipeBookName(it.bookId) }
                     )
                 }
                 is RecipeImportResult.Error -> _syncMessage.value = result.reason
@@ -289,7 +289,7 @@ class RecipeBooksViewModel(
             try {
                 _syncMessage.value = when (val result = RecipeExporter.importSharedRecipe(repository, prompt.recipe, prompt.photos, targetBookId, newBookName)) {
                     is SharedRecipeImportResult.Success -> {
-                        val book = repository.recipeBookName(result.bookId).orEmpty()
+                        val book = repository.books.recipeBookName(result.bookId).orEmpty()
                         L10n.str(
                             when {
                                 result.unchanged -> R.string.shared_recipe_unchanged_x_x
@@ -344,7 +344,7 @@ class RecipeBooksViewModel(
         val selected = selectedBooks()
         val pin = !selected.all { it.isPinned }
         clearSelection()
-        viewModelScope.launch { selected.forEach { repository.setRecipeBookPinned(it.id, pin) } }
+        viewModelScope.launch { selected.forEach { repository.books.setRecipeBookPinned(it.id, pin) } }
     }
 
     /**
@@ -359,11 +359,11 @@ class RecipeBooksViewModel(
             var kept = 0
             selected.forEach { book ->
                 if (book.isPack) {
-                    repository.uninstallPack(book.id)
+                    repository.books.uninstallPack(book.id)
                     deleted++
                 } else {
                     try {
-                        repository.deleteRecipeBook(book.id)
+                        repository.books.deleteRecipeBook(book.id)
                         deleted++
                     } catch (e: RecipeBookNotEmptyException) {
                         kept++
@@ -382,7 +382,7 @@ class RecipeBooksViewModel(
         val ids = selectedBooks().filter { !it.isPack }.map { it.id }
         if (ids.isEmpty()) return
         viewModelScope.launch {
-            val books = ids.mapNotNull { repository.getRecipeBookOnce(it) }
+            val books = ids.mapNotNull { repository.books.getRecipeBookOnce(it) }
             val started = FileExports.shareBooksAs(context, books, action) { ids.flatMap { repository.getRecipesForBookOnce(it) } }
             if (started) clearSelection() else _syncMessage.value = L10n.str(R.string.pdf_already_running)
         }
@@ -469,7 +469,7 @@ class RecipeBooksViewModel(
         if (autoSyncStarted) return
         autoSyncStarted = true
         viewModelScope.launch {
-            repository.observeSyncConnections().first().forEach { connection ->
+            repository.sync.observeSyncConnections().first().forEach { connection ->
                 syncEngine.syncConnection(context, connection.id)
             }
         }
