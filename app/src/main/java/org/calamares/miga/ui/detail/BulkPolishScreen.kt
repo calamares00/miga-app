@@ -42,7 +42,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +55,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.calamares.miga.L10n
@@ -78,7 +78,7 @@ import org.calamares.miga.ui.components.ErrorMessage
 fun BulkPolishScreen(onBack: () -> Unit, onOpenRecipe: (Long) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val items by BulkPolish.items.collectAsState()
+    val items by BulkPolish.items.collectAsStateWithLifecycle()
     val running = items.any { it.state == BulkPolishState.Working || it.state == BulkPolishState.Queued } && BulkPolish.isRunning
     val total = items.size
     val finished = items.count { it.state !is BulkPolishState.Queued && it.state != BulkPolishState.Working }

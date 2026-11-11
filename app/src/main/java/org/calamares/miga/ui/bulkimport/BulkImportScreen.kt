@@ -34,7 +34,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,8 +55,8 @@ fun BulkImportScreen(
     onOpenRecipe: (Long) -> Unit
 ) {
     val context = LocalContext.current
-    val rows by viewModel.rows.collectAsState()
-    val progress by viewModel.aiProgress.collectAsState()
+    val rows by viewModel.rows.collectAsStateWithLifecycle()
+    val progress by viewModel.aiProgress.collectAsStateWithLifecycle()
     val isProcessing = rows.any { it.state is BulkImportRowState.Pending || it.state is BulkImportRowState.Processing }
     var showExitConfirm by remember { mutableStateOf(false) }
 
