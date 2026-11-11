@@ -56,7 +56,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -78,6 +77,7 @@ import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material3.FilterChip
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 
 /**
@@ -97,14 +97,14 @@ fun PacksCatalogScreen(
     onBack: () -> Unit,
     onPackClick: (String) -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val selecting by viewModel.selecting.collectAsState()
-    val selected by viewModel.selected.collectAsState()
-    val progress by viewModel.progress.collectAsState()
-    val message by viewModel.message.collectAsState()
-    val collapsed by viewModel.collapsedSeries.collectAsState()
-    val statusFilter by viewModel.statusFilter.collectAsState()
-    val installStats by viewModel.installStats.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val selecting by viewModel.selecting.collectAsStateWithLifecycle()
+    val selected by viewModel.selected.collectAsStateWithLifecycle()
+    val progress by viewModel.progress.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
+    val collapsed by viewModel.collapsedSeries.collectAsStateWithLifecycle()
+    val statusFilter by viewModel.statusFilter.collectAsStateWithLifecycle()
+    val installStats by viewModel.installStats.collectAsStateWithLifecycle()
     var query by remember { mutableStateOf("") }
     var confirmUninstall by remember { mutableStateOf(false) }
     val context = LocalContext.current

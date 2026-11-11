@@ -63,7 +63,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -112,6 +111,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.data.share.ShoppingIntents
 import org.calamares.miga.ui.shoppinglist.ShoppingListScreen
 import org.calamares.miga.ui.shoppinglist.ShoppingListViewModel
@@ -218,7 +218,7 @@ fun MigaNavHost(initialRoute: String? = null) {
     /**
      * Text shared to Miga or the widget button: go to the shopping tab, which consumes the event.
      */
-    val shoppingEvent by ShoppingIntents.event.collectAsState()
+    val shoppingEvent by ShoppingIntents.event.collectAsStateWithLifecycle()
     LaunchedEffect(shoppingEvent) {
         if (shoppingEvent != null) {
             navController.navigate(Destinations.SHOPPING_LIST_ROUTE) {
@@ -245,7 +245,7 @@ fun MigaNavHost(initialRoute: String? = null) {
     }
 
     /** A notification of finished AI work (a recipe improved with AI): open where its result is. */
-    val openRoute by AiJobs.openRoute.collectAsState()
+    val openRoute by AiJobs.openRoute.collectAsStateWithLifecycle()
     LaunchedEffect(openRoute) {
         openRoute?.let { route ->
             AiJobs.consumeOpenRoute()

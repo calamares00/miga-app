@@ -37,7 +37,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,12 +46,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.data.voice.DictationResult
 import org.calamares.miga.data.voice.SpeechDictation
 
 @Composable
 fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
-    val availableIngredientNames by viewModel.availableIngredientNames.collectAsState()
+    val availableIngredientNames by viewModel.availableIngredientNames.collectAsStateWithLifecycle()
 
     Section(title = L10n.str(R.string.ingredients)) {
         viewModel.ingredientGroups.forEachIndexed { groupIndex, group ->

@@ -64,7 +64,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -80,6 +79,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -88,7 +88,6 @@ import org.calamares.miga.data.stats.LibraryStats
 import org.calamares.miga.data.stats.LibraryStatsCalculator
 import org.calamares.miga.data.stats.RankedRecipe
 import org.calamares.miga.data.stats.StorageUsage
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,7 +98,7 @@ fun StatsScreen(
     /** Lists the recipes behind a figure (title, filter) in the search screen. */
     onOpenRecipes: (String, RecipeFilter) -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val showMessage: (String) -> Unit = { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
@@ -248,7 +247,7 @@ private fun LibraryContent(stats: LibraryStats, onRecipeClick: (Long) -> Unit, o
         ) {
             stats.averageRating?.let { average ->
                 Text(
-                    L10n.str(R.string.stats_average_rating_x_y, String.format(Locale.getDefault(), "%.1f", average), stats.ratedRecipes),
+                    L10n.str(R.string.stats_average_rating_x_y, String.format(L10n.locale(), "%.1f", average), stats.ratedRecipes),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 4.dp)

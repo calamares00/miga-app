@@ -34,7 +34,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,9 +51,9 @@ fun PackDetailScreen(
     onBack: () -> Unit,
     onInstalled: (String) -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val installState by viewModel.installState.collectAsState()
-    val installStats by viewModel.installStats.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val installState by viewModel.installState.collectAsStateWithLifecycle()
+    val installStats by viewModel.installStats.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var confirmUninstall by remember { mutableStateOf(false) }
 

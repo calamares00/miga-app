@@ -5,7 +5,6 @@ import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.ButtonContent
 import androidx.compose.material.icons.filled.Tour
 import androidx.compose.material3.Switch
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.semantics.Role
 import kotlinx.coroutines.launch
@@ -63,6 +62,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.BuildConfig
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -221,7 +221,7 @@ private fun WelcomeTourCard() {
     val context = LocalContext.current
     val settings = remember { (context.applicationContext as MigaApp).settingsRepository }
     val scope = rememberCoroutineScope()
-    val enabled by settings.observeWelcomeOnNextStart().collectAsState(initial = false)
+    val enabled by settings.observeWelcomeOnNextStart().collectAsStateWithLifecycle(initialValue = false)
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(20.dp),

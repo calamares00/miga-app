@@ -46,7 +46,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +57,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.data.model.SyncConnection
 import org.calamares.miga.data.share.SyncInvite
 import org.calamares.miga.data.share.SyncInviteCodec
@@ -69,13 +69,13 @@ import com.journeyapps.barcodescanner.ScanOptions
 @Composable
 fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
-    val connections by viewModel.connections.collectAsState()
-    val syncingConnectionIds by viewModel.syncingConnectionIds.collectAsState()
+    val connections by viewModel.connections.collectAsStateWithLifecycle()
+    val syncingConnectionIds by viewModel.syncingConnectionIds.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
     var connectionToRemove by remember { mutableStateOf<SyncConnection?>(null) }
     var pendingInvite by remember { mutableStateOf<SyncInvite?>(null) }
-    val inviteState by viewModel.inviteState.collectAsState()
-    val message by viewModel.message.collectAsState()
+    val inviteState by viewModel.inviteState.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(message) {
@@ -325,7 +325,7 @@ private fun AddConnectionDialog(
     var serverUrl by remember { mutableStateOf("") }
     var namespaceId by remember { mutableStateOf("") }
     var accessToken by remember { mutableStateOf("") }
-    val testState by viewModel.testState.collectAsState()
+    val testState by viewModel.testState.collectAsStateWithLifecycle()
     val canSave = label.isNotBlank() && serverUrl.isNotBlank() && namespaceId.isNotBlank() && accessToken.isNotBlank()
 
     AlertDialog(
