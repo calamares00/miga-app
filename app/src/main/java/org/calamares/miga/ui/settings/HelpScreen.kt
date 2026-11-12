@@ -33,18 +33,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.NewReleases
-import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -97,11 +94,12 @@ private fun normalizeForSearch(text: String): String =
 
 /**
  * Help topics from the help document in the app language (assets/docs), as expandable cards with
- * a search box, followed by the ways to get in touch.
+ * a search box, followed by a way to get in touch. Topics about a Settings section carry that
+ * section's name, so both read the same.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HelpScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit, onOpenChangelog: (() -> Unit)?) {
+fun HelpScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val aiEnabled = rememberAiEnabled()
     val topics = remember(aiEnabled) { helpTopics(readDocumentAsset(context, L10n.str(R.string.help_asset)), aiEnabled) }
@@ -163,12 +161,10 @@ fun HelpScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit, onOpenChangelog: (
             item { WelcomeTourCard() }
             item {
                 ContactCard(
-                    onReport = {
+                    onContact = {
                         val url = AiContentReport.targetUrl(L10n.str(R.string.miga_support), L10n.str(R.string.version_miga_x_2, BuildConfig.VERSION_NAME))
                         runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-                    },
-                    onOpenPrivacy = onOpenPrivacy,
-                    onOpenChangelog = onOpenChangelog
+                    }
                 )
             }
         }
@@ -249,7 +245,7 @@ private fun WelcomeTourCard() {
 }
 
 @Composable
-private fun ContactCard(onReport: () -> Unit, onOpenPrivacy: () -> Unit, onOpenChangelog: (() -> Unit)?) {
+private fun ContactCard(onContact: () -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.secondaryContainer,
         shape = RoundedCornerShape(20.dp),
@@ -258,16 +254,9 @@ private fun ContactCard(onReport: () -> Unit, onOpenPrivacy: () -> Unit, onOpenC
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(L10n.str(R.string.help_contact_title), style = MaterialTheme.typography.titleMedium)
             Text(L10n.str(R.string.found_bug_have_suggestion_write), style = MaterialTheme.typography.bodyMedium)
-            FilledTonalButton(onClick = onReport, modifier = Modifier.fillMaxWidth()) {
-                ButtonContent(Icons.Filled.BugReport, L10n.str(R.string.report_problem))
-            }
-            OutlinedButton(onClick = onOpenPrivacy, modifier = Modifier.fillMaxWidth()) {
-                ButtonContent(Icons.Filled.Policy, L10n.str(R.string.privacy_policy))
-            }
-            if (onOpenChangelog != null) {
-                OutlinedButton(onClick = onOpenChangelog, modifier = Modifier.fillMaxWidth()) {
-                    ButtonContent(Icons.Filled.NewReleases, L10n.str(R.string.whats_new))
-                }
+            // Privacy is in About and the release notes have their own entry in Settings.
+            FilledTonalButton(onClick = onContact, modifier = Modifier.fillMaxWidth()) {
+                ButtonContent(Icons.Filled.Email, L10n.str(R.string.contact))
             }
             Text(
                 L10n.str(R.string.version_miga_x_2, BuildConfig.VERSION_NAME),

@@ -729,12 +729,7 @@ private fun NavGraphBuilder.screens(
     }
 
     screen(Destinations.HELP_ROUTE) {
-        val hasChangelog = remember { settingsRepository.listAvailableChangelogVersionCodes().isNotEmpty() }
-        HelpScreen(
-            onBack = { navController.popBackStack() },
-            onOpenPrivacy = { navController.navigate(Destinations.PRIVACY_ROUTE) },
-            onOpenChangelog = { navController.navigate(Destinations.HELP_CHANGELOG_ROUTE) }.takeIf { hasChangelog }
-        )
+        HelpScreen(onBack = { navController.popBackStack() })
     }
 
     screen(Destinations.HELP_CHANGELOG_ROUTE) {
