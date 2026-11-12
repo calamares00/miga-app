@@ -323,7 +323,6 @@
     <string name="imported_n_recipes">"%1$s recipes imported"</string>
     <string name="wrong_nonsensical">"Wrong or nonsensical"</string>
     <string name="contents">"Contents"</string>
-    <string name="report_problem">"Report a problem"</string>
     <string name="crash_report_miga">"Crash report – Miga"</string>
     <string name="ingredient">"Ingredient"</string>
     <string name="processed_culinary_ingredient">"Processed culinary ingredient"</string>
@@ -1296,4 +1295,5 @@
     <string name="shortcut_new_recipe">"New recipe"</string>
     <string name="shortcut_new_recipe_short">"New recipe"</string>
     <string name="choose_recipe_to_see_it">"Choose a recipe to see it here"</string>
+    <string name="contact">"Contact"</string>
 </resources>

@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.23:
+• Ayuda revisada: explica la app tal como es hoy (compartir, filtros de libros, modo tienda…) y sus temas se llaman como las secciones de Ajustes.
+• Al final de la ayuda, un solo botón: Contactar.
+• Arreglado el contador de instalaciones de los packs, que no llegaba a enviarse.
