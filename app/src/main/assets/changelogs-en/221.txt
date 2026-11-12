@@ -1,0 +1,4 @@
+What's new in 1.0.23:
+• Help reviewed: it describes the app as it is today (sharing, book filters, shop mode…) and its topics are named like the Settings sections.
+• At the end of help, a single button: Contact.
+• Fixed the pack install counter, which was never sent.
