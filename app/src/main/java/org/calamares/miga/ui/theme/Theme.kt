@@ -7,13 +7,21 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import org.calamares.miga.data.model.ColorTheme
 
 /**
  * Accent of a [ColorTheme] and its soft variant, the only thing that changes between colour
  * themes. [night] is the accent used in dark mode, lighter when the base one would be too dark.
  */
-private data class AccentPalette(val accent: Color, val accentSoft: Color, val night: Color = accent)
+private data class AccentPalette(
+    val accent: Color,
+    val accentSoft: Color,
+    // The day accents are mid tones: on a dark background they need lifting so that text on them
+    // (buttons, a selected card) can reach a readable contrast.
+    val night: Color = lerp(accent, Color.White, 0.35f)
+)
 
 private fun accentPaletteFor(colorTheme: ColorTheme): AccentPalette = when (colorTheme) {
     ColorTheme.GARDEN -> AccentPalette(Garden, GardenSoft, GardenNight)
@@ -34,14 +42,15 @@ fun accentSoftColorFor(colorTheme: ColorTheme): Color = accentPaletteFor(colorTh
 
 // Every role is set explicitly: the Material defaults for the ones left out (secondaryContainer,
 // surface containers...) are lilac-tinted and clash with the palette.
-private fun lightColorSchemeFor(colorTheme: ColorTheme): ColorScheme {
+internal fun lightColorSchemeFor(colorTheme: ColorTheme): ColorScheme {
     val (accent, accentSoft) = accentPaletteFor(colorTheme)
     // With the terracotta theme the secondary accent would repeat the primary one.
     val second = if (colorTheme == ColorTheme.TERRACOTTA) Garden else Terracotta
     val secondSoft = if (colorTheme == ColorTheme.TERRACOTTA) GardenSoft else TerracottaSoft
     return lightColorScheme(
         primary = accent,
-        onPrimary = PaperElevated,
+        // Light text on most accents; dark on the bright ones (orange), where white is unreadable.
+        onPrimary = readableOn(accent, light = PaperElevated, dark = Ink),
         primaryContainer = accentSoft,
         onPrimaryContainer = Ink,
         inversePrimary = accentSoft,
@@ -73,14 +82,24 @@ private fun lightColorSchemeFor(colorTheme: ColorTheme): ColorScheme {
     )
 }
 
-private fun darkColorSchemeFor(colorTheme: ColorTheme): ColorScheme {
+/** Of [light] and [dark], the text colour that contrasts more with [background]. */
+private fun readableOn(background: Color, light: Color, dark: Color): Color {
+    fun contrast(text: Color): Float {
+        val (high, low) = listOf(text.luminance(), background.luminance()).sortedDescending()
+        return (high + 0.05f) / (low + 0.05f)
+    }
+    return if (contrast(dark) >= contrast(light)) dark else light
+}
+
+internal fun darkColorSchemeFor(colorTheme: ColorTheme): ColorScheme {
     val accent = accentPaletteFor(colorTheme).night
+    val onAccent = readableOn(accent, light = NightOnSurface, dark = NightBackground)
     val second = if (colorTheme == ColorTheme.TERRACOTTA) GardenNight else TerracottaNight
     return darkColorScheme(
         primary = accent,
-        onPrimary = NightBackground,
+        onPrimary = onAccent,
         primaryContainer = accent,
-        onPrimaryContainer = NightBackground,
+        onPrimaryContainer = onAccent,
         inversePrimary = accent,
         secondary = Sage,
         onSecondary = NightBackground,
