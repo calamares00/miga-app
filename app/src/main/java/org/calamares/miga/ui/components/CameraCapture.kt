@@ -2,10 +2,16 @@ package org.calamares.miga.ui.components
 
 import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,14 +37,17 @@ class CameraCapture internal constructor(private val start: () -> Unit) {
  * The barcode scanner library adds the CAMERA permission to the app, and Android refuses to start
  * the camera app (SecurityException) for an app that declares CAMERA without holding it: denied,
  * or revoked by the system because it was not used for a while. So the permission is asked first
- * when missing; if the user refuses, a message says the gallery is still there. The target path
- * survives the activity being recreated while the camera app is in front.
+ * when missing. If the user refuses, a dialog explains it and offers Miga's system settings, the
+ * only way back once Android stops asking ("Don't ask again"); the gallery is still there. A dialog
+ * rather than a toast: toasts are cut at two lines since Android 12. The target path survives the
+ * activity being recreated while the camera app is in front.
  */
 @Composable
 fun rememberCameraCapture(onPhoto: (filePath: String) -> Unit): CameraCapture {
     val context = LocalContext.current
     val currentOnPhoto by rememberUpdatedState(onPhoto)
     var pendingPath by rememberSaveable { mutableStateOf<String?>(null) }
+    var showPermissionDialog by rememberSaveable { mutableStateOf(false) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         val path = pendingPath
         pendingPath = null
@@ -51,15 +60,29 @@ fun rememberCameraCapture(onPhoto: (filePath: String) -> Unit): CameraCapture {
             takePicture.launch(contentUri)
         } catch (e: SecurityException) {
             pendingPath = null
-            Toast.makeText(context, L10n.str(R.string.camera_permission_needed), Toast.LENGTH_LONG).show()
+            showPermissionDialog = true
         } catch (e: ActivityNotFoundException) {
             pendingPath = null
             Toast.makeText(context, L10n.str(R.string.no_camera_app), Toast.LENGTH_LONG).show()
         }
     }
     val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) openCamera()
-        else Toast.makeText(context, L10n.str(R.string.camera_permission_needed), Toast.LENGTH_LONG).show()
+        if (granted) openCamera() else showPermissionDialog = true
+    }
+    if (showPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showPermissionDialog = false },
+            title = { Text(L10n.str(R.string.camera_permission_title)) },
+            text = { Text(L10n.str(R.string.camera_permission_needed)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showPermissionDialog = false
+                    val settings = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+                    runCatching { context.startActivity(settings) }
+                }) { Text(L10n.str(R.string.open_app_settings)) }
+            },
+            dismissButton = { TextButton(onClick = { showPermissionDialog = false }) { Text(L10n.str(R.string.close)) } }
+        )
     }
     return remember(takePicture, askPermission) {
         CameraCapture {
