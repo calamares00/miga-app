@@ -3,6 +3,7 @@ package org.calamares.miga.ui.editor
 import androidx.compose.material3.FilledTonalButton
 import org.calamares.miga.data.model.ContentKind
 import org.calamares.miga.data.content.ContentCleanup
+import org.calamares.miga.ui.components.rememberCameraCapture
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.AiProgressView
 import androidx.compose.foundation.layout.widthIn
@@ -100,7 +101,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.ui.components.PhotoEditorOverlay
 import org.calamares.miga.ui.components.PhotoSourceSheet
@@ -129,7 +129,6 @@ fun RecipeEditorScreen(
     var visionErrorDismissed by remember { mutableStateOf(false) }
     var showVisionErrorDialog by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
-    var pendingCameraPath by remember { mutableStateOf<String?>(null) }
     var pendingEditUri by remember { mutableStateOf<Uri?>(null) }
     var editingPhoto by remember { mutableStateOf<PhotoUi?>(null) }
     val photoSheetState = rememberModalBottomSheetState()
@@ -154,10 +153,7 @@ fun RecipeEditorScreen(
             pendingEditUri = uri
         }
     }
-    val cameraCaptureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) pendingCameraPath?.let { pendingEditUri = Uri.parse(it) }
-        pendingCameraPath = null
-    }
+    val cameraCapture = rememberCameraCapture { path -> pendingEditUri = Uri.parse(path) }
 
     AdaptiveScaffold(
         topBar = {
@@ -410,9 +406,7 @@ fun RecipeEditorScreen(
                 title = L10n.str(R.string.add_photo),
                 onCameraClick = {
                     showPhotoSourceSheet = false
-                    val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
-                    pendingCameraPath = filePath
-                    cameraCaptureLauncher.launch(contentUri)
+                    cameraCapture.launch()
                 },
                 onGalleryClick = {
                     showPhotoSourceSheet = false

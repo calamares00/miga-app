@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.24:
+• Arreglado un cierre al hacer una foto con la cámara en algunos móviles (como Xiaomi) cuando la app no tenía permiso de cámara: ahora lo pide y, si no se concede, avisa y puedes elegir la foto de la galería.

@@ -1296,4 +1296,6 @@
     <string name="shortcut_new_recipe_short">"New recipe"</string>
     <string name="choose_recipe_to_see_it">"Choose a recipe to see it here"</string>
     <string name="contact">"Contact"</string>
+    <string name="camera_permission_needed">"To take the photo, Miga needs permission to use the camera. You can also pick it from the gallery."</string>
+    <string name="no_camera_app">"There is no camera app to take the photo. You can pick it from the gallery."</string>
 </resources>
