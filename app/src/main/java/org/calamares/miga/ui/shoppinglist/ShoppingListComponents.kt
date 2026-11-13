@@ -331,8 +331,9 @@ internal fun ShoppingListRow(
                 contentAlignment = if (direction == SwipeToDismissBoxValue.EndToStart) Alignment.CenterEnd else Alignment.CenterStart
             ) {
                 when (direction) {
-                    SwipeToDismissBoxValue.StartToEnd -> Icon(Icons.Filled.CheckBox, contentDescription = L10n.str(R.string.tick))
-                    SwipeToDismissBoxValue.EndToStart -> Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.remove))
+                    // On the container colours: the default content colour is unreadable on the dark themes' bright accent.
+                    SwipeToDismissBoxValue.StartToEnd -> Icon(Icons.Filled.CheckBox, contentDescription = L10n.str(R.string.tick), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                    SwipeToDismissBoxValue.EndToStart -> Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.remove), tint = MaterialTheme.colorScheme.onErrorContainer)
                     SwipeToDismissBoxValue.Settled -> Unit
                 }
             }
