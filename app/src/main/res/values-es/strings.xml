@@ -1299,4 +1299,6 @@
     <string name="no_camera_app">"No hay ninguna app de cámara. Elige la foto de la galería."</string>
     <string name="camera_permission_title">"Permiso de cámara"</string>
     <string name="open_app_settings">"Abrir ajustes"</string>
+    <string name="installing_packs">"Instalando packs"</string>
+    <string name="uninstalling_packs">"Desinstalando packs"</string>
 </resources>
