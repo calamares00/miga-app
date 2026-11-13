@@ -1,3 +1,5 @@
 Novedades de la versión 1.0.25:
-• Sin permiso de cámara, un aviso completo con un botón para abrir los ajustes de Miga (antes el mensaje salía cortado).
-• Los iconos de los accesos directos (mantén pulsado el icono de Miga) se ven bien también en tema oscuro.
+• Packs: desliza a izquierda o derecha para pasar entre Todos, Instalados y Sin instalar.
+• Tema oscuro: el texto de los packs seleccionados y de los botones se lee bien en todos los colores.
+• Sin permiso de cámara, un aviso completo con un botón para abrir los ajustes de Miga.
+• Los iconos de los accesos directos se ven bien también en tema oscuro.
