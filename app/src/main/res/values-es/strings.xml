@@ -1295,6 +1295,10 @@
     <string name="shortcut_new_recipe_short">"Nueva receta"</string>
     <string name="choose_recipe_to_see_it">"Elige una receta para verla aquí"</string>
     <string name="contact">"Contactar"</string>
-    <string name="camera_permission_needed">"Para hacer la foto, Miga necesita permiso para usar la cámara. También puedes elegirla de la galería."</string>
-    <string name="no_camera_app">"No hay ninguna app de cámara para hacer la foto. Puedes elegirla de la galería."</string>
+    <string name="camera_permission_needed">"Para hacer la foto, Miga necesita permiso para usar la cámara. Puedes darlo en los ajustes de Miga, en Permisos, o elegir la foto de la galería."</string>
+    <string name="no_camera_app">"No hay ninguna app de cámara. Elige la foto de la galería."</string>
+    <string name="camera_permission_title">"Permiso de cámara"</string>
+    <string name="open_app_settings">"Abrir ajustes"</string>
+    <string name="installing_packs">"Instalando packs"</string>
+    <string name="uninstalling_packs">"Desinstalando packs"</string>
 </resources>

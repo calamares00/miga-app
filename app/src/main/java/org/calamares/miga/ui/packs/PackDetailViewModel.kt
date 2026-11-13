@@ -76,7 +76,8 @@ class PackDetailViewModel(
         val state = _uiState.value as? PackDetailUiState.Loaded ?: return
         viewModelScope.launch {
             _installState.value = InstallState.Installing
-            when (val result = PackInstaller.install(context, repository, settingsRepository, state.entry)) {
+            // In PackJobs: the install goes on if this page is closed or the app left.
+            when (val result = PackJobs.install(context, repository, settingsRepository, state.entry).await()) {
                 is PackImportResult.Success -> {
                     _installState.value = InstallState.Idle
                     onInstalled(state.entry.name)
