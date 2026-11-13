@@ -1,0 +1,2 @@
+What's new in 1.0.24:
+• Fixed a crash when taking a photo with the camera on some phones (such as Xiaomi) when the app had no camera permission: it now asks for it and, if refused, tells you and you can pick the photo from the gallery.
