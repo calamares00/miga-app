@@ -4,8 +4,6 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.calamares.miga.L10n
-import org.calamares.miga.R
-import org.calamares.miga.data.export.PackImportResult
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.remote.CatalogFetchResult
 import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
@@ -112,12 +110,11 @@ class PacksCatalogViewModel(
     private val _selecting = MutableStateFlow(false)
     val selecting: StateFlow<Boolean> = _selecting
 
-    private val _progress = MutableStateFlow<BatchProgress?>(null)
-    val progress: StateFlow<BatchProgress?> = _progress
+    /** Batches run in [PackJobs], so they finish even if the catalogue is closed or the app left. */
+    val progress: StateFlow<BatchProgress?> = PackJobs.progress
 
     /** Result of the last batch (what was done, or which packs failed), until dismissed. */
-    private val _message = MutableStateFlow<String?>(null)
-    val message: StateFlow<String?> = _message
+    val message: StateFlow<String?> = PackJobs.message
 
     private val _installStats = MutableStateFlow<Map<String, PackInstallStats>>(emptyMap())
     /** Installs by family from the anonymous counter; only for the official catalogue. */
@@ -164,65 +161,31 @@ class PacksCatalogViewModel(
         _selected.value = emptySet()
     }
 
-    fun dismissMessage() {
-        _message.value = null
-    }
+    fun dismissMessage() = PackJobs.dismissMessage()
 
     private fun selectedItems(): List<PackListItem> =
         (uiState.value as? CatalogUiState.Loaded)?.items.orEmpty().filter { it.entry.id in _selected.value }
 
     /** Installs the selected packs that are not installed and updates those with a new version. */
     fun installSelected(context: Context) {
-        val items = selectedItems().filter { it.canInstall }
-        if (items.isEmpty() || _progress.value != null) return
-        val appContext = context.applicationContext
-        viewModelScope.launch {
-            val failed = mutableListOf<String>()
-            items.forEachIndexed { index, item ->
-                _progress.value = BatchProgress(index, items.size, uninstalling = false)
-                val result = PackInstaller.install(appContext, repository, settingsRepository, item.entry)
-                if (result is PackImportResult.Error) failed += item.entry.name
-            }
-            _progress.value = null
-            clearSelection()
-            _message.value = if (failed.isEmpty()) {
-                L10n.str(R.string.x_packs_installed, items.size)
-            } else {
-                L10n.str(R.string.couldnt_install_packs_x, failed.joinToString(", "))
-            }
-        }
+        val entries = selectedItems().filter { it.canInstall }.map { it.entry }
+        if (entries.isEmpty() || progress.value != null) return
+        clearSelection()
+        PackJobs.installAll(context, repository, settingsRepository, entries, updating = false)
     }
 
     /** Updates every installed pack that has a newer version. */
     fun updateAll(context: Context) {
         val entries = (uiState.value as? CatalogUiState.Loaded)?.items.orEmpty().filter { it.hasUpdate }.map { it.entry }
-        if (entries.isEmpty() || _progress.value != null) return
-        val appContext = context.applicationContext
-        viewModelScope.launch {
-            val failed = PackInstaller.installAll(appContext, repository, settingsRepository, entries) { done, total ->
-                _progress.value = BatchProgress(done, total, uninstalling = false)
-            }
-            _progress.value = null
-            _message.value = if (failed.isEmpty()) {
-                L10n.str(R.string.x_packs_updated, entries.size)
-            } else {
-                L10n.str(R.string.couldnt_install_packs_x, failed.joinToString(", "))
-            }
-        }
+        if (entries.isEmpty() || progress.value != null) return
+        PackJobs.installAll(context, repository, settingsRepository, entries, updating = true)
     }
 
     /** Uninstalls the selected packs that are installed. */
     fun uninstallSelected() {
-        val items = selectedItems().filter { it.isInstalled }
-        if (items.isEmpty() || _progress.value != null) return
-        viewModelScope.launch {
-            items.forEachIndexed { index, item ->
-                _progress.value = BatchProgress(index, items.size, uninstalling = true)
-                repository.books.uninstallPackById(item.entry.id)
-            }
-            _progress.value = null
-            clearSelection()
-            _message.value = L10n.str(R.string.x_packs_uninstalled, items.size)
-        }
+        val packIds = selectedItems().filter { it.isInstalled }.map { it.entry.id }
+        if (packIds.isEmpty() || progress.value != null) return
+        clearSelection()
+        PackJobs.uninstallAll(repository, packIds)
     }
 }

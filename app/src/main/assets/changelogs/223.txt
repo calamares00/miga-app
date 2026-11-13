@@ -1,5 +1,6 @@
 Novedades de la versión 1.0.25:
+• Packs: la instalación sigue aunque salgas de la pantalla o de la app, con su progreso en una notificación.
 • Packs: desliza a izquierda o derecha para pasar entre Todos, Instalados y Sin instalar.
 • Tema oscuro: el texto de los packs seleccionados y de los botones se lee bien en todos los colores.
-• Sin permiso de cámara, un aviso completo con un botón para abrir los ajustes de Miga.
-• Los iconos de los accesos directos se ven bien también en tema oscuro.
+• Sin permiso de cámara, un aviso completo con un botón para abrir los ajustes.
+• Iconos de los accesos directos visibles en tema oscuro.
