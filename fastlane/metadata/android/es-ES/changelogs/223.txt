@@ -1,0 +1,3 @@
+Novedades de la versión 1.0.25:
+• Sin permiso de cámara, un aviso completo con un botón para abrir los ajustes de Miga (antes el mensaje salía cortado).
+• Los iconos de los accesos directos (mantén pulsado el icono de Miga) se ven bien también en tema oscuro.

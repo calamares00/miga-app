@@ -1,0 +1,3 @@
+What's new in 1.0.25:
+• Without camera permission, a full message with a button to open Miga's settings (the message used to be cut off).
+• The app shortcut icons (long-press Miga's icon) are now visible in dark mode too.
