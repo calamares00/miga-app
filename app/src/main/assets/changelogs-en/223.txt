@@ -1,0 +1,6 @@
+What's new in 1.0.25:
+• Packs: installing goes on if you leave the screen or the app, with its progress in a notification.
+• Packs: swipe left or right to move between All, Installed and Not installed.
+• Dark mode: the text of selected packs and of buttons is readable in every colour.
+• Without camera permission, a full message with a button to open the settings.
+• App shortcut icons visible in dark mode.
