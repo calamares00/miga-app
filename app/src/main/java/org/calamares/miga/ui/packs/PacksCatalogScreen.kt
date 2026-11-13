@@ -75,6 +75,11 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.UnfoldLess
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -119,6 +124,7 @@ fun PacksCatalogScreen(
             it.entry.series.orEmpty().contains(query, ignoreCase = true)
     }
     val filtered = searched.filter { it.matches(statusFilter) }
+    // Of the page on screen, for "fold or unfold all"; each page groups its own list.
     val seriesGroups = groupBySeries(filtered.filter { !it.hasUpdate })
     // While searching every series is open: a match must never hide inside a folded one.
     val isCollapsed = { series: String? -> query.isBlank() && series.orEmpty() in collapsed }
@@ -126,6 +132,13 @@ fun PacksCatalogScreen(
     val toInstall = selectedItems.count { it.canInstall }
     val toUninstall = selectedItems.count { it.isInstalled }
     val busy = progress != null
+    val filterPager = rememberPagerState(initialPage = statusFilter.ordinal) { PackStatusFilter.entries.size }
+    LaunchedEffect(filterPager) {
+        snapshotFlow { filterPager.settledPage }.collect { page -> viewModel.setStatusFilter(PackStatusFilter.entries[page]) }
+    }
+    LaunchedEffect(statusFilter) {
+        if (filterPager.settledPage != statusFilter.ordinal) filterPager.animateScrollToPage(statusFilter.ordinal)
+    }
 
     BackHandler(enabled = selecting && !busy) { viewModel.clearSelection() }
 
@@ -266,81 +279,94 @@ fun PacksCatalogScreen(
                     }
                 }
                 is CatalogUiState.Loaded -> {
-                    if (filtered.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(
-                                if (state.items.isEmpty()) L10n.str(R.string.no_packs_have_been_published) else L10n.str(R.string.no_packs_match_search),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            // Packs with a newer version first, so they are seen and updated at once.
-                            val updates = filtered.filter { it.hasUpdate }.sortedBy { it.entry.name.lowercase() }
-                            if (updates.isNotEmpty()) {
-                                item(key = "updates", contentType = "header") {
-                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-                                        Text(
-                                            L10n.str(R.string.pack_updates_x, updates.size),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        if (!selecting) {
-                                            FilledTonalButton(onClick = { viewModel.updateAll(context) }, enabled = !busy) {
-                                                ButtonContent(Icons.Filled.SystemUpdate, L10n.str(R.string.update_all))
+                    // One page per filter, as in the library: a horizontal swipe moves to the next or
+                    // previous one, and at the first and last the list only stretches.
+                    HorizontalPager(
+                        state = filterPager,
+                        userScrollEnabled = !selecting,
+                        verticalAlignment = Alignment.Top,
+                        key = { page -> PackStatusFilter.entries[page].name },
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        val pageFilter = PackStatusFilter.entries[page]
+                        val pageFiltered = searched.filter { it.matches(pageFilter) }
+                        val pageGroups = groupBySeries(pageFiltered.filter { !it.hasUpdate })
+                        if (pageFiltered.isEmpty()) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    if (state.items.isEmpty()) L10n.str(R.string.no_packs_have_been_published) else L10n.str(R.string.no_packs_match_search),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            LazyColumn(
+                                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                // Packs with a newer version first, so they are seen and updated at once.
+                                val updates = pageFiltered.filter { it.hasUpdate }.sortedBy { it.entry.name.lowercase() }
+                                if (updates.isNotEmpty()) {
+                                    item(key = "updates", contentType = "header") {
+                                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                                            Text(
+                                                L10n.str(R.string.pack_updates_x, updates.size),
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            if (!selecting) {
+                                                FilledTonalButton(onClick = { viewModel.updateAll(context) }, enabled = !busy) {
+                                                    ButtonContent(Icons.Filled.SystemUpdate, L10n.str(R.string.update_all))
+                                                }
                                             }
                                         }
                                     }
+                                    items(updates, key = { "update/" + it.entry.id }) { item ->
+                                        PackListCard(
+                                            item = item,
+                                            installs = installsLabel(installStats[item.entry.statsKey]),
+                                            selecting = selecting,
+                                            selected = item.entry.id in selected,
+                                            onClick = {
+                                                when {
+                                                    busy -> Unit
+                                                    selecting -> viewModel.toggleSelection(item.entry.id)
+                                                    else -> onPackClick(item.entry.id)
+                                                }
+                                            },
+                                            onLongClick = { if (!busy) viewModel.startSelection(item.entry.id) }
+                                        )
+                                    }
                                 }
-                                items(updates, key = { "update/" + it.entry.id }) { item ->
-                                    PackListCard(
-                                        item = item,
-                                        installs = installsLabel(installStats[item.entry.statsKey]),
-                                        selecting = selecting,
-                                        selected = item.entry.id in selected,
-                                        onClick = {
-                                            when {
-                                                busy -> Unit
-                                                selecting -> viewModel.toggleSelection(item.entry.id)
-                                                else -> onPackClick(item.entry.id)
-                                            }
-                                        },
-                                        onLongClick = { if (!busy) viewModel.startSelection(item.entry.id) }
-                                    )
-                                }
-                            }
-                            seriesGroups.forEach { (series, group) ->
-                                val folded = isCollapsed(series)
-                                item(key = "series/${series.orEmpty()}", contentType = "header") {
-                                    SeriesHeader(
-                                        title = series ?: L10n.str(R.string.books_group_other_packs),
-                                        count = group.size,
-                                        collapsed = folded,
-                                        // Folding is pointless while searching, where every series is open.
-                                        onToggle = if (query.isBlank()) ({ viewModel.toggleSeries(series.orEmpty()) }) else null
-                                    )
-                                }
-                                if (!folded) items(group, key = { it.entry.id }) { item ->
-                                    PackListCard(
-                                        item = item,
-                                        installs = installsLabel(installStats[item.entry.statsKey]),
-                                        selecting = selecting,
-                                        selected = item.entry.id in selected,
-                                        onClick = {
-                                            when {
-                                                busy -> Unit
-                                                selecting -> viewModel.toggleSelection(item.entry.id)
-                                                else -> onPackClick(item.entry.id)
-                                            }
-                                        },
-                                        onLongClick = { if (!busy) viewModel.startSelection(item.entry.id) }
-                                    )
+                                pageGroups.forEach { (series, group) ->
+                                    val folded = isCollapsed(series)
+                                    item(key = "series/${series.orEmpty()}", contentType = "header") {
+                                        SeriesHeader(
+                                            title = series ?: L10n.str(R.string.books_group_other_packs),
+                                            count = group.size,
+                                            collapsed = folded,
+                                            // Folding is pointless while searching, where every series is open.
+                                            onToggle = if (query.isBlank()) ({ viewModel.toggleSeries(series.orEmpty()) }) else null
+                                        )
+                                    }
+                                    if (!folded) items(group, key = { it.entry.id }) { item ->
+                                        PackListCard(
+                                            item = item,
+                                            installs = installsLabel(installStats[item.entry.statsKey]),
+                                            selecting = selecting,
+                                            selected = item.entry.id in selected,
+                                            onClick = {
+                                                when {
+                                                    busy -> Unit
+                                                    selecting -> viewModel.toggleSelection(item.entry.id)
+                                                    else -> onPackClick(item.entry.id)
+                                                }
+                                            },
+                                            onLongClick = { if (!busy) viewModel.startSelection(item.entry.id) }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -412,6 +438,13 @@ private fun PackListCard(
     onLongClick: () -> Unit
 ) {
     val shape = RoundedCornerShape(16.dp)
+    // A selected card is painted with primaryContainer, which in the dark themes is the bright
+    // accent: every text and control on it takes onPrimaryContainer, never the surface colours.
+    val colors = MaterialTheme.colorScheme
+    val content = if (selected) colors.onPrimaryContainer else colors.onSurface
+    val secondary = if (selected) colors.onPrimaryContainer.copy(alpha = 0.78f) else colors.onSurfaceVariant
+    val chipColors = AssistChipDefaults.assistChipColors(labelColor = content, leadingIconContentColor = content)
+    val chipBorder = AssistChipDefaults.assistChipBorder(enabled = true, borderColor = if (selected) secondary else colors.outlineVariant)
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -420,7 +453,8 @@ private fun PackListCard(
             .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = shape,
         colors = CardDefaults.cardColors(
-            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+            containerColor = if (selected) colors.primaryContainer else colors.surface,
+            contentColor = content
         )
     ) {
         Row(
@@ -430,7 +464,11 @@ private fun PackListCard(
         ) {
             if (selecting) {
                 // The whole card toggles the selection; the checkbox only shows it.
-                Checkbox(checked = selected, onCheckedChange = null)
+                Checkbox(
+                    checked = selected,
+                    onCheckedChange = null,
+                    colors = CheckboxDefaults.colors(checkedColor = colors.onPrimaryContainer, checkmarkColor = colors.primaryContainer)
+                )
             }
             Box(
                 modifier = Modifier
@@ -459,13 +497,13 @@ private fun PackListCard(
                 Text(
                     text = listOfNotNull(L10n.str(R.string.x_x_recipes, item.entry.author, item.entry.recipeCount), installs).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = secondary
                 )
                 if (item.entry.description.isNotBlank()) {
                     Text(
                         text = item.entry.description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = secondary,
                         maxLines = 2
                     )
                 }
@@ -473,12 +511,16 @@ private fun PackListCard(
                     AssistChip(
                         onClick = onClick,
                         label = { Text(L10n.str(R.string.update_available)) },
+                        colors = chipColors,
+                        border = chipBorder,
                         leadingIcon = { Icon(Icons.Filled.SystemUpdate, null, modifier = Modifier.size(16.dp)) }
                     )
                 } else if (item.isInstalled) {
                     AssistChip(
                         onClick = onClick,
                         label = { Text(L10n.str(R.string.installed)) },
+                        colors = chipColors,
+                        border = chipBorder,
                         leadingIcon = { Icon(Icons.Filled.CloudDone, null, modifier = Modifier.size(16.dp)) }
                     )
                 }
