@@ -51,7 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import org.calamares.miga.data.local.PhotoStorage
+import org.calamares.miga.ui.components.rememberCameraCapture
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.PhotoEditorOverlay
 import org.calamares.miga.ui.components.PhotoSourceSheet
@@ -69,7 +69,6 @@ fun RecipeBookEditorScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
-    var pendingCameraPath by remember { mutableStateOf<String?>(null) }
     var pendingEditUri by remember { mutableStateOf<Uri?>(null) }
     var editingExistingCover by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
@@ -82,10 +81,7 @@ fun RecipeBookEditorScreen(
             pendingEditUri = uri
         }
     }
-    val cameraCaptureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) pendingCameraPath?.let { pendingEditUri = Uri.parse(it) }
-        pendingCameraPath = null
-    }
+    val cameraCapture = rememberCameraCapture { path -> pendingEditUri = Uri.parse(path) }
 
     var showLinkDialog by remember { mutableStateOf(false) }
     val availableSyncConnections by viewModel.availableSyncConnections.collectAsStateWithLifecycle()
@@ -275,9 +271,7 @@ fun RecipeBookEditorScreen(
                 title = L10n.str(R.string.add_cover),
                 onCameraClick = {
                     showPhotoSourceSheet = false
-                    val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
-                    pendingCameraPath = filePath
-                    cameraCaptureLauncher.launch(contentUri)
+                    cameraCapture.launch()
                 },
                 onGalleryClick = {
                     showPhotoSourceSheet = false

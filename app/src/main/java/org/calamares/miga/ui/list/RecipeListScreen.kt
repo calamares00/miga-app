@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.list
 
+import org.calamares.miga.ui.components.rememberCameraCapture
 import org.calamares.miga.ui.components.ShareSheet
 import org.calamares.miga.data.export.ShareAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -101,7 +102,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import org.calamares.miga.data.local.PhotoStorage
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.ui.common.BACKUP_MIME_TYPES
 import org.calamares.miga.ui.components.FilterSheetContent
@@ -162,7 +162,6 @@ fun RecipeListScreen(
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
     var showNewRecipeSheet by remember { mutableStateOf(false) }
     var showUrlImportDialog by remember { mutableStateOf(false) }
-    var pendingCameraPath by remember { mutableStateOf<String?>(null) }
     val capturedPageUris = remember { mutableStateListOf<String>() }
     var showAddAnotherPageDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -179,10 +178,7 @@ fun RecipeListScreen(
             }
         }
     }
-    val cameraCaptureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) pendingCameraPath?.let { capturedPageUris.add(it); showAddAnotherPageDialog = true }
-        pendingCameraPath = null
-    }
+    val cameraCapture = rememberCameraCapture { path -> capturedPageUris.add(path); showAddAnotherPageDialog = true }
     val galleryPickerForPhotoImport = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(maxItems = 5)
     ) { uris -> if (uris.isNotEmpty()) onAddRecipeFromPhoto(uris.map { it.toString() }) }
@@ -532,9 +528,7 @@ fun RecipeListScreen(
                 title = L10n.str(R.string.add_recipe_photo),
                 onCameraClick = {
                     showPhotoSourceSheet = false
-                    val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
-                    pendingCameraPath = filePath
-                    cameraCaptureLauncher.launch(contentUri)
+                    cameraCapture.launch()
                 },
                 onGalleryClick = {
                     showPhotoSourceSheet = false
@@ -552,9 +546,7 @@ fun RecipeListScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showAddAnotherPageDialog = false
-                    val (contentUri, filePath) = PhotoStorage.createCaptureTarget(context)
-                    pendingCameraPath = filePath
-                    cameraCaptureLauncher.launch(contentUri)
+                    cameraCapture.launch()
                 }) { Text(L10n.str(R.string.add_another_page)) }
             },
             dismissButton = {

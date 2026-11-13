@@ -13,8 +13,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Needed on Android 11+ (package visibility) so the implicit intent of
-         ActivityResultContracts.TakePicture() finds the system camera app. No CAMERA permission:
-         the camera app uses the hardware and this app only receives the resulting file. -->
+         ActivityResultContracts.TakePicture() finds the system camera app. The barcode scanner
+         library adds the CAMERA permission, and with it declared Android only starts the camera
+         app once it is granted: rememberCameraCapture asks for it first. -->
     <queries>
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
