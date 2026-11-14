@@ -1997,6 +1997,1111 @@
      "instant pot"
     ]
    }
+  },
+  {
+   "id": "dice-onion",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Picar cebolla en daditos",
+    "body": "Pártela por la mitad de arriba abajo y apoya el corte en la tabla. Haz cortes a lo largo sin llegar a la raíz, luego uno o dos horizontales, y por último corta en perpendicular: salen dados iguales y la raíz mantiene todo unido.",
+    "keywords": [
+     "cebolla",
+     "cebolla picada",
+     "chalota"
+    ]
+   },
+   "en": {
+    "title": "Dice an onion",
+    "body": "Halve it from top to root and lay the cut side down. Make lengthways cuts without going through the root, then one or two horizontal ones, and finally slice across: you get even dice and the root holds it all together.",
+    "keywords": [
+     "onion",
+     "chopped onion",
+     "diced onion",
+     "shallot"
+    ]
+   }
+  },
+  {
+   "id": "thin-chicken-breasts",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Pechugas jugosas y hechas por igual",
+    "body": "La pechuga es gruesa por un lado y fina por otro, así que se seca un extremo antes de que el otro esté hecho. Ábrela en libro o aplánala entre dos papeles de horno con un cazo hasta que tenga el mismo grosor: se hace antes y por igual.",
+    "keywords": [
+     "pechuga",
+     "pechugas",
+     "pechuga de pollo",
+     "pechugas de pollo",
+     "filetes de pollo"
+    ]
+   },
+   "en": {
+    "title": "Juicy, evenly cooked chicken breasts",
+    "body": "A breast is thick at one end and thin at the other, so one end dries out before the other is done. Butterfly it or flatten it between two sheets of baking paper with a pan until it's even: it cooks faster and evenly.",
+    "keywords": [
+     "chicken breast",
+     "chicken breasts",
+     "chicken fillets"
+    ]
+   }
+  },
+  {
+   "id": "freeze-to-slice",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Lonchas finas de carne",
+    "body": "Mete la carne o el pescado 20-30 minutos en el congelador antes de cortarlo. Se endurece un poco y salen lonchas muy finas e iguales, perfectas para salteados, carpaccio o tiras.",
+    "keywords": [
+     "carpaccio",
+     "lonchas finas",
+     "filetes finos",
+     "carne en tiras",
+     "ternera en tiras"
+    ]
+   },
+   "en": {
+    "title": "Thin slices of meat",
+    "body": "Put the meat or fish in the freezer for 20-30 minutes before slicing. It firms up and you get very thin, even slices, perfect for stir-fries, carpaccio or strips.",
+    "keywords": [
+     "carpaccio",
+     "thinly sliced",
+     "thin slices",
+     "beef strips"
+    ]
+   }
+  },
+  {
+   "id": "fish-not-stick",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Pescado que no se pega",
+    "body": "Sécalo bien, calienta la sartén con el aceite antes de ponerlo y colócalo con la piel hacia abajo. No lo muevas: cuando está hecho por ese lado se suelta solo. Al horno o a la parrilla, ponlo sobre rodajas de limón.",
+    "keywords": [
+     "pescado",
+     "salmón",
+     "lubina",
+     "dorada",
+     "merluza",
+     "bacalao",
+     "corvina",
+     "rape"
+    ]
+   },
+   "en": {
+    "title": "Fish that doesn't stick",
+    "body": "Pat it dry, heat the pan and oil before it goes in, and lay it skin side down. Don't move it: when that side is done it releases by itself. In the oven or on the grill, lay it on lemon slices.",
+    "keywords": [
+     "fish",
+     "salmon",
+     "sea bass",
+     "sea bream",
+     "hake",
+     "cod",
+     "monkfish"
+    ]
+   }
+  },
+  {
+   "id": "roast-chicken-no-stuffing",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Pollo asado sin relleno dentro",
+    "body": "Un pollo vacío se asa antes y por igual. Si quieres relleno, hornéalo aparte en una fuente: queda dorado por encima y no hay que esperar a que el centro del pollo, con el relleno, llegue a la temperatura segura.",
+    "keywords": [
+     "pollo asado",
+     "pollo entero",
+     "relleno"
+    ]
+   },
+   "en": {
+    "title": "Roast chicken without stuffing inside",
+    "body": "An empty bird roasts faster and more evenly. If you want stuffing, bake it separately in a dish: it gets a crisp top and you don't have to wait for the stuffed centre to reach a safe temperature.",
+    "keywords": [
+     "roast chicken",
+     "whole chicken",
+     "stuffing"
+    ]
+   }
+  },
+  {
+   "id": "toast-grains",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Tuesta antes de cocer",
+    "body": "Unos minutos en la sartén sin aceite, removiendo hasta que huelan, despiertan el sabor del cuscús, la quinoa, el bulgur, los frutos secos y las especias enteras (comino, cilantro). Después, el cuscús se tapa para que se hinche y se suelta con un tenedor.",
+    "keywords": [
+     "cuscús",
+     "quinoa",
+     "bulgur",
+     "comino",
+     "piñones",
+     "almendras"
+    ]
+   },
+   "en": {
+    "title": "Toast before cooking",
+    "body": "A few minutes in a dry pan, stirring until fragrant, wakes up the flavour of couscous, quinoa, bulgur, nuts and whole spices (cumin, coriander seed). Then cover couscous so it swells and fluff it with a fork.",
+    "keywords": [
+     "couscous",
+     "quinoa",
+     "bulgur",
+     "cumin",
+     "pine nuts",
+     "almonds"
+    ]
+   }
+  },
+  {
+   "id": "too-salty",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Si te has pasado de sal",
+    "body": "La sal no se quita, se reparte: añade más de lo que no lleva sal (agua o caldo sin sal, tomate, patata, arroz, legumbres) o haz más cantidad. Un toque de ácido o de nata disimula un poco. La patata cruda que «absorbe la sal» solo diluye como cualquier otro ingrediente.",
+    "keywords": []
+   },
+   "en": {
+    "title": "If you've over-salted",
+    "body": "You can't remove salt, only spread it out: add more of something unsalted (water or unsalted stock, tomato, potato, rice, pulses) or make a bigger batch. A little acid or cream masks it a bit. The raw potato that \"absorbs salt\" only dilutes, like any other ingredient.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "drain-mozzarella",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Escurre la mozzarella fresca",
+    "body": "La mozzarella fresca lleva mucha agua. Córtala y déjala escurrir en un colador 20-30 minutos (o sécala con papel) antes de ponerla en una pizza o una lasaña, o lo dejará todo encharcado.",
+    "keywords": [
+     "mozzarella",
+     "pizza",
+     "lasaña"
+    ]
+   },
+   "en": {
+    "title": "Drain fresh mozzarella",
+    "body": "Fresh mozzarella holds a lot of water. Slice it and leave it in a sieve for 20-30 minutes (or pat it dry) before it goes on a pizza or lasagne, or it will make everything soggy.",
+    "keywords": [
+     "mozzarella",
+     "pizza",
+     "lasagne",
+     "lasagna"
+    ]
+   }
+  },
+  {
+   "id": "crack-eggs-flat",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Cascar huevos sin cáscaras",
+    "body": "Golpea el huevo contra la encimera, que es plana, no contra el borde del bol: la cáscara se rompe limpia y caen menos trocitos. Si cae alguno, sácalo con media cáscara, que corta la clara mejor que los dedos.",
+    "keywords": [
+     "tortilla",
+     "huevos batidos",
+     "claras",
+     "yemas"
+    ]
+   },
+   "en": {
+    "title": "Crack eggs without shell bits",
+    "body": "Tap the egg on the flat worktop, not the edge of the bowl: the shell breaks cleanly and fewer pieces fall in. If one does, scoop it out with half a shell, which cuts through the white better than your fingers.",
+    "keywords": [
+     "omelette",
+     "beaten eggs",
+     "egg whites",
+     "egg yolks"
+    ]
+   }
+  },
+  {
+   "id": "peel-boiled-potatoes",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Patatas cocidas que se pelan solas",
+    "body": "Antes de cocerlas con piel, haz un corte poco profundo alrededor de cada patata. Al sacarlas, pásalas 30 segundos a agua fría: tirando de cada mitad, la piel sale entera.",
+    "keywords": [
+     "patatas cocidas",
+     "patata cocida",
+     "ensaladilla",
+     "ensalada de patata",
+     "patatas con piel"
+    ]
+   },
+   "en": {
+    "title": "Boiled potatoes that peel themselves",
+    "body": "Before boiling them in their skins, score a shallow line around each potato. When they're done, put them in cold water for 30 seconds: pull each half and the skin comes off whole.",
+    "keywords": [
+     "boiled potatoes",
+     "potato salad",
+     "jacket potatoes"
+    ]
+   }
+  },
+  {
+   "id": "pomegranate-seeds",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Desgranar una granada",
+    "body": "Córtala por la mitad, colócala boca abajo sobre un bol con la mano debajo y golpea la piel con una cuchara de madera. Los granos caen solos y no te salpica. Retira los trocitos blancos que caigan, que amargan.",
+    "keywords": [
+     "granada",
+     "granadas"
+    ]
+   },
+   "en": {
+    "title": "Seed a pomegranate",
+    "body": "Halve it, hold it cut side down over a bowl and tap the skin with a wooden spoon. The seeds drop out and it doesn't spray. Pick out any white pith that falls in: it's bitter.",
+    "keywords": [
+     "pomegranate",
+     "pomegranate seeds"
+    ]
+   }
+  },
+  {
+   "id": "cube-mango",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Mango en dados",
+    "body": "Corta los dos lados pegados al hueso plano. Haz una cuadrícula en la pulpa sin llegar a la piel, empuja la piel hacia fuera para que los dados se abran y córtalos a ras. Lo que queda alrededor del hueso, para batidos.",
+    "keywords": [
+     "mango"
+    ]
+   },
+   "en": {
+    "title": "Cube a mango",
+    "body": "Slice off the two cheeks along the flat stone. Score a grid in the flesh without cutting the skin, push the skin outwards so the cubes open up and slice them off. What's left round the stone goes into smoothies.",
+    "keywords": [
+     "mango"
+    ]
+   }
+  },
+  {
+   "id": "pit-cherries",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Deshuesar cerezas sin deshuesador",
+    "body": "Quita el rabito, apoya la cereza sobre la boca de una botella y empuja con un palillo chino o una pajita gruesa: el hueso cae dentro de la botella y no se mancha nada.",
+    "keywords": [
+     "cerezas",
+     "cereza",
+     "clafoutis"
+    ]
+   },
+   "en": {
+    "title": "Pit cherries without a pitter",
+    "body": "Pull off the stalk, set the cherry on the neck of a bottle and push through with a chopstick or a thick straw: the stone drops into the bottle and nothing gets splashed.",
+    "keywords": [
+     "cherries",
+     "cherry",
+     "clafoutis"
+    ]
+   }
+  },
+  {
+   "id": "cherry-tomatoes-at-once",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Partir muchos tomates cherry a la vez",
+    "body": "Ponlos sobre una tapa de táper o un plato, cubre con otra tapa igual y, presionando suave con la mano, pasa un cuchillo largo y afilado entre las dos. Se cortan todos por la mitad de una vez. También sirve para uvas.",
+    "keywords": [
+     "tomates cherry",
+     "uvas"
+    ]
+   },
+   "en": {
+    "title": "Halve lots of cherry tomatoes at once",
+    "body": "Put them on a container lid or a plate, cover with another lid and, pressing gently, run a long sharp knife between the two. They're all halved in one go. Works for grapes too.",
+    "keywords": [
+     "cherry tomatoes",
+     "grapes"
+    ]
+   }
+  },
+  {
+   "id": "peel-nuts",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Pelar avellanas y almendras",
+    "body": "Avellanas: tuéstalas 10 minutos a 180 °C y frótalas calientes dentro de un paño; o hiérvelas 3 minutos con 2 cucharadas de bicarbonato y frótalas bajo agua fría. Almendras: 1 minuto en agua hirviendo y la piel se suelta apretándolas.",
+    "keywords": [
+     "avellanas",
+     "avellana",
+     "almendras crudas",
+     "almendras con piel"
+    ]
+   },
+   "en": {
+    "title": "Skin hazelnuts and almonds",
+    "body": "Hazelnuts: roast them for 10 minutes at 180 °C and rub them hot in a tea towel; or boil for 3 minutes with 2 tbsp bicarbonate of soda and rub under cold water. Almonds: 1 minute in boiling water and the skins slip off when squeezed.",
+    "keywords": [
+     "hazelnuts",
+     "hazelnut",
+     "skin-on almonds",
+     "whole almonds"
+    ]
+   }
+  },
+  {
+   "id": "cut-with-floss",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Cortar con hilo dental",
+    "body": "Un hilo dental sin sabor corta limpio lo que con cuchillo se deshace: rulos de queso de cabra, quesos tiernos, masa de galletas en rollo o un bizcocho en capas (rodéalo con el hilo, cruza los extremos y tira).",
+    "keywords": [
+     "queso de cabra",
+     "rulo de cabra",
+     "bizcocho",
+     "tarta de capas"
+    ]
+   },
+   "en": {
+    "title": "Slice with dental floss",
+    "body": "Unflavoured floss cuts cleanly through things a knife squashes: goat's cheese logs, soft cheeses, rolled cookie dough, or a cake into layers (loop it round, cross the ends and pull).",
+    "keywords": [
+     "goat's cheese",
+     "goat cheese",
+     "sponge",
+     "layer cake"
+    ]
+   }
+  },
+  {
+   "id": "chilli-gloves",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Guindillas sin que piquen las manos",
+    "body": "Usa guantes al cortar guindillas o jalapeños, y no te toques los ojos. Lo que pica es la capsaicina, que se disuelve en grasa: si se te ha quedado en las manos, frótalas con un poco de aceite y luego lávalas con agua y jabón.",
+    "keywords": [
+     "guindilla",
+     "guindillas",
+     "chile",
+     "chiles",
+     "jalapeño",
+     "jalapeños",
+     "cayena",
+     "pimiento picante"
+    ]
+   },
+   "en": {
+    "title": "Chillies without burning hands",
+    "body": "Wear gloves when cutting chillies or jalapeños, and don't touch your eyes. The heat is capsaicin, which dissolves in fat: if it's on your hands, rub them with a little oil, then wash with soap and water.",
+    "keywords": [
+     "chilli",
+     "chillies",
+     "chili",
+     "chile",
+     "jalapeño",
+     "jalapeños",
+     "cayenne",
+     "hot pepper"
+    ]
+   }
+  },
+  {
+   "id": "bain-marie",
+   "category": "BAKING",
+   "es": {
+    "title": "Baño maría sin sustos",
+    "body": "El agua del cazo no debe tocar el bol de arriba y basta con que apenas hierva: el vapor hace el trabajo. Para fundir chocolate, que no le caiga ni una gota de agua o vapor, o se apelmaza.",
+    "keywords": [
+     "chocolate negro",
+     "fundir chocolate",
+     "baño maría",
+     "chocolate fundido"
+    ]
+   },
+   "en": {
+    "title": "A bain-marie without trouble",
+    "body": "The water in the pan shouldn't touch the bowl on top, and a bare simmer is enough: the steam does the work. When melting chocolate, don't let a drop of water or steam get in, or it seizes.",
+    "keywords": [
+     "dark chocolate",
+     "melt chocolate",
+     "melted chocolate",
+     "bain-marie",
+     "double boiler"
+    ]
+   }
+  },
+  {
+   "id": "pumpkin-seeds-scoop",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Vaciar la calabaza con una cuchara de helado",
+    "body": "La cuchara de bolas de helado tiene el borde más afilado y la forma justa para rascar las pepitas y las hebras de la calabaza o el melón en un momento. Las pepitas, lavadas y tostadas con sal, son un buen aperitivo.",
+    "keywords": [
+     "calabaza",
+     "melón",
+     "pipas de calabaza"
+    ]
+   },
+   "en": {
+    "title": "Scoop out squash with an ice-cream scoop",
+    "body": "An ice-cream scoop has a sharper edge and just the right shape to scrape out the seeds and strings of a squash or melon in no time. The seeds, rinsed and roasted with salt, make a good snack.",
+    "keywords": [
+     "pumpkin",
+     "squash",
+     "butternut",
+     "melon",
+     "pumpkin seeds"
+    ]
+   }
+  },
+  {
+   "id": "kitchen-scissors",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Tijeras de cocina para casi todo",
+    "body": "Unas buenas tijeras cortan el pollo en trozos, el beicon en tiras, el cebollino y las hierbas directamente sobre el plato o la pizza en porciones, sin ensuciar la tabla. Lávalas bien después de usarlas con carne cruda.",
+    "keywords": [
+     "pollo troceado",
+     "cebollino",
+     "beicon",
+     "bacon",
+     "alitas"
+    ]
+   },
+   "en": {
+    "title": "Kitchen scissors for almost everything",
+    "body": "Good scissors cut chicken into pieces, bacon into strips, chives and herbs straight onto the plate and pizza into slices, without dirtying a board. Wash them well after using them on raw meat.",
+    "keywords": [
+     "chicken pieces",
+     "chives",
+     "bacon",
+     "wings"
+    ]
+   }
+  },
+  {
+   "id": "clean-microwave",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Limpiar el microondas sin frotar",
+    "body": "Pon un bol con agua y el zumo de un limón (o un chorro de vinagre) y caliéntalo 3-5 minutos a máxima potencia. Deja la puerta cerrada otros 5 minutos: el vapor ablanda la suciedad y sale con un paño. Pon un palillo de madera en el agua para que no hierva de golpe.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Clean the microwave without scrubbing",
+    "body": "Heat a bowl of water with the juice of a lemon (or a splash of vinegar) for 3-5 minutes on full power. Keep the door shut for another 5 minutes: the steam loosens the grime and it wipes off. Put a wooden stick in the water so it doesn't boil over suddenly.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "open-jars",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Abrir un bote que se resiste",
+    "body": "Mete la punta de una cuchara bajo el borde de la tapa y haz palanca hasta oír el «clic»: entra aire y deja de hacer vacío. Otra opción es poner la tapa bajo el grifo de agua caliente un minuto, porque el metal se dilata. Un paño o un guante de goma ayudan a agarrar.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Open a stubborn jar",
+    "body": "Slide the tip of a spoon under the lid and lever it until you hear the pop: air gets in and the vacuum goes. Or run the lid under hot water for a minute, as the metal expands. A cloth or rubber glove helps your grip.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "knife-magnet",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Los cuchillos, mejor en una barra imantada",
+    "body": "Sueltos en un cajón se mellan entre ellos y es fácil cortarse al buscarlos. En una barra imantada en la pared están a la vista, secos y con el filo protegido.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Keep knives on a magnetic strip",
+    "body": "Loose in a drawer they blunt each other and it's easy to cut yourself reaching for one. On a magnetic strip on the wall they're in view, dry and with their edges protected.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "phone-in-bag",
+   "category": "KITCHEN",
+   "es": {
+    "title": "El móvil, a salvo mientras cocinas",
+    "body": "Mete el móvil en una bolsa de congelación con cierre: la pantalla táctil sigue funcionando a través del plástico y no se mancha de harina ni de aceite. Y en el modo cocina de Miga puedes pasar los pasos con la voz, sin tocarlo.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Keep your phone safe while cooking",
+    "body": "Put your phone in a zip-lock freezer bag: the touchscreen still works through the plastic and it stays free of flour and oil. And in Miga's cooking mode you can move through the steps by voice, without touching it.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "boil-over-spoon",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Que no se salga al hervir",
+    "body": "Las legumbres, la pasta, el arroz y la leche hacen espuma y se desbordan. Baja el fuego en cuanto hierva y deja la tapa un poco abierta; una cuchara de madera atravesada sobre la olla también ayuda a romper las burbujas.",
+    "keywords": [
+     "garbanzos",
+     "alubias",
+     "lentejas",
+     "pasta",
+     "arroz con leche"
+    ]
+   },
+   "en": {
+    "title": "Stop pots boiling over",
+    "body": "Pulses, pasta, rice and milk foam up and boil over. Turn the heat down as soon as it boils and leave the lid ajar; a wooden spoon laid across the pot also helps break the bubbles.",
+    "keywords": [
+     "chickpeas",
+     "beans",
+     "lentils",
+     "pasta",
+     "rice pudding"
+    ]
+   }
+  },
+  {
+   "id": "open-coconut",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Abrir un coco",
+    "body": "Perfora dos de los «ojos» con un sacacorchos o un destornillador limpio y vacía el agua. Después golpea con el lomo de un cuchillo pesado o un martillo alrededor de la parte más ancha, girándolo: se abre por la mitad. Unos minutos en el horno caliente ayudan a despegar la pulpa.",
+    "keywords": [
+     "coco fresco"
+    ]
+   },
+   "en": {
+    "title": "Open a coconut",
+    "body": "Pierce two of the \"eyes\" with a corkscrew or clean screwdriver and drain the water. Then tap round the widest part with the back of a heavy knife or a hammer, turning it: it splits in half. A few minutes in a hot oven helps loosen the flesh.",
+    "keywords": [
+     "fresh coconut"
+    ]
+   }
+  },
+  {
+   "id": "reheat-in-a-ring",
+   "category": "SAFETY",
+   "es": {
+    "title": "Recalentar por igual en el microondas",
+    "body": "El centro del plato es lo que más tarda en calentarse. Reparte la comida en forma de anillo dejando el centro libre, tápala para que no se reseque y remueve o dale la vuelta a mitad de tiempo, hasta que humee por todas partes.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Reheat evenly in the microwave",
+    "body": "The middle of the plate is the slowest to heat. Spread the food in a ring with the centre empty, cover it so it doesn't dry out, and stir or turn it halfway, until it's steaming all over.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "reheat-pizza",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "Pizza del día anterior, crujiente",
+    "body": "En el microondas la base se queda blanda. Ponla en una sartén a fuego medio 2-3 minutos para que la base cruja, añade unas gotas de agua a un lado de la sartén y tapa un minuto: el vapor funde el queso.",
+    "keywords": [
+     "pizza"
+    ]
+   },
+   "en": {
+    "title": "Crisp leftover pizza",
+    "body": "In the microwave the base goes soft. Put it in a frying pan over medium heat for 2-3 minutes so the base crisps, add a few drops of water to the side of the pan and cover for a minute: the steam melts the cheese.",
+    "keywords": [
+     "pizza"
+    ]
+   }
+  },
+  {
+   "id": "bread-tartlets",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "Tartaletas con pan de molde",
+    "body": "Aplasta rebanadas de pan de molde sin corteza con un rodillo, píntalas con mantequilla o aceite y mételas en un molde de magdalenas. 8-10 minutos a 180 °C y tienes cestitas crujientes para rellenar de revuelto, ensaladilla o lo que te sobre.",
+    "keywords": [
+     "pan de molde"
+    ]
+   },
+   "en": {
+    "title": "Tartlets from sliced bread",
+    "body": "Flatten crustless slices of bread with a rolling pin, brush with butter or oil and press into a muffin tin. 8-10 minutes at 180 °C and you have crisp cups to fill with scrambled egg, salad or leftovers.",
+    "keywords": [
+     "sliced bread",
+     "sandwich bread"
+    ]
+   }
+  },
+  {
+   "id": "pasta-less-water",
+   "category": "TIME_SAVING",
+   "es": {
+    "title": "Pasta con menos agua",
+    "body": "La pasta corta no necesita litros de agua: basta con que la cubra bien en una olla ancha o una sartén honda, removiendo de vez en cuando. Hierve antes, gasta menos energía y el agua queda con más almidón, perfecta para ligar la salsa.",
+    "keywords": [
+     "macarrones",
+     "penne",
+     "fusilli",
+     "pasta corta",
+     "rigatoni"
+    ]
+   },
+   "en": {
+    "title": "Pasta with less water",
+    "body": "Short pasta doesn't need gallons of water: just enough to cover it well in a wide pot or deep frying pan, stirring now and then. It boils sooner, uses less energy and the water ends up starchier, perfect for binding the sauce.",
+    "keywords": [
+     "macaroni",
+     "penne",
+     "fusilli",
+     "short pasta",
+     "rigatoni"
+    ]
+   }
+  },
+  {
+   "id": "microwave-potatoes",
+   "category": "TIME_SAVING",
+   "es": {
+    "title": "Patatas cocidas en el microondas",
+    "body": "Pela y trocea las patatas en dados iguales, ponlas en un bol con 3 cucharadas de agua y tápalo con una tapa apta o film con un agujero. 6-8 minutos a máxima potencia, removiendo a mitad, y listas para puré, ensaladilla o tortilla.",
+    "keywords": [
+     "patatas",
+     "puré de patata",
+     "ensaladilla",
+     "patata"
+    ]
+   },
+   "en": {
+    "title": "Potatoes cooked in the microwave",
+    "body": "Peel and cut the potatoes into even cubes, put them in a bowl with 3 tbsp water and cover with a microwave-safe lid or pierced film. 6-8 minutes on full power, stirring halfway, and they're ready for mash, potato salad or a tortilla.",
+    "keywords": [
+     "potatoes",
+     "mashed potatoes",
+     "mash",
+     "potato salad"
+    ]
+   }
+  },
+  {
+   "id": "corn-in-microwave",
+   "category": "TIME_SAVING",
+   "es": {
+    "title": "Mazorcas sin pelos",
+    "body": "Mete la mazorca con sus hojas 3-4 minutos en el microondas. Corta la base, unos 2 cm por encima del tallo, y aprieta desde la punta: la mazorca sale limpia, sin hojas ni pelos, y ya cocida.",
+    "keywords": [
+     "mazorca",
+     "mazorcas",
+     "maíz dulce",
+     "elote"
+    ]
+   },
+   "en": {
+    "title": "Corn on the cob without the silk",
+    "body": "Microwave the cob in its husk for 3-4 minutes. Cut off the base about 2 cm above the stalk and squeeze from the top: the cob slides out clean, without husk or silk, and already cooked.",
+    "keywords": [
+     "corn on the cob",
+     "sweetcorn cob",
+     "elote"
+    ]
+   }
+  },
+  {
+   "id": "grate-vegetables",
+   "category": "TIME_SAVING",
+   "es": {
+    "title": "Ralla en lugar de picar",
+    "body": "Para sofritos, sopas, salsas de carne o boloñesas, ralla la zanahoria, la cebolla o el calabacín con el rallador grueso. Es más rápido que picar a cuchillo, se cocinan antes y se integran en la salsa.",
+    "keywords": [
+     "boloñesa",
+     "sopa",
+     "crema de verduras",
+     "zanahoria rallada",
+     "albóndigas"
+    ]
+   },
+   "en": {
+    "title": "Grate instead of chopping",
+    "body": "For sauces, soups, meat sauces or bolognese, grate carrot, onion or courgette on the coarse side. It's quicker than chopping, cooks faster and melts into the sauce.",
+    "keywords": [
+     "bolognese",
+     "soup",
+     "vegetable soup",
+     "grated carrot",
+     "meatballs"
+    ]
+   }
+  },
+  {
+   "id": "steam-on-top",
+   "category": "TIME_SAVING",
+   "es": {
+    "title": "Cocina al vapor sobre la salsa",
+    "body": "Cuando una salsa de tomate, un pisto o unas verduras ya estén hechos, casca unos huevos o pon unos lomos de pescado encima y tapa la sartén. Se hacen con el vapor en pocos minutos, y comes de una sola sartén.",
+    "keywords": [
+     "shakshuka",
+     "menemen",
+     "pisto",
+     "huevos al plato",
+     "pescado en salsa"
+    ]
+   },
+   "en": {
+    "title": "Steam it on top of the sauce",
+    "body": "Once a tomato sauce, ratatouille or vegetables are cooked, crack some eggs or lay fish fillets on top and cover the pan. They cook in the steam in a few minutes, and dinner comes from one pan.",
+    "keywords": [
+     "shakshuka",
+     "menemen",
+     "ratatouille",
+     "baked eggs",
+     "fish in sauce"
+    ]
+   }
+  },
+  {
+   "id": "smoothie-packs",
+   "category": "TIME_SAVING",
+   "es": {
+    "title": "Batidos listos en el congelador",
+    "body": "Trocea la fruta (plátano, fresas, mango, espinacas) y congélala en bolsas, una por batido. Por la mañana solo hay que añadir leche o yogur y triturar: además, la fruta congelada lo deja frío y cremoso sin hielo.",
+    "keywords": [
+     "batido",
+     "batidos",
+     "smoothie"
+    ]
+   },
+   "en": {
+    "title": "Smoothies ready in the freezer",
+    "body": "Chop fruit (banana, strawberries, mango, spinach) and freeze it in bags, one per smoothie. In the morning just add milk or yoghurt and blend: the frozen fruit also makes it cold and creamy without ice.",
+    "keywords": [
+     "smoothie",
+     "smoothies",
+     "milkshake"
+    ]
+   }
+  },
+  {
+   "id": "stock-ice-cubes",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Caldo en cubitos",
+    "body": "Congela el caldo que sobre en una cubitera y guarda los cubitos en una bolsa. Son raciones pequeñas para una salsa, un salteado o un arroz, sin tener que descongelar un táper entero. También funciona con vino sobrante.",
+    "keywords": [
+     "caldo",
+     "caldo de pollo",
+     "caldo de verduras",
+     "fumet"
+    ]
+   },
+   "en": {
+    "title": "Stock in ice cubes",
+    "body": "Freeze leftover stock in an ice-cube tray and keep the cubes in a bag. They're small portions for a sauce, stir-fry or rice, with no need to thaw a whole tub. Works with leftover wine too.",
+    "keywords": [
+     "stock",
+     "chicken stock",
+     "vegetable stock",
+     "fish stock"
+    ]
+   }
+  },
+  {
+   "id": "hardy-herbs",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Hierbas de tallo duro, envueltas",
+    "body": "El romero, el tomillo, la salvia o el cebollino aguantan mejor envueltos en papel de cocina apenas húmedo, dentro de una bolsa o táper en el cajón de las verduras. Así duran una o dos semanas.",
+    "keywords": [
+     "romero",
+     "tomillo",
+     "salvia",
+     "cebollino",
+     "orégano fresco"
+    ]
+   },
+   "en": {
+    "title": "Wrap woody herbs",
+    "body": "Rosemary, thyme, sage or chives keep best wrapped in slightly damp kitchen paper, in a bag or container in the vegetable drawer. That way they last one or two weeks.",
+    "keywords": [
+     "rosemary",
+     "thyme",
+     "sage",
+     "chives",
+     "fresh oregano"
+    ]
+   }
+  },
+  {
+   "id": "freeze-sauces",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Salsas y guisos en el congelador",
+    "body": "Las salsas de tomate, los sofritos, los guisos y las legumbres cocinadas se congelan 3-4 meses sin problema. Las que llevan nata, yogur o huevo pueden cortarse al descongelarlas: mejor congelar la base y añadirlos al recalentar.",
+    "keywords": [
+     "salsa de tomate",
+     "boloñesa",
+     "guiso",
+     "estofado",
+     "ragú"
+    ]
+   },
+   "en": {
+    "title": "Sauces and stews in the freezer",
+    "body": "Tomato sauces, sautéed bases, stews and cooked pulses freeze well for 3-4 months. Those with cream, yoghurt or egg may split when thawed: better to freeze the base and add them when reheating.",
+    "keywords": [
+     "tomato sauce",
+     "bolognese",
+     "stew",
+     "casserole",
+     "ragù"
+    ]
+   }
+  },
+  {
+   "id": "ice-cream-surface",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Helado sin cristales de hielo",
+    "body": "Antes de cerrar la tarrina, pega un trozo de papel de horno o de film sobre la superficie del helado. Así no le toca el aire y no se forman cristales ni costra. Y guárdalo al fondo del congelador, no en la puerta.",
+    "keywords": [
+     "helado",
+     "helados",
+     "sorbete"
+    ]
+   },
+   "en": {
+    "title": "Ice cream without ice crystals",
+    "body": "Before closing the tub, press a piece of baking paper or cling film onto the surface of the ice cream. That keeps air off it, so no crystals or crust form. And keep it at the back of the freezer, not in the door.",
+    "keywords": [
+     "ice cream",
+     "sorbet",
+     "gelato"
+    ]
+   }
+  },
+  {
+   "id": "freeze-fruit-tray",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Fruta congelada que no se pega",
+    "body": "Lava, seca y trocea la fruta, extiéndela en una bandeja sin que se toquen los trozos y congélala una o dos horas. Luego pásala a una bolsa: quedan sueltos y sacas solo lo que necesitas. Manzana y plátano, con unas gotas de limón para que no se oscurezcan.",
+    "keywords": [
+     "fresas",
+     "frutos rojos",
+     "arándanos",
+     "frambuesas",
+     "melocotón"
+    ]
+   },
+   "en": {
+    "title": "Frozen fruit that doesn't clump",
+    "body": "Wash, dry and chop the fruit, spread it on a tray so the pieces don't touch and freeze for an hour or two. Then move it to a bag: the pieces stay loose and you take out only what you need. Apple and banana, with a few drops of lemon so they don't brown.",
+    "keywords": [
+     "strawberries",
+     "berries",
+     "blueberries",
+     "raspberries",
+     "peaches"
+    ]
+   }
+  },
+  {
+   "id": "apples-not-brown",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Manzana cortada que no se oscurece",
+    "body": "Sumerge la manzana o la pera cortada unos minutos en agua fría con zumo de limón (o una pizca de sal), escúrrela y guárdala tapada en la nevera. Aguanta blanca hasta un día: ideal para fiambreras y meriendas.",
+    "keywords": [
+     "manzana",
+     "manzanas",
+     "pera",
+     "peras"
+    ]
+   },
+   "en": {
+    "title": "Cut apple that doesn't brown",
+    "body": "Dip cut apple or pear in cold water with lemon juice (or a pinch of salt) for a few minutes, drain and keep it covered in the fridge. It stays white for up to a day: ideal for lunch boxes and snacks.",
+    "keywords": [
+     "apple",
+     "apples",
+     "pear",
+     "pears"
+    ]
+   }
+  },
+  {
+   "id": "open-jam",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Mermelada abierta que dura",
+    "body": "Una vez abierta, a la nevera, y saca siempre con una cuchara limpia y seca: las migas y la mantequilla hacen que salga moho antes. Las mermeladas bajas en azúcar o caseras duran menos que las normales; si ves moho, tírala entera.",
+    "keywords": [
+     "mermelada",
+     "confitura"
+    ]
+   },
+   "en": {
+    "title": "Opened jam that lasts",
+    "body": "Once opened, keep it in the fridge and always use a clean, dry spoon: crumbs and butter make it go mouldy sooner. Low-sugar and homemade jams keep less long than regular ones; if you see mould, throw the whole jar away.",
+    "keywords": [
+     "jam",
+     "preserve",
+     "marmalade"
+    ]
+   }
+  },
+  {
+   "id": "cheese-room-temperature",
+   "category": "PRESERVING",
+   "es": {
+    "title": "El queso, a temperatura ambiente para comerlo",
+    "body": "Saca el queso de la nevera 30-60 minutos antes de servirlo (tapado para que no se seque). Frío está apagado; a temperatura ambiente recupera el aroma y la textura. Corta solo lo que se vaya a comer.",
+    "keywords": [
+     "tabla de quesos",
+     "queso curado",
+     "quesos variados"
+    ]
+   },
+   "en": {
+    "title": "Serve cheese at room temperature",
+    "body": "Take cheese out of the fridge 30-60 minutes before serving (covered so it doesn't dry out). Cold, it tastes muted; at room temperature its aroma and texture come back. Cut only what will be eaten.",
+    "keywords": [
+     "cheese board",
+     "aged cheese",
+     "cheese platter"
+    ]
+   }
+  },
+  {
+   "id": "honey-spoon",
+   "category": "BAKING",
+   "es": {
+    "title": "Miel que no se pega a la cuchara",
+    "body": "Unta la cuchara o el vaso medidor con unas gotas de aceite antes de medir miel, melaza o sirope: resbalan enteros y la medida es exacta. Lo mismo con el cuchillo para cortar dátiles o fruta escarchada.",
+    "keywords": [
+     "miel",
+     "melaza",
+     "sirope",
+     "sirope de agave",
+     "dátiles"
+    ]
+   },
+   "en": {
+    "title": "Honey that doesn't stick to the spoon",
+    "body": "Wipe the spoon or measuring cup with a few drops of oil before measuring honey, treacle or syrup: it slides off completely and the measure is exact. Same for the knife when chopping dates or candied fruit.",
+    "keywords": [
+     "honey",
+     "treacle",
+     "golden syrup",
+     "maple syrup",
+     "agave syrup",
+     "dates"
+    ]
+   }
+  },
+  {
+   "id": "cookie-scoop",
+   "category": "BAKING",
+   "es": {
+    "title": "Galletas y magdalenas del mismo tamaño",
+    "body": "Reparte la masa con una cuchara de bolas de helado: todas las galletas, albóndigas o magdalenas salen iguales y se hacen a la vez. Si quieres precisión total, pesa la primera bola y ajusta.",
+    "keywords": [
+     "galletas",
+     "magdalenas",
+     "muffins",
+     "cupcakes",
+     "albóndigas"
+    ]
+   },
+   "en": {
+    "title": "Cookies and muffins all the same size",
+    "body": "Portion the dough with an ice-cream scoop: every cookie, meatball or muffin comes out the same and cooks at the same time. For total precision, weigh the first scoop and adjust.",
+    "keywords": [
+     "cookies",
+     "biscuits",
+     "muffins",
+     "cupcakes",
+     "meatballs"
+    ]
+   }
+  },
+  {
+   "id": "stencil-dusting",
+   "category": "BAKING",
+   "es": {
+    "title": "Decorar un bizcocho en un momento",
+    "body": "Pon sobre el bizcocho frío un trozo de encaje, una blonda de papel o una plantilla recortada, y espolvorea azúcar glas o cacao con un colador fino. Retira la plantilla con cuidado, levantándola en vertical.",
+    "keywords": [
+     "bizcocho",
+     "tarta",
+     "azúcar glas",
+     "brownie"
+    ]
+   },
+   "en": {
+    "title": "Decorate a cake in a minute",
+    "body": "Lay a piece of lace, a paper doily or a cut-out stencil on the cooled cake and dust with icing sugar or cocoa through a fine sieve. Lift the stencil off carefully, straight up.",
+    "keywords": [
+     "cake",
+     "sponge",
+     "icing sugar",
+     "brownies"
+    ]
+   }
+  },
+  {
+   "id": "chocolate-chunks",
+   "category": "BAKING",
+   "es": {
+    "title": "Pepitas de chocolate caseras",
+    "body": "Si no tienes pepitas, trocea una tableta de chocolate con un cuchillo grande sobre la tabla. Salen trozos irregulares que se funden en vetas: muchos los prefieren a las pepitas de bolsa.",
+    "keywords": [
+     "pepitas de chocolate",
+     "chips de chocolate",
+     "cookies"
+    ]
+   },
+   "en": {
+    "title": "Homemade chocolate chips",
+    "body": "No chips? Chop a bar of chocolate with a big knife on the board. You get irregular chunks that melt into streaks: many people prefer them to bagged chips.",
+    "keywords": [
+     "chocolate chips",
+     "chocolate chunks",
+     "cookies"
+    ]
+   }
+  },
+  {
+   "id": "pancake-bottle",
+   "category": "BAKING",
+   "es": {
+    "title": "Tortitas redondas con un biberón",
+    "body": "Pasa la masa de tortitas o crepes a un bote dosificador de salsas (o a una jarra con pico). Sirven todas del mismo tamaño, sin gotear, y puedes dibujar formas o letras para los peques.",
+    "keywords": [
+     "tortitas",
+     "crepes",
+     "pancakes",
+     "filloas"
+    ]
+   },
+   "en": {
+    "title": "Neat pancakes with a squeeze bottle",
+    "body": "Put pancake or crêpe batter into a sauce squeeze bottle (or a jug with a spout). They all come out the same size, without drips, and you can draw shapes or letters for the kids.",
+    "keywords": [
+     "pancakes",
+     "crêpes",
+     "crepes"
+    ]
+   }
+  },
+  {
+   "id": "butter-wrapper",
+   "category": "BAKING",
+   "es": {
+    "title": "Engrasa el molde con el papel de la mantequilla",
+    "body": "Guarda los envoltorios de la mantequilla doblados en el congelador. Cuando tengas que engrasar un molde, pásalos por dentro: llevan la grasa justa y no te manchas las manos.",
+    "keywords": [
+     "molde",
+     "engrasa el molde",
+     "mantequilla para el molde"
+    ]
+   },
+   "en": {
+    "title": "Grease the tin with the butter wrapper",
+    "body": "Keep butter wrappers folded in the freezer. When you need to grease a tin, rub them inside: they carry just enough fat and your hands stay clean.",
+    "keywords": [
+     "tin",
+     "grease the tin",
+     "butter for the tin"
+    ]
+   }
   }
  ]
 }
