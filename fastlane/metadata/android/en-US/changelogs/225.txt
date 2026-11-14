@@ -1,0 +1,3 @@
+What's new in 1.0.27:
+• Health and nutrition: a single notice at the end, worded more clearly, instead of one in each part.
+• Cooking assistant notices in a more formal tone.

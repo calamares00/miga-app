@@ -693,6 +693,24 @@ private fun RecipeDetailContent(
                         }
                         val analysing = healthState == HealthState.Loading || nutritionState == NutritionState.Loading
                         val hasValues = recipe.healthRating != null || recipe.nutritionInfo != null
+                        // One notice for both: what they are, that they are not medical advice, and a way to report them.
+                        val shownHealth = recipe.healthRating.takeIf { healthState == HealthState.Loaded }
+                        val shownNutrition = recipe.nutritionInfo.takeIf { nutritionState == NutritionState.Loaded }
+                        if (shownHealth != null || shownNutrition != null) {
+                            AiContentNotice(
+                                feature = L10n.str(R.string.health_and_nutrition),
+                                text = L10n.str(R.string.ai_health_disclaimer),
+                                content = {
+                                    listOfNotNull(
+                                        shownHealth?.let { "${recipe.name}: ${it.description}" },
+                                        shownNutrition?.let {
+                                            L10n.str(R.string.x_x_kcal_x_g, recipe.name, it.caloriesPerServing, it.proteinGrams, it.carbsGrams, it.fatGrams)
+                                        }
+                                    ).joinToString("\n")
+                                },
+                                modifier = Modifier.padding(top = 12.dp)
+                            )
+                        }
                         if (onRecalculateAnalysis != null && hasValues && !analysing) {
                             TextButton(onClick = onRecalculateAnalysis, modifier = Modifier.padding(top = 4.dp)) {
                                 ButtonContent(Icons.Filled.Refresh, L10n.str(R.string.recalculate_with_assistant))
@@ -755,12 +773,6 @@ private fun HealthBlock(recipe: Recipe, healthState: HealthState, onRetry: () ->
                     colors = AssistChipDefaults.assistChipColors(containerColor = containerColor, labelColor = contentColor)
                 )
                 Text(rating.description, style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    L10n.str(R.string.ai_health_disclaimer),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                AiContentNotice(feature = L10n.str(R.string.health_rating), content = { "${recipe.name}: $label. ${rating.description}" })
             }
         }
         HealthState.Idle -> Unit
@@ -783,17 +795,6 @@ private fun NutritionBlock(recipe: Recipe, nutritionState: NutritionState, onRet
                     NutritionStat(value = formatQuantity(nutrition.carbsGrams), label = L10n.str(R.string.carbs_g))
                     NutritionStat(value = formatQuantity(nutrition.fatGrams), label = L10n.str(R.string.fat_g))
                 }
-                Text(
-                    L10n.str(R.string.ai_health_disclaimer),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                AiContentNotice(
-                    feature = L10n.str(R.string.estimated_nutrition),
-                    content = {
-                        L10n.str(R.string.x_x_kcal_x_g, recipe.name, nutrition.caloriesPerServing, nutrition.proteinGrams, nutrition.carbsGrams, nutrition.fatGrams)
-                    }
-                )
             }
         }
         NutritionState.Idle -> Unit
