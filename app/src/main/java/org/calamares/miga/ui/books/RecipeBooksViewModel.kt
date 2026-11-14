@@ -71,6 +71,18 @@ class RecipeBooksViewModel(
     val grouped: StateFlow<Boolean> = settingsRepository.observeRecipeBookListGrouped()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    /** Whether the tip of the day shows: switched on and not closed today. */
+    val tipOfTheDayVisible: StateFlow<Boolean> = combine(
+        settingsRepository.observeTipOfTheDayEnabled(),
+        settingsRepository.observeTipOfTheDayClosedDay()
+    ) { enabled, closedDay -> enabled && closedDay != java.time.LocalDate.now().toEpochDay() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /** Hides the tip of the day until tomorrow. */
+    fun hideTipOfTheDay() {
+        viewModelScope.launch { settingsRepository.setTipOfTheDayClosedDay(java.time.LocalDate.now().toEpochDay()) }
+    }
+
     /** Kind of book shown; kept while the books tab lives, not stored, so no book stays hidden. */
     private val _filter = MutableStateFlow(BookFilter.ALL)
     val filter: StateFlow<BookFilter> = _filter

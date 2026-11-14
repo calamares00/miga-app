@@ -75,6 +75,9 @@ class SettingsRepository(private val context: Context) {
     private val packInstallStatsKey = booleanPreferencesKey("pack_install_stats")
     private val dismissedUpdateKey = stringPreferencesKey("dismissed_update_version")
     private val dismissedPackUpdatesKey = stringPreferencesKey("dismissed_pack_updates")
+    private val savedTipsKey = stringPreferencesKey("saved_tips")
+    private val tipOfTheDayKey = booleanPreferencesKey("tip_of_the_day_enabled")
+    private val tipOfTheDayClosedKey = longPreferencesKey("tip_of_the_day_closed_day")
 
     /**
      * AI API keys are stored encrypted with the device Keystore key of [TokenCipher], as
@@ -508,6 +511,34 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[dismissedPackUpdatesKey] = updates.joinToString(",") }
     }
 
+    /** Ids of the cooking tips the user has saved (starred). */
+    fun observeSavedTips(): Flow<Set<String>> =
+        context.settingsDataStore.data.map { prefs -> prefs[savedTipsKey]?.split(',')?.filter { it.isNotBlank() }?.toSet().orEmpty() }
+
+    suspend fun setTipSaved(id: String, saved: Boolean) {
+        context.settingsDataStore.edit { prefs ->
+            val current = prefs[savedTipsKey]?.split(',')?.filter { it.isNotBlank() }.orEmpty()
+            val updated = if (saved) (current + id).distinct() else current - id
+            if (updated.isEmpty()) prefs.remove(savedTipsKey) else prefs[savedTipsKey] = updated.joinToString(",")
+        }
+    }
+
+    /** Whether the books screen shows the tip of the day (on unless turned off). */
+    fun observeTipOfTheDayEnabled(): Flow<Boolean> =
+        context.settingsDataStore.data.map { prefs -> prefs[tipOfTheDayKey] ?: true }
+
+    suspend fun setTipOfTheDayEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[tipOfTheDayKey] = enabled }
+    }
+
+    /** Day (epoch day) the tip of the day was closed: it comes back the next day. */
+    fun observeTipOfTheDayClosedDay(): Flow<Long?> =
+        context.settingsDataStore.data.map { prefs -> prefs[tipOfTheDayClosedKey] }
+
+    suspend fun setTipOfTheDayClosedDay(epochDay: Long) {
+        context.settingsDataStore.edit { prefs -> prefs[tipOfTheDayClosedKey] = epochDay }
+    }
+
     suspend fun dismissedUpdateVersion(): String? = context.settingsDataStore.data.first()[dismissedUpdateKey]
 
     suspend fun setDismissedUpdateVersion(versionName: String) {
@@ -521,11 +552,11 @@ class SettingsRepository(private val context: Context) {
         themeModeKey, colorThemeKey, photoFrameKey, shoppingAuthorKey, recipeListViewModeKey,
         recipeBookListViewModeKey, visionProviderKey, geminiModelKey, anthropicModelKey, openRouterModelKey,
         openAiModelKey, aiProviderOrderKey, aiDisabledProvidersKey, ttsVoiceNameKey, dictationLanguageKey,
-        packsCatalogRepoKey
+        packsCatalogRepoKey, savedTipsKey
     )
     private val backupBooleanKeys = listOf(
         aiEnabledKey, aiHealthEnabledKey, aiNutritionEnabledKey, shoppingImagesKey, recipeBookListGroupedKey,
-        openRouterModelImagesKey, packInstallStatsKey
+        openRouterModelImagesKey, packInstallStatsKey, tipOfTheDayKey
     )
 
     /** The settings to include in a full backup (only those the user has set). */

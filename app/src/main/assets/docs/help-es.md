@@ -112,6 +112,15 @@ Aquí están las listas de categorías de recetas, equipamiento, etiquetas, ingr
 
 Cifras de tu recetario: recetas por libro, categoría y dificultad, favoritas, mejor valoradas y más cocinadas, tiempos, ingredientes y etiquetas más usados, cocinas del mundo y recetas por completar (sin foto, sin pasos…). Toca una cifra para ver sus recetas. Abajo verás cuánto ocupa Miga en el móvil, con opciones para vaciar la caché y borrar fotos que ya no usa ninguna receta.
 
+## 💡 Consejos de cocina
+
+Trucos cortos para cocinar mejor: técnicas, conservar y congelar, aprovechar sobras, sustituciones, seguridad alimentaria, repostería, ahorrar tiempo y utensilios. Están en el icono 💡 de **Libros** y en **Ajustes**, y funcionan sin conexión.
+
+- Toca un consejo para leerlo entero; con la ⭐ lo guardas en **Guardados**, y también puedes compartirlo.
+- Desliza a izquierda o derecha para pasar entre categorías, o búscalo por palabras.
+- **Consejo del día**: aparece arriba en Libros. La ✕ lo oculta hasta mañana, y desde el menú ⋮ de Consejos puedes quitarlo del todo.
+- En cada receta, si algún consejo ayuda con sus ingredientes o pasos (por ejemplo, berenjena o pasta), verás **💡 Consejos para esta receta** entre los ingredientes y la preparación.
+
 ## 🔄 Sincronización
 
 Para compartir libros y listas de la compra en familia con edición completa, conecta Miga a un servidor que alojes tú (miga-server). En **Gestionar conexiones** añades el servidor y el namespace, e invitas a otros con un código QR. Los datos van solo a tu servidor.

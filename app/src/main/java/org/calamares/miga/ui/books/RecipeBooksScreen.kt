@@ -134,6 +134,10 @@ import coil.compose.AsyncImage
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.ui.StartupGate
+import androidx.compose.material.icons.outlined.Lightbulb
+import org.calamares.miga.data.tips.CookingTips
+import org.calamares.miga.data.tips.tipOfTheDay
+import org.calamares.miga.ui.tips.TipOfTheDayCard
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -144,7 +148,8 @@ fun RecipeBooksScreen(
     onEditBookClick: (Long) -> Unit,
     onExplorePacks: () -> Unit = {},
     onOpenIdeas: () -> Unit = {},
-    onOpenSync: () -> Unit = {}
+    onOpenSync: () -> Unit = {},
+    onOpenTips: (String?) -> Unit = {}
 ) {
     val loadedBooks by viewModel.books.collectAsStateWithLifecycle()
     val books = loadedBooks.orEmpty()
@@ -161,6 +166,7 @@ fun RecipeBooksScreen(
     val grouped by viewModel.grouped.collectAsStateWithLifecycle()
     val filter by viewModel.filter.collectAsStateWithLifecycle()
     val connectionNames by viewModel.connectionNames.collectAsStateWithLifecycle()
+    val tipOfTheDayVisible by viewModel.tipOfTheDayVisible.collectAsStateWithLifecycle()
     var showViewModeMenu by remember { mutableStateOf(false) }
     val selectedIds by viewModel.selectedBookIds.collectAsStateWithLifecycle()
     val selectionMode = selectedIds.isNotEmpty()
@@ -286,6 +292,9 @@ fun RecipeBooksScreen(
                 scrollBehavior = scrollBehavior,
                 title = { Text(L10n.str(R.string.my_books)) },
                 actions = {
+                    IconButton(onClick = { onOpenTips(null) }) {
+                        Icon(Icons.Outlined.Lightbulb, contentDescription = L10n.str(R.string.cooking_tips))
+                    }
                     if (aiReady) {
                         IconButton(onClick = onOpenIdeas) {
                             Icon(Icons.Filled.AutoAwesome, contentDescription = L10n.str(R.string.ideas), tint = MaterialTheme.colorScheme.primary)
@@ -360,6 +369,17 @@ fun RecipeBooksScreen(
                     OutlinedButton(onClick = onExplorePacks) { Text(L10n.str(R.string.explore_recipe_packs)) }
                 }
             } else {
+                if (tipOfTheDayVisible && !selectionMode) {
+                    val dayTip = remember { tipOfTheDay(CookingTips.all(context)) }
+                    dayTip?.let { tip ->
+                        TipOfTheDayCard(
+                            tip = tip,
+                            onOpen = { onOpenTips(tip.id) },
+                            onHide = viewModel::hideTipOfTheDay,
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                        )
+                    }
+                }
                 BookFilterChips(filter, books, onSelect = viewModel::setFilter)
                 if (updatingPacks) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp))
                 HorizontalPager(

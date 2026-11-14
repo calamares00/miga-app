@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NewReleases
@@ -61,6 +62,7 @@ fun SettingsHomeScreen(
     hasChangelog: Boolean,
     onOpenSection: (SettingsSection) -> Unit,
     onOpenStats: () -> Unit,
+    onOpenTips: () -> Unit,
     onOpenChangelog: () -> Unit,
     onHelp: () -> Unit,
     onAbout: () -> Unit
@@ -126,7 +128,8 @@ fun SettingsHomeScreen(
                     HomeItem(SettingsSection.BACKUP.icon, SettingsSection.BACKUP.title, L10n.str(R.string.export_import_books_recipes)) {
                         onOpenSection(SettingsSection.BACKUP)
                     },
-                    HomeItem(Icons.Filled.BarChart, L10n.str(R.string.statistics), L10n.str(R.string.recipes_favourites_most_cooked), onOpenStats)
+                    HomeItem(Icons.Filled.BarChart, L10n.str(R.string.statistics), L10n.str(R.string.recipes_favourites_most_cooked), onOpenStats),
+                    HomeItem(Icons.Filled.Lightbulb, L10n.str(R.string.cooking_tips), L10n.str(R.string.cooking_tips_summary), onOpenTips)
                 )
             )
             HomeGroup(
