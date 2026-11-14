@@ -1,0 +1,2002 @@
+{
+ "tips": [
+  {
+   "id": "onion-no-tears",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Cortar cebolla sin llorar",
+    "body": "Lo que hace llorar es el gas que sale de las células rotas. Un cuchillo bien afilado rompe menos células que uno romo, y una cebolla fría de la nevera suelta menos gas. Deja la raíz para el final: es la parte que más pica.",
+    "keywords": [
+     "cebolla",
+     "chalota",
+     "cebolleta"
+    ]
+   },
+   "en": {
+    "title": "Chop onions without crying",
+    "body": "The tears come from a gas released by broken cells. A sharp knife breaks fewer cells than a blunt one, and an onion straight from the fridge releases less gas. Leave the root end until last: it is the strongest part.",
+    "keywords": [
+     "onion",
+     "shallot",
+     "spring onion"
+    ]
+   }
+  },
+  {
+   "id": "peel-garlic",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Pelar ajos en un momento",
+    "body": "Aplasta el diente con la hoja plana del cuchillo y la piel se suelta sola. Si son muchos, sepáralos de la cabeza, mételos en un bote con tapa y agítalo con fuerza 20 segundos.",
+    "keywords": [
+     "ajo",
+     "ajos"
+    ]
+   },
+   "en": {
+    "title": "Peel garlic in no time",
+    "body": "Press the clove with the flat of your knife and the skin comes away. For lots of cloves, break up the bulb, put them in a jar with a lid and shake hard for 20 seconds.",
+    "keywords": [
+     "garlic"
+    ]
+   }
+  },
+  {
+   "id": "garlic-not-burnt",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Que el ajo no se queme",
+    "body": "El ajo picado se quema en segundos y amarga todo el plato. En un sofrito, añádelo cuando la cebolla ya esté pochada, o fríelo a fuego suave y vigílalo: en cuanto huela y empiece a dorarse, sigue con el resto.",
+    "keywords": [
+     "ajo",
+     "sofrito"
+    ]
+   },
+   "en": {
+    "title": "Don't burn the garlic",
+    "body": "Chopped garlic burns in seconds and makes the whole dish bitter. In a base of fried vegetables add it once the onion is soft, or fry it over low heat and watch it: as soon as it smells and starts to colour, move on.",
+    "keywords": [
+     "garlic",
+     "sofrito"
+    ]
+   }
+  },
+  {
+   "id": "peel-ginger",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Pelar jengibre con una cuchara",
+    "body": "Raspa la raíz con el borde de una cucharilla: la piel sale sin esfuerzo, llegas bien a los recovecos y apenas desperdicias nada. Guardado en el congelador se ralla todavía mejor, sin pelar.",
+    "keywords": [
+     "jengibre"
+    ]
+   },
+   "en": {
+    "title": "Peel ginger with a spoon",
+    "body": "Scrape the root with the edge of a teaspoon: the skin comes off easily, you reach every nook and waste almost nothing. Kept in the freezer it grates even better, unpeeled.",
+    "keywords": [
+     "ginger"
+    ]
+   }
+  },
+  {
+   "id": "more-citrus-juice",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Más zumo de limón y naranja",
+    "body": "Exprime los cítricos a temperatura ambiente, no recién sacados de la nevera. Antes de partirlos, hazlos rodar sobre la encimera apretando con la palma: sueltan bastante más zumo.",
+    "keywords": [
+     "limón",
+     "limones",
+     "lima",
+     "naranja",
+     "zumo de limón"
+    ]
+   },
+   "en": {
+    "title": "More juice from lemons and oranges",
+    "body": "Squeeze citrus at room temperature, not straight from the fridge. Before cutting, roll them on the worktop pressing with your palm: they give noticeably more juice.",
+    "keywords": [
+     "lemon",
+     "lime",
+     "orange",
+     "lemon juice"
+    ]
+   }
+  },
+  {
+   "id": "aubergine-salt",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Berenjena que no chupa aceite",
+    "body": "Corta la berenjena, sálala y déjala 20-30 minutos. Suelta agua, se vuelve más compacta y al freírla absorbe mucho menos aceite. Sécala bien con papel antes de cocinarla.",
+    "keywords": [
+     "berenjena",
+     "berenjenas"
+    ]
+   },
+   "en": {
+    "title": "Aubergine that doesn't soak up oil",
+    "body": "Cut the aubergine, salt it and leave it for 20-30 minutes. It releases water, firms up and soaks up much less oil when fried. Pat it dry before cooking.",
+    "keywords": [
+     "aubergine",
+     "eggplant"
+    ]
+   }
+  },
+  {
+   "id": "rinse-rice",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Arroz suelto o arroz meloso",
+    "body": "Para un arroz blanco suelto (basmati, jazmín), lávalo en varias aguas frotándolo con la mano hasta que el agua salga casi clara. Para paella, risotto o arroces melosos no lo laves: necesitas ese almidón.",
+    "keywords": [
+     "arroz"
+    ]
+   },
+   "en": {
+    "title": "Fluffy rice or creamy rice",
+    "body": "For fluffy white rice (basmati, jasmine), rinse it in several changes of water, rubbing it with your hand, until the water runs almost clear. For paella, risotto or creamy rice don't rinse it: you need that starch.",
+    "keywords": [
+     "rice",
+     "risotto",
+     "paella"
+    ]
+   }
+  },
+  {
+   "id": "bright-green-veg",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Verduras verdes que no pierden el color",
+    "body": "Cuécelas en mucha agua hirviendo con sal, sin tapar y solo hasta que estén tiernas. Pásalas enseguida a un bol con agua y hielo: se corta la cocción y mantienen el verde y el punto.",
+    "keywords": [
+     "judías verdes",
+     "brócoli",
+     "guisantes",
+     "espárragos",
+     "espárragos verdes",
+     "tirabeques",
+     "edamame"
+    ]
+   },
+   "en": {
+    "title": "Green vegetables that stay green",
+    "body": "Boil them in plenty of salted water, uncovered, just until tender. Move them straight into a bowl of iced water: the cooking stops and they keep their colour and bite.",
+    "keywords": [
+     "green beans",
+     "broccoli",
+     "peas",
+     "asparagus",
+     "mangetout",
+     "edamame"
+    ]
+   }
+  },
+  {
+   "id": "peel-tomatoes",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Pelar tomates sin esfuerzo",
+    "body": "Haz una cruz poco profunda en la base, mételos 20-30 segundos en agua hirviendo y pásalos a agua fría. La piel se levanta con los dedos. Si solo quieres la pulpa para un sofrito, rállalos: la piel se queda en la mano.",
+    "keywords": [
+     "tomate",
+     "tomates",
+     "tomate pelado"
+    ]
+   },
+   "en": {
+    "title": "Peel tomatoes easily",
+    "body": "Score a shallow cross in the base, drop them into boiling water for 20-30 seconds and then into cold water. The skin lifts off with your fingers. If you only need the pulp for a sauce, grate them: the skin stays in your hand.",
+    "keywords": [
+     "tomato",
+     "peeled tomatoes"
+    ]
+   }
+  },
+  {
+   "id": "sear-meat",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Carne bien dorada, no cocida",
+    "body": "Seca la carne con papel de cocina, calienta bien la sartén o la cazuela y no la llenes: dora por tandas. Si amontonas, la carne suelta jugo y se cuece en vez de dorarse, y pierde todo el sabor del tostado.",
+    "keywords": [
+     "ternera",
+     "carne",
+     "cerdo",
+     "cordero",
+     "filete",
+     "filetes",
+     "solomillo",
+     "entrecot",
+     "muslos de pollo",
+     "guiso",
+     "estofado"
+    ]
+   },
+   "en": {
+    "title": "Browned meat, not boiled",
+    "body": "Pat the meat dry, get the pan or pot really hot and don't crowd it: brown in batches. If you pile it in, it releases juice and stews instead of browning, and you lose the flavour of the crust.",
+    "keywords": [
+     "beef",
+     "meat",
+     "pork",
+     "lamb",
+     "steak",
+     "steaks",
+     "sirloin",
+     "chicken thighs",
+     "stew",
+     "casserole"
+    ]
+   }
+  },
+  {
+   "id": "rest-meat",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Deja reposar la carne",
+    "body": "Después de asar o hacer a la plancha una pieza de carne, déjala reposar 5-10 minutos tapada con papel de aluminio sin apretar. Los jugos se reparten y no se escapan al cortarla.",
+    "keywords": [
+     "asado",
+     "asada",
+     "solomillo",
+     "entrecot",
+     "chuletón",
+     "cordero",
+     "magret",
+     "pierna",
+     "paletilla",
+     "costillas"
+    ]
+   },
+   "en": {
+    "title": "Let meat rest",
+    "body": "After roasting or griddling a piece of meat, let it rest for 5-10 minutes loosely covered with foil. The juices settle and don't run out when you slice it.",
+    "keywords": [
+     "roast",
+     "sirloin",
+     "rib-eye",
+     "lamb",
+     "duck breast",
+     "leg of lamb",
+     "shoulder",
+     "ribs"
+    ]
+   }
+  },
+  {
+   "id": "salt-meat",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Cuándo salar la carne",
+    "body": "Sala justo antes de cocinarla o con al menos 40 minutos de antelación. Al principio la sal saca jugo a la superficie, pero con tiempo se vuelve a absorber y sazona por dentro. Lo peor es salar 10-15 minutos antes: la carne queda mojada y no se dora.",
+    "keywords": [
+     "filete",
+     "filetes",
+     "chuleta",
+     "chuletas",
+     "entrecot",
+     "solomillo",
+     "chuletón",
+     "pechuga"
+    ]
+   },
+   "en": {
+    "title": "When to salt meat",
+    "body": "Salt just before cooking or at least 40 minutes ahead. At first the salt draws juice to the surface, but given time it is absorbed again and seasons the inside. The worst moment is 10-15 minutes before: the surface stays wet and won't brown.",
+    "keywords": [
+     "steak",
+     "steaks",
+     "chop",
+     "chops",
+     "sirloin",
+     "rib-eye",
+     "chicken breast"
+    ]
+   }
+  },
+  {
+   "id": "pasta-water",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Guarda el agua de la pasta",
+    "body": "Antes de escurrir, reserva un vaso del agua de cocción. Su almidón ayuda a que la salsa se una a la pasta y quede cremosa. No hace falta aceite en el agua: basta con mucha agua, sal y remover al principio.",
+    "keywords": [
+     "pasta",
+     "espaguetis",
+     "macarrones",
+     "tallarines",
+     "fideos",
+     "penne",
+     "fusilli",
+     "linguine",
+     "carbonara"
+    ]
+   },
+   "en": {
+    "title": "Save the pasta water",
+    "body": "Before draining, keep a glass of the cooking water. Its starch helps the sauce cling to the pasta and turn creamy. There's no need for oil in the water: plenty of water, salt and a stir at the start is enough.",
+    "keywords": [
+     "pasta",
+     "spaghetti",
+     "macaroni",
+     "tagliatelle",
+     "noodles",
+     "penne",
+     "fusilli",
+     "linguine",
+     "carbonara"
+    ]
+   }
+  },
+  {
+   "id": "mayo-not-split",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Mayonesa que no se corta",
+    "body": "Usa el huevo y el aceite a la misma temperatura y añade el aceite muy poco a poco al principio, hasta que empiece a espesar. Si se corta, pon otra yema (o una cucharada de agua) en un bol limpio y ve añadiendo la mayonesa cortada mientras bates.",
+    "keywords": [
+     "mayonesa",
+     "alioli",
+     "ajoaceite"
+    ]
+   },
+   "en": {
+    "title": "Mayonnaise that doesn't split",
+    "body": "Have the egg and oil at the same temperature and add the oil very slowly at first, until it starts to thicken. If it splits, put another yolk (or a spoonful of water) in a clean bowl and whisk the split mayonnaise into it little by little.",
+    "keywords": [
+     "mayonnaise",
+     "aioli"
+    ]
+   }
+  },
+  {
+   "id": "peel-boiled-eggs",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Huevos cocidos que se pelan bien",
+    "body": "Echa los huevos al agua cuando ya hierva, no en frío, y al terminar pásalos a agua con hielo unos minutos. Los huevos de unos días se pelan mejor que los recién puestos. Empieza a pelar por la parte ancha, donde está la cámara de aire.",
+    "keywords": [
+     "huevo cocido",
+     "huevos cocidos",
+     "huevo duro",
+     "huevos duros"
+    ]
+   },
+   "en": {
+    "title": "Boiled eggs that peel easily",
+    "body": "Lower the eggs into water that is already boiling, not cold, and when they're done move them to iced water for a few minutes. Eggs that are a few days old peel better than very fresh ones. Start peeling at the wide end, where the air pocket is.",
+    "keywords": [
+     "boiled egg",
+     "boiled eggs",
+     "hard-boiled egg",
+     "hard-boiled eggs"
+    ]
+   }
+  },
+  {
+   "id": "frying-temperature",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Fritos crujientes y sin grasa",
+    "body": "El aceite tiene que estar a 170-180 °C: si está frío, el alimento se empapa; si humea, se quema por fuera. Fríe en tandas pequeñas para que no baje la temperatura y escurre sobre una rejilla o papel de cocina.",
+    "keywords": [
+     "freír",
+     "frito",
+     "fritos",
+     "fríe",
+     "croquetas",
+     "rebozado",
+     "rebozados",
+     "buñuelos",
+     "aceite para freír"
+    ]
+   },
+   "en": {
+    "title": "Crisp, non-greasy fried food",
+    "body": "The oil should be at 170-180 °C: too cold and the food goes soggy; smoking and it burns outside. Fry in small batches so the temperature doesn't drop, and drain on a rack or kitchen paper.",
+    "keywords": [
+     "fry",
+     "fried",
+     "deep-fry",
+     "croquettes",
+     "battered",
+     "fritters",
+     "oil for frying"
+    ]
+   }
+  },
+  {
+   "id": "thicken-sauce",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Espesar una salsa sin grumos",
+    "body": "Disuelve la maicena en un poco de agua o caldo frío y añádela a la salsa caliente removiendo; espesa en cuanto hierve. Si la echas directamente al líquido caliente, se hacen grumos. Otra opción es reducir: dejar que hierva destapada.",
+    "keywords": [
+     "maicena",
+     "espesar",
+     "salsa",
+     "bechamel"
+    ]
+   },
+   "en": {
+    "title": "Thicken a sauce without lumps",
+    "body": "Mix cornflour with a little cold water or stock and stir it into the hot sauce; it thickens as soon as it boils. Added straight to hot liquid it forms lumps. Or reduce: let it simmer uncovered.",
+    "keywords": [
+     "cornflour",
+     "cornstarch",
+     "thicken",
+     "sauce",
+     "béchamel"
+    ]
+   }
+  },
+  {
+   "id": "skim-fat",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Desgrasar un caldo",
+    "body": "Lo más fácil es enfriarlo en la nevera: la grasa sube y se solidifica, y se retira con una cuchara. Si tienes prisa, pasa un cucharón por la superficie o apoya un papel de cocina que la absorba.",
+    "keywords": [
+     "caldo",
+     "cocido",
+     "consomé",
+     "fondo",
+     "puchero"
+    ]
+   },
+   "en": {
+    "title": "Skim the fat off a stock",
+    "body": "The easiest way is to chill it: the fat rises, sets, and lifts off with a spoon. In a hurry, skim the surface with a ladle or lay a sheet of kitchen paper on top to soak it up.",
+    "keywords": [
+     "stock",
+     "broth",
+     "consommé",
+     "bone broth"
+    ]
+   }
+  },
+  {
+   "id": "dress-salad-late",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Aliña la ensalada al final",
+    "body": "La sal y el vinagre hacen que las hojas suelten agua y se ablanden. Aliña justo antes de servir, y si sobra ensalada, guárdala sin aliñar.",
+    "keywords": [
+     "ensalada",
+     "lechuga",
+     "rúcula",
+     "canónigos",
+     "vinagreta"
+    ]
+   },
+   "en": {
+    "title": "Dress salad at the last minute",
+    "body": "Salt and vinegar make leaves release water and wilt. Dress the salad just before serving, and keep any leftovers undressed.",
+    "keywords": [
+     "salad",
+     "lettuce",
+     "rocket",
+     "arugula",
+     "vinaigrette"
+    ]
+   }
+  },
+  {
+   "id": "taste-and-adjust",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Prueba y rectifica antes de servir",
+    "body": "Cuando un plato sabe plano, no siempre le falta sal: muchas veces le falta un toque ácido. Unas gotas de limón o de vinagre al final despiertan guisos, legumbres y salsas.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Taste and adjust before serving",
+    "body": "When a dish tastes flat it doesn't always need salt: often it needs some acidity. A few drops of lemon or vinegar at the end brighten stews, pulses and sauces.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "herbs-in-oil-cubes",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Hierbas congeladas en aceite",
+    "body": "Pica las hierbas frescas que te sobren, repártelas en una cubitera y cúbrelas de aceite de oliva. Una vez congeladas, guarda los cubitos en una bolsa: van directos a la sartén para sofritos, guisos y salsas.",
+    "keywords": [
+     "perejil",
+     "cilantro",
+     "albahaca",
+     "eneldo",
+     "romero",
+     "tomillo",
+     "cebollino"
+    ]
+   },
+   "en": {
+    "title": "Herbs frozen in oil",
+    "body": "Chop leftover fresh herbs, divide them between the holes of an ice-cube tray and cover with olive oil. Once frozen, keep the cubes in a bag: they go straight into the pan for sauces, stews and soups.",
+    "keywords": [
+     "parsley",
+     "coriander",
+     "cilantro",
+     "basil",
+     "dill",
+     "rosemary",
+     "thyme",
+     "chives"
+    ]
+   }
+  },
+  {
+   "id": "herbs-like-flowers",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Hierbas frescas como un ramo",
+    "body": "Corta la punta de los tallos y pon el manojo en un vaso con un dedo de agua, como un ramo, tapado con una bolsa en la nevera. La albahaca es la excepción: aguanta mejor fuera de la nevera.",
+    "keywords": [
+     "perejil",
+     "cilantro",
+     "albahaca",
+     "menta",
+     "hierbabuena",
+     "eneldo"
+    ]
+   },
+   "en": {
+    "title": "Keep fresh herbs like flowers",
+    "body": "Trim the stems and stand the bunch in a glass with a little water, like flowers, loosely covered with a bag in the fridge. Basil is the exception: it keeps better out of the fridge.",
+    "keywords": [
+     "parsley",
+     "coriander",
+     "cilantro",
+     "basil",
+     "mint",
+     "dill"
+    ]
+   }
+  },
+  {
+   "id": "freeze-flat",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Congela en plano y con fecha",
+    "body": "Usa bolsas de congelación, quita todo el aire posible y congélalas en plano. Se apilan como libros, se congelan y descongelan antes y no cogen escarcha. Escribe siempre qué es y la fecha.",
+    "keywords": [
+     "congelar",
+     "congelado",
+     "congélalo",
+     "congélalos",
+     "congélalas"
+    ]
+   },
+   "en": {
+    "title": "Freeze flat and labelled",
+    "body": "Use freezer bags, squeeze out as much air as you can and freeze them flat. They stack like books, freeze and thaw faster and don't get freezer burn. Always write what it is and the date.",
+    "keywords": [
+     "freeze",
+     "frozen",
+     "freezer"
+    ]
+   }
+  },
+  {
+   "id": "freeze-sofrito",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Sofrito listo en el congelador",
+    "body": "Cuando pique cebolla, pimiento o ajo, haz de más: picados o ya pochados se congelan muy bien en raciones. El próximo guiso empieza con la mitad del trabajo hecho.",
+    "keywords": [
+     "sofrito",
+     "pochar",
+     "pocha",
+     "cebolla",
+     "pimiento"
+    ]
+   },
+   "en": {
+    "title": "Sofrito ready in the freezer",
+    "body": "When you chop onion, pepper or garlic, make extra: chopped or already softened, they freeze very well in portions. Your next stew starts half done.",
+    "keywords": [
+     "sofrito",
+     "soffritto",
+     "mirepoix",
+     "onion",
+     "pepper"
+    ]
+   }
+  },
+  {
+   "id": "salad-leaves-dry",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Lechuga crujiente varios días",
+    "body": "Lava las hojas, sécalas muy bien (una centrifugadora ayuda) y guárdalas en un táper con papel de cocina debajo y encima. El papel recoge la humedad, que es lo que las pudre.",
+    "keywords": [
+     "lechuga",
+     "rúcula",
+     "canónigos",
+     "espinacas frescas",
+     "brotes",
+     "escarola"
+    ]
+   },
+   "en": {
+    "title": "Crisp lettuce for days",
+    "body": "Wash the leaves, dry them really well (a salad spinner helps) and store them in a container with kitchen paper underneath and on top. The paper catches the moisture that makes them rot.",
+    "keywords": [
+     "lettuce",
+     "rocket",
+     "arugula",
+     "lamb's lettuce",
+     "baby spinach",
+     "salad leaves"
+    ]
+   }
+  },
+  {
+   "id": "ripening-fruit",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Fruta que madura antes (o después)",
+    "body": "Plátanos, aguacates, tomates y manzanas sueltan un gas que acelera la maduración. Para que un aguacate madure antes, mételo en una bolsa de papel con un plátano; para que el resto de la fruta dure más, guárdala aparte.",
+    "keywords": [
+     "aguacate",
+     "aguacates",
+     "plátano",
+     "plátanos",
+     "guacamole"
+    ]
+   },
+   "en": {
+    "title": "Ripen fruit faster (or slower)",
+    "body": "Bananas, avocados, tomatoes and apples give off a gas that speeds up ripening. To ripen an avocado sooner, put it in a paper bag with a banana; to make other fruit last longer, keep it apart.",
+    "keywords": [
+     "avocado",
+     "avocados",
+     "banana",
+     "bananas",
+     "guacamole"
+    ]
+   }
+  },
+  {
+   "id": "tomatoes-out-of-fridge",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Tomates fuera de la nevera",
+    "body": "El frío apaga el sabor y estropea la textura del tomate. Guárdalos a temperatura ambiente hasta que estén maduros y, si tienes que meterlos en la nevera, sácalos un rato antes de comerlos.",
+    "keywords": [
+     "tomate",
+     "tomates",
+     "ensalada de tomate",
+     "salmorejo",
+     "gazpacho"
+    ]
+   },
+   "en": {
+    "title": "Keep tomatoes out of the fridge",
+    "body": "Cold dulls the flavour and spoils the texture of tomatoes. Keep them at room temperature until ripe and, if they must go in the fridge, take them out a while before eating.",
+    "keywords": [
+     "tomato",
+     "tomatoes",
+     "gazpacho"
+    ]
+   }
+  },
+  {
+   "id": "freeze-bread",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Pan siempre a punto",
+    "body": "Congela el pan cortado en rebanadas el mismo día que lo compras. Puedes tostarlas directamente del congelador o dejarlas unos minutos a temperatura ambiente, y solo sacas lo que vas a comer.",
+    "keywords": [
+     "pan",
+     "barra",
+     "hogaza",
+     "rebanadas de pan"
+    ]
+   },
+   "en": {
+    "title": "Bread always ready",
+    "body": "Freeze bread sliced on the day you buy it. You can toast slices straight from the freezer or leave them out for a few minutes, and only take out what you'll eat.",
+    "keywords": [
+     "bread",
+     "loaf",
+     "baguette",
+     "slices of bread"
+    ]
+   }
+  },
+  {
+   "id": "guacamole-green",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Guacamole que no se oscurece",
+    "body": "El aguacate se oscurece al contacto con el aire. Añade zumo de lima o limón y guarda el guacamole con film transparente pegado directamente a la superficie, sin dejar aire entre medias.",
+    "keywords": [
+     "guacamole",
+     "aguacate"
+    ]
+   },
+   "en": {
+    "title": "Guacamole that stays green",
+    "body": "Avocado darkens in contact with air. Add lime or lemon juice and store the guacamole with cling film pressed right onto the surface, with no air in between.",
+    "keywords": [
+     "guacamole",
+     "avocado"
+    ]
+   }
+  },
+  {
+   "id": "artichokes-lemon",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Alcachofas que no se ponen negras",
+    "body": "Según las limpias, frota el corte con medio limón y échalas en un bol con agua y zumo de limón (o un puñado de perejil). Así no se oxidan mientras preparas el resto.",
+    "keywords": [
+     "alcachofa",
+     "alcachofas"
+    ]
+   },
+   "en": {
+    "title": "Artichokes that don't go black",
+    "body": "As you trim them, rub the cut surfaces with half a lemon and drop them into a bowl of water with lemon juice. They won't darken while you prepare the rest.",
+    "keywords": [
+     "artichoke",
+     "artichokes"
+    ]
+   }
+  },
+  {
+   "id": "tin-leftovers",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Lo que sobra de una lata, a otro recipiente",
+    "body": "Una vez abierta, pasa el resto de la conserva (tomate, legumbres, maíz…) a un recipiente de vidrio o plástico con tapa. En la lata abierta coge sabor metálico. Consúmelo en 2-3 días.",
+    "keywords": [
+     "lata",
+     "conserva",
+     "tomate triturado",
+     "tomate en conserva",
+     "garbanzos cocidos",
+     "maíz"
+    ]
+   },
+   "en": {
+    "title": "Move tin leftovers to another container",
+    "body": "Once opened, transfer what's left (tomatoes, beans, sweetcorn…) to a glass or plastic container with a lid. In the open tin it picks up a metallic taste. Use it within 2-3 days.",
+    "keywords": [
+     "tin",
+     "tinned",
+     "canned",
+     "chopped tomatoes",
+     "sweetcorn"
+    ]
+   }
+  },
+  {
+   "id": "store-cheese",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Cómo guardar el queso",
+    "body": "El film pegado hace que el queso sude y coja sabores. Envuélvelo en papel de horno o encerado y luego mételo en una bolsa o táper sin cerrar del todo, en la parte menos fría de la nevera.",
+    "keywords": [
+     "queso",
+     "quesos"
+    ]
+   },
+   "en": {
+    "title": "How to store cheese",
+    "body": "Cling film makes cheese sweat and pick up flavours. Wrap it in baking or waxed paper, then put it in a bag or container left slightly open, in the least cold part of the fridge.",
+    "keywords": [
+     "cheese"
+    ]
+   }
+  },
+  {
+   "id": "grate-soft-cheese",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Rallar queso tierno",
+    "body": "Los quesos blandos se pegan al rallador. Mételos 20-30 minutos en el congelador antes de rallarlos: se endurecen y se rallan sin pegarse ni desperdiciar nada.",
+    "keywords": [
+     "queso rallado",
+     "mozzarella",
+     "queso tierno",
+     "queso fresco"
+    ]
+   },
+   "en": {
+    "title": "Grate soft cheese",
+    "body": "Soft cheeses stick to the grater. Put them in the freezer for 20-30 minutes first: they firm up and grate cleanly without waste.",
+    "keywords": [
+     "grated cheese",
+     "mozzarella",
+     "soft cheese"
+    ]
+   }
+  },
+  {
+   "id": "stale-bread",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "Mil usos del pan duro",
+    "body": "El pan del día anterior es oro: pan rallado (sécalo al horno y tritúralo), picatostes, torrijas, migas, salmorejo, gazpacho o una sopa de ajo. Si no lo vas a usar pronto, rállalo y congélalo.",
+    "keywords": [
+     "pan duro",
+     "pan del día anterior",
+     "pan rallado",
+     "torrijas",
+     "migas",
+     "picatostes",
+     "salmorejo",
+     "sopa de ajo"
+    ]
+   },
+   "en": {
+    "title": "Many uses for stale bread",
+    "body": "Day-old bread is gold: breadcrumbs (dry it in the oven and blitz), croutons, French toast, bread pudding, panzanella or gazpacho. If you won't use it soon, blitz it and freeze the crumbs.",
+    "keywords": [
+     "stale bread",
+     "day-old bread",
+     "breadcrumbs",
+     "croutons",
+     "french toast",
+     "bread pudding",
+     "panzanella"
+    ]
+   }
+  },
+  {
+   "id": "scraps-stock",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "Caldo con recortes",
+    "body": "Guarda en una bolsa en el congelador los recortes limpios de verdura (puntas de puerro, pieles de zanahoria, tallos de perejil, restos de cebolla) y los huesos de pollo. Cuando la bolsa esté llena, tienes un caldo casi gratis.",
+    "keywords": [
+     "caldo",
+     "caldo de verduras",
+     "caldo de pollo",
+     "fondo"
+    ]
+   },
+   "en": {
+    "title": "Stock from scraps",
+    "body": "Keep a bag in the freezer for clean vegetable trimmings (leek tops, carrot peel, parsley stalks, onion ends) and chicken bones. When it's full, you've got stock almost for free.",
+    "keywords": [
+     "stock",
+     "vegetable stock",
+     "chicken stock",
+     "broth"
+    ]
+   }
+  },
+  {
+   "id": "day-old-rice",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "Arroz del día anterior",
+    "body": "El arroz cocido y bien frío de la nevera es el mejor para arroz frito: los granos están más secos y no se apelmazan. Enfríalo rápido después de cocerlo y úsalo en uno o dos días.",
+    "keywords": [
+     "arroz frito",
+     "arroz cocido",
+     "arroz blanco",
+     "arroz del día anterior"
+    ]
+   },
+   "en": {
+    "title": "Yesterday's rice",
+    "body": "Cooked rice that has chilled in the fridge is the best for fried rice: the grains are drier and don't clump. Cool it quickly after cooking and use it within a day or two.",
+    "keywords": [
+     "fried rice",
+     "cooked rice",
+     "white rice",
+     "day-old rice"
+    ]
+   }
+  },
+  {
+   "id": "ripe-bananas",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "Plátanos demasiado maduros",
+    "body": "Los plátanos con la piel negra son los más dulces. Úsalos en bizcochos, tortitas o batidos, o pélalos, trocéalos y congélalos: triturados congelados son un helado instantáneo.",
+    "keywords": [
+     "plátano",
+     "plátanos",
+     "pan de plátano",
+     "banana"
+    ]
+   },
+   "en": {
+    "title": "Overripe bananas",
+    "body": "Bananas with black skins are the sweetest. Use them in cakes, pancakes or smoothies, or peel, chop and freeze them: blitzed from frozen they make instant ice cream.",
+    "keywords": [
+     "banana",
+     "bananas",
+     "banana bread"
+    ]
+   }
+  },
+  {
+   "id": "roast-and-stew-leftovers",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "Segunda vida para el cocido y el asado",
+    "body": "La carne que sobra de un cocido o un pollo asado sirve para croquetas, canelones, ropa vieja, empanadillas o un arroz. El caldo del cocido, para una sopa de fideos al día siguiente.",
+    "keywords": [
+     "cocido",
+     "pollo asado",
+     "asado",
+     "croquetas",
+     "canelones",
+     "ropa vieja"
+    ]
+   },
+   "en": {
+    "title": "A second life for roasts and stews",
+    "body": "Leftover meat from a roast chicken or a stew makes croquettes, cannelloni, pies, pasties or a rice dish. Leftover stock makes noodle soup the next day.",
+    "keywords": [
+     "roast chicken",
+     "roast",
+     "stew",
+     "croquettes",
+     "cannelloni",
+     "pie"
+    ]
+   }
+  },
+  {
+   "id": "herb-stalks",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "No tires los tallos de las hierbas",
+    "body": "Los tallos de perejil y cilantro tienen tanto sabor como las hojas. Pícalos finos en salsas verdes, guacamole o sofritos, o échalos enteros al caldo y retíralos al final.",
+    "keywords": [
+     "perejil",
+     "cilantro",
+     "salsa verde",
+     "chimichurri"
+    ]
+   },
+   "en": {
+    "title": "Don't throw away herb stalks",
+    "body": "Parsley and coriander stalks have as much flavour as the leaves. Chop them finely into green sauces, guacamole or sautéed bases, or add them whole to stock and lift them out at the end.",
+    "keywords": [
+     "parsley",
+     "coriander",
+     "cilantro",
+     "green sauce",
+     "chimichurri"
+    ]
+   }
+  },
+  {
+   "id": "coffee-ice-cubes",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "Cubitos de café",
+    "body": "El café que sobra en la cafetera, en una cubitera. Con esos cubitos el café con hielo no se agua, y también sirven para batidos o postres de café.",
+    "keywords": [
+     "café"
+    ]
+   },
+   "en": {
+    "title": "Coffee ice cubes",
+    "body": "Pour leftover coffee into an ice-cube tray. Iced coffee made with them doesn't get watery, and they're handy for smoothies or coffee desserts.",
+    "keywords": [
+     "coffee",
+     "espresso"
+    ]
+   }
+  },
+  {
+   "id": "parmesan-rind",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "La corteza del parmesano",
+    "body": "No la tires: guárdala en el congelador y échala a sopas, minestrones, caldos o salsas de tomate mientras se cocinan. Da un sabor profundo; retírala antes de servir.",
+    "keywords": [
+     "parmesano",
+     "minestrone",
+     "sopa"
+    ]
+   },
+   "en": {
+    "title": "Parmesan rind",
+    "body": "Don't throw it away: keep it in the freezer and drop it into soups, minestrone, stocks or tomato sauces while they cook. It adds deep flavour; remove it before serving.",
+    "keywords": [
+     "parmesan",
+     "minestrone",
+     "soup"
+    ]
+   }
+  },
+  {
+   "id": "zest-before-squeeze",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "Ralla antes de exprimir",
+    "body": "Si vas a usar el zumo de un limón o una naranja, ralla antes la piel (solo la parte de color, no la blanca, que amarga). La ralladura se congela muy bien para bizcochos y aliños.",
+    "keywords": [
+     "ralladura",
+     "ralladura de limón",
+     "ralladura de naranja",
+     "limón",
+     "naranja"
+    ]
+   },
+   "en": {
+    "title": "Zest before you squeeze",
+    "body": "If you're using the juice of a lemon or orange, grate the zest first (only the coloured part, not the bitter white pith). Zest freezes well for cakes and dressings.",
+    "keywords": [
+     "zest",
+     "lemon zest",
+     "orange zest",
+     "lemon",
+     "orange"
+    ]
+   }
+  },
+  {
+   "id": "spare-yolks-whites",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "Claras y yemas sobrantes",
+    "body": "Las claras se congelan perfectamente (anota cuántas son) y luego se montan igual. Las yemas, en un recipiente cubiertas con un poco de agua, aguantan un par de días en la nevera para cremas o una carbonara.",
+    "keywords": [
+     "yema",
+     "yemas",
+     "clara",
+     "claras"
+    ]
+   },
+   "en": {
+    "title": "Spare egg yolks and whites",
+    "body": "Whites freeze perfectly (note how many) and whip just as well later. Yolks, covered with a little water in a container, keep a couple of days in the fridge for custards or a carbonara.",
+    "keywords": [
+     "egg yolk",
+     "egg yolks",
+     "egg white",
+     "egg whites"
+    ]
+   }
+  },
+  {
+   "id": "buttermilk",
+   "category": "SUBSTITUTIONS",
+   "es": {
+    "title": "Suero de leche casero",
+    "body": "Si una receta pide suero de leche (buttermilk), mezcla 250 ml de leche con 1 cucharada de zumo de limón o vinagre y deja reposar 10 minutos, hasta que se corte un poco. Funciona igual en tortitas, bizcochos y rebozados.",
+    "keywords": [
+     "suero de leche",
+     "buttermilk"
+    ]
+   },
+   "en": {
+    "title": "Homemade buttermilk",
+    "body": "If a recipe calls for buttermilk, mix 250 ml of milk with 1 tbsp lemon juice or vinegar and leave for 10 minutes, until it curdles slightly. It works the same in pancakes, cakes and coatings.",
+    "keywords": [
+     "buttermilk"
+    ]
+   }
+  },
+  {
+   "id": "egg-replacer-baking",
+   "category": "SUBSTITUTIONS",
+   "es": {
+    "title": "Sin huevo en repostería",
+    "body": "Para sustituir un huevo en bizcochos y galletas: 1 cucharada de lino molido con 3 de agua, reposado 10 minutos, o 50 g de plátano maduro o compota de manzana (aportan sabor). Funciona bien hasta 2 huevos por receta.",
+    "keywords": [
+     "bizcocho",
+     "magdalenas",
+     "galletas",
+     "muffins",
+     "brownie",
+     "tortitas"
+    ]
+   },
+   "en": {
+    "title": "Egg-free baking",
+    "body": "To replace one egg in cakes and biscuits: 1 tbsp ground flaxseed with 3 tbsp water, left for 10 minutes, or 50 g ripe banana or apple purée (they add flavour). It works well for up to 2 eggs per recipe.",
+    "keywords": [
+     "cake",
+     "sponge",
+     "muffins",
+     "cookies",
+     "biscuits",
+     "brownies",
+     "pancakes"
+    ]
+   }
+  },
+  {
+   "id": "brown-sugar-sub",
+   "category": "SUBSTITUTIONS",
+   "es": {
+    "title": "Azúcar moreno en un momento",
+    "body": "Mezcla 200 g de azúcar blanco con 1 cucharada de melaza o miel de caña hasta que quede uniforme. Si tu azúcar moreno se ha endurecido, guárdalo un día con un trozo de pan o de manzana y se ablanda.",
+    "keywords": [
+     "azúcar moreno",
+     "azúcar mascabado"
+    ]
+   },
+   "en": {
+    "title": "Brown sugar in a pinch",
+    "body": "Mix 200 g white sugar with 1 tbsp molasses or treacle until even. If your brown sugar has hardened, store it for a day with a piece of bread or apple and it softens.",
+    "keywords": [
+     "brown sugar",
+     "muscovado"
+    ]
+   }
+  },
+  {
+   "id": "dried-vs-fresh-herbs",
+   "category": "SUBSTITUTIONS",
+   "es": {
+    "title": "Hierbas secas o frescas",
+    "body": "Una cucharadita de hierba seca equivale más o menos a una cucharada de fresca. Las secas se añaden al principio para que suelten sabor; las frescas delicadas (albahaca, cilantro, perejil) al final.",
+    "keywords": [
+     "orégano",
+     "tomillo",
+     "romero",
+     "albahaca",
+     "laurel",
+     "eneldo",
+     "estragón"
+    ]
+   },
+   "en": {
+    "title": "Dried or fresh herbs",
+    "body": "One teaspoon of dried herb is roughly one tablespoon of fresh. Add dried herbs at the start so they release their flavour; delicate fresh ones (basil, coriander, parsley) at the end.",
+    "keywords": [
+     "oregano",
+     "thyme",
+     "rosemary",
+     "basil",
+     "bay leaf",
+     "dill",
+     "tarragon"
+    ]
+   }
+  },
+  {
+   "id": "yeast-conversion",
+   "category": "SUBSTITUTIONS",
+   "es": {
+    "title": "Levadura fresca o seca",
+    "body": "La levadura seca de panadería es unas tres veces más concentrada que la fresca: 25 g de fresca equivalen a unos 8 g de seca. La química (polvo de hornear) no sirve para pan: es otra cosa.",
+    "keywords": [
+     "levadura fresca",
+     "levadura seca",
+     "levadura de panadería",
+     "levadura seca de panadería"
+    ]
+   },
+   "en": {
+    "title": "Fresh or dried yeast",
+    "body": "Dried yeast is about three times stronger than fresh: 25 g fresh is about 8 g dried. Baking powder doesn't work for bread: it's something else entirely.",
+    "keywords": [
+     "fresh yeast",
+     "dried yeast",
+     "dry yeast",
+     "instant yeast"
+    ]
+   }
+  },
+  {
+   "id": "lighter-cream",
+   "category": "SUBSTITUTIONS",
+   "es": {
+    "title": "Salsas cremosas más ligeras",
+    "body": "En muchas salsas puedes cambiar la nata por leche evaporada o por yogur griego. El yogur, añádelo fuera del fuego y sin que hierva, o se cortará.",
+    "keywords": [
+     "nata",
+     "nata para cocinar",
+     "nata líquida"
+    ]
+   },
+   "en": {
+    "title": "Lighter creamy sauces",
+    "body": "In many sauces you can swap cream for evaporated milk or Greek yoghurt. Add yoghurt off the heat and don't let it boil, or it will split.",
+    "keywords": [
+     "cream",
+     "single cream",
+     "double cream",
+     "heavy cream"
+    ]
+   }
+  },
+  {
+   "id": "wine-free",
+   "category": "SUBSTITUTIONS",
+   "es": {
+    "title": "Guisos sin vino",
+    "body": "Si no quieres usar vino, pon la misma cantidad de caldo con un chorrito de vinagre o, en guisos de carne, zumo de uva con unas gotas de vinagre. Lo que aporta el vino es acidez y sabor, no solo líquido.",
+    "keywords": [
+     "vino",
+     "vino blanco",
+     "vino tinto",
+     "jerez"
+    ]
+   },
+   "en": {
+    "title": "Stews without wine",
+    "body": "If you'd rather not use wine, use the same amount of stock with a dash of vinegar or, in meat stews, grape juice with a few drops of vinegar. Wine adds acidity and flavour, not just liquid.",
+    "keywords": [
+     "wine",
+     "white wine",
+     "red wine",
+     "sherry"
+    ]
+   }
+  },
+  {
+   "id": "self-raising-flour",
+   "category": "SUBSTITUTIONS",
+   "es": {
+    "title": "Harina con levadura casera",
+    "body": "Si no tienes harina con levadura (bizcochona), mezcla 150 g de harina normal con 2 cucharaditas (8 g) de levadura química y una pizca de sal. Tamízalo todo junto.",
+    "keywords": [
+     "harina con levadura",
+     "harina bizcochona",
+     "harina leudante"
+    ]
+   },
+   "en": {
+    "title": "Homemade self-raising flour",
+    "body": "If you don't have self-raising flour, mix 150 g plain flour with 2 tsp (8 g) baking powder and a pinch of salt. Sift them together.",
+    "keywords": [
+     "self-raising flour",
+     "self-rising flour"
+    ]
+   }
+  },
+  {
+   "id": "two-boards",
+   "category": "SAFETY",
+   "es": {
+    "title": "Una tabla para crudos y otra para el resto",
+    "body": "Usa una tabla y un cuchillo para carne, pollo y pescado crudos y otros para lo que se come tal cual (verdura de ensalada, pan, fruta). Si solo tienes una, lávala con agua caliente y jabón entre medias.",
+    "keywords": [
+     "pollo",
+     "pechuga",
+     "carne picada",
+     "pescado",
+     "cerdo"
+    ]
+   },
+   "en": {
+    "title": "One board for raw, one for the rest",
+    "body": "Use one board and knife for raw meat, poultry and fish, and others for ready-to-eat food (salad, bread, fruit). If you only have one, wash it with hot soapy water in between.",
+    "keywords": [
+     "chicken",
+     "chicken breast",
+     "minced meat",
+     "mince",
+     "fish",
+     "pork"
+    ]
+   }
+  },
+  {
+   "id": "dont-wash-chicken",
+   "category": "SAFETY",
+   "es": {
+    "title": "No laves el pollo crudo",
+    "body": "Al lavarlo, el agua salpica bacterias por el fregadero, la encimera y lo que haya cerca. No elimina nada que no vaya a matar la cocción. Sécalo con papel de cocina, tira el papel y lávate las manos.",
+    "keywords": [
+     "pollo",
+     "pechuga",
+     "muslos",
+     "alitas",
+     "contramuslos"
+    ]
+   },
+   "en": {
+    "title": "Don't wash raw chicken",
+    "body": "Washing it splashes bacteria around the sink, worktop and anything nearby. It removes nothing that cooking won't kill. Pat it dry with kitchen paper, throw the paper away and wash your hands.",
+    "keywords": [
+     "chicken",
+     "chicken breast",
+     "thighs",
+     "drumsticks",
+     "wings"
+    ]
+   }
+  },
+  {
+   "id": "thaw-in-fridge",
+   "category": "SAFETY",
+   "es": {
+    "title": "Descongela en la nevera",
+    "body": "Pasa lo congelado a la nevera la noche antes, en un plato para que no gotee. A temperatura ambiente, la parte de fuera se calienta mientras el centro sigue congelado. Con prisa: microondas en modo descongelar y cocinar enseguida.",
+    "keywords": [
+     "congelado",
+     "congelados",
+     "descongelar",
+     "descongelado"
+    ]
+   },
+   "en": {
+    "title": "Thaw in the fridge",
+    "body": "Move frozen food to the fridge the night before, on a plate to catch drips. At room temperature the outside warms up while the centre is still frozen. In a hurry: defrost in the microwave and cook straight away.",
+    "keywords": [
+     "frozen",
+     "defrost",
+     "thaw",
+     "thawed"
+    ]
+   }
+  },
+  {
+   "id": "cool-leftovers-fast",
+   "category": "SAFETY",
+   "es": {
+    "title": "Las sobras, a la nevera pronto",
+    "body": "No dejes la comida cocinada más de 2 horas a temperatura ambiente. Para que se enfríe rápido, repártela en recipientes bajos; puede ir a la nevera aún templada. Y consúmela en 3-4 días.",
+    "keywords": [
+     "guiso",
+     "estofado",
+     "cocido",
+     "lentejas",
+     "garbanzos",
+     "potaje",
+     "sopa",
+     "crema"
+    ]
+   },
+   "en": {
+    "title": "Get leftovers into the fridge quickly",
+    "body": "Don't leave cooked food out for more than 2 hours. To cool it fast, divide it into shallow containers; it can go into the fridge still warm. Eat it within 3-4 days.",
+    "keywords": [
+     "stew",
+     "casserole",
+     "lentils",
+     "chickpeas",
+     "soup",
+     "curry"
+    ]
+   }
+  },
+  {
+   "id": "rice-safety",
+   "category": "SAFETY",
+   "es": {
+    "title": "Cuidado con el arroz cocido",
+    "body": "El arroz cocido puede tener esporas que sobreviven a la cocción. Enfríalo deprisa, guárdalo en la nevera y tómalo en uno o dos días. Al recalentarlo, que quede bien caliente por todas partes, y hazlo una sola vez.",
+    "keywords": [
+     "arroz",
+     "arroz cocido",
+     "arroz frito",
+     "paella"
+    ]
+   },
+   "en": {
+    "title": "Take care with cooked rice",
+    "body": "Cooked rice can carry spores that survive cooking. Cool it quickly, keep it in the fridge and eat it within a day or two. When reheating, make sure it's piping hot throughout, and only reheat it once.",
+    "keywords": [
+     "rice",
+     "cooked rice",
+     "fried rice",
+     "paella"
+    ]
+   }
+  },
+  {
+   "id": "raw-fish-freeze",
+   "category": "SAFETY",
+   "es": {
+    "title": "Pescado crudo o marinado: congélalo antes",
+    "body": "Si vas a comer pescado crudo o poco hecho (boquerones en vinagre, ceviche, sushi, tartar, marinados), congélalo antes a -20 °C al menos 5 días para eliminar el anisakis, o cómpralo ya congelado. Cocinado del todo no hace falta.",
+    "keywords": [
+     "boquerones en vinagre",
+     "ceviche",
+     "sushi",
+     "tartar",
+     "marinado",
+     "salmón ahumado",
+     "pescado crudo"
+    ]
+   },
+   "en": {
+    "title": "Raw or marinated fish: freeze it first",
+    "body": "If you'll eat fish raw or lightly cooked (pickled anchovies, ceviche, sushi, tartare, cured fish), freeze it first at -20 °C for at least 5 days to kill parasites, or buy it already frozen. Fully cooked fish doesn't need it.",
+    "keywords": [
+     "pickled anchovies",
+     "ceviche",
+     "sushi",
+     "tartare",
+     "cured",
+     "gravlax",
+     "raw fish"
+    ]
+   }
+  },
+  {
+   "id": "homemade-mayo-safety",
+   "category": "SAFETY",
+   "es": {
+    "title": "Mayonesa casera, siempre fresca",
+    "body": "La mayonesa con huevo crudo se guarda en la nevera y se toma en 24 horas. Para embarazadas, bebés, personas mayores o con defensas bajas, mejor con huevo pasteurizado.",
+    "keywords": [
+     "mayonesa",
+     "alioli",
+     "ensaladilla"
+    ]
+   },
+   "en": {
+    "title": "Homemade mayonnaise, always fresh",
+    "body": "Mayonnaise made with raw egg must be kept in the fridge and eaten within 24 hours. For pregnant women, babies, older people or anyone with low immunity, use pasteurised egg.",
+    "keywords": [
+     "mayonnaise",
+     "aioli",
+     "potato salad"
+    ]
+   }
+  },
+  {
+   "id": "egg-water-test",
+   "category": "SAFETY",
+   "es": {
+    "title": "¿Está fresco el huevo?",
+    "body": "Ponlo en un vaso de agua: si se queda tumbado en el fondo, es fresco; si se pone de pie, ya tiene unos días; si flota, es viejo y mejor no usarlo. Ante la duda, cáscalo aparte y huélelo.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Is the egg fresh?",
+    "body": "Put it in a glass of water: if it lies flat on the bottom it's fresh; if it stands up it's a few days old; if it floats it's old and best not used. When in doubt, crack it into a separate cup and smell it.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "reheat-once",
+   "category": "SAFETY",
+   "es": {
+    "title": "Recalentar bien, y una sola vez",
+    "body": "Al recalentar sobras, que queden humeando por todas partes, también en el centro (75 °C). Remueve a mitad si usas el microondas. Calienta solo la ración que vayas a comer: lo recalentado no se vuelve a guardar.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Reheat thoroughly, and only once",
+    "body": "When reheating leftovers, make sure they're steaming hot all the way through, centre included (75 °C). Stir halfway if using the microwave. Only heat the portion you'll eat: reheated food shouldn't go back in the fridge.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "kitchen-scale",
+   "category": "BAKING",
+   "es": {
+    "title": "En repostería, pesa",
+    "body": "Una taza de harina puede pesar 120 g o 160 g según cómo la llenes. En pan y repostería las proporciones importan: una báscula de cocina es la herramienta más barata para que te salgan siempre igual.",
+    "keywords": [
+     "bizcocho",
+     "pan",
+     "galletas",
+     "tarta",
+     "magdalenas",
+     "masa"
+    ]
+   },
+   "en": {
+    "title": "In baking, weigh it",
+    "body": "A cup of flour can weigh 120 g or 160 g depending on how you fill it. In bread and baking proportions matter: a kitchen scale is the cheapest way to get the same result every time.",
+    "keywords": [
+     "cake",
+     "bread",
+     "cookies",
+     "biscuits",
+     "tart",
+     "muffins",
+     "dough"
+    ]
+   }
+  },
+  {
+   "id": "room-temperature",
+   "category": "BAKING",
+   "es": {
+    "title": "Huevos y mantequilla a temperatura ambiente",
+    "body": "Para bizcochos y cremas, saca los huevos y la mantequilla de la nevera una hora antes. Se mezclan mejor, la masa atrapa más aire y sale más esponjosa. Prisa: los huevos, 5 minutos en agua templada.",
+    "keywords": [
+     "bizcocho",
+     "magdalenas",
+     "cupcakes",
+     "muffins",
+     "crema de mantequilla",
+     "galletas"
+    ]
+   },
+   "en": {
+    "title": "Eggs and butter at room temperature",
+    "body": "For cakes and buttercream, take eggs and butter out of the fridge an hour ahead. They combine better, the batter traps more air and the cake is lighter. In a hurry: eggs in warm water for 5 minutes.",
+    "keywords": [
+     "cake",
+     "sponge",
+     "cupcakes",
+     "muffins",
+     "buttercream",
+     "cookies"
+    ]
+   }
+  },
+  {
+   "id": "whip-egg-whites",
+   "category": "BAKING",
+   "es": {
+    "title": "Claras a punto de nieve",
+    "body": "El bol y las varillas tienen que estar limpios y secos, sin rastro de grasa, y las claras sin nada de yema. Mejor a temperatura ambiente. Una pizca de sal o unas gotas de limón al empezar las estabilizan.",
+    "keywords": [
+     "claras",
+     "clara",
+     "merengue",
+     "soufflé",
+     "punto de nieve",
+     "mousse"
+    ]
+   },
+   "en": {
+    "title": "Stiffly beaten egg whites",
+    "body": "The bowl and whisk must be clean and dry, with no trace of fat, and the whites without any yolk. Room temperature is best. A pinch of salt or a few drops of lemon at the start stabilise them.",
+    "keywords": [
+     "egg whites",
+     "egg white",
+     "meringue",
+     "soufflé",
+     "stiff peaks",
+     "mousse"
+    ]
+   }
+  },
+  {
+   "id": "keep-oven-closed",
+   "category": "BAKING",
+   "es": {
+    "title": "No abras el horno antes de tiempo",
+    "body": "Abrir la puerta baja la temperatura de golpe y bizcochos y soufflés se hunden. Espera a que haya pasado al menos dos tercios del tiempo, y comprueba con un palillo: si sale limpio, está hecho.",
+    "keywords": [
+     "bizcocho",
+     "soufflé",
+     "magdalenas",
+     "tarta",
+     "pan de plátano",
+     "brownie"
+    ]
+   },
+   "en": {
+    "title": "Don't open the oven too early",
+    "body": "Opening the door drops the temperature suddenly and cakes and soufflés sink. Wait until at least two-thirds of the time has passed, then test with a skewer: if it comes out clean, it's done.",
+    "keywords": [
+     "cake",
+     "sponge",
+     "soufflé",
+     "muffins",
+     "banana bread",
+     "brownies"
+    ]
+   }
+  },
+  {
+   "id": "steam-for-bread",
+   "category": "BAKING",
+   "es": {
+    "title": "Vapor para un pan con buena corteza",
+    "body": "Al meter el pan, pon en la parte baja del horno una bandeja con un vaso de agua caliente o unos cubitos de hielo. El vapor de los primeros minutos deja que el pan suba más y forma una corteza fina y crujiente.",
+    "keywords": [
+     "pan",
+     "hogaza",
+     "barra",
+     "chapata",
+     "baguette",
+     "masa madre"
+    ]
+   },
+   "en": {
+    "title": "Steam for a crusty loaf",
+    "body": "When the bread goes in, put a tray with a glass of hot water or some ice cubes on the oven floor. Steam in the first minutes lets the loaf rise more and gives a thin, crisp crust.",
+    "keywords": [
+     "bread",
+     "loaf",
+     "baguette",
+     "ciabatta",
+     "sourdough"
+    ]
+   }
+  },
+  {
+   "id": "grate-cold-butter",
+   "category": "BAKING",
+   "es": {
+    "title": "Mantequilla fría, rallada",
+    "body": "Para masa quebrada, scones o hojaldre rápido, ralla la mantequilla muy fría (o congelada) sobre la harina. Se reparte enseguida sin calentarse y la masa queda más crujiente. También sirve para untar pan cuando está dura.",
+    "keywords": [
+     "masa quebrada",
+     "scones",
+     "mantequilla fría",
+     "quiche",
+     "tarta"
+    ]
+   },
+   "en": {
+    "title": "Grate cold butter",
+    "body": "For shortcrust, scones or rough puff, grate very cold (or frozen) butter over the flour. It spreads through quickly without warming and the pastry is crisper. Handy for spreading on bread too when it's hard.",
+    "keywords": [
+     "shortcrust",
+     "scones",
+     "cold butter",
+     "quiche",
+     "tart",
+     "pastry"
+    ]
+   }
+  },
+  {
+   "id": "line-tins",
+   "category": "BAKING",
+   "es": {
+    "title": "Forra el molde con papel de horno",
+    "body": "Engrasa un poco el molde para que el papel se pegue y fórralo con papel de horno. El bizcocho sale entero, no hace falta enharinar y el molde casi no se ensucia. Mejor que el papel de aluminio, que se rompe y se pega.",
+    "keywords": [
+     "molde",
+     "bizcocho",
+     "brownie",
+     "tarta",
+     "plum cake"
+    ]
+   },
+   "en": {
+    "title": "Line the tin with baking paper",
+    "body": "Grease the tin lightly so the paper sticks and line it with baking paper. The cake comes out whole, you don't need flour and the tin barely gets dirty. Better than foil, which tears and sticks.",
+    "keywords": [
+     "tin",
+     "cake",
+     "brownies",
+     "loaf cake",
+     "tart"
+    ]
+   }
+  },
+  {
+   "id": "oven-thermometer",
+   "category": "BAKING",
+   "es": {
+    "title": "Tu horno no marca lo que dice",
+    "body": "Muchos hornos se desvían 10-20 °C del termostato. Un termómetro de horno barato te dice la temperatura real, y si las recetas siempre te salen crudas o quemadas, seguramente es eso.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Your oven isn't the temperature it says",
+    "body": "Many ovens run 10-20 °C off the dial. A cheap oven thermometer tells you the real temperature, and if recipes always come out underdone or burnt, that's probably why.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "mise-en-place",
+   "category": "TIME_SAVING",
+   "es": {
+    "title": "Todo preparado antes de encender el fuego",
+    "body": "Lee la receta entera, pela, corta y mide todo antes de empezar. Cuando la sartén está caliente no hay tiempo de buscar ingredientes, y así no se quema nada mientras picas.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Everything ready before you turn on the heat",
+    "body": "Read the whole recipe, then peel, chop and measure everything before you start. Once the pan is hot there's no time to hunt for ingredients, and nothing burns while you chop.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "clean-as-you-go",
+   "category": "TIME_SAVING",
+   "es": {
+    "title": "Recoge sobre la marcha",
+    "body": "Deja en la encimera solo lo que vas a usar y aprovecha los tiempos muertos (mientras algo hierve o se hornea) para fregar y guardar. Al terminar de comer, la cocina ya está casi recogida.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Clean as you go",
+    "body": "Keep only what you need on the worktop and use the waiting times (while something simmers or bakes) to wash up and put things away. When you finish eating, the kitchen is almost tidy.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "use-timers",
+   "category": "TIME_SAVING",
+   "es": {
+    "title": "Un temporizador para cada cosa",
+    "body": "Cuando haces varias cosas a la vez, pon un temporizador para cada una en cuanto empieza. Es fácil olvidar el horno mientras estás pendiente de la sartén.",
+    "keywords": [
+     "horno",
+     "hornea",
+     "al horno"
+    ]
+   },
+   "en": {
+    "title": "A timer for everything",
+    "body": "When you're cooking several things at once, set a timer for each as soon as it starts. It's easy to forget the oven while you're watching the pan.",
+    "keywords": [
+     "oven",
+     "bake",
+     "roast"
+    ]
+   }
+  },
+  {
+   "id": "lid-on",
+   "category": "TIME_SAVING",
+   "es": {
+    "title": "Con tapa, antes y más barato",
+    "body": "El agua tapada hierve bastante antes y luego mantiene el hervor con menos fuego. Para cocer pasta, patatas o legumbres, tapa hasta que hierva y baja el fuego al mínimo que mantenga el borboteo.",
+    "keywords": [
+     "hervir",
+     "cocer",
+     "patatas",
+     "legumbres"
+    ]
+   },
+   "en": {
+    "title": "Lid on: faster and cheaper",
+    "body": "Covered water boils noticeably faster and then keeps boiling on less heat. For pasta, potatoes or pulses, cover until it boils and turn the heat down to the lowest that keeps it bubbling.",
+    "keywords": [
+     "boil",
+     "potatoes",
+     "pulses",
+     "beans"
+    ]
+   }
+  },
+  {
+   "id": "residual-heat",
+   "category": "TIME_SAVING",
+   "es": {
+    "title": "Aprovecha el calor residual",
+    "body": "Apaga el horno o la vitrocerámica unos minutos antes del final: el calor que queda termina la cocción y ahorras energía. En la placa de inducción no funciona igual, y en repostería mejor no arriesgar.",
+    "keywords": [
+     "guiso",
+     "estofado",
+     "asado",
+     "al horno",
+     "gratinado"
+    ]
+   },
+   "en": {
+    "title": "Use the residual heat",
+    "body": "Switch off the oven or electric hob a few minutes before the end: the heat that remains finishes the cooking and saves energy. It doesn't work the same on induction, and with baking it's best not to risk it.",
+    "keywords": [
+     "stew",
+     "casserole",
+     "roast",
+     "baked",
+     "gratin"
+    ]
+   }
+  },
+  {
+   "id": "batch-cooking",
+   "category": "TIME_SAVING",
+   "es": {
+    "title": "Cocina de más y congela",
+    "body": "Legumbres, salsas de tomate, caldos, guisos y albóndigas cuestan casi lo mismo hacer para 4 que para 8. Congela el resto en raciones y tendrás comidas caseras para los días sin tiempo.",
+    "keywords": [
+     "lentejas",
+     "garbanzos",
+     "alubias",
+     "guiso",
+     "estofado",
+     "salsa de tomate",
+     "albóndigas",
+     "caldo"
+    ]
+   },
+   "en": {
+    "title": "Cook extra and freeze",
+    "body": "Pulses, tomato sauces, stocks, stews and meatballs take almost the same effort for 8 as for 4. Freeze the rest in portions and you'll have home cooking for busy days.",
+    "keywords": [
+     "lentils",
+     "chickpeas",
+     "beans",
+     "stew",
+     "casserole",
+     "tomato sauce",
+     "meatballs",
+     "stock"
+    ]
+   }
+  },
+  {
+   "id": "vinaigrette-jar",
+   "category": "TIME_SAVING",
+   "es": {
+    "title": "Vinagreta en bote",
+    "body": "Prepara la vinagreta en un tarro con tapa: aceite, vinagre, sal, mostaza… y agita. Se emulsiona en segundos y se guarda una semana en la nevera (si lleva ajo o hierbas frescas, menos).",
+    "keywords": [
+     "vinagreta",
+     "ensalada",
+     "aliño"
+    ]
+   },
+   "en": {
+    "title": "Vinaigrette in a jar",
+    "body": "Make the dressing in a jar with a lid: oil, vinegar, salt, mustard… and shake. It emulsifies in seconds and keeps a week in the fridge (less with fresh garlic or herbs).",
+    "keywords": [
+     "vinaigrette",
+     "salad",
+     "dressing"
+    ]
+   }
+  },
+  {
+   "id": "sharp-knives",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Un cuchillo afilado es más seguro",
+    "body": "Con un cuchillo romo hay que apretar y es cuando resbala. Uno bien afilado corta con poca fuerza, más rápido y más limpio. Pásale la chaira a menudo y afílalo de vez en cuando.",
+    "keywords": []
+   },
+   "en": {
+    "title": "A sharp knife is a safer knife",
+    "body": "With a blunt knife you have to press hard, and that's when it slips. A sharp one cuts with little force, faster and cleaner. Hone it often and sharpen it now and then.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "steady-board",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Que la tabla no se mueva",
+    "body": "Pon un paño húmedo o un trozo de papel de cocina mojado debajo de la tabla de cortar. No resbalará mientras trabajas, que es como ocurren muchos cortes.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Keep the board still",
+    "body": "Put a damp cloth or a wet sheet of kitchen paper under your chopping board. It won't slide while you work, which is how a lot of cuts happen.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "wooden-utensils",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Cuidar la madera",
+    "body": "Lava tablas y cucharas de madera a mano con agua caliente y jabón, sécalas bien de pie y no las dejes en remojo ni en el lavavajillas. De vez en cuando, frótalas con aceite mineral o de uso alimentario para que no se agrieten.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Caring for wood",
+    "body": "Wash wooden boards and spoons by hand in hot soapy water, dry them standing up, and don't soak them or put them in the dishwasher. Now and then rub them with food-safe mineral oil so they don't crack.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "non-stick-pans",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Sartenes antiadherentes que duran",
+    "body": "No uses utensilios de metal, no las calientes vacías a fuego máximo y lávalas a mano cuando estén templadas, no muy calientes. Cuando el antiadherente está rayado o pelado, toca cambiarla.",
+    "keywords": [
+     "tortilla",
+     "sartén antiadherente",
+     "crepes",
+     "tortitas",
+     "huevos fritos"
+    ]
+   },
+   "en": {
+    "title": "Non-stick pans that last",
+    "body": "Don't use metal utensils, don't heat them empty on full power, and wash them by hand once they've cooled a little. When the coating is scratched or peeling, it's time to replace the pan.",
+    "keywords": [
+     "omelette",
+     "non-stick pan",
+     "crêpes",
+     "pancakes",
+     "fried eggs"
+    ]
+   }
+  },
+  {
+   "id": "smelly-hands",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Fuera el olor a ajo o pescado",
+    "body": "Frótate las manos bajo el grifo con algo de acero inoxidable (la hoja de un cuchillo por el lado sin filo, una cuchara) o con un poco de zumo de limón, y después lávatelas con jabón.",
+    "keywords": [
+     "ajo",
+     "pescado",
+     "cebolla",
+     "boquerones",
+     "sardinas"
+    ]
+   },
+   "en": {
+    "title": "Get garlic or fish smell off your hands",
+    "body": "Rub your hands under the tap with something stainless steel (the back of a knife blade, a spoon) or a little lemon juice, then wash them with soap.",
+    "keywords": [
+     "garlic",
+     "fish",
+     "onion",
+     "anchovies",
+     "sardines"
+    ]
+   }
+  },
+  {
+   "id": "smelly-containers",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Tápers sin olores",
+    "body": "Si un táper huele a lo que tuvo, llénalo de agua templada con una cucharada de bicarbonato y déjalo toda la noche. Para las manchas de tomate, déjalo un rato al sol.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Odour-free food containers",
+    "body": "If a container smells of what was in it, fill it with warm water and a tablespoon of bicarbonate of soda and leave it overnight. For tomato stains, leave it in the sun for a while.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "wok-stir-fry",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Salteados al wok como en un restaurante",
+    "body": "Calienta el wok hasta que humee, usa poco aceite, corta todo del mismo tamaño y saltea por tandas pequeñas. Si lo llenas, se enfría y las verduras se cuecen en su agua en lugar de saltearse.",
+    "keywords": [
+     "wok",
+     "salteado",
+     "saltea",
+     "salteados",
+     "arroz frito",
+     "fideos"
+    ]
+   },
+   "en": {
+    "title": "Restaurant-style wok stir-fries",
+    "body": "Heat the wok until it smokes, use little oil, cut everything the same size and stir-fry in small batches. Overfill it and it cools down, and the vegetables stew in their juices instead of frying.",
+    "keywords": [
+     "wok",
+     "stir-fry",
+     "stir-fried",
+     "fried rice",
+     "noodles"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Sácale partido a la freidora de aire",
+    "body": "No llenes la cesta: el aire tiene que circular. Una pincelada o un spray de aceite ayuda a que se dore, y agitar o dar la vuelta a mitad deja todo igual de crujiente. Precalentar 3 minutos también ayuda.",
+    "keywords": [
+     "freidora de aire"
+    ]
+   },
+   "en": {
+    "title": "Get the most from your air fryer",
+    "body": "Don't overfill the basket: the air needs to circulate. A brush or spray of oil helps browning, and shaking or turning halfway makes everything evenly crisp. Preheating for 3 minutes helps too.",
+    "keywords": [
+     "air fryer"
+    ]
+   }
+  },
+  {
+   "id": "pressure-cooker",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Olla exprés sin sustos",
+    "body": "No la llenes más de dos tercios (la mitad con legumbres, que hacen espuma) y comprueba que la válvula está limpia. El tiempo se cuenta desde que sube la válvula, y para abrirla espera a que baje sola o enfríala bajo el grifo.",
+    "keywords": [
+     "olla exprés",
+     "olla rápida"
+    ]
+   },
+   "en": {
+    "title": "Pressure cooking without scares",
+    "body": "Don't fill it more than two-thirds (half for pulses, which foam) and check the valve is clean. Time starts once it's up to pressure, and to open it wait for the pressure to drop by itself or cool it under the tap.",
+    "keywords": [
+     "pressure cooker",
+     "instant pot"
+    ]
+   }
+  }
+ ]
+}

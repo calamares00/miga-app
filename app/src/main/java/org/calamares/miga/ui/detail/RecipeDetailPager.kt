@@ -33,7 +33,8 @@ fun RecipeDetailPager(
     initialRecipeId: Long,
     viewModelFor: @Composable (Long) -> RecipeDetailViewModel,
     onBack: () -> Unit,
-    onEdit: (Long) -> Unit
+    onEdit: (Long) -> Unit,
+    onOpenTips: () -> Unit = {}
 ) {
     val pagerState = rememberPagerState(initialPage = recipeIds.indexOf(initialRecipeId).coerceAtLeast(0)) { recipeIds.size }
     var overlay by remember { mutableStateOf<DetailOverlay?>(null) }
@@ -50,7 +51,8 @@ fun RecipeDetailPager(
                 onEdit = { onEdit(recipeId) },
                 active = pagerState.settledPage == page,
                 onOpenCookMode = { recipe, voice -> overlay = DetailOverlay.CookMode(recipe, voice) },
-                onOpenPhoto = { recipe, index -> overlay = DetailOverlay.Photos(recipe, index) }
+                onOpenPhoto = { recipe, index -> overlay = DetailOverlay.Photos(recipe, index) },
+                onOpenTips = onOpenTips
             )
         }
         when (val current = overlay) {
