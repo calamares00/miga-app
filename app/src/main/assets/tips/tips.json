@@ -822,7 +822,7 @@
    "category": "LEFTOVERS",
    "es": {
     "title": "Mil usos del pan duro",
-    "body": "El pan del día anterior es oro: pan rallado (sécalo al horno y tritúralo), picatostes, torrijas, migas, salmorejo, gazpacho o una sopa de ajo. Si no lo vas a usar pronto, rállalo y congélalo.",
+    "body": "El pan del día anterior tiene muchos usos: pan rallado (sécalo al horno y tritúralo), picatostes, torrijas, migas, salmorejo, gazpacho o una sopa de ajo. Si no lo vas a usar pronto, rállalo y congélalo.",
     "keywords": [
      "pan duro",
      "pan del día anterior",
@@ -836,7 +836,7 @@
    },
    "en": {
     "title": "Many uses for stale bread",
-    "body": "Day-old bread is gold: breadcrumbs (dry it in the oven and blitz), croutons, French toast, bread pudding, panzanella or gazpacho. If you won't use it soon, blitz it and freeze the crumbs.",
+    "body": "Day-old bread has many uses: breadcrumbs (dry it in the oven and blitz), croutons, French toast, bread pudding, panzanella or gazpacho. If you won't use it soon, blitz it and freeze the crumbs.",
     "keywords": [
      "stale bread",
      "day-old bread",
@@ -1937,7 +1937,7 @@
    "id": "wok-stir-fry",
    "category": "KITCHEN",
    "es": {
-    "title": "Salteados al wok como en un restaurante",
+    "title": "Salteados al wok",
     "body": "Calienta el wok hasta que humee, usa poco aceite, corta todo del mismo tamaño y saltea por tandas pequeñas. Si lo llenas, se enfría y las verduras se cuecen en su agua en lugar de saltearse.",
     "keywords": [
      "wok",
@@ -1949,7 +1949,7 @@
     ]
    },
    "en": {
-    "title": "Restaurant-style wok stir-fries",
+    "title": "Wok stir-fries",
     "body": "Heat the wok until it smokes, use little oil, cut everything the same size and stir-fry in small batches. Overfill it and it cools down, and the vegetables stew in their juices instead of frying.",
     "keywords": [
      "wok",
@@ -1964,7 +1964,7 @@
    "id": "air-fryer",
    "category": "KITCHEN",
    "es": {
-    "title": "Sácale partido a la freidora de aire",
+    "title": "Cómo usar bien la freidora de aire",
     "body": "No llenes la cesta: el aire tiene que circular. Una pincelada o un spray de aceite ayuda a que se dore, y agitar o dar la vuelta a mitad deja todo igual de crujiente. Precalentar 3 minutos también ayuda.",
     "keywords": [
      "freidora de aire"
@@ -1982,7 +1982,7 @@
    "id": "pressure-cooker",
    "category": "KITCHEN",
    "es": {
-    "title": "Olla exprés sin sustos",
+    "title": "Olla exprés con seguridad",
     "body": "No la llenes más de dos tercios (la mitad con legumbres, que hacen espuma) y comprueba que la válvula está limpia. El tiempo se cuenta desde que sube la válvula, y para abrirla espera a que baje sola o enfríala bajo el grifo.",
     "keywords": [
      "olla exprés",
@@ -1990,7 +1990,7 @@
     ]
    },
    "en": {
-    "title": "Pressure cooking without scares",
+    "title": "Using a pressure cooker safely",
     "body": "Don't fill it more than two-thirds (half for pulses, which foam) and check the valve is clean. Time starts once it's up to pressure, and to open it wait for the pressure to drop by itself or cool it under the tap.",
     "keywords": [
      "pressure cooker",
@@ -2195,7 +2195,8 @@
     "title": "Cascar huevos sin cáscaras",
     "body": "Golpea el huevo contra la encimera, que es plana, no contra el borde del bol: la cáscara se rompe limpia y caen menos trocitos. Si cae alguno, sácalo con media cáscara, que corta la clara mejor que los dedos.",
     "keywords": [
-     "tortilla",
+     "tortilla de patatas",
+     "tortilla francesa",
      "huevos batidos",
      "claras",
      "yemas"
@@ -2400,7 +2401,7 @@
    "id": "bain-marie",
    "category": "BAKING",
    "es": {
-    "title": "Baño maría sin sustos",
+    "title": "Baño maría paso a paso",
     "body": "El agua del cazo no debe tocar el bol de arriba y basta con que apenas hierva: el vapor hace el trabajo. Para fundir chocolate, que no le caiga ni una gota de agua o vapor, o se apelmaza.",
     "keywords": [
      "chocolate negro",
@@ -2410,7 +2411,7 @@
     ]
    },
    "en": {
-    "title": "A bain-marie without trouble",
+    "title": "Using a bain-marie",
     "body": "The water in the pan shouldn't touch the bowl on top, and a bare simmer is enough: the steam does the work. When melting chocolate, don't let a drop of water or steam get in, or it seizes.",
     "keywords": [
      "dark chocolate",
@@ -3100,6 +3101,925 @@
      "tin",
      "grease the tin",
      "butter for the tin"
+    ]
+   }
+  },
+  {
+   "id": "flaky-salt",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Sal en escamas, al final",
+    "body": "La sal en escamas no es para cocinar sino para terminar: unas pocas sobre un filete recién cortado, una tostada con tomate, una ensalada o incluso un postre de chocolate aportan un toque crujiente y salino que la sal fina no da.",
+    "keywords": [
+     "sal en escamas",
+     "escamas de sal",
+     "chuletón",
+     "entrecot",
+     "pan con tomate"
+    ]
+   },
+   "en": {
+    "title": "Flaky salt, to finish",
+    "body": "Flaky salt isn't for cooking but for finishing: a few flakes on a freshly sliced steak, tomato toast, a salad or even a chocolate dessert add a crunchy, salty touch that fine salt doesn't.",
+    "keywords": [
+     "flaky salt",
+     "sea salt flakes",
+     "rib-eye",
+     "steak",
+     "tomato toast"
+    ]
+   }
+  },
+  {
+   "id": "dressing-order",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "El orden del aliño",
+    "body": "Sal y vinagre primero, aceite después: el aceite envuelve las hojas y no deja que la sal y el vinagre se repartan. Como referencia, tres partes de aceite por una de vinagre o limón, y prueba con una hoja antes de servir.",
+    "keywords": [
+     "ensalada",
+     "vinagreta",
+     "aliño",
+     "aliña"
+    ]
+   },
+   "en": {
+    "title": "Dress in the right order",
+    "body": "Salt and vinegar first, oil after: oil coats the leaves and stops the salt and vinegar spreading. As a guide, three parts oil to one of vinegar or lemon, and taste on a leaf before serving.",
+    "keywords": [
+     "salad",
+     "vinaigrette",
+     "dressing"
+    ]
+   }
+  },
+  {
+   "id": "herbs-in-salad",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Hierbas frescas en la ensalada",
+    "body": "Unas hojas de hierbabuena, albahaca, cilantro o eneldo, o un poco de cebollino picado, cambian por completo una ensalada sencilla. Añádelas enteras o troceadas con la mano, justo antes de aliñar.",
+    "keywords": [
+     "ensalada mixta",
+     "ensalada verde",
+     "ensalada de tomate",
+     "ensalada de lechuga"
+    ]
+   },
+   "en": {
+    "title": "Fresh herbs in salad",
+    "body": "A few leaves of mint, basil, coriander or dill, or some chopped chives, transform a simple salad. Add them whole or torn by hand, just before dressing.",
+    "keywords": [
+     "green salad",
+     "mixed salad",
+     "tomato salad",
+     "side salad"
+    ]
+   }
+  },
+  {
+   "id": "caramelised-onion",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Cebolla caramelizada de verdad",
+    "body": "Caramelizar la cebolla lleva 40-60 minutos a fuego lento, no los 10 que dicen muchas recetas: en 10 minutos solo está pochada. Una pizca de sal al principio ayuda a que suelte el agua, y si se pega, un chorrito de agua. No hace falta azúcar.",
+    "keywords": [
+     "cebolla caramelizada",
+     "caramelizar",
+     "caramelizada",
+     "cebolla confitada"
+    ]
+   },
+   "en": {
+    "title": "Properly caramelised onions",
+    "body": "Caramelising onions takes 40-60 minutes over low heat, not the 10 many recipes say: after 10 minutes they're only softened. A pinch of salt at the start helps them release water, and if they stick, a splash of water. No sugar needed.",
+    "keywords": [
+     "caramelised onions",
+     "caramelized onions",
+     "caramelise",
+     "onion jam"
+    ]
+   }
+  },
+  {
+   "id": "acidic-tomato",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Tomate frito menos ácido",
+    "body": "Si la salsa de tomate queda ácida, añade una pizca de azúcar o una zanahoria rallada al principio y deja que se cocine más tiempo, a fuego lento: el sofrito largo también suaviza la acidez. Prueba antes de añadir más.",
+    "keywords": [
+     "tomate frito",
+     "salsa de tomate",
+     "tomate triturado",
+     "sofrito de tomate"
+    ]
+   },
+   "en": {
+    "title": "Less acidic tomato sauce",
+    "body": "If the tomato sauce is sharp, add a pinch of sugar or some grated carrot at the start and let it cook longer, over low heat: long cooking softens the acidity too. Taste before adding more.",
+    "keywords": [
+     "tomato sauce",
+     "chopped tomatoes",
+     "passata",
+     "marinara"
+    ]
+   }
+  },
+  {
+   "id": "lump-free-bechamel",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Bechamel sin grumos",
+    "body": "Cocina la harina en la mantequilla un par de minutos, añade la leche caliente poco a poco y remueve sin parar con unas varillas. Si aun así salen grumos, tritúrala con la batidora o pásala por un colador y vuelve a calentarla.",
+    "keywords": [
+     "bechamel",
+     "besamel",
+     "croquetas",
+     "lasaña",
+     "canelones"
+    ]
+   },
+   "en": {
+    "title": "Lump-free béchamel",
+    "body": "Cook the flour in the butter for a couple of minutes, add hot milk little by little and whisk constantly. If lumps still appear, blitz it with a stick blender or pass it through a sieve, then reheat.",
+    "keywords": [
+     "béchamel",
+     "white sauce",
+     "croquettes",
+     "lasagne",
+     "lasagna",
+     "cannelloni"
+    ]
+   }
+  },
+  {
+   "id": "cold-or-boiling-water",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "¿Agua fría o hirviendo?",
+    "body": "Lo que crece bajo tierra (patatas, zanahorias, boniatos) se pone en agua fría y se lleva a ebullición: así se cuece por igual por fuera y por dentro. Lo que crece sobre la tierra (judías verdes, brócoli, guisantes) va directo al agua hirviendo.",
+    "keywords": [
+     "patatas cocidas",
+     "patata cocida",
+     "zanahorias cocidas",
+     "boniato",
+     "cachelos"
+    ]
+   },
+   "en": {
+    "title": "Cold or boiling water?",
+    "body": "What grows underground (potatoes, carrots, sweet potatoes) goes into cold water and is brought to the boil, so it cooks evenly inside and out. What grows above ground (green beans, broccoli, peas) goes straight into boiling water.",
+    "keywords": [
+     "boiled potatoes",
+     "new potatoes",
+     "boiled carrots",
+     "sweet potato"
+    ]
+   }
+  },
+  {
+   "id": "finish-in-oven",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Dora en la sartén, termina en el horno",
+    "body": "Las piezas gruesas (un solomillo, un magret, una chuleta gorda) se queman por fuera antes de hacerse por dentro. Dóralas bien en la sartén y termínalas unos minutos en el horno a 180-200 °C, donde el calor llega por igual.",
+    "keywords": [
+     "solomillo",
+     "chuletón",
+     "magret",
+     "chuleta gruesa",
+     "lomo"
+    ]
+   },
+   "en": {
+    "title": "Brown in the pan, finish in the oven",
+    "body": "Thick pieces (a tenderloin, duck breast, a thick chop) burn outside before they're done inside. Brown them well in the pan and finish them for a few minutes in the oven at 180-200 °C, where the heat is even.",
+    "keywords": [
+     "tenderloin",
+     "fillet steak",
+     "rib-eye",
+     "duck breast",
+     "thick pork chop"
+    ]
+   }
+  },
+  {
+   "id": "sweet-glaze-last",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Las salsas dulces, al final de la parrilla",
+    "body": "La miel, la salsa barbacoa o la teriyaki llevan azúcar, que se quema antes de que la carne se haga. Ásala con un adobo sin azúcar o solo con sal y pinta la salsa en los últimos 5-10 minutos.",
+    "keywords": [
+     "salsa barbacoa",
+     "teriyaki",
+     "glaseado",
+     "glaseada",
+     "costillas",
+     "alitas"
+    ]
+   },
+   "en": {
+    "title": "Sweet glazes at the end of grilling",
+    "body": "Honey, barbecue or teriyaki sauce contain sugar, which burns before the meat is done. Grill it with a sugar-free marinade or just salt, and brush the sauce on in the last 5-10 minutes.",
+    "keywords": [
+     "barbecue sauce",
+     "teriyaki",
+     "glaze",
+     "glazed",
+     "ribs",
+     "wings"
+    ]
+   }
+  },
+  {
+   "id": "burgers-light-hand",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Hamburguesas jugosas",
+    "body": "Mezcla la carne con los condimentos lo justo, sin amasar de más, y no la aplastes en la plancha: se escapan los jugos. Haz un hoyuelo con el pulgar en el centro de cada una para que no se abomben al cocinarse.",
+    "keywords": [
+     "hamburguesa",
+     "hamburguesas",
+     "albóndigas",
+     "carne picada"
+    ]
+   },
+   "en": {
+    "title": "Juicy burgers",
+    "body": "Mix the meat with the seasoning just enough, without overworking it, and don't press it down on the griddle: the juices escape. Press a dimple in the centre of each one with your thumb so they don't dome as they cook.",
+    "keywords": [
+     "burger",
+     "burgers",
+     "hamburgers",
+     "meatballs",
+     "minced beef"
+    ]
+   }
+  },
+  {
+   "id": "supreme-orange",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Naranja al vivo, sin pieles",
+    "body": "Corta los dos extremos, apoya la naranja y retira la piel y la parte blanca con el cuchillo siguiendo la curva. Luego saca cada gajo cortando a ras de las membranas. Exprime lo que queda para aprovechar el zumo.",
+    "keywords": [
+     "gajos de naranja",
+     "naranja al vivo",
+     "ensalada de naranja",
+     "pomelo"
+    ]
+   },
+   "en": {
+    "title": "Orange segments without pith",
+    "body": "Slice off both ends, stand the orange up and cut away the peel and white pith following the curve. Then cut out each segment close to the membranes. Squeeze what's left for the juice.",
+    "keywords": [
+     "orange segments",
+     "grapefruit",
+     "orange salad"
+    ]
+   }
+  },
+  {
+   "id": "peel-chestnuts",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Pelar castañas fácilmente",
+    "body": "Haz un corte en la piel de cada castaña y ásalas 15-20 minutos en el horno a 200 °C (o un par de minutos en el microondas, en tandas). Envuélvelas calientes en un paño unos minutos: la piel y la telilla interior salen mucho mejor.",
+    "keywords": [
+     "castañas",
+     "castaña"
+    ]
+   },
+   "en": {
+    "title": "Peel chestnuts easily",
+    "body": "Score the shell of each chestnut and roast them for 15-20 minutes at 200 °C (or a couple of minutes in the microwave, in batches). Wrap them hot in a tea towel for a few minutes: the shell and inner skin come off much more easily.",
+    "keywords": [
+     "chestnuts",
+     "chestnut"
+    ]
+   }
+  },
+  {
+   "id": "toast-saffron",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Saca todo el sabor al azafrán",
+    "body": "Tuesta las hebras unos segundos en una sartén seca a fuego suave (o envueltas en papel de aluminio), sin que se quemen. Machácalas en el mortero y disuélvelas en un poco de caldo caliente antes de añadirlas: colorean y aromatizan mucho más.",
+    "keywords": [
+     "azafrán",
+     "hebras de azafrán",
+     "paella",
+     "arroz a banda"
+    ]
+   },
+   "en": {
+    "title": "Get the most from saffron",
+    "body": "Toast the threads for a few seconds in a dry pan over low heat (or wrapped in foil) without burning them. Crush them in a mortar and dissolve in a little hot stock before adding: they colour and flavour far more.",
+    "keywords": [
+     "saffron",
+     "saffron threads",
+     "paella"
+    ]
+   }
+  },
+  {
+   "id": "chickpea-skins",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Hummus más fino: garbanzos sin piel",
+    "body": "Para un hummus muy cremoso, quita la piel a los garbanzos cocidos: caliéntalos 3 minutos en agua con media cucharadita de bicarbonato, pásalos a un bol con agua fría y frótalos con las manos. Las pieles suben y se retiran.",
+    "keywords": [
+     "hummus",
+     "humus",
+     "garbanzos cocidos"
+    ]
+   },
+   "en": {
+    "title": "Smoother hummus: skinless chickpeas",
+    "body": "For very creamy hummus, skin the cooked chickpeas: heat them for 3 minutes in water with half a teaspoon of bicarbonate of soda, tip them into a bowl of cold water and rub them between your hands. The skins float up and lift off.",
+    "keywords": [
+     "hummus",
+     "cooked chickpeas"
+    ]
+   }
+  },
+  {
+   "id": "mash-not-gluey",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Puré de patatas fino, no chicloso",
+    "body": "Aplasta las patatas con un pasapurés o un tenedor, nunca con la batidora: las cuchillas rompen el almidón y el puré queda como un engrudo. Añade la leche caliente y la mantequilla con las patatas aún calientes.",
+    "keywords": [
+     "puré de patata",
+     "puré de patatas",
+     "puré"
+    ]
+   },
+   "en": {
+    "title": "Smooth mash, not gluey",
+    "body": "Mash the potatoes with a ricer, masher or fork, never a blender: the blades break the starch and the mash turns gluey. Add hot milk and the butter while the potatoes are still hot.",
+    "keywords": [
+     "mashed potatoes",
+     "mash",
+     "potato purée"
+    ]
+   }
+  },
+  {
+   "id": "paella-socarrat",
+   "category": "TECHNIQUES",
+   "es": {
+    "title": "Paella con socarrat",
+    "body": "Usa una paellera fina de acero, reparte bien el arroz y no lo remuevas después. En el último minuto, sube el fuego hasta que oigas un ligero crepitar y huela a tostado: se forma el socarrat. Deja reposar 5 minutos tapada con un paño.",
+    "keywords": [
+     "paella",
+     "arroz a banda",
+     "arroz del senyoret",
+     "paellera"
+    ]
+   },
+   "en": {
+    "title": "Paella with socarrat",
+    "body": "Use a thin steel paella pan, spread the rice evenly and don't stir it after that. In the last minute, turn up the heat until you hear a gentle crackle and smell toasting: that's the socarrat. Rest for 5 minutes under a cloth.",
+    "keywords": [
+     "paella",
+     "paella pan"
+    ]
+   }
+  },
+  {
+   "id": "stable-whipped-cream",
+   "category": "BAKING",
+   "es": {
+    "title": "Nata montada que aguanta",
+    "body": "Usa nata para montar con al menos un 35 % de grasa, muy fría, y enfría también el bol y las varillas. Añade el azúcar glas cuando empiece a espesar y para en cuanto forme picos: un poco más y se convierte en mantequilla.",
+    "keywords": [
+     "nata para montar",
+     "nata montada",
+     "chantilly"
+    ]
+   },
+   "en": {
+    "title": "Whipped cream that holds",
+    "body": "Use whipping cream with at least 35% fat, well chilled, and chill the bowl and whisk too. Add icing sugar once it starts to thicken and stop as soon as it holds peaks: a little more and it turns to butter.",
+    "keywords": [
+     "whipping cream",
+     "double cream",
+     "whipped cream",
+     "chantilly"
+    ]
+   }
+  },
+  {
+   "id": "dont-overmix-batter",
+   "category": "BAKING",
+   "es": {
+    "title": "Masas de bizcocho, sin batir de más",
+    "body": "En bizcochos, magdalenas y tortitas, cuando añadas la harina mezcla solo hasta que no se vea harina seca. Si bates de más se forma gluten y quedan duros y con túneles; unos grumitos en la masa de tortitas no importan.",
+    "keywords": [
+     "bizcocho",
+     "magdalenas",
+     "muffins",
+     "tortitas",
+     "pancakes",
+     "plum cake"
+    ]
+   },
+   "en": {
+    "title": "Don't overmix cake batter",
+    "body": "For cakes, muffins and pancakes, once the flour goes in mix only until no dry flour shows. Overmixing develops gluten and makes them tough and full of tunnels; a few lumps in pancake batter don't matter.",
+    "keywords": [
+     "cake",
+     "sponge",
+     "muffins",
+     "pancakes",
+     "loaf cake"
+    ]
+   }
+  },
+  {
+   "id": "blind-bake",
+   "category": "BAKING",
+   "es": {
+    "title": "Hornear la base en blanco",
+    "body": "Para que la base de una quiche o una tarta no quede cruda, hornéala antes de rellenarla: fórrala con papel de horno, llénala de garbanzos o arroz secos y hornea 15 minutos a 180 °C. Retira el peso y hornea 5 minutos más.",
+    "keywords": [
+     "masa quebrada",
+     "quiche",
+     "tarta de limón",
+     "tartaletas",
+     "base de tarta"
+    ]
+   },
+   "en": {
+    "title": "Blind-bake the pastry",
+    "body": "So a quiche or tart base doesn't stay raw, bake it before filling: line it with baking paper, fill with dried beans or rice and bake for 15 minutes at 180 °C. Remove the weights and bake 5 minutes more.",
+    "keywords": [
+     "shortcrust",
+     "quiche",
+     "lemon tart",
+     "tartlets",
+     "pastry case"
+    ]
+   }
+  },
+  {
+   "id": "garlic-confit",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Ajos confitados, siempre en la nevera",
+    "body": "Cubre dientes de ajo pelados con aceite de oliva y cuécelos a fuego muy bajo 30-40 minutos, hasta que estén tiernos. Guárdalos en la nevera, cubiertos de aceite, y úsalos en una semana: a temperatura ambiente el ajo en aceite puede desarrollar toxinas.",
+    "keywords": [
+     "ajos confitados",
+     "ajo confitado",
+     "confitar"
+    ]
+   },
+   "en": {
+    "title": "Garlic confit, always in the fridge",
+    "body": "Cover peeled garlic cloves with olive oil and cook them over very low heat for 30-40 minutes, until tender. Keep them in the fridge, covered in oil, and use within a week: garlic in oil at room temperature can develop toxins.",
+    "keywords": [
+     "garlic confit",
+     "confit garlic",
+     "confit"
+    ]
+   }
+  },
+  {
+   "id": "keep-berries",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Frutos rojos que duran más",
+    "body": "No laves las fresas, arándanos o frambuesas hasta el momento de comerlas: la humedad los estropea. Guárdalos en la nevera en un recipiente con papel de cocina, sin amontonar, y retira enseguida los que estén blandos o con moho.",
+    "keywords": [
+     "fresas",
+     "arándanos",
+     "frambuesas",
+     "moras",
+     "frutos rojos"
+    ]
+   },
+   "en": {
+    "title": "Berries that last longer",
+    "body": "Don't wash strawberries, blueberries or raspberries until you eat them: moisture spoils them. Keep them in the fridge in a container lined with kitchen paper, not piled up, and remove any soft or mouldy ones straight away.",
+    "keywords": [
+     "strawberries",
+     "blueberries",
+     "raspberries",
+     "blackberries",
+     "berries"
+    ]
+   }
+  },
+  {
+   "id": "mince-portions",
+   "category": "PRESERVING",
+   "es": {
+    "title": "Carne picada congelada en raciones",
+    "body": "Mete la carne picada en una bolsa de congelación, aplánala hasta 1-2 cm y marca una cuadrícula con el canto de una regla o una cuchara. Una vez congelada, partes justo las raciones que necesitas sin descongelar el resto.",
+    "keywords": [
+     "carne picada",
+     "carne picada de ternera",
+     "carne picada mixta"
+    ]
+   },
+   "en": {
+    "title": "Minced meat frozen in portions",
+    "body": "Put the mince in a freezer bag, flatten it to 1-2 cm and press a grid into it with the edge of a ruler or a spoon. Once frozen, you can snap off just the portions you need without thawing the rest.",
+    "keywords": [
+     "minced meat",
+     "mince",
+     "minced beef",
+     "ground beef"
+    ]
+   }
+  },
+  {
+   "id": "roasting-fat",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "No tires la grasa del asado",
+    "body": "La grasa que queda en la bandeja al asar un pollo, o la que suelta el beicon, tiene mucho sabor. Cuélala, guárdala tapada en la nevera y úsala para saltear patatas, verduras o pochar cebolla.",
+    "keywords": [
+     "pollo asado",
+     "beicon",
+     "bacon",
+     "panceta"
+    ]
+   },
+   "en": {
+    "title": "Don't throw away roasting fat",
+    "body": "The fat left in the tray after roasting a chicken, or rendered from bacon, is full of flavour. Strain it, keep it covered in the fridge and use it to fry potatoes, vegetables or soften onions.",
+    "keywords": [
+     "roast chicken",
+     "bacon",
+     "pancetta"
+    ]
+   }
+  },
+  {
+   "id": "safe-temperatures",
+   "category": "SAFETY",
+   "es": {
+    "title": "Las temperaturas que importan",
+    "body": "Un termómetro de cocina quita las dudas. En el centro de la pieza: aves y rellenos, 74 °C; carne picada y hamburguesas, 71 °C; cerdo, ternera y cordero en pieza, 63 °C y 3 minutos de reposo; pescado, 63 °C.",
+    "keywords": [
+     "pollo entero",
+     "pollo asado",
+     "pavo",
+     "hamburguesas",
+     "cerdo asado"
+    ]
+   },
+   "en": {
+    "title": "The temperatures that matter",
+    "body": "A kitchen thermometer removes the guesswork. At the centre of the piece: poultry and stuffing, 74 °C; mince and burgers, 71 °C; whole cuts of pork, beef and lamb, 63 °C with a 3-minute rest; fish, 63 °C.",
+    "keywords": [
+     "whole chicken",
+     "roast chicken",
+     "turkey",
+     "burgers",
+     "roast pork"
+    ]
+   }
+  },
+  {
+   "id": "pan-handles-in",
+   "category": "SAFETY",
+   "es": {
+    "title": "Mangos hacia dentro",
+    "body": "Gira siempre los mangos de cazos y sartenes hacia el interior de la placa, sin que sobresalgan. Es muy fácil engancharlos al pasar, y los niños los alcanzan con la mano.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Turn handles inwards",
+    "body": "Always turn pan and saucepan handles towards the back of the hob, not sticking out. They're easy to catch as you pass, and children can reach them.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "cloths-and-sponges",
+   "category": "SAFETY",
+   "es": {
+    "title": "Bayetas y estropajos, a menudo nuevos",
+    "body": "Las bayetas y estropajos húmedos acumulan bacterias aunque parezcan limpios. Déjalos secar tras usarlos, lava las bayetas a 60 °C y cambia el estropajo cada pocas semanas. Para jugos de carne cruda, mejor papel de cocina.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Replace cloths and sponges often",
+    "body": "Damp cloths and sponges harbour bacteria even when they look clean. Let them dry after use, wash cloths at 60 °C and replace sponges every few weeks. For raw meat juices, use kitchen paper.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "tortilla-pan",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Una sartén solo para la tortilla",
+    "body": "Ten una buena sartén antiadherente reservada para tortillas: sin arañazos de otras preparaciones, la tortilla se despega y se le da la vuelta sin problemas. Límpiala con agua caliente y una esponja suave.",
+    "keywords": [
+     "tortilla de patatas",
+     "tortilla de patata",
+     "tortilla francesa"
+    ]
+   },
+   "en": {
+    "title": "A pan just for omelettes",
+    "body": "Keep a good non-stick pan just for omelettes and Spanish tortilla: free of scratches from other cooking, the egg slides out and flips easily. Clean it with hot water and a soft sponge.",
+    "keywords": [
+     "spanish omelette",
+     "omelette",
+     "frittata"
+    ]
+   }
+  },
+  {
+   "id": "clean-blender",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Limpiar la batidora sin tocar las cuchillas",
+    "body": "Justo después de usarla, llena el vaso de la batidora o el robot hasta la mitad con agua templada y unas gotas de jabón y tritura 30 segundos. Aclara con agua limpia: sale casi todo sin acercar los dedos a las cuchillas.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Clean the blender without touching the blades",
+    "body": "Right after using it, half-fill the blender jug or food processor with warm water and a few drops of washing-up liquid and run it for 30 seconds. Rinse with clean water: almost everything comes off without your fingers near the blades.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "cast-iron-care",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Cuidar la sartén de hierro",
+    "body": "Lávala con agua caliente y un cepillo, sin dejarla en remojo. Sécala en el fuego unos segundos y úntala con una capa muy fina de aceite antes de guardarla: así no se oxida y cada vez se vuelve más antiadherente.",
+    "keywords": [
+     "sartén de hierro",
+     "hierro fundido",
+     "plancha de hierro"
+    ]
+   },
+   "en": {
+    "title": "Care for a cast-iron pan",
+    "body": "Wash it with hot water and a brush, without soaking. Dry it on the heat for a few seconds and rub in a very thin layer of oil before putting it away: it won't rust and becomes more non-stick over time.",
+    "keywords": [
+     "cast iron",
+     "cast-iron pan",
+     "cast-iron skillet"
+    ]
+   }
+  },
+  {
+   "id": "olive-oil-frying",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Aceite de oliva también para freír",
+    "body": "El aceite de oliva, también el virgen extra, aguanta bien las temperaturas de fritura y se degrada menos que muchos aceites de semillas. Si no se ha quemado, cuélalo y puedes reutilizarlo un par de veces; tíralo cuando oscurezca o huela fuerte.",
+    "keywords": [
+     "aceite de oliva",
+     "aceite para freír"
+    ]
+   },
+   "en": {
+    "title": "Olive oil works for frying too",
+    "body": "Olive oil, extra virgin included, handles frying temperatures well and breaks down less than many seed oils. If it hasn't burnt, strain it and you can reuse it a couple of times; throw it out when it darkens or smells strong.",
+    "keywords": [
+     "olive oil",
+     "oil for frying"
+    ]
+   }
+  },
+  {
+   "id": "spices-fresh",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Especias con sabor",
+    "body": "Guarda las especias en botes cerrados, lejos de la luz y del calor (no encima de la placa ni del horno). Mejor enteras y molidas al momento. Si al abrir el bote casi no huelen, ya no aportan nada: renuévalas cada año más o menos.",
+    "keywords": []
+   },
+   "en": {
+    "title": "Keep spices full of flavour",
+    "body": "Store spices in closed jars, away from light and heat (not above the hob or oven). Whole and ground as you need them is best. If they barely smell when you open the jar, they add nothing: replace them roughly every year.",
+    "keywords": []
+   }
+  },
+  {
+   "id": "grill-two-zones",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Barbacoa con dos zonas",
+    "body": "Coloca las brasas solo en una mitad de la barbacoa. En esa zona doras a fuego fuerte; en la otra, sin brasas, terminas las piezas gruesas con calor suave y apartas lo que se queme cuando haya llamaradas.",
+    "keywords": [
+     "barbacoa",
+     "brasa",
+     "a la brasa",
+     "parrilla"
+    ]
+   },
+   "en": {
+    "title": "A barbecue with two zones",
+    "body": "Pile the coals on only one half of the barbecue. That side is for searing over high heat; on the other, without coals, you finish thick pieces gently and move anything to safety when flare-ups happen.",
+    "keywords": [
+     "barbecue",
+     "grill",
+     "grilled",
+     "chargrilled"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-first-use",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Antes de estrenar la freidora de aire",
+    "body": "Quita todos los plásticos y protectores, lava la cesta y la bandeja y sécalas bien. Ponla en marcha vacía unos 10 minutos a 200 °C para que se vaya el olor a nuevo. Colócala sobre una superficie estable con unos 10-15 cm libres alrededor, porque expulsa aire muy caliente.",
+    "keywords": [
+     "freidora de aire"
+    ]
+   },
+   "en": {
+    "title": "Before using your air fryer for the first time",
+    "body": "Remove all plastic and protective film, wash the basket and tray and dry them well. Run it empty for about 10 minutes at 200 °C to burn off the new smell. Put it on a stable surface with 10-15 cm clear all round, as it blows out very hot air.",
+    "keywords": [
+     "air fryer"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-oven-recipes",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Recetas de horno en la freidora de aire",
+    "body": "Para adaptar una receta de horno, baja la temperatura unos 20 °C y reduce el tiempo alrededor de un 20 %, y comprueba unos minutos antes. Con bizcochos y masas, usa moldes que dejen pasar el aire y cubre con papel de aluminio si se dora demasiado por arriba.",
+    "keywords": [
+     "freidora de aire",
+     "al horno",
+     "bizcocho",
+     "magdalenas"
+    ]
+   },
+   "en": {
+    "title": "Oven recipes in the air fryer",
+    "body": "To adapt an oven recipe, lower the temperature by about 20 °C, cut the time by about 20 % and check a few minutes early. For cakes and doughs, use tins that let air flow round them and cover with foil if the top browns too fast.",
+    "keywords": [
+     "air fryer",
+     "baked",
+     "cake",
+     "muffins"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-light-foods",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Que nada salga volando en la freidora",
+    "body": "El ventilador mueve el aire con fuerza: el pan de un sándwich, las hojas de kale o una loncha de queso pueden levantarse y tocar la resistencia. Sujétalos con un palillo o coloca encima algo con más peso.",
+    "keywords": [
+     "freidora de aire",
+     "sándwich",
+     "sandwich",
+     "croque monsieur",
+     "kale"
+    ]
+   },
+   "en": {
+    "title": "Stop food flying round the air fryer",
+    "body": "The fan blows hard: the top slice of a sandwich, kale leaves or a slice of cheese can lift and touch the heating element. Pin them with a cocktail stick or put something heavier on top.",
+    "keywords": [
+     "air fryer",
+     "sandwich",
+     "toastie",
+     "croque monsieur",
+     "kale"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-paper",
+   "category": "SAFETY",
+   "es": {
+    "title": "Papel de horno en la freidora, solo con comida encima",
+    "body": "Nunca precalientes la freidora de aire con papel de horno o un forro de papel dentro: sin peso, el aire lo levanta hasta la resistencia y puede quemarse. Ponlo justo al añadir la comida, que no sobresalga de la cesta y, si es posible, perforado para que circule el aire.",
+    "keywords": [
+     "freidora de aire",
+     "papel de horno"
+    ]
+   },
+   "en": {
+    "title": "Baking paper in the air fryer only with food on it",
+    "body": "Never preheat an air fryer with baking paper or a paper liner inside: without weight, the air lifts it onto the element and it can burn. Put it in only with the food, don't let it stick out of the basket and, if possible, use perforated paper so the air can flow.",
+    "keywords": [
+     "air fryer",
+     "baking paper",
+     "parchment"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-no-smoke",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Sin humo al hacer comida grasa en la freidora",
+    "body": "Con beicon, alitas, chorizo o muslos con piel, la grasa cae al fondo, se quema y hace humo blanco. Pon un par de cucharadas de agua o una rebanada de pan en el fondo del cajón (bajo la rejilla) para recogerla, y vacía la grasa entre tandas.",
+    "keywords": [
+     "freidora de aire",
+     "beicon",
+     "bacon",
+     "alitas",
+     "chorizo",
+     "muslos",
+     "panceta"
+    ]
+   },
+   "en": {
+    "title": "No smoke with fatty food in the air fryer",
+    "body": "With bacon, wings, chorizo or skin-on thighs, the fat drips to the bottom, burns and makes white smoke. Put a couple of tablespoons of water or a slice of bread in the bottom of the drawer (under the rack) to catch it, and pour off the fat between batches.",
+    "keywords": [
+     "air fryer",
+     "bacon",
+     "wings",
+     "chorizo",
+     "thighs",
+     "pancetta"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-breaded",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Rebozados crujientes en la freidora de aire",
+    "body": "Sin aceite, el pan rallado se queda pálido y con manchas de harina. Rocía o pinta los rebozados con un poco de aceite por todos los lados, también donde se vea harina seca, y otra vez al darles la vuelta. El panko queda especialmente crujiente.",
+    "keywords": [
+     "freidora de aire",
+     "rebozado",
+     "rebozados",
+     "empanado",
+     "empanados",
+     "croquetas",
+     "nuggets",
+     "pan rallado"
+    ]
+   },
+   "en": {
+    "title": "Crisp breaded food in the air fryer",
+    "body": "Without oil, breadcrumbs stay pale with floury patches. Spray or brush breaded food with a little oil on every side, including any dry flour spots, and again when you turn it. Panko gets especially crisp.",
+    "keywords": [
+     "air fryer",
+     "breaded",
+     "coated",
+     "croquettes",
+     "nuggets",
+     "breadcrumbs",
+     "panko"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-reheat",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "Recalentar sobras crujientes en la freidora de aire",
+    "body": "Patatas fritas, pizza, croquetas o empanadillas se ablandan en el microondas. En la freidora de aire, 3-5 minutos a 170-180 °C las dejan crujientes otra vez. Como siempre, que queden bien calientes por dentro.",
+    "keywords": [
+     "freidora de aire",
+     "patatas fritas",
+     "pizza",
+     "croquetas",
+     "empanadillas",
+     "sobras"
+    ]
+   },
+   "en": {
+    "title": "Reheat leftovers crisp in the air fryer",
+    "body": "Chips, pizza, croquettes or pasties go soft in the microwave. In the air fryer, 3-5 minutes at 170-180 °C makes them crisp again. As always, make sure they're piping hot inside.",
+    "keywords": [
+     "air fryer",
+     "chips",
+     "fries",
+     "pizza",
+     "croquettes",
+     "pasties",
+     "leftovers"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-basket-care",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Cuidar la cesta de la freidora de aire",
+    "body": "Los sprays desmoldantes en aerosol dejan una capa pegajosa que estropea el antiadherente: mejor un pulverizador rellenable con aceite o una brocha. Lava la cesta cuando esté fría, con agua caliente, jabón y una esponja suave; si hay restos pegados, déjala en remojo.",
+    "keywords": [
+     "freidora de aire"
+    ]
+   },
+   "en": {
+    "title": "Look after the air fryer basket",
+    "body": "Aerosol cooking sprays leave a sticky film that damages the non-stick coating: use a refillable oil sprayer or a brush instead. Wash the basket once cool with hot soapy water and a soft sponge; soak it if anything is stuck.",
+    "keywords": [
+     "air fryer"
     ]
    }
   }
