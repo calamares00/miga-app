@@ -3826,6 +3826,202 @@
      "chargrilled"
     ]
    }
+  },
+  {
+   "id": "air-fryer-first-use",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Antes de estrenar la freidora de aire",
+    "body": "Quita todos los plásticos y protectores, lava la cesta y la bandeja y sécalas bien. Ponla en marcha vacía unos 10 minutos a 200 °C para que se vaya el olor a nuevo. Colócala sobre una superficie estable con unos 10-15 cm libres alrededor, porque expulsa aire muy caliente.",
+    "keywords": [
+     "freidora de aire"
+    ]
+   },
+   "en": {
+    "title": "Before using your air fryer for the first time",
+    "body": "Remove all plastic and protective film, wash the basket and tray and dry them well. Run it empty for about 10 minutes at 200 °C to burn off the new smell. Put it on a stable surface with 10-15 cm clear all round, as it blows out very hot air.",
+    "keywords": [
+     "air fryer"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-oven-recipes",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Recetas de horno en la freidora de aire",
+    "body": "Para adaptar una receta de horno, baja la temperatura unos 20 °C y reduce el tiempo alrededor de un 20 %, y comprueba unos minutos antes. Con bizcochos y masas, usa moldes que dejen pasar el aire y cubre con papel de aluminio si se dora demasiado por arriba.",
+    "keywords": [
+     "freidora de aire",
+     "al horno",
+     "bizcocho",
+     "magdalenas"
+    ]
+   },
+   "en": {
+    "title": "Oven recipes in the air fryer",
+    "body": "To adapt an oven recipe, lower the temperature by about 20 °C, cut the time by about 20 % and check a few minutes early. For cakes and doughs, use tins that let air flow round them and cover with foil if the top browns too fast.",
+    "keywords": [
+     "air fryer",
+     "baked",
+     "cake",
+     "muffins"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-light-foods",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Que nada salga volando en la freidora",
+    "body": "El ventilador mueve el aire con fuerza: el pan de un sándwich, las hojas de kale o una loncha de queso pueden levantarse y tocar la resistencia. Sujétalos con un palillo o coloca encima algo con más peso.",
+    "keywords": [
+     "freidora de aire",
+     "sándwich",
+     "sandwich",
+     "croque monsieur",
+     "kale"
+    ]
+   },
+   "en": {
+    "title": "Stop food flying round the air fryer",
+    "body": "The fan blows hard: the top slice of a sandwich, kale leaves or a slice of cheese can lift and touch the heating element. Pin them with a cocktail stick or put something heavier on top.",
+    "keywords": [
+     "air fryer",
+     "sandwich",
+     "toastie",
+     "croque monsieur",
+     "kale"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-paper",
+   "category": "SAFETY",
+   "es": {
+    "title": "Papel de horno en la freidora, solo con comida encima",
+    "body": "Nunca precalientes la freidora de aire con papel de horno o un forro de papel dentro: sin peso, el aire lo levanta hasta la resistencia y puede quemarse. Ponlo justo al añadir la comida, que no sobresalga de la cesta y, si es posible, perforado para que circule el aire.",
+    "keywords": [
+     "freidora de aire",
+     "papel de horno"
+    ]
+   },
+   "en": {
+    "title": "Baking paper in the air fryer only with food on it",
+    "body": "Never preheat an air fryer with baking paper or a paper liner inside: without weight, the air lifts it onto the element and it can burn. Put it in only with the food, don't let it stick out of the basket and, if possible, use perforated paper so the air can flow.",
+    "keywords": [
+     "air fryer",
+     "baking paper",
+     "parchment"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-no-smoke",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Sin humo al hacer comida grasa en la freidora",
+    "body": "Con beicon, alitas, chorizo o muslos con piel, la grasa cae al fondo, se quema y hace humo blanco. Pon un par de cucharadas de agua o una rebanada de pan en el fondo del cajón (bajo la rejilla) para recogerla, y vacía la grasa entre tandas.",
+    "keywords": [
+     "freidora de aire",
+     "beicon",
+     "bacon",
+     "alitas",
+     "chorizo",
+     "muslos",
+     "panceta"
+    ]
+   },
+   "en": {
+    "title": "No smoke with fatty food in the air fryer",
+    "body": "With bacon, wings, chorizo or skin-on thighs, the fat drips to the bottom, burns and makes white smoke. Put a couple of tablespoons of water or a slice of bread in the bottom of the drawer (under the rack) to catch it, and pour off the fat between batches.",
+    "keywords": [
+     "air fryer",
+     "bacon",
+     "wings",
+     "chorizo",
+     "thighs",
+     "pancetta"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-breaded",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Rebozados crujientes en la freidora de aire",
+    "body": "Sin aceite, el pan rallado se queda pálido y con manchas de harina. Rocía o pinta los rebozados con un poco de aceite por todos los lados, también donde se vea harina seca, y otra vez al darles la vuelta. El panko queda especialmente crujiente.",
+    "keywords": [
+     "freidora de aire",
+     "rebozado",
+     "rebozados",
+     "empanado",
+     "empanados",
+     "croquetas",
+     "nuggets",
+     "pan rallado"
+    ]
+   },
+   "en": {
+    "title": "Crisp breaded food in the air fryer",
+    "body": "Without oil, breadcrumbs stay pale with floury patches. Spray or brush breaded food with a little oil on every side, including any dry flour spots, and again when you turn it. Panko gets especially crisp.",
+    "keywords": [
+     "air fryer",
+     "breaded",
+     "coated",
+     "croquettes",
+     "nuggets",
+     "breadcrumbs",
+     "panko"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-reheat",
+   "category": "LEFTOVERS",
+   "es": {
+    "title": "Recalentar sobras crujientes en la freidora de aire",
+    "body": "Patatas fritas, pizza, croquetas o empanadillas se ablandan en el microondas. En la freidora de aire, 3-5 minutos a 170-180 °C las dejan crujientes otra vez. Como siempre, que queden bien calientes por dentro.",
+    "keywords": [
+     "freidora de aire",
+     "patatas fritas",
+     "pizza",
+     "croquetas",
+     "empanadillas",
+     "sobras"
+    ]
+   },
+   "en": {
+    "title": "Reheat leftovers crisp in the air fryer",
+    "body": "Chips, pizza, croquettes or pasties go soft in the microwave. In the air fryer, 3-5 minutes at 170-180 °C makes them crisp again. As always, make sure they're piping hot inside.",
+    "keywords": [
+     "air fryer",
+     "chips",
+     "fries",
+     "pizza",
+     "croquettes",
+     "pasties",
+     "leftovers"
+    ]
+   }
+  },
+  {
+   "id": "air-fryer-basket-care",
+   "category": "KITCHEN",
+   "es": {
+    "title": "Cuidar la cesta de la freidora de aire",
+    "body": "Los sprays desmoldantes en aerosol dejan una capa pegajosa que estropea el antiadherente: mejor un pulverizador rellenable con aceite o una brocha. Lava la cesta cuando esté fría, con agua caliente, jabón y una esponja suave; si hay restos pegados, déjala en remojo.",
+    "keywords": [
+     "freidora de aire"
+    ]
+   },
+   "en": {
+    "title": "Look after the air fryer basket",
+    "body": "Aerosol cooking sprays leave a sticky film that damages the non-stick coating: use a refillable oil sprayer or a brush instead. Wash the basket once cool with hot soapy water and a soft sponge; soak it if anything is stuck.",
+    "keywords": [
+     "air fryer"
+    ]
+   }
   }
  ]
 }
