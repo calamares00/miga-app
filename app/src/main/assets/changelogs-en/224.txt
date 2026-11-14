@@ -1,0 +1,5 @@
+What's new in 1.0.26:
+• New: Cooking tips, over 130 tips on techniques, storing, leftovers, substitutions, food safety and baking, offline.
+• Save your favourite tips and search them by words.
+• Tip of the day in Books.
+• In each recipe, the tips that help with its ingredients and steps.

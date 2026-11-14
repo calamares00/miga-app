@@ -16,6 +16,14 @@ import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.L10n
 import org.calamares.miga.R
+import androidx.compose.foundation.layout.heightIn
+import org.calamares.miga.ui.components.sheetContentHeight
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.ModalBottomSheet
+import org.calamares.miga.data.tips.CookingTips
+import org.calamares.miga.data.tips.tipsForRecipe
+import org.calamares.miga.ui.tips.RecipeTipsContent
+import org.calamares.miga.ui.tips.RecipeTipsRow
 import org.calamares.miga.ui.components.AiContentNotice
 import org.calamares.miga.ui.components.rememberAiReady
 import androidx.compose.material.icons.filled.Refresh
@@ -153,7 +161,8 @@ fun RecipeDetailScreen(
     onEdit: () -> Unit,
     active: Boolean = true,
     onOpenCookMode: (recipe: Recipe, ttsVoiceName: String?) -> Unit,
-    onOpenPhoto: (recipe: Recipe, index: Int) -> Unit
+    onOpenPhoto: (recipe: Recipe, index: Int) -> Unit,
+    onOpenTips: () -> Unit = {}
 ) {
     val recipe by viewModel.recipe.collectAsStateWithLifecycle()
     val recipeBooks by viewModel.recipeBooks.collectAsStateWithLifecycle()
@@ -173,6 +182,9 @@ fun RecipeDetailScreen(
     /** Choosing a book to move (false) or copy (true) the recipe to; null when not asked. */
     var bookDialogCopies by remember { mutableStateOf<Boolean?>(null) }
     var showShareSheet by remember { mutableStateOf(false) }
+    var showTipsSheet by remember { mutableStateOf(false) }
+    val savedTips by viewModel.savedTips.collectAsStateWithLifecycle()
+    val recipeTips = remember(recipe) { recipe?.let { tipsForRecipe(it, CookingTips.all(context)) }.orEmpty() }
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
     /**
@@ -227,6 +239,8 @@ fun RecipeDetailScreen(
                     onRatingChange = { stars -> viewModel.setRating(stars) },
                     onAddToShoppingList = { addToShoppingList() },
                     onPhotoClick = { index -> onOpenPhoto(current, index) },
+                    tipCount = recipeTips.size,
+                    onShowTips = { showTipsSheet = true },
                     journalActions = remember(viewModel) {
                         JournalActions(
                             onAdd = viewModel::addJournalNote,
@@ -360,6 +374,20 @@ fun RecipeDetailScreen(
             onHide = { viewModel.hidePolishProgress() },
             onCancel = { viewModel.cancelPolish() }
         )
+    }
+
+    if (showTipsSheet && recipeTips.isNotEmpty()) {
+        ModalBottomSheet(onDismissRequest = { showTipsSheet = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            // Capped by the window, not the sheet, so the sheet doesn't bounce (see sheetContentHeight).
+            Column(modifier = Modifier.heightIn(max = sheetContentHeight(0.9f)).verticalScroll(rememberScrollState())) {
+                RecipeTipsContent(
+                    tips = recipeTips,
+                    saved = savedTips,
+                    onSavedChange = viewModel::setTipSaved,
+                    onSeeAll = { showTipsSheet = false; onOpenTips() }
+                )
+            }
+        }
     }
 
     if (showShareSheet) {
@@ -497,6 +525,8 @@ private fun RecipeDetailContent(
     onRatingChange: (Int) -> Unit,
     onAddToShoppingList: () -> Unit,
     onPhotoClick: (Int) -> Unit,
+    tipCount: Int,
+    onShowTips: () -> Unit,
     journalActions: JournalActions
 ) {
     var servings by remember(recipe.id) { mutableIntStateOf(recipe.servings) }
@@ -612,6 +642,9 @@ private fun RecipeDetailContent(
                     ButtonContent(Icons.Filled.ShoppingCart, L10n.str(R.string.add_shopping_list))
                 }
             }
+
+            // Bundled cooking tips that help with this recipe (its ingredients, equipment, steps).
+            if (tipCount > 0) RecipeTipsRow(count = tipCount, onClick = onShowTips)
 
             // Steps
             if (recipe.stepGroups.any { it.instructions.isNotEmpty() }) {

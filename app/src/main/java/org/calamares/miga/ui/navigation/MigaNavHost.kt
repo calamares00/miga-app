@@ -118,6 +118,9 @@ import org.calamares.miga.data.share.ShoppingIntents
 import org.calamares.miga.ui.shoppinglist.ShoppingListScreen
 import org.calamares.miga.ui.shoppinglist.ShoppingListViewModel
 import org.calamares.miga.ui.stats.StatsScreen
+import org.calamares.miga.data.tips.CookingTips
+import org.calamares.miga.ui.tips.TipsScreen
+import org.calamares.miga.ui.tips.TipsViewModel
 import org.calamares.miga.ui.stats.StatsViewModel
 import org.calamares.miga.ui.settings.AboutScreen
 import org.calamares.miga.ui.settings.ChangelogScreen
@@ -343,8 +346,20 @@ private fun NavGraphBuilder.screens(
             onEditBookClick = { navController.navigate(Destinations.bookEditor(it)) },
             onExplorePacks = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) },
             onOpenIdeas = { navController.navigate(Destinations.IDEAS_ROUTE) },
-            onOpenSync = { navController.navigate(Destinations.SYNC_CONNECTIONS_ROUTE) }
+            onOpenSync = { navController.navigate(Destinations.SYNC_CONNECTIONS_ROUTE) },
+            onOpenTips = { tipId -> navController.navigate(Destinations.tips(tipId)) }
         )
+    }
+
+    screen(
+        route = Destinations.TIPS_ROUTE,
+        arguments = listOf(navArgument(Destinations.ARG_TIP_ID) { type = NavType.StringType; nullable = true; defaultValue = null })
+    ) { backStackEntry ->
+        val tipId = backStackEntry.arguments?.getString(Destinations.ARG_TIP_ID)
+        val viewModel: TipsViewModel = viewModel(
+            factory = viewModelFactory { initializer { TipsViewModel(settingsRepository, CookingTips.all(context)) } }
+        )
+        TipsScreen(viewModel = viewModel, initialTipId = tipId, onBack = { navController.popBackStack() })
     }
 
     screen(Destinations.IDEAS_ROUTE) {
@@ -552,7 +567,8 @@ private fun NavGraphBuilder.screens(
                 )
             },
             onBack = { navController.popBackStack() },
-            onEdit = { id -> navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = id)) }
+            onEdit = { id -> navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = id)) },
+            onOpenTips = { navController.navigate(Destinations.tips()) }
         )
     }
 
@@ -634,6 +650,7 @@ private fun NavGraphBuilder.screens(
             hasChangelog = hasChangelog,
             onOpenSection = { navController.navigate(Destinations.settingsSection(it.id)) },
             onOpenStats = { navController.navigate(Destinations.STATS_ROUTE) },
+            onOpenTips = { navController.navigate(Destinations.tips()) },
             onOpenChangelog = { navController.navigate(Destinations.HELP_CHANGELOG_ROUTE) },
             onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
             onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) }
