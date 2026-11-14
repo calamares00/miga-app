@@ -289,7 +289,7 @@
     <string name="feature_x">"Feature: %1$s"</string>
     <string name="report_reason_x">"Reason: %1$s"</string>
     <string name="report_comment_x">"Comment: %1$s"</string>
-    <string name="ai_generated_may_contain_mistakes">"Made with AI · worth a quick check"</string>
+    <string name="ai_generated_may_contain_mistakes">"AI-generated. May contain errors."</string>
     <string name="generating_recipe_ai">"Cooking up the recipe…"</string>
     <string name="manage_connections">"Manage connections"</string>
     <string name="manage_content">"Manage content"</string>
@@ -463,7 +463,6 @@
     <string name="new_supermarket">"New supermarket"</string>
     <string name="nutrition">"Nutrition"</string>
     <string name="nutrition_per_100_g">"Nutrition per 100 g"</string>
-    <string name="estimated_nutrition">"Estimated nutrition"</string>
     <string name="nutrition_per_serving">"Nutrition (per serving)"</string>
     <string name="nutrition_x_100_60_additives">"Nutrition %1$s/100 (60%%) · Additives %2$s/100 (30%%)"</string>
     <string name="hide_photos">"Hide photos"</string>
@@ -656,7 +655,6 @@
     <string name="utensils_needed">"You will need"</string>
     <string name="clear_2">"Clear"</string>
     <string name="clear_list">"Clear list"</string>
-    <string name="health_rating">"Health rating"</string>
     <string name="x_items_added_list_quantities">"%1$s items will be added to your list (quantities are added to what's already there):"</string>
     <string name="x_recipe_imported_want_delete">"%1$s recipe(s) will be imported. Do you want to delete your current books and recipes (with their photos) first for a fresh start, or add the imported content to what you already have? Installed packs aren't affected."</string>
     <string name="several_people">"Several people"</string>
@@ -734,7 +732,7 @@
     <string name="ai_health_title">"Automatic health rating"</string>
     <string name="ai_health_desc">"Rates how healthy a recipe is from its ingredients when you open it."</string>
     <string name="ai_nutrition_title">"Automatic nutrition estimate"</string>
-    <string name="ai_health_disclaimer">"A guide only: it doesn't replace advice from a doctor or dietitian."</string>
+    <string name="ai_health_disclaimer">"AI-generated estimate. It may contain errors and is not a substitute for advice from a health professional."</string>
     <string name="ai_nutrition_desc">"Estimates calories and macros per serving when you open a recipe."</string>
     <string name="ai_disabled_summary">"Disabled"</string>
     <string name="ai_incomplete_too_long">"%1$s cut the answer off before finishing (too long). Try fewer photos at once or a simpler photo."</string>

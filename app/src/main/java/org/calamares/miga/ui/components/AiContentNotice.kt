@@ -38,10 +38,16 @@ import org.calamares.miga.data.support.AiReportReason
 /**
  * "Generated with AI" notice with a button to report the content (Google Play requirement for
  * generative AI apps). [feature] names the feature ("Import recipe", "Nutrition"...) and [content]
- * returns the generated text attached to the report.
+ * returns the generated text attached to the report. [text] replaces the standard notice where
+ * the content needs more (health and nutrition are not medical advice).
  */
 @Composable
-fun AiContentNotice(feature: String, content: () -> String, modifier: Modifier = Modifier) {
+fun AiContentNotice(
+    feature: String,
+    content: () -> String,
+    modifier: Modifier = Modifier,
+    text: String = L10n.str(R.string.ai_generated_may_contain_mistakes)
+) {
     var reporting by remember { mutableStateOf(false) }
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Icon(
@@ -51,7 +57,7 @@ fun AiContentNotice(feature: String, content: () -> String, modifier: Modifier =
             modifier = Modifier.size(16.dp)
         )
         Text(
-            L10n.str(R.string.ai_generated_may_contain_mistakes),
+            text,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f).padding(start = 6.dp)
