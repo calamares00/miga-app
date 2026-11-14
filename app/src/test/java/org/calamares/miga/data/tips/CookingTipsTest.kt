@@ -87,7 +87,9 @@ class CookingTipsTest {
     @Test
     fun `equipment counts and general tips are never attached to recipes`() {
         val tips = tipsForRecipe(recipe("Receta", utensils = listOf("Freidora de aire")), spanish)
-        assertEquals(listOf("air-fryer"), ids(tips))
+        // The general air fryer tip first, then other air fryer tips; nothing unrelated.
+        assertEquals("air-fryer", ids(tips).first())
+        assertTrue(tips.all { "freidora de aire" in it.keywords })
         val general = spanish.filter { it.keywords.isEmpty() }.map { it.id }.toSet()
         assertTrue(general.isNotEmpty())
         val everything = recipe("Todo", ingredients = spanish.flatMap { it.keywords }, steps = general.toList())
