@@ -112,6 +112,15 @@ The lists of recipe categories, equipment, tags, ingredients and products, and p
 
 Figures about your recipes: recipes per book, category and difficulty, favourites, best rated and most cooked, times, most used ingredients and tags, world cuisines and recipes to complete (no photo, no steps…). Tap a figure to see its recipes. At the bottom you can see how much space Miga takes on the phone, with options to clear the cache and delete photos no recipe uses any more.
 
+## 💡 Cooking tips
+
+Short tips to cook better: techniques, storing and freezing, using leftovers, substitutions, food safety, baking, saving time and kitchen tools. Find them under the 💡 icon in **Books** and in **Settings**; they work offline.
+
+- Tap a tip to read it in full; the ⭐ keeps it in **Saved**, and you can share it too.
+- Swipe left or right to move between categories, or search by words.
+- **Tip of the day**: shown at the top of Books. The ✕ hides it until tomorrow, and the ⋮ menu in Tips turns it off altogether.
+- In a recipe, if any tip helps with its ingredients or steps (aubergine or pasta, say), you'll see **💡 Tips for this recipe** between the ingredients and the method.
+
 ## 🔄 Sync
 
 To share books and shopping lists with your family with full editing, connect Miga to a server you host yourself (miga-server). In **Manage connections** you add the server and namespace, and invite others with a QR code. Your data only goes to your server.

@@ -96,6 +96,14 @@ class RecipeDetailViewModel(
     val ttsVoiceName: StateFlow<String?> = settingsRepository.observeTtsVoiceName()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** Ids of the cooking tips the user has saved, for the recipe's tips. */
+    val savedTips: StateFlow<Set<String>> = settingsRepository.observeSavedTips()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    fun setTipSaved(id: String, saved: Boolean) {
+        viewModelScope.launch { settingsRepository.setTipSaved(id, saved) }
+    }
+
     val recipeBooks: StateFlow<List<RecipeBookSummary>> = repository.books.observeRecipeBooks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

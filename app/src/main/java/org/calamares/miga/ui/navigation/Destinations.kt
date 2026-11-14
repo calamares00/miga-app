@@ -29,6 +29,7 @@ object Destinations {
     const val CONTENT_CLEANUP_ROUTE = "settings/cleanup"
     const val SYNC_CONNECTIONS_ROUTE = "settings/syncConnections"
     const val HELP_ROUTE = "help"
+    const val TIPS_ROUTE = "tips?tipId={tipId}"
     const val HELP_CHANGELOG_ROUTE = "help/changelog"
     const val ABOUT_ROUTE = "about"
     const val PRIVACY_ROUTE = "privacy"
@@ -43,6 +44,7 @@ object Destinations {
     const val ARG_SOURCE_DISH_ORIGIN = "sourceDishOrigin"
     const val ARG_SOURCE_RECIPE_URL = "sourceRecipeUrl"
     const val ARG_PACK_ID = "packId"
+    const val ARG_TIP_ID = "tipId"
     const val ARG_PHOTO_URIS = "photoUris"
     const val ARG_BROWSE_IDS = "browse"
     const val NEW_RECIPE_ID = -1L
@@ -61,6 +63,8 @@ object Destinations {
     fun decodeIdList(raw: String?): List<Long> =
         raw?.split(",")?.mapNotNull { it.trim().toLongOrNull() }.orEmpty()
     fun settingsSection(sectionId: String) = "settings/section/$sectionId"
+    /** The cooking tips, opened on [tipId] when given. */
+    fun tips(tipId: String? = null) = if (tipId != null) "tips?tipId=${Uri.encode(tipId)}" else "tips"
 
     fun editor(
         bookId: Long,
