@@ -22,6 +22,8 @@ import org.calamares.miga.data.ai.DEFAULT_ANTHROPIC_MODEL
 import org.calamares.miga.data.ai.DEFAULT_GEMINI_MODEL
 import org.calamares.miga.data.ai.DEFAULT_OPENAI_MODEL
 import org.calamares.miga.data.ai.openAiModelReadsImages
+import org.calamares.miga.data.ai.DEFAULT_DEEPSEEK_MODEL
+import org.calamares.miga.data.ai.deepSeekModelReadsImages
 import org.calamares.miga.data.ai.AiProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -66,6 +68,8 @@ class SettingsRepository(private val context: Context) {
     private val openRouterModelImagesKey = booleanPreferencesKey("openrouter_model_images")
     private val openAiApiKeyKey = stringPreferencesKey("openai_api_key")
     private val openAiModelKey = stringPreferencesKey("openai_model")
+    private val deepSeekApiKeyKey = stringPreferencesKey("deepseek_api_key")
+    private val deepSeekModelKey = stringPreferencesKey("deepseek_model")
     private val aiProviderOrderKey = stringPreferencesKey("ai_provider_order")
     private val aiDisabledProvidersKey = stringPreferencesKey("ai_disabled_providers")
     private val ttsVoiceNameKey = stringPreferencesKey("tts_voice_name")
@@ -104,7 +108,7 @@ class SettingsRepository(private val context: Context) {
     /** Encrypts the API keys stored in plain text by earlier versions. Run once at startup. */
     suspend fun encryptStoredApiKeys() {
         context.settingsDataStore.edit { prefs ->
-            listOf(geminiApiKeyKey, anthropicApiKeyKey, openRouterApiKeyKey, openAiApiKeyKey).forEach { key ->
+            listOf(geminiApiKeyKey, anthropicApiKeyKey, openRouterApiKeyKey, openAiApiKeyKey, deepSeekApiKeyKey).forEach { key ->
                 val stored = prefs[key]
                 if (!stored.isNullOrBlank() && !stored.startsWith(ENCRYPTED_KEY_PREFIX)) prefs[key] = encodeApiKey(stored)
             }
@@ -416,12 +420,29 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[openAiModelKey] = model.trim() }
     }
 
+    /** DeepSeek API key entered by the user; empty when not configured. */
+    fun observeDeepSeekApiKey(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> decodeApiKey(prefs[deepSeekApiKeyKey]) }
+
+    suspend fun setDeepSeekApiKey(apiKey: String) {
+        context.settingsDataStore.edit { prefs -> prefs[deepSeekApiKeyKey] = encodeApiKey(apiKey) }
+    }
+
+    /** DeepSeek model id, from the account's list (see ProviderModels) or typed by hand. */
+    fun observeDeepSeekModel(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[deepSeekModelKey] ?: DEFAULT_DEEPSEEK_MODEL }
+
+    suspend fun setDeepSeekModel(model: String) {
+        context.settingsDataStore.edit { prefs -> prefs[deepSeekModelKey] = model.trim() }
+    }
+
     /** API key configured for [provider]. */
     suspend fun apiKeyFor(provider: AiProvider): String = when (provider) {
         AiProvider.GEMINI -> observeGeminiApiKey().first()
         AiProvider.ANTHROPIC -> observeAnthropicApiKey().first()
         AiProvider.OPENROUTER -> observeOpenRouterApiKey().first()
         AiProvider.OPENAI -> observeOpenAiApiKey().first()
+        AiProvider.DEEPSEEK -> observeDeepSeekApiKey().first()
     }
 
     /** Model configured for [provider]. */
@@ -430,6 +451,7 @@ class SettingsRepository(private val context: Context) {
         AiProvider.ANTHROPIC -> observeAnthropicModel().first()
         AiProvider.OPENROUTER -> observeOpenRouterModel().first()
         AiProvider.OPENAI -> observeOpenAiModel().first()
+        AiProvider.DEEPSEEK -> observeDeepSeekModel().first()
     }
 
     /**
@@ -445,6 +467,7 @@ class SettingsRepository(private val context: Context) {
                     AiProvider.ANTHROPIC -> decodeApiKey(prefs[anthropicApiKeyKey]) to (prefs[anthropicModelKey] ?: DEFAULT_ANTHROPIC_MODEL)
                     AiProvider.OPENROUTER -> decodeApiKey(prefs[openRouterApiKeyKey]) to prefs[openRouterModelKey]
                     AiProvider.OPENAI -> decodeApiKey(prefs[openAiApiKeyKey]) to (prefs[openAiModelKey] ?: DEFAULT_OPENAI_MODEL)
+                    AiProvider.DEEPSEEK -> decodeApiKey(prefs[deepSeekApiKeyKey]) to (prefs[deepSeekModelKey] ?: DEFAULT_DEEPSEEK_MODEL)
                 }
                 !key.isNullOrBlank() && !model.isNullOrBlank()
             }
@@ -458,6 +481,7 @@ class SettingsRepository(private val context: Context) {
         AiProvider.GEMINI, AiProvider.ANTHROPIC -> true
         AiProvider.OPENROUTER -> observeOpenRouterModelImages().first()
         AiProvider.OPENAI -> openAiModelReadsImages(observeOpenAiModel().first())
+        AiProvider.DEEPSEEK -> deepSeekModelReadsImages(observeDeepSeekModel().first())
     }
 
     /** Android text-to-speech voice for cooking mode; null means the system default voice. */
@@ -551,7 +575,7 @@ class SettingsRepository(private val context: Context) {
     private val backupStringKeys = listOf(
         themeModeKey, colorThemeKey, photoFrameKey, shoppingAuthorKey, recipeListViewModeKey,
         recipeBookListViewModeKey, visionProviderKey, geminiModelKey, anthropicModelKey, openRouterModelKey,
-        openAiModelKey, aiProviderOrderKey, aiDisabledProvidersKey, ttsVoiceNameKey, dictationLanguageKey,
+        openAiModelKey, deepSeekModelKey, aiProviderOrderKey, aiDisabledProvidersKey, ttsVoiceNameKey, dictationLanguageKey,
         packsCatalogRepoKey, savedTipsKey
     )
     private val backupBooleanKeys = listOf(

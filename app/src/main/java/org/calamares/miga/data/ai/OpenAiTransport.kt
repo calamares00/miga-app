@@ -18,20 +18,23 @@ import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.ensureActive
 
 private const val OPENAI_CHAT_ENDPOINT = "https://api.openai.com/v1/chat/completions"
+private const val DEEPSEEK_CHAT_ENDPOINT = "https://api.deepseek.com/chat/completions"
 private const val TIMEOUT_MILLIS = 90_000
 
 // Output budget for the second attempt after an answer was cut off.
 private const val LARGE_MAX_TOKENS = 32_000
 
 /**
- * Chat completions request. max_completion_tokens, not max_tokens: reasoning models (o-series,
- * GPT-5) reject the old parameter, and it also bounds their hidden reasoning.
+ * Chat completions request. OpenAI takes max_completion_tokens, not max_tokens: its reasoning
+ * models (o-series, GPT-5) reject the old parameter, and it also bounds their hidden reasoning.
+ * Other APIs with the same format (DeepSeek) take max_tokens. Only the one that is set is sent.
  */
 @Serializable
 internal data class OpenAiRequest(
     val model: String,
     val messages: List<OpenAiMessage>,
-    @SerialName("max_completion_tokens") val maxCompletionTokens: Int
+    @SerialName("max_completion_tokens") val maxCompletionTokens: Int? = null,
+    @SerialName("max_tokens") val maxTokens: Int? = null
 )
 
 /** Fields with a default value are only encoded when marked with @EncodeDefault. */
@@ -67,9 +70,19 @@ internal data class OpenAiErrorEnvelope(val error: OpenAiErrorDetail? = null)
 internal data class OpenAiErrorDetail(val message: String? = null, val code: String? = null)
 
 /** OpenAI chat completions API (GPT models). */
-internal object OpenAiTransport : AiTransport {
+internal val OpenAiTransport: AiTransport = OpenAiCompatibleTransport(AiProvider.OPENAI, OPENAI_CHAT_ENDPOINT, useMaxCompletionTokens = true)
 
-    private val name = AiProvider.OPENAI.shortName
+/** DeepSeek's API, which follows the OpenAI chat completions format, images included. */
+internal val DeepSeekTransport: AiTransport = OpenAiCompatibleTransport(AiProvider.DEEPSEEK, DEEPSEEK_CHAT_ENDPOINT, useMaxCompletionTokens = false)
+
+/** A chat completions API in OpenAI's format at [endpoint], with a Bearer key. */
+internal class OpenAiCompatibleTransport(
+    provider: AiProvider,
+    private val endpoint: String,
+    private val useMaxCompletionTokens: Boolean
+) : AiTransport {
+
+    private val name = provider.shortName
 
     override suspend fun complete(request: AiRequest, apiKey: String, model: String): AiText = withContext(AppDispatchers.io) {
         try {
@@ -107,8 +120,12 @@ internal object OpenAiTransport : AiTransport {
 
     private suspend fun send(model: String, messages: List<OpenAiMessage>, maxTokens: Int, apiKey: String): Answer {
         val response = postJson(
-            url = OPENAI_CHAT_ENDPOINT,
-            body = aiJson.encodeToString(OpenAiRequest.serializer(), OpenAiRequest(model, messages, maxTokens)),
+            url = endpoint,
+            body = aiJson.encodeToString(
+                OpenAiRequest.serializer(),
+                if (useMaxCompletionTokens) OpenAiRequest(model, messages, maxCompletionTokens = maxTokens)
+                else OpenAiRequest(model, messages, maxTokens = maxTokens)
+            ),
             headers = mapOf("Authorization" to "Bearer $apiKey"),
             timeoutMillis = TIMEOUT_MILLIS
         )

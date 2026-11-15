@@ -1,0 +1,2 @@
+What's new in 1.0.28:
+• New cooking assistant provider: DeepSeek, very low cost. Its Flash models also read recipe photos.
