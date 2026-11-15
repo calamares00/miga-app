@@ -1,6 +1,6 @@
 # Miga privacy policy
 
-Last updated: 8 November 2026.
+Last updated: 15 November 2026.
 
 Miga is a family recipe book and shopping list app. This document explains what data the app handles, where it goes and what control you have over it.
 
@@ -15,7 +15,7 @@ Miga is a family recipe book and shopping list app. This document explains what 
 
 Recipes, books, photos, personal notes, categories, tags, kitchen equipment, ratings, shopping lists, templates, supermarkets and settings are stored **in your device's internal storage**.
 
-The Google Gemini, Anthropic, OpenAI or OpenRouter API keys you enter are stored only on your device, **encrypted** with a key from Android's secure keystore that never leaves the phone, and are used only to call the provider you choose.
+The Google Gemini, Anthropic, OpenAI, DeepSeek, Mistral, Groq or OpenRouter API keys (and that of any OpenAI-compatible server you set up) you enter are stored only on your device, **encrypted** with a key from Android's secure keystore that never leaves the phone, and are used only to call the provider you choose.
 
 If Android backup is turned on, the system may include this data (recipes, photos and settings) in the backup managed by your Google account, as with any other app. Miga has no access to that backup. API keys stay encrypted and cannot be read on another device: after restoring on a new phone you will need to enter them again.
 
@@ -32,7 +32,7 @@ If Android backup is turned on, the system may include this data (recipes, photo
 
 All of them start from an action of yours or a feature you have turned on. None goes through a server of the Miga developer: there is no such server.
 
-1. **AI features (optional, with your own key).** What each feature needs is sent to the provider you set up (**Google Gemini**, **Anthropic Claude**, **OpenAI** or **OpenRouter**, which in turn forwards it to the provider of the model you choose):
+1. **AI features (optional, with your own key).** What each feature needs is sent to the provider you set up (**Google Gemini**, **Anthropic Claude**, **OpenAI**, **DeepSeek**, **Mistral**, **Groq** or **OpenRouter**, which in turn forwards it to the provider of the model you choose; or the **OpenAI-compatible server** whose address you enter, which may be your own):
    - **Recipes from photos**: the photos you choose. Cropping the dish photo is then done on your device.
    - **Improving a photo**: the photo you choose. The assistant only suggests colour, brightness and sharpness adjustments, which are applied on your device.
    - **Recipes from a web page**: the text of the page.
@@ -43,7 +43,7 @@ All of them start from an action of yours or a feature you have turned on. None 
    - **Cleaning up dictated text**: the text you dictated.
    - **Ideas**: a summary of your recipes (name, category, tags, time, main ingredients, equipment, whether it is a favourite and how many times you have cooked it), the options you choose, your question and the earlier questions of that conversation.
 
-   Providers are used in the priority order you choose: if one fails or cannot read images, the same request is sent to the next one. How that data is handled is subject to each provider's terms for your key (some free OpenRouter models may use requests for training). Without a key nothing is sent. The OpenRouter model list is downloaded from its public catalogue without sending any of your data; the Gemini, Claude and OpenAI lists are requested from each provider with your key, without sending any other data. You can turn off all AI features, or only the automatic health rating or nutrition estimate, in Settings → Artificial intelligence. AI-generated content is labelled in the app, may contain mistakes and can be reported.
+   Providers are used in the priority order you choose: if one fails or cannot read images, the same request is sent to the next one. How that data is handled is subject to each provider's terms for your key (some free OpenRouter models may use requests for training; DeepSeek processes and stores data on servers in the People's Republic of China; Mistral processes it in the European Union; with your own server, data only goes there). Without a key nothing is sent. The OpenRouter model list is downloaded from its public catalogue without sending any of your data; the Gemini, Claude, OpenAI, DeepSeek, Mistral, Groq and custom server lists are requested from each provider with your key, without sending any other data. You can turn off all AI features, or only the automatic health rating or nutrition estimate, in Settings → Artificial intelligence. AI-generated content is labelled in the app, may contain mistakes and can be reported.
 2. **Open Food Facts.** When you scan a barcode or search for a product by name, that code or text is sent to Open Food Facts (an open database, no account) to get the product's name, photo and details. Product photos are downloaded from its servers. Open Food Facts data is licensed under the ODbL.
 3. **Recipe packs catalogue.** When you open the catalogue or install a pack, a public listing and the pack file are downloaded from miga.calamares.org (or from the alternative catalogue you set up). None of your data is sent.
 

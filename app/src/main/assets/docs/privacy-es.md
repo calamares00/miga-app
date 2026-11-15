@@ -1,6 +1,6 @@
 # Política de privacidad de Miga
 
-Última actualización: 8 de noviembre de 2026.
+Última actualización: 15 de noviembre de 2026.
 
 Miga es una app de recetario familiar y lista de la compra. Este documento explica qué datos maneja la app, adónde van y qué control tienes sobre ellos.
 
@@ -15,7 +15,7 @@ Miga es una app de recetario familiar y lista de la compra. Este documento expli
 
 Recetas, libros, fotos, notas personales, categorías, etiquetas, equipamiento de cocina, valoraciones, listas de la compra, plantillas, supermercados y ajustes se guardan **en el almacenamiento interno de tu dispositivo**.
 
-Las claves de API de Google Gemini, Anthropic, OpenAI u OpenRouter que introduzcas se guardan solo en tu dispositivo, **cifradas** con una clave del almacén seguro de Android que no sale del teléfono, y se usan únicamente para llamar al proveedor que elijas.
+Las claves de API de Google Gemini, Anthropic, OpenAI, DeepSeek, Mistral, Groq u OpenRouter (y la del servidor compatible con OpenAI que configures) que introduzcas se guardan solo en tu dispositivo, **cifradas** con una clave del almacén seguro de Android que no sale del teléfono, y se usan únicamente para llamar al proveedor que elijas.
 
 Si tienes activada la copia de seguridad de Android, el sistema puede incluir estos datos (recetas, fotos y ajustes) en la copia gestionada por tu cuenta de Google, como con cualquier otra app. Miga no tiene acceso a esa copia. Las claves de API van cifradas y no se pueden leer en otro dispositivo: al restaurar en un móvil nuevo tendrás que volver a introducirlas.
 
@@ -32,7 +32,7 @@ Si tienes activada la copia de seguridad de Android, el sistema puede incluir es
 
 Todas se inician por una acción tuya o por una función que has activado. Ninguna pasa por un servidor del desarrollador de Miga: no existe tal servidor.
 
-1. **Funciones de IA (opcionales, con tu propia clave).** Se envía al proveedor que configures (**Google Gemini**, **Anthropic Claude**, **OpenAI** u **OpenRouter**, que a su vez lo reenvía al proveedor del modelo que elijas) lo necesario para cada función:
+1. **Funciones de IA (opcionales, con tu propia clave).** Se envía al proveedor que configures (**Google Gemini**, **Anthropic Claude**, **OpenAI**, **DeepSeek**, **Mistral**, **Groq** u **OpenRouter**, que a su vez lo reenvía al proveedor del modelo que elijas; o el **servidor compatible con OpenAI** cuya dirección escribas, que puede ser tuyo) lo necesario para cada función:
    - **Recetas desde fotos**: las fotos que elijas. El recorte de la foto del plato se hace después en tu dispositivo.
    - **Mejorar una foto**: la foto que eliges. El asistente solo propone ajustes de color, brillo y nitidez, que se aplican en tu dispositivo.
    - **Recetas desde una web**: el texto de la página.
@@ -43,7 +43,7 @@ Todas se inician por una acción tuya o por una función que has activado. Ningu
    - **Limpieza del texto dictado**: el texto que has dictado.
    - **Ideas**: un resumen de tus recetas (nombre, categoría, etiquetas, tiempo, ingredientes principales, equipamiento, si es favorita y cuántas veces la has cocinado), las opciones que elijas, tu pregunta y las preguntas anteriores de esa conversación.
 
-   Los proveedores se usan en el orden de prioridad que elijas: si uno falla o no puede leer imágenes, se envía la misma petición al siguiente. El tratamiento de esos datos está sujeto a las condiciones de cada proveedor asociadas a tu clave (algunos modelos gratuitos de OpenRouter pueden usar las peticiones para entrenar). Sin clave configurada no se envía nada. La lista de modelos de OpenRouter se descarga de su catálogo público, sin enviar datos tuyos; la de Gemini, Claude y OpenAI se pide a cada proveedor con tu clave, sin enviar ningún otro dato. Puedes desactivar todas las funciones de IA, o solo la valoración de salud o la estimación nutricional automáticas, en Ajustes → Inteligencia artificial. El contenido generado con IA se marca en la app, puede contener errores y se puede reportar.
+   Los proveedores se usan en el orden de prioridad que elijas: si uno falla o no puede leer imágenes, se envía la misma petición al siguiente. El tratamiento de esos datos está sujeto a las condiciones de cada proveedor asociadas a tu clave (algunos modelos gratuitos de OpenRouter pueden usar las peticiones para entrenar; DeepSeek procesa y guarda los datos en servidores de la República Popular China; Mistral los procesa en la Unión Europea; con un servidor propio, los datos solo van a él). Sin clave configurada no se envía nada. La lista de modelos de OpenRouter se descarga de su catálogo público, sin enviar datos tuyos; la de Gemini, Claude, OpenAI, DeepSeek, Mistral, Groq y el servidor personalizado se pide a cada proveedor con tu clave, sin enviar ningún otro dato. Puedes desactivar todas las funciones de IA, o solo la valoración de salud o la estimación nutricional automáticas, en Ajustes → Inteligencia artificial. El contenido generado con IA se marca en la app, puede contener errores y se puede reportar.
 2. **Open Food Facts.** Al escanear un código de barras o buscar un producto por nombre se envía ese código o ese texto a Open Food Facts (base de datos abierta, sin cuenta) para obtener el nombre, la foto y la ficha del producto. Las fotos de producto se descargan de sus servidores. Datos de Open Food Facts bajo licencia ODbL.
 3. **Catálogo de packs de recetas.** Al abrir el catálogo o instalar un pack se descargan un listado público y el archivo del pack desde miga.calamares.org (o desde el catálogo alternativo que configures). No se envían datos tuyos.
 

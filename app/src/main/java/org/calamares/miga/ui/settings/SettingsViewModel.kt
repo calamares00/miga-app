@@ -27,6 +27,10 @@ import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.ai.DEFAULT_ANTHROPIC_MODEL
 import org.calamares.miga.data.ai.DEFAULT_OPENAI_MODEL
+import org.calamares.miga.data.ai.DEFAULT_DEEPSEEK_MODEL
+import org.calamares.miga.data.ai.GENERIC_PROVIDERS
+import org.calamares.miga.data.ai.ProviderModels
+import org.calamares.miga.data.ai.defaultModelFor
 import org.calamares.miga.data.ai.DEFAULT_GEMINI_MODEL
 import org.calamares.miga.data.ai.AiProvider
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -227,6 +231,50 @@ class SettingsViewModel(
 
     fun setOpenAiModel(model: String) {
         viewModelScope.launch { settingsRepository.setOpenAiModel(model) }
+    }
+
+    /** Key, model and "reads images" switch of each generic provider (see GENERIC_PROVIDERS). */
+    val genericApiKeys: Map<AiProvider, StateFlow<String>> = GENERIC_PROVIDERS.associateWith { provider ->
+        settingsRepository.observeGenericApiKey(provider).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+    }
+    val genericModels: Map<AiProvider, StateFlow<String>> = GENERIC_PROVIDERS.associateWith { provider ->
+        settingsRepository.observeGenericModel(provider).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), defaultModelFor(provider))
+    }
+    val genericModelImages: Map<AiProvider, StateFlow<Boolean>> = GENERIC_PROVIDERS.associateWith { provider ->
+        settingsRepository.observeGenericModelImages(provider).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    }
+    val customBaseUrl: StateFlow<String> = settingsRepository.observeCustomBaseUrl()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    fun setGenericApiKey(provider: AiProvider, apiKey: String) {
+        viewModelScope.launch { settingsRepository.setGenericApiKey(provider, apiKey) }
+    }
+
+    /** Chooses a model; whether it reads images comes from the provider's list when known. */
+    fun setGenericModel(provider: AiProvider, model: String) {
+        viewModelScope.launch { settingsRepository.setGenericModel(provider, model, ProviderModels.knownImageSupport(provider, model)) }
+    }
+
+    fun setGenericModelImages(provider: AiProvider, readsImages: Boolean) {
+        viewModelScope.launch { settingsRepository.setGenericModelImages(provider, readsImages) }
+    }
+
+    fun setCustomBaseUrl(url: String) {
+        viewModelScope.launch { settingsRepository.setCustomBaseUrl(url) }
+    }
+
+    val deepSeekApiKey: StateFlow<String> = settingsRepository.observeDeepSeekApiKey()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    fun setDeepSeekApiKey(apiKey: String) {
+        viewModelScope.launch { settingsRepository.setDeepSeekApiKey(apiKey) }
+    }
+
+    val deepSeekModel: StateFlow<String> = settingsRepository.observeDeepSeekModel()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_DEEPSEEK_MODEL)
+
+    fun setDeepSeekModel(model: String) {
+        viewModelScope.launch { settingsRepository.setDeepSeekModel(model) }
     }
 
     val anthropicApiKey: StateFlow<String> = settingsRepository.observeAnthropicApiKey()

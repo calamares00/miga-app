@@ -1,0 +1,3 @@
+What's new in 1.0.28:
+• New cooking assistant providers: DeepSeek (very low cost), Mistral (European) and Groq (very fast, with a free tier).
+• "OpenAI-compatible": use OpenCode Zen, a model on your computer with Ollama or LM Studio, or any API of that kind.
