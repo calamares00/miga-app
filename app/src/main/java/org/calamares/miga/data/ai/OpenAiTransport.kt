@@ -163,7 +163,7 @@ internal class OpenAiCompatibleTransport(
         )
         if (!response.isSuccessful) {
             val message = runCatching { aiJson.decodeFromString(OpenAiErrorEnvelope.serializer(), response.body).error?.message }.getOrNull()
-            return Answer.Failed(AiErrors.http(name, response.code, message ?: response.body.take(1500)))
+            return Answer.Failed(AiErrors.http(name, response.code, message ?: response.body.take(1500), response.retryAfter))
         }
         val choice = aiJson.decodeFromString(OpenAiResponse.serializer(), response.body).choices.firstOrNull()
         val text = choice?.message?.content

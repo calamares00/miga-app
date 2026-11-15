@@ -40,7 +40,11 @@ object AiErrors {
     }
 
     /** Unsuccessful HTTP response from [provider] (Gemini, Claude...). */
-    fun http(provider: String, code: Int, providerMessage: String?): String {
+    /**
+     * Error for an HTTP failure. A rate limit's [retryAfter] header is kept in the detail so the
+     * request can be repeated once the wait is over (see RateLimits).
+     */
+    fun http(provider: String, code: Int, providerMessage: String?, retryAfter: String? = null): String {
         val summary = when (code) {
             400 -> L10n.str(R.string.ai_error_bad_request, provider)
             401, 403 -> L10n.str(R.string.ai_error_key, provider)
@@ -49,7 +53,8 @@ object AiErrors {
             in 500..599 -> L10n.str(R.string.ai_error_unavailable, provider)
             else -> L10n.str(R.string.ai_error_generic, provider)
         }
-        return ErrorDetail.markAsAi(ErrorDetail.withDetail(summary, "HTTP $code" + (providerMessage?.let { "\n$it" } ?: "")))
+        val header = retryAfter?.takeIf { it.isNotBlank() }?.let { "\nRetry-After: ${it.trim()}" }.orEmpty()
+        return ErrorDetail.markAsAi(ErrorDetail.withDetail(summary, "HTTP $code" + header + (providerMessage?.let { "\n$it" } ?: "")))
     }
 
     /** Network or unexpected failure while calling the AI. */
