@@ -12,6 +12,8 @@ import org.calamares.miga.data.ai.DEFAULT_ANTHROPIC_MODEL
 import org.calamares.miga.data.ai.ANTHROPIC_MODELS
 import org.calamares.miga.data.ai.DEFAULT_OPENAI_MODEL
 import org.calamares.miga.data.ai.OPENAI_MODELS
+import org.calamares.miga.data.ai.DEEPSEEK_MODELS
+import org.calamares.miga.data.ai.DEFAULT_DEEPSEEK_MODEL
 import org.calamares.miga.data.ai.ProviderModels
 import org.calamares.miga.MigaApp
 import kotlinx.coroutines.launch
@@ -102,10 +104,12 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
     val openRouterModel by settings.observeOpenRouterModel().collectAsStateWithLifecycle(initialValue = "")
     val openAiKey by settings.observeOpenAiApiKey().collectAsStateWithLifecycle(initialValue = "")
     val openAiModel by settings.observeOpenAiModel().collectAsStateWithLifecycle(initialValue = DEFAULT_OPENAI_MODEL)
+    val deepSeekKey by settings.observeDeepSeekApiKey().collectAsStateWithLifecycle(initialValue = "")
+    val deepSeekModel by settings.observeDeepSeekModel().collectAsStateWithLifecycle(initialValue = DEFAULT_DEEPSEEK_MODEL)
     /** Models of the user's account for the providers that list them (see ProviderModels). */
     val accountModels = remember { mutableStateMapOf<AiProvider, List<String>>() }
-    LaunchedEffect(geminiKey, anthropicKey, openAiKey) {
-        listOf(AiProvider.GEMINI to geminiKey, AiProvider.ANTHROPIC to anthropicKey, AiProvider.OPENAI to openAiKey)
+    LaunchedEffect(geminiKey, anthropicKey, openAiKey, deepSeekKey) {
+        listOf(AiProvider.GEMINI to geminiKey, AiProvider.ANTHROPIC to anthropicKey, AiProvider.OPENAI to openAiKey, AiProvider.DEEPSEEK to deepSeekKey)
             .filter { it.second.isNotBlank() }
             .forEach { (provider, key) -> ProviderModels.fetch(provider, key)?.let { accountModels[provider] = it } }
     }
@@ -121,6 +125,7 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
         AiProvider.ANTHROPIC -> anthropicModel
         AiProvider.OPENROUTER -> openRouterModel
         AiProvider.OPENAI -> openAiModel
+        AiProvider.DEEPSEEK -> deepSeekModel
     }
 
     fun hasKey(provider: AiProvider): Boolean = when (provider) {
@@ -128,6 +133,7 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
         AiProvider.ANTHROPIC -> anthropicKey.isNotBlank()
         AiProvider.OPENROUTER -> openRouterKey.isNotBlank()
         AiProvider.OPENAI -> openAiKey.isNotBlank()
+        AiProvider.DEEPSEEK -> deepSeekKey.isNotBlank()
     }
 
     fun modelsFor(provider: AiProvider): List<String> {
@@ -136,6 +142,7 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
             AiProvider.GEMINI -> (saved + (accountModels[provider] ?: GEMINI_MODELS)).distinct()
             AiProvider.ANTHROPIC -> (saved + (accountModels[provider] ?: ANTHROPIC_MODELS)).distinct()
             AiProvider.OPENAI -> (saved + (accountModels[provider] ?: OPENAI_MODELS)).distinct()
+            AiProvider.DEEPSEEK -> (saved + (accountModels[provider] ?: DEEPSEEK_MODELS)).distinct()
             // The first free models of the catalogue plus the chosen one; the full catalogue is in
             // Settings.
             AiProvider.OPENROUTER -> (saved + openRouterCatalog.filter { it.isFree }.take(15).map { it.id }).distinct()
@@ -149,6 +156,7 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
                     AiProvider.GEMINI -> settings.setGeminiModel(model)
                     AiProvider.ANTHROPIC -> settings.setAnthropicModel(model)
                     AiProvider.OPENAI -> settings.setOpenAiModel(model)
+                    AiProvider.DEEPSEEK -> settings.setDeepSeekModel(model)
                     AiProvider.OPENROUTER -> settings.setOpenRouterModel(
                         model,
                         openRouterCatalog.firstOrNull { it.id == model }?.supportsImages ?: settings.observeOpenRouterModelImages().first()

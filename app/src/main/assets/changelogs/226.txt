@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.28:
+• Nuevo proveedor para el asistente de cocina: DeepSeek, muy económico. Sus modelos Flash también leen fotos de recetas.

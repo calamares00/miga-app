@@ -54,6 +54,7 @@ private fun transportFor(provider: AiProvider): AiTransport = when (provider) {
     AiProvider.ANTHROPIC -> AnthropicTransport
     AiProvider.OPENROUTER -> OpenRouterTransport
     AiProvider.OPENAI -> OpenAiTransport
+    AiProvider.DEEPSEEK -> DeepSeekTransport
 }
 
 /** Runs [request] against this candidate's provider, key and model. */

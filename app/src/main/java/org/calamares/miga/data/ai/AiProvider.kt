@@ -8,7 +8,8 @@ enum class AiProvider(val label: String, val shortName: String) {
     GEMINI("Google Gemini", "Gemini"),
     ANTHROPIC("Anthropic Claude", "Claude"),
     OPENROUTER("OpenRouter", "OpenRouter"),
-    OPENAI("OpenAI", "OpenAI")
+    OPENAI("OpenAI", "OpenAI"),
+    DEEPSEEK("DeepSeek", "DeepSeek")
 }
 
 /**
@@ -46,6 +47,23 @@ val OPENAI_MODELS = listOf(
 )
 
 const val DEFAULT_OPENAI_MODEL = "gpt-5-mini"
+
+/**
+ * DeepSeek models offered in Settings until the list of the user's account is downloaded; any
+ * other id can also be typed in by hand. See https://api-docs.deepseek.com/quick_start/pricing.
+ */
+val DEEPSEEK_MODELS = listOf(
+    "deepseek-flash",
+    "deepseek-v4-pro"
+)
+
+const val DEFAULT_DEEPSEEK_MODEL = "deepseek-flash"
+
+/**
+ * Whether a DeepSeek model reads images: only the Flash models do (the Pro model answers images
+ * with an error). Older Flash ids are still accepted and served by the current Flash model.
+ */
+fun deepSeekModelReadsImages(model: String): Boolean = "flash" in model.lowercase()
 
 /** Whether an OpenAI model reads images: all current chat models do, except a few small reasoning ones. */
 fun openAiModelReadsImages(model: String): Boolean {

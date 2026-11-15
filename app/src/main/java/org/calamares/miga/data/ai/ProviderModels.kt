@@ -81,6 +81,13 @@ object ProviderModels {
                 .filter { isGeminiChatModel(it) }
                 .sortedDescending()
         }
+        AiProvider.DEEPSEEK -> {
+            val response = getJson("https://api.deepseek.com/models", mapOf("Authorization" to "Bearer $apiKey"), TIMEOUT_MILLIS)
+            // A short list in the API's own order (current models first).
+            if (!response.isSuccessful) null else aiJson.decodeFromString(OpenAiModelsResponse.serializer(), response.body).data
+                .map { it.id }
+                .filter { it.startsWith("deepseek") }
+        }
         AiProvider.OPENROUTER -> null
     }
 }
