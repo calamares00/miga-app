@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.29:
+• Si un proveedor del asistente de cocina llega a su límite de uso por minuto (como la capa gratuita de Groq), Miga espera lo que indica y lo vuelve a intentar sola, con una cuenta atrás.
