@@ -15,6 +15,18 @@ internal data class OpenAiModelsResponse(val data: List<OpenAiModelDto> = emptyL
 internal data class OpenAiModelDto(val id: String, val created: Long = 0)
 
 @Serializable
+internal data class MistralModelsResponse(val data: List<MistralModelDto> = emptyList())
+
+@Serializable
+internal data class MistralModelDto(val id: String, val capabilities: MistralCapabilities = MistralCapabilities())
+
+@Serializable
+internal data class MistralCapabilities(
+    @SerialName("completion_chat") val completionChat: Boolean = true,
+    val vision: Boolean = false
+)
+
+@Serializable
 internal data class AnthropicModelsResponse(val data: List<AnthropicModelDto> = emptyList())
 
 @Serializable
@@ -41,21 +53,34 @@ internal data class GeminiModelDto(
 object ProviderModels {
     private const val TIMEOUT_MILLIS = 20_000
     private val mutex = Mutex()
-    private val cache = mutableMapOf<Pair<AiProvider, String>, List<String>>()
+    private val cache = mutableMapOf<Triple<AiProvider, String, String>, List<String>>()
 
-    /** Model ids, newest first, or null when the list cannot be downloaded (no network, wrong key). */
-    suspend fun fetch(provider: AiProvider, apiKey: String): List<String>? {
-        val key = provider to apiKey.trim()
-        if (key.second.isEmpty() || provider == AiProvider.OPENROUTER) return null
+    /** Whether a model reads images, for the providers whose list says so (Mistral). */
+    private val imageSupport = java.util.concurrent.ConcurrentHashMap<Pair<AiProvider, String>, Boolean>()
+
+    /**
+     * Model ids, newest first, or null when the list cannot be downloaded (no network, wrong key).
+     * A custom server is asked at [baseUrl], with or without a key.
+     */
+    suspend fun fetch(provider: AiProvider, apiKey: String, baseUrl: String? = null): List<String>? {
+        val key = Triple(provider, apiKey.trim(), baseUrl?.trim().orEmpty())
+        val ready = if (provider == AiProvider.CUSTOM) key.third.isNotEmpty() else key.second.isNotEmpty()
+        if (!ready || provider == AiProvider.OPENROUTER) return null
         mutex.withLock { cache[key]?.let { return it } }
         val fetched = withContext(AppDispatchers.io) {
-            runCatching { download(provider, key.second) }.getOrNull()
+            runCatching { download(provider, key.second, key.third) }.getOrNull()
         }?.takeIf { it.isNotEmpty() } ?: return null
         mutex.withLock { cache[key] = fetched }
         return fetched
     }
 
-    private fun download(provider: AiProvider, apiKey: String): List<String>? = when (provider) {
+    /** Whether [model] reads images according to the provider's own list; null when unknown. */
+    fun knownImageSupport(provider: AiProvider, model: String): Boolean? = imageSupport[provider to model]
+
+    private fun bearer(apiKey: String): Map<String, String> =
+        if (apiKey.isBlank()) emptyMap() else mapOf("Authorization" to "Bearer $apiKey")
+
+    private fun download(provider: AiProvider, apiKey: String, baseUrl: String): List<String>? = when (provider) {
         AiProvider.OPENAI -> {
             val response = getJson("https://api.openai.com/v1/models", mapOf("Authorization" to "Bearer $apiKey"), TIMEOUT_MILLIS)
             if (!response.isSuccessful) null else aiJson.decodeFromString(OpenAiModelsResponse.serializer(), response.body).data
@@ -81,8 +106,41 @@ object ProviderModels {
                 .filter { isGeminiChatModel(it) }
                 .sortedDescending()
         }
+        AiProvider.DEEPSEEK -> {
+            val response = getJson("https://api.deepseek.com/models", mapOf("Authorization" to "Bearer $apiKey"), TIMEOUT_MILLIS)
+            // A short list in the API's own order (current models first).
+            if (!response.isSuccessful) null else aiJson.decodeFromString(OpenAiModelsResponse.serializer(), response.body).data
+                .map { it.id }
+                .filter { it.startsWith("deepseek") }
+        }
+        AiProvider.MISTRAL -> {
+            val response = getJson("https://api.mistral.ai/v1/models", bearer(apiKey), TIMEOUT_MILLIS)
+            if (!response.isSuccessful) null else aiJson.decodeFromString(MistralModelsResponse.serializer(), response.body).data
+                .filter { it.capabilities.completionChat && MISTRAL_NON_CHAT.none { marker -> marker in it.id } }
+                .onEach { imageSupport[provider to it.id] = it.capabilities.vision }
+                .map { it.id }
+                .distinct()
+                // The "-latest" aliases first: they follow each model's current version.
+                .sortedWith(compareBy<String> { !it.endsWith("-latest") }.thenBy { it })
+        }
+        AiProvider.GROQ -> {
+            val response = getJson("https://api.groq.com/openai/v1/models", bearer(apiKey), TIMEOUT_MILLIS)
+            if (!response.isSuccessful) null else aiJson.decodeFromString(OpenAiModelsResponse.serializer(), response.body).data
+                .map { it.id }
+                .filter { id -> GROQ_NON_CHAT.none { it in id.lowercase() } }
+                .sorted()
+        }
+        AiProvider.CUSTOM -> {
+            val response = getJson(customModelsEndpoint(baseUrl), bearer(apiKey), TIMEOUT_MILLIS)
+            if (!response.isSuccessful) null else aiJson.decodeFromString(OpenAiModelsResponse.serializer(), response.body).data
+                .map { it.id }
+                .sorted()
+        }
         AiProvider.OPENROUTER -> null
     }
+
+    private val MISTRAL_NON_CHAT = listOf("embed", "moderation", "ocr", "transcribe", "voxtral")
+    private val GROQ_NON_CHAT = listOf("whisper", "tts", "guard", "playai", "orpheus", "distil")
 }
 
 private val NON_CHAT_MARKERS = listOf(
