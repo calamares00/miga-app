@@ -19,6 +19,11 @@ import kotlinx.coroutines.ensureActive
 
 private const val OPENAI_CHAT_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 private const val DEEPSEEK_CHAT_ENDPOINT = "https://api.deepseek.com/chat/completions"
+private const val MISTRAL_CHAT_ENDPOINT = "https://api.mistral.ai/v1/chat/completions"
+private const val GROQ_CHAT_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
+
+// Models on a home server (Ollama, LM Studio) can be much slower than the hosted APIs.
+private const val CUSTOM_TIMEOUT_MILLIS = 300_000
 private const val TIMEOUT_MILLIS = 90_000
 
 // Output budget for the second attempt after an answer was cut off.
@@ -75,11 +80,38 @@ internal val OpenAiTransport: AiTransport = OpenAiCompatibleTransport(AiProvider
 /** DeepSeek's API, which follows the OpenAI chat completions format, images included. */
 internal val DeepSeekTransport: AiTransport = OpenAiCompatibleTransport(AiProvider.DEEPSEEK, DEEPSEEK_CHAT_ENDPOINT, useMaxCompletionTokens = false)
 
-/** A chat completions API in OpenAI's format at [endpoint], with a Bearer key. */
+/** Mistral's API, in the OpenAI chat completions format. */
+internal val MistralTransport: AiTransport = OpenAiCompatibleTransport(AiProvider.MISTRAL, MISTRAL_CHAT_ENDPOINT, useMaxCompletionTokens = false)
+
+/** Groq's OpenAI-compatible API. */
+internal val GroqTransport: AiTransport = OpenAiCompatibleTransport(AiProvider.GROQ, GROQ_CHAT_ENDPOINT, useMaxCompletionTokens = true)
+
+/** A server with OpenAI's chat completions API at the address the user entered. */
+internal fun customTransport(baseUrl: String): AiTransport =
+    OpenAiCompatibleTransport(AiProvider.CUSTOM, customChatEndpoint(baseUrl), useMaxCompletionTokens = false, timeoutMillis = CUSTOM_TIMEOUT_MILLIS)
+
+/**
+ * Chat completions address for what the user typed: a base such as "http://192.168.1.10:11434/v1"
+ * or "https://opencode.ai/zen/v1", or the full address already ending in /chat/completions.
+ */
+internal fun customChatEndpoint(baseUrl: String): String {
+    val base = baseUrl.trim().trimEnd('/')
+    return if (base.endsWith("/chat/completions")) base else "$base/chat/completions"
+}
+
+/** Models list address of the same server. */
+internal fun customModelsEndpoint(baseUrl: String): String =
+    baseUrl.trim().trimEnd('/').removeSuffix("/chat/completions").trimEnd('/') + "/models"
+
+/**
+ * A chat completions API in OpenAI's format at [endpoint], with a Bearer key (left out when the
+ * key is blank, as a home server needs none).
+ */
 internal class OpenAiCompatibleTransport(
     provider: AiProvider,
     private val endpoint: String,
-    private val useMaxCompletionTokens: Boolean
+    private val useMaxCompletionTokens: Boolean,
+    private val timeoutMillis: Int = TIMEOUT_MILLIS
 ) : AiTransport {
 
     private val name = provider.shortName
@@ -126,8 +158,8 @@ internal class OpenAiCompatibleTransport(
                 if (useMaxCompletionTokens) OpenAiRequest(model, messages, maxCompletionTokens = maxTokens)
                 else OpenAiRequest(model, messages, maxTokens = maxTokens)
             ),
-            headers = mapOf("Authorization" to "Bearer $apiKey"),
-            timeoutMillis = TIMEOUT_MILLIS
+            headers = if (apiKey.isBlank()) emptyMap() else mapOf("Authorization" to "Bearer $apiKey"),
+            timeoutMillis = timeoutMillis
         )
         if (!response.isSuccessful) {
             val message = runCatching { aiJson.decodeFromString(OpenAiErrorEnvelope.serializer(), response.body).error?.message }.getOrNull()

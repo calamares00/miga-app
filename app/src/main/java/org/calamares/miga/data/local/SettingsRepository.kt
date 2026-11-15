@@ -24,6 +24,9 @@ import org.calamares.miga.data.ai.DEFAULT_OPENAI_MODEL
 import org.calamares.miga.data.ai.openAiModelReadsImages
 import org.calamares.miga.data.ai.DEFAULT_DEEPSEEK_MODEL
 import org.calamares.miga.data.ai.deepSeekModelReadsImages
+import org.calamares.miga.data.ai.GENERIC_PROVIDERS
+import org.calamares.miga.data.ai.defaultModelFor
+import org.calamares.miga.data.ai.guessModelReadsImages
 import org.calamares.miga.data.ai.AiProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -70,6 +73,20 @@ class SettingsRepository(private val context: Context) {
     private val openAiModelKey = stringPreferencesKey("openai_model")
     private val deepSeekApiKeyKey = stringPreferencesKey("deepseek_api_key")
     private val deepSeekModelKey = stringPreferencesKey("deepseek_model")
+    private val customBaseUrlKey = stringPreferencesKey("custom_ai_base_url")
+
+    /** Settings of the providers configured the same way (see GENERIC_PROVIDERS). */
+    private class GenericProviderKeys(provider: AiProvider) {
+        private val prefix = provider.name.lowercase()
+        val apiKey = stringPreferencesKey("${prefix}_api_key")
+        val model = stringPreferencesKey("${prefix}_model")
+        val readsImages = booleanPreferencesKey("${prefix}_model_images")
+    }
+
+    private val genericKeys = GENERIC_PROVIDERS.associateWith { GenericProviderKeys(it) }
+
+    private fun generic(provider: AiProvider): GenericProviderKeys =
+        genericKeys[provider] ?: error("$provider has settings of its own")
     private val aiProviderOrderKey = stringPreferencesKey("ai_provider_order")
     private val aiDisabledProvidersKey = stringPreferencesKey("ai_disabled_providers")
     private val ttsVoiceNameKey = stringPreferencesKey("tts_voice_name")
@@ -108,7 +125,7 @@ class SettingsRepository(private val context: Context) {
     /** Encrypts the API keys stored in plain text by earlier versions. Run once at startup. */
     suspend fun encryptStoredApiKeys() {
         context.settingsDataStore.edit { prefs ->
-            listOf(geminiApiKeyKey, anthropicApiKeyKey, openRouterApiKeyKey, openAiApiKeyKey, deepSeekApiKeyKey).forEach { key ->
+            (listOf(geminiApiKeyKey, anthropicApiKeyKey, openRouterApiKeyKey, openAiApiKeyKey, deepSeekApiKeyKey) + genericKeys.values.map { it.apiKey }).forEach { key ->
                 val stored = prefs[key]
                 if (!stored.isNullOrBlank() && !stored.startsWith(ENCRYPTED_KEY_PREFIX)) prefs[key] = encodeApiKey(stored)
             }
@@ -436,6 +453,46 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[deepSeekModelKey] = model.trim() }
     }
 
+    /** API key of a generic provider (optional for a custom server); empty when not set. */
+    fun observeGenericApiKey(provider: AiProvider): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> decodeApiKey(prefs[generic(provider).apiKey]) }
+
+    suspend fun setGenericApiKey(provider: AiProvider, apiKey: String) {
+        context.settingsDataStore.edit { prefs -> prefs[generic(provider).apiKey] = encodeApiKey(apiKey) }
+    }
+
+    /** Model of a generic provider; its default until one is chosen (none for a custom server). */
+    fun observeGenericModel(provider: AiProvider): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[generic(provider).model] ?: defaultModelFor(provider) }
+
+    /** Chooses [model] and whether it reads images (null keeps a guess from its name). */
+    suspend fun setGenericModel(provider: AiProvider, model: String, readsImages: Boolean? = null) {
+        val trimmed = model.trim()
+        context.settingsDataStore.edit { prefs ->
+            prefs[generic(provider).model] = trimmed
+            prefs[generic(provider).readsImages] = readsImages ?: guessModelReadsImages(provider, trimmed)
+        }
+    }
+
+    /** Whether the model of a generic provider reads images: chosen in Settings, or guessed from its name. */
+    fun observeGenericModelImages(provider: AiProvider): Flow<Boolean> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[generic(provider).readsImages]
+                ?: guessModelReadsImages(provider, prefs[generic(provider).model] ?: defaultModelFor(provider))
+        }
+
+    suspend fun setGenericModelImages(provider: AiProvider, readsImages: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[generic(provider).readsImages] = readsImages }
+    }
+
+    /** Address of the custom OpenAI-compatible server; empty when not set. */
+    fun observeCustomBaseUrl(): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[customBaseUrlKey].orEmpty() }
+
+    suspend fun setCustomBaseUrl(url: String) {
+        context.settingsDataStore.edit { prefs -> prefs[customBaseUrlKey] = url.trim() }
+    }
+
     /** API key configured for [provider]. */
     suspend fun apiKeyFor(provider: AiProvider): String = when (provider) {
         AiProvider.GEMINI -> observeGeminiApiKey().first()
@@ -443,6 +500,7 @@ class SettingsRepository(private val context: Context) {
         AiProvider.OPENROUTER -> observeOpenRouterApiKey().first()
         AiProvider.OPENAI -> observeOpenAiApiKey().first()
         AiProvider.DEEPSEEK -> observeDeepSeekApiKey().first()
+        AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> observeGenericApiKey(provider).first()
     }
 
     /** Model configured for [provider]. */
@@ -452,6 +510,7 @@ class SettingsRepository(private val context: Context) {
         AiProvider.OPENROUTER -> observeOpenRouterModel().first()
         AiProvider.OPENAI -> observeOpenAiModel().first()
         AiProvider.DEEPSEEK -> observeDeepSeekModel().first()
+        AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> observeGenericModel(provider).first()
     }
 
     /**
@@ -468,6 +527,9 @@ class SettingsRepository(private val context: Context) {
                     AiProvider.OPENROUTER -> decodeApiKey(prefs[openRouterApiKeyKey]) to prefs[openRouterModelKey]
                     AiProvider.OPENAI -> decodeApiKey(prefs[openAiApiKeyKey]) to (prefs[openAiModelKey] ?: DEFAULT_OPENAI_MODEL)
                     AiProvider.DEEPSEEK -> decodeApiKey(prefs[deepSeekApiKeyKey]) to (prefs[deepSeekModelKey] ?: DEFAULT_DEEPSEEK_MODEL)
+                    AiProvider.MISTRAL, AiProvider.GROQ -> decodeApiKey(prefs[generic(provider).apiKey]) to (prefs[generic(provider).model] ?: defaultModelFor(provider))
+                    // A home server needs no key: its address takes the key's place.
+                    AiProvider.CUSTOM -> prefs[customBaseUrlKey] to prefs[generic(provider).model]
                 }
                 !key.isNullOrBlank() && !model.isNullOrBlank()
             }
@@ -482,6 +544,7 @@ class SettingsRepository(private val context: Context) {
         AiProvider.OPENROUTER -> observeOpenRouterModelImages().first()
         AiProvider.OPENAI -> openAiModelReadsImages(observeOpenAiModel().first())
         AiProvider.DEEPSEEK -> deepSeekModelReadsImages(observeDeepSeekModel().first())
+        AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> observeGenericModelImages(provider).first()
     }
 
     /** Android text-to-speech voice for cooking mode; null means the system default voice. */
@@ -575,13 +638,13 @@ class SettingsRepository(private val context: Context) {
     private val backupStringKeys = listOf(
         themeModeKey, colorThemeKey, photoFrameKey, shoppingAuthorKey, recipeListViewModeKey,
         recipeBookListViewModeKey, visionProviderKey, geminiModelKey, anthropicModelKey, openRouterModelKey,
-        openAiModelKey, deepSeekModelKey, aiProviderOrderKey, aiDisabledProvidersKey, ttsVoiceNameKey, dictationLanguageKey,
+        openAiModelKey, deepSeekModelKey, customBaseUrlKey, aiProviderOrderKey, aiDisabledProvidersKey, ttsVoiceNameKey, dictationLanguageKey,
         packsCatalogRepoKey, savedTipsKey
-    )
+    ) + genericKeys.values.map { it.model }
     private val backupBooleanKeys = listOf(
         aiEnabledKey, aiHealthEnabledKey, aiNutritionEnabledKey, shoppingImagesKey, recipeBookListGroupedKey,
         openRouterModelImagesKey, packInstallStatsKey, tipOfTheDayKey
-    )
+    ) + genericKeys.values.map { it.readsImages }
 
     /** The settings to include in a full backup (only those the user has set). */
     suspend fun exportForBackup(): SettingsBackupDto {
