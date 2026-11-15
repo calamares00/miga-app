@@ -14,6 +14,10 @@ import org.calamares.miga.data.ai.DEFAULT_OPENAI_MODEL
 import org.calamares.miga.data.ai.OPENAI_MODELS
 import org.calamares.miga.data.ai.DEEPSEEK_MODELS
 import org.calamares.miga.data.ai.DEFAULT_DEEPSEEK_MODEL
+import org.calamares.miga.data.ai.GENERIC_PROVIDERS
+import org.calamares.miga.data.ai.GROQ_MODELS
+import org.calamares.miga.data.ai.MISTRAL_MODELS
+import org.calamares.miga.data.ai.defaultModelFor
 import org.calamares.miga.data.ai.ProviderModels
 import org.calamares.miga.MigaApp
 import kotlinx.coroutines.launch
@@ -106,12 +110,20 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
     val openAiModel by settings.observeOpenAiModel().collectAsStateWithLifecycle(initialValue = DEFAULT_OPENAI_MODEL)
     val deepSeekKey by settings.observeDeepSeekApiKey().collectAsStateWithLifecycle(initialValue = "")
     val deepSeekModel by settings.observeDeepSeekModel().collectAsStateWithLifecycle(initialValue = DEFAULT_DEEPSEEK_MODEL)
+    val genericKeys = GENERIC_PROVIDERS.associateWith { settings.observeGenericApiKey(it).collectAsStateWithLifecycle(initialValue = "").value }
+    val genericModels = GENERIC_PROVIDERS.associateWith { settings.observeGenericModel(it).collectAsStateWithLifecycle(initialValue = defaultModelFor(it)).value }
+    val customBaseUrl by settings.observeCustomBaseUrl().collectAsStateWithLifecycle(initialValue = "")
     /** Models of the user's account for the providers that list them (see ProviderModels). */
     val accountModels = remember { mutableStateMapOf<AiProvider, List<String>>() }
-    LaunchedEffect(geminiKey, anthropicKey, openAiKey, deepSeekKey) {
+    LaunchedEffect(geminiKey, anthropicKey, openAiKey, deepSeekKey, genericKeys, customBaseUrl) {
         listOf(AiProvider.GEMINI to geminiKey, AiProvider.ANTHROPIC to anthropicKey, AiProvider.OPENAI to openAiKey, AiProvider.DEEPSEEK to deepSeekKey)
             .filter { it.second.isNotBlank() }
             .forEach { (provider, key) -> ProviderModels.fetch(provider, key)?.let { accountModels[provider] = it } }
+        for (provider in GENERIC_PROVIDERS) {
+            val key = genericKeys[provider].orEmpty()
+            val baseUrl = customBaseUrl.takeIf { provider == AiProvider.CUSTOM }
+            ProviderModels.fetch(provider, key, baseUrl)?.let { accountModels[provider] = it }
+        }
     }
     var openRouterCatalog by remember { mutableStateOf(OpenRouterModels.cached().orEmpty()) }
     LaunchedEffect(openRouterKey) {
@@ -126,6 +138,7 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
         AiProvider.OPENROUTER -> openRouterModel
         AiProvider.OPENAI -> openAiModel
         AiProvider.DEEPSEEK -> deepSeekModel
+        AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> genericModels[provider].orEmpty()
     }
 
     fun hasKey(provider: AiProvider): Boolean = when (provider) {
@@ -134,6 +147,8 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
         AiProvider.OPENROUTER -> openRouterKey.isNotBlank()
         AiProvider.OPENAI -> openAiKey.isNotBlank()
         AiProvider.DEEPSEEK -> deepSeekKey.isNotBlank()
+        AiProvider.MISTRAL, AiProvider.GROQ -> genericKeys[provider].orEmpty().isNotBlank()
+        AiProvider.CUSTOM -> customBaseUrl.isNotBlank()
     }
 
     fun modelsFor(provider: AiProvider): List<String> {
@@ -143,6 +158,9 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
             AiProvider.ANTHROPIC -> (saved + (accountModels[provider] ?: ANTHROPIC_MODELS)).distinct()
             AiProvider.OPENAI -> (saved + (accountModels[provider] ?: OPENAI_MODELS)).distinct()
             AiProvider.DEEPSEEK -> (saved + (accountModels[provider] ?: DEEPSEEK_MODELS)).distinct()
+            AiProvider.MISTRAL -> (saved + (accountModels[provider] ?: MISTRAL_MODELS)).distinct()
+            AiProvider.GROQ -> (saved + (accountModels[provider] ?: GROQ_MODELS)).distinct()
+            AiProvider.CUSTOM -> (saved + accountModels[provider].orEmpty()).distinct()
             // The first free models of the catalogue plus the chosen one; the full catalogue is in
             // Settings.
             AiProvider.OPENROUTER -> (saved + openRouterCatalog.filter { it.isFree }.take(15).map { it.id }).distinct()
@@ -157,6 +175,8 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
                     AiProvider.ANTHROPIC -> settings.setAnthropicModel(model)
                     AiProvider.OPENAI -> settings.setOpenAiModel(model)
                     AiProvider.DEEPSEEK -> settings.setDeepSeekModel(model)
+                    AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM ->
+                        settings.setGenericModel(provider, model, ProviderModels.knownImageSupport(provider, model))
                     AiProvider.OPENROUTER -> settings.setOpenRouterModel(
                         model,
                         openRouterCatalog.firstOrNull { it.id == model }?.supportsImages ?: settings.observeOpenRouterModelImages().first()

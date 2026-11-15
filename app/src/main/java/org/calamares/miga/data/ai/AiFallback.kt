@@ -9,8 +9,11 @@ import org.calamares.miga.data.support.ErrorDetail
 
 private const val NETWORK_RETRY_DELAY_MILLIS = 3000L
 
-/** A provider that is ready to use: it has both an API key and a model. */
-data class AiCandidate(val provider: AiProvider, val apiKey: String, val model: String)
+/**
+ * A provider that is ready to use: it has an API key and a model (a custom server needs its
+ * [baseUrl] instead of a key).
+ */
+data class AiCandidate(val provider: AiProvider, val apiKey: String, val model: String, val baseUrl: String? = null)
 
 /** Configured providers, in the priority order chosen in Settings, without the ones switched off. */
 suspend fun SettingsRepository.aiCandidates(): List<AiCandidate> {
@@ -18,7 +21,9 @@ suspend fun SettingsRepository.aiCandidates(): List<AiCandidate> {
     return observeProviderOrder().first().filter { it !in disabled }.mapNotNull { provider ->
         val key = apiKeyFor(provider)
         val model = modelFor(provider)
-        if (key.isBlank() || model.isBlank()) null else AiCandidate(provider, key, model)
+        val baseUrl = if (provider == AiProvider.CUSTOM) observeCustomBaseUrl().first() else null
+        val ready = model.isNotBlank() && if (provider == AiProvider.CUSTOM) !baseUrl.isNullOrBlank() else key.isNotBlank()
+        if (ready) AiCandidate(provider, key, model, baseUrl) else null
     }
 }
 

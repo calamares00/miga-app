@@ -67,6 +67,9 @@ import org.calamares.miga.data.ai.GEMINI_MODELS
 import org.calamares.miga.data.ai.OPENAI_MODELS
 import org.calamares.miga.data.ai.DEEPSEEK_MODELS
 import org.calamares.miga.data.ai.deepSeekModelReadsImages
+import org.calamares.miga.data.ai.GROQ_MODELS
+import org.calamares.miga.data.ai.MISTRAL_MODELS
+import org.calamares.miga.ui.components.rememberSettingText
 import org.calamares.miga.data.ai.ProviderModels
 import kotlinx.coroutines.delay
 import org.calamares.miga.data.ai.AiProvider
@@ -91,6 +94,10 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
     val openAiModel by viewModel.openAiModel.collectAsStateWithLifecycle()
     val deepSeekApiKey by viewModel.deepSeekApiKey.collectAsStateWithLifecycle()
     val deepSeekModel by viewModel.deepSeekModel.collectAsStateWithLifecycle()
+    val genericKeys = viewModel.genericApiKeys.mapValues { (_, flow) -> flow.collectAsStateWithLifecycle().value }
+    val genericModels = viewModel.genericModels.mapValues { (_, flow) -> flow.collectAsStateWithLifecycle().value }
+    val genericImages = viewModel.genericModelImages.mapValues { (_, flow) -> flow.collectAsStateWithLifecycle().value }
+    val customBaseUrl by viewModel.customBaseUrl.collectAsStateWithLifecycle()
     val disabledProviders by viewModel.disabledProviders.collectAsStateWithLifecycle()
     var expanded by rememberSaveable { mutableStateOf<AiProvider?>(null) }
 
@@ -129,6 +136,16 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                     deepSeekModelReadsImages(deepSeekModel) -> deepSeekModel
                     else -> "$deepSeekModel · ${L10n.str(R.string.ai_no_images)}"
                 }
+                AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> {
+                    val model = genericModels[provider].orEmpty()
+                    when {
+                        provider == AiProvider.CUSTOM && customBaseUrl.isBlank() -> L10n.str(R.string.ai_provider_no_address)
+                        provider != AiProvider.CUSTOM && genericKeys[provider].isNullOrBlank() -> L10n.str(R.string.ai_provider_no_key)
+                        model.isBlank() -> L10n.str(R.string.ai_provider_no_model)
+                        genericImages[provider] == true -> model
+                        else -> "$model · ${L10n.str(R.string.ai_no_images)}"
+                    }
+                }
             }
             val configured = when (provider) {
                 AiProvider.GEMINI -> geminiApiKey.isNotBlank()
@@ -136,6 +153,8 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                 AiProvider.OPENROUTER -> openRouterApiKey.isNotBlank() && openRouterModel.isNotBlank()
                 AiProvider.OPENAI -> openAiApiKey.isNotBlank()
                 AiProvider.DEEPSEEK -> deepSeekApiKey.isNotBlank()
+                AiProvider.MISTRAL, AiProvider.GROQ -> !genericKeys[provider].isNullOrBlank()
+                AiProvider.CUSTOM -> customBaseUrl.isNotBlank() && genericModels[provider].orEmpty().isNotBlank()
             }
             val switchedOn = provider !in disabledProviders
             ProviderRow(
@@ -245,10 +264,103 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> GenericProviderFields(
+                        provider = provider,
+                        apiKey = genericKeys[provider].orEmpty(),
+                        model = genericModels[provider].orEmpty(),
+                        readsImages = genericImages[provider] == true,
+                        baseUrl = customBaseUrl,
+                        viewModel = viewModel
+                    )
                 }
             }
         }
     }
+}
+
+/**
+ * Settings of Mistral, Groq and a custom OpenAI-compatible server: the address (custom only), the
+ * key (optional for a custom server), the model and whether it reads images, which is filled in
+ * when a model is chosen and can be corrected.
+ */
+@Composable
+private fun GenericProviderFields(
+    provider: AiProvider,
+    apiKey: String,
+    model: String,
+    readsImages: Boolean,
+    baseUrl: String,
+    viewModel: SettingsViewModel
+) {
+    if (provider == AiProvider.CUSTOM) {
+        val (url, onUrlChange) = rememberSettingText(saved = baseUrl, save = viewModel::setCustomBaseUrl)
+        OutlinedTextField(
+            value = url,
+            onValueChange = onUrlChange,
+            label = { Text(L10n.str(R.string.custom_ai_base_url)) },
+            placeholder = { Text("http://192.168.1.10:11434/v1") },
+            supportingText = { Text(L10n.str(R.string.custom_ai_base_url_hint)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+    ApiKeyField(
+        value = apiKey,
+        onValueChange = { viewModel.setGenericApiKey(provider, it) },
+        label = L10n.str(
+            when (provider) {
+                AiProvider.MISTRAL -> R.string.api_key_mistral
+                AiProvider.GROQ -> R.string.api_key_groq
+                else -> R.string.api_key_custom
+            }
+        ),
+        placeholder = L10n.str(
+            when (provider) {
+                AiProvider.MISTRAL -> R.string.get_one_console_mistral_ai
+                AiProvider.GROQ -> R.string.get_one_console_groq_com
+                else -> R.string.custom_ai_key_hint
+            }
+        )
+    )
+    AccountModelField(
+        provider = provider,
+        apiKey = apiKey,
+        baseUrl = baseUrl.takeIf { provider == AiProvider.CUSTOM },
+        label = L10n.str(R.string.ai_model),
+        fallbackModels = when (provider) {
+            AiProvider.MISTRAL -> MISTRAL_MODELS
+            AiProvider.GROQ -> GROQ_MODELS
+            else -> emptyList()
+        },
+        current = model,
+        customPlaceholder = L10n.str(if (provider == AiProvider.CUSTOM) R.string.e_g_custom_model else R.string.e_g_mistral_groq_model),
+        onSelect = { viewModel.setGenericModel(provider, it) }
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { viewModel.setGenericModelImages(provider, !readsImages) },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(L10n.str(R.string.ai_model_reads_images), style = MaterialTheme.typography.bodyLarge)
+            Text(
+                L10n.str(R.string.ai_model_reads_images_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Switch(checked = readsImages, onCheckedChange = { viewModel.setGenericModelImages(provider, it) })
+    }
+    Text(
+        L10n.str(
+            when (provider) {
+                AiProvider.MISTRAL -> R.string.mistral_note
+                AiProvider.GROQ -> R.string.groq_note
+                else -> R.string.custom_ai_note
+            }
+        ),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }
 
 @Composable
@@ -373,6 +485,7 @@ private fun ApiKeyField(value: String, onValueChange: (String) -> Unit, label: S
 private fun AccountModelField(
     provider: AiProvider,
     apiKey: String,
+    baseUrl: String? = null,
     label: String,
     fallbackModels: List<String>,
     current: String,
@@ -381,13 +494,15 @@ private fun AccountModelField(
 ) {
     var accountModels by remember(provider) { mutableStateOf<List<String>?>(null) }
     var loading by remember(provider) { mutableStateOf(false) }
-    LaunchedEffect(provider, apiKey) {
+    // A custom server is asked with its address, with or without a key.
+    val ready = if (baseUrl != null) baseUrl.isNotBlank() else apiKey.isNotBlank()
+    LaunchedEffect(provider, apiKey, baseUrl) {
         accountModels = null
-        if (apiKey.isBlank()) return@LaunchedEffect
+        if (!ready) return@LaunchedEffect
         // Wait for the user to finish typing or pasting the key.
         delay(700)
         loading = true
-        accountModels = ProviderModels.fetch(provider, apiKey)
+        accountModels = ProviderModels.fetch(provider, apiKey, baseUrl)
         loading = false
     }
     ModelDropdownField(
@@ -396,7 +511,7 @@ private fun AccountModelField(
         current = current,
         customPlaceholder = customPlaceholder,
         supportingText = when {
-            apiKey.isBlank() -> null
+            !ready -> null
             loading -> L10n.str(R.string.ai_models_loading)
             accountModels != null -> L10n.str(R.string.ai_models_from_account_n, accountModels!!.size)
             else -> L10n.str(R.string.ai_models_default_list)
