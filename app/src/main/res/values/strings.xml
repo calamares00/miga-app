@@ -1350,4 +1350,6 @@
     <string name="mistral_note">"A European company: data is processed in the EU."</string>
     <string name="groq_note">"Very fast, with a free tier with daily limits."</string>
     <string name="custom_ai_note">"Requests go to the address you enter. A model on your own computer keeps everything at home, but can be slow."</string>
+    <string name="ai_step_rate_limited_x">"%1$s has reached its usage limit"</string>
+    <string name="ai_retrying_in_x_seconds">"Trying again in %1$d s"</string>
 </resources>

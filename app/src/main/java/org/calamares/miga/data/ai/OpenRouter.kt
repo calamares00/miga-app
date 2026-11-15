@@ -159,7 +159,7 @@ internal object OpenRouterTransport : AiTransport {
             }
         }
         if (!response.isSuccessful) {
-            return Answer.Failed(AiErrors.http(name, response.code, errorDetail ?: describeErrorBody(response.body)))
+            return Answer.Failed(AiErrors.http(name, response.code, errorDetail ?: describeErrorBody(response.body), response.retryAfter))
         }
         val decoded = aiJson.decodeFromString(OpenRouterResponse.serializer(), response.body)
         // OpenRouter may answer 200 with the upstream provider's error inside the body.
