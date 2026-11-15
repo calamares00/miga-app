@@ -49,17 +49,20 @@ internal interface AiTransport {
     suspend fun complete(request: AiRequest, apiKey: String, model: String): AiText
 }
 
-private fun transportFor(provider: AiProvider): AiTransport = when (provider) {
+private fun transportFor(provider: AiProvider, baseUrl: String?): AiTransport = when (provider) {
     AiProvider.GEMINI -> GeminiTransport
     AiProvider.ANTHROPIC -> AnthropicTransport
     AiProvider.OPENROUTER -> OpenRouterTransport
     AiProvider.OPENAI -> OpenAiTransport
     AiProvider.DEEPSEEK -> DeepSeekTransport
+    AiProvider.MISTRAL -> MistralTransport
+    AiProvider.GROQ -> GroqTransport
+    AiProvider.CUSTOM -> customTransport(baseUrl.orEmpty())
 }
 
 /** Runs [request] against this candidate's provider, key and model. */
 suspend fun AiCandidate.complete(request: AiRequest): AiText =
-    transportFor(provider).complete(request, apiKey, model)
+    transportFor(provider, baseUrl).complete(request, apiKey, model)
 
 /**
  * Lenient JSON setup shared by every AI client. coerceInputValues turns a null sent for a
