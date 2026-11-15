@@ -65,6 +65,8 @@ import org.calamares.miga.data.ai.OpenRouterModels
 import org.calamares.miga.data.ai.ANTHROPIC_MODELS
 import org.calamares.miga.data.ai.GEMINI_MODELS
 import org.calamares.miga.data.ai.OPENAI_MODELS
+import org.calamares.miga.data.ai.DEEPSEEK_MODELS
+import org.calamares.miga.data.ai.deepSeekModelReadsImages
 import org.calamares.miga.data.ai.ProviderModels
 import kotlinx.coroutines.delay
 import org.calamares.miga.data.ai.AiProvider
@@ -87,6 +89,8 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
     val openRouterModelImages by viewModel.openRouterModelImages.collectAsStateWithLifecycle()
     val openAiApiKey by viewModel.openAiApiKey.collectAsStateWithLifecycle()
     val openAiModel by viewModel.openAiModel.collectAsStateWithLifecycle()
+    val deepSeekApiKey by viewModel.deepSeekApiKey.collectAsStateWithLifecycle()
+    val deepSeekModel by viewModel.deepSeekModel.collectAsStateWithLifecycle()
     val disabledProviders by viewModel.disabledProviders.collectAsStateWithLifecycle()
     var expanded by rememberSaveable { mutableStateOf<AiProvider?>(null) }
 
@@ -120,12 +124,18 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                 }
                 AiProvider.OPENAI ->
                     if (openAiApiKey.isBlank()) L10n.str(R.string.ai_provider_no_key) else openAiModel
+                AiProvider.DEEPSEEK -> when {
+                    deepSeekApiKey.isBlank() -> L10n.str(R.string.ai_provider_no_key)
+                    deepSeekModelReadsImages(deepSeekModel) -> deepSeekModel
+                    else -> "$deepSeekModel · ${L10n.str(R.string.ai_no_images)}"
+                }
             }
             val configured = when (provider) {
                 AiProvider.GEMINI -> geminiApiKey.isNotBlank()
                 AiProvider.ANTHROPIC -> anthropicApiKey.isNotBlank()
                 AiProvider.OPENROUTER -> openRouterApiKey.isNotBlank() && openRouterModel.isNotBlank()
                 AiProvider.OPENAI -> openAiApiKey.isNotBlank()
+                AiProvider.DEEPSEEK -> deepSeekApiKey.isNotBlank()
             }
             val switchedOn = provider !in disabledProviders
             ProviderRow(
@@ -211,6 +221,28 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                             current = openAiModel,
                             customPlaceholder = L10n.str(R.string.e_g_gpt_5_mini),
                             onSelect = { viewModel.setOpenAiModel(it) }
+                        )
+                    }
+                    AiProvider.DEEPSEEK -> {
+                        ApiKeyField(
+                            value = deepSeekApiKey,
+                            onValueChange = { viewModel.setDeepSeekApiKey(it) },
+                            label = L10n.str(R.string.api_key_deepseek),
+                            placeholder = L10n.str(R.string.get_one_platform_deepseek_com)
+                        )
+                        AccountModelField(
+                            provider = provider,
+                            apiKey = deepSeekApiKey,
+                            label = L10n.str(R.string.deepseek_model),
+                            fallbackModels = DEEPSEEK_MODELS,
+                            current = deepSeekModel,
+                            customPlaceholder = L10n.str(R.string.e_g_deepseek_flash),
+                            onSelect = { viewModel.setDeepSeekModel(it) }
+                        )
+                        Text(
+                            L10n.str(R.string.deepseek_note),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

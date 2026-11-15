@@ -1325,4 +1325,9 @@
     <string name="tip_category_baking">"Repostería"</string>
     <string name="tip_category_time_saving">"Ahorrar tiempo"</string>
     <string name="tip_category_kitchen">"Utensilios"</string>
+    <string name="api_key_deepseek">"Clave de API de DeepSeek"</string>
+    <string name="get_one_platform_deepseek_com">"Consíguela en platform.deepseek.com"</string>
+    <string name="deepseek_model">"Modelo de DeepSeek"</string>
+    <string name="e_g_deepseek_flash">"p. ej., deepseek-flash"</string>
+    <string name="deepseek_note">"Solo los modelos Flash leen fotos. DeepSeek procesa los datos en servidores de China."</string>
 </resources>

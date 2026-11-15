@@ -133,7 +133,7 @@ To share books and shopping lists with your family with full editing, connect Mi
 
 ## 🤖 Kitchen assistant {ai}
 
-Features marked ✨ are done by the kitchen assistant, which uses artificial intelligence (AI). They are optional and use **your own key** for Google Gemini, Anthropic Claude, OpenAI or OpenRouter (which has free models). The list of models loads on its own with your key.
+Features marked ✨ are done by the kitchen assistant, which uses artificial intelligence (AI). They are optional and use **your own key** for Google Gemini, Anthropic Claude, OpenAI, DeepSeek (very low cost; only its Flash models read photos) or OpenRouter (which has free models). The list of models loads on its own with your key.
 
 - If you add several providers, they are used **in the order you choose**: if one fails, the next one is tried automatically.
 - Each provider has a **switch**: turn it off whenever you like without losing its key.

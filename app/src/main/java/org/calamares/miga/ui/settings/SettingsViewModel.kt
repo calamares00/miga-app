@@ -27,6 +27,7 @@ import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.ai.DEFAULT_ANTHROPIC_MODEL
 import org.calamares.miga.data.ai.DEFAULT_OPENAI_MODEL
+import org.calamares.miga.data.ai.DEFAULT_DEEPSEEK_MODEL
 import org.calamares.miga.data.ai.DEFAULT_GEMINI_MODEL
 import org.calamares.miga.data.ai.AiProvider
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -227,6 +228,20 @@ class SettingsViewModel(
 
     fun setOpenAiModel(model: String) {
         viewModelScope.launch { settingsRepository.setOpenAiModel(model) }
+    }
+
+    val deepSeekApiKey: StateFlow<String> = settingsRepository.observeDeepSeekApiKey()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    fun setDeepSeekApiKey(apiKey: String) {
+        viewModelScope.launch { settingsRepository.setDeepSeekApiKey(apiKey) }
+    }
+
+    val deepSeekModel: StateFlow<String> = settingsRepository.observeDeepSeekModel()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_DEEPSEEK_MODEL)
+
+    fun setDeepSeekModel(model: String) {
+        viewModelScope.launch { settingsRepository.setDeepSeekModel(model) }
     }
 
     val anthropicApiKey: StateFlow<String> = settingsRepository.observeAnthropicApiKey()
