@@ -264,7 +264,8 @@ fun ManageContentScreen(
                         icon = Icons.Filled.Inventory2,
                         title = L10n.str(R.string.there_no_items_yet),
                         body = L10n.str(R.string.manage_content_empty_body),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        scrollable = false
                     )
                 }
             }
