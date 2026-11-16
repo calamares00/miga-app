@@ -62,7 +62,7 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.ai.OpenRouterModel
 import org.calamares.miga.data.ai.OpenRouterModels
-import org.calamares.miga.data.ai.deepSeekModelReadsImages
+import org.calamares.miga.data.ai.imageSupportVaries
 import org.calamares.miga.ui.components.rememberSettingText
 import org.calamares.miga.data.ai.ProviderModels
 import kotlinx.coroutines.delay
@@ -77,20 +77,9 @@ import org.calamares.miga.ui.components.moved
 @Composable
 fun AiProvidersSettings(viewModel: SettingsViewModel) {
     val order by viewModel.providerOrder.collectAsStateWithLifecycle()
-    val geminiApiKey by viewModel.geminiApiKey.collectAsStateWithLifecycle()
-    val geminiModel by viewModel.geminiModel.collectAsStateWithLifecycle()
-    val anthropicApiKey by viewModel.anthropicApiKey.collectAsStateWithLifecycle()
-    val anthropicModel by viewModel.anthropicModel.collectAsStateWithLifecycle()
-    val openRouterApiKey by viewModel.openRouterApiKey.collectAsStateWithLifecycle()
-    val openRouterModel by viewModel.openRouterModel.collectAsStateWithLifecycle()
-    val openRouterModelImages by viewModel.openRouterModelImages.collectAsStateWithLifecycle()
-    val openAiApiKey by viewModel.openAiApiKey.collectAsStateWithLifecycle()
-    val openAiModel by viewModel.openAiModel.collectAsStateWithLifecycle()
-    val deepSeekApiKey by viewModel.deepSeekApiKey.collectAsStateWithLifecycle()
-    val deepSeekModel by viewModel.deepSeekModel.collectAsStateWithLifecycle()
-    val genericKeys = viewModel.genericApiKeys.mapValues { (_, flow) -> flow.collectAsStateWithLifecycle().value }
-    val genericModels = viewModel.genericModels.mapValues { (_, flow) -> flow.collectAsStateWithLifecycle().value }
-    val genericImages = viewModel.genericModelImages.mapValues { (_, flow) -> flow.collectAsStateWithLifecycle().value }
+    val apiKeys = viewModel.apiKeys.mapValues { (_, flow) -> flow.collectAsStateWithLifecycle().value }
+    val models = viewModel.models.mapValues { (_, flow) -> flow.collectAsStateWithLifecycle().value }
+    val modelImages = viewModel.modelImages.mapValues { (_, flow) -> flow.collectAsStateWithLifecycle().value }
     val customBaseUrl by viewModel.customBaseUrl.collectAsStateWithLifecycle()
     val disabledProviders by viewModel.disabledProviders.collectAsStateWithLifecycle()
     var expanded by rememberSaveable { mutableStateOf<AiProvider?>(null) }
@@ -109,46 +98,22 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
             modifier = Modifier.padding(bottom = 4.dp)
         )
         ReorderableColumn(items = order, onReorder = { viewModel.setProviderOrder(it) }) { provider, index, dragHandle, isDragging ->
-            val status = when (provider) {
-                AiProvider.GEMINI ->
-                    if (geminiApiKey.isBlank()) L10n.str(R.string.ai_provider_no_key) else geminiModel
-                AiProvider.ANTHROPIC ->
-                    if (anthropicApiKey.isBlank()) L10n.str(R.string.ai_provider_no_key) else anthropicModel
-                AiProvider.OPENROUTER -> when {
-                    openRouterApiKey.isBlank() -> L10n.str(R.string.ai_provider_no_key)
-                    openRouterModel.isBlank() -> L10n.str(R.string.ai_provider_no_model)
-                    else -> buildList {
-                        add(openRouterModel)
-                        if (isFreeModelId(openRouterModel)) add(L10n.str(R.string.ai_free))
-                        if (!openRouterModelImages) add(L10n.str(R.string.ai_no_images))
-                    }.joinToString(" · ")
-                }
-                AiProvider.OPENAI ->
-                    if (openAiApiKey.isBlank()) L10n.str(R.string.ai_provider_no_key) else openAiModel
-                AiProvider.DEEPSEEK -> when {
-                    deepSeekApiKey.isBlank() -> L10n.str(R.string.ai_provider_no_key)
-                    deepSeekModelReadsImages(deepSeekModel) -> deepSeekModel
-                    else -> "$deepSeekModel · ${L10n.str(R.string.ai_no_images)}"
-                }
-                AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> {
-                    val model = genericModels[provider].orEmpty()
-                    when {
-                        provider == AiProvider.CUSTOM && customBaseUrl.isBlank() -> L10n.str(R.string.ai_provider_no_address)
-                        provider != AiProvider.CUSTOM && genericKeys[provider].isNullOrBlank() -> L10n.str(R.string.ai_provider_no_key)
-                        model.isBlank() -> L10n.str(R.string.ai_provider_no_model)
-                        genericImages[provider] == true -> model
-                        else -> "$model · ${L10n.str(R.string.ai_no_images)}"
-                    }
-                }
+            val apiKey = apiKeys[provider].orEmpty()
+            val model = models[provider].orEmpty()
+            val readsImages = modelImages[provider] != false
+            val status = when {
+                provider == AiProvider.CUSTOM && customBaseUrl.isBlank() -> L10n.str(R.string.ai_provider_no_address)
+                provider != AiProvider.CUSTOM && apiKey.isBlank() -> L10n.str(R.string.ai_provider_no_key)
+                model.isBlank() -> L10n.str(R.string.ai_provider_no_model)
+                else -> buildList {
+                    add(model)
+                    if (provider == AiProvider.OPENROUTER && isFreeModelId(model)) add(L10n.str(R.string.ai_free))
+                    if (!readsImages) add(L10n.str(R.string.ai_no_images))
+                }.joinToString(" · ")
             }
             val configured = when (provider) {
-                AiProvider.GEMINI -> geminiApiKey.isNotBlank()
-                AiProvider.ANTHROPIC -> anthropicApiKey.isNotBlank()
-                AiProvider.OPENROUTER -> openRouterApiKey.isNotBlank() && openRouterModel.isNotBlank()
-                AiProvider.OPENAI -> openAiApiKey.isNotBlank()
-                AiProvider.DEEPSEEK -> deepSeekApiKey.isNotBlank()
-                AiProvider.MISTRAL, AiProvider.GROQ -> !genericKeys[provider].isNullOrBlank()
-                AiProvider.CUSTOM -> customBaseUrl.isNotBlank() && genericModels[provider].orEmpty().isNotBlank()
+                AiProvider.CUSTOM -> customBaseUrl.isNotBlank() && model.isNotBlank()
+                else -> apiKey.isNotBlank() && model.isNotBlank()
             }
             val switchedOn = provider !in disabledProviders
             ProviderRow(
@@ -166,115 +131,41 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                 onMoveUp = if (index > 0) ({ viewModel.setProviderOrder(order.moved(index, index - 1)) }) else null,
                 onMoveDown = if (index < order.lastIndex) ({ viewModel.setProviderOrder(order.moved(index, index + 1)) }) else null
             ) {
-                when (provider) {
-                    AiProvider.GEMINI -> {
-                        ApiKeyField(
-                            value = geminiApiKey,
-                            onValueChange = { viewModel.setGeminiApiKey(it) },
-                            label = L10n.str(R.string.api_key_gemini),
-                            placeholder = L10n.str(R.string.get_one_free_aistudio_google)
-                        )
-                        AccountModelField(
-                            provider = provider,
-                            apiKey = geminiApiKey,
-                            label = L10n.str(R.string.gemini_model),
-                            current = geminiModel,
-                            customPlaceholder = L10n.str(R.string.e_g_gemini_3_6),
-                            onSelect = { viewModel.setGeminiModel(it) }
-                        )
-                    }
-                    AiProvider.ANTHROPIC -> {
-                        ApiKeyField(
-                            value = anthropicApiKey,
-                            onValueChange = { viewModel.setAnthropicApiKey(it) },
-                            label = L10n.str(R.string.api_key_anthropic),
-                            placeholder = L10n.str(R.string.get_one_console_anthropic_com)
-                        )
-                        AccountModelField(
-                            provider = provider,
-                            apiKey = anthropicApiKey,
-                            label = L10n.str(R.string.claude_model),
-                            current = anthropicModel,
-                            customPlaceholder = L10n.str(R.string.e_g_claude_haiku_4),
-                            onSelect = { viewModel.setAnthropicModel(it) }
-                        )
-                    }
-                    AiProvider.OPENROUTER -> {
-                        ApiKeyField(
-                            value = openRouterApiKey,
-                            onValueChange = { viewModel.setOpenRouterApiKey(it) },
-                            label = L10n.str(R.string.api_key_openrouter),
-                            placeholder = L10n.str(R.string.openrouter_key_hint)
-                        )
-                        OpenRouterModelField(
-                            current = openRouterModel,
-                            supportsImages = openRouterModelImages,
-                            onSelect = { id, images -> viewModel.setOpenRouterModel(id, images) }
-                        )
-                        Text(
-                            L10n.str(R.string.openrouter_free_note),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    AiProvider.OPENAI -> {
-                        ApiKeyField(
-                            value = openAiApiKey,
-                            onValueChange = { viewModel.setOpenAiApiKey(it) },
-                            label = L10n.str(R.string.api_key_openai),
-                            placeholder = L10n.str(R.string.get_one_platform_openai_com)
-                        )
-                        AccountModelField(
-                            provider = provider,
-                            apiKey = openAiApiKey,
-                            label = L10n.str(R.string.openai_model),
-                            current = openAiModel,
-                            customPlaceholder = L10n.str(R.string.e_g_gpt_5_mini),
-                            onSelect = { viewModel.setOpenAiModel(it) }
-                        )
-                    }
-                    AiProvider.DEEPSEEK -> {
-                        ApiKeyField(
-                            value = deepSeekApiKey,
-                            onValueChange = { viewModel.setDeepSeekApiKey(it) },
-                            label = L10n.str(R.string.api_key_deepseek),
-                            placeholder = L10n.str(R.string.get_one_platform_deepseek_com)
-                        )
-                        AccountModelField(
-                            provider = provider,
-                            apiKey = deepSeekApiKey,
-                            label = L10n.str(R.string.deepseek_model),
-                            current = deepSeekModel,
-                            customPlaceholder = L10n.str(R.string.e_g_deepseek_flash),
-                            onSelect = { viewModel.setDeepSeekModel(it) }
-                        )
-                        Text(
-                            L10n.str(R.string.deepseek_note),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> GenericProviderFields(
-                        provider = provider,
-                        apiKey = genericKeys[provider].orEmpty(),
-                        model = genericModels[provider].orEmpty(),
-                        readsImages = genericImages[provider] == true,
-                        baseUrl = customBaseUrl,
-                        viewModel = viewModel
-                    )
-                }
+                ProviderFields(
+                    provider = provider,
+                    apiKey = apiKey,
+                    model = model,
+                    readsImages = readsImages,
+                    baseUrl = customBaseUrl,
+                    viewModel = viewModel
+                )
             }
         }
     }
 }
 
+/** Texts of a provider's settings: key label and hint, model example and a note below, if any. */
+private class ProviderTexts(val keyLabel: Int, val keyHint: Int, val modelExample: Int, val note: Int?)
+
+private fun textsOf(provider: AiProvider): ProviderTexts = when (provider) {
+    AiProvider.GEMINI -> ProviderTexts(R.string.api_key_gemini, R.string.get_one_free_aistudio_google, R.string.e_g_gemini_3_6, null)
+    AiProvider.ANTHROPIC -> ProviderTexts(R.string.api_key_anthropic, R.string.get_one_console_anthropic_com, R.string.e_g_claude_haiku_4, null)
+    AiProvider.OPENROUTER -> ProviderTexts(R.string.api_key_openrouter, R.string.openrouter_key_hint, R.string.e_g_custom_model, R.string.openrouter_free_note)
+    AiProvider.OPENAI -> ProviderTexts(R.string.api_key_openai, R.string.get_one_platform_openai_com, R.string.e_g_gpt_5_mini, null)
+    AiProvider.DEEPSEEK -> ProviderTexts(R.string.api_key_deepseek, R.string.get_one_platform_deepseek_com, R.string.e_g_deepseek_flash, R.string.deepseek_note)
+    AiProvider.MISTRAL -> ProviderTexts(R.string.api_key_mistral, R.string.get_one_console_mistral_ai, R.string.e_g_mistral_groq_model, R.string.mistral_note)
+    AiProvider.GROQ -> ProviderTexts(R.string.api_key_groq, R.string.get_one_console_groq_com, R.string.e_g_mistral_groq_model, R.string.groq_note)
+    AiProvider.CUSTOM -> ProviderTexts(R.string.api_key_custom, R.string.custom_ai_key_hint, R.string.e_g_custom_model, R.string.custom_ai_note)
+}
+
 /**
- * Settings of Mistral, Groq and a custom OpenAI-compatible server: the address (custom only), the
- * key (optional for a custom server), the model and whether it reads images, which is filled in
- * when a model is chosen and can be corrected.
+ * Settings of a provider, the same for all: the address (custom server only), the key (optional
+ * for a custom server), the model from the account's list (OpenRouter's catalogue for OpenRouter)
+ * and, where models differ, whether it reads images, filled in when a model is chosen and open to
+ * correction.
  */
 @Composable
-private fun GenericProviderFields(
+private fun ProviderFields(
     provider: AiProvider,
     apiKey: String,
     model: String,
@@ -294,35 +185,40 @@ private fun GenericProviderFields(
             modifier = Modifier.fillMaxWidth()
         )
     }
+    val texts = textsOf(provider)
     ApiKeyField(
         value = apiKey,
-        onValueChange = { viewModel.setGenericApiKey(provider, it) },
-        label = L10n.str(
-            when (provider) {
-                AiProvider.MISTRAL -> R.string.api_key_mistral
-                AiProvider.GROQ -> R.string.api_key_groq
-                else -> R.string.api_key_custom
-            }
-        ),
-        placeholder = L10n.str(
-            when (provider) {
-                AiProvider.MISTRAL -> R.string.get_one_console_mistral_ai
-                AiProvider.GROQ -> R.string.get_one_console_groq_com
-                else -> R.string.custom_ai_key_hint
-            }
+        onValueChange = { viewModel.setApiKey(provider, it) },
+        label = L10n.str(texts.keyLabel),
+        placeholder = L10n.str(texts.keyHint)
+    )
+    if (provider == AiProvider.OPENROUTER) {
+        OpenRouterModelField(
+            current = model,
+            supportsImages = readsImages,
+            onSelect = { id, images -> viewModel.setModel(provider, id, images) }
         )
-    )
-    AccountModelField(
-        provider = provider,
-        apiKey = apiKey,
-        baseUrl = baseUrl.takeIf { provider == AiProvider.CUSTOM },
-        label = L10n.str(R.string.ai_model),
-        current = model,
-        customPlaceholder = L10n.str(if (provider == AiProvider.CUSTOM) R.string.e_g_custom_model else R.string.e_g_mistral_groq_model),
-        onSelect = { viewModel.setGenericModel(provider, it) }
-    )
+    } else {
+        AccountModelField(
+            provider = provider,
+            apiKey = apiKey,
+            baseUrl = baseUrl.takeIf { provider == AiProvider.CUSTOM },
+            label = L10n.str(R.string.ai_model),
+            current = model,
+            customPlaceholder = L10n.str(texts.modelExample),
+            onSelect = { viewModel.setModel(provider, it) }
+        )
+    }
+    if (provider.imageSupportVaries()) ReadsImagesSwitch(readsImages) { viewModel.setModelImages(provider, it) }
+    texts.note?.let { note ->
+        Text(L10n.str(note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun ReadsImagesSwitch(readsImages: Boolean, onChange: (Boolean) -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { viewModel.setGenericModelImages(provider, !readsImages) },
+        modifier = Modifier.fillMaxWidth().clickable { onChange(!readsImages) },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
@@ -333,19 +229,8 @@ private fun GenericProviderFields(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Switch(checked = readsImages, onCheckedChange = { viewModel.setGenericModelImages(provider, it) })
+        Switch(checked = readsImages, onCheckedChange = onChange)
     }
-    Text(
-        L10n.str(
-            when (provider) {
-                AiProvider.MISTRAL -> R.string.mistral_note
-                AiProvider.GROQ -> R.string.groq_note
-                else -> R.string.custom_ai_note
-            }
-        ),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
 }
 
 @Composable
