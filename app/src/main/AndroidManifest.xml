@@ -71,6 +71,13 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="miga" android:host="share" />
             </intent-filter>
+            <!-- Return of "Connect with OpenRouter" through miga.calamares.org/openrouter/ (see OpenRouterConnect). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="miga" android:host="openrouter" />
+            </intent-filter>
             <!-- A book shared as a ".miga" file (WhatsApp, Telegram, mail, files): "Open with" or "Share to" Miga. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

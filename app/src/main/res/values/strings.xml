@@ -1394,4 +1394,15 @@
     <string name="no_connections_title">"No connections"</string>
     <string name="no_connections_body">"Add your own server to share and sync books with other Miga apps."</string>
     <string name="manage_content_empty_body">"They are created as you use them in your recipes."</string>
+    <string name="openrouter_connect">"Connect with OpenRouter"</string>
+    <string name="openrouter_connect_hint">"Log in to OpenRouter and authorise Miga: the key is created and saved for you. Or paste a key below."</string>
+    <string name="openrouter_paste_code">"Paste the code"</string>
+    <string name="openrouter_paste_code_hint">"If Miga did not open by itself, paste the code shown on the page."</string>
+    <string name="openrouter_code">"Code"</string>
+    <string name="openrouter_connecting">"Connecting to OpenRouter…"</string>
+    <string name="openrouter_connected">"OpenRouter connected. Choose a model."</string>
+    <string name="openrouter_connect_denied">"OpenRouter did not grant access."</string>
+    <string name="openrouter_connect_expired">"The code has expired or is not valid. Tap “Connect with OpenRouter” again."</string>
+    <string name="openrouter_connect_network">"No connection with OpenRouter. Check the internet and try again."</string>
+    <string name="openrouter_connect_failed_x">"OpenRouter answered with an error (%1$d). Try again."</string>
 </resources>
