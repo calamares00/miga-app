@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.packs
 
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.Storefront
+import org.calamares.miga.ui.components.EmptyState
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -292,12 +295,13 @@ fun PacksCatalogScreen(
                         val pageFiltered = searched.filter { it.matches(pageFilter) }
                         val pageGroups = groupBySeries(pageFiltered.filter { !it.hasUpdate })
                         if (pageFiltered.isEmpty()) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text(
-                                    if (state.items.isEmpty()) L10n.str(R.string.no_packs_have_been_published) else L10n.str(R.string.no_packs_match_search),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                            EmptyState(
+                                icon = if (state.items.isEmpty()) Icons.Filled.Storefront else Icons.Filled.SearchOff,
+                                title = L10n.str(if (state.items.isEmpty()) R.string.no_packs_title else R.string.no_results),
+                                body = if (state.items.isEmpty()) L10n.str(R.string.no_packs_have_been_published) else L10n.str(R.string.no_packs_match_search),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                if (query.isNotBlank()) OutlinedButton(onClick = { query = "" }) { Text(L10n.str(R.string.clear_search)) }
                             }
                         } else {
                             LazyColumn(

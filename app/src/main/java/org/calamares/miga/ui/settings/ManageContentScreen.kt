@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.settings
 
+import androidx.compose.material.icons.filled.Inventory2
+import org.calamares.miga.ui.components.EmptyState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -258,10 +260,11 @@ fun ManageContentScreen(
             }
             if (loaded != null && shown.isEmpty()) {
                 item(key = "empty") {
-                    Text(
-                        L10n.str(R.string.there_no_items_yet),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.fillMaxWidth().padding(32.dp)
+                    EmptyState(
+                        icon = Icons.Filled.Inventory2,
+                        title = L10n.str(R.string.there_no_items_yet),
+                        body = L10n.str(R.string.manage_content_empty_body),
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }

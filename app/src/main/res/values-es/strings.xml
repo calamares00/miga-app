@@ -72,7 +72,6 @@
     <string name="no_favourites_yet">"Todavía no hay favoritas"</string>
     <string name="dont_have_templates_yet_create">"Aún no tienes plantillas. Crea una y llénala con productos de Open Food Facts (icono de marcador en Productos) o guarda la lista actual como plantilla."</string>
     <string name="dont_have_recipes_yet_nadd">"Sin recetas no hay números.\nAñade unas cuantas y tus estadísticas empezarán a cocinarse."</string>
-    <string name="dont_have_recipes_yet_ntap">"Este libro aún está en blanco.\nPulsa «Nueva receta» para estrenarlo."</string>
     <string name="help_support">"Ayuda y soporte"</string>
     <string name="blue">"Azul"</string>
     <string name="move_x_down">"Bajar %1$s"</string>
@@ -626,7 +625,6 @@
     <string name="there_no_items_yet">"Todavía no hay nada por aquí."</string>
     <string name="there_no_ingredients_yet">"Todavía no hay ingredientes."</string>
     <string name="not_synced_yet">"Todavía no sincronizada"</string>
-    <string name="dont_have_connections_yet_nadd">"Todavía no tienes conexiones.\nAñade una para compartir y sincronizar libros con otras apps Miga a través de tu propio servidor."</string>
     <string name="access_token">"Token de acceso"</string>
     <string name="invalid_revoked_access_token">"Token de acceso inválido o revocado"</string>
     <string name="turquoise">"Turquesa"</string>
@@ -1389,4 +1387,10 @@
     <string name="pantry_missing_x">"Te falta: %1$s"</string>
     <string name="save_search">"Guardar búsqueda"</string>
     <string name="save_search_hint">"p. ej. Cenas rápidas"</string>
+    <string name="empty_book_title">"Este libro está vacío"</string>
+    <string name="empty_book_body">"Escribe una receta, impórtala desde una foto, una web o un archivo, o deja que el asistente de cocina te sugiera una."</string>
+    <string name="no_packs_title">"Aún no hay packs"</string>
+    <string name="no_connections_title">"Sin conexiones"</string>
+    <string name="no_connections_body">"Añade tu propio servidor para compartir y sincronizar libros con otras apps Miga."</string>
+    <string name="manage_content_empty_body">"Se crean a medida que los usas en tus recetas."</string>
 </resources>
