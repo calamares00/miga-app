@@ -455,8 +455,13 @@ private fun NavGraphBuilder.screens(
                     },
                     onEditRecipeClick = editRecipe,
                     onAddRecipeClick = { navController.navigate(Destinations.editor(bookId = bookId)) },
-                    onAddRecipeFromPhoto = { photoUris -> navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUris = photoUris)) },
-                    onAddRecipesBulk = { photoUris -> navController.navigate(Destinations.bulkImport(bookId = bookId, photoUris = photoUris)) },
+                    // One photo is read in the editor; several are first sorted into recipes.
+                    onAddRecipesFromPhotos = { photoUris ->
+                        navController.navigate(
+                            if (photoUris.size == 1) Destinations.editor(bookId = bookId, sourcePhotoUris = photoUris)
+                            else Destinations.bulkImport(bookId = bookId, photoUris = photoUris)
+                        )
+                    },
                     onSearchDishClick = { navController.navigate(Destinations.dishSearch(bookId)) },
                     onAddRecipeFromUrl = { url -> navController.navigate(Destinations.editor(bookId = bookId, sourceRecipeUrl = url)) },
                     onEditBookClick = { navController.navigate(Destinations.bookEditor(bookId)) }
@@ -538,7 +543,13 @@ private fun NavGraphBuilder.screens(
         BulkImportScreen(
             viewModel = viewModel,
             onBack = { navController.popBackStack() },
-            onOpenRecipe = { recipeId -> navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = recipeId)) }
+            onOpenRecipe = { recipeId -> navController.navigate(Destinations.editor(bookId = Destinations.NEW_BOOK_ID, recipeId = recipeId)) },
+            // All the photos are one recipe: the editor takes this screen's place.
+            onSingleRecipe = { uris ->
+                navController.navigate(Destinations.editor(bookId = bookId, sourcePhotoUris = uris)) {
+                    popUpTo(Destinations.BULK_IMPORT_ROUTE) { inclusive = true }
+                }
+            }
         )
     }
 

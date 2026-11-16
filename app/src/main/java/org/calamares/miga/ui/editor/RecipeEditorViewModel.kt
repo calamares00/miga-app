@@ -1,7 +1,6 @@
 package org.calamares.miga.ui.editor
 
 import kotlinx.coroutines.withContext
-import org.calamares.miga.data.local.DishPhotoCropper
 import org.calamares.miga.data.ai.aiCandidates
 import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.ai.AiProgress
@@ -37,6 +36,7 @@ import org.calamares.miga.data.vision.RecipeVisionResult
 import org.calamares.miga.data.vision.RecipeVisionResultDto
 import org.calamares.miga.data.ai.AiImage
 import org.calamares.miga.data.vision.extractRecipes
+import org.calamares.miga.data.vision.findDishPhotos
 import org.calamares.miga.data.vision.matchedTo
 import org.calamares.miga.data.vision.newLabels
 import org.calamares.miga.data.vision.NewLabels
@@ -255,10 +255,9 @@ class RecipeEditorViewModel(
     /** Fills the form with [recipe] and adds the dish photos the AI located in [sourceUris]. */
     private suspend fun fillFromPhotos(recipe: RecipeVisionResultDto, appContext: Context, sourceUris: List<Uri>, progress: AiProgressReporter?) {
         applyVisionResult(recipe)
-        // Dish photos located by the AI: cropped, cleaned up and added to the recipe.
-        if (recipe.dishPhotos.isNotEmpty()) progress?.step(L10n.str(R.string.ai_step_cropping_photo))
-        val dishPhotoUris = withContext(AppDispatchers.io) { DishPhotoCropper.extract(appContext, sourceUris, recipe.dishPhotos) }
-        dishPhotoUris.forEach { addPhoto(it) }
+        // Dish photos located by the AI: confirmed, cropped, cleaned up and added to the recipe,
+        // the one showing the whole dish first (the first photo added is the cover).
+        settingsRepository.findDishPhotos(appContext, sourceUris, recipe, progress).forEach { addPhoto(it) }
         _visionState.value = VisionState.Loaded
     }
 
@@ -285,9 +284,7 @@ class RecipeEditorViewModel(
             val created = mutableListOf<String>()
             AiKeepAlive.hold(L10n.str(R.string.ai_task_reading_photo)) {
                 recipes.forEach { recipe ->
-                    val dishPhotoUris = withContext(AppDispatchers.io) {
-                        DishPhotoCropper.extract(detected.appContext, detected.sourceUris, recipe.dishPhotos)
-                    }
+                    val dishPhotoUris = settingsRepository.findDishPhotos(detected.appContext, detected.sourceUris, recipe)
                     val draft = recipe.matchedTo(known).toRecipeDraft(bookId)
                         .copy(photos = dishPhotoUris.mapIndexed { i, uri -> RecipePhoto(uri, isCover = i == 0) })
                     val toCreate = newLabels(draft.categoryName, draft.utensilNames, known)

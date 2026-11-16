@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.UploadFile
@@ -24,44 +23,47 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 /**
- * Content of the "new recipe" picker, meant to go inside a `ModalBottomSheet`: create it by hand,
- * from an exported file (JSON/ZIP) or from a photo (which opens PhotoSourceSheet to choose camera
- * or gallery).
+ * Content of the "new recipe" picker, meant to go inside a `ModalBottomSheet`: write it by hand,
+ * read it from photos (which opens PhotoSourceSheet to choose camera or gallery; one or several
+ * recipes), from a web page, from a file exported by Miga, or ask the assistant for one.
  */
 @Composable
 fun NewRecipeSourceSheet(
     onManualClick: () -> Unit,
     onFileClick: () -> Unit,
     onPhotoClick: () -> Unit,
-    onBulkPhotoClick: () -> Unit,
     onSearchDishClick: () -> Unit,
     onUrlClick: () -> Unit,
     aiEnabled: Boolean = true
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(L10n.str(R.string.new_recipe), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
-        NewRecipeSourceRow(icon = Icons.Filled.Edit, label = L10n.str(R.string.manual), onClick = onManualClick)
-        NewRecipeSourceRow(icon = Icons.Filled.UploadFile, label = L10n.str(R.string.file_json_zip), onClick = onFileClick)
-        // Photo, multiple photos, URL and dish search need AI, so they are hidden when it is off.
+        NewRecipeSourceRow(Icons.Filled.Edit, L10n.str(R.string.new_recipe_by_hand), L10n.str(R.string.new_recipe_by_hand_desc), onManualClick)
+        // Photos, a web page and suggestions need the assistant, so they are hidden when it is off.
         if (aiEnabled) {
-            NewRecipeSourceRow(icon = Icons.Filled.AddAPhoto, label = L10n.str(R.string.image), onClick = onPhotoClick)
-            NewRecipeSourceRow(icon = Icons.Filled.Collections, label = L10n.str(R.string.several_recipes_images), onClick = onBulkPhotoClick)
-            NewRecipeSourceRow(icon = Icons.Filled.Link, label = L10n.str(R.string.url), onClick = onUrlClick)
-            NewRecipeSourceRow(icon = Icons.Filled.AutoAwesome, label = L10n.str(R.string.find_recipe_ai), onClick = onSearchDishClick)
+            NewRecipeSourceRow(Icons.Filled.AddAPhoto, L10n.str(R.string.new_recipe_from_photos), L10n.str(R.string.new_recipe_from_photos_desc), onPhotoClick)
+            NewRecipeSourceRow(Icons.Filled.Link, L10n.str(R.string.new_recipe_from_web), L10n.str(R.string.new_recipe_from_web_desc), onUrlClick)
+        }
+        NewRecipeSourceRow(Icons.Filled.UploadFile, L10n.str(R.string.new_recipe_from_file), L10n.str(R.string.new_recipe_from_file_desc), onFileClick)
+        if (aiEnabled) {
+            NewRecipeSourceRow(Icons.Filled.AutoAwesome, L10n.str(R.string.find_recipe_ai), L10n.str(R.string.new_recipe_suggest_desc), onSearchDishClick)
         }
     }
 }
 
 @Composable
-private fun NewRecipeSourceRow(icon: ImageVector, label: String, onClick: () -> Unit) {
+private fun NewRecipeSourceRow(icon: ImageVector, label: String, description: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
+            .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(label, modifier = Modifier.padding(start = 16.dp))
+        Column(modifier = Modifier.padding(start = 16.dp)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge)
+            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }

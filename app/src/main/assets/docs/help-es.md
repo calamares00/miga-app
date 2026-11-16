@@ -25,11 +25,10 @@ Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo
 
 Desde un libro, pulsa **Nueva receta** y elige de dónde sale:
 
-- **Manual**: escribes tú la receta.
-- **Desde archivo**: importa un archivo de Miga (.miga o .zip) o una exportación en JSON.
-- **Desde imagen** ✨: haz una foto o elige una de la galería. Si la receta sigue en otra página, añade más fotos. El asistente lee el texto, recorta la foto del plato y rellena el editor para que solo tengas que revisarlo.
-- **Varias recetas desde imágenes** ✨: elige muchas fotos y la app crea una receta por cada una.
-- **Desde una URL** ✨: pega el enlace de una receta de cualquier web.
+- **Escribirla a mano**: una receta vacía que rellenas tú.
+- **Desde fotos** ✨: haz fotos o elige hasta 20 de la galería, de una receta o de varias. Miga averigua qué fotos son de la misma receta (dos páginas, o la receta y la foto del plato) y cuáles son recetas distintas. Si es una sola, se abre el editor ya relleno para que la revises; si son varias, se guardan una a una y ves el resultado en una lista. El asistente lee el texto y busca la foto del plato: comprueba que es de verdad el plato terminado, la recorta sin texto ni márgenes y pone como principal la que muestra el plato entero.
+- **Desde una página web** ✨: pega el enlace de una receta de cualquier web.
+- **Desde un archivo de Miga**: importa recetas exportadas desde Miga (.miga, .zip o JSON).
 - **Sugerir una receta** ✨: escribe el nombre de un plato y elige entre las propuestas.
 
 Las opciones con ✨ las hace el asistente de cocina y solo aparecen si lo tienes configurado.

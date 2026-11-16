@@ -113,6 +113,9 @@ import org.calamares.miga.ui.components.RecipeCard
 import org.calamares.miga.ui.components.RecipeGridCard
 import kotlinx.coroutines.launch
 
+/** Most photos one import takes (pages of one recipe or several recipes). */
+private const val MAX_IMPORT_PHOTOS = 20
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeListScreen(
@@ -121,8 +124,8 @@ fun RecipeListScreen(
     onRecipeClick: (Long) -> Unit,
     onEditRecipeClick: (Long) -> Unit,
     onAddRecipeClick: () -> Unit,
-    onAddRecipeFromPhoto: (List<String>) -> Unit,
-    onAddRecipesBulk: (List<String>) -> Unit,
+    /** Photos taken or picked to read recipes from: one recipe or several, sorted out by the AI. */
+    onAddRecipesFromPhotos: (List<String>) -> Unit,
     onSearchDishClick: () -> Unit,
     onAddRecipeFromUrl: (String) -> Unit,
     /** Improve the selected recipes with AI, all together (see BulkPolishScreen). */
@@ -180,11 +183,8 @@ fun RecipeListScreen(
     }
     val cameraCapture = rememberCameraCapture { path -> capturedPageUris.add(path); showAddAnotherPageDialog = true }
     val galleryPickerForPhotoImport = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(maxItems = 5)
-    ) { uris -> if (uris.isNotEmpty()) onAddRecipeFromPhoto(uris.map { it.toString() }) }
-    val bulkGalleryPicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(maxItems = 20)
-    ) { uris -> if (uris.isNotEmpty()) onAddRecipesBulk(uris.map { it.toString() }) }
+        ActivityResultContracts.PickMultipleVisualMedia(maxItems = MAX_IMPORT_PHOTOS)
+    ) { uris -> if (uris.isNotEmpty()) onAddRecipesFromPhotos(uris.map { it.toString() }) }
 
     AdaptiveScaffold(
         maxContentWidth = GRID_CONTENT_WIDTH,
@@ -474,10 +474,6 @@ fun RecipeListScreen(
                 onManualClick = { showNewRecipeSheet = false; onAddRecipeClick() },
                 onFileClick = { showNewRecipeSheet = false; importRecipeLauncher.launch(BACKUP_MIME_TYPES) },
                 onPhotoClick = { showNewRecipeSheet = false; showPhotoSourceSheet = true },
-                onBulkPhotoClick = {
-                    showNewRecipeSheet = false
-                    bulkGalleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                },
                 onSearchDishClick = { showNewRecipeSheet = false; onSearchDishClick() },
                 onUrlClick = { showNewRecipeSheet = false; showUrlImportDialog = true },
                 aiEnabled = rememberAiReady()
@@ -525,7 +521,7 @@ fun RecipeListScreen(
     if (showPhotoSourceSheet) {
         ModalBottomSheet(onDismissRequest = { showPhotoSourceSheet = false }, sheetState = photoSheetState) {
             PhotoSourceSheet(
-                title = L10n.str(R.string.add_recipe_photo),
+                title = L10n.str(R.string.recipes_from_photos),
                 onCameraClick = {
                     showPhotoSourceSheet = false
                     cameraCapture.launch()
@@ -541,13 +537,13 @@ fun RecipeListScreen(
     if (showAddAnotherPageDialog) {
         AlertDialog(
             onDismissRequest = { showAddAnotherPageDialog = false },
-            title = { Text(L10n.str(R.string.another_page)) },
-            text = { Text(L10n.str(R.string.does_recipe_continue_another_photo)) },
+            title = { Text(L10n.str(R.string.another_photo_title_n, capturedPageUris.size)) },
+            text = { Text(L10n.str(R.string.another_photo_body)) },
             confirmButton = {
                 TextButton(onClick = {
                     showAddAnotherPageDialog = false
                     cameraCapture.launch()
-                }) { Text(L10n.str(R.string.add_another_page)) }
+                }) { Text(L10n.str(R.string.take_another_photo)) }
             },
             dismissButton = {
                 Row {
@@ -557,7 +553,7 @@ fun RecipeListScreen(
                     }) { Text(L10n.str(R.string.cancel)) }
                     TextButton(onClick = {
                         showAddAnotherPageDialog = false
-                        onAddRecipeFromPhoto(capturedPageUris.toList())
+                        onAddRecipesFromPhotos(capturedPageUris.toList())
                         capturedPageUris.clear()
                     }) { Text(L10n.str(R.string.continue_action)) }
                 }

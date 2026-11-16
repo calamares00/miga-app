@@ -147,9 +147,11 @@ In each recipe's "dishPhotos" list where the photos of the FINISHED DISH are (th
 photograph itself, as precisely as possible: it must contain only the photograph, with no
 surrounding page, text, titles, captions, page numbers, margins, frames, ring or spiral binding,
 fingers or the table under the book. If an edge is uncertain, keep it slightly inside the photo.
-If the whole image is a photo of the dish (no recipe text), use the box framing the dish. Do not
-include photos of intermediate steps, loose ingredients, people or decorative illustrations. At
-most 3; if there are none, leave the list empty.
+If the whole image is a photo of the dish (no recipe text), use the box framing the dish. Only real
+photographs of prepared food count: never a block of text, a title, a drawing or an icon, and no
+photos of intermediate steps, loose ingredients, people or decorative illustrations. List the
+photo that shows the whole dish first. At most 3; if there is no photo of the dish, leave the list
+empty rather than guessing.
 "rotation" is how many degrees the cropped photo must be turned CLOCKWISE to look upright (the
 dish the right way up, as printed on the page). Use the page text as a guide: if the text in the
 image reads sideways or upside down, the photo is rotated the same way. Use 0 when it is already
