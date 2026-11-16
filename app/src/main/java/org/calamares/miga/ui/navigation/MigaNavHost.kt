@@ -650,7 +650,6 @@ private fun NavGraphBuilder.screens(
             hasChangelog = hasChangelog,
             onOpenSection = { navController.navigate(Destinations.settingsSection(it.id)) },
             onOpenStats = { navController.navigate(Destinations.STATS_ROUTE) },
-            onOpenTips = { navController.navigate(Destinations.tips()) },
             onOpenChangelog = { navController.navigate(Destinations.HELP_CHANGELOG_ROUTE) },
             onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
             onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) }

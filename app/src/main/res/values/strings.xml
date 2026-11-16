@@ -758,11 +758,7 @@
     <string name="openrouter_key_hint">"Get it at openrouter.ai/keys"</string>
     <string name="openrouter_model">"OpenRouter model"</string>
     <string name="openrouter_free_note">"Free models have usage limits and can be slow or busy at times; if one fails, the next provider in the list takes over."</string>
-    <string name="openrouter_models_title">"OpenRouter models"</string>
     <string name="openrouter_search_models">"Search models"</string>
-    <string name="openrouter_models_error">"Couldn't load the OpenRouter model list. Check your connection."</string>
-    <string name="openrouter_no_models_match">"No models match these filters."</string>
-    <string name="use_model">"Use"</string>
     <string name="retry_with_these_models">"Retry with these models"</string>
     <string name="n_selected">"%1$d selected"</string>
     <string name="select_all">"Select all"</string>
@@ -1037,7 +1033,6 @@
     <string name="e_g_gpt_5_mini">"e.g. gpt-5-mini"</string>
     <string name="ai_models_loading">"Loading your account's models…"</string>
     <string name="ai_models_from_account_n">"%1$d models available with your key"</string>
-    <string name="ai_models_default_list">"Default list (your account's list couldn't be loaded)"</string>
     <string name="see_all">"See all"</string>
     <string name="stats_tap_to_list">"Tap a figure to see its recipes."</string>
     <string name="search_cond_book_x">"Book: %1$s"</string>
@@ -1302,7 +1297,6 @@
     <string name="uninstalling_packs">"Uninstalling packs"</string>
     <string name="tips">"Tips"</string>
     <string name="cooking_tips">"Cooking tips"</string>
-    <string name="cooking_tips_summary">"Techniques, storing, leftovers and more"</string>
     <string name="tip_of_the_day">"Tip of the day"</string>
     <string name="tips_all">"All"</string>
     <string name="tips_saved">"Saved"</string>
@@ -1352,4 +1346,8 @@
     <string name="custom_ai_note">"Requests go to the address you enter. A model on your own computer keeps everything at home, but can be slow."</string>
     <string name="ai_step_rate_limited_x">"%1$s has reached its usage limit"</string>
     <string name="ai_retrying_in_x_seconds">"Trying again in %1$d s"</string>
+    <string name="ai_models_need_key">"Enter the key to see its models"</string>
+    <string name="ai_models_need_address">"Enter the address to see its models"</string>
+    <string name="ai_models_load_failed">"The models could not be loaded: open the list to try again"</string>
+    <string name="ai_models_catalog_n">"%1$d models in the OpenRouter catalogue"</string>
 </resources>

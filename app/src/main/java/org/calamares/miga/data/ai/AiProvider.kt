@@ -29,22 +29,7 @@ enum class AiProvider(private val brandLabel: String, private val brandShortName
  */
 val GENERIC_PROVIDERS = listOf(AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM)
 
-/** Mistral models offered until the account's list is downloaded; see https://docs.mistral.ai. */
-val MISTRAL_MODELS = listOf(
-    "mistral-medium-latest",
-    "mistral-large-latest",
-    "mistral-small-latest",
-    "ministral-8b-latest"
-)
-
 const val DEFAULT_MISTRAL_MODEL = "mistral-medium-latest"
-
-/** Groq models offered until the account's list is downloaded; see https://console.groq.com/docs/models. */
-val GROQ_MODELS = listOf(
-    "qwen/qwen3.8-27b",
-    "llama-3.3-70b-versatile",
-    "openai/gpt-oss-120b"
-)
 
 const val DEFAULT_GROQ_MODEL = "qwen/qwen3.8-27b"
 
@@ -72,50 +57,11 @@ fun guessModelReadsImages(provider: AiProvider, model: String): Boolean {
     return markers.any { it in id }
 }
 
-/**
- * Gemini models offered in Settings. Google retires model ids over time, so Settings also lets the
- * user type any other id; see https://ai.google.dev/gemini-api/docs/models for the current list.
- */
-val GEMINI_MODELS = listOf(
-    "gemini-3.8-flash",
-    "gemini-3.7-flash",
-    "gemini-3.6-flash",
-    "gemini-3.5-flash",
-    "gemini-3.5-flash-lite"
-)
-
 const val DEFAULT_GEMINI_MODEL = "gemini-3.6-flash"
-
-/** Claude models offered in Settings; any other id can also be typed in by hand. */
-val ANTHROPIC_MODELS = listOf(
-    "claude-opus-5",
-    "claude-sonnet-5",
-    "claude-haiku-4-5"
-)
 
 const val DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5"
 
-/**
- * OpenAI models offered in Settings until the list of the user's account is downloaded (see
- * [ProviderModels]); any other id can also be typed in by hand.
- */
-val OPENAI_MODELS = listOf(
-    "gpt-5-mini",
-    "gpt-5",
-    "gpt-4.1-mini",
-    "gpt-4o-mini"
-)
-
 const val DEFAULT_OPENAI_MODEL = "gpt-5-mini"
-
-/**
- * DeepSeek models offered in Settings until the list of the user's account is downloaded; any
- * other id can also be typed in by hand. See https://api-docs.deepseek.com/quick_start/pricing.
- */
-val DEEPSEEK_MODELS = listOf(
-    "deepseek-flash",
-    "deepseek-v4-pro"
-)
 
 const val DEFAULT_DEEPSEEK_MODEL = "deepseek-flash"
 
