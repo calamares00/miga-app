@@ -6,17 +6,11 @@ import org.calamares.miga.data.ai.OpenRouterModels
 import kotlinx.coroutines.flow.first
 
 import org.calamares.miga.data.ai.AiProvider
-import org.calamares.miga.data.ai.GEMINI_MODELS
 import org.calamares.miga.data.ai.DEFAULT_GEMINI_MODEL
 import org.calamares.miga.data.ai.DEFAULT_ANTHROPIC_MODEL
-import org.calamares.miga.data.ai.ANTHROPIC_MODELS
 import org.calamares.miga.data.ai.DEFAULT_OPENAI_MODEL
-import org.calamares.miga.data.ai.OPENAI_MODELS
-import org.calamares.miga.data.ai.DEEPSEEK_MODELS
 import org.calamares.miga.data.ai.DEFAULT_DEEPSEEK_MODEL
 import org.calamares.miga.data.ai.GENERIC_PROVIDERS
-import org.calamares.miga.data.ai.GROQ_MODELS
-import org.calamares.miga.data.ai.MISTRAL_MODELS
 import org.calamares.miga.data.ai.defaultModelFor
 import org.calamares.miga.data.ai.ProviderModels
 import org.calamares.miga.MigaApp
@@ -154,12 +148,12 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
     fun modelsFor(provider: AiProvider): List<String> {
         val saved = listOfNotNull(savedModel(provider).takeIf { it.isNotBlank() })
         return when (provider) {
-            AiProvider.GEMINI -> (saved + (accountModels[provider] ?: GEMINI_MODELS)).distinct()
-            AiProvider.ANTHROPIC -> (saved + (accountModels[provider] ?: ANTHROPIC_MODELS)).distinct()
-            AiProvider.OPENAI -> (saved + (accountModels[provider] ?: OPENAI_MODELS)).distinct()
-            AiProvider.DEEPSEEK -> (saved + (accountModels[provider] ?: DEEPSEEK_MODELS)).distinct()
-            AiProvider.MISTRAL -> (saved + (accountModels[provider] ?: MISTRAL_MODELS)).distinct()
-            AiProvider.GROQ -> (saved + (accountModels[provider] ?: GROQ_MODELS)).distinct()
+            AiProvider.GEMINI -> (saved + accountModels[provider].orEmpty()).distinct()
+            AiProvider.ANTHROPIC -> (saved + accountModels[provider].orEmpty()).distinct()
+            AiProvider.OPENAI -> (saved + accountModels[provider].orEmpty()).distinct()
+            AiProvider.DEEPSEEK -> (saved + accountModels[provider].orEmpty()).distinct()
+            AiProvider.MISTRAL -> (saved + accountModels[provider].orEmpty()).distinct()
+            AiProvider.GROQ -> (saved + accountModels[provider].orEmpty()).distinct()
             AiProvider.CUSTOM -> (saved + accountModels[provider].orEmpty()).distinct()
             // The first free models of the catalogue plus the chosen one; the full catalogue is in
             // Settings.
@@ -237,6 +231,14 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
                                 L10n.str(R.string.ai_free),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        }
+                        if (ProviderModels.readsImages(groupProvider, model)) {
+                            Text(
+                                L10n.str(R.string.ai_images_badge),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(end = 8.dp)
                             )
                         }
