@@ -15,7 +15,7 @@ Miga is a family recipe book and shopping list app. This document explains what 
 
 Recipes, books, photos, personal notes, categories, tags, kitchen equipment, ratings, shopping lists, templates, supermarkets and settings are stored **in your device's internal storage**.
 
-The Google Gemini, Anthropic, OpenAI, DeepSeek, Mistral, Groq or OpenRouter API keys (and that of any OpenAI-compatible server you set up) you enter are stored only on your device, **encrypted** with a key from Android's secure keystore that never leaves the phone, and are used only to call the provider you choose.
+The Google Gemini, Anthropic, OpenAI, DeepSeek, Mistral, Groq or OpenRouter API keys (and that of any OpenAI-compatible server you set up) you enter are stored only on your device, **encrypted** with a key from Android's secure keystore that never leaves the phone, and are used only to call the provider you choose. With **Connect with OpenRouter** you log in on the OpenRouter website (Miga never sees your password); OpenRouter returns to a page on miga.calamares.org with a single-use code, which the page hands to the app without storing or sending it anywhere, and the app exchanges it for a key directly with OpenRouter.
 
 If Android backup is turned on, the system may include this data (recipes, photos and settings) in the backup managed by your Google account, as with any other app. Miga has no access to that backup. API keys stay encrypted and cannot be read on another device: after restoring on a new phone you will need to enter them again.
 

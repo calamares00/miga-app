@@ -1,0 +1,3 @@
+What's new in version 1.0.32:
+• Connect with OpenRouter: log in to OpenRouter and authorise Miga; the key is created and saved for you, no copying needed.
+• Faster start-up: Android compiles the start-up and main screen code in advance.

@@ -1,5 +1,6 @@
 package org.calamares.miga
 
+import org.calamares.miga.data.ai.OpenRouterConnect
 import org.calamares.miga.data.ai.AiJobs
 import android.Manifest
 import android.content.Context
@@ -96,6 +97,7 @@ class MainActivity : FragmentActivity() {
         AppShortcuts.handle(intent)
         BookFileIntents.handle(this, intent)
         AiJobs.handle(intent)
+        OpenRouterConnect.handle(this, intent)
     }
 
     /** True once, on Android 13+, when notifications are not allowed yet; later calls return false. */
@@ -134,6 +136,7 @@ class MainActivity : FragmentActivity() {
             AppShortcuts.handle(intent)
             BookFileIntents.handle(this, intent)
             AiJobs.handle(intent)
+            OpenRouterConnect.handle(this, intent)
         }
         val settingsRepository = (application as MigaApp).settingsRepository
         setContent {

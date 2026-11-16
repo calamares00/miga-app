@@ -24,8 +24,8 @@ android {
         // versionCode goes up on every commit (Play requires it to always grow). versionName is the
         // public version and only changes when a new version is released (1.0.0, 1.0.1, 1.1.0...),
         // with release notes in assets/changelogs and fastlane/.../changelogs (<versionCode>.txt).
-        versionCode = 229
-        versionName = "1.0.31"
+        versionCode = 230
+        versionName = "1.0.32"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -151,6 +151,8 @@ room {
 dependencies {
     implementation(libs.core.ktx)
     implementation(libs.core.splashscreen)
+    // Installs the baseline profile (src/main/baseline-prof.txt) so start-up code runs compiled.
+    implementation(libs.profileinstaller)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.lifecycle.viewmodel.compose)
