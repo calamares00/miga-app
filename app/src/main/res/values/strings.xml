@@ -1368,4 +1368,13 @@
     <string name="cook_timer_minutes">"Minutes"</string>
     <string name="cook_start_timer">"Start"</string>
     <string name="cook_allow_exact_alarms">"Allow exact alarms so timers ring on time with the screen off"</string>
+    <string name="paste_list">"Paste list"</string>
+    <string name="paste_ingredients">"Paste ingredients"</string>
+    <string name="paste_ingredients_hint">"One per line, e.g.\n200 g flour\n3 eggs"</string>
+    <string name="paste_steps">"Paste steps"</string>
+    <string name="paste_steps_hint">"One step per line; numbers and bullets are removed"</string>
+    <string name="drag_to_reorder">"Drag to reorder"</string>
+    <string name="duplicate_recipe_title">"Recipe already exists"</string>
+    <string name="duplicate_recipe_body_x_x">"You already have “%1$s” in the book “%2$s”. Save this one too?"</string>
+    <string name="save_anyway">"Save anyway"</string>
 </resources>
