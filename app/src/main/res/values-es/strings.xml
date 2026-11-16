@@ -1376,4 +1376,17 @@
     <string name="duplicate_recipe_title">"Ya existe esta receta"</string>
     <string name="duplicate_recipe_body_x_x">"Ya tienes «%1$s» en el libro «%2$s». ¿Guardar también esta?"</string>
     <string name="save_anyway">"Guardar igualmente"</string>
+    <string name="pantry_title">"¿Qué cocino con lo que tengo?"</string>
+    <string name="pantry_card_body">"Di lo que tienes en casa y mira qué recetas puedes hacer"</string>
+    <string name="saved_searches">"Búsquedas guardadas"</string>
+    <string name="recent_searches">"Búsquedas recientes"</string>
+    <string name="delete_saved_search">"¿Borrar la búsqueda guardada?"</string>
+    <string name="pantry_what_you_have">"Lo que tienes"</string>
+    <string name="pantry_hint">"p. ej. huevos, patatas, cebolla"</string>
+    <string name="pantry_empty_body">"Añade los ingredientes que tienes. La sal, el agua, el aceite y la pimienta se dan por supuestos."</string>
+    <string name="pantry_no_matches">"Ninguna receta usa estos ingredientes. Prueba a añadir otros."</string>
+    <string name="pantry_have_everything">"Lo tienes todo"</string>
+    <string name="pantry_missing_x">"Te falta: %1$s"</string>
+    <string name="save_search">"Guardar búsqueda"</string>
+    <string name="save_search_hint">"p. ej. Cenas rápidas"</string>
 </resources>

@@ -1,5 +1,11 @@
 package org.calamares.miga.ui.search
 
+import androidx.compose.material.icons.filled.BookmarkAdd
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.AutoAwesome
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.rememberAiReady
@@ -101,6 +107,17 @@ fun GlobalSearchScreen(
     val selectedIds by viewModel.selectedIds.collectAsStateWithLifecycle()
     val selectionMode = selectedIds.isNotEmpty()
     var showFilters by remember { mutableStateOf(false) }
+    /** The search tab (not Favourites nor a list opened from the statistics) also offers recent and saved searches and "What can I cook?". */
+    val searchTab = !favoritesOnly && onBack == null
+    val recentSearches by viewModel.recentSearches.collectAsStateWithLifecycle()
+    val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
+    val pantryMode by viewModel.pantryMode.collectAsStateWithLifecycle()
+    val pantryItems by viewModel.pantryItems.collectAsStateWithLifecycle()
+    val pantryMatches by viewModel.pantryMatches.collectAsStateWithLifecycle()
+    var showSaveSearch by remember { mutableStateOf(false) }
+    val keyboard = LocalSoftwareKeyboardController.current
+    val openRecipe: (Long) -> Unit = { id -> viewModel.rememberQuery(); onRecipeClick(id) }
+    BackHandler(enabled = pantryMode) { viewModel.setPantryMode(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     /** In Favourites, "only favourites" is implicit and does not count as an applied filter. */
@@ -136,9 +153,11 @@ fun GlobalSearchScreen(
             } else {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                    title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    title = { Text(if (pantryMode) L10n.str(R.string.pantry_title) else title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     navigationIcon = {
-                        if (onBack != null) {
+                        if (pantryMode) {
+                            IconButton(onClick = { viewModel.setPantryMode(false) }) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                        } else if (onBack != null) {
                             IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                         }
                     },
@@ -146,6 +165,18 @@ fun GlobalSearchScreen(
             }
         }
     ) { padding ->
+        if (pantryMode) {
+            PantryContent(
+                items = pantryItems,
+                matches = pantryMatches,
+                onAdd = viewModel::addPantryItems,
+                onRemove = viewModel::removePantryItem,
+                onClear = viewModel::clearPantry,
+                onRecipeClick = onRecipeClick,
+                modifier = Modifier.fillMaxSize().padding(padding)
+            )
+            return@AdaptiveScaffold
+        }
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             // The same header on Search and Favourites: the search field with the filters next to
             // it, the filters applied as chips and, over the results, how many and their order.
@@ -172,8 +203,15 @@ fun GlobalSearchScreen(
                             }
                         }
                     },
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { viewModel.rememberQuery(); keyboard?.hide() })
                 )
+                if (searchTab && (filtersApplied || filter.query.isNotBlank())) {
+                    IconButton(onClick = { showSaveSearch = true }) {
+                        Icon(Icons.Filled.BookmarkAdd, contentDescription = L10n.str(R.string.save_search))
+                    }
+                }
                 IconButton(onClick = { showFilters = true }) {
                     BadgedBox(badge = { if (filtersApplied) Badge { Text(activeCount.toString()) } }) {
                         Icon(Icons.Filled.FilterList, contentDescription = L10n.str(R.string.filters))
@@ -207,6 +245,16 @@ fun GlobalSearchScreen(
                         body = L10n.str(R.string.tap_heart_recipe_keep_handy),
                         modifier = Modifier.fillMaxSize().weight(1f)
                     )
+                    filter.query.isBlank() && !filter.isActive && searchTab -> SearchStart(
+                        recent = recentSearches,
+                        saved = savedFilters,
+                        onPantry = { viewModel.setPantryMode(true) },
+                        onRecent = viewModel::updateQuery,
+                        onClearRecent = viewModel::clearRecentSearches,
+                        onSaved = viewModel::applySavedFilter,
+                        onDeleteSaved = viewModel::deleteSavedFilter,
+                        modifier = Modifier.fillMaxSize().weight(1f)
+                    )
                     filter.query.isBlank() && !filter.isActive -> EmptyState(
                         icon = Icons.Filled.Search,
                         title = L10n.str(R.string.search_recipes),
@@ -233,7 +281,7 @@ fun GlobalSearchScreen(
                             selectionMode = selectionMode,
                             isSelected = result.recipeId in selectedIds,
                             onClick = {
-                                if (selectionMode) viewModel.toggleSelection(result.recipeId) else onRecipeClick(result.recipeId)
+                                if (selectionMode) viewModel.toggleSelection(result.recipeId) else openRecipe(result.recipeId)
                             },
                             onLongClick = { viewModel.startSelection(result.recipeId) }
                         )
@@ -241,6 +289,13 @@ fun GlobalSearchScreen(
                 }
             }
         }
+    }
+
+    if (showSaveSearch) {
+        SaveSearchDialog(
+            onSave = { name -> viewModel.saveCurrentFilter(name); showSaveSearch = false },
+            onDismiss = { showSaveSearch = false }
+        )
     }
 
     if (showFilters) {

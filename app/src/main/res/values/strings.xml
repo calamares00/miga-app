@@ -1377,4 +1377,17 @@
     <string name="duplicate_recipe_title">"Recipe already exists"</string>
     <string name="duplicate_recipe_body_x_x">"You already have “%1$s” in the book “%2$s”. Save this one too?"</string>
     <string name="save_anyway">"Save anyway"</string>
+    <string name="pantry_title">"What can I cook?"</string>
+    <string name="pantry_card_body">"Say what you have at home and see which recipes you can make"</string>
+    <string name="saved_searches">"Saved searches"</string>
+    <string name="recent_searches">"Recent searches"</string>
+    <string name="delete_saved_search">"Delete saved search?"</string>
+    <string name="pantry_what_you_have">"What you have"</string>
+    <string name="pantry_hint">"e.g. eggs, potatoes, onion"</string>
+    <string name="pantry_empty_body">"Add the ingredients you have. Salt, water, oil and pepper are taken for granted."</string>
+    <string name="pantry_no_matches">"No recipe uses these ingredients. Try adding others."</string>
+    <string name="pantry_have_everything">"You have everything"</string>
+    <string name="pantry_missing_x">"Missing: %1$s"</string>
+    <string name="save_search">"Save search"</string>
+    <string name="save_search_hint">"e.g. Quick dinners"</string>
 </resources>
