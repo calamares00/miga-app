@@ -15,7 +15,7 @@ Miga es una app de recetario familiar y lista de la compra. Este documento expli
 
 Recetas, libros, fotos, notas personales, categorías, etiquetas, equipamiento de cocina, valoraciones, listas de la compra, plantillas, supermercados y ajustes se guardan **en el almacenamiento interno de tu dispositivo**.
 
-Las claves de API de Google Gemini, Anthropic, OpenAI, DeepSeek, Mistral, Groq u OpenRouter (y la del servidor compatible con OpenAI que configures) que introduzcas se guardan solo en tu dispositivo, **cifradas** con una clave del almacén seguro de Android que no sale del teléfono, y se usan únicamente para llamar al proveedor que elijas.
+Las claves de API de Google Gemini, Anthropic, OpenAI, DeepSeek, Mistral, Groq u OpenRouter (y la del servidor compatible con OpenAI que configures) que introduzcas se guardan solo en tu dispositivo, **cifradas** con una clave del almacén seguro de Android que no sale del teléfono, y se usan únicamente para llamar al proveedor que elijas. Con **Conectar con OpenRouter** inicias sesión en la web de OpenRouter (Miga no ve tu contraseña); OpenRouter vuelve a una página de miga.calamares.org con un código de un solo uso que la página pasa a la app sin guardarlo ni enviarlo a ningún sitio, y la app lo cambia por una clave directamente con OpenRouter.
 
 Si tienes activada la copia de seguridad de Android, el sistema puede incluir estos datos (recetas, fotos y ajustes) en la copia gestionada por tu cuenta de Google, como con cualquier otra app. Miga no tiene acceso a esa copia. Las claves de API van cifradas y no se pueden leer en otro dispositivo: al restaurar en un móvil nuevo tendrás que volver a introducirlas.
 
