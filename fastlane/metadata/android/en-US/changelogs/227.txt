@@ -1,2 +1,4 @@
 What's new in 1.0.29:
 • If a cooking assistant provider reaches its per-minute usage limit (such as Groq's free tier), Miga waits as long as it asks and tries again on its own, with a countdown.
+• Assistant settings: every provider's model is picked in the same dropdown, listing the provider's own models and tagging those that read images (and OpenRouter's free ones).
+• Cooking tips only from the lightbulb in Books.

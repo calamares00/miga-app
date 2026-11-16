@@ -74,6 +74,18 @@ object ProviderModels {
         return fetched
     }
 
+    /**
+     * Whether [model] reads images, to mark it in the pickers: every Gemini and Claude model does;
+     * OpenRouter's catalogue and Mistral's list say it; for the rest it comes from the model name.
+     */
+    fun readsImages(provider: AiProvider, model: String): Boolean = when (provider) {
+        AiProvider.GEMINI, AiProvider.ANTHROPIC -> true
+        AiProvider.OPENAI -> openAiModelReadsImages(model)
+        AiProvider.DEEPSEEK -> deepSeekModelReadsImages(model)
+        AiProvider.OPENROUTER -> OpenRouterModels.cached()?.firstOrNull { it.id == model }?.supportsImages ?: false
+        AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> knownImageSupport(provider, model) ?: guessModelReadsImages(provider, model)
+    }
+
     /** Whether [model] reads images according to the provider's own list; null when unknown. */
     fun knownImageSupport(provider: AiProvider, model: String): Boolean? = imageSupport[provider to model]
 
