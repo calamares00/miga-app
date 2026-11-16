@@ -73,7 +73,6 @@
     <string name="no_favourites_yet">"No favourites yet"</string>
     <string name="dont_have_templates_yet_create">"No templates yet. Create one and fill it with Open Food Facts products (bookmark icon in Products), or save your current list as a template."</string>
     <string name="dont_have_recipes_yet_nadd">"No recipes, no numbers.\nAdd a few and your stats will start cooking."</string>
-    <string name="dont_have_recipes_yet_ntap">"This book is still a blank page.\nTap \"New recipe\" to write the first one."</string>
     <string name="help_support">"Help and support"</string>
     <string name="blue">"Blue"</string>
     <string name="move_x_down">"Move %1$s down"</string>
@@ -627,7 +626,6 @@
     <string name="there_no_items_yet">"Nothing here yet."</string>
     <string name="there_no_ingredients_yet">"No ingredients yet."</string>
     <string name="not_synced_yet">"Not synced yet"</string>
-    <string name="dont_have_connections_yet_nadd">"No connections yet.\nAdd one to share and sync books with other Miga apps through your own server."</string>
     <string name="access_token">"Access token"</string>
     <string name="invalid_revoked_access_token">"Invalid or revoked access token"</string>
     <string name="turquoise">"Turquoise"</string>
@@ -1390,4 +1388,10 @@
     <string name="pantry_missing_x">"Missing: %1$s"</string>
     <string name="save_search">"Save search"</string>
     <string name="save_search_hint">"e.g. Quick dinners"</string>
+    <string name="empty_book_title">"This book is empty"</string>
+    <string name="empty_book_body">"Write a recipe, import it from a photo, a web page or a file, or let the cooking assistant suggest one."</string>
+    <string name="no_packs_title">"No packs yet"</string>
+    <string name="no_connections_title">"No connections"</string>
+    <string name="no_connections_body">"Add your own server to share and sync books with other Miga apps."</string>
+    <string name="manage_content_empty_body">"They are created as you use them in your recipes."</string>
 </resources>

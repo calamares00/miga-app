@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.shoppinglist
 
+import androidx.compose.material.icons.filled.ShoppingCart
+import org.calamares.miga.ui.components.EmptyState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import org.calamares.miga.ui.components.rememberSettingText
@@ -20,11 +22,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bookmarks
@@ -62,7 +62,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import org.calamares.miga.data.model.DEFAULT_SHOPPING_LIST_UID
 import org.calamares.miga.data.model.ParsedShoppingEntry
 import org.calamares.miga.data.model.ShoppingAisleOrder
@@ -79,23 +78,12 @@ internal fun EmptyShoppingList(
     onSearch: () -> Unit,
     onScan: () -> Unit
 ) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) { Column(
-        modifier = Modifier.verticalScroll(rememberScrollState()).padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    EmptyState(
+        icon = Icons.Filled.ShoppingCart,
+        title = L10n.str(R.string.list_empty),
+        body = L10n.str(R.string.type_dictate_what_need_above),
+        modifier = modifier
     ) {
-        Text("🛒", fontSize = 56.sp)
-        Text(
-            L10n.str(R.string.list_empty),
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-        Text(
-            L10n.str(R.string.type_dictate_what_need_above),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
-        )
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.widthIn(max = 320.dp)) {
             FilledTonalButton(onClick = onTemplates, modifier = Modifier.fillMaxWidth()) {
                 ButtonContent(Icons.Filled.Bookmarks, L10n.str(R.string.use_template))
@@ -110,7 +98,7 @@ internal fun EmptyShoppingList(
                 ButtonContent(Icons.Filled.QrCodeScanner, L10n.str(R.string.scan_product))
             }
         }
-    } }
+    }
 }
 
 @Composable
