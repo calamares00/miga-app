@@ -139,11 +139,15 @@ class RecipeListViewModel(
         _selectedIds.value = emptySet()
     }
 
+    /** Deletes the selection; "Undo" is offered for a while (see PendingDeletions). */
     fun deleteSelected() {
-        viewModelScope.launch {
-            _selectedIds.value.forEach { repository.deleteRecipe(it) }
-            _selectedIds.value = emptySet()
-        }
+        val ids = _selectedIds.value
+        if (ids.isEmpty()) return
+        _selectedIds.value = emptySet()
+        repository.deleteRecipesWithUndo(
+            ids,
+            if (ids.size == 1) L10n.str(R.string.recipe_deleted) else L10n.str(R.string.recipes_deleted_n, ids.size)
+        )
     }
 
     /**

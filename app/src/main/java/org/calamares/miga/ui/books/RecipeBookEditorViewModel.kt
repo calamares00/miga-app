@@ -103,21 +103,20 @@ class RecipeBookEditorViewModel(
         if (!isEditing) return
         viewModelScope.launch {
             isDeleting = true
-            if (isPack) {
-                repository.books.uninstallPack(bookId)
-                isDeleting = false
-                onDeleted()
+            // "Undo" is offered for a while by the books screen (see PendingDeletions).
+            val count = if (isPack) 0 else repository.books.countRecipes(bookId)
+            isDeleting = false
+            if (count > 0) {
+                deleteError = if (count == 1) L10n.str(R.string.book_not_empty_one)
+                else L10n.str(R.string.book_not_empty_many, count)
                 return@launch
             }
-            try {
-                repository.books.deleteRecipeBook(bookId)
-                onDeleted()
-            } catch (e: RecipeBookNotEmptyException) {
-                deleteError = if (e.recipeCount == 1) L10n.str(R.string.book_not_empty_one)
-                else L10n.str(R.string.book_not_empty_many, e.recipeCount)
-            } finally {
-                isDeleting = false
-            }
+            repository.books.deleteRecipeBooksWithUndo(
+                ids = if (isPack) emptySet() else setOf(bookId),
+                packIds = if (isPack) setOf(bookId) else emptySet(),
+                message = L10n.str(R.string.book_deleted)
+            )
+            onDeleted()
         }
     }
 

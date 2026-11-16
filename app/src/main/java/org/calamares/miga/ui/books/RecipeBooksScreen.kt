@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.books
 
+import org.calamares.miga.ui.components.UndoDeletionSnackbar
 import org.calamares.miga.ui.components.ShareSheet
 import org.calamares.miga.data.export.ShareAction
 import androidx.compose.material.icons.filled.SelectAll
@@ -183,6 +184,7 @@ fun RecipeBooksScreen(
         }
     }
     val snackbarHostState = remember { SnackbarHostState() }
+    UndoDeletionSnackbar(snackbarHostState)
     LaunchedEffect(syncMessage) {
         syncMessage?.let {
             snackbarHostState.showSnackbar(it)
