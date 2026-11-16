@@ -1,5 +1,9 @@
 package org.calamares.miga.ui.settings
 
+import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
+import org.calamares.miga.data.ai.OpenRouterConnect
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.material3.Switch
 import androidx.compose.animation.AnimatedVisibility
@@ -186,6 +190,7 @@ private fun ProviderFields(
         )
     }
     val texts = textsOf(provider)
+    if (provider == AiProvider.OPENROUTER) OpenRouterConnectBlock()
     ApiKeyField(
         value = apiKey,
         onValueChange = { viewModel.setApiKey(provider, it) },
@@ -543,3 +548,70 @@ private fun ModelBadge(text: String, highlighted: Boolean) {
 /** Free according to the id (":free" suffix) or the already downloaded catalogue. */
 internal fun isFreeModelId(id: String): Boolean =
     id.endsWith(":free") || OpenRouterModels.cached()?.firstOrNull { it.id == id }?.isFree == true
+
+/**
+ * "Connect with OpenRouter": logs in in the browser and comes back with a key (see
+ * OpenRouterConnect), plus pasting the code by hand if Miga does not open by itself.
+ */
+@Composable
+private fun OpenRouterConnectBlock() {
+    val context = LocalContext.current
+    val status by OpenRouterConnect.status.collectAsStateWithLifecycle()
+    var started by rememberSaveable { mutableStateOf(false) }
+    var pasting by remember { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Button(
+            onClick = {
+                started = true
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, OpenRouterConnect.authorizationUri(context))) }
+            },
+            enabled = status != OpenRouterConnect.Status.Connecting,
+            modifier = Modifier.fillMaxWidth()
+        ) { Text(L10n.str(R.string.openrouter_connect)) }
+        Text(
+            L10n.str(R.string.openrouter_connect_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        when (val current = status) {
+            OpenRouterConnect.Status.Connecting -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                Text(L10n.str(R.string.openrouter_connecting), style = MaterialTheme.typography.bodyMedium)
+            }
+            OpenRouterConnect.Status.Connected ->
+                Text(L10n.str(R.string.openrouter_connected), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+            is OpenRouterConnect.Status.Failed ->
+                Text(current.reason, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+            OpenRouterConnect.Status.Idle -> Unit
+        }
+        if (started && status != OpenRouterConnect.Status.Connected) {
+            TextButton(onClick = { pasting = true }) { Text(L10n.str(R.string.openrouter_paste_code)) }
+        }
+    }
+    if (pasting) {
+        var code by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { pasting = false },
+            title = { Text(L10n.str(R.string.openrouter_paste_code)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(L10n.str(R.string.openrouter_paste_code_hint), style = MaterialTheme.typography.bodyMedium)
+                    OutlinedTextField(
+                        value = code,
+                        onValueChange = { code = it },
+                        label = { Text(L10n.str(R.string.openrouter_code)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = code.isNotBlank(), onClick = {
+                    pasting = false
+                    OpenRouterConnect.connectWithCode(context, code)
+                }) { Text(L10n.str(R.string.openrouter_connect)) }
+            },
+            dismissButton = { TextButton(onClick = { pasting = false }) { Text(L10n.str(R.string.cancel)) } }
+        )
+    }
+}

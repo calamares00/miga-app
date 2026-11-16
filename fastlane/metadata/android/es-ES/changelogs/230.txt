@@ -1,0 +1,3 @@
+Novedades de la versión 1.0.32:
+• Conectar con OpenRouter: inicia sesión en OpenRouter y autoriza a Miga; la clave se crea y se guarda sola, sin copiarla a mano.
+• Arranque más rápido: Android compila de antemano el código del inicio y de las pantallas principales.
