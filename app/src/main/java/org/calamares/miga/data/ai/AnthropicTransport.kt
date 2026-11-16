@@ -81,7 +81,7 @@ internal object AnthropicTransport : AiTransport {
             )
             if (!response.isSuccessful) {
                 val message = runCatching { aiJson.decodeFromString(AnthropicErrorEnvelope.serializer(), response.body).error?.message }.getOrNull()
-                return@withContext AiText.Error(AiErrors.http(AiProvider.ANTHROPIC.shortName, response.code, message))
+                return@withContext AiText.Error(AiErrors.http(AiProvider.ANTHROPIC.shortName, response.code, message, response.retryAfter))
             }
             val decoded = aiJson.decodeFromString(AnthropicResponse.serializer(), response.body)
             val text = decoded.content.firstOrNull { it.type == "text" }?.text

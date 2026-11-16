@@ -9,6 +9,11 @@ import org.calamares.miga.data.support.ErrorDetail
 
 private const val NETWORK_RETRY_DELAY_MILLIS = 3000L
 
+// A provider at its rate limit is waited for when the wait it asks for is short, at most this many times.
+private const val MAX_RATE_LIMIT_WAIT_MILLIS = 90_000L
+private const val MAX_RATE_LIMIT_RETRIES = 2
+private const val RATE_LIMIT_MARGIN_MILLIS = 1000L
+
 /**
  * A provider that is ready to use: it has an API key and a model (a custom server needs its
  * [baseUrl] instead of a key).
@@ -55,7 +60,7 @@ suspend fun <T> SettingsRepository.runAi(
 
     val failures = mutableListOf<Pair<AiCandidate, String>>()
     AiKeepAlive.hold {
-        for (candidate in usable) {
+        for ((position, candidate) in usable.withIndex()) {
             val previous = failures.lastOrNull()?.first
             progress?.step(
                 if (previous == null) L10n.str(R.string.ai_step_asking_x, candidate.provider.label)
@@ -75,6 +80,17 @@ suspend fun <T> SettingsRepository.runAi(
                 reason = errorOf(result) ?: return@hold result
                 if (!ErrorDetail.isAiError(reason)) return@hold result
             }
+            // At its rate limit with a short wait (Groq's free tier: tokens per minute): the last
+            // provider left is waited for and asked again; with others still to try, moving on is faster.
+            var rateLimitRetries = 0
+            while (position == usable.lastIndex && rateLimitRetries < MAX_RATE_LIMIT_RETRIES) {
+                val wait = RateLimits.waitMillis(reason)?.takeIf { it <= MAX_RATE_LIMIT_WAIT_MILLIS } ?: break
+                rateLimitRetries++
+                waitForRateLimit(candidate, wait + RATE_LIMIT_MARGIN_MILLIS, progress)
+                result = call(candidate)
+                reason = errorOf(result) ?: return@hold result
+                if (!ErrorDetail.isAiError(reason)) return@hold result
+            }
             failures += candidate to reason
         }
         null
@@ -86,4 +102,17 @@ suspend fun <T> SettingsRepository.runAi(
     }
     val summary = L10n.str(R.string.ai_all_providers_failed, ErrorDetail.summary(failures.last().second))
     return error(ErrorDetail.markAsAi(ErrorDetail.withDetail(summary, detail)))
+}
+
+/** Waits [millis] while the progress line counts down the seconds left. */
+private suspend fun waitForRateLimit(candidate: AiCandidate, millis: Long, progress: AiProgressReporter?) {
+    val end = System.currentTimeMillis() + millis
+    progress?.step(L10n.str(R.string.ai_step_rate_limited_x, candidate.provider.label))
+    while (true) {
+        val left = end - System.currentTimeMillis()
+        if (left <= 0) break
+        progress?.detail(L10n.str(R.string.ai_retrying_in_x_seconds, ((left + 999) / 1000).toInt()))
+        delay(minOf(left, 1000L))
+    }
+    progress?.step(L10n.str(R.string.ai_step_retrying_x, candidate.provider.label))
 }
