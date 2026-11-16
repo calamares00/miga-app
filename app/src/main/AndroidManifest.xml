@@ -11,6 +11,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- Shows the running AI task and announces when it finishes (Android 13+). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Cooking timers go off on time even with the screen off (see CookTimers). Android 14
+         leaves it off until the user allows it; the timers then go off a little late. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <!-- Needed on Android 11+ (package visibility) so the implicit intent of
          ActivityResultContracts.TakePicture() finds the system camera app. The barcode scanner
@@ -90,6 +93,10 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/shopping_widget_info" />
         </receiver>
+
+        <receiver
+            android:name=".data.cook.CookTimerReceiver"
+            android:exported="false" />
 
         <service
             android:name=".data.ai.AiWorkService"
