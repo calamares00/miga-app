@@ -11,6 +11,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,6 +29,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -52,22 +54,28 @@ import coil.compose.AsyncImage
 fun BulkImportScreen(
     viewModel: BulkImportViewModel,
     onBack: () -> Unit,
-    onOpenRecipe: (Long) -> Unit
+    onOpenRecipe: (Long) -> Unit,
+    /** Every photo turned out to be the same recipe: it is reviewed in the editor instead. */
+    onSingleRecipe: (List<String>) -> Unit
 ) {
     val context = LocalContext.current
     val rows by viewModel.rows.collectAsStateWithLifecycle()
+    val phase by viewModel.phase.collectAsStateWithLifecycle()
+    val singleRecipe by viewModel.singleRecipe.collectAsStateWithLifecycle()
     val progress by viewModel.aiProgress.collectAsStateWithLifecycle()
-    val isProcessing = rows.any { it.state is BulkImportRowState.Pending || it.state is BulkImportRowState.Processing }
+    val isProcessing = phase == BulkImportPhase.Grouping ||
+        rows.any { it.state is BulkImportRowState.Pending || it.state is BulkImportRowState.Processing }
     var showExitConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { viewModel.start(context) }
+    LaunchedEffect(singleRecipe) { singleRecipe?.let(onSingleRecipe) }
     BackHandler(enabled = isProcessing) { showExitConfirm = true }
 
     AdaptiveScaffold(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(L10n.str(R.string.several_recipes_images)) },
+                title = { Text(L10n.str(R.string.recipes_from_photos)) },
                 navigationIcon = {
                     IconButton(onClick = { if (isProcessing) showExitConfirm = true else onBack() }) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back))
@@ -76,10 +84,23 @@ fun BulkImportScreen(
             )
         }
     ) { padding ->
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+        when (val current = phase) {
+            // Sorting the photos into recipes, before there is a list to show.
+            BulkImportPhase.Grouping -> Box(modifier = Modifier.fillMaxSize().padding(padding).padding(32.dp), contentAlignment = Alignment.Center) {
+                AiProgressView(progress = progress, fallback = L10n.str(R.string.ai_step_sorting_photos), centered = true)
+            }
+            is BulkImportPhase.GroupingFailed -> Column(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(L10n.str(R.string.sorting_photos_failed), style = MaterialTheme.typography.titleMedium)
+                ErrorMessage(current.reason, onRetry = { viewModel.retryGrouping(context) })
+                OutlinedButton(onClick = { viewModel.importOnePerPhoto(context) }) { Text(L10n.str(R.string.one_recipe_per_photo)) }
+            }
+            BulkImportPhase.Importing -> LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
             item {
                 AiContentNotice(
-                    feature = L10n.str(R.string.several_recipes_images),
+                    feature = L10n.str(R.string.recipes_from_photos),
                     content = { L10n.str(R.string.recipes_imported_ai_x_photos, rows.size) },
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
@@ -91,6 +112,7 @@ fun BulkImportScreen(
                     onClick = { (row.state as? BulkImportRowState.Success)?.let { onOpenRecipe(it.recipeId) } },
                     onRetry = { viewModel.retry(context, rows.indexOf(row)) }
                 )
+            }
             }
         }
     }
@@ -120,15 +142,29 @@ private fun BulkImportRowItem(row: BulkImportRow, progress: AiProgress?, onClick
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        AsyncImage(
-            model = row.photoUri,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-        )
+        Box(contentAlignment = Alignment.BottomEnd) {
+            AsyncImage(
+                model = row.photoUris.first(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            )
+            // A recipe read from several photos (its pages, or the dish) says how many.
+            if (row.photoUris.size > 1) {
+                Text(
+                    "${row.photoUris.size}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primary)
+                        .padding(horizontal = 5.dp, vertical = 1.dp)
+                )
+            }
+        }
         when (val state = row.state) {
             BulkImportRowState.Pending -> Text(
                 L10n.str(R.string.queued),
