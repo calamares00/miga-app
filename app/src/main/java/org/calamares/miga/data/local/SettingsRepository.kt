@@ -1,5 +1,6 @@
 package org.calamares.miga.data.local
 
+import org.calamares.miga.data.model.SavedFilter
 import org.calamares.miga.R
 import org.calamares.miga.L10n
 import android.content.Context
@@ -30,6 +31,8 @@ import kotlinx.coroutines.flow.map
 private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 
 private const val ENCRYPTED_KEY_PREFIX = "enc1:"
+
+private const val MAX_RECENT_SEARCHES = 8
 
 /** Decrypting through the Keystore on every settings change would be wasteful: cipher text -> key. */
 private val decryptedKeys = java.util.concurrent.ConcurrentHashMap<String, String>()
@@ -82,6 +85,9 @@ class SettingsRepository(private val context: Context) {
     private val dismissedUpdateKey = stringPreferencesKey("dismissed_update_version")
     private val dismissedPackUpdatesKey = stringPreferencesKey("dismissed_pack_updates")
     private val savedTipsKey = stringPreferencesKey("saved_tips")
+    private val recentSearchesKey = stringPreferencesKey("recent_searches")
+    private val savedFiltersKey = stringPreferencesKey("saved_filters")
+    private val pantryItemsKey = stringPreferencesKey("pantry_items")
     private val tipOfTheDayKey = booleanPreferencesKey("tip_of_the_day_enabled")
     private val tipOfTheDayClosedKey = longPreferencesKey("tip_of_the_day_closed_day")
 
@@ -476,6 +482,53 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
+    /** Latest searches, newest first (one per line). */
+    fun observeRecentSearches(): Flow<List<String>> =
+        context.settingsDataStore.data.map { prefs -> prefs[recentSearchesKey]?.lines()?.filter { it.isNotBlank() }.orEmpty() }
+
+    suspend fun addRecentSearch(query: String) {
+        val trimmed = query.trim().replace('\n', ' ')
+        if (trimmed.length < 2) return
+        context.settingsDataStore.edit { prefs ->
+            val current = prefs[recentSearchesKey]?.lines()?.filter { it.isNotBlank() }.orEmpty()
+            val updated = (listOf(trimmed) + current.filterNot { it.equals(trimmed, ignoreCase = true) }).take(MAX_RECENT_SEARCHES)
+            prefs[recentSearchesKey] = updated.joinToString("\n")
+        }
+    }
+
+    suspend fun clearRecentSearches() {
+        context.settingsDataStore.edit { prefs -> prefs.remove(recentSearchesKey) }
+    }
+
+    /** Searches saved by name, in the order they were saved. */
+    fun observeSavedFilters(): Flow<List<SavedFilter>> =
+        context.settingsDataStore.data.map { prefs -> SavedFilter.decode(prefs[savedFiltersKey]) }
+
+    /** Saves [filter] under its name, replacing one with the same name. */
+    suspend fun saveFilter(filter: SavedFilter) {
+        context.settingsDataStore.edit { prefs ->
+            val current = SavedFilter.decode(prefs[savedFiltersKey]).filterNot { it.name.equals(filter.name, ignoreCase = true) }
+            prefs[savedFiltersKey] = SavedFilter.encode(current + filter)
+        }
+    }
+
+    suspend fun deleteSavedFilter(name: String) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[savedFiltersKey] = SavedFilter.encode(SavedFilter.decode(prefs[savedFiltersKey]).filterNot { it.name == name })
+        }
+    }
+
+    /** What the user said they have at home, for "What can I cook?" (one per line). */
+    fun observePantryItems(): Flow<List<String>> =
+        context.settingsDataStore.data.map { prefs -> prefs[pantryItemsKey]?.lines()?.filter { it.isNotBlank() }.orEmpty() }
+
+    suspend fun setPantryItems(items: List<String>) {
+        context.settingsDataStore.edit { prefs ->
+            val cleaned = items.map { it.trim().replace('\n', ' ') }.filter { it.isNotEmpty() }.distinctBy { it.lowercase() }
+            if (cleaned.isEmpty()) prefs.remove(pantryItemsKey) else prefs[pantryItemsKey] = cleaned.joinToString("\n")
+        }
+    }
+
     /** Whether the books screen shows the tip of the day (on unless turned off). */
     fun observeTipOfTheDayEnabled(): Flow<Boolean> =
         context.settingsDataStore.data.map { prefs -> prefs[tipOfTheDayKey] ?: true }
@@ -504,7 +557,7 @@ class SettingsRepository(private val context: Context) {
     private val backupStringKeys = listOf(
         themeModeKey, colorThemeKey, photoFrameKey, shoppingAuthorKey, recipeListViewModeKey,
         recipeBookListViewModeKey, visionProviderKey, customBaseUrlKey, aiProviderOrderKey, aiDisabledProvidersKey, ttsVoiceNameKey, dictationLanguageKey,
-        packsCatalogRepoKey, savedTipsKey
+        packsCatalogRepoKey, savedTipsKey, recentSearchesKey, savedFiltersKey, pantryItemsKey
     ) + providerKeys.values.map { it.model }
     private val backupBooleanKeys = listOf(
         aiEnabledKey, aiHealthEnabledKey, aiNutritionEnabledKey, shoppingImagesKey, recipeBookListGroupedKey,
