@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.30:
+• Foto del plato al importar: el asistente comprueba que es el plato terminado (no texto ni otra cosa), la recorta sin márgenes y pone como principal la del plato entero.
+• «Desde fotos» unificado: haz o elige varias fotos y Miga averigua cuáles son de la misma receta y cuáles son recetas distintas.
+• Menú «Nueva receta» reordenado, con una explicación en cada opción.

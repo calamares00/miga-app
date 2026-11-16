@@ -25,11 +25,10 @@ Each book is a recipe collection with its own cover: your mum's, a friend's or o
 
 From a book, tap **New recipe** and choose where it comes from:
 
-- **Manual**: you write the recipe yourself.
-- **From a file**: imports a Miga file (.miga or .zip) or a JSON export.
-- **From an image** ✨: take a photo or pick one from the gallery. If the recipe continues on another page, add more photos. The assistant reads the text, crops the photo of the dish and fills in the editor so you only need to check it.
-- **Several recipes from images** ✨: pick many photos and the app creates one recipe for each.
-- **From a URL** ✨: paste the link to a recipe on any website.
+- **Write it yourself**: an empty recipe for you to fill in.
+- **From photos** ✨: take photos or pick up to 20 from the gallery, of one recipe or several. Miga works out which photos belong to the same recipe (two pages, or the recipe and a photo of the dish) and which are different recipes. If it is a single one, the editor opens already filled in for you to check; if there are several, they are saved one by one and you see the result in a list. The assistant reads the text and looks for the photo of the dish: it checks that it really is the finished dish, crops it without text or margins and makes the one showing the whole dish the main photo.
+- **From a web page** ✨: paste the link to a recipe on any website.
+- **From a Miga file**: imports recipes exported from Miga (.miga, .zip or JSON).
 - **Suggest a recipe** ✨: type the name of a dish and choose from the suggestions.
 
 Options marked ✨ are done by the kitchen assistant and only appear once it is set up.

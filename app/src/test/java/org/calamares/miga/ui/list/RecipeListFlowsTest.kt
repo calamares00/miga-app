@@ -64,8 +64,7 @@ class RecipeListFlowsTest {
                     onRecipeClick = {},
                     onEditRecipeClick = {},
                     onAddRecipeClick = {},
-                    onAddRecipeFromPhoto = {},
-                    onAddRecipesBulk = {},
+                    onAddRecipesFromPhotos = {},
                     onSearchDishClick = {},
                     onAddRecipeFromUrl = {}
                 )
