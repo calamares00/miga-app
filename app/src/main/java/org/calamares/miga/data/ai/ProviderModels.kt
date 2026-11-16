@@ -78,16 +78,13 @@ object ProviderModels {
      * Whether [model] reads images, to mark it in the pickers: every Gemini and Claude model does;
      * OpenRouter's catalogue and Mistral's list say it; for the rest it comes from the model name.
      */
-    fun readsImages(provider: AiProvider, model: String): Boolean = when (provider) {
-        AiProvider.GEMINI, AiProvider.ANTHROPIC -> true
-        AiProvider.OPENAI -> openAiModelReadsImages(model)
-        AiProvider.DEEPSEEK -> deepSeekModelReadsImages(model)
-        AiProvider.OPENROUTER -> OpenRouterModels.cached()?.firstOrNull { it.id == model }?.supportsImages ?: false
-        AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> knownImageSupport(provider, model) ?: guessModelReadsImages(provider, model)
-    }
+    fun readsImages(provider: AiProvider, model: String): Boolean =
+        knownImageSupport(provider, model) ?: (provider != AiProvider.OPENROUTER && guessModelReadsImages(provider, model))
 
     /** Whether [model] reads images according to the provider's own list; null when unknown. */
-    fun knownImageSupport(provider: AiProvider, model: String): Boolean? = imageSupport[provider to model]
+    fun knownImageSupport(provider: AiProvider, model: String): Boolean? =
+        if (provider == AiProvider.OPENROUTER) OpenRouterModels.cached()?.firstOrNull { it.id == model }?.supportsImages
+        else imageSupport[provider to model]
 
     private fun bearer(apiKey: String): Map<String, String> =
         if (apiKey.isBlank()) emptyMap() else mapOf("Authorization" to "Bearer $apiKey")

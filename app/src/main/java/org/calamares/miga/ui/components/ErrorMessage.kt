@@ -6,11 +6,6 @@ import org.calamares.miga.data.ai.OpenRouterModels
 import kotlinx.coroutines.flow.first
 
 import org.calamares.miga.data.ai.AiProvider
-import org.calamares.miga.data.ai.DEFAULT_GEMINI_MODEL
-import org.calamares.miga.data.ai.DEFAULT_ANTHROPIC_MODEL
-import org.calamares.miga.data.ai.DEFAULT_OPENAI_MODEL
-import org.calamares.miga.data.ai.DEFAULT_DEEPSEEK_MODEL
-import org.calamares.miga.data.ai.GENERIC_PROVIDERS
 import org.calamares.miga.data.ai.defaultModelFor
 import org.calamares.miga.data.ai.ProviderModels
 import org.calamares.miga.MigaApp
@@ -94,88 +89,47 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
     val scope = rememberCoroutineScope()
     val order by settings.observeProviderOrder().collectAsStateWithLifecycle(initialValue = AiProvider.entries.toList())
     val disabled by settings.observeDisabledProviders().collectAsStateWithLifecycle(initialValue = emptySet())
-    val geminiKey by settings.observeGeminiApiKey().collectAsStateWithLifecycle(initialValue = "")
-    val anthropicKey by settings.observeAnthropicApiKey().collectAsStateWithLifecycle(initialValue = "")
-    val openRouterKey by settings.observeOpenRouterApiKey().collectAsStateWithLifecycle(initialValue = "")
-    val geminiModel by settings.observeGeminiModel().collectAsStateWithLifecycle(initialValue = DEFAULT_GEMINI_MODEL)
-    val anthropicModel by settings.observeAnthropicModel().collectAsStateWithLifecycle(initialValue = DEFAULT_ANTHROPIC_MODEL)
-    val openRouterModel by settings.observeOpenRouterModel().collectAsStateWithLifecycle(initialValue = "")
-    val openAiKey by settings.observeOpenAiApiKey().collectAsStateWithLifecycle(initialValue = "")
-    val openAiModel by settings.observeOpenAiModel().collectAsStateWithLifecycle(initialValue = DEFAULT_OPENAI_MODEL)
-    val deepSeekKey by settings.observeDeepSeekApiKey().collectAsStateWithLifecycle(initialValue = "")
-    val deepSeekModel by settings.observeDeepSeekModel().collectAsStateWithLifecycle(initialValue = DEFAULT_DEEPSEEK_MODEL)
-    val genericKeys = GENERIC_PROVIDERS.associateWith { settings.observeGenericApiKey(it).collectAsStateWithLifecycle(initialValue = "").value }
-    val genericModels = GENERIC_PROVIDERS.associateWith { settings.observeGenericModel(it).collectAsStateWithLifecycle(initialValue = defaultModelFor(it)).value }
+    val keys = AiProvider.entries.associateWith { settings.observeApiKey(it).collectAsStateWithLifecycle(initialValue = "").value }
+    val models = AiProvider.entries.associateWith { settings.observeModel(it).collectAsStateWithLifecycle(initialValue = defaultModelFor(it)).value }
     val customBaseUrl by settings.observeCustomBaseUrl().collectAsStateWithLifecycle(initialValue = "")
     /** Models of the user's account for the providers that list them (see ProviderModels). */
     val accountModels = remember { mutableStateMapOf<AiProvider, List<String>>() }
-    LaunchedEffect(geminiKey, anthropicKey, openAiKey, deepSeekKey, genericKeys, customBaseUrl) {
-        listOf(AiProvider.GEMINI to geminiKey, AiProvider.ANTHROPIC to anthropicKey, AiProvider.OPENAI to openAiKey, AiProvider.DEEPSEEK to deepSeekKey)
-            .filter { it.second.isNotBlank() }
-            .forEach { (provider, key) -> ProviderModels.fetch(provider, key)?.let { accountModels[provider] = it } }
-        for (provider in GENERIC_PROVIDERS) {
-            val key = genericKeys[provider].orEmpty()
+    LaunchedEffect(keys, customBaseUrl) {
+        for (provider in AiProvider.entries - AiProvider.OPENROUTER) {
+            val key = keys[provider].orEmpty()
+            if (key.isBlank() && provider != AiProvider.CUSTOM) continue
             val baseUrl = customBaseUrl.takeIf { provider == AiProvider.CUSTOM }
             ProviderModels.fetch(provider, key, baseUrl)?.let { accountModels[provider] = it }
         }
     }
     var openRouterCatalog by remember { mutableStateOf(OpenRouterModels.cached().orEmpty()) }
-    LaunchedEffect(openRouterKey) {
-        if (openRouterKey.isNotBlank()) OpenRouterModels.fetch()?.let { openRouterCatalog = it }
+    LaunchedEffect(keys[AiProvider.OPENROUTER]) {
+        if (!keys[AiProvider.OPENROUTER].isNullOrBlank()) OpenRouterModels.fetch()?.let { openRouterCatalog = it }
     }
     /** Model chosen in this sheet for each provider (no entry keeps the saved one). */
     val selection = remember { mutableStateMapOf<AiProvider, String>() }
 
-    fun savedModel(provider: AiProvider): String = when (provider) {
-        AiProvider.GEMINI -> geminiModel
-        AiProvider.ANTHROPIC -> anthropicModel
-        AiProvider.OPENROUTER -> openRouterModel
-        AiProvider.OPENAI -> openAiModel
-        AiProvider.DEEPSEEK -> deepSeekModel
-        AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> genericModels[provider].orEmpty()
-    }
+    fun savedModel(provider: AiProvider): String = models[provider].orEmpty()
 
-    fun hasKey(provider: AiProvider): Boolean = when (provider) {
-        AiProvider.GEMINI -> geminiKey.isNotBlank()
-        AiProvider.ANTHROPIC -> anthropicKey.isNotBlank()
-        AiProvider.OPENROUTER -> openRouterKey.isNotBlank()
-        AiProvider.OPENAI -> openAiKey.isNotBlank()
-        AiProvider.DEEPSEEK -> deepSeekKey.isNotBlank()
-        AiProvider.MISTRAL, AiProvider.GROQ -> genericKeys[provider].orEmpty().isNotBlank()
-        AiProvider.CUSTOM -> customBaseUrl.isNotBlank()
-    }
+    fun hasKey(provider: AiProvider): Boolean =
+        if (provider == AiProvider.CUSTOM) customBaseUrl.isNotBlank() else keys[provider].orEmpty().isNotBlank()
 
     fun modelsFor(provider: AiProvider): List<String> {
         val saved = listOfNotNull(savedModel(provider).takeIf { it.isNotBlank() })
-        return when (provider) {
-            AiProvider.GEMINI -> (saved + accountModels[provider].orEmpty()).distinct()
-            AiProvider.ANTHROPIC -> (saved + accountModels[provider].orEmpty()).distinct()
-            AiProvider.OPENAI -> (saved + accountModels[provider].orEmpty()).distinct()
-            AiProvider.DEEPSEEK -> (saved + accountModels[provider].orEmpty()).distinct()
-            AiProvider.MISTRAL -> (saved + accountModels[provider].orEmpty()).distinct()
-            AiProvider.GROQ -> (saved + accountModels[provider].orEmpty()).distinct()
-            AiProvider.CUSTOM -> (saved + accountModels[provider].orEmpty()).distinct()
-            // The first free models of the catalogue plus the chosen one; the full catalogue is in
-            // Settings.
-            AiProvider.OPENROUTER -> (saved + openRouterCatalog.filter { it.isFree }.take(15).map { it.id }).distinct()
-        }
+        // OpenRouter: the first free models of the catalogue plus the chosen one; the full
+        // catalogue is in Settings.
+        val offered = if (provider == AiProvider.OPENROUTER) openRouterCatalog.filter { it.isFree }.take(15).map { it.id }
+        else accountModels[provider].orEmpty()
+        return (saved + offered).distinct()
     }
 
     fun saveAndRetry() {
         scope.launch {
             for ((provider, model) in selection.toMap()) {
-                when (provider) {
-                    AiProvider.GEMINI -> settings.setGeminiModel(model)
-                    AiProvider.ANTHROPIC -> settings.setAnthropicModel(model)
-                    AiProvider.OPENAI -> settings.setOpenAiModel(model)
-                    AiProvider.DEEPSEEK -> settings.setDeepSeekModel(model)
-                    AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM ->
-                        settings.setGenericModel(provider, model, ProviderModels.knownImageSupport(provider, model))
-                    AiProvider.OPENROUTER -> settings.setOpenRouterModel(
-                        model,
-                        openRouterCatalog.firstOrNull { it.id == model }?.supportsImages ?: settings.observeOpenRouterModelImages().first()
-                    )
-                }
+                // An OpenRouter model missing from the catalogue keeps what was known of the saved one.
+                val readsImages = ProviderModels.knownImageSupport(provider, model)
+                    ?: settings.observeModelImages(provider).first().takeIf { provider == AiProvider.OPENROUTER }
+                settings.setModel(provider, model, readsImages)
             }
             onPicked()
         }

@@ -367,8 +367,6 @@
     <string name="miga_page_x_x">"Miga · página %1$s de %2$s"</string>
     <string name="my_lists">"Mis listas"</string>
     <string name="my_templates">"Mis plantillas"</string>
-    <string name="claude_model">"Modelo de Claude"</string>
-    <string name="gemini_model">"Modelo de Gemini"</string>
     <string name="moderate">"Moderada"</string>
     <string name="cooking_mode">"Modo cocina"</string>
     <string name="shop_mode">"Modo tienda"</string>
@@ -1019,7 +1017,6 @@
     <string name="export_ready_x">"«%1$s» (%2$s) está listo. Guárdalo en tus archivos o compártelo."</string>
     <string name="api_key_openai">"Clave de API de OpenAI"</string>
     <string name="get_one_platform_openai_com">"Consíguela en platform.openai.com"</string>
-    <string name="openai_model">"Modelo de OpenAI"</string>
     <string name="e_g_gpt_5_mini">"p. ej., gpt-5-mini"</string>
     <string name="ai_models_loading">"Cargando los modelos de tu cuenta…"</string>
     <string name="ai_models_from_account_n">"%1$d modelos disponibles con tu clave"</string>
@@ -1312,7 +1309,6 @@
     <string name="tip_category_kitchen">"Utensilios"</string>
     <string name="api_key_deepseek">"Clave de API de DeepSeek"</string>
     <string name="get_one_platform_deepseek_com">"Consíguela en platform.deepseek.com"</string>
-    <string name="deepseek_model">"Modelo de DeepSeek"</string>
     <string name="e_g_deepseek_flash">"p. ej., deepseek-flash"</string>
     <string name="deepseek_note">"Solo los modelos Flash leen fotos. DeepSeek procesa los datos en servidores de China."</string>
     <string name="ai_provider_custom">"Compatible con OpenAI (personalizado)"</string>
