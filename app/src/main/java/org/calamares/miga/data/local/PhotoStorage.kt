@@ -174,9 +174,14 @@ object PhotoStorage {
      * model, without writing to disk. Optimised for upload size (see [MAX_VISION_DIMENSION]), not
      * for display.
      */
-    fun readResizedJpegBytes(context: Context, uri: Uri): ByteArray? {
-        val upright = loadUprightSampled(context, uri, MAX_VISION_DIMENSION) ?: return null
-        val resized = downscaleIfNeeded(upright, MAX_VISION_DIMENSION)
+    fun readResizedJpegBytes(context: Context, uri: Uri, maxDimension: Int = MAX_VISION_DIMENSION): ByteArray? {
+        val upright = loadUprightSampled(context, uri, maxDimension) ?: return null
+        return jpegBytes(upright, maxDimension)
+    }
+
+    /** [bitmap] downscaled to [maxDimension] as JPEG bytes ready to send to an AI model. */
+    fun jpegBytes(bitmap: Bitmap, maxDimension: Int): ByteArray {
+        val resized = downscaleIfNeeded(bitmap, maxDimension)
         return ByteArrayOutputStream().use { out ->
             resized.compress(Bitmap.CompressFormat.JPEG, VISION_JPEG_QUALITY, out)
             out.toByteArray()
