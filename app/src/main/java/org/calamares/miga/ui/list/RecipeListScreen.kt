@@ -1,11 +1,17 @@
 package org.calamares.miga.ui.list
 
+import org.calamares.miga.ui.components.ButtonContent
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.outlined.MenuBook
+import org.calamares.miga.ui.components.EmptyState
+import org.calamares.miga.ui.components.UndoDeletionSnackbar
 import org.calamares.miga.ui.components.rememberCameraCapture
 import org.calamares.miga.ui.components.ShareSheet
 import org.calamares.miga.data.export.ShareAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.material.icons.filled.AutoAwesome
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.GRID_CONTENT_WIDTH
 import org.calamares.miga.ui.components.ResultsHeader
@@ -30,7 +36,6 @@ import androidx.compose.material.icons.filled.UnfoldLess
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.SelectAll
 import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -60,9 +65,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
@@ -173,6 +176,7 @@ fun RecipeListScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    UndoDeletionSnackbar(snackbarHostState)
 
     val importRecipeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -332,16 +336,26 @@ fun RecipeListScreen(
             }
 
             if (uiState.groups.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = if (uiState.totalCount == 0) {
-                            L10n.str(R.string.dont_have_recipes_yet_ntap)
-                        } else {
-                            L10n.str(R.string.no_recipes_match_search_filters)
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                if (uiState.totalCount == 0) {
+                    EmptyState(
+                        icon = Icons.Outlined.MenuBook,
+                        title = L10n.str(R.string.empty_book_title),
+                        body = L10n.str(R.string.empty_book_body),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        if (!uiState.isPackBook) {
+                            Button(onClick = { showNewRecipeSheet = true }) { ButtonContent(Icons.Filled.Add, L10n.str(R.string.new_recipe)) }
+                        }
+                    }
+                } else {
+                    EmptyState(
+                        icon = Icons.Filled.SearchOff,
+                        title = L10n.str(R.string.no_results),
+                        body = L10n.str(R.string.no_recipes_match_search_filters),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        OutlinedButton(onClick = { viewModel.clearFilters() }) { Text(L10n.str(R.string.clear_filters)) }
+                    }
                 }
             } else if (viewMode == RecipeListViewMode.GRID) {
                 // Two columns on a phone, more on a tablet, so cards keep their size.

@@ -126,6 +126,7 @@ import org.calamares.miga.ui.settings.AboutScreen
 import org.calamares.miga.ui.settings.ChangelogScreen
 import org.calamares.miga.ui.settings.HelpScreen
 import org.calamares.miga.ui.settings.SettingsHomeScreen
+import org.calamares.miga.ui.settings.SettingsPanes
 import org.calamares.miga.ui.settings.SettingsSection
 import org.calamares.miga.ui.settings.SettingsSectionScreen
 import org.calamares.miga.ui.settings.SettingsViewModel
@@ -380,7 +381,7 @@ private fun NavGraphBuilder.screens(
 
     screen(Destinations.SEARCH_ROUTE) {
         val viewModel: GlobalSearchViewModel = viewModel(
-            factory = viewModelFactory { initializer { GlobalSearchViewModel(repository) } }
+            factory = viewModelFactory { initializer { GlobalSearchViewModel(repository, settingsRepository) } }
         )
         GlobalSearchScreen(
             viewModel = viewModel,
@@ -391,7 +392,7 @@ private fun NavGraphBuilder.screens(
 
     screen(Destinations.FAVORITES_ROUTE) {
         val viewModel: GlobalSearchViewModel = viewModel(
-            factory = viewModelFactory { initializer { GlobalSearchViewModel(repository, initialOnlyFavorites = true) } }
+            factory = viewModelFactory { initializer { GlobalSearchViewModel(repository, settingsRepository, initialOnlyFavorites = true) } }
         )
         GlobalSearchScreen(
             viewModel = viewModel,
@@ -656,14 +657,30 @@ private fun NavGraphBuilder.screens(
             factory = viewModelFactory { initializer { SettingsViewModel(repository, settingsRepository) } }
         )
         val hasChangelog = remember { settingsRepository.listAvailableChangelogVersionCodes().isNotEmpty() }
-        SettingsHomeScreen(
-            viewModel = viewModel,
-            hasChangelog = hasChangelog,
-            onOpenSection = { navController.navigate(Destinations.settingsSection(it.id)) },
-            onOpenStats = { navController.navigate(Destinations.STATS_ROUTE) },
-            onOpenChangelog = { navController.navigate(Destinations.HELP_CHANGELOG_ROUTE) },
-            onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
-            onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) }
+        SettingsPanes(
+            home = { selected, onOpenInPane ->
+                SettingsHomeScreen(
+                    viewModel = viewModel,
+                    hasChangelog = hasChangelog,
+                    onOpenSection = onOpenInPane ?: { navController.navigate(Destinations.settingsSection(it.id)) },
+                    onOpenStats = { navController.navigate(Destinations.STATS_ROUTE) },
+                    onOpenChangelog = { navController.navigate(Destinations.HELP_CHANGELOG_ROUTE) },
+                    onHelp = { navController.navigate(Destinations.HELP_ROUTE) },
+                    onAbout = { navController.navigate(Destinations.ABOUT_ROUTE) },
+                    selectedSection = selected
+                )
+            },
+            section = { section ->
+                SettingsSectionScreen(
+                    viewModel = viewModel,
+                    section = section,
+                    onBack = null,
+                    onManageContent = { kind -> navController.navigate(Destinations.manageContent(kind)) },
+                    onCleanUpContent = { navController.navigate(Destinations.CONTENT_CLEANUP_ROUTE) },
+                    onOpenPacksCatalog = { navController.navigate(Destinations.PACKS_CATALOG_ROUTE) },
+                    onOpenSyncConnections = { navController.navigate(Destinations.SYNC_CONNECTIONS_ROUTE) }
+                )
+            }
         )
     }
 
@@ -707,7 +724,7 @@ private fun NavGraphBuilder.screens(
         val request = remember { SearchRequests.take() }
         val title = rememberSaveable { request?.title ?: L10n.str(R.string.search_recipes_2) }
         val viewModel: GlobalSearchViewModel = viewModel(
-            factory = viewModelFactory { initializer { GlobalSearchViewModel(repository, initialFilter = request?.filter) } }
+            factory = viewModelFactory { initializer { GlobalSearchViewModel(repository, settingsRepository, initialFilter = request?.filter) } }
         )
         GlobalSearchScreen(
             viewModel = viewModel,

@@ -415,10 +415,9 @@ class RecipeDetailViewModel(
         viewModelScope.launch { repository.shopping.addIngredientsToShoppingList(current.ingredientGroups.flatMap { it.ingredients }) }
     }
 
+    /** Leaves the recipe at once; the screen behind offers "Undo" for a while (see PendingDeletions). */
     fun deleteRecipe(onDeleted: () -> Unit) {
-        viewModelScope.launch {
-            repository.deleteRecipe(recipeId)
-            onDeleted()
-        }
+        repository.deleteRecipesWithUndo(setOf(recipeId), L10n.str(R.string.recipe_deleted))
+        onDeleted()
     }
 }

@@ -1,10 +1,12 @@
 package org.calamares.miga.data.local
 
+import org.calamares.miga.data.model.SavedFilter
 import org.calamares.miga.R
 import org.calamares.miga.L10n
 import android.content.Context
 import org.calamares.miga.data.voice.DictationLanguages
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -18,13 +20,6 @@ import org.calamares.miga.data.model.PhotoFrame
 import org.calamares.miga.data.model.RecipeListViewMode
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
-import org.calamares.miga.data.ai.DEFAULT_ANTHROPIC_MODEL
-import org.calamares.miga.data.ai.DEFAULT_GEMINI_MODEL
-import org.calamares.miga.data.ai.DEFAULT_OPENAI_MODEL
-import org.calamares.miga.data.ai.openAiModelReadsImages
-import org.calamares.miga.data.ai.DEFAULT_DEEPSEEK_MODEL
-import org.calamares.miga.data.ai.deepSeekModelReadsImages
-import org.calamares.miga.data.ai.GENERIC_PROVIDERS
 import org.calamares.miga.data.ai.defaultModelFor
 import org.calamares.miga.data.ai.guessModelReadsImages
 import org.calamares.miga.data.ai.AiProvider
@@ -36,6 +31,8 @@ import kotlinx.coroutines.flow.map
 private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 
 private const val ENCRYPTED_KEY_PREFIX = "enc1:"
+
+private const val MAX_RECENT_SEARCHES = 8
 
 /** Decrypting through the Keystore on every settings change would be wasteful: cipher text -> key. */
 private val decryptedKeys = java.util.concurrent.ConcurrentHashMap<String, String>()
@@ -62,31 +59,22 @@ class SettingsRepository(private val context: Context) {
     private val recipeBookListViewModeKey = stringPreferencesKey("recipe_book_list_view_mode")
     private val recipeBookListGroupedKey = booleanPreferencesKey("recipe_book_list_grouped")
     private val visionProviderKey = stringPreferencesKey("vision_provider")
-    private val geminiApiKeyKey = stringPreferencesKey("gemini_api_key")
-    private val geminiModelKey = stringPreferencesKey("gemini_model")
-    private val anthropicApiKeyKey = stringPreferencesKey("anthropic_api_key")
-    private val anthropicModelKey = stringPreferencesKey("anthropic_model")
-    private val openRouterApiKeyKey = stringPreferencesKey("openrouter_api_key")
-    private val openRouterModelKey = stringPreferencesKey("openrouter_model")
-    private val openRouterModelImagesKey = booleanPreferencesKey("openrouter_model_images")
-    private val openAiApiKeyKey = stringPreferencesKey("openai_api_key")
-    private val openAiModelKey = stringPreferencesKey("openai_model")
-    private val deepSeekApiKeyKey = stringPreferencesKey("deepseek_api_key")
-    private val deepSeekModelKey = stringPreferencesKey("deepseek_model")
     private val customBaseUrlKey = stringPreferencesKey("custom_ai_base_url")
 
-    /** Settings of the providers configured the same way (see GENERIC_PROVIDERS). */
-    private class GenericProviderKeys(provider: AiProvider) {
+    /**
+     * Key, model and "reads images" setting of each provider. The names follow the provider
+     * ("gemini_api_key", "openrouter_model"...), as earlier versions stored them.
+     */
+    private class ProviderKeys(provider: AiProvider) {
         private val prefix = provider.name.lowercase()
         val apiKey = stringPreferencesKey("${prefix}_api_key")
         val model = stringPreferencesKey("${prefix}_model")
         val readsImages = booleanPreferencesKey("${prefix}_model_images")
     }
 
-    private val genericKeys = GENERIC_PROVIDERS.associateWith { GenericProviderKeys(it) }
+    private val providerKeys = AiProvider.entries.associateWith { ProviderKeys(it) }
 
-    private fun generic(provider: AiProvider): GenericProviderKeys =
-        genericKeys[provider] ?: error("$provider has settings of its own")
+    private fun keys(provider: AiProvider): ProviderKeys = providerKeys.getValue(provider)
     private val aiProviderOrderKey = stringPreferencesKey("ai_provider_order")
     private val aiDisabledProvidersKey = stringPreferencesKey("ai_disabled_providers")
     private val ttsVoiceNameKey = stringPreferencesKey("tts_voice_name")
@@ -97,6 +85,9 @@ class SettingsRepository(private val context: Context) {
     private val dismissedUpdateKey = stringPreferencesKey("dismissed_update_version")
     private val dismissedPackUpdatesKey = stringPreferencesKey("dismissed_pack_updates")
     private val savedTipsKey = stringPreferencesKey("saved_tips")
+    private val recentSearchesKey = stringPreferencesKey("recent_searches")
+    private val savedFiltersKey = stringPreferencesKey("saved_filters")
+    private val pantryItemsKey = stringPreferencesKey("pantry_items")
     private val tipOfTheDayKey = booleanPreferencesKey("tip_of_the_day_enabled")
     private val tipOfTheDayClosedKey = longPreferencesKey("tip_of_the_day_closed_day")
 
@@ -125,7 +116,7 @@ class SettingsRepository(private val context: Context) {
     /** Encrypts the API keys stored in plain text by earlier versions. Run once at startup. */
     suspend fun encryptStoredApiKeys() {
         context.settingsDataStore.edit { prefs ->
-            (listOf(geminiApiKeyKey, anthropicApiKeyKey, openRouterApiKeyKey, openAiApiKeyKey, deepSeekApiKeyKey) + genericKeys.values.map { it.apiKey }).forEach { key ->
+            providerKeys.values.map { it.apiKey }.forEach { key ->
                 val stored = prefs[key]
                 if (!stored.isNullOrBlank() && !stored.startsWith(ENCRYPTED_KEY_PREFIX)) prefs[key] = encodeApiKey(stored)
             }
@@ -364,125 +355,36 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[aiProviderOrderKey] = (order + AiProvider.entries).distinct().joinToString(",") { it.name } }
     }
 
-    /** Gemini API key entered by the user; empty when not configured. */
-    fun observeGeminiApiKey(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> decodeApiKey(prefs[geminiApiKeyKey]) }
+    /** API key of [provider] (optional for a custom server); empty when not set. */
+    fun observeApiKey(provider: AiProvider): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> decodeApiKey(prefs[keys(provider).apiKey]) }
 
-    suspend fun setGeminiApiKey(apiKey: String) {
-        context.settingsDataStore.edit { prefs -> prefs[geminiApiKeyKey] = encodeApiKey(apiKey) }
+    suspend fun setApiKey(provider: AiProvider, apiKey: String) {
+        context.settingsDataStore.edit { prefs -> prefs[keys(provider).apiKey] = encodeApiKey(apiKey) }
     }
 
-    /** Gemini model id, from GEMINI_MODELS or typed by hand. */
-    fun observeGeminiModel(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> prefs[geminiModelKey] ?: DEFAULT_GEMINI_MODEL }
-
-    suspend fun setGeminiModel(model: String) {
-        context.settingsDataStore.edit { prefs -> prefs[geminiModelKey] = model.trim() }
-    }
-
-    /** Anthropic (Claude) API key entered by the user; empty when not configured. */
-    fun observeAnthropicApiKey(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> decodeApiKey(prefs[anthropicApiKeyKey]) }
-
-    suspend fun setAnthropicApiKey(apiKey: String) {
-        context.settingsDataStore.edit { prefs -> prefs[anthropicApiKeyKey] = encodeApiKey(apiKey) }
-    }
-
-    /** Claude model id, from ANTHROPIC_MODELS or typed by hand. */
-    fun observeAnthropicModel(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> prefs[anthropicModelKey] ?: DEFAULT_ANTHROPIC_MODEL }
-
-    suspend fun setAnthropicModel(model: String) {
-        context.settingsDataStore.edit { prefs -> prefs[anthropicModelKey] = model.trim() }
-    }
-
-    /** OpenRouter API key entered by the user; empty when not configured. */
-    fun observeOpenRouterApiKey(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> decodeApiKey(prefs[openRouterApiKeyKey]) }
-
-    suspend fun setOpenRouterApiKey(apiKey: String) {
-        context.settingsDataStore.edit { prefs -> prefs[openRouterApiKeyKey] = encodeApiKey(apiKey) }
-    }
-
-    /** OpenRouter model id (for example "vendor/model:free"); empty until the user picks one. */
-    fun observeOpenRouterModel(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> prefs[openRouterModelKey].orEmpty() }
-
-    /**
-     * Whether the chosen OpenRouter model accepts images (stored when picked from the catalogue).
-     */
-    fun observeOpenRouterModelImages(): Flow<Boolean> =
-        context.settingsDataStore.data.map { prefs -> prefs[openRouterModelImagesKey] ?: true }
-
-    suspend fun setOpenRouterModel(model: String, supportsImages: Boolean) {
-        context.settingsDataStore.edit { prefs ->
-            prefs[openRouterModelKey] = model.trim()
-            prefs[openRouterModelImagesKey] = supportsImages
-        }
-    }
-
-    /** OpenAI API key entered by the user; empty when not configured. */
-    fun observeOpenAiApiKey(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> decodeApiKey(prefs[openAiApiKeyKey]) }
-
-    suspend fun setOpenAiApiKey(apiKey: String) {
-        context.settingsDataStore.edit { prefs -> prefs[openAiApiKeyKey] = encodeApiKey(apiKey) }
-    }
-
-    /** OpenAI model id, from the account's list (see ProviderModels) or typed by hand. */
-    fun observeOpenAiModel(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> prefs[openAiModelKey] ?: DEFAULT_OPENAI_MODEL }
-
-    suspend fun setOpenAiModel(model: String) {
-        context.settingsDataStore.edit { prefs -> prefs[openAiModelKey] = model.trim() }
-    }
-
-    /** DeepSeek API key entered by the user; empty when not configured. */
-    fun observeDeepSeekApiKey(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> decodeApiKey(prefs[deepSeekApiKeyKey]) }
-
-    suspend fun setDeepSeekApiKey(apiKey: String) {
-        context.settingsDataStore.edit { prefs -> prefs[deepSeekApiKeyKey] = encodeApiKey(apiKey) }
-    }
-
-    /** DeepSeek model id, from the account's list (see ProviderModels) or typed by hand. */
-    fun observeDeepSeekModel(): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> prefs[deepSeekModelKey] ?: DEFAULT_DEEPSEEK_MODEL }
-
-    suspend fun setDeepSeekModel(model: String) {
-        context.settingsDataStore.edit { prefs -> prefs[deepSeekModelKey] = model.trim() }
-    }
-
-    /** API key of a generic provider (optional for a custom server); empty when not set. */
-    fun observeGenericApiKey(provider: AiProvider): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> decodeApiKey(prefs[generic(provider).apiKey]) }
-
-    suspend fun setGenericApiKey(provider: AiProvider, apiKey: String) {
-        context.settingsDataStore.edit { prefs -> prefs[generic(provider).apiKey] = encodeApiKey(apiKey) }
-    }
-
-    /** Model of a generic provider; its default until one is chosen (none for a custom server). */
-    fun observeGenericModel(provider: AiProvider): Flow<String> =
-        context.settingsDataStore.data.map { prefs -> prefs[generic(provider).model] ?: defaultModelFor(provider) }
+    /** Model of [provider]; its default until one is chosen (none for OpenRouter or a custom server). */
+    fun observeModel(provider: AiProvider): Flow<String> =
+        context.settingsDataStore.data.map { prefs -> prefs[keys(provider).model] ?: defaultModelFor(provider) }
 
     /** Chooses [model] and whether it reads images (null keeps a guess from its name). */
-    suspend fun setGenericModel(provider: AiProvider, model: String, readsImages: Boolean? = null) {
+    suspend fun setModel(provider: AiProvider, model: String, readsImages: Boolean? = null) {
         val trimmed = model.trim()
         context.settingsDataStore.edit { prefs ->
-            prefs[generic(provider).model] = trimmed
-            prefs[generic(provider).readsImages] = readsImages ?: guessModelReadsImages(provider, trimmed)
+            prefs[keys(provider).model] = trimmed
+            prefs[keys(provider).readsImages] = readsImages ?: guessModelReadsImages(provider, trimmed)
         }
     }
 
-    /** Whether the model of a generic provider reads images: chosen in Settings, or guessed from its name. */
-    fun observeGenericModelImages(provider: AiProvider): Flow<Boolean> =
-        context.settingsDataStore.data.map { prefs ->
-            prefs[generic(provider).readsImages]
-                ?: guessModelReadsImages(provider, prefs[generic(provider).model] ?: defaultModelFor(provider))
-        }
+    /** Whether the model of [provider] reads images: chosen in Settings, or guessed from its name. */
+    fun observeModelImages(provider: AiProvider): Flow<Boolean> =
+        context.settingsDataStore.data.map { prefs -> modelImages(prefs, provider) }
 
-    suspend fun setGenericModelImages(provider: AiProvider, readsImages: Boolean) {
-        context.settingsDataStore.edit { prefs -> prefs[generic(provider).readsImages] = readsImages }
+    private fun modelImages(prefs: Preferences, provider: AiProvider): Boolean =
+        prefs[keys(provider).readsImages] ?: guessModelReadsImages(provider, prefs[keys(provider).model] ?: defaultModelFor(provider))
+
+    suspend fun setModelImages(provider: AiProvider, readsImages: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[keys(provider).readsImages] = readsImages }
     }
 
     /** Address of the custom OpenAI-compatible server; empty when not set. */
@@ -494,24 +396,10 @@ class SettingsRepository(private val context: Context) {
     }
 
     /** API key configured for [provider]. */
-    suspend fun apiKeyFor(provider: AiProvider): String = when (provider) {
-        AiProvider.GEMINI -> observeGeminiApiKey().first()
-        AiProvider.ANTHROPIC -> observeAnthropicApiKey().first()
-        AiProvider.OPENROUTER -> observeOpenRouterApiKey().first()
-        AiProvider.OPENAI -> observeOpenAiApiKey().first()
-        AiProvider.DEEPSEEK -> observeDeepSeekApiKey().first()
-        AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> observeGenericApiKey(provider).first()
-    }
+    suspend fun apiKeyFor(provider: AiProvider): String = observeApiKey(provider).first()
 
     /** Model configured for [provider]. */
-    suspend fun modelFor(provider: AiProvider): String = when (provider) {
-        AiProvider.GEMINI -> observeGeminiModel().first()
-        AiProvider.ANTHROPIC -> observeAnthropicModel().first()
-        AiProvider.OPENROUTER -> observeOpenRouterModel().first()
-        AiProvider.OPENAI -> observeOpenAiModel().first()
-        AiProvider.DEEPSEEK -> observeDeepSeekModel().first()
-        AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> observeGenericModel(provider).first()
-    }
+    suspend fun modelFor(provider: AiProvider): String = observeModel(provider).first()
 
     /**
      * Providers ready to use (with a key and a model), in priority order. Used to tell whether AI
@@ -521,31 +409,15 @@ class SettingsRepository(private val context: Context) {
         combine(observeProviderOrder(), context.settingsDataStore.data) { order, prefs ->
             val disabled = parseProviders(prefs[aiDisabledProvidersKey])
             order.filter { provider -> provider !in disabled }.filter { provider ->
-                val (key, model) = when (provider) {
-                    AiProvider.GEMINI -> decodeApiKey(prefs[geminiApiKeyKey]) to (prefs[geminiModelKey] ?: DEFAULT_GEMINI_MODEL)
-                    AiProvider.ANTHROPIC -> decodeApiKey(prefs[anthropicApiKeyKey]) to (prefs[anthropicModelKey] ?: DEFAULT_ANTHROPIC_MODEL)
-                    AiProvider.OPENROUTER -> decodeApiKey(prefs[openRouterApiKeyKey]) to prefs[openRouterModelKey]
-                    AiProvider.OPENAI -> decodeApiKey(prefs[openAiApiKeyKey]) to (prefs[openAiModelKey] ?: DEFAULT_OPENAI_MODEL)
-                    AiProvider.DEEPSEEK -> decodeApiKey(prefs[deepSeekApiKeyKey]) to (prefs[deepSeekModelKey] ?: DEFAULT_DEEPSEEK_MODEL)
-                    AiProvider.MISTRAL, AiProvider.GROQ -> decodeApiKey(prefs[generic(provider).apiKey]) to (prefs[generic(provider).model] ?: defaultModelFor(provider))
-                    // A home server needs no key: its address takes the key's place.
-                    AiProvider.CUSTOM -> prefs[customBaseUrlKey] to prefs[generic(provider).model]
-                }
+                val model = prefs[keys(provider).model] ?: defaultModelFor(provider)
+                // A home server needs no key: its address takes the key's place.
+                val key = if (provider == AiProvider.CUSTOM) prefs[customBaseUrlKey] else decodeApiKey(prefs[keys(provider).apiKey])
                 !key.isNullOrBlank() && !model.isNullOrBlank()
             }
         }
 
-    /**
-     * Whether the model configured for [provider] can read images; every Gemini and Claude model
-     * can.
-     */
-    suspend fun supportsImages(provider: AiProvider): Boolean = when (provider) {
-        AiProvider.GEMINI, AiProvider.ANTHROPIC -> true
-        AiProvider.OPENROUTER -> observeOpenRouterModelImages().first()
-        AiProvider.OPENAI -> openAiModelReadsImages(observeOpenAiModel().first())
-        AiProvider.DEEPSEEK -> deepSeekModelReadsImages(observeDeepSeekModel().first())
-        AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM -> observeGenericModelImages(provider).first()
-    }
+    /** Whether the model configured for [provider] can read images. */
+    suspend fun supportsImages(provider: AiProvider): Boolean = observeModelImages(provider).first()
 
     /** Android text-to-speech voice for cooking mode; null means the system default voice. */
     fun observeTtsVoiceName(): Flow<String?> =
@@ -610,6 +482,53 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
+    /** Latest searches, newest first (one per line). */
+    fun observeRecentSearches(): Flow<List<String>> =
+        context.settingsDataStore.data.map { prefs -> prefs[recentSearchesKey]?.lines()?.filter { it.isNotBlank() }.orEmpty() }
+
+    suspend fun addRecentSearch(query: String) {
+        val trimmed = query.trim().replace('\n', ' ')
+        if (trimmed.length < 2) return
+        context.settingsDataStore.edit { prefs ->
+            val current = prefs[recentSearchesKey]?.lines()?.filter { it.isNotBlank() }.orEmpty()
+            val updated = (listOf(trimmed) + current.filterNot { it.equals(trimmed, ignoreCase = true) }).take(MAX_RECENT_SEARCHES)
+            prefs[recentSearchesKey] = updated.joinToString("\n")
+        }
+    }
+
+    suspend fun clearRecentSearches() {
+        context.settingsDataStore.edit { prefs -> prefs.remove(recentSearchesKey) }
+    }
+
+    /** Searches saved by name, in the order they were saved. */
+    fun observeSavedFilters(): Flow<List<SavedFilter>> =
+        context.settingsDataStore.data.map { prefs -> SavedFilter.decode(prefs[savedFiltersKey]) }
+
+    /** Saves [filter] under its name, replacing one with the same name. */
+    suspend fun saveFilter(filter: SavedFilter) {
+        context.settingsDataStore.edit { prefs ->
+            val current = SavedFilter.decode(prefs[savedFiltersKey]).filterNot { it.name.equals(filter.name, ignoreCase = true) }
+            prefs[savedFiltersKey] = SavedFilter.encode(current + filter)
+        }
+    }
+
+    suspend fun deleteSavedFilter(name: String) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[savedFiltersKey] = SavedFilter.encode(SavedFilter.decode(prefs[savedFiltersKey]).filterNot { it.name == name })
+        }
+    }
+
+    /** What the user said they have at home, for "What can I cook?" (one per line). */
+    fun observePantryItems(): Flow<List<String>> =
+        context.settingsDataStore.data.map { prefs -> prefs[pantryItemsKey]?.lines()?.filter { it.isNotBlank() }.orEmpty() }
+
+    suspend fun setPantryItems(items: List<String>) {
+        context.settingsDataStore.edit { prefs ->
+            val cleaned = items.map { it.trim().replace('\n', ' ') }.filter { it.isNotEmpty() }.distinctBy { it.lowercase() }
+            if (cleaned.isEmpty()) prefs.remove(pantryItemsKey) else prefs[pantryItemsKey] = cleaned.joinToString("\n")
+        }
+    }
+
     /** Whether the books screen shows the tip of the day (on unless turned off). */
     fun observeTipOfTheDayEnabled(): Flow<Boolean> =
         context.settingsDataStore.data.map { prefs -> prefs[tipOfTheDayKey] ?: true }
@@ -637,14 +556,13 @@ class SettingsRepository(private val context: Context) {
     // supermarket and shopping list, last seen version) are deliberately left out.
     private val backupStringKeys = listOf(
         themeModeKey, colorThemeKey, photoFrameKey, shoppingAuthorKey, recipeListViewModeKey,
-        recipeBookListViewModeKey, visionProviderKey, geminiModelKey, anthropicModelKey, openRouterModelKey,
-        openAiModelKey, deepSeekModelKey, customBaseUrlKey, aiProviderOrderKey, aiDisabledProvidersKey, ttsVoiceNameKey, dictationLanguageKey,
-        packsCatalogRepoKey, savedTipsKey
-    ) + genericKeys.values.map { it.model }
+        recipeBookListViewModeKey, visionProviderKey, customBaseUrlKey, aiProviderOrderKey, aiDisabledProvidersKey, ttsVoiceNameKey, dictationLanguageKey,
+        packsCatalogRepoKey, savedTipsKey, recentSearchesKey, savedFiltersKey, pantryItemsKey
+    ) + providerKeys.values.map { it.model }
     private val backupBooleanKeys = listOf(
         aiEnabledKey, aiHealthEnabledKey, aiNutritionEnabledKey, shoppingImagesKey, recipeBookListGroupedKey,
-        openRouterModelImagesKey, packInstallStatsKey, tipOfTheDayKey
-    ) + genericKeys.values.map { it.readsImages }
+        packInstallStatsKey, tipOfTheDayKey
+    ) + providerKeys.values.map { it.readsImages }
 
     /** The settings to include in a full backup (only those the user has set). */
     suspend fun exportForBackup(): SettingsBackupDto {

@@ -1,5 +1,12 @@
 package org.calamares.miga.ui.editor
 
+import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.shadow
+import androidx.compose.material.icons.filled.DragIndicator
+import androidx.compose.material.icons.filled.ContentPaste
+import org.calamares.miga.data.model.PastedLists
+import org.calamares.miga.ui.components.ReorderableColumn
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
@@ -53,6 +60,16 @@ import org.calamares.miga.data.voice.SpeechDictation
 @Composable
 fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
     val availableIngredientNames by viewModel.availableIngredientNames.collectAsStateWithLifecycle()
+    /** Group that the "Paste list" dialog adds to. */
+    var pasteInto by remember { mutableStateOf<Int?>(null) }
+    pasteInto?.let { groupIndex ->
+        PasteListDialog(
+            title = L10n.str(R.string.paste_ingredients),
+            hint = L10n.str(R.string.paste_ingredients_hint),
+            onPaste = { viewModel.pasteIngredients(groupIndex, it); pasteInto = null },
+            onDismiss = { pasteInto = null }
+        )
+    }
 
     Section(title = L10n.str(R.string.ingredients)) {
         viewModel.ingredientGroups.forEachIndexed { groupIndex, group ->
@@ -74,16 +91,28 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
                     Text(L10n.str(R.string.main_ingredients), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
-                group.ingredients.forEachIndexed { rowIndex, row ->
+                ReorderableColumn(
+                    items = group.ingredients.toList(),
+                    onReorder = { viewModel.reorderIngredients(groupIndex, it) },
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) { row, rowIndex, dragHandle, isDragging ->
                     IngredientRow(
                         row = row,
                         availableNames = availableIngredientNames,
+                        dragHandle = dragHandle,
+                        isDragging = isDragging,
+                        onPasteLines = { lines -> viewModel.splitIngredientRow(groupIndex, rowIndex, lines) },
                         onRemove = { viewModel.removeIngredientRow(groupIndex, rowIndex) }
                     )
                 }
 
-                TextButton(onClick = { viewModel.addIngredientRow(groupIndex) }) {
-                    ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_ingredient))
+                Row {
+                    TextButton(onClick = { viewModel.addIngredientRow(groupIndex) }) {
+                        ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_ingredient))
+                    }
+                    TextButton(onClick = { pasteInto = groupIndex }) {
+                        ButtonContent(Icons.Filled.ContentPaste, L10n.str(R.string.paste_list))
+                    }
                 }
             }
             if (groupIndex < viewModel.ingredientGroups.lastIndex) {
@@ -98,11 +127,19 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
 }
 
 @Composable
-private fun IngredientRow(row: IngredientRowUi, availableNames: List<String>, onRemove: () -> Unit) {
+private fun IngredientRow(
+    row: IngredientRowUi,
+    availableNames: List<String>,
+    dragHandle: Modifier,
+    isDragging: Boolean,
+    onPasteLines: (List<String>) -> Unit,
+    onRemove: () -> Unit
+) {
     var showSuggestions by remember { mutableStateOf(false) }
 
-    Column {
+    Column(modifier = Modifier.draggedLook(isDragging)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DragHandle(dragHandle)
             OutlinedTextField(
                 value = row.quantity,
                 onValueChange = { row.quantity = it },
@@ -119,7 +156,11 @@ private fun IngredientRow(row: IngredientRowUi, availableNames: List<String>, on
             )
             OutlinedTextField(
                 value = row.name,
-                onValueChange = { row.name = it; showSuggestions = true },
+                onValueChange = { text ->
+                    // Several lines pasted at once become one ingredient each.
+                    val lines = PastedLists.pastedLines(row.name, text)
+                    if (lines != null) onPasteLines(lines) else { row.name = text; showSuggestions = true }
+                },
                 label = { Text(L10n.str(R.string.ingredient)) },
                 modifier = Modifier.weight(1.5f),
                 singleLine = true
@@ -229,6 +270,16 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
         onDispose { activeRecognizer?.destroy() }
     }
 
+    var pasteInto by remember { mutableStateOf<Int?>(null) }
+    pasteInto?.let { groupIndex ->
+        PasteListDialog(
+            title = L10n.str(R.string.paste_steps),
+            hint = L10n.str(R.string.paste_steps_hint),
+            onPaste = { viewModel.pasteSteps(groupIndex, it); pasteInto = null },
+            onDismiss = { pasteInto = null }
+        )
+    }
+
     Section(title = L10n.str(R.string.method)) {
         viewModel.stepGroups.forEachIndexed { groupIndex, group ->
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -249,17 +300,24 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
                     Text(L10n.str(R.string.main_steps), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
-                group.steps.forEachIndexed { rowIndex, row ->
-                    Column {
+                ReorderableColumn(
+                    items = group.steps.toList(),
+                    onReorder = { viewModel.reorderSteps(groupIndex, it) },
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) { row, rowIndex, dragHandle, isDragging ->
+                    Column(modifier = Modifier.draggedLook(isDragging)) {
                         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                "${rowIndex + 1}.",
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(top = 16.dp)
-                            )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 4.dp)) {
+                                DragHandle(dragHandle)
+                                Text("${rowIndex + 1}.", style = MaterialTheme.typography.titleMedium)
+                            }
                             RichTextField(
                                 value = row.text,
-                                onValueChange = { row.text = it },
+                                onValueChange = { text ->
+                                    // A pasted list becomes one step per line.
+                                    val lines = PastedLists.pastedLines(row.text, text)
+                                    if (lines != null) viewModel.splitStepRow(groupIndex, rowIndex, lines) else row.text = text
+                                },
                                 label = { Text(L10n.str(R.string.step_x, rowIndex + 1)) },
                                 modifier = Modifier.weight(1f),
                                 minLines = 1
@@ -291,8 +349,13 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
                     }
                 }
 
-                TextButton(onClick = { viewModel.addStepRow(groupIndex) }) {
-                    ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_step))
+                Row {
+                    TextButton(onClick = { viewModel.addStepRow(groupIndex) }) {
+                        ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_step))
+                    }
+                    TextButton(onClick = { pasteInto = groupIndex }) {
+                        ButtonContent(Icons.Filled.ContentPaste, L10n.str(R.string.paste_list))
+                    }
                 }
             }
             if (groupIndex < viewModel.stepGroups.lastIndex) {
@@ -304,4 +367,43 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
             ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_steps_sub_recipe_e))
         }
     }
+}
+
+/** Handle to drag an ingredient or step to another place. */
+@Composable
+private fun DragHandle(dragHandle: Modifier) {
+    Box(modifier = dragHandle.size(32.dp), contentAlignment = Alignment.Center) {
+        Icon(
+            Icons.Filled.DragIndicator,
+            contentDescription = L10n.str(R.string.drag_to_reorder),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+/** Lifts the row being dragged above the others. */
+@Composable
+private fun Modifier.draggedLook(isDragging: Boolean): Modifier =
+    if (isDragging) shadow(6.dp, MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.medium) else this
+
+/** A list pasted or typed at once: one ingredient or step per line, bullets and numbers removed. */
+@Composable
+private fun PasteListDialog(title: String, hint: String, onPaste: (String) -> Unit, onDismiss: () -> Unit) {
+    var text by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                placeholder = { Text(hint) },
+                minLines = 6,
+                maxLines = 12,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = { TextButton(enabled = text.isNotBlank(), onClick = { onPaste(text) }) { Text(L10n.str(R.string.add)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
+    )
 }

@@ -437,6 +437,18 @@ fun RecipeEditorScreen(
         )
     }
 
+    viewModel.duplicate?.let { existing ->
+        AlertDialog(
+            onDismissRequest = { viewModel.duplicate = null },
+            title = { Text(L10n.str(R.string.duplicate_recipe_title)) },
+            text = { Text(L10n.str(R.string.duplicate_recipe_body_x_x, existing.name, existing.recipeBookName)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.save(onSaved, allowDuplicate = true) }) { Text(L10n.str(R.string.save_anyway)) }
+            },
+            dismissButton = { TextButton(onClick = { viewModel.duplicate = null }) { Text(L10n.str(R.string.keep_editing)) } }
+        )
+    }
+
     if (showDiscardDialog) {
         AlertDialog(
             onDismissRequest = { showDiscardDialog = false },

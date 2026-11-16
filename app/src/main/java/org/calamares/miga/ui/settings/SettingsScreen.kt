@@ -128,7 +128,8 @@ import java.util.Locale
 fun SettingsSectionScreen(
     viewModel: SettingsViewModel,
     section: SettingsSection,
-    onBack: () -> Unit,
+    /** Null when the section is shown beside the Settings list, which has no back arrow. */
+    onBack: (() -> Unit)?,
     onManageContent: (ContentKind) -> Unit,
     onCleanUpContent: () -> Unit,
     onOpenPacksCatalog: () -> Unit,
@@ -231,7 +232,9 @@ fun SettingsSectionScreen(
             TopAppBar(
                 title = { Text(section.title) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                    if (onBack != null) {
+                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
