@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.tips
 
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material.icons.filled.SearchOff
 import android.content.Context
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
@@ -182,12 +184,14 @@ fun TipsScreen(viewModel: TipsViewModel, initialTipId: String?, onBack: () -> Un
             if (searching) {
                 val found = remember(tips, query) { searchTips(tips, query) }
                 if (found.isEmpty()) {
-                    Text(
-                        L10n.str(R.string.tips_search_empty, query.trim()),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
-                    )
+                    EmptyState(
+                        icon = Icons.Filled.SearchOff,
+                        title = L10n.str(R.string.no_results),
+                        body = L10n.str(R.string.tips_search_empty, query.trim()),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedButton(onClick = { query = "" }) { Text(L10n.str(R.string.clear_search)) }
+                    }
                 } else {
                     TipList(found) { tip -> card(tip, false) }
                 }

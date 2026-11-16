@@ -24,7 +24,8 @@ Si tienes activada la copia de seguridad de Android, el sistema puede incluir es
 - **Internet**: solo para las conexiones descritas en la sección siguiente.
 - **Micrófono**: para dictar pasos de receta y artículos de la lista. El reconocimiento lo hace el servicio de voz de Android en el idioma que elijas; Miga recibe el texto, no el audio, y no lo guarda.
 - **Cámara**: para escanear códigos de barras de productos y códigos QR de listas o invitaciones. La imagen se procesa en el dispositivo y no se guarda ni se envía. Las fotos de recetas se hacen con la app de cámara del sistema; Miga solo recibe el archivo resultante.
-- **Notificaciones**: para mostrar el progreso de una tarea de IA que sigue trabajando cuando sales de la app o apagas la pantalla, y para avisarte cuando termina. Puedes negarlo; la tarea se completa igualmente.
+- **Notificaciones**: para mostrar el progreso de una tarea de IA que sigue trabajando cuando sales de la app o apagas la pantalla, y para avisarte cuando termina, y para el aviso de los temporizadores del modo cocina. Puedes negarlo; la tarea se completa igualmente.
+- **Alarmas exactas**: para que los temporizadores del modo cocina suenen a su hora aunque la pantalla esté apagada. Si no lo permites, pueden sonar con algo de retraso.
 - **Servicio en primer plano**: mantiene viva una tarea de IA en curso mientras está en segundo plano. Solo funciona mientras dura esa tarea y siempre muestra su notificación.
 - **Biometría**: si activas el bloqueo, la verificación la hace Android. Miga solo recibe un "sí" o un "no"; nunca ve tu huella ni tu rostro.
 
