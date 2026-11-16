@@ -381,7 +381,7 @@ private fun NavGraphBuilder.screens(
 
     screen(Destinations.SEARCH_ROUTE) {
         val viewModel: GlobalSearchViewModel = viewModel(
-            factory = viewModelFactory { initializer { GlobalSearchViewModel(repository) } }
+            factory = viewModelFactory { initializer { GlobalSearchViewModel(repository, settingsRepository) } }
         )
         GlobalSearchScreen(
             viewModel = viewModel,
@@ -392,7 +392,7 @@ private fun NavGraphBuilder.screens(
 
     screen(Destinations.FAVORITES_ROUTE) {
         val viewModel: GlobalSearchViewModel = viewModel(
-            factory = viewModelFactory { initializer { GlobalSearchViewModel(repository, initialOnlyFavorites = true) } }
+            factory = viewModelFactory { initializer { GlobalSearchViewModel(repository, settingsRepository, initialOnlyFavorites = true) } }
         )
         GlobalSearchScreen(
             viewModel = viewModel,
@@ -724,7 +724,7 @@ private fun NavGraphBuilder.screens(
         val request = remember { SearchRequests.take() }
         val title = rememberSaveable { request?.title ?: L10n.str(R.string.search_recipes_2) }
         val viewModel: GlobalSearchViewModel = viewModel(
-            factory = viewModelFactory { initializer { GlobalSearchViewModel(repository, initialFilter = request?.filter) } }
+            factory = viewModelFactory { initializer { GlobalSearchViewModel(repository, settingsRepository, initialFilter = request?.filter) } }
         )
         GlobalSearchScreen(
             viewModel = viewModel,
