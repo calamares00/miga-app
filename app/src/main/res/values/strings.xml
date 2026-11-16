@@ -39,12 +39,10 @@
     <string name="add_ingredient">"Add ingredient"</string>
     <string name="add_list">"Add to list"</string>
     <string name="add_shopping_list">"Add to shopping list"</string>
-    <string name="add_another_page">"Add another page"</string>
     <string name="add_step">"Add step"</string>
     <string name="add_steps_sub_recipe_e">"Add steps for a sub-recipe (e.g. a sauce)"</string>
     <string name="add_template">"Add to the template"</string>
     <string name="add_cover">"Add cover"</string>
-    <string name="add_recipe_photo">"Add recipe from photo"</string>
     <string name="add_without_deleting">"Add without deleting"</string>
     <string name="add_sub_recipe_e_g">"Add sub-recipe (e.g. a sauce)"</string>
     <string name="add_supermarket">"Add supermarket"</string>
@@ -199,9 +197,6 @@
     <string name="discard">"Discard"</string>
     <string name="discard_changes">"Discard changes?"</string>
     <string name="unknown">"Unknown"</string>
-    <string name="file_json_zip">"From a file (JSON/ZIP)"</string>
-    <string name="image">"From an image"</string>
-    <string name="url">"From a URL"</string>
     <string name="undo">"Undo"</string>
     <string name="uninstall">"Uninstall"</string>
     <string name="uninstall_pack">"Uninstall pack"</string>
@@ -356,7 +351,6 @@
     <string name="list_received">"List received"</string>
     <string name="done_step_x">"Done! Step %1$s"</string>
     <string name="poor">"Poor"</string>
-    <string name="manual">"Manual"</string>
     <string name="ticked_x">"Ticked by %1$s"</string>
     <string name="tick">"Tick"</string>
     <string name="mark_favourite">"Mark as favourite"</string>
@@ -474,7 +468,6 @@
     <string name="source">"Source"</string>
     <string name="source_book_website_etc">"Source (book, website, etc.)"</string>
     <string name="dark">"Dark"</string>
-    <string name="another_page">"Another page?"</string>
     <string name="other_reason">"Other reason"</string>
     <string name="other_phone_settings_sync_manage">"On the other phone: Settings → Sync → Manage connections → scan icon. Anyone who scans this code can read and change this namespace, so only show it to people you trust. You can revoke access from the server."</string>
     <string name="e_g_ana_optional">"e.g. Ana (optional)"</string>
@@ -543,7 +536,6 @@
     <string name="remove_x_template">"Remove %1$s from the template"</string>
     <string name="servings_2">"Servings"</string>
     <string name="servings_x">" · Servings: %1$s"</string>
-    <string name="does_recipe_continue_another_photo">"Does the recipe continue in another photo? You can keep adding pages or continue with the ones you have."</string>
     <string name="ai_generated_recipe">"Recipe suggested by the assistant"</string>
     <string name="recipe_imported">"Recipe imported"</string>
     <string name="main_recipe">"Main recipe"</string>
@@ -658,7 +650,6 @@
     <string name="x_items_added_list_quantities">"%1$s items will be added to your list (quantities are added to what's already there):"</string>
     <string name="x_recipe_imported_want_delete">"%1$s recipe(s) will be imported. Do you want to delete your current books and recipes (with their photos) first for a fresh start, or add the imported content to what you already have? Installed packs aren't affected."</string>
     <string name="several_people">"Several people"</string>
-    <string name="several_recipes_images">"Several recipes from images"</string>
     <string name="vegan">"Vegan"</string>
     <string name="vegetarian">"Vegetarian"</string>
     <string name="view_product_details">"View product details"</string>
@@ -1350,4 +1341,21 @@
     <string name="ai_models_need_address">"Enter the address to see its models"</string>
     <string name="ai_models_load_failed">"The models could not be loaded: open the list to try again"</string>
     <string name="ai_models_catalog_n">"%1$d models in the OpenRouter catalogue"</string>
+    <string name="new_recipe_by_hand">"Write it yourself"</string>
+    <string name="new_recipe_by_hand_desc">"An empty recipe to fill in"</string>
+    <string name="new_recipe_from_photos">"From photos"</string>
+    <string name="new_recipe_from_photos_desc">"One or several recipes: take photos or pick them from the gallery"</string>
+    <string name="new_recipe_from_web">"From a web page"</string>
+    <string name="new_recipe_from_web_desc">"Paste the link to the recipe"</string>
+    <string name="new_recipe_from_file">"From a Miga file"</string>
+    <string name="new_recipe_from_file_desc">"Recipes exported from Miga (.miga, .zip or JSON)"</string>
+    <string name="new_recipe_suggest_desc">"Name a dish and the assistant proposes the recipe"</string>
+    <string name="recipes_from_photos">"Recipes from photos"</string>
+    <string name="another_photo_title_n">"%1$d photo(s) taken"</string>
+    <string name="another_photo_body">"Take more photos if the recipe continues or you want to add other recipes. Miga works out which photos belong to the same recipe."</string>
+    <string name="take_another_photo">"Take another"</string>
+    <string name="ai_step_sorting_photos">"Working out which photos go together…"</string>
+    <string name="ai_step_checking_dish_photo">"Checking the photo of the dish…"</string>
+    <string name="sorting_photos_failed">"The photos could not be sorted into recipes"</string>
+    <string name="one_recipe_per_photo">"Import one recipe per photo"</string>
 </resources>

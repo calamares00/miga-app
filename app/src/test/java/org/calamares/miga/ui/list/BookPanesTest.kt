@@ -56,8 +56,7 @@ class BookPanesTest {
                             onRecipeClick = onRecipeClickInPane ?: { openedAsScreen += it },
                             onEditRecipeClick = {},
                             onAddRecipeClick = {},
-                            onAddRecipeFromPhoto = {},
-                            onAddRecipesBulk = {},
+                            onAddRecipesFromPhotos = {},
                             onSearchDishClick = {},
                             onAddRecipeFromUrl = {}
                         )
