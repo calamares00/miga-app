@@ -29,11 +29,13 @@ fun EmptyState(
     title: String,
     body: String,
     modifier: Modifier = Modifier,
+    /** False inside a list that already scrolls (a LazyColumn item). */
+    scrollable: Boolean = true,
     actions: @Composable ColumnScope.() -> Unit = {}
 ) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Column(
-            modifier = Modifier.verticalScroll(rememberScrollState()).padding(32.dp).widthIn(max = 420.dp),
+            modifier = Modifier.then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier).padding(32.dp).widthIn(max = 420.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {

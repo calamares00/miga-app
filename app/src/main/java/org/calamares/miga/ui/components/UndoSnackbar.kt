@@ -5,9 +5,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 import org.calamares.miga.L10n
 import org.calamares.miga.MigaApp
 import org.calamares.miga.R
@@ -20,16 +20,17 @@ import org.calamares.miga.R
 @Composable
 fun UndoDeletionSnackbar(snackbarHostState: SnackbarHostState) {
     val pending = (LocalContext.current.applicationContext as MigaApp).repository.pendingDeletions
-    val offer by pending.offer.collectAsStateWithLifecycle()
-    LaunchedEffect(offer) {
-        val current = offer ?: return@LaunchedEffect
-        pending.offered(current)
-        val result = snackbarHostState.showSnackbar(
-            message = current.message,
-            actionLabel = L10n.str(R.string.undo),
-            withDismissAction = true,
-            duration = SnackbarDuration.Long
-        )
-        if (result == SnackbarResult.ActionPerformed) pending.undo(current)
+    LaunchedEffect(pending) {
+        // A newer deletion replaces the snackbar of the previous one.
+        pending.offer.filterNotNull().collectLatest { current ->
+            pending.offered(current)
+            val result = snackbarHostState.showSnackbar(
+                message = current.message,
+                actionLabel = L10n.str(R.string.undo),
+                withDismissAction = true,
+                duration = SnackbarDuration.Long
+            )
+            if (result == SnackbarResult.ActionPerformed) pending.undo(current)
+        }
     }
 }

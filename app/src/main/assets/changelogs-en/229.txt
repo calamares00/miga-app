@@ -1,0 +1,7 @@
+What's new in version 1.0.31:
+• Undo after deleting recipes and books.
+• Search: "What can I cook?", recent and saved searches.
+• Editor: paste whole lists of ingredients or steps, drag to reorder, and a warning for repeated recipes.
+• Cooking mode: several named timers that ring even after leaving the app, and the screen kept on only if you want.
+• Tablets: shopping lists and Settings in two panes.
+• Every assistant provider is set up the same way.

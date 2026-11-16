@@ -24,7 +24,8 @@ If Android backup is turned on, the system may include this data (recipes, photo
 - **Internet**: only for the connections described in the next section.
 - **Microphone**: to dictate recipe steps and list items. Recognition is done by Android's speech service in the language you choose; Miga receives the text, not the audio, and does not store it.
 - **Camera**: to scan product barcodes and QR codes of lists or invitations. The image is processed on the device and is neither stored nor sent. Recipe photos are taken with the system camera app; Miga only receives the resulting file.
-- **Notifications**: to show the progress of an AI task that keeps working when you leave the app or turn off the screen, and to tell you when it finishes. You can deny it; the task still completes.
+- **Notifications**: to show the progress of an AI task that keeps working when you leave the app or turn off the screen, and to tell you when it finishes, and for the alert of the cooking mode timers. You can deny it; the task still completes.
+- **Exact alarms**: so cooking mode timers ring on time even with the screen off. If you do not allow it, they may ring a little late.
 - **Foreground service**: keeps a running AI task alive while it is in the background. It only works while that task lasts and always shows its notification.
 - **Biometrics**: if you turn on the lock, verification is done by Android. Miga only receives a "yes" or a "no"; it never sees your fingerprint or face.
 
