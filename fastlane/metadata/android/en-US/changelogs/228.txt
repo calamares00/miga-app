@@ -1,0 +1,4 @@
+What's new in 1.0.30:
+• Dish photo on import: the assistant checks it is the finished dish (not text or something else), crops it without margins and makes the whole dish the main photo.
+• "From photos" in one place: take or pick several photos and Miga works out which belong to the same recipe and which are different recipes.
+• "New recipe" menu reordered, with a short explanation on each option.

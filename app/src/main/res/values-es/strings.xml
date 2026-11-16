@@ -38,12 +38,10 @@
     <string name="add_ingredient">"Añadir ingrediente"</string>
     <string name="add_list">"Añadir a la lista"</string>
     <string name="add_shopping_list">"Añadir a la lista de la compra"</string>
-    <string name="add_another_page">"Añadir otra página"</string>
     <string name="add_step">"Añadir paso"</string>
     <string name="add_steps_sub_recipe_e">"Añadir pasos de una subreceta (p. ej., una salsa)"</string>
     <string name="add_template">"Añadir a la plantilla"</string>
     <string name="add_cover">"Añadir portada"</string>
-    <string name="add_recipe_photo">"Añadir receta con foto"</string>
     <string name="add_without_deleting">"Añadir sin borrar"</string>
     <string name="add_sub_recipe_e_g">"Añadir subreceta (p. ej., una salsa)"</string>
     <string name="add_supermarket">"Añadir supermercado"</string>
@@ -198,9 +196,6 @@
     <string name="discard">"Descartar"</string>
     <string name="discard_changes">"¿Descartar cambios?"</string>
     <string name="unknown">"Desconocida"</string>
-    <string name="file_json_zip">"Desde archivo (JSON/ZIP)"</string>
-    <string name="image">"Desde imagen"</string>
-    <string name="url">"Desde una URL"</string>
     <string name="undo">"Deshacer"</string>
     <string name="uninstall">"Desinstalar"</string>
     <string name="uninstall_pack">"Desinstalar pack"</string>
@@ -355,7 +350,6 @@
     <string name="list_received">"Lista recibida"</string>
     <string name="done_step_x">"¡Listo! Paso %1$s"</string>
     <string name="poor">"Malo"</string>
-    <string name="manual">"Manual"</string>
     <string name="ticked_x">"Marcado por %1$s"</string>
     <string name="tick">"Marcar"</string>
     <string name="mark_favourite">"Marcar como favorita"</string>
@@ -473,7 +467,6 @@
     <string name="source">"Fuente"</string>
     <string name="source_book_website_etc">"Fuente (libro, web, etc.)"</string>
     <string name="dark">"Oscuro"</string>
-    <string name="another_page">"¿Otra página?"</string>
     <string name="other_reason">"Otro motivo"</string>
     <string name="other_phone_settings_sync_manage">"En el otro móvil: Ajustes → Sincronización → Gestionar conexiones → icono de escanear. Quien escanee este código podrá leer y modificar este namespace, así que enséñalo solo a gente de confianza. Puedes revocar su acceso desde el servidor."</string>
     <string name="e_g_ana_optional">"p. ej., Ana (opcional)"</string>
@@ -542,7 +535,6 @@
     <string name="remove_x_template">"Quitar %1$s de la plantilla"</string>
     <string name="servings_2">"Raciones"</string>
     <string name="servings_x">" · Raciones: %1$s"</string>
-    <string name="does_recipe_continue_another_photo">"¿La receta continúa en otra foto? Puedes seguir añadiendo páginas o continuar con las que ya tienes."</string>
     <string name="ai_generated_recipe">"Receta sugerida por el asistente"</string>
     <string name="recipe_imported">"Receta importada"</string>
     <string name="main_recipe">"Receta principal"</string>
@@ -657,7 +649,6 @@
     <string name="x_items_added_list_quantities">"Se añadirán %1$s artículos a tu lista (las cantidades se suman a lo que ya tengas):"</string>
     <string name="x_recipe_imported_want_delete">"Se van a importar %1$s receta(s). ¿Quieres borrar antes tus libros y recetas actuales (con sus fotos) para empezar de cero, o añadir lo importado a lo que ya tienes? Los packs instalados no se tocan."</string>
     <string name="several_people">"Varias personas"</string>
-    <string name="several_recipes_images">"Varias recetas desde imágenes"</string>
     <string name="vegan">"Vegano"</string>
     <string name="vegetarian">"Vegetariano"</string>
     <string name="view_product_details">"Ver detalles del producto"</string>
@@ -1349,4 +1340,21 @@
     <string name="ai_models_need_address">"Escribe la dirección para ver sus modelos"</string>
     <string name="ai_models_load_failed">"No se pudieron cargar los modelos: abre la lista para reintentar"</string>
     <string name="ai_models_catalog_n">"%1$d modelos en el catálogo de OpenRouter"</string>
+    <string name="new_recipe_by_hand">"Escribirla a mano"</string>
+    <string name="new_recipe_by_hand_desc">"Una receta vacía para rellenar"</string>
+    <string name="new_recipe_from_photos">"Desde fotos"</string>
+    <string name="new_recipe_from_photos_desc">"Una o varias recetas: haz fotos o elígelas de la galería"</string>
+    <string name="new_recipe_from_web">"Desde una página web"</string>
+    <string name="new_recipe_from_web_desc">"Pega el enlace de la receta"</string>
+    <string name="new_recipe_from_file">"Desde un archivo de Miga"</string>
+    <string name="new_recipe_from_file_desc">"Recetas exportadas desde Miga (.miga, .zip o JSON)"</string>
+    <string name="new_recipe_suggest_desc">"Di un plato y el asistente te propone la receta"</string>
+    <string name="recipes_from_photos">"Recetas desde fotos"</string>
+    <string name="another_photo_title_n">"%1$d foto(s) hecha(s)"</string>
+    <string name="another_photo_body">"Haz más fotos si la receta continúa o quieres añadir otras recetas. Miga averigua qué fotos son de la misma receta."</string>
+    <string name="take_another_photo">"Hacer otra"</string>
+    <string name="ai_step_sorting_photos">"Viendo qué fotos van juntas…"</string>
+    <string name="ai_step_checking_dish_photo">"Comprobando la foto del plato…"</string>
+    <string name="sorting_photos_failed">"No se pudieron agrupar las fotos por receta"</string>
+    <string name="one_recipe_per_photo">"Importar una receta por foto"</string>
 </resources>

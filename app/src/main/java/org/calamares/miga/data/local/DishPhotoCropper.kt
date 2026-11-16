@@ -32,6 +32,12 @@ private const val PAPER_LUMINANCE_TOLERANCE = 34
 private const val MIN_ASPECT = 0.6f
 private const val MAX_ASPECT = 1.8f
 private const val MIN_RESULT_SIDE = 160
+/** Resolution of the candidate areas shown to the AI to confirm them: enough to tell a dish from text. */
+private const val CANDIDATE_SOURCE_DIMENSION = 1600
+private const val CANDIDATE_DIMENSION = 768
+/** Margin around a candidate box, as a fraction of its own size and at least this much of the image. */
+private const val CANDIDATE_MARGIN_OF_BOX = 0.35f
+private const val CANDIDATE_MIN_MARGIN = 0.06f
 
 /** Normalised (0..1) box on image number [image]. */
 internal data class NormalizedBox(
@@ -55,8 +61,34 @@ internal data class NormalizedBox(
 object DishPhotoCropper {
 
     /** Returns the uris ("file://...") of the saved photos, in the order given by the AI. */
-    fun extract(context: Context, sources: List<Uri>, dishPhotos: List<DishPhotoDto>): List<String> {
-        val boxes = validDishBoxes(dishPhotos, sources.size)
+    fun extract(context: Context, sources: List<Uri>, dishPhotos: List<DishPhotoDto>): List<String> =
+        extractBoxes(context, sources, validDishBoxes(dishPhotos, sources.size))
+
+    /**
+     * The area around each of [boxes], with a margin, as a small JPEG to show to the AI so it can
+     * confirm that it is a photo of the dish and frame it exactly (see DishPhotoFinder). A box
+     * whose image cannot be read has no entry.
+     */
+    internal fun candidateCrops(context: Context, sources: List<Uri>, boxes: List<NormalizedBox>): List<CandidateCrop> {
+        val crops = mutableMapOf<NormalizedBox, CandidateCrop>()
+        boxes.groupBy { it.image }.forEach { (imageIndex, imageBoxes) ->
+            val source = PhotoStorage.loadUprightSampled(context, sources[imageIndex], CANDIDATE_SOURCE_DIMENSION) ?: return@forEach
+            imageBoxes.forEach { box ->
+                val region = candidateRegion(box)
+                runCatching {
+                    val x = (region.left * source.width).roundToInt().coerceIn(0, source.width - 1)
+                    val y = (region.top * source.height).roundToInt().coerceIn(0, source.height - 1)
+                    val w = (region.width * source.width).roundToInt().coerceIn(1, source.width - x)
+                    val h = (region.height * source.height).roundToInt().coerceIn(1, source.height - y)
+                    PhotoStorage.jpegBytes(Bitmap.createBitmap(source, x, y, w, h), CANDIDATE_DIMENSION)
+                }.getOrNull()?.let { jpeg -> crops[box] = CandidateCrop(box, region, jpeg) }
+            }
+        }
+        return boxes.mapNotNull { crops[it] }
+    }
+
+    /** Crops [boxes] out of [sources], cleans them and returns the uris of the saved photos, in order. */
+    internal fun extractBoxes(context: Context, sources: List<Uri>, boxes: List<NormalizedBox>): List<String> {
         if (boxes.isEmpty()) return emptyList()
         // One source image is decoded at a time and dropped before the next, since every decoded
         // image can take tens of megabytes.
@@ -146,6 +178,41 @@ object DishPhotoCropper {
         if (tw < MIN_RESULT_SIDE || th < MIN_RESULT_SIDE) return null
         return Bitmap.createBitmap(crop, tx.coerceIn(0, cw - 1), ty.coerceIn(0, ch - 1), tw.coerceAtMost(cw - tx), th.coerceAtMost(ch - ty))
     }
+}
+
+/** A candidate dish photo cut out with a margin: [box] as located, [region] the area actually sent as [jpeg]. */
+internal class CandidateCrop(val box: NormalizedBox, val region: NormalizedBox, val jpeg: ByteArray)
+
+/**
+ * [box] grown by a margin on every side (clamped to the image), so a box that is a little off
+ * still shows the whole photo and what surrounds it.
+ */
+internal fun candidateRegion(box: NormalizedBox): NormalizedBox {
+    val dx = max(box.width * CANDIDATE_MARGIN_OF_BOX, CANDIDATE_MIN_MARGIN)
+    val dy = max(box.height * CANDIDATE_MARGIN_OF_BOX, CANDIDATE_MIN_MARGIN)
+    return NormalizedBox(
+        image = box.image,
+        top = (box.top - dy).coerceAtLeast(0f),
+        left = (box.left - dx).coerceAtLeast(0f),
+        bottom = (box.bottom + dy).coerceAtMost(1f),
+        right = (box.right + dx).coerceAtMost(1f),
+        rotation = box.rotation
+    )
+}
+
+/**
+ * A box given inside [region] (as `[ymin, xmin, ymax, xmax]` from 0 to 1000 of that region) in
+ * coordinates of the whole image; null when it is not a usable box.
+ */
+internal fun boxWithinRegion(region: NormalizedBox, inner: List<Int>, rotation: Int): NormalizedBox? {
+    if (inner.size != 4) return null
+    val (y1, x1, y2, x2) = inner.map { it.coerceIn(0, 1000) / 1000f }
+    val top = region.top + min(y1, y2) * region.height
+    val bottom = region.top + max(y1, y2) * region.height
+    val left = region.left + min(x1, x2) * region.width
+    val right = region.left + max(x1, x2) * region.width
+    val box = NormalizedBox(region.image, top, left, bottom, right, normalizeRotation(rotation))
+    return box.takeIf { it.width >= 0.06f && it.height >= 0.06f && it.area >= 0.012f }
 }
 
 /** Rectangle in pixels; [right] and [bottom] are exclusive. */
