@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.settings
 
+import androidx.compose.ui.graphics.Color
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -47,7 +48,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.BuildConfig
 import org.calamares.miga.data.voice.DictationLanguages
 
-private data class HomeItem(val icon: ImageVector, val title: String, val summary: String, val onClick: () -> Unit)
+private data class HomeItem(
+    val icon: ImageVector,
+    val title: String,
+    val summary: String,
+    /** Whether its section is the one open beside the list (large screens). */
+    val selected: Boolean = false,
+    val onClick: () -> Unit
+)
 
 /**
  * Main Settings screen, styled like Google's apps: groups of rows (icon, title and a summary of the
@@ -63,7 +71,9 @@ fun SettingsHomeScreen(
     onOpenStats: () -> Unit,
     onOpenChangelog: () -> Unit,
     onHelp: () -> Unit,
-    onAbout: () -> Unit
+    onAbout: () -> Unit,
+    /** Section shown beside this list on large screens, highlighted; null on phones. */
+    selectedSection: SettingsSection? = null
 ) {
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val colorTheme by viewModel.colorTheme.collectAsStateWithLifecycle()
@@ -98,46 +108,44 @@ fun SettingsHomeScreen(
         ) {
             HomeGroup(
                 listOf(
-                    HomeItem(SettingsSection.PROFILE.icon, SettingsSection.PROFILE.title, yourName.ifBlank { L10n.str(R.string.your_name_not_set) }) {
+                    HomeItem(SettingsSection.PROFILE.icon, SettingsSection.PROFILE.title, selected = selectedSection == SettingsSection.PROFILE, summary = yourName.ifBlank { L10n.str(R.string.your_name_not_set) }) {
                         onOpenSection(SettingsSection.PROFILE)
                     }
                 )
             )
             HomeGroup(
                 listOf(
-                    HomeItem(SettingsSection.APPEARANCE.icon, SettingsSection.APPEARANCE.title, "${themeMode.label} · ${colorTheme.label}") {
+                    HomeItem(SettingsSection.APPEARANCE.icon, SettingsSection.APPEARANCE.title, selected = selectedSection == SettingsSection.APPEARANCE, summary = "${themeMode.label} · ${colorTheme.label}") {
                         onOpenSection(SettingsSection.APPEARANCE)
                     },
-                    HomeItem(
-                        SettingsSection.SECURITY.icon,
-                        SettingsSection.SECURITY.title,
+                    HomeItem(SettingsSection.SECURITY.icon, SettingsSection.SECURITY.title, selected = selectedSection == SettingsSection.SECURITY, summary =
                         if (biometricLockEnabled) L10n.str(R.string.biometric_lock_2) else L10n.str(R.string.biometric_lock_off)
                     ) { onOpenSection(SettingsSection.SECURITY) },
-                    HomeItem(SettingsSection.VOICE.icon, SettingsSection.VOICE.title, L10n.str(R.string.dictation_x, DictationLanguages.label(dictationLanguage))) {
+                    HomeItem(SettingsSection.VOICE.icon, SettingsSection.VOICE.title, selected = selectedSection == SettingsSection.VOICE, summary = L10n.str(R.string.dictation_x, DictationLanguages.label(dictationLanguage))) {
                         onOpenSection(SettingsSection.VOICE)
                     }
                 )
             )
             HomeGroup(
                 listOf(
-                    HomeItem(SettingsSection.CONTENT.icon, SettingsSection.CONTENT.title, L10n.str(R.string.categories_utensils_ingredients)) {
+                    HomeItem(SettingsSection.CONTENT.icon, SettingsSection.CONTENT.title, selected = selectedSection == SettingsSection.CONTENT, summary = L10n.str(R.string.categories_utensils_ingredients)) {
                         onOpenSection(SettingsSection.CONTENT)
                     },
-                    HomeItem(SettingsSection.BACKUP.icon, SettingsSection.BACKUP.title, L10n.str(R.string.export_import_books_recipes)) {
+                    HomeItem(SettingsSection.BACKUP.icon, SettingsSection.BACKUP.title, selected = selectedSection == SettingsSection.BACKUP, summary = L10n.str(R.string.export_import_books_recipes)) {
                         onOpenSection(SettingsSection.BACKUP)
                     },
-                    HomeItem(Icons.Filled.BarChart, L10n.str(R.string.statistics), L10n.str(R.string.recipes_favourites_most_cooked), onOpenStats)
+                    HomeItem(Icons.Filled.BarChart, L10n.str(R.string.statistics), L10n.str(R.string.recipes_favourites_most_cooked), onClick = onOpenStats)
                 )
             )
             HomeGroup(
                 listOf(
-                    HomeItem(SettingsSection.SYNC.icon, SettingsSection.SYNC.title, L10n.str(R.string.own_server_books_recipes_shopping)) {
+                    HomeItem(SettingsSection.SYNC.icon, SettingsSection.SYNC.title, selected = selectedSection == SettingsSection.SYNC, summary = L10n.str(R.string.own_server_books_recipes_shopping)) {
                         onOpenSection(SettingsSection.SYNC)
                     },
-                    HomeItem(SettingsSection.PACKS.icon, SettingsSection.PACKS.title, L10n.str(R.string.ready_install_recipe_books)) {
+                    HomeItem(SettingsSection.PACKS.icon, SettingsSection.PACKS.title, selected = selectedSection == SettingsSection.PACKS, summary = L10n.str(R.string.ready_install_recipe_books)) {
                         onOpenSection(SettingsSection.PACKS)
                     },
-                    HomeItem(SettingsSection.AI.icon, SettingsSection.AI.title, when {
+                    HomeItem(SettingsSection.AI.icon, SettingsSection.AI.title, selected = selectedSection == SettingsSection.AI, summary = when {
                         !aiEnabled -> L10n.str(R.string.ai_disabled_summary)
                         aiProviders.isEmpty() -> L10n.str(R.string.ai_no_provider_summary)
                         else -> aiProviders.joinToString(" → ") { it.shortName }
@@ -149,10 +157,10 @@ fun SettingsHomeScreen(
             HomeGroup(
                 buildList {
                     if (hasChangelog) {
-                        add(HomeItem(Icons.Filled.NewReleases, L10n.str(R.string.whats_new), L10n.str(R.string.whats_new_each_version), onOpenChangelog))
+                        add(HomeItem(Icons.Filled.NewReleases, L10n.str(R.string.whats_new), L10n.str(R.string.whats_new_each_version), onClick = onOpenChangelog))
                     }
-                    add(HomeItem(Icons.Filled.HelpOutline, L10n.str(R.string.help_support), L10n.str(R.string.faq_contact), onHelp))
-                    add(HomeItem(Icons.Filled.Info, L10n.str(R.string.about), L10n.str(R.string.version_x_privacy_policy, BuildConfig.VERSION_NAME), onAbout))
+                    add(HomeItem(Icons.Filled.HelpOutline, L10n.str(R.string.help_support), L10n.str(R.string.faq_contact), onClick = onHelp))
+                    add(HomeItem(Icons.Filled.Info, L10n.str(R.string.about), L10n.str(R.string.version_x_privacy_policy, BuildConfig.VERSION_NAME), onClick = onAbout))
                 }
             )
         }
@@ -185,6 +193,7 @@ private fun HomeRow(item: HomeItem) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(if (item.selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
             .clickable(onClick = item.onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
