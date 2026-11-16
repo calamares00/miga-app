@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -47,95 +48,84 @@ import org.calamares.miga.data.model.SavedFilter
 import org.calamares.miga.ui.components.EmptyState
 
 /**
- * What the search tab shows before anything is typed: "What can I cook?", the saved searches and
- * the latest ones, so a search is one tap away.
+ * What the search tab shows over the recipes before anything is typed: "What can I cook?", the
+ * saved searches and the latest ones, so a search is one tap away.
  */
-@Composable
-internal fun SearchStart(
+internal fun LazyListScope.searchStartItems(
     recent: List<String>,
     saved: List<SavedFilter>,
     onPantry: () -> Unit,
     onRecent: (String) -> Unit,
     onClearRecent: () -> Unit,
     onSaved: (SavedFilter) -> Unit,
-    onDeleteSaved: (SavedFilter) -> Unit,
-    modifier: Modifier = Modifier
+    onDeleteSaved: (SavedFilter) -> Unit
 ) {
-    var deleting by remember { mutableStateOf<SavedFilter?>(null) }
-    LazyColumn(modifier = modifier, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        item {
-            Card(
-                onClick = onPantry,
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Kitchen, contentDescription = null, modifier = Modifier.size(32.dp))
-                    Column(modifier = Modifier.padding(start = 16.dp)) {
-                        Text(L10n.str(R.string.pantry_title), style = MaterialTheme.typography.titleMedium)
-                        Text(L10n.str(R.string.pantry_card_body), style = MaterialTheme.typography.bodyMedium)
-                    }
+    item(key = "pantry") {
+        Card(
+            onClick = onPantry,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Kitchen, contentDescription = null, modifier = Modifier.size(32.dp))
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                    Text(L10n.str(R.string.pantry_title), style = MaterialTheme.typography.titleMedium)
+                    Text(L10n.str(R.string.pantry_card_body), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
-        if (saved.isNotEmpty()) {
-            item {
-                SectionLabel(L10n.str(R.string.saved_searches))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    saved.forEach { filter ->
-                        InputChip(
-                            selected = false,
-                            onClick = { onSaved(filter) },
-                            label = { Text(filter.name) },
-                            leadingIcon = { Icon(Icons.Filled.Bookmark, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                            trailingIcon = {
-                                IconButton(onClick = { deleting = filter }, modifier = Modifier.size(24.dp)) {
-                                    Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.delete_x, filter.name), modifier = Modifier.size(18.dp))
-                                }
+    }
+    if (saved.isNotEmpty()) {
+        item(key = "saved") {
+            SectionLabel(L10n.str(R.string.saved_searches))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                saved.forEach { filter ->
+                    InputChip(
+                        selected = false,
+                        onClick = { onSaved(filter) },
+                        label = { Text(filter.name) },
+                        leadingIcon = { Icon(Icons.Filled.Bookmark, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        trailingIcon = {
+                            IconButton(onClick = { onDeleteSaved(filter) }, modifier = Modifier.size(24.dp)) {
+                                Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.delete_x, filter.name), modifier = Modifier.size(18.dp))
                             }
-                        )
-                    }
+                        }
+                    )
                 }
-            }
-        }
-        if (recent.isNotEmpty()) {
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    SectionLabel(L10n.str(R.string.recent_searches), Modifier.weight(1f))
-                    TextButton(onClick = onClearRecent) { Text(L10n.str(R.string.clear_2)) }
-                }
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    recent.forEach { query ->
-                        AssistChip(
-                            onClick = { onRecent(query) },
-                            label = { Text(query, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                            leadingIcon = { Icon(Icons.Filled.History, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                        )
-                    }
-                }
-            }
-        }
-        if (saved.isEmpty() && recent.isEmpty()) {
-            item {
-                Text(
-                    L10n.str(R.string.name_ingredient_tag_utensil_difficulty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }
-    deleting?.let { filter ->
-        AlertDialog(
-            onDismissRequest = { deleting = null },
-            title = { Text(L10n.str(R.string.delete_saved_search)) },
-            text = { Text(filter.name) },
-            confirmButton = {
-                TextButton(onClick = { onDeleteSaved(filter); deleting = null }) { Text(L10n.str(R.string.delete), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = { TextButton(onClick = { deleting = null }) { Text(L10n.str(R.string.cancel)) } }
-        )
+    if (recent.isNotEmpty()) {
+        item(key = "recent") {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SectionLabel(L10n.str(R.string.recent_searches), Modifier.weight(1f))
+                TextButton(onClick = onClearRecent) { Text(L10n.str(R.string.clear_2)) }
+            }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                recent.forEach { query ->
+                    AssistChip(
+                        onClick = { onRecent(query) },
+                        label = { Text(query, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = { Icon(Icons.Filled.History, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    )
+                }
+            }
+        }
     }
+}
+
+/** Asks before deleting a saved search. */
+@Composable
+internal fun DeleteSavedSearchDialog(filter: SavedFilter, onDelete: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(L10n.str(R.string.delete_saved_search)) },
+        text = { Text(filter.name) },
+        confirmButton = {
+            TextButton(onClick = onDelete) { Text(L10n.str(R.string.delete), color = MaterialTheme.colorScheme.error) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
+    )
 }
 
 @Composable
@@ -205,14 +195,16 @@ internal fun PantryContent(
                 EmptyState(
                     icon = Icons.Filled.Kitchen,
                     title = L10n.str(R.string.pantry_title),
-                    body = L10n.str(R.string.pantry_empty_body)
+                    body = L10n.str(R.string.pantry_empty_body),
+                    scrollable = false
                 )
             }
             matches.isEmpty() -> item {
                 EmptyState(
                     icon = Icons.Filled.Kitchen,
                     title = L10n.str(R.string.no_results),
-                    body = L10n.str(R.string.pantry_no_matches)
+                    body = L10n.str(R.string.pantry_no_matches),
+                    scrollable = false
                 )
             }
             else -> items(matches, key = { it.recipe.id }) { match -> PantryMatchCard(match) { onRecipeClick(match.recipe.id) } }

@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.search
 
+import org.calamares.miga.data.model.SavedFilter
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardActions
@@ -118,11 +120,25 @@ fun GlobalSearchScreen(
     val keyboard = LocalSoftwareKeyboardController.current
     val openRecipe: (Long) -> Unit = { id -> viewModel.rememberQuery(); onRecipeClick(id) }
     BackHandler(enabled = pantryMode) { viewModel.setPantryMode(false) }
+    var deletingSaved by remember { mutableStateOf<SavedFilter?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     /** In Favourites, "only favourites" is implicit and does not count as an applied filter. */
     val activeCount = filter.activeConditions(ignoreFavorites = favoritesOnly)
     val filtersApplied = activeCount > 0
+    /** Nothing typed or filtered yet on the search tab: offer "What can I cook?" and the recent and saved searches. */
+    val showStart = searchTab && filter.query.isBlank() && !filtersApplied && !selectionMode
+    val startItems: LazyListScope.() -> Unit = {
+        searchStartItems(
+            recent = recentSearches,
+            saved = savedFilters,
+            onPantry = { viewModel.setPantryMode(true) },
+            onRecent = viewModel::updateQuery,
+            onClearRecent = viewModel::clearRecentSearches,
+            onSaved = viewModel::applySavedFilter,
+            onDeleteSaved = { deletingSaved = it }
+        )
+    }
 
     AdaptiveScaffold(
         contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.navigationBars).exclude(WindowInsets.ime),
@@ -245,16 +261,11 @@ fun GlobalSearchScreen(
                         body = L10n.str(R.string.tap_heart_recipe_keep_handy),
                         modifier = Modifier.fillMaxSize().weight(1f)
                     )
-                    filter.query.isBlank() && !filter.isActive && searchTab -> SearchStart(
-                        recent = recentSearches,
-                        saved = savedFilters,
-                        onPantry = { viewModel.setPantryMode(true) },
-                        onRecent = viewModel::updateQuery,
-                        onClearRecent = viewModel::clearRecentSearches,
-                        onSaved = viewModel::applySavedFilter,
-                        onDeleteSaved = viewModel::deleteSavedFilter,
-                        modifier = Modifier.fillMaxSize().weight(1f)
-                    )
+                    showStart -> LazyColumn(
+                        modifier = Modifier.fillMaxSize().weight(1f),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) { startItems() }
                     filter.query.isBlank() && !filter.isActive -> EmptyState(
                         icon = Icons.Filled.Search,
                         title = L10n.str(R.string.search_recipes),
@@ -275,6 +286,7 @@ fun GlobalSearchScreen(
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    if (showStart) startItems()
                     items(uiState.results, key = { it.recipeId }) { result ->
                         SearchResultCard(
                             result = result,
@@ -289,6 +301,14 @@ fun GlobalSearchScreen(
                 }
             }
         }
+    }
+
+    deletingSaved?.let { saved ->
+        DeleteSavedSearchDialog(
+            filter = saved,
+            onDelete = { viewModel.deleteSavedFilter(saved); deletingSaved = null },
+            onDismiss = { deletingSaved = null }
+        )
     }
 
     if (showSaveSearch) {

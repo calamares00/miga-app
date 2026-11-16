@@ -3,16 +3,20 @@
 Each book is a recipe collection with its own cover: your mum's, a friend's or one per theme (the best brownies deserve a book of their own). New recipes are saved in the book you have open.
 
 - In **Books**, the filters at the top (All, My books, Packs, Server) show each kind of book. You can also **swipe left or right** to move from one to the next.
-- Long-press a book to **select it**, then tap others to add them. At the top you have Edit, Share and Delete, and under **More actions**, **Pin to top**: pinned books come first, with a pin on their cover. Inside a book you can also pin it from its menu (⋮).
+- Long-press a book to **select it**, then tap others to add them. At the top you have Edit, Share and Delete (after deleting you have a few seconds to **Undo**), and under **More actions**, **Pin to top**: pinned books come first, with a pin on their cover. Inside a book you can also pin it from its menu (⋮).
 - Inside a book, recipes are grouped by **category**. Tap a category to collapse or expand it; the menu (⋮) collapses or expands them all.
 - When a recipe is open, **swipe left or right** to go to the next or previous recipe of the book.
-- Long-press a recipe to **select several**. At the top you can edit it (if only one), share or delete them, and under **More actions** change their category, difficulty, servings or source at once, mark them as favourites, move or copy them to another book, add their ingredients to the shopping list or **polish them** ✨ all in one go.
+- Long-press a recipe to **select several**. At the top you can edit it (if only one), share or delete them (with **Undo** for a few seconds), and under **More actions** change their category, difficulty, servings or source at once, mark them as favourites, move or copy them to another book, add their ingredients to the shopping list or **polish them** ✨ all in one go.
 - In each recipe, **My notes** keeps dated personal notes ("next time, less salt"). They do not change the recipe and go into backups.
-- **Search** looks through every book by name or ingredient. The filter button narrows it down by time, difficulty, category, equipment, tags, ingredients or origin, and active filters show up as chips you can remove one by one. **Favourites** works the same, with your favourites only.
+- **Search** looks through every book by name or ingredient. The filter button narrows it down by time, difficulty, category, equipment, tags, ingredients or origin, and active filters show up as chips you can remove one by one. The bookmark **saves the search** under a name, and before you type your saved and recent searches are at hand. **Favourites** works the same, with your favourites only.
+- **What can I cook?** (in Search): type the ingredients you have and see the recipes that use them, those needing fewest extra things first, with what is missing. Salt, water, oil and pepper are taken for granted.
 
 ## ✍️ Writing a recipe
 
 - **Ingredients**: as you type the name, the app suggests the ones you have used before. From each ingredient's menu (⋮) you can mark it as **optional** (parsley to garnish, for example): it shows "(optional)" without changing its name.
+- **Paste a list**: paste several ingredients or steps at once (or use **Paste list**) and they are split one per line, without bullets or numbers; ingredients are split into quantity, unit and name.
+- **Reorder**: drag the handle (⋮⋮) of an ingredient or step to move it.
+- **Repeated recipes**: if you already have a recipe with the same name, you are asked before saving.
 - **Sub-recipes**: split the recipe into parts (for example, "For the sauce"), each with its own ingredients and steps.
 - **Steps and notes** support formatting: while you type, a bar offers **bold**, *italics*, strikethrough and lists. Pressing Enter in a list starts the next item.
 - **Dictation**: tap the microphone to dictate the steps instead of typing them.
@@ -35,9 +39,9 @@ Options marked ✨ are done by the kitchen assistant and only appear once it is 
 
 ## 🍳 Cooking mode
 
-In a recipe with steps, tap **Cooking mode** to see them one at a time in full screen, with the screen kept on. Tick off the ingredients as you use them.
+In a recipe with steps, tap **Cooking mode** to see them one at a time in full screen. The sun icon chooses whether the screen **stays on** (remembered for next time). Tick off the ingredients as you use them.
 
-- Times mentioned in a step ("simmer for 10 minutes") become one-tap **timers**.
+- Times mentioned in a step ("simmer for 10 minutes") become one-tap **timers**, and the clock icon adds others with any name and minutes ("Rice", 18). You can have **several at once** and they keep counting after you close cooking mode or leave the app: when one ends, an alert sounds. For it to ring on time with the screen off, Android may ask you to allow **exact alarms**.
 - The app can **read each step aloud**. The voice is chosen in Settings → Voice and dictation.
 - With the **voice command** (microphone) you can say "next", "previous", "repeat" or "timer".
 - Turn on **hands-free** (the speaking-person icon) so it listens all the time: say "next" with your hands in the dough and it moves on without touching the phone. It stops listening while it reads a step aloud; to turn it off, tap the icon again.
@@ -46,7 +50,7 @@ In a recipe with steps, tap **Cooking mode** to see them one at a time in full s
 
 - Add items by typing, **dictating** or **scanning the barcode**. From a recipe you can add all its ingredients at once, and the explore button opens the product **catalogue** and the Open Food Facts search.
 - Items are grouped by category and sorted by **your supermarket's aisles**.
-- You can have **several lists** and save **templates** for the weekly shop.
+- You can have **several lists** and save **templates** for the weekly shop. On tablets and large screens the lists show on the left, and Settings shows each section next to its list.
 - **Swipe** an item right to tick it and left to remove it.
 - **Shop mode** keeps only what you need while shopping and stops the screen from turning off.
 - The **product sheet** (Open Food Facts) shows Nutri-Score, NOVA, Eco-Score, allergens, additives and an indicative score.
@@ -132,7 +136,7 @@ To share books and shopping lists with your family with full editing, connect Mi
 
 ## 🤖 Kitchen assistant {ai}
 
-Features marked ✨ are done by the kitchen assistant, which uses artificial intelligence (AI). They are optional and use **your own key** for Google Gemini, Anthropic Claude, OpenAI, DeepSeek (very low cost; only its Flash models read photos), Mistral (European), Groq (very fast, with a free tier) or OpenRouter (which has free models). With **OpenAI-compatible** you can use any other service with that API, such as OpenCode Zen, or a model on your own computer with Ollama or LM Studio: enter its address (for example `http://192.168.1.10:11434/v1`) and, if it asks for one, the key. For Mistral, Groq and the custom server, the **This model reads photos** switch says whether photos can be sent to it. The list of models loads on its own from the provider with your key (OpenRouter's from its public catalogue), and those that read photos are tagged **Images**.
+Features marked ✨ are done by the kitchen assistant, which uses artificial intelligence (AI). They are optional and use **your own key** for Google Gemini, Anthropic Claude, OpenAI, DeepSeek (very low cost; only its Flash models read photos), Mistral (European), Groq (very fast, with a free tier) or OpenRouter (which has free models). With **OpenAI-compatible** you can use any other service with that API, such as OpenCode Zen, or a model on your own computer with Ollama or LM Studio: enter its address (for example `http://192.168.1.10:11434/v1`) and, if it asks for one, the key. Every provider is set up the same way: key, model and, where it depends on the model, the **This model reads photos** switch, which says whether photos can be sent to it. The list of models loads on its own from the provider with your key (OpenRouter's from its public catalogue), and those that read photos are tagged **Images**.
 
 - If you add several providers, they are used **in the order you choose**: if one fails, the next one is tried automatically.
 - Each provider has a **switch**: turn it off whenever you like without losing its key.

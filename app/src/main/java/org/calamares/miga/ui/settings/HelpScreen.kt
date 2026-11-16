@@ -149,7 +149,8 @@ fun HelpScreen(onBack: () -> Unit) {
                         icon = Icons.Filled.SearchOff,
                         title = L10n.str(R.string.no_results),
                         body = L10n.str(R.string.help_no_results),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        scrollable = false
                     ) {
                         OutlinedButton(onClick = { query = "" }) { Text(L10n.str(R.string.clear_search)) }
                     }

@@ -1,0 +1,7 @@
+Novedades de la versión 1.0.31:
+• Deshacer al borrar recetas y libros.
+• Buscar: «¿Qué cocino con lo que tengo?», búsquedas recientes y guardadas.
+• Editor: pega listas de ingredientes o pasos de golpe, reordena arrastrando y aviso de recetas repetidas.
+• Modo cocina: varios temporizadores con nombre que suenan aunque salgas de la app, y pantalla encendida a tu elección.
+• Tablets: listas de la compra y Ajustes en dos paneles.
+• Todos los proveedores del asistente se configuran igual.
