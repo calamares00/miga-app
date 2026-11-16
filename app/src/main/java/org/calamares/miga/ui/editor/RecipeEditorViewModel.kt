@@ -1,5 +1,9 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.data.model.Recipe
+import org.calamares.miga.data.model.searchKey
+import org.calamares.miga.data.model.ParsedShoppingEntry
+import org.calamares.miga.data.model.PastedLists
 import kotlinx.coroutines.withContext
 import org.calamares.miga.data.ai.aiCandidates
 import org.calamares.miga.data.ai.AiKeepAlive
@@ -510,6 +514,42 @@ class RecipeEditorViewModel(
         ingredientGroups.getOrNull(groupIndex)?.ingredients?.removeAt(rowIndex)
     }
 
+    /**
+     * Turns pasted [lines] into ingredient rows: the first fills row [rowIndex] (its quantity and
+     * unit only if still empty), the rest are inserted after it.
+     */
+    fun splitIngredientRow(groupIndex: Int, rowIndex: Int, lines: List<String>) {
+        val rows = ingredientGroups.getOrNull(groupIndex)?.ingredients ?: return
+        val parsed = lines.map { PastedLists.ingredient(it) }
+        rows.getOrNull(rowIndex)?.let { row ->
+            val first = parsed.first()
+            row.name = first.name
+            if (row.quantity.isBlank()) row.quantity = first.quantity?.let { formatEditorQuantity(it) }.orEmpty()
+            if (row.unit.isBlank()) row.unit = first.unit.orEmpty()
+        }
+        rows.addAll((rowIndex + 1).coerceAtMost(rows.size), parsed.drop(1).map { it.toRow() })
+    }
+
+    /** Adds a pasted list of ingredients at the end of the group, replacing a last empty row. */
+    fun pasteIngredients(groupIndex: Int, text: String) {
+        val rows = ingredientGroups.getOrNull(groupIndex)?.ingredients ?: return
+        val parsed = PastedLists.lines(text).map { PastedLists.ingredient(it).toRow() }
+        if (parsed.isEmpty()) return
+        if (rows.lastOrNull()?.let { it.name.isBlank() && it.quantity.isBlank() && it.unit.isBlank() } == true) rows.removeAt(rows.lastIndex)
+        rows.addAll(parsed)
+    }
+
+    private fun ParsedShoppingEntry.toRow() =
+        IngredientRowUi(name, quantity?.let { formatEditorQuantity(it) }.orEmpty(), unit.orEmpty())
+
+    /** New order after dragging an ingredient. */
+    fun reorderIngredients(groupIndex: Int, order: List<IngredientRowUi>) {
+        val rows = ingredientGroups.getOrNull(groupIndex)?.ingredients ?: return
+        if (order.toSet() != rows.toSet()) return
+        rows.clear()
+        rows.addAll(order)
+    }
+
     fun addIngredientSubGroup() {
         ingredientGroups.add(IngredientGroupUi(name = L10n.str(R.string.new_sub_recipe), ingredients = mutableListOf(IngredientRowUi())))
     }
@@ -547,6 +587,30 @@ class RecipeEditorViewModel(
 
     fun removeStepRow(groupIndex: Int, rowIndex: Int) {
         stepGroups.getOrNull(groupIndex)?.steps?.removeAt(rowIndex)
+    }
+
+    /** Turns pasted [lines] into steps: the first goes into row [rowIndex], the rest after it. */
+    fun splitStepRow(groupIndex: Int, rowIndex: Int, lines: List<String>) {
+        val rows = stepGroups.getOrNull(groupIndex)?.steps ?: return
+        rows.getOrNull(rowIndex)?.text = lines.first()
+        rows.addAll((rowIndex + 1).coerceAtMost(rows.size), lines.drop(1).map { StepRowUi(it) })
+    }
+
+    /** Adds a pasted list of steps at the end of the group, replacing a last empty step. */
+    fun pasteSteps(groupIndex: Int, text: String) {
+        val rows = stepGroups.getOrNull(groupIndex)?.steps ?: return
+        val lines = PastedLists.lines(text)
+        if (lines.isEmpty()) return
+        if (rows.lastOrNull()?.text?.isBlank() == true) rows.removeAt(rows.lastIndex)
+        rows.addAll(lines.map { StepRowUi(it) })
+    }
+
+    /** New order after dragging a step. */
+    fun reorderSteps(groupIndex: Int, order: List<StepRowUi>) {
+        val rows = stepGroups.getOrNull(groupIndex)?.steps ?: return
+        if (order.toSet() != rows.toSet()) return
+        rows.clear()
+        rows.addAll(order)
     }
 
     fun addStepSubGroup() {
@@ -595,12 +659,28 @@ class RecipeEditorViewModel(
         if (trimmed.isNotEmpty() && !selectedUtensils.contains(trimmed)) selectedUtensils.add(trimmed)
     }
 
-    fun save(onSaved: (Long) -> Unit) {
+    /** Another recipe with the same name, found when saving; the screen asks before saving it too. */
+    var duplicate by mutableStateOf<Recipe?>(null)
+
+    /**
+     * Saves the recipe. Unless [allowDuplicate], a recipe of the same name elsewhere (accents and
+     * case aside) stops it and fills [duplicate], so the user can decide.
+     */
+    fun save(onSaved: (Long) -> Unit, allowDuplicate: Boolean = false) {
         if (name.isBlank()) {
             nameError = true
             return
         }
         viewModelScope.launch {
+            if (!allowDuplicate) {
+                val key = searchKey(name.trim())
+                val existing = repository.getAllRecipesOnce().firstOrNull { it.id != recipeId && searchKey(it.name.trim()) == key }
+                if (existing != null) {
+                    duplicate = existing
+                    return@launch
+                }
+            }
+            duplicate = null
             isSaving = true
             val draft = RecipeDraft(
                 id = if (isEditing) recipeId else 0L,

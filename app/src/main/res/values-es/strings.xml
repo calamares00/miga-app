@@ -1367,4 +1367,13 @@
     <string name="cook_timer_minutes">"Minutos"</string>
     <string name="cook_start_timer">"Empezar"</string>
     <string name="cook_allow_exact_alarms">"Permite las alarmas exactas para que los temporizadores suenen a tiempo con la pantalla apagada"</string>
+    <string name="paste_list">"Pegar lista"</string>
+    <string name="paste_ingredients">"Pegar ingredientes"</string>
+    <string name="paste_ingredients_hint">"Uno por línea, p. ej.\n200 g de harina\n3 huevos"</string>
+    <string name="paste_steps">"Pegar pasos"</string>
+    <string name="paste_steps_hint">"Un paso por línea; los números y viñetas se quitan"</string>
+    <string name="drag_to_reorder">"Arrastra para reordenar"</string>
+    <string name="duplicate_recipe_title">"Ya existe esta receta"</string>
+    <string name="duplicate_recipe_body_x_x">"Ya tienes «%1$s» en el libro «%2$s». ¿Guardar también esta?"</string>
+    <string name="save_anyway">"Guardar igualmente"</string>
 </resources>
