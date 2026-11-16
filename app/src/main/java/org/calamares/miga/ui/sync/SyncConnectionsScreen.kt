@@ -1,12 +1,14 @@
 package org.calamares.miga.ui.sync
 
+import org.calamares.miga.ui.components.ButtonContent
+import androidx.compose.material3.Button
+import org.calamares.miga.ui.components.EmptyState
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.sync.ServerUrlSecurity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -129,11 +131,13 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
         }
     ) { padding ->
         if (connections.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text(
-                    L10n.str(R.string.dont_have_connections_yet_nadd),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            EmptyState(
+                icon = Icons.Filled.Sync,
+                title = L10n.str(R.string.no_connections_title),
+                body = L10n.str(R.string.no_connections_body),
+                modifier = Modifier.fillMaxSize().padding(padding)
+            ) {
+                Button(onClick = { viewModel.resetTestState(); showAddDialog = true }) { ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_connection)) }
             }
         } else {
             LazyColumn(contentPadding = PaddingValues(vertical = 8.dp), modifier = Modifier.padding(padding)) {

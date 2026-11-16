@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.settings
 
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material.icons.filled.SearchOff
+import org.calamares.miga.ui.components.EmptyState
 import androidx.compose.foundation.selection.toggleable
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.ButtonContent
@@ -142,12 +145,14 @@ fun HelpScreen(onBack: () -> Unit) {
             }
             if (shown.isEmpty()) {
                 item {
-                    Text(
-                        L10n.str(R.string.help_no_results),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 16.dp)
-                    )
+                    EmptyState(
+                        icon = Icons.Filled.SearchOff,
+                        title = L10n.str(R.string.no_results),
+                        body = L10n.str(R.string.help_no_results),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedButton(onClick = { query = "" }) { Text(L10n.str(R.string.clear_search)) }
+                    }
                 }
             }
             items(shown, key = { it.title }) { topic ->
