@@ -1,5 +1,22 @@
 package org.calamares.miga.ui.detail
 
+import kotlin.math.roundToInt
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.AddAlarm
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.filled.LightMode
+import android.provider.Settings
+import android.net.Uri
+import android.content.Intent
+import android.os.Build
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.mutableLongStateOf
+import org.calamares.miga.data.cook.CookTimers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.calamares.miga.ui.components.READABLE_CONTENT_WIDTH
 import org.calamares.miga.ui.components.ButtonContent
@@ -113,17 +130,11 @@ private data class CookStep(val groupName: String?, val stepNumberInGroup: Int, 
 private fun Recipe.flattenSteps(): List<CookStep> =
     stepGroups.flatMap { group -> group.instructions.mapIndexed { idx, instruction -> CookStep(group.name, idx + 1, instruction) } }
 
-/**
- * Active cook mode timer: the step it belongs to (index in [CookStep], not the page) and its
- * starting seconds. [startToken] changes on every "Start" tap, even when restarting the same step,
- * so LaunchedEffect always restarts the countdown.
- */
-private data class ActiveTimer(val stepIndex: Int, val totalSeconds: Int, val startToken: Int)
-
 private fun formatTimer(seconds: Int): String = "%d:%02d".format(seconds / 60, seconds % 60)
 
 private const val COOK_PREFS = "miga_cook_mode"
 private const val KEY_TEXT_SIZE = "text_size"
+private const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
 
 /** Step text sizes the user can cycle through, as a factor of the base size. */
 private val TEXT_SIZES = listOf(0.85f, 1f, 1.2f, 1.4f)
@@ -158,9 +169,13 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
     val context = LocalContext.current
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
 
-    var activeTimer by remember { mutableStateOf<ActiveTimer?>(null) }
-    var timerSecondsLeft by remember { mutableIntStateOf(0) }
-    var timerFinished by remember { mutableStateOf(false) }
+    // Timers live outside cook mode (see CookTimers): they keep running, and ring, after it closes.
+    val timers by CookTimers.timers.collectAsStateWithLifecycle()
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    /** Timers whose end was already signalled here, so the phone vibrates once for each. */
+    val signalledTimers = remember { mutableStateListOf<Int>() }
+    var showNewTimer by remember { mutableStateOf(false) }
+    var keepScreenOn by remember { mutableStateOf(cookPrefs(context).getBoolean(KEY_KEEP_SCREEN_ON, true)) }
 
     val speechAvailable = remember { SpeechDictation.isAvailable(context) }
     val dictationLanguage = org.calamares.miga.ui.components.rememberDictationLanguage()
@@ -184,23 +199,47 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
     val currentStep = steps.getOrNull(currentStepIndex)
     val currentDetectedSeconds = remember(currentStep?.instruction) { currentStep?.let { StepTimerParsing.findTimerSeconds(it.instruction) } }
 
-    LaunchedEffect(activeTimer) {
-        val timer = activeTimer ?: return@LaunchedEffect
-        timerSecondsLeft = timer.totalSeconds
-        timerFinished = false
-        while (timerSecondsLeft > 0) {
-            delay(1000)
-            timerSecondsLeft--
-        }
-        timerFinished = true
-        repeat(4) {
-            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-            delay(400)
+    LaunchedEffect(timers.isNotEmpty()) {
+        while (timers.isNotEmpty()) {
+            now = System.currentTimeMillis()
+            val finished = timers.filter { it.secondsLeft(now) == 0 && it.id !in signalledTimers }
+            if (finished.isNotEmpty()) {
+                signalledTimers += finished.map { it.id }
+                launch {
+                    repeat(4) {
+                        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                        delay(400)
+                    }
+                }
+            }
+            delay(250)
         }
     }
 
+    DisposableEffect(keepScreenOn) {
+        view.keepScreenOn = keepScreenOn
+        onDispose { view.keepScreenOn = false }
+    }
+
+    // Android 13+: a timer's notification needs the permission, asked when the first one starts.
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    fun startTimer(name: String, seconds: Int, stepIndex: Int?) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        CookTimers.start(context, name, seconds, stepIndex)
+        now = System.currentTimeMillis()
+    }
+
+    fun startStepTimer(stepIndex: Int, seconds: Int) =
+        startTimer(L10n.str(R.string.cook_timer_step_x, stepIndex + 1), seconds, stepIndex)
+
+    fun timerOfStep(stepIndex: Int) = timers.lastOrNull { it.stepIndex == stepIndex }
+
     DisposableEffect(Unit) {
-        view.keepScreenOn = true
         var engine: TextToSpeech? = null
         engine = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
@@ -212,7 +251,6 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
         }
         tts = engine
         onDispose {
-            view.keepScreenOn = false
             engine?.stop()
             engine?.shutdown()
             activeRecognizer?.destroy()
@@ -250,14 +288,17 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
         CookVoiceCommand.StartTimer -> {
             val seconds = currentDetectedSeconds
             if (seconds != null) {
-                activeTimer = ActiveTimer(currentStepIndex, seconds, (activeTimer?.startToken ?: 0) + 1)
+                startStepTimer(currentStepIndex, seconds)
                 L10n.str(R.string.timer_started)
             } else {
                 L10n.str(R.string.no_duration_was_detected_step)
             }
         }
-        CookVoiceCommand.CancelTimer ->
-            if (activeTimer != null) { activeTimer = null; L10n.str(R.string.timer_cancelled) } else L10n.str(R.string.theres_no_active_timer)
+        CookVoiceCommand.CancelTimer -> {
+            // The current step's timer, or else the latest one.
+            val timer = timerOfStep(currentStepIndex) ?: timers.lastOrNull()
+            if (timer != null) { CookTimers.cancel(context, timer.id); L10n.str(R.string.timer_cancelled) } else L10n.str(R.string.theres_no_active_timer)
+        }
     }
 
     fun beginListeningForCommand() {
@@ -359,6 +400,11 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
         cookPrefs(context).edit().putInt(KEY_TEXT_SIZE, textSizeIndex).apply()
     }
 
+    fun toggleKeepScreenOn() {
+        keepScreenOn = !keepScreenOn
+        cookPrefs(context).edit().putBoolean(KEY_KEEP_SCREEN_ON, keepScreenOn).apply()
+    }
+
     fun close() {
         tts?.stop()
         onClose()
@@ -367,6 +413,12 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
     // Full-screen layer inside the app window rather than a Dialog, so it gets the real system bar
     // insets and never shows the screen underneath.
     BackHandler(onBack = ::close)
+    if (showNewTimer) {
+        NewTimerDialog(
+            onStart = { name, seconds -> showNewTimer = false; startTimer(name, seconds, null) },
+            onDismiss = { showNewTimer = false }
+        )
+    }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         // Since Android 15 full-screen windows draw under the system bars, so the insets are
         // applied here to keep the bottom buttons clear of the navigation bar.
@@ -397,6 +449,16 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                     )
                     IconButton(onClick = ::cycleTextSize) {
                         Icon(Icons.Filled.FormatSize, contentDescription = L10n.str(R.string.cook_text_size))
+                    }
+                    IconButton(onClick = ::toggleKeepScreenOn) {
+                        Icon(
+                            if (keepScreenOn) Icons.Filled.LightMode else Icons.Outlined.LightMode,
+                            contentDescription = L10n.str(if (keepScreenOn) R.string.cook_screen_on else R.string.cook_screen_may_turn_off),
+                            tint = if (keepScreenOn) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                        )
+                    }
+                    IconButton(onClick = { showNewTimer = true }) {
+                        Icon(Icons.Filled.AddAlarm, contentDescription = L10n.str(R.string.cook_new_timer))
                     }
                     if (speechAvailable) {
                         IconButton(onClick = { toggleHandsFree() }) {
@@ -466,14 +528,28 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                 )
                 Spacer(modifier = Modifier.height(10.dp))
 
-                activeTimer?.let { timer ->
-                    TimerBanner(
-                        stepNumber = timer.stepIndex + 1,
-                        secondsLeft = timerSecondsLeft,
-                        finished = timerFinished,
-                        onCancel = { activeTimer = null },
-                        onOpenStep = { goToPage(timer.stepIndex + if (hasIngredients) 1 else 0) }
-                    )
+                if (timers.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        timers.forEach { timer ->
+                            TimerBanner(
+                                name = timer.name,
+                                secondsLeft = timer.secondsLeft(now),
+                                onCancel = { CookTimers.cancel(context, timer.id) },
+                                onOpenStep = timer.stepIndex?.takeIf { it in steps.indices }?.let { index ->
+                                    { goToPage(index + if (hasIngredients) 1 else 0) }
+                                }
+                            )
+                        }
+                        if (!CookTimers.canBeExact(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            TextButton(onClick = {
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}"))
+                                    )
+                                }
+                            }) { Text(L10n.str(R.string.cook_allow_exact_alarms), style = MaterialTheme.typography.bodySmall) }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(10.dp))
                 }
 
@@ -503,17 +579,15 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                             textScale = TEXT_SIZES[textSizeIndex],
                             ingredients = stepIngredients,
                             detectedSeconds = detectedSeconds,
-                            timerRunningHere = activeTimer?.stepIndex == stepIndex,
+                            timerRunningHere = timerOfStep(stepIndex) != null,
                             onListen = {
                                 val engine = tts
                                 if (engine != null && engine.isSpeaking) engine.stop() else speak(step.instruction, "cook_step")
                             },
                             onTimer = {
-                                activeTimer = if (activeTimer?.stepIndex == stepIndex || detectedSeconds == null) {
-                                    null
-                                } else {
-                                    ActiveTimer(stepIndex, detectedSeconds, (activeTimer?.startToken ?: 0) + 1)
-                                }
+                                val running = timerOfStep(stepIndex)
+                                if (running != null) CookTimers.cancel(context, running.id)
+                                else if (detectedSeconds != null) startStepTimer(stepIndex, detectedSeconds)
                             }
                         )
                     }
@@ -564,7 +638,8 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
 }
 
 @Composable
-private fun TimerBanner(stepNumber: Int, secondsLeft: Int, finished: Boolean, onCancel: () -> Unit, onOpenStep: () -> Unit) {
+private fun TimerBanner(name: String, secondsLeft: Int, onCancel: () -> Unit, onOpenStep: (() -> Unit)?) {
+    val finished = secondsLeft == 0
     val bannerColor = if (finished) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer
     val bannerContentColor = if (finished) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
     Row(
@@ -572,14 +647,14 @@ private fun TimerBanner(stepNumber: Int, secondsLeft: Int, finished: Boolean, on
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(bannerColor)
-            .clickable(onClick = onOpenStep)
+            .clickable(enabled = onOpenStep != null) { onOpenStep?.invoke() }
             .padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Icon(Icons.Filled.Timer, contentDescription = null, tint = bannerContentColor)
         Text(
-            text = if (finished) L10n.str(R.string.done_step_x, stepNumber) else L10n.str(R.string.step_x_x, stepNumber, formatTimer(secondsLeft)),
+            text = if (finished) L10n.str(R.string.cook_timer_done_x, name) else "$name · ${formatTimer(secondsLeft)}",
             style = MaterialTheme.typography.titleLarge,
             color = bannerContentColor,
             modifier = Modifier.weight(1f)
@@ -588,6 +663,46 @@ private fun TimerBanner(stepNumber: Int, secondsLeft: Int, finished: Boolean, on
             Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel_timer), tint = bannerContentColor)
         }
     }
+}
+
+/** A timer of one's own: a name and minutes, for things the steps do not time. */
+@Composable
+private fun NewTimerDialog(onStart: (name: String, seconds: Int) -> Unit, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var minutes by remember { mutableStateOf("") }
+    val value = minutes.trim().replace(',', '.').toDoubleOrNull()
+    val seconds = value?.takeIf { it > 0 && it <= 24 * 60 }?.let { (it * 60).roundToInt() }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(L10n.str(R.string.cook_new_timer)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(L10n.str(R.string.cook_timer_name)) },
+                    placeholder = { Text(L10n.str(R.string.cook_timer_name_hint)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = minutes,
+                    onValueChange = { minutes = it },
+                    label = { Text(L10n.str(R.string.cook_timer_minutes)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = seconds != null, onClick = { seconds?.let { onStart(name.ifBlank { L10n.str(R.string.cook_timer) }, it) } }) {
+                Text(L10n.str(R.string.cook_start_timer))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
+    )
 }
 
 /** First page: every ingredient, which can be ticked off while getting them ready. */

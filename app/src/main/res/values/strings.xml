@@ -349,7 +349,6 @@
     <string name="list_too_big_qr_code">"The list is too long for a QR code. Use \"Send as text\" instead."</string>
     <string name="list_empty">"Your list is empty. Fridge looking full?"</string>
     <string name="list_received">"List received"</string>
-    <string name="done_step_x">"Done! Step %1$s"</string>
     <string name="poor">"Poor"</string>
     <string name="ticked_x">"Ticked by %1$s"</string>
     <string name="tick">"Tick"</string>
@@ -484,7 +483,6 @@
     <string name="send_another_phone_miga">"To send it to another phone with Miga"</string>
     <string name="previous_step">"Previous step"</string>
     <string name="step_x">"Step %1$s"</string>
-    <string name="step_x_x">"Step %1$s · %2$s"</string>
     <string name="main_steps">"Main steps"</string>
     <string name="paste_link_recipe_website_ai">"Paste a link to a recipe from any website: the assistant reads it and fills in the editor for you."</string>
     <string name="dangerous_food_allergies_health">"Dangerous: food, allergies or health"</string>
@@ -1357,4 +1355,17 @@
     <string name="recipe_deleted">"Recipe deleted"</string>
     <string name="recipes_deleted_n">"Recipes deleted: %1$d"</string>
     <string name="book_deleted">"Book deleted"</string>
+    <string name="cook_timers_channel">"Cooking timers"</string>
+    <string name="cook_timer">"Timer"</string>
+    <string name="cook_timer_done_x">"%1$s is ready"</string>
+    <string name="cook_timer_done_body">"Your cooking timer has finished."</string>
+    <string name="cook_timer_step_x">"Step %1$d"</string>
+    <string name="cook_screen_on">"Screen stays on (tap to let it turn off)"</string>
+    <string name="cook_screen_may_turn_off">"Screen may turn off (tap to keep it on)"</string>
+    <string name="cook_new_timer">"New timer"</string>
+    <string name="cook_timer_name">"Name"</string>
+    <string name="cook_timer_name_hint">"e.g. Rice"</string>
+    <string name="cook_timer_minutes">"Minutes"</string>
+    <string name="cook_start_timer">"Start"</string>
+    <string name="cook_allow_exact_alarms">"Allow exact alarms so timers ring on time with the screen off"</string>
 </resources>
