@@ -1,5 +1,9 @@
 package org.calamares.miga.ui.search
 
+import org.calamares.miga.data.model.recipesWithWhatYouHave
+import org.calamares.miga.data.model.PantryMatch
+import org.calamares.miga.data.model.SavedFilter
+import org.calamares.miga.data.local.SettingsRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.calamares.miga.data.local.entity.CategoryEntity
@@ -45,6 +49,7 @@ private data class FilterOptions(
 
 class GlobalSearchViewModel(
     private val repository: RecipeRepository,
+    private val settingsRepository: SettingsRepository,
     /** True on the Favourites tab: "only favourites" is fixed and clearing filters keeps it. */
     private val initialOnlyFavorites: Boolean = false,
     /** Filter to start with, when opened from the statistics (see SearchRequests). */
@@ -76,6 +81,67 @@ class GlobalSearchViewModel(
             availableOrigins = recipes.mapNotNull { it.originCountry }.distinct()
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GlobalSearchUiState())
+
+    /** Latest searches and searches saved by name, offered while the search is empty. */
+    val recentSearches: StateFlow<List<String>> = settingsRepository.observeRecentSearches()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val savedFilters: StateFlow<List<SavedFilter>> = settingsRepository.observeSavedFilters()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Remembers the current text as a recent search (on the keyboard's search key or opening a result). */
+    fun rememberQuery() {
+        val query = _filter.value.query
+        if (query.isNotBlank()) viewModelScope.launch { settingsRepository.addRecentSearch(query) }
+    }
+
+    fun clearRecentSearches() {
+        viewModelScope.launch { settingsRepository.clearRecentSearches() }
+    }
+
+    fun saveCurrentFilter(name: String) {
+        if (name.isBlank()) return
+        viewModelScope.launch { settingsRepository.saveFilter(SavedFilter.from(name, _filter.value)) }
+    }
+
+    fun applySavedFilter(saved: SavedFilter) {
+        _filter.value = saved.toFilter().let { if (initialOnlyFavorites) it.copy(onlyFavorites = true) else it }
+    }
+
+    fun deleteSavedFilter(saved: SavedFilter) {
+        viewModelScope.launch { settingsRepository.deleteSavedFilter(saved.name) }
+    }
+
+    // --- What can I cook with what I have ---
+
+    private val _pantryMode = MutableStateFlow(false)
+    /** True while the screen shows recipes for what the user has instead of the search results. */
+    val pantryMode: StateFlow<Boolean> = _pantryMode
+
+    val pantryItems: StateFlow<List<String>> = settingsRepository.observePantryItems()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val pantryMatches: StateFlow<List<PantryMatch>> = combine(repository.observeAllRecipes(), settingsRepository.observePantryItems()) { recipes, have ->
+        recipesWithWhatYouHave(recipes, have)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun setPantryMode(on: Boolean) {
+        _pantryMode.value = on
+    }
+
+    /** Adds what was typed; commas separate several ("eggs, potatoes"). */
+    fun addPantryItems(text: String) {
+        val added = text.split(',', '\n').map { it.trim() }.filter { it.isNotEmpty() }
+        if (added.isEmpty()) return
+        viewModelScope.launch { settingsRepository.setPantryItems(pantryItems.value + added) }
+    }
+
+    fun removePantryItem(item: String) {
+        viewModelScope.launch { settingsRepository.setPantryItems(pantryItems.value - item) }
+    }
+
+    fun clearPantry() {
+        viewModelScope.launch { settingsRepository.setPantryItems(emptyList()) }
+    }
 
     fun updateQuery(query: String) {
         _filter.update { it.copy(query = query) }

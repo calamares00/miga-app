@@ -3,16 +3,20 @@
 Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo o uno por temas (las mejores croquetas merecen su propio libro). Las recetas nuevas se guardan en el libro que tengas abierto.
 
 - En **Libros**, los filtros de arriba (Todos, Mis libros, Packs, Servidor) muestran cada tipo de libro. También puedes **deslizar a izquierda o derecha** para pasar de uno a otro.
-- Mantén pulsado un libro para **seleccionarlo**; luego toca otros para añadirlos. Arriba tienes Editar, Compartir y Eliminar, y en **Más acciones**, **Fijar arriba**: los libros fijados salen los primeros, con una chincheta en la portada. Dentro de un libro también puedes fijarlo desde su menú (⋮).
+- Mantén pulsado un libro para **seleccionarlo**; luego toca otros para añadirlos. Arriba tienes Editar, Compartir y Eliminar (al eliminar tienes unos segundos para **Deshacer**), y en **Más acciones**, **Fijar arriba**: los libros fijados salen los primeros, con una chincheta en la portada. Dentro de un libro también puedes fijarlo desde su menú (⋮).
 - Dentro de un libro, las recetas se agrupan por **categoría**. Toca una categoría para plegarla o desplegarla; desde el menú (⋮) puedes plegarlas o desplegarlas todas.
 - Al abrir una receta, **desliza a izquierda o derecha** para pasar a la siguiente o a la anterior del libro.
-- Mantén pulsada una receta para **seleccionar varias**. Arriba puedes editarla (si es solo una), compartirlas o eliminarlas, y en **Más acciones** cambiarles a la vez la categoría, la dificultad, las raciones o la fuente, marcarlas como favoritas, moverlas o copiarlas a otro libro, añadir sus ingredientes a la lista de la compra o **mejorarlas** ✨ todas de una vez.
+- Mantén pulsada una receta para **seleccionar varias**. Arriba puedes editarla (si es solo una), compartirlas o eliminarlas (con **Deshacer** durante unos segundos), y en **Más acciones** cambiarles a la vez la categoría, la dificultad, las raciones o la fuente, marcarlas como favoritas, moverlas o copiarlas a otro libro, añadir sus ingredientes a la lista de la compra o **mejorarlas** ✨ todas de una vez.
 - En cada receta, **Mis notas** guarda notas personales con fecha («la próxima vez, menos sal»). No cambian la receta y van en las copias de seguridad.
-- **Buscar** busca en todos los libros por nombre o ingrediente. Con el botón de filtros afinas por tiempo, dificultad, categoría, equipamiento, etiquetas, ingredientes u origen, y los filtros activos aparecen como chips que puedes quitar de uno en uno. **Favoritos** funciona igual, solo con tus favoritas.
+- **Buscar** busca en todos los libros por nombre o ingrediente. Con el botón de filtros afinas por tiempo, dificultad, categoría, equipamiento, etiquetas, ingredientes u origen, y los filtros activos aparecen como chips que puedes quitar de uno en uno. Con el marcador **guardas la búsqueda** con un nombre, y antes de escribir tienes a mano tus búsquedas guardadas y las recientes. **Favoritos** funciona igual, solo con tus favoritas.
+- **¿Qué cocino con lo que tengo?** (en Buscar): escribe los ingredientes que tienes y verás las recetas que los usan, primero las que necesitan menos cosas, con lo que te falta. La sal, el agua, el aceite y la pimienta se dan por supuestos.
 
 ## ✍️ Escribir una receta
 
 - **Ingredientes**: al escribir el nombre, la app te sugiere los que ya has usado. Desde el menú (⋮) de cada ingrediente puedes marcarlo como **opcional** (el perejil para decorar, por ejemplo): se mostrará «(opcional)» sin ensuciar su nombre.
+- **Pegar una lista**: pega varios ingredientes o pasos de golpe (o usa **Pegar lista**) y se separan uno por línea, sin viñetas ni números; en los ingredientes se distinguen cantidad, unidad y nombre.
+- **Reordenar**: arrastra el asa (⋮⋮) de un ingrediente o un paso para moverlo.
+- **Recetas repetidas**: si ya tienes una receta con el mismo nombre, al guardar se te pregunta antes.
 - **Subrecetas**: divide la receta en partes (por ejemplo, «Para la salsa»), cada una con sus ingredientes y pasos.
 - **Pasos y notas** admiten formato: al escribir aparece una barra con **negrita**, *cursiva*, tachado y listas. Pulsar Intro en una lista empieza el siguiente punto.
 - **Dictado**: pulsa el micrófono para dictar los pasos en lugar de escribirlos.
@@ -35,9 +39,9 @@ Las opciones con ✨ las hace el asistente de cocina y solo aparecen si lo tiene
 
 ## 🍳 Modo cocina
 
-En una receta con pasos, pulsa **Modo cocina** para verlos uno a uno en pantalla completa, sin que la pantalla se apague. Marca los ingredientes a medida que los uses.
+En una receta con pasos, pulsa **Modo cocina** para verlos uno a uno en pantalla completa. Con el icono del sol eliges si la pantalla se mantiene **siempre encendida** (se recuerda para la próxima vez). Marca los ingredientes a medida que los uses.
 
-- Los tiempos que aparecen en un paso («cocer 10 minutos») se convierten en **temporizadores** de un toque.
+- Los tiempos que aparecen en un paso («cocer 10 minutos») se convierten en **temporizadores** de un toque, y con el icono del reloj añades otros con el nombre y los minutos que quieras («Arroz», 18). Puedes tener **varios a la vez** y siguen contando aunque cierres el modo cocina o salgas de la app: al terminar suena un aviso. Para que suene a su hora con la pantalla apagada, Android puede pedirte permitir las **alarmas exactas**.
 - La app puede **leerte cada paso en voz alta**. La voz se elige en Ajustes → Voz y dictado.
 - Con el **comando de voz** (micrófono) puedes decir «siguiente», «anterior», «repite» o «temporizador».
 - Activa **manos libres** (el icono de la persona hablando) para que escuche todo el rato: dices «siguiente» con las manos en la masa y pasa de paso sin tocar el móvil. Mientras lee un paso en voz alta deja de escuchar; para desactivarlo, vuelve a tocar el icono.
@@ -46,7 +50,7 @@ En una receta con pasos, pulsa **Modo cocina** para verlos uno a uno en pantalla
 
 - Añade artículos escribiendo, **dictando** o **escaneando el código de barras**. Desde una receta puedes añadir todos sus ingredientes de una vez, y el botón de explorar abre el **catálogo** de productos y la búsqueda en Open Food Facts.
 - Los artículos se agrupan por categoría y se ordenan según los **pasillos de tu supermercado**.
-- Puedes tener **varias listas** y guardar **plantillas** para la compra de cada semana.
+- Puedes tener **varias listas** y guardar **plantillas** para la compra de cada semana. En tablets y pantallas grandes, las listas se ven a la izquierda y los Ajustes muestran cada apartado al lado de la lista.
 - **Desliza** un artículo a la derecha para marcarlo y a la izquierda para quitarlo.
 - El **modo tienda** deja solo lo necesario para comprar y no deja que la pantalla se apague.
 - La **ficha del producto** (Open Food Facts) muestra Nutri-Score, NOVA, Eco-Score, alérgenos, aditivos y una puntuación orientativa.
@@ -132,7 +136,7 @@ Para compartir libros y listas de la compra en familia con edición completa, co
 
 ## 🤖 Asistente de cocina {ai}
 
-Las funciones marcadas con ✨ las hace el asistente de cocina, que usa inteligencia artificial (IA). Son opcionales y usan **tu propia clave** de Google Gemini, Anthropic Claude, OpenAI, DeepSeek (muy económico; solo sus modelos Flash leen fotos), Mistral (europeo), Groq (muy rápido, con capa gratuita) u OpenRouter (que tiene modelos gratuitos). Con **Compatible con OpenAI** puedes usar cualquier otro servicio con esa API, como OpenCode Zen, o un modelo en tu propio ordenador con Ollama o LM Studio: escribe su dirección (por ejemplo `http://192.168.1.10:11434/v1`) y, si la pide, la clave. En Mistral, Groq y el personalizado, el interruptor **Este modelo lee fotos** indica si se le pueden mandar fotos. La lista de modelos se carga sola del proveedor con tu clave (la de OpenRouter, de su catálogo público), y los que leen fotos llevan la etiqueta **Imágenes**.
+Las funciones marcadas con ✨ las hace el asistente de cocina, que usa inteligencia artificial (IA). Son opcionales y usan **tu propia clave** de Google Gemini, Anthropic Claude, OpenAI, DeepSeek (muy económico; solo sus modelos Flash leen fotos), Mistral (europeo), Groq (muy rápido, con capa gratuita) u OpenRouter (que tiene modelos gratuitos). Con **Compatible con OpenAI** puedes usar cualquier otro servicio con esa API, como OpenCode Zen, o un modelo en tu propio ordenador con Ollama o LM Studio: escribe su dirección (por ejemplo `http://192.168.1.10:11434/v1`) y, si la pide, la clave. Todos los proveedores se configuran igual: clave, modelo y, cuando depende del modelo, el interruptor **Este modelo lee fotos**, que indica si se le pueden mandar fotos. La lista de modelos se carga sola del proveedor con tu clave (la de OpenRouter, de su catálogo público), y los que leen fotos llevan la etiqueta **Imágenes**.
 
 - Si añades varios proveedores, se usan **en el orden que elijas**: si uno falla, se prueba el siguiente automáticamente.
 - Cada proveedor tiene un **interruptor**: desactívalo cuando quieras sin perder su clave.

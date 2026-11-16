@@ -87,6 +87,9 @@ object ShoppingEntryParser {
         return chunks.map { it.trim() }.filter { it.isNotEmpty() }.map { parseOne(it) }
     }
 
+    /** One item already split from the rest: "200 g harina" -> 200, g, harina. */
+    fun parseLine(entry: String): ParsedShoppingEntry = parseOne(entry.trim())
+
     private fun parseOne(entry: String): ParsedShoppingEntry {
         val match = NUMBER_PREFIX.matchEntire(entry) ?: return parseWordNumber(entry)
         val quantity = parseNumber(match.groupValues[1]) ?: return ParsedShoppingEntry(entry, null, null)

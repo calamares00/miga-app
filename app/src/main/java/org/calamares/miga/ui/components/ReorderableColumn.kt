@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.components
 
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
@@ -29,6 +30,7 @@ fun <T : Any> ReorderableColumn(
     items: List<T>,
     onReorder: (List<T>) -> Unit,
     modifier: Modifier = Modifier,
+    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     itemContent: @Composable (item: T, index: Int, dragHandle: Modifier, isDragging: Boolean) -> Unit
 ) {
     var order by remember { mutableStateOf(items) }
@@ -39,7 +41,7 @@ fun <T : Any> ReorderableColumn(
 
     LaunchedEffect(items) { if (draggingItem == null) order = items }
 
-    Column(modifier) {
+    Column(modifier, verticalArrangement = verticalArrangement) {
         order.forEachIndexed { index, item ->
             key(item) {
                 val isDragging = draggingItem == item

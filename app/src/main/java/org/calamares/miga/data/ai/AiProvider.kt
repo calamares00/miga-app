@@ -23,33 +23,35 @@ enum class AiProvider(private val brandLabel: String, private val brandShortName
     val shortName: String get() = if (this == CUSTOM) L10n.str(R.string.ai_provider_custom_short) else brandShortName
 }
 
-/**
- * Providers configured through the generic settings (key, model, "reads images" switch and, for
- * [AiProvider.CUSTOM], the server address) rather than settings of their own.
- */
-val GENERIC_PROVIDERS = listOf(AiProvider.MISTRAL, AiProvider.GROQ, AiProvider.CUSTOM)
-
 const val DEFAULT_MISTRAL_MODEL = "mistral-medium-latest"
 
 const val DEFAULT_GROQ_MODEL = "qwen/qwen3.8-27b"
 
-/** Model used by a generic provider before the user picks one; a custom server has no default. */
+/** Model used before the user picks one; OpenRouter and a custom server have no default. */
 fun defaultModelFor(provider: AiProvider): String = when (provider) {
+    AiProvider.GEMINI -> DEFAULT_GEMINI_MODEL
+    AiProvider.ANTHROPIC -> DEFAULT_ANTHROPIC_MODEL
+    AiProvider.OPENAI -> DEFAULT_OPENAI_MODEL
+    AiProvider.DEEPSEEK -> DEFAULT_DEEPSEEK_MODEL
     AiProvider.MISTRAL -> DEFAULT_MISTRAL_MODEL
     AiProvider.GROQ -> DEFAULT_GROQ_MODEL
     else -> ""
 }
 
 /**
- * First guess of whether a generic provider's model reads images, from its name. Settings shows it
- * as a switch the user can correct, and the models list of Mistral states it exactly.
+ * First guess of whether a model reads images, from its name. Every Gemini and Claude model does;
+ * an OpenRouter model is assumed to until the catalogue says otherwise. Settings shows the guess
+ * as a switch the user can correct where it is uncertain.
  */
 fun guessModelReadsImages(provider: AiProvider, model: String): Boolean {
     val id = model.lowercase()
     val markers = when (provider) {
+        AiProvider.GEMINI, AiProvider.ANTHROPIC, AiProvider.OPENROUTER -> return true
+        AiProvider.OPENAI -> return openAiModelReadsImages(model)
+        AiProvider.DEEPSEEK -> return deepSeekModelReadsImages(model)
         AiProvider.MISTRAL -> listOf("pixtral", "medium", "large", "ministral")
         AiProvider.GROQ -> listOf("qwen3.8", "llama-4", "scout", "maverick", "vision", "muse-spark")
-        else -> listOf(
+        AiProvider.CUSTOM -> listOf(
             "vision", "-vl", "vl-", "llava", "pixtral", "gemma3", "gemma-3", "llama-4", "llama4", "minicpm-v",
             "moondream", "gpt-4o", "gpt-5", "claude", "gemini", "deepseek-flash", "qwen3.8"
         )
@@ -76,3 +78,6 @@ fun openAiModelReadsImages(model: String): Boolean {
     val id = model.lowercase()
     return listOf("o1-mini", "o3-mini", "gpt-3.5").none { id.startsWith(it) }
 }
+
+/** Whether Settings shows the "reads images" switch: not for providers whose models all read images. */
+fun AiProvider.imageSupportVaries(): Boolean = this != AiProvider.GEMINI && this != AiProvider.ANTHROPIC && this != AiProvider.OPENROUTER

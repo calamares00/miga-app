@@ -89,5 +89,5 @@ fun StepGroupUi.toDomain(): StepGroup = StepGroup(
 fun RecipePhoto.toUi() = PhotoUi(uri, isCover)
 fun PhotoUi.toDomain() = RecipePhoto(uri, isCover)
 
-private fun formatEditorQuantity(value: Double): String =
+internal fun formatEditorQuantity(value: Double): String =
     if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
