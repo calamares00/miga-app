@@ -1,5 +1,8 @@
 package org.calamares.miga.data.repository
 
+import org.calamares.miga.data.support.AppDispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CoroutineScope
 import org.calamares.miga.data.content.CleanupProposal
 import org.calamares.miga.data.content.CleanupAction
 import org.calamares.miga.data.model.ContentItem
@@ -70,6 +73,9 @@ class RecipeRepository(
     /** Recipe books and installed packs. */
     val books = BookRepository(db, this, sync, onSyncChangeEnqueued)
 
+    /** Recipes and books deleted with "Undo" still available: left out of the lists until then. */
+    val pendingDeletions = PendingDeletions(CoroutineScope(SupervisorJob() + AppDispatchers.io))
+
     private val recipeDao = db.recipeDao()
     private val categoryDao = db.categoryDao()
     private val tagDao = db.tagDao()
@@ -88,11 +94,21 @@ class RecipeRepository(
     private val contentDao = db.contentDao()
 
     fun observeRecipesForBook(bookId: Long): Flow<List<Recipe>> =
-        recipeDao.observeAllWithDetailsForBook(bookId).map { list -> list.map { it.toDomain() } }
+        recipeDao.observeAllWithDetailsForBook(bookId).map { list -> list.map { it.toDomain() } }.withoutPendingDeletions()
 
     /** Every recipe in every book, used by the global search. */
     fun observeAllRecipes(): Flow<List<Recipe>> =
-        recipeDao.observeAllWithDetails().map { list -> list.map { it.toDomain() } }
+        recipeDao.observeAllWithDetails().map { list -> list.map { it.toDomain() } }.withoutPendingDeletions()
+
+    private fun Flow<List<Recipe>>.withoutPendingDeletions(): Flow<List<Recipe>> =
+        combine(pendingDeletions.recipeIds) { recipes, hidden -> if (hidden.isEmpty()) recipes else recipes.filter { it.id !in hidden } }
+
+    /**
+     * Deletes the recipes after the undo window (see [PendingDeletions]); until then they are
+     * hidden and [PendingDeletions.undo] brings them back.
+     */
+    fun deleteRecipesWithUndo(ids: Set<Long>, message: String): UndoOffer =
+        pendingDeletions.schedule(message, recipeIds = ids) { ids.forEach { deleteRecipe(it) } }
 
     fun observeRecipe(id: Long): Flow<Recipe?> =
         recipeDao.observeWithDetails(id).map { it?.toDomain() }

@@ -366,26 +366,22 @@ class RecipeBooksViewModel(
     fun deleteSelected() {
         val selected = selectedBooks()
         clearSelection()
-        viewModelScope.launch {
-            var deleted = 0
-            var kept = 0
-            selected.forEach { book ->
-                if (book.isPack) {
-                    repository.books.uninstallPack(book.id)
-                    deleted++
-                } else {
-                    try {
-                        repository.books.deleteRecipeBook(book.id)
-                        deleted++
-                    } catch (e: RecipeBookNotEmptyException) {
-                        kept++
-                    }
-                }
-            }
-            _syncMessage.value = listOfNotNull(
-                L10n.str(R.string.books_deleted_n, deleted).takeIf { deleted > 0 },
-                L10n.str(R.string.books_not_deleted_n, kept).takeIf { kept > 0 }
-            ).joinToString(". ")
+        val packs = selected.filter { it.isPack }.map { it.id }.toSet()
+        val empty = selected.filter { !it.isPack && it.recipeCount == 0 }.map { it.id }.toSet()
+        val kept = selected.size - packs.size - empty.size
+        val deleted = packs.size + empty.size
+        if (deleted > 0) {
+            // "Undo" is offered for a while (see PendingDeletions); books with recipes are kept.
+            repository.books.deleteRecipeBooksWithUndo(
+                empty,
+                packs,
+                listOfNotNull(
+                    if (deleted == 1) L10n.str(R.string.book_deleted) else L10n.str(R.string.books_deleted_n, deleted),
+                    L10n.str(R.string.books_not_deleted_n, kept).takeIf { kept > 0 }
+                ).joinToString(". ")
+            )
+        } else if (kept > 0) {
+            _syncMessage.value = L10n.str(R.string.books_not_deleted_n, kept)
         }
     }
 

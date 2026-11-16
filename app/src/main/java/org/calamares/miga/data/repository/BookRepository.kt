@@ -1,5 +1,6 @@
 package org.calamares.miga.data.repository
 
+import kotlinx.coroutines.flow.combine
 import androidx.room.withTransaction
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -46,8 +47,8 @@ class BookRepository internal constructor(
     // --- Recipe books ---
 
     fun observeRecipeBooks(): Flow<List<RecipeBookSummary>> =
-        recipeBookDao.observeAllWithCounts().map { list ->
-            list.map {
+        recipeBookDao.observeAllWithCounts().combine(recipeRepository.pendingDeletions.bookIds) { list, hidden ->
+            list.filter { it.book.id !in hidden }.map {
                 RecipeBookSummary(
                     it.book.id, it.book.name, it.book.coverPhotoUri, it.recipeCount,
                     it.book.packId, it.book.packVersion, it.book.syncConnectionId, it.book.isPinned,
@@ -133,6 +134,25 @@ class BookRepository internal constructor(
             draft.id
         }
     }
+
+    suspend fun countRecipes(bookId: Long): Int = recipeBookDao.countRecipes(bookId)
+
+    /**
+     * Deletes empty books of one's own and uninstalls packs ([packIds]) after the undo window
+     * (see [PendingDeletions]); until then they are hidden. A book that got recipes meanwhile is
+     * kept.
+     */
+    fun deleteRecipeBooksWithUndo(ids: Set<Long>, packIds: Set<Long>, message: String): UndoOffer =
+        recipeRepository.pendingDeletions.schedule(message, bookIds = ids + packIds) {
+            packIds.forEach { uninstallPack(it) }
+            ids.forEach { id ->
+                try {
+                    deleteRecipeBook(id)
+                } catch (e: RecipeBookNotEmptyException) {
+                    // Kept: recipes were added to it while the deletion could still be undone.
+                }
+            }
+        }
 
     /** Throws [RecipeBookNotEmptyException] when the book still contains recipes. */
     suspend fun deleteRecipeBook(id: Long) {

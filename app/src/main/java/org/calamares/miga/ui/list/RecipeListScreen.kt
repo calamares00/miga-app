@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.list
 
+import org.calamares.miga.ui.components.UndoDeletionSnackbar
 import org.calamares.miga.ui.components.rememberCameraCapture
 import org.calamares.miga.ui.components.ShareSheet
 import org.calamares.miga.data.export.ShareAction
@@ -173,6 +174,7 @@ fun RecipeListScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    UndoDeletionSnackbar(snackbarHostState)
 
     val importRecipeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {

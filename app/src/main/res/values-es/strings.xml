@@ -1353,4 +1353,7 @@
     <string name="ai_step_checking_dish_photo">"Comprobando la foto del plato…"</string>
     <string name="sorting_photos_failed">"No se pudieron agrupar las fotos por receta"</string>
     <string name="one_recipe_per_photo">"Importar una receta por foto"</string>
+    <string name="recipe_deleted">"Receta eliminada"</string>
+    <string name="recipes_deleted_n">"Recetas eliminadas: %1$d"</string>
+    <string name="book_deleted">"Libro eliminado"</string>
 </resources>

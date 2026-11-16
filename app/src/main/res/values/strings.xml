@@ -1354,4 +1354,7 @@
     <string name="ai_step_checking_dish_photo">"Checking the photo of the dish…"</string>
     <string name="sorting_photos_failed">"The photos could not be sorted into recipes"</string>
     <string name="one_recipe_per_photo">"Import one recipe per photo"</string>
+    <string name="recipe_deleted">"Recipe deleted"</string>
+    <string name="recipes_deleted_n">"Recipes deleted: %1$d"</string>
+    <string name="book_deleted">"Book deleted"</string>
 </resources>
