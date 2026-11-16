@@ -62,13 +62,7 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.ai.OpenRouterModel
 import org.calamares.miga.data.ai.OpenRouterModels
-import org.calamares.miga.data.ai.ANTHROPIC_MODELS
-import org.calamares.miga.data.ai.GEMINI_MODELS
-import org.calamares.miga.data.ai.OPENAI_MODELS
-import org.calamares.miga.data.ai.DEEPSEEK_MODELS
 import org.calamares.miga.data.ai.deepSeekModelReadsImages
-import org.calamares.miga.data.ai.GROQ_MODELS
-import org.calamares.miga.data.ai.MISTRAL_MODELS
 import org.calamares.miga.ui.components.rememberSettingText
 import org.calamares.miga.data.ai.ProviderModels
 import kotlinx.coroutines.delay
@@ -184,7 +178,6 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                             provider = provider,
                             apiKey = geminiApiKey,
                             label = L10n.str(R.string.gemini_model),
-                            fallbackModels = GEMINI_MODELS,
                             current = geminiModel,
                             customPlaceholder = L10n.str(R.string.e_g_gemini_3_6),
                             onSelect = { viewModel.setGeminiModel(it) }
@@ -201,7 +194,6 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                             provider = provider,
                             apiKey = anthropicApiKey,
                             label = L10n.str(R.string.claude_model),
-                            fallbackModels = ANTHROPIC_MODELS,
                             current = anthropicModel,
                             customPlaceholder = L10n.str(R.string.e_g_claude_haiku_4),
                             onSelect = { viewModel.setAnthropicModel(it) }
@@ -236,7 +228,6 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                             provider = provider,
                             apiKey = openAiApiKey,
                             label = L10n.str(R.string.openai_model),
-                            fallbackModels = OPENAI_MODELS,
                             current = openAiModel,
                             customPlaceholder = L10n.str(R.string.e_g_gpt_5_mini),
                             onSelect = { viewModel.setOpenAiModel(it) }
@@ -253,7 +244,6 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                             provider = provider,
                             apiKey = deepSeekApiKey,
                             label = L10n.str(R.string.deepseek_model),
-                            fallbackModels = DEEPSEEK_MODELS,
                             current = deepSeekModel,
                             customPlaceholder = L10n.str(R.string.e_g_deepseek_flash),
                             onSelect = { viewModel.setDeepSeekModel(it) }
@@ -327,11 +317,6 @@ private fun GenericProviderFields(
         apiKey = apiKey,
         baseUrl = baseUrl.takeIf { provider == AiProvider.CUSTOM },
         label = L10n.str(R.string.ai_model),
-        fallbackModels = when (provider) {
-            AiProvider.MISTRAL -> MISTRAL_MODELS
-            AiProvider.GROQ -> GROQ_MODELS
-            else -> emptyList()
-        },
         current = model,
         customPlaceholder = L10n.str(if (provider == AiProvider.CUSTOM) R.string.e_g_custom_model else R.string.e_g_mistral_groq_model),
         onSelect = { viewModel.setGenericModel(provider, it) }
@@ -475,11 +460,13 @@ private fun ApiKeyField(value: String, onValueChange: (String) -> Unit, label: S
     )
 }
 
-/** Dropdown with the known models plus a "Custom" option to type an id by hand. */
+/** A model in a picker: its id, whether it reads images and, on OpenRouter, whether it is free. */
+private data class ModelOption(val id: String, val readsImages: Boolean, val free: Boolean = false)
+
 /**
- * Model picker of a provider that lists the models of the user's account (see [ProviderModels]):
- * the list is downloaded once a key is entered, and [fallbackModels] is offered meanwhile or when
- * it cannot be downloaded.
+ * Model picker of a provider that lists the models of the user's account (see [ProviderModels]).
+ * The list always comes from the provider: it is downloaded once a key (or, for a custom server,
+ * its address) is entered, and again when the menu is opened after a failed download.
  */
 @Composable
 private fun AccountModelField(
@@ -487,82 +474,160 @@ private fun AccountModelField(
     apiKey: String,
     baseUrl: String? = null,
     label: String,
-    fallbackModels: List<String>,
     current: String,
     customPlaceholder: String,
     onSelect: (String) -> Unit
 ) {
     var accountModels by remember(provider) { mutableStateOf<List<String>?>(null) }
     var loading by remember(provider) { mutableStateOf(false) }
+    var attempt by remember(provider) { mutableIntStateOf(0) }
     // A custom server is asked with its address, with or without a key.
     val ready = if (baseUrl != null) baseUrl.isNotBlank() else apiKey.isNotBlank()
-    LaunchedEffect(provider, apiKey, baseUrl) {
-        accountModels = null
+    LaunchedEffect(provider, apiKey, baseUrl, attempt) {
+        if (attempt == 0) accountModels = null
         if (!ready) return@LaunchedEffect
         // Wait for the user to finish typing or pasting the key.
-        delay(700)
+        if (attempt == 0) delay(700)
         loading = true
         accountModels = ProviderModels.fetch(provider, apiKey, baseUrl)
         loading = false
     }
     ModelDropdownField(
         label = label,
-        models = accountModels ?: fallbackModels,
+        options = accountModels.orEmpty().map { ModelOption(it, ProviderModels.readsImages(provider, it)) },
         current = current,
+        currentReadsImages = current.isNotBlank() && ProviderModels.readsImages(provider, current),
         customPlaceholder = customPlaceholder,
         supportingText = when {
-            !ready -> null
+            !ready -> L10n.str(if (baseUrl != null) R.string.ai_models_need_address else R.string.ai_models_need_key)
             loading -> L10n.str(R.string.ai_models_loading)
             accountModels != null -> L10n.str(R.string.ai_models_from_account_n, accountModels!!.size)
-            else -> L10n.str(R.string.ai_models_default_list)
+            else -> L10n.str(R.string.ai_models_load_failed)
         },
+        // After a failed download, opening the menu tries again.
+        onOpen = { if (ready && accountModels == null && !loading) attempt++ },
         onSelect = onSelect
     )
 }
 
+/** OpenRouter's model picker over its public catalogue (no key needed): free models first. */
+@Composable
+private fun OpenRouterModelField(current: String, supportsImages: Boolean, onSelect: (String, Boolean) -> Unit) {
+    var catalog by remember { mutableStateOf(OpenRouterModels.cached()) }
+    var loading by remember { mutableStateOf(false) }
+    var attempt by remember { mutableIntStateOf(0) }
+    LaunchedEffect(attempt) {
+        if (catalog != null && attempt == 0) return@LaunchedEffect
+        loading = true
+        OpenRouterModels.fetch(forceRefresh = attempt > 0)?.let { catalog = it }
+        loading = false
+    }
+    val models = catalog.orEmpty().sortedByDescending { it.isFree }
+    ModelDropdownField(
+        label = L10n.str(R.string.openrouter_model),
+        options = models.map { ModelOption(it.id, it.supportsImages, it.isFree) },
+        current = current,
+        currentReadsImages = supportsImages,
+        currentFree = isFreeModelId(current),
+        customPlaceholder = "vendor/model:free",
+        supportingText = when {
+            loading -> L10n.str(R.string.ai_models_loading)
+            catalog != null -> L10n.str(R.string.ai_models_catalog_n, models.size)
+            else -> L10n.str(R.string.ai_models_load_failed)
+        },
+        onOpen = { if (catalog == null && !loading) attempt++ },
+        // An id typed by hand is assumed to read images; a failure falls back to the next provider.
+        onSelect = { id -> onSelect(id, models.firstOrNull { it.id == id }?.supportsImages ?: true) }
+    )
+}
+
+/**
+ * Dropdown with a provider's models, marking those that read images ("Images") and free ones,
+ * with a search box when the list is long and a "Custom" option to type an id by hand. A dropdown
+ * rather than a bottom sheet, the same for every provider.
+ */
 @Composable
 private fun ModelDropdownField(
     label: String,
-    models: List<String>,
+    options: List<ModelOption>,
     current: String,
+    currentReadsImages: Boolean,
     customPlaceholder: String,
     onSelect: (String) -> Unit,
-    supportingText: String? = null
+    supportingText: String? = null,
+    currentFree: Boolean = false,
+    onOpen: () -> Unit = {}
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val isCustom = current !in models
+    var query by remember { mutableStateOf("") }
+    // Typing an id by hand: chosen in the menu, or a saved model the provider no longer lists.
+    var typing by remember { mutableStateOf(false) }
+    val listed = options.any { it.id == current }
+    val isCustom = typing || (current.isNotBlank() && options.isNotEmpty() && !listed)
     Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = if (isCustom) L10n.str(R.string.custom_2) else current,
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
-            supportingText = supportingText?.let { { Text(it) } },
+            placeholder = { Text(L10n.str(R.string.ai_provider_no_model)) },
+            supportingText = {
+                Text(
+                    listOfNotNull(
+                        L10n.str(R.string.ai_free).takeIf { current.isNotBlank() && currentFree },
+                        if (current.isBlank()) null
+                        else L10n.str(if (currentReadsImages) R.string.ai_reads_images else R.string.ai_no_images),
+                        supportingText
+                    ).joinToString(" · ")
+                )
+            },
             trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.open_model_picker)) },
             modifier = Modifier.fillMaxWidth()
         )
         // Transparent layer over the field that opens the menu on tap, so the read-only TextField
         // does not take the tap and show a cursor.
-        Box(modifier = Modifier.matchParentSize().clickable { menuExpanded = true })
+        Box(modifier = Modifier.matchParentSize().clickable { onOpen(); query = ""; menuExpanded = true })
         DropdownMenu(
             expanded = menuExpanded,
             onDismissRequest = { menuExpanded = false },
-            // A provider may list dozens of models.
-            modifier = Modifier.heightIn(max = 420.dp)
+            // A provider may list dozens of models (OpenRouter, hundreds).
+            modifier = Modifier.heightIn(max = 460.dp)
         ) {
-            models.forEach { modelId ->
-                DropdownMenuItem(text = { Text(modelId) }, onClick = { onSelect(modelId); menuExpanded = false })
+            if (options.size > SEARCH_FROM_MODELS) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    placeholder = { Text(L10n.str(R.string.openrouter_search_models)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+            options.filter { query.isBlank() || it.id.contains(query.trim(), ignoreCase = true) }.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.id, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                    trailingIcon = if (option.free || option.readsImages) {
+                        {
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                if (option.free) ModelBadge(L10n.str(R.string.ai_free), highlighted = true)
+                                if (option.readsImages) ModelBadge(L10n.str(R.string.ai_images_badge), highlighted = false)
+                            }
+                        }
+                    } else null,
+                    onClick = { typing = false; onSelect(option.id); menuExpanded = false }
+                )
             }
             DropdownMenuItem(
                 text = { Text(L10n.str(R.string.custom)) },
-                onClick = { onSelect(""); menuExpanded = false }
+                onClick = { typing = true; menuExpanded = false }
             )
         }
     }
     if (isCustom) {
+        val (text, onTextChange) = rememberSettingText(saved = current, save = onSelect)
         OutlinedTextField(
-            value = current,
-            onValueChange = onSelect,
+            value = text,
+            onValueChange = onTextChange,
             label = { Text(L10n.str(R.string.model_id)) },
             placeholder = { Text(customPlaceholder) },
             singleLine = true,
@@ -571,163 +636,8 @@ private fun ModelDropdownField(
     }
 }
 
-@Composable
-private fun OpenRouterModelField(current: String, supportsImages: Boolean, onSelect: (String, Boolean) -> Unit) {
-    var showSheet by remember { mutableStateOf(false) }
-    Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = current,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(L10n.str(R.string.openrouter_model)) },
-            placeholder = { Text(L10n.str(R.string.ai_provider_no_model)) },
-            supportingText = if (current.isNotBlank()) {
-                {
-                    Text(
-                        listOfNotNull(
-                            L10n.str(R.string.ai_free).takeIf { isFreeModelId(current) },
-                            if (supportsImages) L10n.str(R.string.ai_reads_images) else L10n.str(R.string.ai_no_images)
-                        ).joinToString(" · ")
-                    )
-                }
-            } else null,
-            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = L10n.str(R.string.open_model_picker)) },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Box(modifier = Modifier.matchParentSize().clickable { showSheet = true })
-    }
-    if (showSheet) {
-        OpenRouterModelSheet(
-            current = current,
-            onPick = { id, images -> onSelect(id, images); showSheet = false },
-            onDismiss = { showSheet = false }
-        )
-    }
-}
-
-private sealed interface CatalogState {
-    data object Loading : CatalogState
-    data object Error : CatalogState
-    data class Loaded(val models: List<OpenRouterModel>) : CatalogState
-}
-
-/**
- * OpenRouter model picker over the public catalogue downloaded on the spot: search, "Free" and
- * "Reads images" filters, and an option to type an id by hand.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun OpenRouterModelSheet(current: String, onPick: (id: String, supportsImages: Boolean) -> Unit, onDismiss: () -> Unit) {
-    var state by remember { mutableStateOf<CatalogState>(CatalogState.Loading) }
-    var reloadToken by remember { mutableIntStateOf(0) }
-    var query by rememberSaveable { mutableStateOf("") }
-    var onlyFree by rememberSaveable { mutableStateOf(true) }
-    var onlyImages by rememberSaveable { mutableStateOf(false) }
-    var customId by rememberSaveable { mutableStateOf("") }
-
-    LaunchedEffect(reloadToken) {
-        state = CatalogState.Loading
-        state = OpenRouterModels.fetch(forceRefresh = reloadToken > 0)?.let { CatalogState.Loaded(it) } ?: CatalogState.Error
-    }
-
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(L10n.str(R.string.openrouter_models_title), style = MaterialTheme.typography.titleLarge)
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                placeholder = { Text(L10n.str(R.string.openrouter_search_models)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = onlyFree, onClick = { onlyFree = !onlyFree }, label = { Text(L10n.str(R.string.ai_free)) })
-                FilterChip(selected = onlyImages, onClick = { onlyImages = !onlyImages }, label = { Text(L10n.str(R.string.ai_reads_images)) })
-            }
-        }
-        when (val current0 = state) {
-            CatalogState.Loading -> Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            CatalogState.Error -> Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(L10n.str(R.string.openrouter_models_error), style = MaterialTheme.typography.bodyMedium)
-                TextButton(onClick = { reloadToken++ }) { Text(L10n.str(R.string.retry)) }
-            }
-            is CatalogState.Loaded -> {
-                val filtered = current0.models.filter { model ->
-                    (!onlyFree || model.isFree) &&
-                        (!onlyImages || model.supportsImages) &&
-                        (query.isBlank() || model.name.contains(query, ignoreCase = true) || model.id.contains(query, ignoreCase = true))
-                }
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth().heightIn(max = 520.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
-                ) {
-                    if (filtered.isEmpty()) {
-                        item {
-                            Text(
-                                L10n.str(R.string.openrouter_no_models_match),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
-                    }
-                    items(filtered, key = { it.id }) { model ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(MaterialTheme.shapes.medium)
-                                .clickable { onPick(model.id, model.supportsImages) }
-                                .padding(vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(selected = model.id == current, onClick = { onPick(model.id, model.supportsImages) })
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(model.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(
-                                    model.id,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                            Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 8.dp, end = 8.dp)) {
-                                if (model.isFree) ModelBadge(L10n.str(R.string.ai_free), highlighted = true)
-                                if (model.supportsImages) ModelBadge(L10n.str(R.string.ai_images_badge), highlighted = false)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        // Id typed by hand (new models or ones missing from the catalogue).
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 32.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = customId,
-                onValueChange = { customId = it },
-                label = { Text(L10n.str(R.string.model_id)) },
-                placeholder = { Text("vendor/model:free") },
-                singleLine = true,
-                modifier = Modifier.weight(1f)
-            )
-            Button(
-                onClick = { onPick(customId.trim(), true) },
-                enabled = customId.isNotBlank(),
-                modifier = Modifier.padding(start = 8.dp)
-            ) { Text(L10n.str(R.string.use_model)) }
-        }
-    }
-}
+// Above this many models the menu starts with a search box.
+private const val SEARCH_FROM_MODELS = 12
 
 @Composable
 private fun ModelBadge(text: String, highlighted: Boolean) {

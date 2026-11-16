@@ -114,7 +114,7 @@ Figures about your recipes: recipes per book, category and difficulty, favourite
 
 ## 💡 Cooking tips
 
-Short tips to cook better: techniques, storing and freezing, using leftovers, substitutions, food safety, baking, saving time and kitchen tools. Find them under the 💡 icon in **Books** and in **Settings**; they work offline.
+Short tips to cook better: techniques, storing and freezing, using leftovers, substitutions, food safety, baking, saving time and kitchen tools. Find them under the 💡 icon in **Books**; they work offline.
 
 - Tap a tip to read it in full; the ⭐ keeps it in **Saved**, and you can share it too.
 - Swipe left or right to move between categories, or search by words.
@@ -133,7 +133,7 @@ To share books and shopping lists with your family with full editing, connect Mi
 
 ## 🤖 Kitchen assistant {ai}
 
-Features marked ✨ are done by the kitchen assistant, which uses artificial intelligence (AI). They are optional and use **your own key** for Google Gemini, Anthropic Claude, OpenAI, DeepSeek (very low cost; only its Flash models read photos), Mistral (European), Groq (very fast, with a free tier) or OpenRouter (which has free models). With **OpenAI-compatible** you can use any other service with that API, such as OpenCode Zen, or a model on your own computer with Ollama or LM Studio: enter its address (for example `http://192.168.1.10:11434/v1`) and, if it asks for one, the key. For Mistral, Groq and the custom server, the **This model reads photos** switch says whether photos can be sent to it. The list of models loads on its own with your key.
+Features marked ✨ are done by the kitchen assistant, which uses artificial intelligence (AI). They are optional and use **your own key** for Google Gemini, Anthropic Claude, OpenAI, DeepSeek (very low cost; only its Flash models read photos), Mistral (European), Groq (very fast, with a free tier) or OpenRouter (which has free models). With **OpenAI-compatible** you can use any other service with that API, such as OpenCode Zen, or a model on your own computer with Ollama or LM Studio: enter its address (for example `http://192.168.1.10:11434/v1`) and, if it asks for one, the key. For Mistral, Groq and the custom server, the **This model reads photos** switch says whether photos can be sent to it. The list of models loads on its own from the provider with your key (OpenRouter's from its public catalogue), and those that read photos are tagged **Images**.
 
 - If you add several providers, they are used **in the order you choose**: if one fails, the next one is tried automatically.
 - Each provider has a **switch**: turn it off whenever you like without losing its key.
