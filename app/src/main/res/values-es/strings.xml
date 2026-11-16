@@ -348,7 +348,6 @@
     <string name="list_too_big_qr_code">"La lista es demasiado larga para un QR. Usa «Enviar como texto»."</string>
     <string name="list_empty">"Tu lista está vacía. ¿Nevera llena?"</string>
     <string name="list_received">"Lista recibida"</string>
-    <string name="done_step_x">"¡Listo! Paso %1$s"</string>
     <string name="poor">"Malo"</string>
     <string name="ticked_x">"Marcado por %1$s"</string>
     <string name="tick">"Marcar"</string>
@@ -483,7 +482,6 @@
     <string name="send_another_phone_miga">"Para pasarla a otro móvil con Miga"</string>
     <string name="previous_step">"Paso anterior"</string>
     <string name="step_x">"Paso %1$s"</string>
-    <string name="step_x_x">"Paso %1$s · %2$s"</string>
     <string name="main_steps">"Pasos principales"</string>
     <string name="paste_link_recipe_website_ai">"Pega el enlace de una receta de cualquier web: el asistente la lee y te rellena el editor."</string>
     <string name="dangerous_food_allergies_health">"Peligroso: alimentos, alergias o salud"</string>
@@ -1356,4 +1354,17 @@
     <string name="recipe_deleted">"Receta eliminada"</string>
     <string name="recipes_deleted_n">"Recetas eliminadas: %1$d"</string>
     <string name="book_deleted">"Libro eliminado"</string>
+    <string name="cook_timers_channel">"Temporizadores de cocina"</string>
+    <string name="cook_timer">"Temporizador"</string>
+    <string name="cook_timer_done_x">"%1$s: tiempo cumplido"</string>
+    <string name="cook_timer_done_body">"Ha terminado el temporizador de cocina."</string>
+    <string name="cook_timer_step_x">"Paso %1$d"</string>
+    <string name="cook_screen_on">"Pantalla siempre encendida (toca para que pueda apagarse)"</string>
+    <string name="cook_screen_may_turn_off">"La pantalla puede apagarse (toca para mantenerla encendida)"</string>
+    <string name="cook_new_timer">"Nuevo temporizador"</string>
+    <string name="cook_timer_name">"Nombre"</string>
+    <string name="cook_timer_name_hint">"p. ej. Arroz"</string>
+    <string name="cook_timer_minutes">"Minutos"</string>
+    <string name="cook_start_timer">"Empezar"</string>
+    <string name="cook_allow_exact_alarms">"Permite las alarmas exactas para que los temporizadores suenen a tiempo con la pantalla apagada"</string>
 </resources>
