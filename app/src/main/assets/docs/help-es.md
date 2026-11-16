@@ -114,7 +114,7 @@ Cifras de tu recetario: recetas por libro, categoría y dificultad, favoritas, m
 
 ## 💡 Consejos de cocina
 
-Trucos cortos para cocinar mejor: técnicas, conservar y congelar, aprovechar sobras, sustituciones, seguridad alimentaria, repostería, ahorrar tiempo y utensilios. Están en el icono 💡 de **Libros** y en **Ajustes**, y funcionan sin conexión.
+Trucos cortos para cocinar mejor: técnicas, conservar y congelar, aprovechar sobras, sustituciones, seguridad alimentaria, repostería, ahorrar tiempo y utensilios. Están en el icono 💡 de **Libros** y funcionan sin conexión.
 
 - Toca un consejo para leerlo entero; con la ⭐ lo guardas en **Guardados**, y también puedes compartirlo.
 - Desliza a izquierda o derecha para pasar entre categorías, o búscalo por palabras.
@@ -133,7 +133,7 @@ Para compartir libros y listas de la compra en familia con edición completa, co
 
 ## 🤖 Asistente de cocina {ai}
 
-Las funciones marcadas con ✨ las hace el asistente de cocina, que usa inteligencia artificial (IA). Son opcionales y usan **tu propia clave** de Google Gemini, Anthropic Claude, OpenAI, DeepSeek (muy económico; solo sus modelos Flash leen fotos), Mistral (europeo), Groq (muy rápido, con capa gratuita) u OpenRouter (que tiene modelos gratuitos). Con **Compatible con OpenAI** puedes usar cualquier otro servicio con esa API, como OpenCode Zen, o un modelo en tu propio ordenador con Ollama o LM Studio: escribe su dirección (por ejemplo `http://192.168.1.10:11434/v1`) y, si la pide, la clave. En Mistral, Groq y el personalizado, el interruptor **Este modelo lee fotos** indica si se le pueden mandar fotos. La lista de modelos se carga sola con tu clave.
+Las funciones marcadas con ✨ las hace el asistente de cocina, que usa inteligencia artificial (IA). Son opcionales y usan **tu propia clave** de Google Gemini, Anthropic Claude, OpenAI, DeepSeek (muy económico; solo sus modelos Flash leen fotos), Mistral (europeo), Groq (muy rápido, con capa gratuita) u OpenRouter (que tiene modelos gratuitos). Con **Compatible con OpenAI** puedes usar cualquier otro servicio con esa API, como OpenCode Zen, o un modelo en tu propio ordenador con Ollama o LM Studio: escribe su dirección (por ejemplo `http://192.168.1.10:11434/v1`) y, si la pide, la clave. En Mistral, Groq y el personalizado, el interruptor **Este modelo lee fotos** indica si se le pueden mandar fotos. La lista de modelos se carga sola del proveedor con tu clave (la de OpenRouter, de su catálogo público), y los que leen fotos llevan la etiqueta **Imágenes**.
 
 - Si añades varios proveedores, se usan **en el orden que elijas**: si uno falla, se prueba el siguiente automáticamente.
 - Cada proveedor tiene un **interruptor**: desactívalo cuando quieras sin perder su clave.

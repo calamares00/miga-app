@@ -157,7 +157,8 @@ internal fun extractJsonObject(raw: String): String {
 }
 
 /** Status code and body (the error body for non-2xx answers) of an HTTP call. */
-internal class HttpResponse(val code: Int, val body: String) {
+/** [retryAfter] is the Retry-After header, sent by some APIs with a rate limit error (429). */
+internal class HttpResponse(val code: Int, val body: String, val retryAfter: String? = null) {
     val isSuccessful: Boolean get() = code in 200..299
 }
 
@@ -182,7 +183,7 @@ internal suspend fun postJson(url: String, body: String, headers: Map<String, St
                 connection.outputStream.use { it.write(body.toByteArray()) }
                 val code = connection.responseCode
                 val stream = if (code in 200..299) connection.inputStream else connection.errorStream
-                HttpResponse(code, stream?.use { it.readTextAtMost(ReadLimits.API_JSON_BYTES) }.orEmpty())
+                HttpResponse(code, stream?.use { it.readTextAtMost(ReadLimits.API_JSON_BYTES) }.orEmpty(), connection.getHeaderField("Retry-After"))
             }
             connection.disconnect()
             // After a cancellation the continuation is already resumed; these are then ignored.

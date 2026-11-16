@@ -81,7 +81,7 @@ internal object GeminiTransport : AiTransport {
             )
             if (!response.isSuccessful) {
                 val message = runCatching { aiJson.decodeFromString(GeminiErrorEnvelope.serializer(), response.body).error?.message }.getOrNull()
-                return@withContext AiText.Error(AiErrors.http(AiProvider.GEMINI.shortName, response.code, message))
+                return@withContext AiText.Error(AiErrors.http(AiProvider.GEMINI.shortName, response.code, message, response.retryAfter))
             }
             val decoded = aiJson.decodeFromString(GeminiResponse.serializer(), response.body)
             val candidate = decoded.candidates.firstOrNull()
