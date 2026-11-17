@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.data.allergens.CertifiedFreeMarks
+import org.calamares.miga.data.allergens.AllergenAnalysis
 import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.background
 import androidx.compose.ui.draw.shadow
@@ -177,6 +179,18 @@ private fun IngredientRow(
                         leadingIcon = { Checkbox(checked = row.optional, onCheckedChange = null) },
                         onClick = { row.optional = !row.optional; menu = false }
                     )
+                    // Certified products clear what depends on the product (see AllergenAnalysis):
+                    // offered only when the ingredient may bring gluten or lactose.
+                    CertifiedFreeMarks.entries.forEach { mark ->
+                        val marked = mark.isIn(row.name)
+                        if (marked || mark.allergen in AllergenAnalysis.ofIngredient(row.name).levels) {
+                            DropdownMenuItem(
+                                text = { Text(mark.label) },
+                                leadingIcon = { Checkbox(checked = marked, onCheckedChange = null) },
+                                onClick = { row.name = mark.toggle(row.name); menu = false }
+                            )
+                        }
+                    }
                     DropdownMenuItem(
                         text = { Text(L10n.str(R.string.remove_ingredient)) },
                         leadingIcon = { Icon(Icons.Filled.Close, contentDescription = null) },
