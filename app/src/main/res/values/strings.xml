@@ -1405,4 +1405,10 @@
     <string name="openrouter_connect_expired">"The code has expired or is not valid. Tap “Connect with OpenRouter” again."</string>
     <string name="openrouter_connect_network">"No connection with OpenRouter. Check the internet and try again."</string>
     <string name="openrouter_connect_failed_x">"OpenRouter answered with an error (%1$d). Try again."</string>
+    <string name="ai_test_connection">"Test connection"</string>
+    <string name="ai_test_running">"Testing…"</string>
+    <string name="ai_test_ok_x_x">"It works: %1$s answered in %2$s s."</string>
+    <string name="ai_test_reads_photo">"It also read a test photo."</string>
+    <string name="ai_test_photo_failed">"Text works, but it could not read the test photo."</string>
+    <string name="ai_test_turn_photos_off">"Mark it as not reading photos"</string>
 </resources>

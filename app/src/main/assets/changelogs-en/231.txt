@@ -1,2 +1,3 @@
 What's new in version 1.0.33:
 • Connect with OpenRouter: coming back to Miga no longer shows “Couldn't open the file”, and a message says whether it connected.
+• Assistant providers: a “Test connection” button checks the key and model right away (and whether it reads photos).
