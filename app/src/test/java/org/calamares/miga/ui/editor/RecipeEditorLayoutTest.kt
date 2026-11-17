@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.data.model.formatIngredientText
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -87,7 +88,7 @@ class RecipeEditorLayoutTest {
 
         compose.onNodeWithText(L10n.str(R.string.editor_tab_count_x, L10n.str(R.string.ingredients), 6)).performClick()
         compose.waitForIdle()
-        compose.onNodeWithText("ajo").performClick()
+        compose.onNodeWithText(formatIngredientText("ajo", 4.0, "diente", forReading = true)).performClick()
         compose.waitForIdle()
         compose.onNodeWithText(L10n.str(R.string.editor_add_ingredient_hint)).performTextInput("200 g de patatas")
         compose.onNodeWithText("200 g de patatas").performImeAction()
