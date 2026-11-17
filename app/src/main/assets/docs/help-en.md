@@ -31,11 +31,21 @@ From a book, tap **New recipe** and choose where it comes from:
 
 - **Write it yourself**: an empty recipe for you to fill in.
 - **From photos** ✨: take photos or pick up to 20 from the gallery, of one recipe or several. Miga works out which photos belong to the same recipe (two pages, or the recipe and a photo of the dish) and which are different recipes. If it is a single one, the editor opens already filled in for you to check; if there are several, they are saved one by one and you see the result in a list. The assistant reads the text and looks for the photo of the dish: it checks that it really is the finished dish, crops it without text or margins and makes the one showing the whole dish the main photo.
-- **From a web page** ✨: paste the link to a recipe on any website.
+- **From a web page**: paste the link to a recipe. Most recipe websites include it in a standard format (schema.org) that Miga reads directly, with its photo, times and servings, **without the assistant**. If the assistant is set up, it then **improves** it ✨ like "Polish the recipe" (wording, units, times in bold) and tells you what changed, with a button to **undo the improvement**. If the site does not use that format, the assistant reads it.
 - **From a Miga file**: imports recipes exported from Miga (.miga, .zip or JSON).
 - **Suggest a recipe** ✨: type the name of a dish and choose from the suggestions.
 
 Options marked ✨ are done by the kitchen assistant and only appear once it is set up.
+
+## ⚠️ Allergens and intolerances
+
+From the ingredients, and without the assistant, Miga works out the **14 allergens** EU law requires to be declared (gluten, crustaceans, eggs, fish, peanuts, soy, milk, tree nuts, celery, mustard, sesame, sulphites, lupin and molluscs) and **lactose**.
+
+- In the recipe, an **Allergens** line shows only the ones it has: red for what it **contains**; amber with "!" for what it **may contain** depending on the product you buy (stock cubes, sausages, soy sauce, chocolate, dry pulses…). Tap it to see all of them, which ingredient brings each one and advice for coeliacs.
+- In the ingredient list the allergen is in **bold**, as on food labels, and ingredients that depend on the product carry ⚠.
+- **Gluten**: "No ingredients with gluten" or "Suitable for coeliacs if…" (for example, if you buy the sausage and stock certified gluten-free and cook without cross-contact). Miga never says just "gluten-free": that is a legal claim that needs the product to be tested. Oats count as a cereal with gluten unless certified; buckwheat has no gluten.
+- If you use a certified product, mark it in the editor from the ingredient's menu (⋮): **Gluten-free product (certified)** or **Lactose-free product**. It is added to the name, so it also shows in the shopping list.
+- It is **for guidance only**: check each product's label and ask your doctor or dietitian.
 
 ## 🍳 Cooking mode
 
