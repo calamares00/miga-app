@@ -1,5 +1,17 @@
 package org.calamares.miga.ui.settings
 
+import android.content.ClipData
+import android.os.Build
+import org.calamares.miga.ui.components.ButtonContent
+import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalWindowInfo
+import android.net.Uri
+import android.content.ClipboardManager
+import org.calamares.miga.data.ai.ApiKeyPages
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
@@ -206,6 +218,7 @@ private fun ProviderFields(
         label = L10n.str(texts.keyLabel),
         placeholder = L10n.str(texts.keyHint)
     )
+    if (ApiKeyPages.pageFor(provider) != null) GetKeyBlock(provider) { viewModel.setApiKey(provider, it) }
     if (provider == AiProvider.OPENROUTER) {
         OpenRouterModelField(
             current = model,
@@ -684,3 +697,73 @@ private fun OpenRouterConnectBlock() {
         )
     }
 }
+
+/**
+ * "Get a key": opens the provider's page where keys are created and, once the user comes back to
+ * Miga, offers the key of that provider found in the clipboard (see ApiKeyPages), so it does not
+ * have to be pasted by hand. The clipboard is read only then, after the user went to get a key.
+ */
+@Composable
+internal fun GetKeyBlock(provider: AiProvider, onUse: (String) -> Unit) {
+    val context = LocalContext.current
+    val windowFocused = LocalWindowInfo.current.isWindowFocused
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var waiting by rememberSaveable(provider) { mutableStateOf(false) }
+    var leftApp by rememberSaveable(provider) { mutableStateOf(false) }
+    var found by remember(provider) { mutableStateOf<String?>(null) }
+    var notFound by remember(provider) { mutableStateOf(false) }
+    DisposableEffect(lifecycleOwner, waiting) {
+        val observer = LifecycleEventObserver { _, event -> if (waiting && event == Lifecycle.Event.ON_STOP) leftApp = true }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    // Android only lets an app read the clipboard while its window has the focus.
+    LaunchedEffect(leftApp, windowFocused) {
+        if (!leftApp || !windowFocused) return@LaunchedEffect
+        waiting = false
+        leftApp = false
+        val text = context.getSystemService(ClipboardManager::class.java)?.primaryClip
+            ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString()?.trim()
+        if (text != null && ApiKeyPages.looksLike(provider, text)) found = text else notFound = true
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        TextButton(onClick = {
+            found = null
+            notFound = false
+            waiting = true
+            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(ApiKeyPages.pageFor(provider)))) }
+        }) {
+            ButtonContent(Icons.Filled.OpenInNew, L10n.str(R.string.ai_get_key))
+        }
+        found?.let { key ->
+            Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(L10n.str(R.string.ai_key_in_clipboard_x_x, provider.shortName, maskedKey(key)), style = MaterialTheme.typography.bodyMedium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = {
+                            onUse(key)
+                            found = null
+                            // The key is saved encrypted; it should not stay where any app can read it.
+                            runCatching {
+                                val clipboard = context.getSystemService(ClipboardManager::class.java)
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) clipboard?.clearPrimaryClip()
+                                else clipboard?.setPrimaryClip(ClipData.newPlainText("", ""))
+                            }
+                        }) { Text(L10n.str(R.string.ai_use_key)) }
+                        TextButton(onClick = { found = null }) { Text(L10n.str(R.string.cancel)) }
+                    }
+                }
+            }
+        }
+        if (notFound) {
+            Text(
+                L10n.str(R.string.ai_key_not_in_clipboard_x, provider.shortName),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/** "gsk_Ab…9f2c": enough to recognise the key without showing it. */
+private fun maskedKey(key: String): String = key.take(6) + "…" + key.takeLast(4)

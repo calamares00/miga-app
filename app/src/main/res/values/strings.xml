@@ -1411,4 +1411,8 @@
     <string name="ai_test_reads_photo">"It also read a test photo."</string>
     <string name="ai_test_photo_failed">"Text works, but it could not read the test photo."</string>
     <string name="ai_test_turn_photos_off">"Mark it as not reading photos"</string>
+    <string name="ai_get_key">"Get a key"</string>
+    <string name="ai_key_in_clipboard_x_x">"You copied a %1$s key (%2$s). Use it?"</string>
+    <string name="ai_use_key">"Use it"</string>
+    <string name="ai_key_not_in_clipboard_x">"No %1$s key found in what you copied. Copy it on the page and paste it in the field above."</string>
 </resources>
