@@ -1,3 +1,4 @@
 Novedades de la versión 1.0.37:
 • Las hojas que se abren desde abajo (consejos de la receta, alérgenos, filtros, exportar, listas de la compra…) ya no rebotan al llegar al final de la lista.
 • Ingredientes sin negritas en los alérgenos; solo queda el aviso ⚠ en los que dependen del producto.
+• Editor de recetas más claro: pestañas, ingredientes como en la receta (toca para editar), caja para añadir «200 g de patatas» y pasos a todo el ancho.

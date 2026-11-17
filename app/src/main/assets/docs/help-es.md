@@ -14,6 +14,8 @@ Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo
 ## ✍️ Escribir una receta
 
 - **Ingredientes**: al escribir el nombre, la app te sugiere los que ya has usado. Desde el menú (⋮) de cada ingrediente puedes marcarlo como **opcional** (el perejil para decorar, por ejemplo): se mostrará «(opcional)» sin ensuciar su nombre.
+- **Pestañas** arriba (Lo básico, Ingredientes, Pasos, Más) para saltar a cada parte de la receta.
+- **Ingredientes**: se ven como en la receta; toca uno para editar nombre, cantidad y unidad. Para añadir, escribe en la caja de abajo «200 g de patatas» y Miga separa cantidad, unidad y nombre.
 - **Pegar una lista**: pega varios ingredientes o pasos de golpe (o usa **Pegar lista**) y se separan uno por línea, sin viñetas ni números; en los ingredientes se distinguen cantidad, unidad y nombre.
 - **Reordenar**: arrastra el asa (⋮⋮) de un ingrediente o un paso para moverlo.
 - **Recetas repetidas**: si ya tienes una receta con el mismo nombre, al guardar se te pregunta antes.
