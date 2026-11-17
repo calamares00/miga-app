@@ -1,2 +1,3 @@
 What's new in version 1.0.35:
 • Allergens: buckwheat, maize, rice or chickpea flour and lentils no longer show as "may contain gluten": they have none. The coeliac card only reminds you to buy them certified in case of traces.
+• Cooking mode: times, temperatures and speeds are highlighted in the theme colour.
