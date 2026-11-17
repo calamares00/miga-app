@@ -1,2 +1,2 @@
 What's new in version 1.0.34:
-• Import from a website without the assistant: Miga reads the recipe that most recipe websites include in a standard format (schema.org) directly, with its photo, times, servings and step sections. Faster, exact and free; the assistant is only used when the site does not include it.
+• Import from a website without the assistant: Miga reads the recipe that most recipe websites include in a standard format (schema.org) directly, with its photo, times, servings and step sections. With the assistant set up, it also improves it (wording, units), and you can undo that.

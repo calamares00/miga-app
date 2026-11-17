@@ -1,5 +1,10 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.data.model.StepGroup
+import org.calamares.miga.data.model.IngredientGroup
+import org.calamares.miga.data.polish.polishRecipe
+import org.calamares.miga.data.polish.PolishedRecipe
+import org.calamares.miga.data.polish.RecipePolishResult
 import org.calamares.miga.data.search.PageFetchResult
 import org.calamares.miga.data.search.SchemaOrgRecipe
 import org.calamares.miga.data.model.Recipe
@@ -59,6 +64,15 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/** An automatic improvement of a recipe read from the web: what changed and the texts before it. */
+class WebPolish(
+    val changes: List<String>,
+    val name: String,
+    val notes: String,
+    val ingredientGroups: List<IngredientGroup>,
+    val stepGroups: List<StepGroup>
+)
 
 sealed interface VisionState {
     data object Idle : VisionState
@@ -362,13 +376,28 @@ class RecipeEditorViewModel(
             }
             val structured = withContext(AppDispatchers.default) { SchemaOrgRecipe.parse(page.html, page.url) }
             if (structured != null) {
-                applyVisionResult(structured.recipe)
+                applyVisionResult(structured.recipe, byAi = false)
                 structured.imageUrl?.let { imageUrl ->
                     progress.step(L10n.str(R.string.ai_step_downloading_photo))
                     val saved = RecipeUrlFetcher.fetchImage(imageUrl)?.let { bytes ->
                         withContext(AppDispatchers.io) { PhotoStorage.saveDownloaded(appContext, bytes) }
                     }
                     saved?.let { addPhoto(it) }
+                }
+                // With the assistant set up, the texts read from the page are improved as with
+                // "Polish the recipe"; the editor offers to undo it.
+                if (settingsRepository.aiCandidates().isNotEmpty()) {
+                    progress.step(L10n.str(R.string.polish_working))
+                    val polish = settingsRepository.runAi<RecipePolishResult>(
+                        errorOf = { (it as? RecipePolishResult.Error)?.reason },
+                        error = { RecipePolishResult.Error(it) },
+                        progress = progress
+                    ) { ai -> ai.polishRecipe(formAsRecipe()) }
+                    when (polish) {
+                        is RecipePolishResult.Success -> applyWebPolish(polish.polished)
+                        is RecipePolishResult.Error -> webPolishError = polish.reason
+                        null -> Unit
+                    }
                 }
                 _visionState.value = VisionState.Loaded
                 return@launchAiTask
@@ -450,7 +479,20 @@ class RecipeEditorViewModel(
         }
     }
 
-    private fun applyVisionResult(found: RecipeVisionResultDto) {
+    /** Whether the form was filled by the cooking assistant (photos, suggestion, web text or improved). */
+    var filledByAi by mutableStateOf(false)
+        private set
+
+    /** The improvement applied to a recipe read from a web page, which can be undone. */
+    var webPolish by mutableStateOf<WebPolish?>(null)
+        private set
+
+    /** Why a recipe read from a web page could not be improved, shown without blocking. */
+    var webPolishError by mutableStateOf<String?>(null)
+        private set
+
+    private fun applyVisionResult(found: RecipeVisionResultDto, byAi: Boolean = true) {
+        filledByAi = byAi
         val recipe = found.matchedTo(known)
         // Some books title a section with several comma-separated categories ("Rice, pulses,
         // potatoes and pasta"). Only the first one becomes the recipe category (the data model
@@ -470,6 +512,41 @@ class RecipeEditorViewModel(
         selectedUtensils.clear(); selectedUtensils.addAll(recipe.utensils)
         origin = recipe.origin?.trim().orEmpty()
         originCountry = RecipeOrigin.normalizeCountry(recipe.originCountry) ?: RecipeOrigin.guessCountry(origin)
+    }
+
+    /** The form's recipe texts as a Recipe, for the assistant. */
+    private fun formAsRecipe() = Recipe(
+        uid = "", recipeBookId = bookId, recipeBookName = "", name = name, categoryId = null, categoryName = categoryName,
+        difficulty = difficulty, prepTimeMinutes = prepTimeMinutesText.toIntOrNull(), cookTimeMinutes = cookTimeMinutesText.toIntOrNull(),
+        servings = servings, notes = notes, source = source, isFavorite = false, timesCooked = 0, createdAt = 0L, updatedAt = 0L,
+        photos = emptyList(), ingredientGroups = ingredientGroups.map { it.toDomain() }, stepGroups = stepGroups.map { it.toDomain() },
+        tags = emptyList(), utensils = emptyList()
+    )
+
+    private fun applyWebPolish(polished: PolishedRecipe) {
+        webPolish = WebPolish(
+            changes = polished.changes,
+            name = name,
+            notes = notes,
+            ingredientGroups = ingredientGroups.map { it.toDomain() },
+            stepGroups = stepGroups.map { it.toDomain() }
+        )
+        filledByAi = true
+        name = polished.name
+        notes = polished.notes
+        ingredientGroups.clear(); ingredientGroups.addAll(polished.ingredientGroups.map { it.toUi() }.ifEmpty { listOf(IngredientGroupUi()) })
+        stepGroups.clear(); stepGroups.addAll(polished.stepGroups.map { it.toUi() }.ifEmpty { listOf(StepGroupUi()) })
+    }
+
+    /** Puts back the texts as the web page had them. */
+    fun undoWebPolish() {
+        val original = webPolish ?: return
+        name = original.name
+        notes = original.notes
+        ingredientGroups.clear(); ingredientGroups.addAll(original.ingredientGroups.map { it.toUi() }.ifEmpty { listOf(IngredientGroupUi()) })
+        stepGroups.clear(); stepGroups.addAll(original.stepGroups.map { it.toUi() }.ifEmpty { listOf(StepGroupUi()) })
+        webPolish = null
+        filledByAi = false
     }
 
     private var initialSnapshot: EditorSnapshot? = null

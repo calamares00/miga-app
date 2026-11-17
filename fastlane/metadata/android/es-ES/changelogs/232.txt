@@ -1,2 +1,2 @@
 Novedades de la versión 1.0.34:
-• Importar desde una web sin asistente: Miga lee directamente la receta que casi todas las webs de recetas incluyen en formato estándar (schema.org), con su foto, tiempos, raciones y secciones de pasos. Es más rápido, exacto y gratis; el asistente solo se usa si la web no la trae.
+• Importar desde una web sin asistente: Miga lee directamente la receta que casi todas las webs de recetas incluyen en formato estándar (schema.org), con su foto, tiempos, raciones y secciones de pasos. Con el asistente configurado, además la mejora (redacción, unidades) y puedes deshacerlo.
