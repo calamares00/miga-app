@@ -1,0 +1,5 @@
+Novedades de la versión 1.0.36:
+• Receta más clara: datos en una franja, alérgenos en una fila, cantidades en columna y tiempos resaltados.
+• Alérgenos: el trigo sarraceno, las harinas de maíz o arroz y las lentejas ya no salen como «puede contener gluten»; solo se recuerda comprarlos certificados.
+• Modo cocina: tiempos y velocidades con el color del tema.
+• Borrar recetas: si sales de la app justo después, ya no vuelven a aparecer.
