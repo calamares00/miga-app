@@ -14,6 +14,8 @@ Each book is a recipe collection with its own cover: your mum's, a friend's or o
 ## ✍️ Writing a recipe
 
 - **Ingredients**: as you type the name, the app suggests the ones you have used before. From each ingredient's menu (⋮) you can mark it as **optional** (parsley to garnish, for example): it shows "(optional)" without changing its name.
+- **Tabs** at the top (Basics, Ingredients, Steps, More) jump to each part of the recipe.
+- **Ingredients**: they look as in the recipe; tap one to edit its name, amount and unit. To add one, type "200 g potatoes" in the box below and Miga splits amount, unit and name.
 - **Paste a list**: paste several ingredients or steps at once (or use **Paste list**) and they are split one per line, without bullets or numbers; ingredients are split into quantity, unit and name.
 - **Reorder**: drag the handle (⋮⋮) of an ingredient or step to move it.
 - **Repeated recipes**: if you already have a recipe with the same name, you are asked before saving.

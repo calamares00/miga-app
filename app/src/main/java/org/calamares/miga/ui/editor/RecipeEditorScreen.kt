@@ -1,7 +1,21 @@
 package org.calamares.miga.ui.editor
 
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.material3.Tab
+import androidx.compose.material3.PrimaryScrollableTabRow
+import androidx.compose.material3.AssistChip
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusRequester
+import org.calamares.miga.data.model.PhotoCredit
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import org.calamares.miga.ui.components.keepScrollInSheet
-import androidx.compose.material3.FilledTonalButton
 import org.calamares.miga.data.model.ContentKind
 import org.calamares.miga.data.content.ContentCleanup
 import org.calamares.miga.ui.components.rememberCameraCapture
@@ -65,7 +79,6 @@ import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -74,7 +87,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.InputChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -156,8 +168,27 @@ fun RecipeEditorScreen(
     }
     val cameraCapture = rememberCameraCapture { path -> pendingEditUri = Uri.parse(path) }
 
+    val formScroll = rememberScrollState()
+    val tabScope = rememberCoroutineScope()
+    /** Where each part of the form starts (see EditorSection), to jump to it from the tabs. */
+    val sectionTops = remember { mutableStateMapOf<Int, Int>() }
+    val currentSection by remember {
+        derivedStateOf {
+            if (formScroll.value >= formScroll.maxValue && formScroll.maxValue > 0) EDITOR_SECTIONS - 1
+            else sectionTops.filterValues { it <= formScroll.value + 48 }.keys.maxOrNull() ?: 0
+        }
+    }
+    fun editorSections() = listOf(
+        L10n.str(R.string.editor_basics),
+        L10n.str(R.string.editor_tab_count_x, L10n.str(R.string.ingredients), viewModel.ingredientGroups.sumOf { group -> group.ingredients.count { it.name.isNotBlank() } }),
+        L10n.str(R.string.editor_tab_count_x, L10n.str(R.string.editor_tab_steps), viewModel.stepGroups.sumOf { group -> group.steps.count { it.text.isNotBlank() } }),
+        L10n.str(R.string.editor_more)
+    )
+    fun Modifier.section(index: Int) = onGloballyPositioned { sectionTops[index] = it.positionInParent().y.roundToInt() }
+
     AdaptiveScaffold(
         topBar = {
+          Column {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(if (viewModel.isEditing) L10n.str(R.string.edit_recipe) else L10n.str(R.string.new_recipe)) },
@@ -172,6 +203,23 @@ fun RecipeEditorScreen(
                     }
                 }
             )
+            if (!viewModel.isLoading) {
+                // Jumps to each part of the form; the tab follows the part on screen.
+                PrimaryScrollableTabRow(
+                    selectedTabIndex = currentSection,
+                    containerColor = MaterialTheme.colorScheme.background,
+                    edgePadding = 8.dp
+                ) {
+                    editorSections().forEachIndexed { index, title ->
+                        Tab(
+                            selected = index == currentSection,
+                            onClick = { sectionTops[index]?.let { top -> tabScope.launch { formScroll.animateScrollTo(top) } } },
+                            text = { Text(title, maxLines = 1) }
+                        )
+                    }
+                }
+            }
+          }
         }
     ) { padding ->
         if (viewModel.isLoading) {
@@ -185,9 +233,9 @@ fun RecipeEditorScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(formScroll)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
             if (visionState is VisionState.Error && !visionErrorDismissed) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
@@ -229,7 +277,7 @@ fun RecipeEditorScreen(
                 if (!toCreate.isEmpty) NewLabelsNotice(toCreate)
             }
 
-            EditorCard(title = L10n.str(R.string.editor_basics), icon = Icons.Outlined.Info) {
+            EditorCard(title = L10n.str(R.string.editor_basics), icon = Icons.Outlined.Info, modifier = Modifier.section(0)) {
                 PhotosRow(
                     viewModel = viewModel,
                     onAddPhoto = { showPhotoSourceSheet = true },
@@ -243,28 +291,25 @@ fun RecipeEditorScreen(
                     supportingText = { if (viewModel.nameError) Text(L10n.str(R.string.name_required)) },
                     modifier = Modifier.fillMaxWidth()
                 )
-                CategoryField(
-                    value = viewModel.categoryName.orEmpty(),
-                    suggestions = availableCategories,
-                    onValueChange = { text -> viewModel.categoryName = text.takeIf { it.isNotBlank() } }
-                )
-                OriginField(
-                    value = viewModel.origin,
-                    countryCode = viewModel.originCountry,
-                    onValueChange = viewModel::updateOrigin,
-                    onPickCountry = viewModel::pickOriginCountry
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                    CategoryField(
+                        value = viewModel.categoryName.orEmpty(),
+                        suggestions = availableCategories,
+                        onValueChange = { text -> viewModel.categoryName = text.takeIf { it.isNotBlank() } },
+                        modifier = Modifier.weight(1f)
+                    )
+                    OriginField(
+                        value = viewModel.origin,
+                        countryCode = viewModel.originCountry,
+                        onValueChange = viewModel::updateOrigin,
+                        onPickCountry = viewModel::pickOriginCountry,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
 
             EditorCard(title = L10n.str(R.string.editor_details), icon = Icons.Outlined.Timer) {
-                Section(title = L10n.str(R.string.difficulty)) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Difficulty.entries.forEach { d ->
-                            FilterChip(selected = viewModel.difficulty == d, onClick = { viewModel.difficulty = d }, label = { Text(d.label) })
-                        }
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = viewModel.prepTimeMinutesText,
                         onValueChange = { if (it.all(Char::isDigit)) viewModel.prepTimeMinutesText = it },
@@ -292,13 +337,23 @@ fun RecipeEditorScreen(
                         modifier = Modifier.weight(1f)
                     )
                 }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Difficulty.entries.forEach { d ->
+                        FilterChip(
+                            selected = viewModel.difficulty == d,
+                            onClick = { viewModel.difficulty = d },
+                            label = { Text(d.label) },
+                            modifier = Modifier.semantics { contentDescription = L10n.str(R.string.difficulty) + ": " + d.label }
+                        )
+                    }
+                }
             }
 
-            EditorCard(title = null, icon = null) { IngredientsEditor(viewModel) }
+            EditorCard(title = null, icon = null, modifier = Modifier.section(1)) { IngredientsEditor(viewModel) }
 
-            EditorCard(title = null, icon = null) { StepsEditor(viewModel) }
+            EditorCard(title = null, icon = null, modifier = Modifier.section(2)) { StepsEditor(viewModel) }
 
-            EditorCard(title = L10n.str(R.string.editor_more), icon = Icons.Outlined.MoreHoriz) {
+            EditorCard(title = L10n.str(R.string.editor_more), icon = Icons.Outlined.MoreHoriz, modifier = Modifier.section(3)) {
                 Section(title = L10n.str(R.string.utensils_needed)) {
                     ChipMultiSelect(
                         selected = viewModel.selectedUtensils,
@@ -321,13 +376,17 @@ fun RecipeEditorScreen(
                         kind = ContentKind.TAG
                     )
                 }
+                val (notesText, photoCredit) = remember(viewModel.notes) { PhotoCredit.split(viewModel.notes) }
                 RichTextField(
-                    value = viewModel.notes,
-                    onValueChange = { viewModel.notes = it },
+                    value = notesText,
+                    onValueChange = { viewModel.notes = PhotoCredit.join(it, photoCredit) },
                     label = { Text(L10n.str(R.string.notes_variants)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2
                 )
+                photoCredit?.let { credit ->
+                    Text(PhotoCredit.plain(credit), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 OutlinedTextField(
                     value = viewModel.source,
                     onValueChange = { viewModel.source = it },
@@ -544,7 +603,13 @@ private fun PhotosRow(viewModel: RecipeEditorViewModel, onAddPhoto: () -> Unit, 
  * of its country, guessed from the text or picked from the list by tapping the flag.
  */
 @Composable
-private fun OriginField(value: String, countryCode: String?, onValueChange: (String) -> Unit, onPickCountry: (String?) -> Unit) {
+private fun OriginField(
+    value: String,
+    countryCode: String?,
+    onValueChange: (String) -> Unit,
+    onPickCountry: (String?) -> Unit,
+    modifier: Modifier = Modifier
+) {
     var picking by remember { mutableStateOf(false) }
     OutlinedTextField(
         value = value,
@@ -563,9 +628,13 @@ private fun OriginField(value: String, countryCode: String?, onValueChange: (Str
             }
         },
         supportingText = {
-            Text(countryCode?.let { L10n.str(R.string.origin_country_x, RecipeOrigin.countryName(it)) } ?: L10n.str(R.string.origin_tap_flag))
+            Text(
+                countryCode?.let { RecipeOrigin.countryName(it) } ?: L10n.str(R.string.origin_tap_flag),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         },
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier
     )
     if (picking) {
         CountryPickerDialog(
@@ -578,13 +647,13 @@ private fun OriginField(value: String, countryCode: String?, onValueChange: (Str
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CategoryField(value: String, suggestions: List<String>, onValueChange: (String) -> Unit) {
+private fun CategoryField(value: String, suggestions: List<String>, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
     // "postre" when "Postres" exists: offered instead of creating a near duplicate.
     val similar = remember(value, suggestions) {
         ContentCleanup.similarExisting(ContentKind.CATEGORY, value, suggestions, L10n.locale().language)
     }
-    Column {
+    Column(modifier = modifier) {
         OutlinedTextField(
             value = value,
             onValueChange = { onValueChange(it); expanded = true },
@@ -639,6 +708,9 @@ private fun ChipMultiSelect(
 ) {
     var text by remember { mutableStateOf("") }
     var focused by remember { mutableStateOf(false) }
+    /** The field only shows after tapping "Add", so the chips take little room. */
+    var adding by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
     // Not remembered: [selected] is a state list that changes without changing identity, and
     // filtering a few hundred names on each recomposition is cheap.
     val allOptions = (available + selected).distinct()
@@ -664,21 +736,28 @@ private fun ChipMultiSelect(
     val similar = if (fragment.isEmpty()) null else ContentCleanup.similarExisting(kind, fragment, allOptions, L10n.locale().language)
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (selected.isNotEmpty()) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                selected.forEach { option ->
-                    InputChip(
-                        selected = true,
-                        onClick = { onToggle(option) },
-                        label = { Text(option) },
-                        trailingIcon = {
-                            Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.remove_x, option), modifier = Modifier.size(18.dp))
-                        }
-                    )
-                }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            selected.forEach { option ->
+                InputChip(
+                    selected = true,
+                    onClick = { onToggle(option) },
+                    label = { Text(option) },
+                    trailingIcon = {
+                        Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.remove_x, option), modifier = Modifier.size(18.dp))
+                    }
+                )
+            }
+            if (!adding) {
+                AssistChip(
+                    onClick = { adding = true },
+                    label = { Text(L10n.str(R.string.add)) },
+                    leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    modifier = Modifier.semantics { contentDescription = label }
+                )
             }
         }
-        OutlinedTextField(
+        if (adding) LaunchedEffect(Unit) { focusRequester.requestFocus() }
+        if (adding) OutlinedTextField(
             value = text,
             onValueChange = { value ->
                 if (value.any { it == ',' || it == ';' || it == '\n' }) {
@@ -701,7 +780,11 @@ private fun ChipMultiSelect(
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused }
+            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).onFocusChanged { state ->
+                // Leaving an empty field hides it again.
+                if (focused && !state.isFocused && text.isBlank()) adding = false
+                focused = state.isFocused
+            }
         )
         if (matches.isNotEmpty()) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -723,6 +806,9 @@ private fun ChipMultiSelect(
 
 private const val MAX_SUGGESTIONS = 8
 
+/** Parts of the form the tabs jump to: basics, ingredients, steps, more. */
+private const val EDITOR_SECTIONS = 4
+
 @Composable
 internal fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -733,14 +819,14 @@ internal fun Section(title: String, content: @Composable () -> Unit) {
 
 /** Editor section styled like the Settings groups: rounded container and a title with an icon. */
 @Composable
-private fun EditorCard(title: String?, icon: ImageVector?, content: @Composable ColumnScope.() -> Unit) {
+private fun EditorCard(title: String?, icon: ImageVector?, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         if (title != null) {
             Row(verticalAlignment = Alignment.CenterVertically) {
