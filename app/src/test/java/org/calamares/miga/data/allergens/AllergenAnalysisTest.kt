@@ -41,14 +41,18 @@ class AllergenAnalysisTest {
         assertTrue(levels("pasta de tomate").isEmpty())
         assertTrue(levels("cebolla en corte fino").isEmpty())
         assertEquals(mapOf(TREE_NUTS to CONTAINS), levels("leche de almendras"))
-        assertEquals(mapOf(GLUTEN to MAY_CONTAIN), levels("trigo sarraceno"))
+        // Buckwheat is not wheat: no gluten, only possible traces (AESAN).
+        assertTrue(levels("harina de trigo sarraceno").isEmpty())
+        assertEquals(setOf(GLUTEN), AllergenAnalysis.ofIngredient("harina de trigo sarraceno").traces)
+        assertTrue(AllergenAnalysis.ofIngredient("harina de trigo sarraceno sin gluten").traces.isEmpty())
     }
 
     @Test
     fun `what depends on the product, and certified products`() {
         assertEquals(mapOf(GLUTEN to MAY_CONTAIN, CELERY to MAY_CONTAIN), levels("1 pastilla de caldo de pollo"))
         assertEquals(MAY_CONTAIN, levels("chorizo")[GLUTEN])
-        assertEquals(MAY_CONTAIN, levels("lentejas pardinas")[GLUTEN])
+        assertTrue(levels("lentejas pardinas").isEmpty())
+        assertEquals(setOf(GLUTEN), AllergenAnalysis.ofIngredient("lentejas pardinas").traces)
         assertEquals(CONTAINS, levels("copos de avena")[GLUTEN])
         assertTrue(levels("avena sin gluten").isEmpty())
         assertTrue(levels("chorizo sin gluten ni lactosa").let { GLUTEN !in it })
@@ -64,7 +68,21 @@ class AllergenAnalysisTest {
         assertEquals(CONTAINS, lentils.level(CELERY))
         assertEquals(CONTAINS, lentils.level(SULPHITES))
         assertEquals(FREE, lentils.level(EGGS))
-        assertEquals(listOf("lentejas", "chorizo", "1 pastilla de caldo"), lentils.causes.getValue(GLUTEN).map { it.ingredient })
+        assertEquals(listOf("chorizo", "1 pastilla de caldo"), lentils.causes.getValue(GLUTEN).map { it.ingredient })
+        assertEquals(listOf("lentejas"), lentils.traceCauses[GLUTEN])
+
+        // A gluten-free recipe with buckwheat flour: no gluten, the flour only as traces.
+        val crepes = recipe("harina de trigo sarraceno", "huevo para la masa", "mantequilla", "jamón cocido sin gluten", "queso emmental rallado")
+        assertEquals(FREE, crepes.level(GLUTEN))
+        assertEquals(listOf("harina de trigo sarraceno"), crepes.traceCauses[GLUTEN])
+
+        // Polenta (maize semolina): no gluten either; wheat semolina has.
+        val polenta = recipe("polenta (sémola de maíz)", "caldo de verduras sin gluten", "queso parmesano rallado", "setas")
+        assertEquals(FREE, polenta.level(GLUTEN))
+        assertEquals(listOf("polenta (sémola de maíz)"), polenta.traceCauses[GLUTEN])
+        assertEquals(MAY_CONTAIN, polenta.level(CELERY))
+        assertEquals(CONTAINS, levels("sémola de trigo")[GLUTEN])
+        assertEquals(CONTAINS, levels("sémola")[GLUTEN])
         // CONTAINS first, then MAY_CONTAIN, each in the EU order.
         assertEquals(listOf(CELERY, SULPHITES, GLUTEN, MILK, LACTOSE), lentils.present)
 
