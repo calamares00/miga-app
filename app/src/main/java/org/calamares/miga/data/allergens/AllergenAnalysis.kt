@@ -4,11 +4,9 @@ import org.calamares.miga.data.model.Ingredient
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.searchKey
 
-/** What one ingredient brings, and where in its name (for bold text, like food labels). */
+/** What one ingredient brings. */
 data class IngredientAllergens(
     val levels: Map<Allergen, AllergenLevel>,
-    /** Parts of the name that bring an allergen for sure (CONTAINS). */
-    val highlights: List<IntRange>,
     /** Allergens it does not have but may carry as traces (see AllergenRule.traces). */
     val traces: Set<Allergen> = emptySet()
 ) {
@@ -44,7 +42,7 @@ class RecipeAllergens(
  */
 object AllergenAnalysis {
 
-    private class Token(val text: String, val start: Int, val end: Int)
+    private class Token(val text: String)
     private class Match(val first: Int, val count: Int, val rule: AllergenRule)
 
     private val WORD = Regex("[a-z0-9]+")
@@ -54,7 +52,7 @@ object AllergenAnalysis {
 
     fun ofIngredient(name: String): IngredientAllergens {
         val key = searchKey(name)
-        val tokens = WORD.findAll(key).map { Token(it.value, it.range.first, it.range.last) }.toList()
+        val tokens = WORD.findAll(key).map { Token(it.value) }.toList()
         val matches = mutableListOf<Match>()
         for (rule in AllergenRules.all) for (pattern in rule.patterns) {
             for (i in 0..tokens.size - pattern.size) {
@@ -65,18 +63,12 @@ object AllergenAnalysis {
         val used = BooleanArray(tokens.size)
         val levels = mutableMapOf<Allergen, AllergenLevel>()
         val traces = mutableSetOf<Allergen>()
-        val highlights = mutableListOf<IntRange>()
-        // Offsets only line up with the name when searchKey kept its length (it does for accents).
-        val sameLength = key.length == name.length
         for (match in matches.sortedWith(compareByDescending<Match> { it.count }.thenBy { it.first })) {
             val range = match.first until match.first + match.count
             if (range.any { used[it] }) continue
             range.forEach { used[it] = true }
             match.rule.effects.forEach { (allergen, level) -> levels.merge(allergen, level) { a, b -> maxOf(a, b) } }
             traces += match.rule.traces
-            if (sameLength && match.rule.effects.values.any { it == AllergenLevel.CONTAINS }) {
-                highlights += tokens[match.first].start..tokens[match.first + match.count - 1].end
-            }
         }
         fun says(phrases: List<List<String>>) = phrases.any { phrase ->
             (0..tokens.size - phrase.size).any { i -> phrase.indices.all { k -> tokens[i + k].text == phrase[k] } }
@@ -87,7 +79,7 @@ object AllergenAnalysis {
         }
         if (says(LACTOSE_FREE)) levels.remove(Allergen.LACTOSE)
         if (says(EGG_FREE)) levels.remove(Allergen.EGGS)
-        return IngredientAllergens(levels, highlights.sortedBy { it.first }, traces - levels.keys)
+        return IngredientAllergens(levels, traces - levels.keys)
     }
 
     fun ofRecipe(recipe: Recipe): RecipeAllergens = ofIngredients(recipe.ingredientGroups.flatMap { it.ingredients })
