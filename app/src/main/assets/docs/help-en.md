@@ -140,6 +140,8 @@ Features marked ✨ are done by the kitchen assistant, which uses artificial int
 
 - If you add several providers, they are used **in the order you choose**: if one fails, the next one is tried automatically.
 - Each provider has a **switch**: turn it off whenever you like without losing its key.
+- **Get a key** opens the provider's page where keys are created; copy it there and, back in Miga, you are offered to use it with one tap (Miga only looks at what you copied at that moment and clears it from the clipboard once saved).
+- **Test connection** sends a small request with that key and model and tells you whether it works and how long it takes; if the model is set as reading photos, it also tries a photo.
 - While it works, the app tells you **what it is doing** ("Reading the text in the photo…", "Going through your recipes…").
 - If you leave the app or turn off the screen, the task **keeps going in the background** and a notification shows its progress. When a polish finishes, the notification takes you straight to the result to review it.
 - The assistant can also rate how healthy a recipe is, estimate its nutrition and suggest **substitutes** for an ingredient (tap ⟳ next to the ingredient).

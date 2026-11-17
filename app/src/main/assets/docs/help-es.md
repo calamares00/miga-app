@@ -140,6 +140,8 @@ Las funciones marcadas con ✨ las hace el asistente de cocina, que usa intelige
 
 - Si añades varios proveedores, se usan **en el orden que elijas**: si uno falla, se prueba el siguiente automáticamente.
 - Cada proveedor tiene un **interruptor**: desactívalo cuando quieras sin perder su clave.
+- **Conseguir clave** abre la página del proveedor donde se crean las claves; cópiala allí y, al volver a Miga, se te ofrece usarla con un toque (Miga solo mira lo copiado en ese momento y lo borra del portapapeles al guardarla).
+- **Probar conexión** manda una petición pequeña con esa clave y ese modelo y te dice si funciona y cuánto tarda; si el modelo está marcado como que lee fotos, prueba también con una foto.
 - Mientras trabaja, la app te dice **qué está haciendo** («Leyendo el texto de la foto…», «Repasando tus recetas…»).
 - Si sales de la app o apagas la pantalla, la tarea **sigue en segundo plano** y una notificación muestra su progreso. Cuando termina una mejora, la notificación te lleva directo al resultado para revisarlo.
 - El asistente también puede valorar lo saludable que es una receta, estimar su información nutricional y sugerir **sustitutos** de un ingrediente (toca ⟳ junto al ingrediente).
