@@ -48,4 +48,18 @@ class PendingDeletionsTest {
         pending.undo(first)
         assertEquals(setOf(2L), pending.recipeIds.value)
     }
+
+    @Test
+    fun `leaving the app deletes at once what was waiting`() = runBlocking {
+        val slow = PendingDeletions(CoroutineScope(SupervisorJob() + Dispatchers.Default), windowMillis = 60_000)
+        var deleted = false
+        val offer = slow.schedule("Deleted", recipeIds = setOf(3L)) { deleted = true }
+        slow.commitAll()
+        delay(300)
+        assertTrue(deleted)
+        assertTrue(slow.recipeIds.value.isEmpty())
+        // Too late to undo.
+        slow.undo(offer)
+        assertTrue(deleted)
+    }
 }
