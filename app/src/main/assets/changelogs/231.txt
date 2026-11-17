@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.33:
+• Conectar con OpenRouter: al volver a Miga ya no aparece «No se pudo abrir el archivo», y un aviso dice si la conexión ha ido bien.

@@ -1,5 +1,6 @@
 package org.calamares.miga.data.share
 
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -56,6 +57,8 @@ object BookFileIntents {
             Intent.ACTION_SEND -> IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
             else -> null
         } ?: return false
+        // Only files: other links (miga://openrouter...) belong to someone else.
+        if (uri.scheme != ContentResolver.SCHEME_CONTENT && uri.scheme != ContentResolver.SCHEME_FILE) return false
         val type = intent.type ?: context.contentResolver.getType(uri)
         if (type != null && type !in FILE_TYPES) return false
         val appContext = context.applicationContext

@@ -1,5 +1,8 @@
 package org.calamares.miga.data.ai
 
+import android.widget.Toast
+import android.os.Looper
+import android.os.Handler
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -95,7 +98,7 @@ object OpenRouterConnect {
         }
         _status.value = Status.Connecting
         scope.launch {
-            _status.value = when (val result = exchange(code.trim(), verifier)) {
+            val status = when (val result = exchange(code.trim(), verifier)) {
                 is Exchange.Key -> {
                     val settings = (app as MigaApp).settingsRepository
                     settings.setApiKey(AiProvider.OPENROUTER, result.key)
@@ -105,6 +108,10 @@ object OpenRouterConnect {
                 }
                 is Exchange.Error -> Status.Failed(result.reason)
             }
+            _status.value = status
+            // The app may have opened on another screen: say how it went wherever the user is.
+            val message = if (status is Status.Failed) status.reason else L10n.str(R.string.openrouter_connected)
+            Handler(Looper.getMainLooper()).post { Toast.makeText(app, message, Toast.LENGTH_LONG).show() }
         }
     }
 

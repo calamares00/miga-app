@@ -93,11 +93,13 @@ class MainActivity : FragmentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        ShoppingIntents.handle(intent)
-        AppShortcuts.handle(intent)
-        BookFileIntents.handle(this, intent)
-        AiJobs.handle(intent)
-        OpenRouterConnect.handle(this, intent)
+        // The return of "Connect with OpenRouter" is a link of its own, not shared text or a file.
+        if (!OpenRouterConnect.handle(this, intent)) {
+            ShoppingIntents.handle(intent)
+            AppShortcuts.handle(intent)
+            BookFileIntents.handle(this, intent)
+            AiJobs.handle(intent)
+        }
     }
 
     /** True once, on Android 13+, when notifications are not allowed yet; later calls return false. */
@@ -132,11 +134,13 @@ class MainActivity : FragmentActivity() {
         }
         enableEdgeToEdge()
         if (savedInstanceState == null) {
-            ShoppingIntents.handle(intent)
-            AppShortcuts.handle(intent)
-            BookFileIntents.handle(this, intent)
-            AiJobs.handle(intent)
-            OpenRouterConnect.handle(this, intent)
+            // The return of "Connect with OpenRouter" is a link of its own, not shared text or a file.
+            if (!OpenRouterConnect.handle(this, intent)) {
+                ShoppingIntents.handle(intent)
+                AppShortcuts.handle(intent)
+                BookFileIntents.handle(this, intent)
+                AiJobs.handle(intent)
+            }
         }
         val settingsRepository = (application as MigaApp).settingsRepository
         setContent {
