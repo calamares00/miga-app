@@ -277,6 +277,10 @@ private fun CoeliacCard(allergens: RecipeAllergens) {
                 AllergenLevel.MAY_CONTAIN -> Bullet(L10n.str(R.string.coeliac_buy_certified_x, causes.joinToString(", ") { it.ingredient }))
                 AllergenLevel.FREE -> Unit
             }
+            // Gluten-free foods that may carry traces (buckwheat, maize flour, dry lentils...).
+            allergens.traceCauses[Allergen.GLUTEN]?.takeIf { it.isNotEmpty() && level != AllergenLevel.CONTAINS }?.let { names ->
+                Bullet(L10n.str(R.string.coeliac_buy_certified_traces_x, names.joinToString(", ")))
+            }
             Bullet(L10n.str(R.string.coeliac_kitchen))
         }
     }
