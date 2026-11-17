@@ -16,14 +16,25 @@ import org.calamares.miga.data.allergens.Allergen.SOY
 import org.calamares.miga.data.allergens.Allergen.SULPHITES
 import org.calamares.miga.data.allergens.Allergen.TREE_NUTS
 
-/** One entry of [AllergenRules]: names (search keys, see searchKey) and what they bring. */
-internal class AllergenRule(val patterns: List<List<String>>, val effects: Map<Allergen, AllergenLevel>)
+/**
+ * One entry of [AllergenRules]: names (search keys, see searchKey), what they bring and, in
+ * [traces], allergens they do not have but may pick up by cross-contact (buckwheat and gluten).
+ */
+internal class AllergenRule(
+    val patterns: List<List<String>>,
+    val effects: Map<Allergen, AllergenLevel>,
+    val traces: Set<Allergen> = emptySet()
+)
 
 private val Allergen.c get() = this to AllergenLevel.CONTAINS
 private val Allergen.m get() = this to AllergenLevel.MAY_CONTAIN
 
-private fun r(names: String, vararg effects: Pair<Allergen, AllergenLevel>) =
-    AllergenRule(names.split('|').map { name -> name.trim().split(' ').filter { it.isNotEmpty() } }, effects.toMap())
+private fun patterns(names: String) = names.split('|').map { name -> name.trim().split(' ').filter { it.isNotEmpty() } }
+
+private fun r(names: String, vararg effects: Pair<Allergen, AllergenLevel>) = AllergenRule(patterns(names), effects.toMap())
+
+/** Foods without the allergen that often carry traces of it (only gluten so far). */
+private fun traces(names: String, vararg allergens: Allergen) = AllergenRule(patterns(names), emptyMap(), allergens.toSet())
 
 // Groups used by several entries.
 private val MILK_AND_LACTOSE = arrayOf(MILK.c, LACTOSE.c)
@@ -40,8 +51,9 @@ private val CURED_MEAT = arrayOf(GLUTEN.m, MILK.m, LACTOSE.m)
  * sarraceno" is not wheat). An entry with no allergens is such an exception. Plurals are matched
  * too ("huevo" finds "huevos", "nuez" finds "nueces").
  *
- * MAY_CONTAIN marks what depends on the product bought or on cross-contact: stock cubes, sausages,
- * spice mixes, baking powder, chocolate, dry lentils, maize or rice flour... A name containing
+ * MAY_CONTAIN marks what may have the allergen as an ingredient depending on the product bought:
+ * stock cubes, sausages, spice mixes, baking powder, chocolate... Foods that never have it but may
+ * carry traces (buckwheat, maize or rice flour, dry lentils) are only traces. A name containing
  * "sin gluten" or "sin lactosa" clears those (see AllergenAnalysis).
  */
 internal object AllergenRules {
@@ -74,12 +86,16 @@ internal object AllergenRules {
         r("salsa de soja|soy sauce|soja sauce|salsa teriyaki|teriyaki", GLUTEN.c, SOY.c),
         r("tamari", SOY.c, GLUTEN.m),
         r("levadura de cerveza|brewer s yeast|brewers yeast", GLUTEN.m),
-        // Naturally without gluten, but often contaminated or mixed: depends on the product.
-        r("trigo sarraceno|alforfon|harina de trigo sarraceno|buckwheat|buckwheat flour", GLUTEN.m),
-        r("harina de maiz|harina de arroz|harina de garbanzo|harina de coco|harina de mijo|harina de quinoa|semola de maiz|semola de arroz|polenta|corn flour|rice flour|gram flour|chickpea flour", GLUTEN.m),
-        r("fideos de arroz|pasta de arroz|rice noodles|rice paper|papel de arroz", GLUTEN.m),
+        // Naturally without gluten (buckwheat is not wheat), but often with traces from
+        // cross-contact: no gluten, and coeliacs are told to buy them certified.
+        traces("trigo sarraceno|alforfon|harina de trigo sarraceno|buckwheat|buckwheat flour", GLUTEN),
+        traces("harina de maiz|harina de arroz|harina de garbanzo|harina de coco|harina de mijo|harina de quinoa|semola de maiz|semola de arroz|polenta|corn flour|rice flour|gram flour|chickpea flour", GLUTEN),
+        traces("fideos de arroz|pasta de arroz|rice noodles|rice paper|papel de arroz", GLUTEN),
         r("maicena|maizena|harina fina de maiz|almidon de maiz|fecula de patata|cornstarch|cornflour|potato starch", ),
-        r("lentejas|lenteja|lentils|lentil", GLUTEN.m),
+        // Breakfast cereals of maize or rice usually have barley malt.
+        r("copos de maiz|cereales de desayuno|corn flakes|cornflakes|breakfast cereal", GLUTEN.m),
+        // Dry lentils often carry cereal grains (AESAN).
+        traces("lentejas|lenteja|lentils|lentil", GLUTEN),
         r("levadura quimica|levadura en polvo|polvo de hornear|polvos de hornear|gasificante|impulsor|baking powder", GLUTEN.m),
         r("levadura fresca|levadura de panadero|levadura seca|yeast|dried yeast", ),
         r("caldo|caldos|pastilla de caldo|pastillas de caldo|cubito|cubitos|avecrem|caldo de pollo|caldo de carne|caldo de verduras|stock|stock cube|bouillon|broth", *STOCK),

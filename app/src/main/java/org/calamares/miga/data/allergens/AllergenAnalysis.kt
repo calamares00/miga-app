@@ -8,7 +8,9 @@ import org.calamares.miga.data.model.searchKey
 data class IngredientAllergens(
     val levels: Map<Allergen, AllergenLevel>,
     /** Parts of the name that bring an allergen for sure (CONTAINS). */
-    val highlights: List<IntRange>
+    val highlights: List<IntRange>,
+    /** Allergens it does not have but may carry as traces (see AllergenRule.traces). */
+    val traces: Set<Allergen> = emptySet()
 ) {
     val contains: Boolean get() = levels.values.any { it == AllergenLevel.CONTAINS }
     val mayContain: Boolean get() = levels.values.any { it == AllergenLevel.MAY_CONTAIN }
@@ -21,7 +23,11 @@ data class AllergenCause(val ingredient: String, val level: AllergenLevel, val o
  * The allergens of a recipe: each one at the worst level of its ingredients, with the ingredients
  * that bring it.
  */
-class RecipeAllergens(val causes: Map<Allergen, List<AllergenCause>>) {
+class RecipeAllergens(
+    val causes: Map<Allergen, List<AllergenCause>>,
+    /** Ingredients without the allergen that may carry traces of it, to buy certified. */
+    val traceCauses: Map<Allergen, List<String>> = emptyMap()
+) {
     fun level(allergen: Allergen): AllergenLevel =
         causes[allergen]?.maxOfOrNull { it.level } ?: AllergenLevel.FREE
 
@@ -58,6 +64,7 @@ object AllergenAnalysis {
         // The longest names first: "nuez moscada" before "nuez", "leche de coco" before "leche".
         val used = BooleanArray(tokens.size)
         val levels = mutableMapOf<Allergen, AllergenLevel>()
+        val traces = mutableSetOf<Allergen>()
         val highlights = mutableListOf<IntRange>()
         // Offsets only line up with the name when searchKey kept its length (it does for accents).
         val sameLength = key.length == name.length
@@ -66,6 +73,7 @@ object AllergenAnalysis {
             if (range.any { used[it] }) continue
             range.forEach { used[it] = true }
             match.rule.effects.forEach { (allergen, level) -> levels.merge(allergen, level) { a, b -> maxOf(a, b) } }
+            traces += match.rule.traces
             if (sameLength && match.rule.effects.values.any { it == AllergenLevel.CONTAINS }) {
                 highlights += tokens[match.first].start..tokens[match.first + match.count - 1].end
             }
@@ -73,25 +81,34 @@ object AllergenAnalysis {
         fun says(phrases: List<List<String>>) = phrases.any { phrase ->
             (0..tokens.size - phrase.size).any { i -> phrase.indices.all { k -> tokens[i + k].text == phrase[k] } }
         }
-        if (says(GLUTEN_FREE)) levels.remove(Allergen.GLUTEN)
+        if (says(GLUTEN_FREE)) {
+            levels.remove(Allergen.GLUTEN)
+            traces.remove(Allergen.GLUTEN)
+        }
         if (says(LACTOSE_FREE)) levels.remove(Allergen.LACTOSE)
         if (says(EGG_FREE)) levels.remove(Allergen.EGGS)
-        return IngredientAllergens(levels, highlights.sortedBy { it.first })
+        return IngredientAllergens(levels, highlights.sortedBy { it.first }, traces - levels.keys)
     }
 
     fun ofRecipe(recipe: Recipe): RecipeAllergens = ofIngredients(recipe.ingredientGroups.flatMap { it.ingredients })
 
     fun ofIngredients(ingredients: List<Ingredient>): RecipeAllergens {
         val causes = mutableMapOf<Allergen, MutableList<AllergenCause>>()
+        val traceCauses = mutableMapOf<Allergen, MutableList<String>>()
         ingredients.filter { it.name.isNotBlank() }.forEach { ingredient ->
-            ofIngredient(ingredient.name).levels.forEach { (allergen, level) ->
+            val found = ofIngredient(ingredient.name)
+            found.traces.forEach { allergen -> traceCauses.getOrPut(allergen) { mutableListOf() } += ingredient.name.trim() }
+            found.levels.forEach { (allergen, level) ->
                 val list = causes.getOrPut(allergen) { mutableListOf() }
                 if (list.none { it.ingredient.equals(ingredient.name.trim(), ignoreCase = true) }) {
                     list += AllergenCause(ingredient.name.trim(), level, ingredient.optional)
                 }
             }
         }
-        return RecipeAllergens(causes.mapValues { (_, list) -> list.sortedByDescending { it.level } })
+        return RecipeAllergens(
+            causes.mapValues { (_, list) -> list.sortedByDescending { it.level } },
+            traceCauses.mapValues { (_, list) -> list.distinctBy { it.lowercase() } }
+        )
     }
 
     /** "huevo" matches "huevos", "nuez" matches "nueces", "pan" does not match "panceta". */
