@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.ui.components.keepScrollInSheet
 import androidx.compose.material3.FilledTonalButton
 import org.calamares.miga.data.model.ContentKind
 import org.calamares.miga.data.content.ContentCleanup
@@ -414,17 +415,19 @@ fun RecipeEditorScreen(
 
     if (showPhotoSourceSheet) {
         ModalBottomSheet(onDismissRequest = { showPhotoSourceSheet = false }, sheetState = photoSheetState) {
-            PhotoSourceSheet(
-                title = L10n.str(R.string.add_photo),
-                onCameraClick = {
-                    showPhotoSourceSheet = false
-                    cameraCapture.launch()
-                },
-                onGalleryClick = {
-                    showPhotoSourceSheet = false
-                    photoPicker.launch("image/*")
-                }
-            )
+            Column(modifier = Modifier.keepScrollInSheet()) {
+                PhotoSourceSheet(
+                    title = L10n.str(R.string.add_photo),
+                    onCameraClick = {
+                        showPhotoSourceSheet = false
+                        cameraCapture.launch()
+                    },
+                    onGalleryClick = {
+                        showPhotoSourceSheet = false
+                        photoPicker.launch("image/*")
+                    }
+                )
+            }
         }
     }
 

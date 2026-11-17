@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.list
 
+import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.ui.components.ButtonContent
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
@@ -469,29 +470,33 @@ fun RecipeListScreen(
 
     if (showFilters) {
         ModalBottomSheet(onDismissRequest = { showFilters = false }, sheetState = sheetState) {
-            FilterSheetContent(
-                filter = filter,
-                availableCategories = uiState.availableCategories,
-                availableTags = uiState.availableTags,
-                availableUtensils = uiState.availableUtensils,
-                availableIngredients = uiState.availableIngredients,
-                availableOrigins = uiState.availableOrigins,
-                onApply = { newFilter -> viewModel.applyFilter(newFilter) },
-                onClear = { viewModel.clearFilters() }
-            )
+            Column(modifier = Modifier.keepScrollInSheet()) {
+                FilterSheetContent(
+                    filter = filter,
+                    availableCategories = uiState.availableCategories,
+                    availableTags = uiState.availableTags,
+                    availableUtensils = uiState.availableUtensils,
+                    availableIngredients = uiState.availableIngredients,
+                    availableOrigins = uiState.availableOrigins,
+                    onApply = { newFilter -> viewModel.applyFilter(newFilter) },
+                    onClear = { viewModel.clearFilters() }
+                )
+            }
         }
     }
 
     if (showNewRecipeSheet) {
         ModalBottomSheet(onDismissRequest = { showNewRecipeSheet = false }, sheetState = newRecipeSheetState) {
-            NewRecipeSourceSheet(
-                onManualClick = { showNewRecipeSheet = false; onAddRecipeClick() },
-                onFileClick = { showNewRecipeSheet = false; importRecipeLauncher.launch(BACKUP_MIME_TYPES) },
-                onPhotoClick = { showNewRecipeSheet = false; showPhotoSourceSheet = true },
-                onSearchDishClick = { showNewRecipeSheet = false; onSearchDishClick() },
-                onUrlClick = { showNewRecipeSheet = false; showUrlImportDialog = true },
-                aiEnabled = rememberAiReady()
-            )
+            Column(modifier = Modifier.keepScrollInSheet()) {
+                NewRecipeSourceSheet(
+                    onManualClick = { showNewRecipeSheet = false; onAddRecipeClick() },
+                    onFileClick = { showNewRecipeSheet = false; importRecipeLauncher.launch(BACKUP_MIME_TYPES) },
+                    onPhotoClick = { showNewRecipeSheet = false; showPhotoSourceSheet = true },
+                    onSearchDishClick = { showNewRecipeSheet = false; onSearchDishClick() },
+                    onUrlClick = { showNewRecipeSheet = false; showUrlImportDialog = true },
+                    aiEnabled = rememberAiReady()
+                )
+            }
         }
     }
 
@@ -534,17 +539,19 @@ fun RecipeListScreen(
 
     if (showPhotoSourceSheet) {
         ModalBottomSheet(onDismissRequest = { showPhotoSourceSheet = false }, sheetState = photoSheetState) {
-            PhotoSourceSheet(
-                title = L10n.str(R.string.recipes_from_photos),
-                onCameraClick = {
-                    showPhotoSourceSheet = false
-                    cameraCapture.launch()
-                },
-                onGalleryClick = {
-                    showPhotoSourceSheet = false
-                    galleryPickerForPhotoImport.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }
-            )
+            Column(modifier = Modifier.keepScrollInSheet()) {
+                PhotoSourceSheet(
+                    title = L10n.str(R.string.recipes_from_photos),
+                    onCameraClick = {
+                        showPhotoSourceSheet = false
+                        cameraCapture.launch()
+                    },
+                    onGalleryClick = {
+                        showPhotoSourceSheet = false
+                        galleryPickerForPhotoImport.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    }
+                )
+            }
         }
     }
 

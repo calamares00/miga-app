@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.search
 
+import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.data.model.SavedFilter
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.filled.BookmarkAdd
@@ -320,17 +321,19 @@ fun GlobalSearchScreen(
 
     if (showFilters) {
         ModalBottomSheet(onDismissRequest = { showFilters = false }, sheetState = sheetState) {
-            FilterSheetContent(
-                filter = filter,
-                availableCategories = uiState.availableCategories,
-                availableTags = uiState.availableTags,
-                availableUtensils = uiState.availableUtensils,
-                availableIngredients = uiState.availableIngredients,
-                availableOrigins = uiState.availableOrigins,
-                onApply = { newFilter -> viewModel.applyFilter(newFilter) },
-                onClear = { viewModel.clearFilters() },
-                showFavoritesToggle = !favoritesOnly
-            )
+            Column(modifier = Modifier.keepScrollInSheet()) {
+                FilterSheetContent(
+                    filter = filter,
+                    availableCategories = uiState.availableCategories,
+                    availableTags = uiState.availableTags,
+                    availableUtensils = uiState.availableUtensils,
+                    availableIngredients = uiState.availableIngredients,
+                    availableOrigins = uiState.availableOrigins,
+                    onApply = { newFilter -> viewModel.applyFilter(newFilter) },
+                    onClear = { viewModel.clearFilters() },
+                    showFavoritesToggle = !favoritesOnly
+                )
+            }
         }
     }
 }
