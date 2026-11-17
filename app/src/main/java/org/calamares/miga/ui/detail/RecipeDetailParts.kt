@@ -263,7 +263,7 @@ internal fun FactsStrip(facts: List<Fact>) {
 
 /**
  * One ingredient: tick circle, the amount in a column of [quantityWidth] in the theme colour and
- * the name, with allergens in bold and a warning when one depends on the product. Tap ticks it;
+ * the name, with a warning when an allergen depends on the product. Tap ticks it;
  * a long press offers a substitute.
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -312,7 +312,7 @@ internal fun IngredientLine(
             )
         }
         Text(
-            ingredientWithAllergens(label),
+            label,
             style = MaterialTheme.typography.bodyLarge,
             color = textColor,
             textDecoration = decoration,

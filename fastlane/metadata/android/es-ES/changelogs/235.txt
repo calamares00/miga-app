@@ -1,2 +1,3 @@
 Novedades de la versión 1.0.37:
 • Las hojas que se abren desde abajo (consejos de la receta, alérgenos, filtros, exportar, listas de la compra…) ya no rebotan al llegar al final de la lista.
+• Ingredientes sin negritas en los alérgenos; solo queda el aviso ⚠ en los que dependen del producto.
