@@ -31,7 +31,7 @@ Desde un libro, pulsa **Nueva receta** y elige de dónde sale:
 
 - **Escribirla a mano**: una receta vacía que rellenas tú.
 - **Desde fotos** ✨: haz fotos o elige hasta 20 de la galería, de una receta o de varias. Miga averigua qué fotos son de la misma receta (dos páginas, o la receta y la foto del plato) y cuáles son recetas distintas. Si es una sola, se abre el editor ya relleno para que la revises; si son varias, se guardan una a una y ves el resultado en una lista. El asistente lee el texto y busca la foto del plato: comprueba que es de verdad el plato terminado, la recorta sin texto ni márgenes y pone como principal la que muestra el plato entero.
-- **Desde una página web** ✨: pega el enlace de una receta de cualquier web.
+- **Desde una página web**: pega el enlace de una receta. Casi todas las webs de recetas la incluyen en un formato estándar (schema.org) que Miga lee directamente, con su foto, tiempos y raciones, **sin necesitar el asistente**. Si la web no lo trae, la lee el asistente de cocina ✨.
 - **Desde un archivo de Miga**: importa recetas exportadas desde Miga (.miga, .zip o JSON).
 - **Sugerir una receta** ✨: escribe el nombre de un plato y elige entre las propuestas.
 
