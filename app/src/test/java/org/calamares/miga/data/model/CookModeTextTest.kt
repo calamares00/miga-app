@@ -43,4 +43,12 @@ class CookModeTextTest {
     fun `words that do not name the ingredient do not match`() {
         assertEquals(emptyList<String>(), found("Sirve con hojas verdes y un yogur natural."))
     }
+
+    @Test
+    fun `speeds with fractions and ranges are highlighted whole`() {
+        val text = "Trocee 6 seg, velocidad 3½. Luego velocidad 5-10."
+        val parts = CookModeText.highlights(text).map { text.substring(it) }
+        org.junit.Assert.assertTrue(parts.toString(), "velocidad 3½" in parts)
+        org.junit.Assert.assertTrue(parts.toString(), "velocidad 5-10" in parts)
+    }
 }
