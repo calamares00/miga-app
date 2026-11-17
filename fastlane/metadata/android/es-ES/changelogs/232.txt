@@ -1,2 +1,3 @@
 Novedades de la versión 1.0.34:
 • Importar desde una web sin asistente: Miga lee directamente la receta que casi todas las webs de recetas incluyen en formato estándar (schema.org), con su foto, tiempos, raciones y secciones de pasos. Con el asistente configurado, además la mejora (redacción, unidades) y puedes deshacerlo.
+• Alérgenos e intolerancia a la lactosa: cada receta muestra los 14 alérgenos que lleva o puede llevar, con iconos, negritas en los ingredientes y consejos para celíacos.
