@@ -1,0 +1,2 @@
+What's new in version 1.0.37:
+• Sheets that open from the bottom (recipe tips, allergens, filters, export, shopping lists…) no longer bounce when you reach the end of the list.

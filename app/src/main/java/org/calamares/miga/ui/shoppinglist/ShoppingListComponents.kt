@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.shoppinglist
 
+import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -357,60 +358,62 @@ internal fun StoreEditorSheet(
     }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.height(sheetContentHeight(0.85f)).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(if (store.id == 0L) L10n.str(R.string.new_supermarket) else L10n.str(R.string.edit_supermarket), style = MaterialTheme.typography.titleMedium)
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(L10n.str(R.string.name)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ShoppingAisleOrder.SUGGESTED_NAMES.forEach { suggestion ->
-                    SuggestionChip(onClick = { name = suggestion }, label = { Text(suggestion) })
+        Column(modifier = Modifier.keepScrollInSheet()) {
+            Column(modifier = Modifier.height(sheetContentHeight(0.85f)).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(if (store.id == 0L) L10n.str(R.string.new_supermarket) else L10n.str(R.string.edit_supermarket), style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(L10n.str(R.string.name)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ShoppingAisleOrder.SUGGESTED_NAMES.forEach { suggestion ->
+                        SuggestionChip(onClick = { name = suggestion }, label = { Text(suggestion) })
+                    }
                 }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                ShoppingAisleOrder.PALETTE.forEach { color ->
-                    Box(
-                        modifier = Modifier
-                            .size(30.dp)
-                            .clip(CircleShape)
-                            .background(Color(color))
-                            .then(if (color == argb) Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier)
-                            .clickable { argb = color }
-                    )
-                }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(L10n.str(R.string.aisle_order), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                TextButton(onClick = { order = ShoppingAisleOrder.complete(ShoppingAisleOrder.TYPICAL_ORDER, categoryNames) }) {
-                    Text(L10n.str(R.string.typical_route))
-                }
-            }
-            LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                itemsIndexed(order, key = { _, category -> category }) { index, category ->
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        EmojiBadge(
-                            emoji = ShoppingVisuals.categoryStyle(category).emoji,
-                            accent = Color(ShoppingVisuals.categoryStyle(category).argb),
-                            size = 30
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    ShoppingAisleOrder.PALETTE.forEach { color ->
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
+                                .background(Color(color))
+                                .then(if (color == argb) Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier)
+                                .clickable { argb = color }
                         )
-                        Text("${index + 1}. ${displayCategoryName(category)}", modifier = Modifier.weight(1f).padding(start = 10.dp))
-                        IconButton(onClick = { order = ShoppingAisleOrder.move(order, index, -1) }, enabled = index > 0) {
-                            Icon(Icons.Filled.ArrowUpward, contentDescription = L10n.str(R.string.move_x_up, category))
-                        }
-                        IconButton(onClick = { order = ShoppingAisleOrder.move(order, index, 1) }, enabled = index < order.lastIndex) {
-                            Icon(Icons.Filled.ArrowDownward, contentDescription = L10n.str(R.string.move_x_down, category))
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(L10n.str(R.string.aisle_order), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    TextButton(onClick = { order = ShoppingAisleOrder.complete(ShoppingAisleOrder.TYPICAL_ORDER, categoryNames) }) {
+                        Text(L10n.str(R.string.typical_route))
+                    }
+                }
+                LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    itemsIndexed(order, key = { _, category -> category }) { index, category ->
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            EmojiBadge(
+                                emoji = ShoppingVisuals.categoryStyle(category).emoji,
+                                accent = Color(ShoppingVisuals.categoryStyle(category).argb),
+                                size = 30
+                            )
+                            Text("${index + 1}. ${displayCategoryName(category)}", modifier = Modifier.weight(1f).padding(start = 10.dp))
+                            IconButton(onClick = { order = ShoppingAisleOrder.move(order, index, -1) }, enabled = index > 0) {
+                                Icon(Icons.Filled.ArrowUpward, contentDescription = L10n.str(R.string.move_x_up, category))
+                            }
+                            IconButton(onClick = { order = ShoppingAisleOrder.move(order, index, 1) }, enabled = index < order.lastIndex) {
+                                Icon(Icons.Filled.ArrowDownward, contentDescription = L10n.str(R.string.move_x_down, category))
+                            }
                         }
                     }
                 }
-            }
-            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) }
-                TextButton(onClick = { onSave(store.copy(name = name.trim(), argb = argb, aisleOrder = order)) }, enabled = name.isNotBlank()) {
-                    Text(L10n.str(R.string.save))
+                Row(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) }
+                    TextButton(onClick = { onSave(store.copy(name = name.trim(), argb = argb, aisleOrder = order)) }, enabled = name.isNotBlank()) {
+                        Text(L10n.str(R.string.save))
+                    }
                 }
             }
         }

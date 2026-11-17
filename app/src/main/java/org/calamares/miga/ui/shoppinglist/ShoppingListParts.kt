@@ -1,5 +1,10 @@
 package org.calamares.miga.ui.shoppinglist
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import org.calamares.miga.ui.components.sheetContentHeight
+import androidx.compose.foundation.layout.heightIn
+import org.calamares.miga.ui.components.keepScrollInSheet
 import androidx.compose.material.icons.filled.ShoppingCart
 import org.calamares.miga.ui.components.EmptyState
 import androidx.compose.runtime.setValue
@@ -131,18 +136,21 @@ internal fun ShoppingListsSheet(
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        ShoppingListsPanel(
-            lists = lists,
-            listCounts = listCounts,
-            selectedListUid = selectedListUid,
-            author = author,
-            onSelect = onSelect,
-            onCreate = onCreate,
-            onRename = onRename,
-            onDelete = onDelete,
-            onAuthorChange = onAuthorChange,
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp)
-        )
+        Column(modifier = Modifier.keepScrollInSheet()) {
+            ShoppingListsPanel(
+                lists = lists,
+                listCounts = listCounts,
+                selectedListUid = selectedListUid,
+                author = author,
+                onSelect = onSelect,
+                onCreate = onCreate,
+                onRename = onRename,
+                onDelete = onDelete,
+                onAuthorChange = onAuthorChange,
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
+                modifier = Modifier.heightIn(max = sheetContentHeight(0.9f))
+            )
+        }
     }
 }
 
