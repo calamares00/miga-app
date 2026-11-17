@@ -22,9 +22,9 @@ object CookModeText {
         RegexOption.IGNORE_CASE
     )
 
-    /** Food processor speed: "velocidad 4", "vel. 2", "velocidad cuchara", "speed 5". */
+    /** Food processor speed: "velocidad 4", "vel. 2", "velocidad 3½", "velocidad 5-10", "velocidad cuchara", "speed 5". */
     private val SPEED = Regex(
-        """(?<![\p{L}\d])(?:velocidad|vel\.?|speed)\s*(?:cuchara|spoon|\d+(?:[.,]\d+)?)(?![\p{L}\d])""",
+        """(?<![\p{L}\d])(?:velocidad|vel\.?|speed)\s*(?:cuchara|spoon|\d+(?:[.,]\d+)?[½¼¾]?(?:\s*-\s*\d+[½¼¾]?)?)(?![\p{L}\d])""",
         RegexOption.IGNORE_CASE
     )
 
