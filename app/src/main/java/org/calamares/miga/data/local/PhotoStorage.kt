@@ -212,6 +212,26 @@ object PhotoStorage {
         return SavedPhoto("file://${destination.absolutePath}", destination.length())
     }
 
+    /**
+     * Stores a photo downloaded from the web (JPEG, PNG, WebP...) like an improved one; null when
+     * the bytes are not an image Android can read.
+     */
+    fun saveDownloaded(context: Context, bytes: ByteArray): String? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        var sample = 1
+        while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= OPTIMIZED_PHOTO_DIMENSION) sample *= 2
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample }) ?: return null
+        return try {
+            saveOptimized(context, bitmap).uri
+        } catch (e: Exception) {
+            null
+        } finally {
+            bitmap.recycle()
+        }
+    }
+
     /** Size in bytes of the file behind [uri], or null when it cannot be known. */
     fun sizeOf(context: Context, uri: Uri): Long? = try {
         context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length }?.takeIf { it > 0 }

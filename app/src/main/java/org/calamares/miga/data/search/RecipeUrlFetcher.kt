@@ -17,6 +17,13 @@ private const val TIMEOUT_MILLIS = 15000
 private const val MAX_PAGE_TEXT_CHARS = 20000
 private const val MAX_PAGE_BYTES = 3 * 1024 * 1024
 private const val MAX_REDIRECTS = 5
+private const val MAX_IMAGE_BYTES = 12 * 1024 * 1024
+
+/** A downloaded page: its HTML and the address it ended at, after redirects. */
+sealed interface PageFetchResult {
+    data class Success(val html: String, val url: String) : PageFetchResult
+    data class Error(val reason: String) : PageFetchResult
+}
 
 sealed interface UrlFetchResult {
     data class Success(val text: String) : UrlFetchResult
@@ -25,11 +32,41 @@ sealed interface UrlFetchResult {
 
 /**
  * Downloads a web page and extracts its readable text (no tags, scripts or styles) for the AI to
- * extract the recipe from. Structured data such as schema.org Recipe or JSON-LD is not parsed here;
- * the model interprets the text, the same way it does with a photo.
+ * extract the recipe from. The schema.org Recipe the page may carry is read by SchemaOrgRecipe,
+ * which needs no AI; this text is for pages without it.
  */
 object RecipeUrlFetcher {
-    suspend fun fetchReadableText(url: String): UrlFetchResult = withContext(AppDispatchers.io) {
+    suspend fun fetchReadableText(url: String): UrlFetchResult = when (val page = fetchPage(url)) {
+        is PageFetchResult.Success -> readableText(page.html)
+        is PageFetchResult.Error -> UrlFetchResult.Error(page.reason)
+    }
+
+    /** The page's readable text for the AI, or an error when it has none. */
+    fun readableText(html: String): UrlFetchResult {
+        val text = extractReadableText(html)
+        return if (text.isBlank()) UrlFetchResult.Error(L10n.str(R.string.couldnt_extract_text_page))
+        else UrlFetchResult.Success(text.take(MAX_PAGE_TEXT_CHARS))
+    }
+
+    /** Downloads the photo at [url]; null when it is not an image or cannot be read. */
+    suspend fun fetchImage(url: String): ByteArray? = withContext(AppDispatchers.io) {
+        runCatching {
+            val connection = URL(url).openConnection() as HttpURLConnection
+            try {
+                connection.connectTimeout = TIMEOUT_MILLIS
+                connection.readTimeout = TIMEOUT_MILLIS
+                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Android) Miga-Recipe-App")
+                if (connection.responseCode != HttpURLConnection.HTTP_OK) return@runCatching null
+                if (connection.contentType?.startsWith("image/") == false) return@runCatching null
+                connection.inputStream.use { readAtMost(it, MAX_IMAGE_BYTES) }
+            } finally {
+                connection.disconnect()
+            }
+        }.getOrNull()
+    }
+
+    /** Downloads [url] (following redirects) and returns its HTML. */
+    suspend fun fetchPage(url: String): PageFetchResult = withContext(AppDispatchers.io) {
         try {
             var target = URL(url.trim())
             for (attempt in 0..MAX_REDIRECTS) {
@@ -50,25 +87,20 @@ object RecipeUrlFetcher {
                         continue
                     }
                     if (responseCode != HttpURLConnection.HTTP_OK) {
-                        return@withContext UrlFetchResult.Error(L10n.str(R.string.page_responded_code_x, responseCode))
+                        return@withContext PageFetchResult.Error(L10n.str(R.string.page_responded_code_x, responseCode))
                     }
                     val bytes = connection.inputStream.use { readAtMost(it, MAX_PAGE_BYTES) }
-                    val text = extractReadableText(String(bytes, charsetOf(connection.contentType, bytes)))
-                    return@withContext if (text.isBlank()) {
-                        UrlFetchResult.Error(L10n.str(R.string.couldnt_extract_text_page))
-                    } else {
-                        UrlFetchResult.Success(text.take(MAX_PAGE_TEXT_CHARS))
-                    }
+                    return@withContext PageFetchResult.Success(String(bytes, charsetOf(connection.contentType, bytes)), target.toString())
                 } finally {
                     connection.disconnect()
                 }
             }
-            UrlFetchResult.Error(L10n.str(R.string.couldnt_download_page))
+            PageFetchResult.Error(L10n.str(R.string.couldnt_download_page))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             coroutineContext.ensureActive()
-            UrlFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.couldnt_download_page))
+            PageFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.couldnt_download_page))
         }
     }
 
@@ -101,7 +133,7 @@ object RecipeUrlFetcher {
         return decodeEntities(withoutTags).replace(Regex("\\s+"), " ").trim()
     }
 
-    private fun decodeEntities(text: String): String = ENTITY_PATTERN.replace(text) { match ->
+    internal fun decodeEntities(text: String): String = ENTITY_PATTERN.replace(text) { match ->
         val entity = match.groupValues[1]
         val codePoint = when {
             entity.startsWith("#x", ignoreCase = true) -> entity.drop(2).toIntOrNull(16)
