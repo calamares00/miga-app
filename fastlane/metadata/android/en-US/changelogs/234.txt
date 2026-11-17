@@ -1,0 +1,4 @@
+What's new in version 1.0.36:
+• Clearer recipe page: facts in one strip, allergens and the coeliac note in one row, amounts in a column, highlighted times and a smaller cooking mode button while you read.
+• Allergens: buckwheat, maize or rice flour and lentils no longer show as "may contain gluten"; you are only reminded to buy them certified in case of traces.
+• Cooking mode: times and speeds in the theme colour.
