@@ -1,5 +1,9 @@
 package org.calamares.miga.ui.ideas
 
+import androidx.compose.foundation.verticalScroll
+import org.calamares.miga.ui.components.sheetContentHeight
+import androidx.compose.foundation.layout.heightIn
+import org.calamares.miga.ui.components.keepScrollInSheet
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.rememberScrollState
@@ -450,42 +454,47 @@ private fun FilterGroupSheet(
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(groupTitle(group), style = MaterialTheme.typography.titleLarge)
-            if (group == FilterGroup.MEAL || group == FilterGroup.UTENSIL) {
-                Text(
-                    L10n.str(if (group == FilterGroup.MEAL) R.string.ideas_filter_meal_hint else R.string.ideas_filter_utensil_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                when (group) {
-                    FilterGroup.MEAL -> IdeasMeal.entries.forEach { meal ->
-                        FilterChip(selected = filters.meal == meal, onClick = { onMeal(meal) }, label = { Text("${mealEmoji(meal)}  ${mealLabel(meal)}") })
-                    }
-                    FilterGroup.STYLE -> IdeasStyle.entries.forEach { style ->
-                        val label = if (style == IdeasStyle.SEASONAL) "${seasonEmoji()}  ${styleLabel(style)}" else styleLabel(style)
-                        FilterChip(selected = style in filters.styles, onClick = { onStyle(style) }, label = { Text(label) })
-                    }
-                    FilterGroup.DISH -> IdeasDish.entries.forEach { dish ->
-                        FilterChip(selected = dish in filters.dishes, onClick = { onDish(dish) }, label = { Text(dishLabel(dish)) })
-                    }
-                    FilterGroup.UTENSIL -> {
-                        utensils.forEach { name ->
-                            FilterChip(selected = filters.utensils.any { it.equals(name, ignoreCase = true) }, onClick = { onUtensil(name) }, label = { Text(name) })
+        Column(modifier = Modifier.keepScrollInSheet()) {
+            Column(
+                modifier = Modifier.heightIn(max = sheetContentHeight(0.9f)).verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(groupTitle(group), style = MaterialTheme.typography.titleLarge)
+                if (group == FilterGroup.MEAL || group == FilterGroup.UTENSIL) {
+                    Text(
+                        L10n.str(if (group == FilterGroup.MEAL) R.string.ideas_filter_meal_hint else R.string.ideas_filter_utensil_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    when (group) {
+                        FilterGroup.MEAL -> IdeasMeal.entries.forEach { meal ->
+                            FilterChip(selected = filters.meal == meal, onClick = { onMeal(meal) }, label = { Text("${mealEmoji(meal)}  ${mealLabel(meal)}") })
                         }
-                        FilterChip(
-                            selected = false,
-                            onClick = onAddUtensil,
-                            label = { Text(L10n.str(R.string.ideas_other)) },
-                            leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                        )
+                        FilterGroup.STYLE -> IdeasStyle.entries.forEach { style ->
+                            val label = if (style == IdeasStyle.SEASONAL) "${seasonEmoji()}  ${styleLabel(style)}" else styleLabel(style)
+                            FilterChip(selected = style in filters.styles, onClick = { onStyle(style) }, label = { Text(label) })
+                        }
+                        FilterGroup.DISH -> IdeasDish.entries.forEach { dish ->
+                            FilterChip(selected = dish in filters.dishes, onClick = { onDish(dish) }, label = { Text(dishLabel(dish)) })
+                        }
+                        FilterGroup.UTENSIL -> {
+                            utensils.forEach { name ->
+                                FilterChip(selected = filters.utensils.any { it.equals(name, ignoreCase = true) }, onClick = { onUtensil(name) }, label = { Text(name) })
+                            }
+                            FilterChip(
+                                selected = false,
+                                onClick = onAddUtensil,
+                                label = { Text(L10n.str(R.string.ideas_other)) },
+                                leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                            )
+                        }
                     }
                 }
-            }
-            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                Text(L10n.str(R.string.ideas_done))
+                Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(L10n.str(R.string.ideas_done))
+                }
             }
         }
     }

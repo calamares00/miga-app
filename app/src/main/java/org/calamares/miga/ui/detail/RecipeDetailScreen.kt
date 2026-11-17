@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.ui.components.keepScrollInSheet
 import androidx.compose.runtime.snapshotFlow
 import org.calamares.miga.data.model.ingredientParts
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -349,14 +350,16 @@ fun RecipeDetailScreen(
 
     if (showTipsSheet && recipeTips.isNotEmpty()) {
         ModalBottomSheet(onDismissRequest = { showTipsSheet = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-            // Capped by the window, not the sheet, so the sheet doesn't bounce (see sheetContentHeight).
-            Column(modifier = Modifier.heightIn(max = sheetContentHeight(0.9f)).verticalScroll(rememberScrollState())) {
-                RecipeTipsContent(
-                    tips = recipeTips,
-                    saved = savedTips,
-                    onSavedChange = viewModel::setTipSaved,
-                    onSeeAll = { showTipsSheet = false; onOpenTips() }
-                )
+            Column(modifier = Modifier.keepScrollInSheet()) {
+                // Capped by the window, not the sheet, so the sheet doesn't bounce (see sheetContentHeight).
+                Column(modifier = Modifier.heightIn(max = sheetContentHeight(0.9f)).verticalScroll(rememberScrollState())) {
+                    RecipeTipsContent(
+                        tips = recipeTips,
+                        saved = savedTips,
+                        onSavedChange = viewModel::setTipSaved,
+                        onSeeAll = { showTipsSheet = false; onOpenTips() }
+                    )
+                }
             }
         }
     }

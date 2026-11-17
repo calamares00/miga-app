@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.ui.components.sheetContentHeight
+import androidx.compose.foundation.layout.heightIn
+import org.calamares.miga.ui.components.keepScrollInSheet
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -171,14 +174,16 @@ internal fun AllergenLine(allergens: RecipeAllergens, onClick: () -> Unit) {
 @Composable
 internal fun AllergenSheet(allergens: RecipeAllergens, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        AllergenSheetContent(allergens)
+        Column(modifier = Modifier.keepScrollInSheet()) {
+            AllergenSheetContent(allergens)
+        }
     }
 }
 
 @Composable
 internal fun AllergenSheetContent(allergens: RecipeAllergens) {
     Column(
-        modifier = Modifier.verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
+        modifier = Modifier.heightIn(max = sheetContentHeight(0.9f)).verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(L10n.str(R.string.allergens_sheet_title), style = MaterialTheme.typography.titleLarge)
