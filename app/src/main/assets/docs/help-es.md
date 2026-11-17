@@ -154,5 +154,5 @@ Las funciones marcadas con ✨ las hace el asistente de cocina, que usa intelige
 - **Probar conexión** manda una petición pequeña con esa clave y ese modelo y te dice si funciona y cuánto tarda; si el modelo está marcado como que lee fotos, prueba también con una foto.
 - Mientras trabaja, la app te dice **qué está haciendo** («Leyendo el texto de la foto…», «Repasando tus recetas…»).
 - Si sales de la app o apagas la pantalla, la tarea **sigue en segundo plano** y una notificación muestra su progreso. Cuando termina una mejora, la notificación te lleva directo al resultado para revisarlo.
-- El asistente también puede valorar lo saludable que es una receta, estimar su información nutricional y sugerir **sustitutos** de un ingrediente (toca ⟳ junto al ingrediente).
+- El asistente también puede valorar lo saludable que es una receta, estimar su información nutricional y sugerir **sustitutos** de un ingrediente (mantén pulsado el ingrediente).
 - El contenido generado con IA se marca como tal y puede contener errores: revísalo. Si algo es inadecuado, usa **Informar sobre contenido de IA**.

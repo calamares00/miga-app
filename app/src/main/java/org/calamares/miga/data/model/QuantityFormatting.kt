@@ -26,6 +26,22 @@ fun formatIngredientText(
 }
 
 /**
+ * The same as [formatIngredientText] in two parts, for a list with the amounts in a column of
+ * their own: ("2 tazas", "harina"), (null, "sal"). No "de" between them: the column separates.
+ */
+fun ingredientParts(
+    name: String,
+    quantity: Double?,
+    unit: String?,
+    scale: Double = 1.0,
+    language: String = L10n.locale().language
+): Pair<String?, String> {
+    val quantityPart = quantity?.let { formatQuantity(it * scale) } ?: return null to name
+    if (unit.isNullOrBlank()) return quantityPart to name
+    return "$quantityPart ${UnitInflection.inflect(unit, quantityPart.toDouble(), language)}" to name
+}
+
+/**
  * Rounds to two decimals and drops trailing zeros: 2.0 -> "2", 2.50 -> "2.5", 0.333 -> "0.33". A
  * positive amount too small for two decimals keeps two significant digits (0.004 -> "0.004")
  * instead of showing "0", which happened when scaling a big recipe down to a few servings.

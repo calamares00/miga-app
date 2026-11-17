@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.components
 
+import org.calamares.miga.data.model.CookModeText
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.text.ClickableText
@@ -90,9 +91,24 @@ private const val RICH_LINK_TAG = "rich_link"
  * show only their text, underlined, and open in the browser when tapped.
  */
 @Composable
-fun FormattedText(text: String, style: TextStyle, modifier: Modifier = Modifier, color: Color = Color.Unspecified) {
+fun FormattedText(
+    text: String,
+    style: TextStyle,
+    modifier: Modifier = Modifier,
+    color: Color = Color.Unspecified,
+    /** Times, temperatures and speeds in the theme colour, as in cooking mode (recipe steps). */
+    highlightTimes: Boolean = false
+) {
     val linkColor = MaterialTheme.colorScheme.primary
-    val annotated = remember(text, linkColor) { richAnnotatedString(text, linkColor = linkColor) }
+    val annotated = remember(text, linkColor, highlightTimes) {
+        val rich = richAnnotatedString(text, linkColor = linkColor)
+        if (!highlightTimes) rich else buildAnnotatedString {
+            append(rich)
+            CookModeText.highlights(rich.text).forEach { range ->
+                addStyle(SpanStyle(color = linkColor, fontWeight = FontWeight.SemiBold), range.first, range.last + 1)
+            }
+        }
+    }
     if (annotated.getStringAnnotations(RICH_LINK_TAG, 0, annotated.length).isEmpty()) {
         Text(annotated, style = style, color = color, modifier = modifier)
         return
