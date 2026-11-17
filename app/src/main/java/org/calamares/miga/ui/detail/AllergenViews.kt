@@ -102,36 +102,32 @@ internal fun AllergenBadge(allergen: Allergen, level: AllergenLevel, size: Int =
 }
 
 /**
- * The gluten chip shown with the recipe's key facts: "No ingredients with gluten", or "Suitable
- * for coeliacs if…" when it depends on products. Nothing when gluten is certain: the allergen
- * line already says so. Never "gluten-free" or "suitable for coeliacs" alone: those are legal
- * claims a home recipe cannot make (Regulation (EU) No 828/2014).
+ * What coeliacs need to know, under the allergen badges: "No ingredients with gluten", or
+ * "Suitable for coeliacs if you buy gluten-free: stock cube". Never "gluten-free" or "suitable
+ * for coeliacs" alone: those are legal claims a home recipe cannot make (Regulation (EU) No
+ * 828/2014).
  */
-@Composable
-internal fun GlutenChip(level: AllergenLevel, onClick: () -> Unit) {
-    if (level == AllergenLevel.CONTAINS) return
-    val color = if (level == AllergenLevel.FREE) MaterialTheme.colorScheme.primary else ALLERGEN_AMBER
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(color.copy(alpha = 0.13f))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(painterResource(Allergen.GLUTEN.iconRes), contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(
-            L10n.str(if (level == AllergenLevel.FREE) R.string.gluten_free_ingredients else R.string.coeliac_suitable_if),
-            style = MaterialTheme.typography.labelLarge
+internal fun glutenNote(allergens: RecipeAllergens): String {
+    val causes = allergens.causes[Allergen.GLUTEN].orEmpty()
+    return when (allergens.level(Allergen.GLUTEN)) {
+        AllergenLevel.FREE -> L10n.str(R.string.gluten_free_ingredients)
+        AllergenLevel.MAY_CONTAIN -> L10n.str(R.string.coeliac_suitable_if_x, causes.joinToString(", ") { it.ingredient })
+        AllergenLevel.CONTAINS -> L10n.str(
+            R.string.coeliac_not_suitable_x,
+            causes.filter { it.level == AllergenLevel.CONTAINS }.joinToString(", ") { it.ingredient }
         )
     }
 }
 
-/** One line under the key facts: only the allergens this recipe has, and a tap for the details. */
+/**
+ * One row under the key facts: the allergens this recipe has and, under them, the note for
+ * coeliacs; a tap opens the details.
+ */
 @Composable
 internal fun AllergenLine(allergens: RecipeAllergens, onClick: () -> Unit) {
     val present = allergens.present
+    val note = glutenNote(allergens)
+    val glutenLevel = allergens.level(Allergen.GLUTEN)
     val description = if (present.isEmpty()) L10n.str(R.string.allergens_none)
     else present.joinToString(", ") { "${it.label}: ${levelLabel(allergens.level(it)).lowercase(L10n.locale())}" }
     Surface(
@@ -141,21 +137,29 @@ internal fun AllergenLine(allergens: RecipeAllergens, onClick: () -> Unit) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .clickable(onClickLabel = L10n.str(R.string.allergens_open), role = Role.Button, onClick = onClick)
-            .semantics(mergeDescendants = true) { contentDescription = L10n.str(R.string.allergens_title) + ". " + description }
+            .semantics(mergeDescendants = true) { contentDescription = L10n.str(R.string.allergens_title) + ". " + description + ". " + note }
     ) {
         Row(modifier = Modifier.padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(L10n.str(R.string.allergens_title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(end = 12.dp))
-            if (present.isEmpty()) {
-                Text(
-                    L10n.str(R.string.allergens_none),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f)
-                )
-            } else {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
-                    present.forEach { AllergenBadge(it, allergens.level(it), 30) }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(L10n.str(R.string.allergens_title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(end = 12.dp))
+                    if (present.isEmpty()) {
+                        Text(L10n.str(R.string.allergens_none), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            present.forEach { AllergenBadge(it, allergens.level(it), 28) }
+                        }
+                    }
                 }
+                Text(
+                    note,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = when (glutenLevel) {
+                        AllergenLevel.FREE -> MaterialTheme.colorScheme.primary
+                        AllergenLevel.MAY_CONTAIN -> ALLERGEN_AMBER
+                        AllergenLevel.CONTAINS -> ALLERGEN_RED
+                    }
+                )
             }
             Icon(Icons.Filled.ChevronRight, contentDescription = null)
         }
@@ -276,6 +280,10 @@ private fun CoeliacCard(allergens: RecipeAllergens) {
                 )
                 AllergenLevel.MAY_CONTAIN -> Bullet(L10n.str(R.string.coeliac_buy_certified_x, causes.joinToString(", ") { it.ingredient }))
                 AllergenLevel.FREE -> Unit
+            }
+            // Gluten-free foods that may carry traces (buckwheat, maize flour, dry lentils...).
+            allergens.traceCauses[Allergen.GLUTEN]?.takeIf { it.isNotEmpty() && level != AllergenLevel.CONTAINS }?.let { names ->
+                Bullet(L10n.str(R.string.coeliac_buy_certified_traces_x, names.joinToString(", ")))
             }
             Bullet(L10n.str(R.string.coeliac_kitchen))
         }

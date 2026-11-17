@@ -1,5 +1,22 @@
 package org.calamares.miga.ui.detail
 
+import androidx.compose.ui.text.font.FontWeight
+import org.calamares.miga.data.allergens.AllergenAnalysis
+import org.calamares.miga.data.model.ingredientParts
+import org.calamares.miga.data.model.Ingredient
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
+import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.material.icons.outlined.Circle
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.foundation.combinedClickable
 import org.calamares.miga.ui.theme.recipePhotoFrame
 import org.calamares.miga.ui.components.ErrorMessage
 import org.calamares.miga.L10n
@@ -48,7 +65,6 @@ import org.calamares.miga.ui.theme.HealthGreenOn
 import org.calamares.miga.ui.theme.HealthRedContainer
 import org.calamares.miga.ui.theme.HealthRedOn
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.foundation.pager.rememberPagerState
@@ -56,8 +72,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 internal fun HealthBlock(recipe: Recipe, healthState: HealthState, onRetry: () -> Unit) {
@@ -178,22 +192,6 @@ internal fun PhotoHeader(recipe: Recipe, onPhotoClick: (Int) -> Unit) {
     }
 }
 
-@Composable
-internal fun FactTile(icon: ImageVector, label: String, value: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxHeight()
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
-            .padding(horizontal = 8.dp, vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-        Text(value, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-    }
-}
 
 @Composable
 internal fun GroupTitle(name: String) {
@@ -215,17 +213,118 @@ internal fun RoundedGroup(contentPadding: androidx.compose.ui.unit.Dp = 0.dp, co
 internal const val MAX_RATING_STARS = 5
 
 @Composable
-internal fun StarRatingRow(rating: Int?, onRatingChange: (Int) -> Unit) {
+internal fun StarRatingRow(rating: Int?, onRatingChange: (Int) -> Unit, small: Boolean = false) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         for (star in 1..MAX_RATING_STARS) {
             val filled = rating != null && star <= rating
-            IconButton(onClick = { onRatingChange(star) }, modifier = Modifier.size(36.dp)) {
+            IconButton(onClick = { onRatingChange(star) }, modifier = Modifier.size(if (small) 30.dp else 36.dp)) {
                 Icon(
                     imageVector = if (filled) Icons.Filled.Star else Icons.Outlined.StarBorder,
                     contentDescription = L10n.str(R.string.stars_x, star),
-                    tint = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(if (small) 18.dp else 24.dp)
                 )
             }
+        }
+    }
+}
+
+/** The small separator between category, origin and rating. */
+@Composable
+internal fun Dot() {
+    Text("  ·  ", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
+/** One of the recipe's key facts; [description] replaces the text for screen readers. */
+internal class Fact(val icon: ImageVector, val text: String, val description: String?)
+
+/** The key facts side by side in one strip. */
+@Composable
+internal fun FactsStrip(facts: List<Fact>) {
+    Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            facts.forEach { fact ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.semantics(mergeDescendants = true) { fact.description?.let { contentDescription = it } }
+                ) {
+                    Icon(fact.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(fact.text, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * One ingredient: tick circle, the amount in a column of [quantityWidth] in the theme colour and
+ * the name, with allergens in bold and a warning when one depends on the product. Tap ticks it;
+ * a long press offers a substitute.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+internal fun IngredientLine(
+    ingredient: Ingredient,
+    scale: Double,
+    quantityWidth: Dp,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    onSubstitute: (() -> Unit)?
+) {
+    val (quantity, name) = ingredientParts(ingredient.name, ingredient.quantity, ingredient.unit, scale)
+    val label = if (ingredient.optional) "$name ${L10n.str(R.string.ingredient_optional_suffix)}" else name
+    val mayContain = remember(ingredient.name) { AllergenAnalysis.ofIngredient(ingredient.name).mayContain }
+    val textColor = if (checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+    val decoration = if (checked) TextDecoration.LineThrough else TextDecoration.None
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                role = Role.Checkbox,
+                onClickLabel = null,
+                onLongClickLabel = onSubstitute?.let { L10n.str(R.string.substitute_x, ingredient.name) },
+                onClick = { onCheckedChange(!checked) },
+                onLongClick = onSubstitute
+            )
+            .semantics { stateDescription = if (checked) L10n.str(R.string.selected) else L10n.str(R.string.not_selected) }
+            .padding(horizontal = 14.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Icon(
+            imageVector = if (checked) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
+            contentDescription = null,
+            tint = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+            modifier = Modifier.padding(top = 2.dp).size(18.dp)
+        )
+        if (quantityWidth > 0.dp) {
+            Text(
+                quantity.orEmpty(),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = if (checked) textColor else MaterialTheme.colorScheme.primary,
+                textDecoration = decoration,
+                modifier = Modifier.padding(start = 12.dp).width(quantityWidth)
+            )
+        }
+        Text(
+            ingredientWithAllergens(label),
+            style = MaterialTheme.typography.bodyLarge,
+            color = textColor,
+            textDecoration = decoration,
+            modifier = Modifier.padding(start = 12.dp).weight(1f, fill = false)
+        )
+        if (mayContain) {
+            Icon(
+                Icons.Outlined.WarningAmber,
+                contentDescription = L10n.str(R.string.ingredient_may_contain),
+                tint = ALLERGEN_AMBER,
+                modifier = Modifier.padding(start = 6.dp, top = 3.dp).size(16.dp)
+            )
         }
     }
 }

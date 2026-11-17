@@ -41,9 +41,9 @@ Options marked ✨ are done by the kitchen assistant and only appear once it is 
 
 From the ingredients, and without the assistant, Miga works out the **14 allergens** EU law requires to be declared (gluten, crustaceans, eggs, fish, peanuts, soy, milk, tree nuts, celery, mustard, sesame, sulphites, lupin and molluscs) and **lactose**.
 
-- In the recipe, an **Allergens** line shows only the ones it has: red for what it **contains**; amber with "!" for what it **may contain** depending on the product you buy (stock cubes, sausages, soy sauce, chocolate, dry pulses…). Tap it to see all of them, which ingredient brings each one and advice for coeliacs.
+- In the recipe, an **Allergens** line shows only the ones it has: red for what it **contains**; amber with "!" for what it **may contain** depending on the product you buy (stock cubes, sausages, spice mixes, chocolate…). Tap it to see all of them, which ingredient brings each one and advice for coeliacs.
 - In the ingredient list the allergen is in **bold**, as on food labels, and ingredients that depend on the product carry ⚠.
-- **Gluten**: "No ingredients with gluten" or "Suitable for coeliacs if…" (for example, if you buy the sausage and stock certified gluten-free and cook without cross-contact). Miga never says just "gluten-free": that is a legal claim that needs the product to be tested. Oats count as a cereal with gluten unless certified; buckwheat has no gluten.
+- **Gluten**: "No ingredients with gluten" or "Suitable for coeliacs if…" (for example, if you buy the sausage and stock certified gluten-free and cook without cross-contact). Miga never says just "gluten-free": that is a legal claim that needs the product to be tested. Oats count as a cereal with gluten unless certified. Buckwheat, maize, rice or chickpea flour and lentils have no gluten but may carry traces: the coeliac card reminds you to buy them certified.
 - If you use a certified product, mark it in the editor from the ingredient's menu (⋮): **Gluten-free product (certified)** or **Lactose-free product**. It is added to the name, so it also shows in the shopping list.
 - It is **for guidance only**: check each product's label and ask your doctor or dietitian.
 
@@ -154,5 +154,5 @@ Features marked ✨ are done by the kitchen assistant, which uses artificial int
 - **Test connection** sends a small request with that key and model and tells you whether it works and how long it takes; if the model is set as reading photos, it also tries a photo.
 - While it works, the app tells you **what it is doing** ("Reading the text in the photo…", "Going through your recipes…").
 - If you leave the app or turn off the screen, the task **keeps going in the background** and a notification shows its progress. When a polish finishes, the notification takes you straight to the result to review it.
-- The assistant can also rate how healthy a recipe is, estimate its nutrition and suggest **substitutes** for an ingredient (tap ⟳ next to the ingredient).
+- The assistant can also rate how healthy a recipe is, estimate its nutrition and suggest **substitutes** for an ingredient (long-press the ingredient).
 - AI-generated content is marked as such and may contain mistakes: check it. If something is inappropriate, use **Report AI content**.
