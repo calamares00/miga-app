@@ -775,11 +775,12 @@ private fun StepPage(
     onTimer: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
-    val text = remember(step.instruction, colors.primary, colors.tertiary) {
+    // Times, temperatures and speeds in the theme's colour, like the bold text.
+    val text = remember(step.instruction, colors.primary) {
         cookStepText(
             step.instruction,
             boldColor = colors.primary,
-            highlight = SpanStyle(color = colors.tertiary, fontWeight = FontWeight.SemiBold)
+            highlight = SpanStyle(color = colors.primary, fontWeight = FontWeight.SemiBold)
         )
     }
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
