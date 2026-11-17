@@ -102,6 +102,13 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        // Leaving the app: deletions still offering "Undo" happen now, or a recipe deleted just
+        // before could come back if Android closes the app (see PendingDeletions).
+        if (!isChangingConfigurations) (application as MigaApp).repository.pendingDeletions.commitAll()
+    }
+
     /** True once, on Android 13+, when notifications are not allowed yet; later calls return false. */
     private fun shouldAskNotificationPermission(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return false
