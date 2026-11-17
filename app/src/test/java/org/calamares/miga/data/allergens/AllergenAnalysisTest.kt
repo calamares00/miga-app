@@ -90,12 +90,4 @@ class AllergenAnalysisTest {
         assertEquals(listOf(EGGS), tortilla.present)
     }
 
-    @Test
-    fun `bold marks only what surely brings an allergen`() {
-        val name = "harina de trigo"
-        val result = AllergenAnalysis.ofIngredient(name)
-        assertEquals(listOf("harina de trigo"), result.highlights.map { name.substring(it) })
-        assertEquals(listOf("leche"), AllergenAnalysis.ofIngredient("200 ml de leche").highlights.map { "200 ml de leche".substring(it) })
-        assertTrue(AllergenAnalysis.ofIngredient("chorizo").highlights.isEmpty())
-    }
 }

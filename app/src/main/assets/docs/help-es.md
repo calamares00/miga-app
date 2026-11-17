@@ -42,7 +42,7 @@ Las opciones con ✨ las hace el asistente de cocina y solo aparecen si lo tiene
 Miga calcula, a partir de los ingredientes y sin usar el asistente, los **14 alérgenos** que la ley europea obliga a declarar (gluten, crustáceos, huevo, pescado, cacahuete, soja, leche, frutos de cáscara, apio, mostaza, sésamo, sulfitos, altramuz y moluscos) y la **lactosa**.
 
 - En la receta, una línea **Alérgenos** muestra solo los que lleva: en rojo, los que **contiene**; en naranja con «!», los que **puede contener** según el producto que compres (caldos, embutidos, mezclas de especias, chocolate…). Tócala para ver todos, qué ingrediente causa cada uno y los consejos para celíacos.
-- En la lista de ingredientes, el alérgeno sale en **negrita**, como en las etiquetas, y los que dependen del producto llevan ⚠.
+- En la lista de ingredientes, los que pueden llevar un alérgeno según el producto llevan ⚠.
 - **Gluten**: «Sin ingredientes con gluten» o «Apta para celíacos si…» (por ejemplo, si compras el chorizo y el caldo certificados sin gluten y cocinas sin contaminación cruzada). Miga nunca dice «sin gluten» a secas: es una mención legal que exige análisis del producto. La avena cuenta como cereal con gluten salvo que sea certificada. El trigo sarraceno, las harinas de maíz, arroz o garbanzo y las lentejas no llevan gluten, pero pueden tener trazas: la ficha para celíacos recuerda comprarlos certificados.
 - Si usas un producto certificado, márcalo en el editor desde el menú (⋮) del ingrediente: **Producto sin gluten (certificado)** o **Producto sin lactosa**. Se añade al nombre, así se ve también en la lista de la compra.
 - Es **orientativo**: revisa la etiqueta de cada producto y consulta a tu médico o dietista.
