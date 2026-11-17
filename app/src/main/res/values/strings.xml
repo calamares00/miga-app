@@ -40,11 +40,9 @@
     <string name="add_list">"Add to list"</string>
     <string name="add_shopping_list">"Add to shopping list"</string>
     <string name="add_step">"Add step"</string>
-    <string name="add_steps_sub_recipe_e">"Add steps for a sub-recipe (e.g. a sauce)"</string>
     <string name="add_template">"Add to the template"</string>
     <string name="add_cover">"Add cover"</string>
     <string name="add_without_deleting">"Add without deleting"</string>
-    <string name="add_sub_recipe_e_g">"Add sub-recipe (e.g. a sauce)"</string>
     <string name="add_supermarket">"Add supermarket"</string>
     <string name="add_list_2">"Add all to the list"</string>
     <string name="add_utensil">"Add equipment"</string>
@@ -1463,4 +1461,10 @@
     <string name="coeliac_suitable_if_x">"Suitable for coeliacs if you buy gluten-free: %1$s"</string>
     <string name="coeliac_not_suitable_x">"Not suitable for coeliacs: %1$s"</string>
     <string name="servings_count_x">"%1$d servings"</string>
+    <string name="sub_recipe">"Sub-recipe"</string>
+    <string name="editor_ingredients_hint">"Tap an ingredient to edit it · drag ⠿ to move it"</string>
+    <string name="editor_add_ingredient_hint">"Add: e.g. 200 g potatoes"</string>
+    <string name="unit_full">"Unit"</string>
+    <string name="editor_tab_steps">"Steps"</string>
+    <string name="editor_tab_count_x">"%1$s · %2$d"</string>
 </resources>

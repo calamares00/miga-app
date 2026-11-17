@@ -1,5 +1,27 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.data.model.UnitInflection
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.foundation.BorderStroke
 import org.calamares.miga.data.allergens.CertifiedFreeMarks
 import org.calamares.miga.data.allergens.AllergenAnalysis
 import androidx.compose.material3.AlertDialog
@@ -16,7 +38,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.foundation.layout.Box
 import org.calamares.miga.ui.components.RichTextField
-import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.Manifest
@@ -73,9 +94,15 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
         )
     }
 
+    /** The ingredient open for editing; the others show as in the recipe. Blank ones are always open. */
+    var editing by remember { mutableStateOf<IngredientRowUi?>(null) }
+    val quantityStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+
     Section(title = L10n.str(R.string.ingredients)) {
         viewModel.ingredientGroups.forEachIndexed { groupIndex, group ->
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (group.name != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
@@ -90,30 +117,55 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
                         }
                     }
                 } else {
-                    Text(L10n.str(R.string.main_ingredients), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(L10n.str(R.string.main_ingredients), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 }
 
+                // The amounts in a column as wide as the longest one, as in the recipe.
+                val quantityWidth = with(density) {
+                    group.ingredients.maxOfOrNull { measurer.measure(it.amountText(), quantityStyle).size.width }?.toDp() ?: 0.dp
+                }.coerceAtMost(110.dp)
                 ReorderableColumn(
                     items = group.ingredients.toList(),
                     onReorder = { viewModel.reorderIngredients(groupIndex, it) },
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) { row, rowIndex, dragHandle, isDragging ->
-                    IngredientRow(
-                        row = row,
-                        availableNames = availableIngredientNames,
-                        dragHandle = dragHandle,
-                        isDragging = isDragging,
-                        onPasteLines = { lines -> viewModel.splitIngredientRow(groupIndex, rowIndex, lines) },
-                        onRemove = { viewModel.removeIngredientRow(groupIndex, rowIndex) }
-                    )
+                    val open = row === editing || (row.name.isBlank() && row.quantity.isBlank() && row.unit.isBlank())
+                    if (open) {
+                        IngredientEditRow(
+                            row = row,
+                            availableNames = availableIngredientNames,
+                            dragHandle = dragHandle,
+                            isDragging = isDragging,
+                            onPasteLines = { lines -> viewModel.splitIngredientRow(groupIndex, rowIndex, lines) },
+                            onRemove = { viewModel.removeIngredientRow(groupIndex, rowIndex) },
+                            onDone = { editing = null }
+                        )
+                    } else {
+                        IngredientListRow(
+                            row = row,
+                            quantityWidth = quantityWidth,
+                            quantityStyle = quantityStyle,
+                            dragHandle = dragHandle,
+                            isDragging = isDragging,
+                            onClick = { editing = row },
+                            onRemove = { viewModel.removeIngredientRow(groupIndex, rowIndex) }
+                        )
+                    }
                 }
 
-                Row {
-                    TextButton(onClick = { viewModel.addIngredientRow(groupIndex) }) {
-                        ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_ingredient))
-                    }
-                    TextButton(onClick = { pasteInto = groupIndex }) {
-                        ButtonContent(Icons.Filled.ContentPaste, L10n.str(R.string.paste_list))
+                QuickAddIngredient(onAdd = { text -> viewModel.pasteIngredients(groupIndex, text) })
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AssistChip(
+                        onClick = { pasteInto = groupIndex },
+                        label = { Text(L10n.str(R.string.paste_list)) },
+                        leadingIcon = { Icon(Icons.Filled.ContentPaste, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    )
+                    if (groupIndex == viewModel.ingredientGroups.lastIndex) {
+                        AssistChip(
+                            onClick = { viewModel.addIngredientSubGroup() },
+                            label = { Text(L10n.str(R.string.sub_recipe)) },
+                            leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        )
                     }
                 }
             }
@@ -121,113 +173,194 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
         }
-
-        TextButton(onClick = { viewModel.addIngredientSubGroup() }) {
-            ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_sub_recipe_e_g))
-        }
+        Text(L10n.str(R.string.editor_ingredients_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
+/** "4 dientes", "200 g", "": what the ingredient's amount column shows, the unit agreeing with the amount. */
+private fun IngredientRowUi.amountText(): String {
+    val amount = quantity.trim()
+    val number = amount.replace(',', '.').toDoubleOrNull()
+    val shownUnit = if (number != null && unit.isNotBlank()) UnitInflection.inflect(unit.trim(), number, L10n.locale().language) else unit.trim()
+    return listOf(amount, shownUnit).filter { it.isNotEmpty() }.joinToString(" ")
+}
+
+/** An ingredient as in the recipe (amount column, name); a tap opens it for editing. */
 @Composable
-private fun IngredientRow(
+private fun IngredientListRow(
+    row: IngredientRowUi,
+    quantityWidth: Dp,
+    quantityStyle: TextStyle,
+    dragHandle: Modifier,
+    isDragging: Boolean,
+    onClick: () -> Unit,
+    onRemove: () -> Unit
+) {
+    val name = if (row.optional) "${row.name} ${L10n.str(R.string.ingredient_optional_suffix)}" else row.name
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .draggedLook(isDragging)
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClickLabel = L10n.str(R.string.edit_x, row.name), onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        DragHandle(dragHandle)
+        if (quantityWidth > 0.dp) {
+            Text(
+                row.amountText(),
+                style = quantityStyle,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 8.dp).width(quantityWidth)
+            )
+        }
+        Text(name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp).weight(1f))
+        IngredientMenu(row, onRemove)
+    }
+}
+
+/** The ingredient being edited: the name across the width, amount and unit under it. */
+@Composable
+private fun IngredientEditRow(
     row: IngredientRowUi,
     availableNames: List<String>,
     dragHandle: Modifier,
     isDragging: Boolean,
     onPasteLines: (List<String>) -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    onDone: () -> Unit
 ) {
     var showSuggestions by remember { mutableStateOf(false) }
-
-    Column(modifier = Modifier.draggedLook(isDragging)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            DragHandle(dragHandle)
-            OutlinedTextField(
-                value = row.quantity,
-                onValueChange = { row.quantity = it },
-                label = { Text(L10n.str(R.string.qty)) },
-                modifier = Modifier.weight(0.7f),
-                singleLine = true
-            )
-            OutlinedTextField(
-                value = row.unit,
-                onValueChange = { row.unit = it },
-                label = { Text(L10n.str(R.string.unit)) },
-                modifier = Modifier.weight(0.8f),
-                singleLine = true
-            )
-            OutlinedTextField(
-                value = row.name,
-                onValueChange = { text ->
-                    // Several lines pasted at once become one ingredient each.
-                    val lines = PastedLists.pastedLines(row.name, text)
-                    if (lines != null) onPasteLines(lines) else { row.name = text; showSuggestions = true }
-                },
-                label = { Text(L10n.str(R.string.ingredient)) },
-                modifier = Modifier.weight(1.5f),
-                singleLine = true
-            )
-            // Optional and Remove in a menu: the row has no room for more buttons.
-            Box {
-                var menu by remember { mutableStateOf(false) }
-                IconButton(onClick = { menu = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = L10n.str(R.string.more_options))
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).draggedLook(isDragging)
+    ) {
+        Column(modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                DragHandle(dragHandle)
+                OutlinedTextField(
+                    value = row.name,
+                    onValueChange = { text ->
+                        // Several lines pasted at once become one ingredient each.
+                        val lines = PastedLists.pastedLines(row.name, text)
+                        if (lines != null) onPasteLines(lines) else { row.name = text; showSuggestions = true }
+                    },
+                    label = { Text(L10n.str(R.string.ingredient)) },
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                    singleLine = true
+                )
+            }
+            if (showSuggestions && row.name.isNotBlank()) {
+                val suggestions = availableNames.filter {
+                    it.contains(row.name, ignoreCase = true) && !it.equals(row.name, ignoreCase = true)
                 }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(
-                        text = { Text(L10n.str(R.string.ingredient_optional)) },
-                        leadingIcon = { Checkbox(checked = row.optional, onCheckedChange = null) },
-                        onClick = { row.optional = !row.optional; menu = false }
-                    )
-                    // Certified products clear what depends on the product (see AllergenAnalysis):
-                    // offered only when the ingredient may bring gluten or lactose.
-                    CertifiedFreeMarks.entries.forEach { mark ->
-                        val marked = mark.isIn(row.name)
-                        if (marked || mark.allergen in AllergenAnalysis.ofIngredient(row.name).levels) {
-                            DropdownMenuItem(
-                                text = { Text(mark.label) },
-                                leadingIcon = { Checkbox(checked = marked, onCheckedChange = null) },
-                                onClick = { row.name = mark.toggle(row.name); menu = false }
-                            )
-                        }
-                    }
-                    DropdownMenuItem(
-                        text = { Text(L10n.str(R.string.remove_ingredient)) },
-                        leadingIcon = { Icon(Icons.Filled.Close, contentDescription = null) },
-                        onClick = { menu = false; onRemove() }
+                suggestions.take(5).forEach { suggestion ->
+                    Text(
+                        text = suggestion,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { row.name = suggestion; showSuggestions = false }
+                            .padding(start = 40.dp, top = 6.dp, bottom = 6.dp)
                     )
                 }
             }
-        }
-        if (row.optional) {
-            AssistChip(
-                onClick = { row.optional = false },
-                label = { Text(L10n.str(R.string.ingredient_optional)) },
-                trailingIcon = { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.ingredient_not_optional), modifier = Modifier.size(16.dp)) },
-                modifier = Modifier.padding(start = 4.dp)
-            )
-        }
-
-        if (showSuggestions && row.name.isNotBlank()) {
-            val suggestions = availableNames.filter {
-                it.contains(row.name, ignoreCase = true) && !it.equals(row.name, ignoreCase = true)
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 32.dp)) {
+                OutlinedTextField(
+                    value = row.quantity,
+                    onValueChange = { row.quantity = it },
+                    label = { Text(L10n.str(R.string.quantity)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+                Spacer(Modifier.width(8.dp))
+                OutlinedTextField(
+                    value = row.unit,
+                    onValueChange = { row.unit = it },
+                    label = { Text(L10n.str(R.string.unit_full)) },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { onDone() }),
+                    modifier = Modifier.weight(1.3f),
+                    singleLine = true
+                )
+                IngredientMenu(row, onRemove)
             }
-            if (suggestions.isNotEmpty()) {
-                Column {
-                    suggestions.take(5).forEach { suggestion ->
-                        Text(
-                            text = suggestion,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { row.name = suggestion; showSuggestions = false }
-                                .padding(vertical = 6.dp)
-                        )
-                    }
-                }
+            if (row.optional) {
+                AssistChip(
+                    onClick = { row.optional = false },
+                    label = { Text(L10n.str(R.string.ingredient_optional)) },
+                    trailingIcon = { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.ingredient_not_optional), modifier = Modifier.size(16.dp)) },
+                    modifier = Modifier.padding(start = 32.dp)
+                )
             }
         }
     }
+}
+
+/** Optional, certified gluten-free or lactose-free, and remove. */
+@Composable
+private fun IngredientMenu(row: IngredientRowUi, onRemove: () -> Unit) {
+    Box {
+        var menu by remember { mutableStateOf(false) }
+        IconButton(onClick = { menu = true }) {
+            Icon(Icons.Filled.MoreVert, contentDescription = L10n.str(R.string.more_options))
+        }
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenuItem(
+                text = { Text(L10n.str(R.string.ingredient_optional)) },
+                leadingIcon = { Checkbox(checked = row.optional, onCheckedChange = null) },
+                onClick = { row.optional = !row.optional; menu = false }
+            )
+            // Certified products clear what depends on the product (see AllergenAnalysis):
+            // offered only when the ingredient may bring gluten or lactose.
+            CertifiedFreeMarks.entries.forEach { mark ->
+                val marked = mark.isIn(row.name)
+                if (marked || mark.allergen in AllergenAnalysis.ofIngredient(row.name).levels) {
+                    DropdownMenuItem(
+                        text = { Text(mark.label) },
+                        leadingIcon = { Checkbox(checked = marked, onCheckedChange = null) },
+                        onClick = { row.name = mark.toggle(row.name); menu = false }
+                    )
+                }
+            }
+            DropdownMenuItem(
+                text = { Text(L10n.str(R.string.remove_ingredient)) },
+                leadingIcon = { Icon(Icons.Filled.Close, contentDescription = null) },
+                onClick = { menu = false; onRemove() }
+            )
+        }
+    }
+}
+
+/** "200 g de patatas" typed or pasted at the end of the list: amount, unit and name are split. */
+@Composable
+private fun QuickAddIngredient(onAdd: (String) -> Unit) {
+    var text by remember { mutableStateOf("") }
+    fun add() {
+        if (text.isNotBlank()) onAdd(text)
+        text = ""
+    }
+    OutlinedTextField(
+        value = text,
+        onValueChange = { value ->
+            // A pasted list is added at once, one ingredient per line.
+            if (PastedLists.pastedLines(text, value) != null) { onAdd(value); text = "" } else text = value
+        },
+        placeholder = { Text(L10n.str(R.string.editor_add_ingredient_hint)) },
+        leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
+        trailingIcon = {
+            if (text.isNotBlank()) {
+                IconButton(onClick = { add() }) { Icon(Icons.Filled.Check, contentDescription = L10n.str(R.string.add_ingredient)) }
+            }
+        },
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { add() }),
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+    )
 }
 
 @Composable
@@ -311,7 +444,7 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
                         }
                     }
                 } else {
-                    Text(L10n.str(R.string.main_steps), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(L10n.str(R.string.main_steps), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 }
 
                 ReorderableColumn(
@@ -319,12 +452,17 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
                     onReorder = { viewModel.reorderSteps(groupIndex, it) },
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) { row, rowIndex, dragHandle, isDragging ->
-                    Column(modifier = Modifier.draggedLook(isDragging)) {
-                        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 4.dp)) {
-                                DragHandle(dragHandle)
-                                Text("${rowIndex + 1}.", style = MaterialTheme.typography.titleMedium)
+                    Row(verticalAlignment = Alignment.Top, modifier = Modifier.draggedLook(isDragging)) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 12.dp, end = 6.dp)) {
+                            Box(
+                                modifier = Modifier.size(26.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("${rowIndex + 1}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
+                            DragHandle(dragHandle)
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
                             RichTextField(
                                 value = row.text,
                                 onValueChange = { text ->
@@ -332,43 +470,51 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
                                     val lines = PastedLists.pastedLines(row.text, text)
                                     if (lines != null) viewModel.splitStepRow(groupIndex, rowIndex, lines) else row.text = text
                                 },
-                                label = { Text(L10n.str(R.string.step_x, rowIndex + 1)) },
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.fillMaxWidth().semantics { contentDescription = L10n.str(R.string.step_x, rowIndex + 1) },
                                 minLines = 1
                             )
-                            if (speechAvailable) {
-                                IconButton(
-                                    onClick = { onMicClick(row) },
-                                    enabled = !row.isTranscribing && (recordingRow == null || recordingRow === row)
-                                ) {
-                                    when {
-                                        row.isTranscribing -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                        row.isRecording -> Icon(Icons.Filled.Stop, contentDescription = L10n.str(R.string.stop_dictation), tint = MaterialTheme.colorScheme.error)
-                                        else -> Icon(Icons.Filled.Mic, contentDescription = L10n.str(R.string.dictate_step))
+                            row.dictationError?.let { reason ->
+                                Text(reason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                if (speechAvailable) {
+                                    IconButton(
+                                        onClick = { onMicClick(row) },
+                                        enabled = !row.isTranscribing && (recordingRow == null || recordingRow === row),
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        when {
+                                            row.isTranscribing -> CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                            row.isRecording -> Icon(Icons.Filled.Stop, contentDescription = L10n.str(R.string.stop_dictation), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                                            else -> Icon(Icons.Filled.Mic, contentDescription = L10n.str(R.string.dictate_step), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                                        }
                                     }
                                 }
+                                IconButton(onClick = { viewModel.removeStepRow(groupIndex, rowIndex) }, modifier = Modifier.size(36.dp)) {
+                                    Icon(Icons.Filled.DeleteOutline, contentDescription = L10n.str(R.string.remove_step), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                                }
                             }
-                            IconButton(onClick = { viewModel.removeStepRow(groupIndex, rowIndex) }) {
-                                Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.remove_step))
-                            }
-                        }
-                        row.dictationError?.let { reason ->
-                            Text(
-                                reason,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.padding(start = 24.dp)
-                            )
                         }
                     }
                 }
 
-                Row {
-                    TextButton(onClick = { viewModel.addStepRow(groupIndex) }) {
-                        ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_step))
-                    }
-                    TextButton(onClick = { pasteInto = groupIndex }) {
-                        ButtonContent(Icons.Filled.ContentPaste, L10n.str(R.string.paste_list))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AssistChip(
+                        onClick = { viewModel.addStepRow(groupIndex) },
+                        label = { Text(L10n.str(R.string.add_step)) },
+                        leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    )
+                    AssistChip(
+                        onClick = { pasteInto = groupIndex },
+                        label = { Text(L10n.str(R.string.paste_list)) },
+                        leadingIcon = { Icon(Icons.Filled.ContentPaste, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    )
+                    if (groupIndex == viewModel.stepGroups.lastIndex) {
+                        AssistChip(
+                            onClick = { viewModel.addStepSubGroup() },
+                            label = { Text(L10n.str(R.string.sub_recipe)) },
+                            leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        )
                     }
                 }
             }
@@ -377,9 +523,6 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
             }
         }
 
-        TextButton(onClick = { viewModel.addStepSubGroup() }) {
-            ButtonContent(Icons.Filled.Add, L10n.str(R.string.add_steps_sub_recipe_e))
-        }
     }
 }
 
