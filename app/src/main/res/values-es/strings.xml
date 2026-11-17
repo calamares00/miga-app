@@ -1416,4 +1416,7 @@
     <string name="ai_key_not_in_clipboard_x">"No hay una clave de %1$s en lo que has copiado. Cópiala en la página y pégala en el campo de arriba."</string>
     <string name="web_import_needs_assistant">"Esta página no trae la receta en el formato estándar (schema.org). Configura el asistente de cocina en Ajustes para importarla."</string>
     <string name="ai_step_downloading_photo">"Descargando la foto…"</string>
+    <string name="web_polish_title">"Leída de la web y mejorada por el asistente de cocina"</string>
+    <string name="web_polish_undo">"Deshacer la mejora"</string>
+    <string name="web_polish_failed">"Leída de la web. El asistente no ha podido mejorarla esta vez; puedes hacerlo luego con «Mejorar la receta»."</string>
 </resources>

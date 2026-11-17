@@ -202,6 +202,18 @@ fun RecipeEditorScreen(
             }
 
             if (visionState is VisionState.Loaded) {
+                viewModel.webPolish?.let { polish ->
+                    WebPolishNotice(polish.changes, onUndo = viewModel::undoWebPolish)
+                }
+                if (viewModel.webPolishError != null) {
+                    Text(
+                        L10n.str(R.string.web_polish_failed),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            if (visionState is VisionState.Loaded && viewModel.filledByAi) {
                 AiContentNotice(
                     feature = L10n.str(R.string.ai_generated_recipe),
                     content = {
@@ -763,6 +775,18 @@ private fun NewLabelsNotice(labels: NewLabels) {
                     )
                 }
             }
+        }
+    }
+}
+
+/** A recipe read from a web page and then improved by the assistant: what changed, and undo. */
+@Composable
+private fun WebPolishNotice(changes: List<String>, onUndo: () -> Unit) {
+    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(L10n.str(R.string.web_polish_title), style = MaterialTheme.typography.titleSmall)
+            changes.forEach { Text("• $it", style = MaterialTheme.typography.bodyMedium) }
+            TextButton(onClick = onUndo) { Text(L10n.str(R.string.web_polish_undo)) }
         }
     }
 }
