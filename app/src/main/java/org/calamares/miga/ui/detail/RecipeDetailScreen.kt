@@ -2,9 +2,6 @@ package org.calamares.miga.ui.detail
 
 import org.calamares.miga.ui.components.keepScrollInSheet
 import androidx.compose.runtime.snapshotFlow
-import org.calamares.miga.data.model.ingredientParts
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.runtime.saveable.rememberSaveable
 import org.calamares.miga.data.allergens.AllergenAnalysis
 import androidx.compose.material.icons.filled.ContentCopy
@@ -587,34 +584,21 @@ private fun RecipeDetailContent(
                     // last composition, so quick taps are never lost.
                     ServingsStepper(servings = servings, onStep = { delta -> servings = (servings + delta).coerceIn(MIN_SERVINGS, MAX_SERVINGS) })
                 }
-                // Amounts in a column as wide as the longest one (at most a third of the width),
-                // names next to them; compact rows without per-row buttons.
-                val measurer = rememberTextMeasurer()
-                val quantityStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
-                val density = LocalDensity.current
-                val quantityWidth = remember(recipe.ingredientGroups, scale, quantityStyle) {
-                    val widest = recipe.ingredientGroups.flatMap { it.ingredients }
-                        .mapNotNull { ingredientParts(it.name, it.quantity, it.unit, scale).first }
-                        .maxOfOrNull { measurer.measure(it, quantityStyle).size.width } ?: 0
-                    with(density) { widest.toDp() }
-                }
+                // Each ingredient as written ("50 g de panceta"), the amount in the theme colour;
+                // compact rows without per-row buttons.
                 recipe.ingredientGroups.filter { it.ingredients.isNotEmpty() }.forEach { group ->
                     if (group.name != null) GroupTitle(group.name)
                     RoundedGroup(contentPadding = 6.dp) {
-                        BoxWithConstraints {
-                            val column = minOf(quantityWidth, maxWidth / 3)
-                            Column {
-                                group.ingredients.forEachIndexed { index, ingredient ->
-                                    val key = "${group.name}_$index"
-                                    IngredientLine(
-                                        ingredient = ingredient,
-                                        scale = scale,
-                                        quantityWidth = column,
-                                        checked = checkedIngredients[key] ?: false,
-                                        onCheckedChange = { checkedIngredients[key] = it },
-                                        onSubstitute = onSubstituteIngredient?.let { substitute -> { substitute(ingredient.name) } }
-                                    )
-                                }
+                        Column {
+                            group.ingredients.forEachIndexed { index, ingredient ->
+                                val key = "${group.name}_$index"
+                                IngredientLine(
+                                    ingredient = ingredient,
+                                    scale = scale,
+                                    checked = checkedIngredients[key] ?: false,
+                                    onCheckedChange = { checkedIngredients[key] = it },
+                                    onSubstitute = onSubstituteIngredient?.let { substitute -> { substitute(ingredient.name) } }
+                                )
                             }
                         }
                     }

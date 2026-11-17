@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.data.model.formatIngredientText
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import org.calamares.miga.data.allergens.AllergenAnalysis
 import org.calamares.miga.data.model.ingredientParts
@@ -262,31 +265,37 @@ internal fun FactsStrip(facts: List<Fact>) {
 }
 
 /**
- * One ingredient: tick circle, the amount in a column of [quantityWidth] in the theme colour and
- * the name, with a warning when an allergen depends on the product. Tap ticks it;
- * a long press offers a substitute.
+ * One ingredient as written ("50 g de panceta"), the amount in the theme colour so it still
+ * stands out, with a warning when an allergen depends on the product. Tap ticks it; a long press
+ * offers a substitute.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun IngredientLine(
     ingredient: Ingredient,
     scale: Double,
-    quantityWidth: Dp,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     onSubstitute: (() -> Unit)?
 ) {
-    val (quantity, name) = ingredientParts(ingredient.name, ingredient.quantity, ingredient.unit, scale)
-    val label = if (ingredient.optional) "$name ${L10n.str(R.string.ingredient_optional_suffix)}" else name
+    val text = formatIngredientText(ingredient.name, ingredient.quantity, ingredient.unit, scale, forReading = true) +
+        if (ingredient.optional) " " + L10n.str(R.string.ingredient_optional_suffix) else ""
+    val amount = ingredientParts(ingredient.name, ingredient.quantity, ingredient.unit, scale, forReading = true).first
+    val amountColor = MaterialTheme.colorScheme.primary
+    val styled = remember(text, amount, checked, amountColor) {
+        buildAnnotatedString {
+            append(text)
+            if (!checked && amount != null && text.startsWith(amount)) {
+                addStyle(SpanStyle(color = amountColor, fontWeight = FontWeight.SemiBold), 0, amount.length)
+            }
+        }
+    }
     val mayContain = remember(ingredient.name) { AllergenAnalysis.ofIngredient(ingredient.name).mayContain }
-    val textColor = if (checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
-    val decoration = if (checked) TextDecoration.LineThrough else TextDecoration.None
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
                 role = Role.Checkbox,
-                onClickLabel = null,
                 onLongClickLabel = onSubstitute?.let { L10n.str(R.string.substitute_x, ingredient.name) },
                 onClick = { onCheckedChange(!checked) },
                 onLongClick = onSubstitute
@@ -301,21 +310,11 @@ internal fun IngredientLine(
             tint = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
             modifier = Modifier.padding(top = 2.dp).size(18.dp)
         )
-        if (quantityWidth > 0.dp) {
-            Text(
-                quantity.orEmpty(),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = if (checked) textColor else MaterialTheme.colorScheme.primary,
-                textDecoration = decoration,
-                modifier = Modifier.padding(start = 12.dp).width(quantityWidth)
-            )
-        }
         Text(
-            label,
+            styled,
             style = MaterialTheme.typography.bodyLarge,
-            color = textColor,
-            textDecoration = decoration,
+            color = if (checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+            textDecoration = if (checked) TextDecoration.LineThrough else TextDecoration.None,
             modifier = Modifier.padding(start = 12.dp).weight(1f, fill = false)
         )
         if (mayContain) {

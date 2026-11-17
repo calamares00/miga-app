@@ -1,6 +1,9 @@
 package org.calamares.miga.ui.editor
 
-import org.calamares.miga.data.model.UnitInflection
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import org.calamares.miga.data.model.ingredientParts
+import org.calamares.miga.data.model.formatIngredientText
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.shape.CircleShape
@@ -16,11 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.foundation.BorderStroke
 import org.calamares.miga.data.allergens.CertifiedFreeMarks
 import org.calamares.miga.data.allergens.AllergenAnalysis
@@ -96,9 +95,6 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
 
     /** The ingredient open for editing; the others show as in the recipe. Blank ones are always open. */
     var editing by remember { mutableStateOf<IngredientRowUi?>(null) }
-    val quantityStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
 
     Section(title = L10n.str(R.string.ingredients)) {
         viewModel.ingredientGroups.forEachIndexed { groupIndex, group ->
@@ -120,10 +116,6 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
                     Text(L10n.str(R.string.main_ingredients), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 }
 
-                // The amounts in a column as wide as the longest one, as in the recipe.
-                val quantityWidth = with(density) {
-                    group.ingredients.maxOfOrNull { measurer.measure(it.amountText(), quantityStyle).size.width }?.toDp() ?: 0.dp
-                }.coerceAtMost(110.dp)
                 ReorderableColumn(
                     items = group.ingredients.toList(),
                     onReorder = { viewModel.reorderIngredients(groupIndex, it) },
@@ -143,8 +135,6 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
                     } else {
                         IngredientListRow(
                             row = row,
-                            quantityWidth = quantityWidth,
-                            quantityStyle = quantityStyle,
                             dragHandle = dragHandle,
                             isDragging = isDragging,
                             onClick = { editing = row },
@@ -177,26 +167,33 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
     }
 }
 
-/** "4 dientes", "200 g", "": what the ingredient's amount column shows, the unit agreeing with the amount. */
-private fun IngredientRowUi.amountText(): String {
-    val amount = quantity.trim()
-    val number = amount.replace(',', '.').toDoubleOrNull()
-    val shownUnit = if (number != null && unit.isNotBlank()) UnitInflection.inflect(unit.trim(), number, L10n.locale().language) else unit.trim()
-    return listOf(amount, shownUnit).filter { it.isNotEmpty() }.joinToString(" ")
+/** The ingredient as written in the recipe ("4 dientes de ajo"), with the length of its amount. */
+private fun IngredientRowUi.asWritten(): Pair<String, Int> {
+    val amount = quantity.trim().replace(',', '.').toDoubleOrNull()
+    val shownName = if (optional) "$name ${L10n.str(R.string.ingredient_optional_suffix)}" else name
+    if (amount == null) {
+        val written = listOf(quantity.trim(), unit.trim(), shownName).filter { it.isNotEmpty() }.joinToString(" ")
+        return written to quantity.trim().length
+    }
+    val text = formatIngredientText(shownName, amount, unit.trim().ifEmpty { null }, forReading = true)
+    return text to ingredientParts(shownName, amount, unit.trim().ifEmpty { null }, forReading = true).first.orEmpty().length
 }
 
-/** An ingredient as in the recipe (amount column, name); a tap opens it for editing. */
+/** An ingredient as in the recipe ("50 g de panceta"); a tap opens it for editing. */
 @Composable
 private fun IngredientListRow(
     row: IngredientRowUi,
-    quantityWidth: Dp,
-    quantityStyle: TextStyle,
     dragHandle: Modifier,
     isDragging: Boolean,
     onClick: () -> Unit,
     onRemove: () -> Unit
 ) {
-    val name = if (row.optional) "${row.name} ${L10n.str(R.string.ingredient_optional_suffix)}" else row.name
+    val amountColor = MaterialTheme.colorScheme.primary
+    val (written, amountLength) = row.asWritten()
+    val styled = buildAnnotatedString {
+        append(written)
+        if (amountLength > 0) addStyle(SpanStyle(color = amountColor, fontWeight = FontWeight.SemiBold), 0, amountLength)
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -206,15 +203,7 @@ private fun IngredientListRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         DragHandle(dragHandle)
-        if (quantityWidth > 0.dp) {
-            Text(
-                row.amountText(),
-                style = quantityStyle,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 8.dp).width(quantityWidth)
-            )
-        }
-        Text(name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp).weight(1f))
+        Text(styled, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp).weight(1f))
         IngredientMenu(row, onRemove)
     }
 }
