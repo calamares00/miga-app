@@ -15,7 +15,9 @@ Android recipe and shopping list app (`org.calamares.miga`): Kotlin, Jetpack Com
   - `versionName` bumped and `versionCode` + 1 in `app/build.gradle.kts`;
   - release notes `<versionCode>.txt` in `app/src/main/assets/changelogs` (es),
     `app/src/main/assets/changelogs-en` and `fastlane/metadata/android/{es-ES,en-US}/changelogs`
-    (max 500 characters each). Older notes stay.
+    (max 500 characters each, in **every** language: Google Play rejects the whole upload
+    otherwise, which kept 1.0.35 out of Play). `ReleaseNotesTest` checks it; run it before
+    merging. Older notes stay.
 - The app cannot be built in Claude Code cloud sessions (Maven is blocked): rely on CI, which also
   builds the release AAB on every branch.
 - Units go through `UnitInflection` (singular/plural). `calamares00/miga-server` keeps a copy for

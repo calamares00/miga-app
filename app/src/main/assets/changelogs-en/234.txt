@@ -1,0 +1,5 @@
+What's new in version 1.0.36:
+• Clearer recipe page: facts in one strip, allergens in one row, amounts in a column and highlighted times.
+• Allergens: buckwheat, maize or rice flour and lentils no longer show as "may contain gluten"; you are only reminded to buy them certified.
+• Cooking mode: times and speeds in the theme colour.
+• Deleting recipes: leaving the app right after no longer brings them back.
