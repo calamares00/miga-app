@@ -1,5 +1,14 @@
 package org.calamares.miga.ui.settings
 
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.OutlinedButton
+import org.calamares.miga.ui.components.ErrorMessage
+import org.calamares.miga.data.ai.ProviderTestResult
+import org.calamares.miga.data.ai.ProviderTest
+import org.calamares.miga.data.ai.AiCandidate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.platform.LocalContext
 import android.content.Intent
@@ -217,6 +226,66 @@ private fun ProviderFields(
     if (provider.imageSupportVaries()) ReadsImagesSwitch(readsImages) { viewModel.setModelImages(provider, it) }
     texts.note?.let { note ->
         Text(L10n.str(note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    ProviderTestBlock(
+        candidate = AiCandidate(provider, apiKey, model, baseUrl.takeIf { provider == AiProvider.CUSTOM }),
+        ready = model.isNotBlank() && (if (provider == AiProvider.CUSTOM) baseUrl.isNotBlank() else apiKey.isNotBlank()),
+        checkImage = readsImages,
+        onImagesOff = if (provider.imageSupportVaries()) ({ viewModel.setModelImages(provider, false) }) else null
+    )
+}
+
+/**
+ * "Test connection": one small request with this key and model (and a photo, if the model is set
+ * as reading them), to know right away whether they work. Testing again after a change starts
+ * over; the result is forgotten when the key or model changes.
+ */
+@Composable
+private fun ProviderTestBlock(candidate: AiCandidate, ready: Boolean, checkImage: Boolean, onImagesOff: (() -> Unit)?) {
+    val scope = rememberCoroutineScope()
+    var testing by remember(candidate) { mutableStateOf(false) }
+    var result by remember(candidate, checkImage) { mutableStateOf<ProviderTestResult?>(null) }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        OutlinedButton(
+            onClick = {
+                testing = true
+                result = null
+                scope.launch {
+                    result = ProviderTest.run(candidate, checkImage)
+                    testing = false
+                }
+            },
+            enabled = ready && !testing
+        ) {
+            if (testing) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(L10n.str(R.string.ai_test_running))
+            } else {
+                Text(L10n.str(R.string.ai_test_connection))
+            }
+        }
+        result?.let { tested ->
+            if (!tested.ok) {
+                ErrorMessage(tested.error.orEmpty())
+            } else {
+                val seconds = "%.1f".format(L10n.locale(), tested.millis / 1000.0)
+                Text(
+                    L10n.str(R.string.ai_test_ok_x_x, candidate.model, seconds),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                when (tested.readsImage) {
+                    true -> Text(L10n.str(R.string.ai_test_reads_photo), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                    false -> {
+                        Text(L10n.str(R.string.ai_test_photo_failed), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                        ErrorMessage(tested.imageError.orEmpty())
+                        if (onImagesOff != null) TextButton(onClick = onImagesOff) { Text(L10n.str(R.string.ai_test_turn_photos_off)) }
+                    }
+                    null -> Unit
+                }
+            }
+        }
     }
 }
 
