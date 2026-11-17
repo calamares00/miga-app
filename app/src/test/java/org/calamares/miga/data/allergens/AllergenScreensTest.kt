@@ -72,7 +72,7 @@ class AllergenScreensTest {
     fun `a recipe shows its allergens in one line and the details in a sheet`() {
         show("Lentejas con chorizo", "300 g de lentejas pardinas", "1 chorizo", "1 pastilla de caldo de verduras", "1 rama de apio", "1 vaso de vino blanco", "2 zanahorias", "1 cebolla")
         compose.onNodeWithText(L10n.str(R.string.allergens_title)).performScrollTo()
-        assertTrue(shown(L10n.str(R.string.coeliac_suitable_if)))
+        assertTrue(shown(L10n.str(R.string.coeliac_suitable_if_x, "1 chorizo, 1 pastilla de caldo de verduras")))
         captureScreenRoboImage("src/test/snapshots/allergens_recipe.png")
 
         compose.onNodeWithText(L10n.str(R.string.allergens_title)).performClick()

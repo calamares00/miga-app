@@ -1457,4 +1457,9 @@
     <string name="ingredient_gluten_free_phrase">"sin gluten"</string>
     <string name="ingredient_lactose_free_phrase">"sin lactosa"</string>
     <string name="allergen_cause_may_x">"%1$s (puede contener)"</string>
+    <string name="coeliac_buy_certified_traces_x">"Mejor certificados también estos: no llevan gluten, pero pueden tener trazas: %1$s."</string>
+    <string name="long_press_to_substitute">"Mantén pulsado un ingrediente para sustituirlo"</string>
+    <string name="coeliac_suitable_if_x">"Apta para celíacos si compras sin gluten: %1$s"</string>
+    <string name="coeliac_not_suitable_x">"No apta para celíacos: %1$s"</string>
+    <string name="servings_count_x">"%1$d raciones"</string>
 </resources>

@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.35:
+• Alérgenos: el trigo sarraceno, las harinas de maíz, arroz o garbanzo y las lentejas ya no aparecen como «puede contener gluten»: no lo llevan. Solo se recuerda, en la ficha para celíacos, comprarlos certificados por si tienen trazas.
+• Modo cocina: los tiempos, temperaturas y velocidades se resaltan con el color del tema.
+• Receta más clara: datos en una franja, alérgenos y aviso para celíacos en una fila, cantidades en columna, tiempos resaltados y botón de modo cocina que se encoge al leer.

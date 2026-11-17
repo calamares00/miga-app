@@ -1,8 +1,10 @@
 package org.calamares.miga.ui.detail
 
+import androidx.compose.runtime.snapshotFlow
+import org.calamares.miga.data.model.ingredientParts
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.material.icons.outlined.WarningAmber
-import org.calamares.miga.data.allergens.Allergen
 import org.calamares.miga.data.allergens.AllergenAnalysis
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Folder
@@ -34,7 +36,6 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -50,7 +51,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
@@ -85,8 +85,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import org.calamares.miga.data.export.FileExports
 import org.calamares.miga.ui.components.ShareSheet
@@ -95,15 +93,11 @@ import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.Recipe
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.Circle
-import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.FilledTonalButton
@@ -177,9 +171,20 @@ fun RecipeDetailScreen(
         snackbarHost = { SnackbarHost(snackbarHostState, modifier = Modifier.navigationBarsPadding()) },
         floatingActionButton = {
             if (recipe?.stepGroups?.any { it.instructions.isNotEmpty() } == true) {
+                // Full at the top and while scrolling up; only the icon while reading down, so it
+                // covers less of the text.
+                var lastScroll by remember { mutableIntStateOf(0) }
+                var fabExpanded by remember { mutableStateOf(true) }
+                LaunchedEffect(scrollState) {
+                    snapshotFlow { scrollState.value }.collect { value ->
+                        fabExpanded = value < 48 || value < lastScroll
+                        lastScroll = value
+                    }
+                }
                 ExtendedFloatingActionButton(
                     onClick = { recipe?.let { onOpenCookMode(it, ttsVoiceName) } },
-                    icon = { Icon(Icons.Filled.PlayArrow, null) },
+                    expanded = fabExpanded,
+                    icon = { Icon(Icons.Filled.PlayArrow, contentDescription = L10n.str(R.string.cooking_mode).takeIf { !fabExpanded }) },
                     text = { Text(L10n.str(R.string.cooking_mode)) },
                     modifier = Modifier.navigationBarsPadding()
                 )
@@ -514,56 +519,60 @@ private fun RecipeDetailContent(
         }
 
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            // Title
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Title: category, origin and rating in one line, then the name.
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 val originLabel = RecipeOrigin.label(recipe.origin, recipe.originCountry)
-                if (recipe.categoryName != null || originLabel != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        recipe.categoryName?.let {
-                            Text(displayCategoryName(it).uppercase(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                        }
-                        if (recipe.categoryName != null && originLabel != null) {
-                            Text("  ·  ", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        originLabel?.let {
-                            Text(it, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                FlowRow(verticalArrangement = Arrangement.Center, itemVerticalAlignment = Alignment.CenterVertically) {
+                    recipe.categoryName?.let {
+                        Text(displayCategoryName(it).uppercase(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        Dot()
+                    }
+                    originLabel?.let {
+                        Text(it, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Dot()
+                    }
+                    StarRatingRow(rating = recipe.rating, onRatingChange = onRatingChange, small = true)
+                    if (recipe.timesCooked > 0) {
+                        Dot()
+                        Text(
+                            L10n.str(R.string.cooked_x_x, recipe.timesCooked),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
                 Text(recipe.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
                 recipe.sharedBy?.let {
                     Text(L10n.str(R.string.shared_by_x, it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    StarRatingRow(rating = recipe.rating, onRatingChange = onRatingChange)
-                    if (recipe.timesCooked > 0) {
-                        Text(
-                            L10n.str(R.string.cooked_x_x, recipe.timesCooked),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(start = 8.dp)
+            }
+
+            // Key facts in one strip: total time, servings and difficulty.
+            val totalMinutes = listOfNotNull(recipe.prepTimeMinutes, recipe.cookTimeMinutes).sum().takeIf { it > 0 }
+            FactsStrip(
+                listOfNotNull(
+                    totalMinutes?.let { minutes ->
+                        Fact(
+                            Icons.Outlined.Timer,
+                            formatDuration(minutes),
+                            // Prep and cooking times stay available to screen readers.
+                            listOfNotNull(
+                                recipe.prepTimeMinutes?.let { "${L10n.str(R.string.prep_short)} ${formatDuration(it)}" },
+                                recipe.cookTimeMinutes?.let { "${L10n.str(R.string.cook_short)} ${formatDuration(it)}" }
+                            ).joinToString(", ")
                         )
-                    }
-                }
-            }
+                    },
+                    Fact(Icons.Outlined.People, L10n.str(R.string.servings_count_x, servings), null),
+                    Fact(Icons.Outlined.BarChart, recipe.difficulty.label, L10n.str(R.string.difficulty) + ": " + recipe.difficulty.label)
+                )
+            )
 
-            // Key facts
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                recipe.prepTimeMinutes?.let { FactTile(Icons.Outlined.Timer, L10n.str(R.string.prep_short), formatDuration(it), Modifier.weight(1f)) }
-                recipe.cookTimeMinutes?.let { FactTile(Icons.Outlined.LocalFireDepartment, L10n.str(R.string.cook_short), formatDuration(it), Modifier.weight(1f)) }
-                FactTile(Icons.Outlined.People, L10n.str(R.string.servings_2), "$servings", Modifier.weight(1f))
-                FactTile(Icons.Outlined.BarChart, L10n.str(R.string.difficulty), recipe.difficulty.label, Modifier.weight(1f))
-            }
-
-            // Allergens: a chip for gluten and one line with the ones this recipe has; the
-            // details open in a sheet.
+            // Allergens in one row, with what coeliacs need to know under them; the details
+            // open in a sheet.
             val allergens = remember(recipe.ingredientGroups) { AllergenAnalysis.ofRecipe(recipe) }
             var showAllergens by rememberSaveable { mutableStateOf(false) }
             if (recipe.ingredientGroups.any { group -> group.ingredients.any { it.name.isNotBlank() } }) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    GlutenChip(allergens.level(Allergen.GLUTEN)) { showAllergens = true }
-                    AllergenLine(allergens) { showAllergens = true }
-                }
+                AllergenLine(allergens) { showAllergens = true }
             }
             if (showAllergens) AllergenSheet(allergens) { showAllergens = false }
 
@@ -575,54 +584,44 @@ private fun RecipeDetailContent(
                     // last composition, so quick taps are never lost.
                     ServingsStepper(servings = servings, onStep = { delta -> servings = (servings + delta).coerceIn(MIN_SERVINGS, MAX_SERVINGS) })
                 }
+                // Amounts in a column as wide as the longest one (at most a third of the width),
+                // names next to them; compact rows without per-row buttons.
+                val measurer = rememberTextMeasurer()
+                val quantityStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                val density = LocalDensity.current
+                val quantityWidth = remember(recipe.ingredientGroups, scale, quantityStyle) {
+                    val widest = recipe.ingredientGroups.flatMap { it.ingredients }
+                        .mapNotNull { ingredientParts(it.name, it.quantity, it.unit, scale).first }
+                        .maxOfOrNull { measurer.measure(it, quantityStyle).size.width } ?: 0
+                    with(density) { widest.toDp() }
+                }
                 recipe.ingredientGroups.filter { it.ingredients.isNotEmpty() }.forEach { group ->
                     if (group.name != null) GroupTitle(group.name)
-                    RoundedGroup {
-                        group.ingredients.forEachIndexed { index, ingredient ->
-                            if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                            val key = "${group.name}_$index"
-                            val checked = checkedIngredients[key] ?: false
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .toggleable(value = checked, role = Role.Checkbox, onValueChange = { checkedIngredients[key] = it })
-                                    .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = if (checked) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
-                                    contentDescription = null,
-                                    tint = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Text(
-                                    text = ingredientWithAllergens(formatIngredient(ingredient, scale)),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    textDecoration = if (checked) TextDecoration.LineThrough else TextDecoration.None,
-                                    color = if (checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 8.dp)
-                                )
-                                if (remember(ingredient.name) { AllergenAnalysis.ofIngredient(ingredient.name).mayContain }) {
-                                    Icon(
-                                        Icons.Outlined.WarningAmber,
-                                        contentDescription = L10n.str(R.string.ingredient_may_contain),
-                                        tint = ALLERGEN_AMBER,
-                                        modifier = Modifier.size(18.dp)
+                    RoundedGroup(contentPadding = 6.dp) {
+                        BoxWithConstraints {
+                            val column = minOf(quantityWidth, maxWidth / 3)
+                            Column {
+                                group.ingredients.forEachIndexed { index, ingredient ->
+                                    val key = "${group.name}_$index"
+                                    IngredientLine(
+                                        ingredient = ingredient,
+                                        scale = scale,
+                                        quantityWidth = column,
+                                        checked = checkedIngredients[key] ?: false,
+                                        onCheckedChange = { checkedIngredients[key] = it },
+                                        onSubstitute = onSubstituteIngredient?.let { substitute -> { substitute(ingredient.name) } }
                                     )
-                                }
-                                if (onSubstituteIngredient != null) {
-                                    IconButton(onClick = { onSubstituteIngredient(ingredient.name) }) {
-                                        Icon(
-                                            Icons.Filled.Autorenew,
-                                            contentDescription = L10n.str(R.string.substitute_x, ingredient.name),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
                                 }
                             }
                         }
                     }
+                }
+                if (onSubstituteIngredient != null) {
+                    Text(
+                        L10n.str(R.string.long_press_to_substitute),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 FilledTonalButton(onClick = onAddToShoppingList, modifier = Modifier.fillMaxWidth()) {
                     ButtonContent(Icons.Filled.ShoppingCart, L10n.str(R.string.add_shopping_list))
@@ -639,9 +638,9 @@ private fun RecipeDetailContent(
                     recipe.stepGroups.filter { it.instructions.isNotEmpty() }.forEach { group ->
                         if (group.name != null) GroupTitle(group.name)
                         group.instructions.forEachIndexed { index, instruction ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(bottom = 4.dp)) {
                                 Box(
-                                    modifier = Modifier.size(30.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                                    modifier = Modifier.size(26.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
@@ -651,7 +650,12 @@ private fun RecipeDetailContent(
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                 }
-                                FormattedText(instruction, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(top = 4.dp))
+                                FormattedText(
+                                    instruction,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.weight(1f).padding(top = 2.dp),
+                                    highlightTimes = true
+                                )
                             }
                         }
                     }
