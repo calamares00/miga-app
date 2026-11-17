@@ -31,7 +31,7 @@ From a book, tap **New recipe** and choose where it comes from:
 
 - **Write it yourself**: an empty recipe for you to fill in.
 - **From photos** ✨: take photos or pick up to 20 from the gallery, of one recipe or several. Miga works out which photos belong to the same recipe (two pages, or the recipe and a photo of the dish) and which are different recipes. If it is a single one, the editor opens already filled in for you to check; if there are several, they are saved one by one and you see the result in a list. The assistant reads the text and looks for the photo of the dish: it checks that it really is the finished dish, crops it without text or margins and makes the one showing the whole dish the main photo.
-- **From a web page**: paste the link to a recipe. Most recipe websites include it in a standard format (schema.org) that Miga reads directly, with its photo, times and servings, **without the assistant**. If the site does not, the cooking assistant ✨ reads it.
+- **From a web page**: paste the link to a recipe. Most recipe websites include it in a standard format (schema.org) that Miga reads directly, with its photo, times and servings, **without the assistant**. If the assistant is set up, it then **improves** it ✨ like "Polish the recipe" (wording, units, times in bold) and tells you what changed, with a button to **undo the improvement**. If the site does not use that format, the assistant reads it.
 - **From a Miga file**: imports recipes exported from Miga (.miga, .zip or JSON).
 - **Suggest a recipe** ✨: type the name of a dish and choose from the suggestions.
 
