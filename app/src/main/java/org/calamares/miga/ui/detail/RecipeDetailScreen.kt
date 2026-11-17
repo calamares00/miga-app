@@ -1,5 +1,9 @@
 package org.calamares.miga.ui.detail
 
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.icons.outlined.WarningAmber
+import org.calamares.miga.data.allergens.Allergen
+import org.calamares.miga.data.allergens.AllergenAnalysis
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.SnackbarDuration
@@ -551,6 +555,18 @@ private fun RecipeDetailContent(
                 FactTile(Icons.Outlined.BarChart, L10n.str(R.string.difficulty), recipe.difficulty.label, Modifier.weight(1f))
             }
 
+            // Allergens: a chip for gluten and one line with the ones this recipe has; the
+            // details open in a sheet.
+            val allergens = remember(recipe.ingredientGroups) { AllergenAnalysis.ofRecipe(recipe) }
+            var showAllergens by rememberSaveable { mutableStateOf(false) }
+            if (recipe.ingredientGroups.any { group -> group.ingredients.any { it.name.isNotBlank() } }) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    GlutenChip(allergens.level(Allergen.GLUTEN)) { showAllergens = true }
+                    AllergenLine(allergens) { showAllergens = true }
+                }
+            }
+            if (showAllergens) AllergenSheet(allergens) { showAllergens = false }
+
             // Ingredients
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -580,12 +596,20 @@ private fun RecipeDetailContent(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Text(
-                                    text = formatIngredient(ingredient, scale),
+                                    text = ingredientWithAllergens(formatIngredient(ingredient, scale)),
                                     style = MaterialTheme.typography.bodyLarge,
                                     textDecoration = if (checked) TextDecoration.LineThrough else TextDecoration.None,
                                     color = if (checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 8.dp)
                                 )
+                                if (remember(ingredient.name) { AllergenAnalysis.ofIngredient(ingredient.name).mayContain }) {
+                                    Icon(
+                                        Icons.Outlined.WarningAmber,
+                                        contentDescription = L10n.str(R.string.ingredient_may_contain),
+                                        tint = ALLERGEN_AMBER,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                                 if (onSubstituteIngredient != null) {
                                     IconButton(onClick = { onSubstituteIngredient(ingredient.name) }) {
                                         Icon(

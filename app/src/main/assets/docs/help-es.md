@@ -31,11 +31,21 @@ Desde un libro, pulsa **Nueva receta** y elige de dónde sale:
 
 - **Escribirla a mano**: una receta vacía que rellenas tú.
 - **Desde fotos** ✨: haz fotos o elige hasta 20 de la galería, de una receta o de varias. Miga averigua qué fotos son de la misma receta (dos páginas, o la receta y la foto del plato) y cuáles son recetas distintas. Si es una sola, se abre el editor ya relleno para que la revises; si son varias, se guardan una a una y ves el resultado en una lista. El asistente lee el texto y busca la foto del plato: comprueba que es de verdad el plato terminado, la recorta sin texto ni márgenes y pone como principal la que muestra el plato entero.
-- **Desde una página web** ✨: pega el enlace de una receta de cualquier web.
+- **Desde una página web**: pega el enlace de una receta. Casi todas las webs de recetas la incluyen en un formato estándar (schema.org) que Miga lee directamente, con su foto, tiempos y raciones, **sin necesitar el asistente**. Si tienes el asistente configurado, después la **mejora** ✨ como «Mejorar la receta» (redacción, unidades, tiempos en negrita) y te dice qué ha cambiado, con un botón para **deshacer la mejora**. Si la web no trae ese formato, la lee el asistente.
 - **Desde un archivo de Miga**: importa recetas exportadas desde Miga (.miga, .zip o JSON).
 - **Sugerir una receta** ✨: escribe el nombre de un plato y elige entre las propuestas.
 
 Las opciones con ✨ las hace el asistente de cocina y solo aparecen si lo tienes configurado.
+
+## ⚠️ Alérgenos e intolerancias
+
+Miga calcula, a partir de los ingredientes y sin usar el asistente, los **14 alérgenos** que la ley europea obliga a declarar (gluten, crustáceos, huevo, pescado, cacahuete, soja, leche, frutos de cáscara, apio, mostaza, sésamo, sulfitos, altramuz y moluscos) y la **lactosa**.
+
+- En la receta, una línea **Alérgenos** muestra solo los que lleva: en rojo, los que **contiene**; en naranja con «!», los que **puede contener** según el producto que compres (caldos, embutidos, salsa de soja, chocolate, legumbres secas…). Tócala para ver todos, qué ingrediente causa cada uno y los consejos para celíacos.
+- En la lista de ingredientes, el alérgeno sale en **negrita**, como en las etiquetas, y los que dependen del producto llevan ⚠.
+- **Gluten**: «Sin ingredientes con gluten» o «Apta para celíacos si…» (por ejemplo, si compras el chorizo y el caldo certificados sin gluten y cocinas sin contaminación cruzada). Miga nunca dice «sin gluten» a secas: es una mención legal que exige análisis del producto. La avena cuenta como cereal con gluten salvo que sea certificada; el trigo sarraceno no lleva gluten.
+- Si usas un producto certificado, márcalo en el editor desde el menú (⋮) del ingrediente: **Producto sin gluten (certificado)** o **Producto sin lactosa**. Se añade al nombre, así se ve también en la lista de la compra.
+- Es **orientativo**: revisa la etiqueta de cada producto y consulta a tu médico o dietista.
 
 ## 🍳 Modo cocina
 
