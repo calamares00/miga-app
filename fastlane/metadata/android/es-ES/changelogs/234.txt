@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.36:
+• Receta más clara: datos en una franja, alérgenos y aviso para celíacos en una fila, cantidades en columna, tiempos resaltados y botón de modo cocina más pequeño al leer.
+• Alérgenos: el trigo sarraceno, las harinas de maíz o arroz y las lentejas ya no salen como «puede contener gluten»; solo se recuerda comprarlos certificados por si tienen trazas.
+• Modo cocina: tiempos y velocidades con el color del tema.
