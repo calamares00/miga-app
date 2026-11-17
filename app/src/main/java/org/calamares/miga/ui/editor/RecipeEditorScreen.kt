@@ -145,7 +145,7 @@ fun RecipeEditorScreen(
         if (!sourceDishName.isNullOrBlank()) viewModel.startDishGeneration(sourceDishName, sourceDishDescription, sourceDishOrigin)
     }
     LaunchedEffect(sourceRecipeUrl) {
-        if (!sourceRecipeUrl.isNullOrBlank()) viewModel.startUrlImport(sourceRecipeUrl)
+        if (!sourceRecipeUrl.isNullOrBlank()) viewModel.startUrlImport(context, sourceRecipeUrl)
     }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->

@@ -39,11 +39,12 @@ fun NewRecipeSourceSheet(
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(L10n.str(R.string.new_recipe), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
         NewRecipeSourceRow(Icons.Filled.Edit, L10n.str(R.string.new_recipe_by_hand), L10n.str(R.string.new_recipe_by_hand_desc), onManualClick)
-        // Photos, a web page and suggestions need the assistant, so they are hidden when it is off.
+        // Photos and suggestions need the assistant, so they are hidden when it is off. A web page
+        // does not when it carries a schema.org recipe, as most recipe sites do.
         if (aiEnabled) {
             NewRecipeSourceRow(Icons.Filled.AddAPhoto, L10n.str(R.string.new_recipe_from_photos), L10n.str(R.string.new_recipe_from_photos_desc), onPhotoClick)
-            NewRecipeSourceRow(Icons.Filled.Link, L10n.str(R.string.new_recipe_from_web), L10n.str(R.string.new_recipe_from_web_desc), onUrlClick)
         }
+        NewRecipeSourceRow(Icons.Filled.Link, L10n.str(R.string.new_recipe_from_web), L10n.str(R.string.new_recipe_from_web_desc), onUrlClick)
         NewRecipeSourceRow(Icons.Filled.UploadFile, L10n.str(R.string.new_recipe_from_file), L10n.str(R.string.new_recipe_from_file_desc), onFileClick)
         if (aiEnabled) {
             NewRecipeSourceRow(Icons.Filled.AutoAwesome, L10n.str(R.string.find_recipe_ai), L10n.str(R.string.new_recipe_suggest_desc), onSearchDishClick)

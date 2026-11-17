@@ -1415,4 +1415,6 @@
     <string name="ai_key_in_clipboard_x_x">"You copied a %1$s key (%2$s). Use it?"</string>
     <string name="ai_use_key">"Use it"</string>
     <string name="ai_key_not_in_clipboard_x">"No %1$s key found in what you copied. Copy it on the page and paste it in the field above."</string>
+    <string name="web_import_needs_assistant">"This page does not include the recipe in the standard format (schema.org). Set up the cooking assistant in Settings to import it."</string>
+    <string name="ai_step_downloading_photo">"Downloading the photo…"</string>
 </resources>
