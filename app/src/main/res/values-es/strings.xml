@@ -1404,4 +1404,10 @@
     <string name="openrouter_connect_expired">"El código ha caducado o no es válido. Pulsa otra vez «Conectar con OpenRouter»."</string>
     <string name="openrouter_connect_network">"No hay conexión con OpenRouter. Revisa internet y vuelve a intentarlo."</string>
     <string name="openrouter_connect_failed_x">"OpenRouter ha respondido con un error (%1$d). Vuelve a intentarlo."</string>
+    <string name="ai_test_connection">"Probar conexión"</string>
+    <string name="ai_test_running">"Probando…"</string>
+    <string name="ai_test_ok_x_x">"Funciona: %1$s ha respondido en %2$s s."</string>
+    <string name="ai_test_reads_photo">"También ha leído una foto de prueba."</string>
+    <string name="ai_test_photo_failed">"El texto funciona, pero no ha podido leer la foto de prueba."</string>
+    <string name="ai_test_turn_photos_off">"Marcarlo como que no lee fotos"</string>
 </resources>
