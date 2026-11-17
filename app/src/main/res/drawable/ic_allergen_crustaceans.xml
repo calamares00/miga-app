@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Allergen icon (see Allergen); drawn for Miga, tinted by its level. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M18.5,6.2 C12,4.6 5.8,8.4 5.6,13.6 C5.4,17.2 8,19.6 11.4,19.4 L11.6,16.6 C9.6,16.6 8.4,15.4 8.5,13.5 C8.7,10 12.6,7.8 17.8,8.9 Z M11,15.6 L15,15 L13.6,18 L15.2,21.4 L11.2,20.2 Z" />
+    <path
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M18,6.6 C19.6,5.4 21,4.4 22,2.6 M18.2,7.4 C20,7.2 21.4,6.8 22.6,5.8" />
+</vector>
