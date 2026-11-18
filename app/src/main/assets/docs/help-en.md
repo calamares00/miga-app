@@ -60,7 +60,7 @@ For those who count carbohydrate portions. Everything is in **Settings → Healt
 - **Count carbohydrate portions**: each recipe shows how many portions it has per serving, worked out from its ingredients and amounts, without the assistant. Tap the line to see what each ingredient brings, what could not be counted (for example "flour to coat" with no amount) and what has hardly any carbohydrate.
 - **Grams per portion**: 10 by default (1 portion = 10 g in Spain; US carb choices are 15 g). Use the one your care team gave you; at 0 only grams are shown.
 - **My portion plan**: copy your care team's plan, with the portions of each group (milk, protein, vegetables, starches, fruit and fat) at each meal. There is a 1,500 kcal example to start with, but always use yours.
-- With a plan, each recipe shows its portions by group, and **Fit to my meal** tells you how much to take for that meal and what to add to complete it (bread, fruit, salad…) in kitchen measures, or what is over.
+- With a plan, each recipe shows its portions by group, and **Fit to my meal** tells you how much to take for that meal and what to add to complete it (bread, fruit, salad…) in kitchen measures, or what is over. If the recipe does not fit that meal (a burger when your plan only has milk), it says so and which meals it fits.
 - It counts the part that is eaten (no bones or shells), oil to fry or confit as 3 tablespoons per serving at most, and sweets as 1 serving at most.
 - Values come from USDA FoodData Central checked against BEDCA (AESAN), raw. It is **for guidance only**: it does not replace your care team's advice.
 

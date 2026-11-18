@@ -129,7 +129,10 @@ internal fun PlanSheet(perServing: GroupPortions, plan: PortionPlan, recipeServi
 @Composable
 internal fun PlanSheetContent(perServing: GroupPortions, plan: PortionPlan, recipeServings: Int, initialMeal: Meal? = null) {
     val meals = plan.usedMeals
-    val default = initialMeal ?: listOf(Meal.LUNCH, Meal.DINNER).firstOrNull { it in meals } ?: meals.firstOrNull() ?: Meal.LUNCH
+    val suitable = remember(perServing, plan) { MealFitter.suitableMeals(perServing, plan) }
+    val default = initialMeal
+        ?: (listOf(Meal.LUNCH, Meal.DINNER) + meals).firstOrNull { it in suitable }
+        ?: listOf(Meal.LUNCH, Meal.DINNER).firstOrNull { it in meals } ?: meals.firstOrNull() ?: Meal.LUNCH
     var meal by rememberSaveable { mutableStateOf(default) }
     val fit = remember(perServing, plan, meal) { MealFitter.fit(perServing, plan, meal) }
     Column(
@@ -147,6 +150,28 @@ internal fun PlanSheetContent(perServing: GroupPortions, plan: PortionPlan, reci
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+
+        if (!fit.suitable) {
+            Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(L10n.str(R.string.plan_not_suitable_x, meal.label), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        L10n.str(R.string.plan_not_suitable_why_x, fit.mainGroup?.label?.lowercase(L10n.locale()).orEmpty()),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        if (suitable.isEmpty()) L10n.str(R.string.plan_suits_none)
+                        else L10n.str(R.string.plan_suits_x, suitable.joinToString(", ") { it.label.lowercase(L10n.locale()) }),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            HorizontalDivider()
+            Text(L10n.str(R.string.plan_fit_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            return@Column
+        }
 
         Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

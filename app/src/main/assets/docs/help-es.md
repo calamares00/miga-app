@@ -60,7 +60,7 @@ Para quien cuenta raciones de hidratos de carbono. Todo está en **Ajustes → S
 - **Contar raciones de hidratos**: cada receta muestra cuántas raciones lleva por persona, calculadas con sus ingredientes y cantidades, sin el asistente. Toca la línea para ver qué aporta cada ingrediente, qué no se ha podido calcular (por ejemplo, «harina para rebozar» sin cantidad) y lo que casi no tiene hidratos.
 - **Gramos por ración**: 10 por defecto (en España, 1 ración = 10 g). Usa la que te haya indicado tu equipo médico; a 0 se ven solo gramos.
 - **Mi plan de raciones**: copia el plan de tu equipo médico, con las raciones de cada grupo (leche, proteicos, verdura, harinas, fruta y grasa) en cada comida. Hay un ejemplo de 1.500 kcal para empezar, pero usa siempre el tuyo.
-- Con un plan, cada receta muestra sus raciones por grupo, y **Ajustar a mi comida** te dice cuánto servirte para esa comida y qué añadir para completarla (pan, fruta, ensalada…) en medidas caseras, o qué te sobra.
+- Con un plan, cada receta muestra sus raciones por grupo, y **Ajustar a mi comida** te dice cuánto servirte para esa comida y qué añadir para completarla (pan, fruta, ensalada…) en medidas caseras, o qué te sobra. Si la receta no encaja en esa comida (una hamburguesa cuando tu plan solo tiene leche), te lo dice y te indica en qué comidas encaja.
 - Cuenta la parte que se come (sin huesos ni conchas), el aceite de freír o confitar como mucho 3 cucharadas por persona y los dulces como mucho 1 ración.
 - Los valores son de USDA FoodData Central contrastados con BEDCA (AESAN), en crudo. Es **orientativo**: no sustituye la pauta de tu equipo médico.
 

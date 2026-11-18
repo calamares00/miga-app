@@ -15,7 +15,14 @@ data class MealFit(
     /** Portions still to add, per group (half portions and up). */
     val missing: Map<FoodGroup, Double>,
     /** Portions over the plan, per group (half portions and up). */
-    val over: Map<FoodGroup, Double>
+    val over: Map<FoodGroup, Double>,
+    /**
+     * False when the recipe's main group is not in this meal of the plan (a burger at bedtime,
+     * when the plan only has milk): then there is no sensible serving.
+     */
+    val suitable: Boolean = true,
+    /** The group the recipe has most of, fat aside. */
+    val mainGroup: FoodGroup? = null
 )
 
 object MealFitter {
@@ -36,6 +43,10 @@ object MealFitter {
      */
     fun fit(perServing: GroupPortions, plan: PortionPlan, meal: Meal): MealFit {
         val target = plan.meal(meal)
+        val main = mainGroup(perServing)
+        if (main != null && target[main] <= 0.0) {
+            return MealFit(meal, 0.0, GroupPortions(), emptyMap(), emptyMap(), suitable = false, mainGroup = main)
+        }
         val ratios = ANCHORS.filter { perServing[it] >= ANCHOR_MIN && target[it] > 0.0 }.map { target[it] / perServing[it] }
         val byGroups = ratios.minOrNull() ?: 1.0
         // Never more energy than the whole meal, and sweets (sugar outside the groups) at most one serving.
@@ -48,8 +59,16 @@ object MealFitter {
         val taken = perServing.times(servings)
         val missing = FoodGroup.entries.associateWith { halves(target[it] - taken[it]) }.filterValues { it > 0.0 }
         val over = FoodGroup.entries.associateWith { halves(taken[it] - target[it]) }.filterValues { it > 0.0 }
-        return MealFit(meal, servings, taken, missing, over)
+        return MealFit(meal, servings, taken, missing, over, mainGroup = main)
     }
+
+    /** The meals of the plan this recipe suits, in the order of the day. */
+    fun suitableMeals(perServing: GroupPortions, plan: PortionPlan): List<Meal> =
+        plan.usedMeals.filter { fit(perServing, plan, it).suitable }
+
+    /** The group a serving has most of (at least half a portion), fat aside; null for none. */
+    fun mainGroup(perServing: GroupPortions): FoodGroup? =
+        FoodGroup.entries.filter { it != FoodGroup.FAT && perServing[it] >= ANCHOR_MIN }.maxByOrNull { perServing[it] }
 
     /** To the nearest half portion; less than a quarter is nothing. */
     private fun halves(value: Double): Double = if (value < 0.25) 0.0 else Math.round(value * 2) / 2.0
