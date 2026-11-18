@@ -2,3 +2,4 @@ What's new in version 1.0.38:
 • Refreshed filters: time and difficulty as buttons, shorter categories and the long lists (ingredients, equipment, tags, origin) folded. At the bottom, "Show 23 recipes".
 • Filter by allergens: pick the ones to avoid, or "For coeliacs". An option includes those that depend on the product.
 • The filter sheet no longer bounces when you scroll back to the top.
+• Ingredient amounts in plain text, like the name.

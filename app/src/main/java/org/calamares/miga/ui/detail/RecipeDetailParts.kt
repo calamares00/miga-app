@@ -1,11 +1,7 @@
 package org.calamares.miga.ui.detail
 
 import org.calamares.miga.data.model.formatIngredientText
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import org.calamares.miga.data.allergens.AllergenAnalysis
-import org.calamares.miga.data.model.ingredientParts
 import org.calamares.miga.data.model.Ingredient
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.width
@@ -280,16 +276,6 @@ internal fun IngredientLine(
 ) {
     val text = formatIngredientText(ingredient.name, ingredient.quantity, ingredient.unit, scale, forReading = true) +
         if (ingredient.optional) " " + L10n.str(R.string.ingredient_optional_suffix) else ""
-    val amount = ingredientParts(ingredient.name, ingredient.quantity, ingredient.unit, scale, forReading = true).first
-    val amountColor = MaterialTheme.colorScheme.primary
-    val styled = remember(text, amount, checked, amountColor) {
-        buildAnnotatedString {
-            append(text)
-            if (!checked && amount != null && text.startsWith(amount)) {
-                addStyle(SpanStyle(color = amountColor, fontWeight = FontWeight.SemiBold), 0, amount.length)
-            }
-        }
-    }
     val mayContain = remember(ingredient.name) { AllergenAnalysis.ofIngredient(ingredient.name).mayContain }
     Row(
         modifier = Modifier
@@ -311,7 +297,7 @@ internal fun IngredientLine(
             modifier = Modifier.padding(top = 2.dp).size(18.dp)
         )
         Text(
-            styled,
+            text,
             style = MaterialTheme.typography.bodyLarge,
             color = if (checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
             textDecoration = if (checked) TextDecoration.LineThrough else TextDecoration.None,
