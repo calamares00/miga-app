@@ -14,6 +14,9 @@ class SavedFilterTest {
             difficulties = setOf(Difficulty.EASY),
             ingredients = setOf("huevos"),
             onlyFavorites = true,
+            withoutAllergens = setOf(org.calamares.miga.data.allergens.Allergen.EGGS),
+            allowMayContain = true,
+            coeliacFriendly = true,
             sortOption = SortOption.RECENT,
             maxMinutes = 30
         )

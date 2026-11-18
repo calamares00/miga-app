@@ -6,6 +6,8 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.runtime.Composable
@@ -43,19 +45,32 @@ fun sheetContentHeight(fraction: Float): Dp {
 }
 
 /**
- * Keeps the scroll of a sheet's content in the content. When a list reaches its end, Compose
+ * Keeps the scroll of a sheet's content in the content. When a list reaches either end, Compose
  * hands what is left of the drag or fling to the ModalBottomSheet around it; the sheet, already
  * expanded, tries to follow and settles again, and the user sees it bounce. Leftovers towards the
- * end (finger moving up) are taken here; those towards the start still reach the sheet, so pulling
- * down from the top keeps closing it.
+ * end (finger moving up) are always taken here. Towards the start, only a drag by the finger
+ * reaches the sheet, so pulling down from the top still closes it, and the fling that ends that
+ * drag too; the momentum of a list flung up to its top does not.
  */
-private object KeepScrollInSheet : NestedScrollConnection {
-    override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset =
-        if (available.y < 0f) Offset(0f, available.y) else Offset.Zero
+private class KeepScrollInSheet : NestedScrollConnection {
+    /** This gesture has moved the sheet down (the list was at its top). */
+    private var draggingSheet = false
 
-    override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
-        if (available.y < 0f) Velocity(0f, available.y) else Velocity.Zero
+    override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset = when {
+        available.y < 0f -> Offset(0f, available.y)
+        available.y > 0f && source == NestedScrollSource.UserInput -> {
+            draggingSheet = true
+            Offset.Zero
+        }
+        else -> Offset(0f, available.y)
+    }
+
+    override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+        val passToSheet = draggingSheet && available.y > 0f
+        draggingSheet = false
+        return if (passToSheet) Velocity.Zero else Velocity(0f, available.y)
+    }
 }
 
 /** Put on the root of a bottom sheet's content: see [KeepScrollInSheet]. */
-fun Modifier.keepScrollInSheet(): Modifier = nestedScroll(KeepScrollInSheet)
+fun Modifier.keepScrollInSheet(): Modifier = composed { nestedScroll(remember { KeepScrollInSheet() }) }
