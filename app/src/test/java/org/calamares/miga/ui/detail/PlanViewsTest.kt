@@ -114,4 +114,31 @@ class PlanViewsTest {
         compose.onNodeWithText("2 vasos medidores", substring = true).assertExists()
         captureScreenRoboImage("src/test/snapshots/plan_fit_pil_pil.png")
     }
+
+    @Test
+    fun `burgers at bedtime do not fit`() {
+        val burgers = lentils.copy(
+            ingredientGroups = listOf(
+                IngredientGroup(
+                    null,
+                    listOf(
+                        Ingredient("carne picada mixta (ternera y cerdo)", 400.0, "g"),
+                        Ingredient("cebolla", 100.0, "g"),
+                        Ingredient("pan de molde", 2.0, "rebanada"),
+                        Ingredient("leche", 100.0, "g"),
+                        Ingredient("huevo", 1.0, null)
+                    )
+                )
+            )
+        )
+        val perServing = FoodGroups.ofRecipe(burgers)
+        compose.setContent {
+            MigaTheme(darkTheme = false) {
+                Surface { PlanSheetContent(perServing, PortionPlan.EXAMPLE_1500, 4, initialMeal = Meal.BEDTIME) }
+            }
+        }
+        compose.onNodeWithText("No encaja en «Antes de dormir»").assertExists()
+        compose.onNodeWithText("Encaja en: comida, cena.").assertExists()
+        captureScreenRoboImage("src/test/snapshots/plan_fit_not_suitable.png")
+    }
 }

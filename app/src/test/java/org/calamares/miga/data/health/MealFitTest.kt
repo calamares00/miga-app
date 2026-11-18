@@ -138,4 +138,28 @@ class MealFitTest {
         val gnocchi = FoodGroups.ofRecipe(recipe(2, Ingredient("ñoquis de patata", 500.0, "g")))
         assertEquals(8.0, gnocchi[FoodGroup.STARCHES], 0.1)
     }
+
+    private val burgers = recipe(
+        4,
+        Ingredient("carne picada mixta (ternera y cerdo)", 400.0, "g"),
+        Ingredient("cebolla", 100.0, "g"),
+        Ingredient("pan de molde", 2.0, "rebanada"),
+        Ingredient("leche", 100.0, "g"),
+        Ingredient("huevo", 1.0, null),
+        Ingredient("tomate frito", 30.0, "g"),
+        Ingredient("pan rallado", 20.0, "g"),
+        Ingredient("aceite para freír", null, null)
+    )
+
+    @Test
+    fun `a burger does not fit a bedtime of milk, and says where it does`() {
+        val perServing = FoodGroups.ofRecipe(burgers)
+        assertEquals(FoodGroup.PROTEIN, MealFitter.mainGroup(perServing))
+        val bedtime = MealFitter.fit(perServing, PortionPlan.EXAMPLE_1500, Meal.BEDTIME)
+        assertEquals(false, bedtime.suitable)
+        assertEquals(listOf(Meal.LUNCH, Meal.DINNER), MealFitter.suitableMeals(perServing, PortionPlan.EXAMPLE_1500))
+        val lunch = MealFitter.fit(perServing, PortionPlan.EXAMPLE_1500, Meal.LUNCH)
+        assertTrue(lunch.suitable)
+        assertTrue("lunch ${lunch.servings}", lunch.servings in 0.5..1.0)
+    }
 }
