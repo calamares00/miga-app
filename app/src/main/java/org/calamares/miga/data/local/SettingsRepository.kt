@@ -26,6 +26,7 @@ import org.calamares.miga.data.ai.AiProvider
 import org.calamares.miga.data.allergens.Allergen
 import org.calamares.miga.data.health.AllergenDisplay
 import org.calamares.miga.data.health.HealthPrefs
+import org.calamares.miga.data.health.PortionPlan
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.combine
@@ -104,6 +105,7 @@ class SettingsRepository(private val context: Context) {
     private val allergenHideInSearchKey = booleanPreferencesKey("allergen_hide_in_search")
     private val coeliacKey = booleanPreferencesKey("coeliac_mode")
     private val coeliacInSearchKey = booleanPreferencesKey("coeliac_in_search")
+    private val portionPlanKey = stringPreferencesKey("portion_plan")
     private val tipOfTheDayClosedKey = longPreferencesKey("tip_of_the_day_closed_day")
 
     /**
@@ -329,6 +331,14 @@ class SettingsRepository(private val context: Context) {
             prefs[coeliacKey] = health.coeliac
             prefs[coeliacInSearchKey] = health.coeliacInSearch
         }
+    }
+
+    /** The portion plan from the user's care team (Settings > Health); empty when none. */
+    fun observePortionPlan(): Flow<PortionPlan> =
+        context.settingsDataStore.data.map { prefs -> PortionPlan.decode(prefs[portionPlanKey]) }
+
+    suspend fun setPortionPlan(plan: PortionPlan) {
+        context.settingsDataStore.edit { prefs -> if (plan.isEmpty) prefs.remove(portionPlanKey) else prefs[portionPlanKey] = plan.encode() }
     }
 
     fun observeBiometricLockEnabled(): Flow<Boolean> =

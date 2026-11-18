@@ -165,6 +165,8 @@ fun SettingsSectionScreen(
     val carbCounting by viewModel.carbCountingEnabled.collectAsStateWithLifecycle()
     val carbPortion by viewModel.carbPortionGrams.collectAsStateWithLifecycle()
     val health by viewModel.healthPrefs.collectAsStateWithLifecycle()
+    val portionPlan by viewModel.portionPlan.collectAsStateWithLifecycle()
+    var showPlanEditor by remember { mutableStateOf(false) }
     val ttsVoiceName by viewModel.ttsVoiceName.collectAsStateWithLifecycle()
     var voiceMenuExpanded by remember { mutableStateOf(false) }
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
@@ -431,8 +433,12 @@ fun SettingsSectionScreen(
                     checked = carbCounting,
                     onCheckedChange = { viewModel.setCarbCountingEnabled(it) }
                 )
-                if (carbCounting) CarbPortionSlider(carbPortion) { viewModel.setCarbPortionGrams(it) }
+                if (carbCounting) {
+                    CarbPortionSlider(carbPortion) { viewModel.setCarbPortionGrams(it) }
+                    PortionPlanRow(portionPlan) { showPlanEditor = true }
+                }
             }
+            if (showPlanEditor) PortionPlanSheet(portionPlan, { viewModel.setPortionPlan(it) }) { showPlanEditor = false }
             Text(L10n.str(R.string.health_disclaimer), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 SettingsSection.VOICE -> {
