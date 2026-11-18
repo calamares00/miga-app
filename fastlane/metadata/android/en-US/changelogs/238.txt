@@ -1,0 +1,2 @@
+What's new in version 1.0.40:
+• Ingredient amounts are shown in plain text, like the name, without bold or colour (in the recipe and in the editor).
