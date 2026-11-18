@@ -60,13 +60,22 @@ internal fun complementText(group: FoodGroup, portions: Double): String {
     fun n(value: Double) = readableQuantity(value)
     // Weights to the nearest 5 g: nobody weighs 113 g of fish.
     fun g(value: Double) = (Math.round(value / 5) * 5).toInt()
+    // Plural from more than 1, as cooks write it ("1½ vasos", "½ vaso").
+    fun many(value: Double) = value > 1.0
     return when (group) {
-        FoodGroup.STARCHES -> L10n.str(R.string.complement_starches_x, g(portions * 20), n(portions / 2))
-        FoodGroup.FRUIT -> L10n.str(R.string.complement_fruit_x, n(portions / 2))
-        FoodGroup.VEGETABLES -> L10n.str(R.string.complement_vegetables_x, n(portions))
-        FoodGroup.MILK -> L10n.str(R.string.complement_milk_x, n(portions), n(portions * 2))
+        FoodGroup.STARCHES -> L10n.str(
+            if (many(portions / 2)) R.string.complement_starches_many_x else R.string.complement_starches_x,
+            g(portions * 20), n(portions / 2)
+        )
+        FoodGroup.FRUIT -> L10n.str(if (many(portions / 2)) R.string.complement_fruit_many_x else R.string.complement_fruit_x, n(portions / 2))
+        FoodGroup.VEGETABLES -> L10n.str(if (many(portions)) R.string.complement_vegetables_many_x else R.string.complement_vegetables_x, n(portions))
+        FoodGroup.MILK -> when {
+            portions <= 0.5 -> L10n.str(R.string.complement_milk_half)
+            many(portions) -> L10n.str(R.string.complement_milk_many_x, n(portions), n(portions * 2))
+            else -> L10n.str(R.string.complement_milk_x, n(portions), n(portions * 2))
+        }
         FoodGroup.PROTEIN -> L10n.str(R.string.complement_protein_x, g(portions * 50), g(portions * 75))
-        FoodGroup.FAT -> L10n.str(R.string.complement_fat_x, n(portions))
+        FoodGroup.FAT -> L10n.str(if (many(portions)) R.string.complement_fat_many_x else R.string.complement_fat_x, n(portions))
     }
 }
 
@@ -120,7 +129,10 @@ internal fun PlanSheet(perServing: GroupPortions, plan: PortionPlan, recipeServi
 @Composable
 internal fun PlanSheetContent(perServing: GroupPortions, plan: PortionPlan, recipeServings: Int, initialMeal: Meal? = null) {
     val meals = plan.usedMeals
-    val default = initialMeal ?: listOf(Meal.LUNCH, Meal.DINNER).firstOrNull { it in meals } ?: meals.firstOrNull() ?: Meal.LUNCH
+    val suitable = remember(perServing, plan) { MealFitter.suitableMeals(perServing, plan) }
+    val default = initialMeal
+        ?: (listOf(Meal.LUNCH, Meal.DINNER) + meals).firstOrNull { it in suitable }
+        ?: listOf(Meal.LUNCH, Meal.DINNER).firstOrNull { it in meals } ?: meals.firstOrNull() ?: Meal.LUNCH
     var meal by rememberSaveable { mutableStateOf(default) }
     val fit = remember(perServing, plan, meal) { MealFitter.fit(perServing, plan, meal) }
     Column(
@@ -138,6 +150,28 @@ internal fun PlanSheetContent(perServing: GroupPortions, plan: PortionPlan, reci
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+
+        if (!fit.suitable) {
+            Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(L10n.str(R.string.plan_not_suitable_x, meal.label), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        L10n.str(R.string.plan_not_suitable_why_x, fit.mainGroup?.label?.lowercase(L10n.locale()).orEmpty()),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        if (suitable.isEmpty()) L10n.str(R.string.plan_suits_none)
+                        else L10n.str(R.string.plan_suits_x, suitable.joinToString(", ") { it.label.lowercase(L10n.locale()) }),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            HorizontalDivider()
+            Text(L10n.str(R.string.plan_fit_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            return@Column
+        }
 
         Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -180,6 +214,10 @@ internal fun PlanSheetContent(perServing: GroupPortions, plan: PortionPlan, reci
             fit.over.forEach { (group, portions) ->
                 GroupRow(group, portions, if (group == FoodGroup.FAT) L10n.str(R.string.plan_over_fat) else L10n.str(R.string.plan_over_other))
             }
+        }
+
+        if (perServing.cookingOil) {
+            Text(L10n.str(R.string.plan_cooking_oil), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         if (fit.fromRecipe.otherCarbs >= 1) {
