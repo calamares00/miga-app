@@ -1,5 +1,14 @@
 package org.calamares.miga.ui.settings
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SegmentedButton
+import org.calamares.miga.ui.components.ALLERGENS_PER_ROW
+import org.calamares.miga.ui.components.AllergenToggle
+import org.calamares.miga.data.allergens.Allergen
+import org.calamares.miga.data.health.AllergenDisplay
+import org.calamares.miga.data.health.HealthPrefs
 import org.calamares.miga.data.local.MAX_CARB_PORTION_GRAMS
 import kotlin.math.roundToInt
 import androidx.compose.material3.Slider
@@ -155,6 +164,7 @@ fun SettingsSectionScreen(
     val aiNutritionEnabled by viewModel.aiNutritionEnabled.collectAsStateWithLifecycle()
     val carbCounting by viewModel.carbCountingEnabled.collectAsStateWithLifecycle()
     val carbPortion by viewModel.carbPortionGrams.collectAsStateWithLifecycle()
+    val health by viewModel.healthPrefs.collectAsStateWithLifecycle()
     val ttsVoiceName by viewModel.ttsVoiceName.collectAsStateWithLifecycle()
     var voiceMenuExpanded by remember { mutableStateOf(false) }
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
@@ -398,6 +408,22 @@ fun SettingsSectionScreen(
             }
                 }
                 SettingsSection.HEALTH -> {
+            Text(L10n.str(R.string.health_intro), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            HealthAllergenSettings(health) { viewModel.updateHealthPrefs(it) }
+            SettingsCard(title = L10n.str(R.string.health_coeliac_section)) {
+                AiSwitchRow(
+                    title = L10n.str(R.string.health_coeliac_title),
+                    subtitle = L10n.str(R.string.health_coeliac_desc),
+                    checked = health.coeliac,
+                    onCheckedChange = { on -> viewModel.updateHealthPrefs { it.copy(coeliac = on) } }
+                )
+                AiSwitchRow(
+                    title = L10n.str(R.string.health_coeliac_search_title),
+                    subtitle = L10n.str(R.string.health_coeliac_search_desc),
+                    checked = health.coeliacInSearch,
+                    onCheckedChange = { on -> viewModel.updateHealthPrefs { it.copy(coeliacInSearch = on) } }
+                )
+            }
             SettingsCard(title = L10n.str(R.string.carb_counting_section), description = L10n.str(R.string.carb_counting_desc)) {
                 AiSwitchRow(
                     title = L10n.str(R.string.carb_counting_title),
@@ -406,8 +432,8 @@ fun SettingsSectionScreen(
                     onCheckedChange = { viewModel.setCarbCountingEnabled(it) }
                 )
                 if (carbCounting) CarbPortionSlider(carbPortion) { viewModel.setCarbPortionGrams(it) }
-                Text(L10n.str(R.string.carb_disclaimer), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            Text(L10n.str(R.string.health_disclaimer), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 SettingsSection.VOICE -> {
             SettingsCard(
@@ -650,6 +676,70 @@ fun SettingsSectionScreen(
                 }
             }
         )
+    }
+}
+
+/**
+ * Which allergens recipes show, the user's own ones and how lists and searches use them. The grid
+ * only appears when it matters: with "only mine", or to warn in lists and searches.
+ */
+@Composable
+internal fun HealthAllergenSettings(health: HealthPrefs, onChange: ((HealthPrefs) -> HealthPrefs) -> Unit) {
+    SettingsCard(title = L10n.str(R.string.allergens_sheet_title)) {
+        Text(L10n.str(R.string.health_allergens_show), style = MaterialTheme.typography.bodyLarge)
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            val options = listOf(AllergenDisplay.NONE, AllergenDisplay.MINE, AllergenDisplay.ALL)
+            options.forEachIndexed { index, option ->
+                SegmentedButton(
+                    selected = health.allergenDisplay == option,
+                    onClick = { onChange { it.copy(allergenDisplay = option) } },
+                    shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                    label = {
+                        Text(
+                            L10n.str(
+                                when (option) {
+                                    AllergenDisplay.NONE -> R.string.health_allergens_none
+                                    AllergenDisplay.MINE -> R.string.health_allergens_mine
+                                    AllergenDisplay.ALL -> R.string.health_allergens_all
+                                }
+                            ),
+                            maxLines = 1
+                        )
+                    }
+                )
+            }
+        }
+        Text(L10n.str(R.string.health_my_allergens), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+        Text(L10n.str(R.string.health_my_allergens_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Allergen.entries.chunked(ALLERGENS_PER_ROW).forEach { row ->
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    row.forEach { allergen ->
+                        AllergenToggle(
+                            allergen,
+                            allergen in health.myAllergens,
+                            { onChange { it.copy(myAllergens = if (allergen in it.myAllergens) it.myAllergens - allergen else it.myAllergens + allergen) } },
+                            Modifier.weight(1f)
+                        )
+                    }
+                    repeat(ALLERGENS_PER_ROW - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+        if (health.myAllergens.isNotEmpty()) {
+            AiSwitchRow(
+                title = L10n.str(R.string.health_warn_lists_title),
+                subtitle = L10n.str(R.string.health_warn_lists_desc),
+                checked = health.warnInLists,
+                onCheckedChange = { on -> onChange { it.copy(warnInLists = on) } }
+            )
+            AiSwitchRow(
+                title = L10n.str(R.string.health_hide_search_title),
+                subtitle = L10n.str(R.string.health_hide_search_desc),
+                checked = health.hideMineInSearch,
+                onCheckedChange = { on -> onChange { it.copy(hideMineInSearch = on) } }
+            )
+        }
     }
 }
 

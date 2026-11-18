@@ -1,8 +1,5 @@
 package org.calamares.miga.ui.editor
 
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import org.calamares.miga.data.model.ingredientParts
 import org.calamares.miga.data.model.formatIngredientText
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -19,7 +16,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.BorderStroke
 import org.calamares.miga.data.allergens.CertifiedFreeMarks
 import org.calamares.miga.data.allergens.AllergenAnalysis
@@ -167,16 +163,12 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
     }
 }
 
-/** The ingredient as written in the recipe ("4 dientes de ajo"), with the length of its amount. */
-private fun IngredientRowUi.asWritten(): Pair<String, Int> {
+/** The ingredient as written in the recipe ("4 dientes de ajo"). */
+private fun IngredientRowUi.asWritten(): String {
     val amount = quantity.trim().replace(',', '.').toDoubleOrNull()
     val shownName = if (optional) "$name ${L10n.str(R.string.ingredient_optional_suffix)}" else name
-    if (amount == null) {
-        val written = listOf(quantity.trim(), unit.trim(), shownName).filter { it.isNotEmpty() }.joinToString(" ")
-        return written to quantity.trim().length
-    }
-    val text = formatIngredientText(shownName, amount, unit.trim().ifEmpty { null }, forReading = true)
-    return text to ingredientParts(shownName, amount, unit.trim().ifEmpty { null }, forReading = true).first.orEmpty().length
+    if (amount == null) return listOf(quantity.trim(), unit.trim(), shownName).filter { it.isNotEmpty() }.joinToString(" ")
+    return formatIngredientText(shownName, amount, unit.trim().ifEmpty { null }, forReading = true)
 }
 
 /** An ingredient as in the recipe ("50 g de panceta"); a tap opens it for editing. */
@@ -188,12 +180,6 @@ private fun IngredientListRow(
     onClick: () -> Unit,
     onRemove: () -> Unit
 ) {
-    val amountColor = MaterialTheme.colorScheme.primary
-    val (written, amountLength) = row.asWritten()
-    val styled = buildAnnotatedString {
-        append(written)
-        if (amountLength > 0) addStyle(SpanStyle(color = amountColor, fontWeight = FontWeight.SemiBold), 0, amountLength)
-    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -203,7 +189,7 @@ private fun IngredientListRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         DragHandle(dragHandle)
-        Text(styled, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp).weight(1f))
+        Text(row.asWritten(), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp).weight(1f))
         IngredientMenu(row, onRemove)
     }
 }
