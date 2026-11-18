@@ -1,0 +1,3 @@
+What's new in version 1.0.41:
+• My portion plan (Settings › Health, with carbohydrate portions on): copy your care team's plan by meals and groups (milk, starches, fruit, vegetables, protein, fat).
+• On each recipe, its portions by group and "Fit to my meal": how much to take and what to add to complete the meal (bread, fruit, salad…), in kitchen measures.

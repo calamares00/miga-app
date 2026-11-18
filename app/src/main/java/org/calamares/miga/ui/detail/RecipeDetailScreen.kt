@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.data.carbs.FoodGroups
+import org.calamares.miga.data.health.PortionPlan
 import androidx.compose.ui.res.painterResource
 import org.calamares.miga.data.health.HealthPrefs
 import org.calamares.miga.data.health.AllergenDisplay
@@ -134,6 +136,7 @@ fun RecipeDetailScreen(
     val nutritionState by viewModel.nutritionState.collectAsStateWithLifecycle()
     val carbPortionGrams by viewModel.carbPortionGrams.collectAsStateWithLifecycle()
     val healthPrefs by viewModel.healthPrefs.collectAsStateWithLifecycle()
+    val portionPlan by viewModel.portionPlan.collectAsStateWithLifecycle()
     var showAllergensFromMenu by remember { mutableStateOf(false) }
     val substitutionDialogState by viewModel.substitutionDialogState.collectAsStateWithLifecycle()
     val polishState by viewModel.polishState.collectAsStateWithLifecycle()
@@ -212,6 +215,7 @@ fun RecipeDetailScreen(
                     onRetryNutrition = { viewModel.retryNutritionCheck() },
                     carbPortionGrams = carbPortionGrams,
                     health = healthPrefs,
+                    portionPlan = portionPlan,
                     onRecalculateAnalysis = { viewModel.recalculateAnalysis() }.takeIf { canRecalculateAnalysis },
                     onSubstituteIngredient = { name: String -> viewModel.findSubstitutesFor(name) }.takeIf { aiEnabled },
                     onRatingChange = { stars -> viewModel.setRating(stars) },
@@ -513,6 +517,8 @@ private fun RecipeDetailContent(
     carbPortionGrams: Int?,
     /** Which allergens to show (Settings > Health). */
     health: HealthPrefs = HealthPrefs(),
+    /** The user's portion plan, to fit the recipe to a meal; null hides it. */
+    portionPlan: PortionPlan? = null,
     onRecalculateAnalysis: (() -> Unit)?,
     onSubstituteIngredient: ((String) -> Unit)?,
     onRatingChange: (Int) -> Unit,
@@ -608,6 +614,12 @@ private fun RecipeDetailContent(
                 var showCarbs by rememberSaveable { mutableStateOf(false) }
                 CarbLine(carbs, carbPortionGrams) { showCarbs = true }
                 if (showCarbs) CarbSheet(carbs, carbPortionGrams) { showCarbs = false }
+                if (portionPlan != null) {
+                    val perServing = remember(recipe.ingredientGroups, recipe.servings) { FoodGroups.ofRecipe(recipe) }
+                    var showPlan by rememberSaveable { mutableStateOf(false) }
+                    PlanLine(perServing) { showPlan = true }
+                    if (showPlan) PlanSheet(perServing, portionPlan, recipe.servings) { showPlan = false }
+                }
             }
 
             // Ingredients
