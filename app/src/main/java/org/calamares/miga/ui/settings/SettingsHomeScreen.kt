@@ -82,6 +82,8 @@ fun SettingsHomeScreen(
     val aiProviders by viewModel.aiProvidersSummary.collectAsStateWithLifecycle()
     val dictationLanguage by viewModel.dictationLanguage.collectAsStateWithLifecycle()
     val yourName by viewModel.yourName.collectAsStateWithLifecycle()
+    val carbCounting by viewModel.carbCountingEnabled.collectAsStateWithLifecycle()
+    val carbPortion by viewModel.carbPortionGrams.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     AdaptiveScaffold(
@@ -123,7 +125,12 @@ fun SettingsHomeScreen(
                     ) { onOpenSection(SettingsSection.SECURITY) },
                     HomeItem(SettingsSection.VOICE.icon, SettingsSection.VOICE.title, selected = selectedSection == SettingsSection.VOICE, summary = L10n.str(R.string.dictation_x, DictationLanguages.label(dictationLanguage))) {
                         onOpenSection(SettingsSection.VOICE)
-                    }
+                    },
+                    HomeItem(SettingsSection.HEALTH.icon, SettingsSection.HEALTH.title, selected = selectedSection == SettingsSection.HEALTH, summary = when {
+                        !carbCounting -> L10n.str(R.string.carb_counting_off)
+                        carbPortion == 0 -> L10n.str(R.string.carb_counting_grams_only)
+                        else -> L10n.str(R.string.carb_counting_portion_x, carbPortion)
+                    }) { onOpenSection(SettingsSection.HEALTH) }
                 )
             )
             HomeGroup(
