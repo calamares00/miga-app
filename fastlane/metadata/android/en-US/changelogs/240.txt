@@ -1,0 +1,5 @@
+What's new in version 1.0.42:
+• "Fit to my meal" works out the serving better: meat and fish by the piece ("4 loins"), bones, shells and stock left out, a little garlic no longer sets it, sweets at most 1 serving, and never more than the meal's calories or 2 servings.
+• Oil to confit or fry counts 3 tablespoons per serving at most.
+• Correct plurals in kitchen measures.
+• Help updated: allergens in Settings, carbohydrates and portion plan.

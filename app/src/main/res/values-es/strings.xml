@@ -1586,4 +1586,11 @@
     <string name="complement_protein_x">"%1$d g de carne o %2$d g de pescado"</string>
     <string name="complement_fat_x">"%1$s cucharada de aceite"</string>
     <string name="plan_take_part_x">"Sírvete %1$s de ración de la receta"</string>
+    <string name="plan_cooking_oil">"Lleva mucho aceite para confitar o freír: contamos como mucho 3 cucharadas por persona, lo que suele quedar en el plato."</string>
+    <string name="complement_starches_many_x">"%1$d g de pan, o %2$s vasos medidores de arroz, pasta o legumbre cocidos"</string>
+    <string name="complement_fruit_many_x">"%1$s frutas medianas"</string>
+    <string name="complement_vegetables_many_x">"%1$s platos de verdura o ensalada"</string>
+    <string name="complement_milk_many_x">"%1$s tazas de leche o %2$s yogures"</string>
+    <string name="complement_fat_many_x">"%1$s cucharadas de aceite"</string>
+    <string name="complement_milk_half">"½ taza de leche o 1 yogur"</string>
 </resources>
