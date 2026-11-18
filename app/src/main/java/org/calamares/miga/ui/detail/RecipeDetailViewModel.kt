@@ -128,6 +128,13 @@ class RecipeDetailViewModel(
     ) { ready, isPack -> ready && !isPack }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    /** Grams in a carbohydrate portion when the user counts them (Settings), or null. */
+    val carbPortionGrams: StateFlow<Int?> = combine(
+        settingsRepository.observeCarbCountingEnabled(),
+        settingsRepository.observeCarbPortionGrams()
+    ) { enabled, grams -> grams.takeIf { enabled } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     private suspend fun isPackRecipe(recipe: Recipe): Boolean = repository.books.getRecipeBookOnce(recipe.recipeBookId)?.isPack == true
 
     /**

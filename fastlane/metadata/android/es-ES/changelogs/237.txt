@@ -1,0 +1,3 @@
+Novedades de la versión 1.0.39:
+• Raciones de hidratos de carbono: actívalas en Ajustes › Salud y cada receta muestra cuántas lleva por persona, calculadas con sus ingredientes. Al tocarlas ves qué aporta cada uno. Tú eliges los gramos por ración (10 por defecto). Orientativo: no sustituye la pauta de tu equipo médico.
+• La fuente de la receta se puede copiar, y los enlaces se abren en el navegador.

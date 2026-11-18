@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Storefront
@@ -27,6 +28,7 @@ enum class SettingsSection(val id: String, val title: String, val icon: ImageVec
     BACKUP("backup", L10n.str(R.string.backup), Icons.Filled.Backup),
     AI("ai", L10n.str(R.string.artificial_intelligence), Icons.Filled.AutoAwesome),
     VOICE("voice", L10n.str(R.string.voice_dictation_2), Icons.Filled.Mic),
+    HEALTH("health", L10n.str(R.string.settings_health), Icons.Filled.MonitorHeart),
     PACKS("packs", L10n.str(R.string.recipe_packs), Icons.Filled.Storefront),
     SYNC("sync", L10n.str(R.string.sync), Icons.Filled.Sync);
 
