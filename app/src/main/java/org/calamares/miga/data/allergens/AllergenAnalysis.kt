@@ -50,7 +50,17 @@ object AllergenAnalysis {
     private val LACTOSE_FREE = listOf(listOf("sin", "lactosa"), listOf("lactose", "free"), listOf("deslactosada"), listOf("deslactosado"))
     private val EGG_FREE = listOf(listOf("sin", "huevo"), listOf("egg", "free"))
 
+    /** Filtering a library analyses the same names again and again; the rules never change. */
+    private val cache = java.util.concurrent.ConcurrentHashMap<String, IngredientAllergens>()
+    private const val CACHE_LIMIT = 5000
+
     fun ofIngredient(name: String): IngredientAllergens {
+        cache[name]?.let { return it }
+        if (cache.size > CACHE_LIMIT) cache.clear()
+        return analyse(name).also { cache[name] = it }
+    }
+
+    private fun analyse(name: String): IngredientAllergens {
         val key = searchKey(name)
         val tokens = WORD.findAll(key).map { Token(it.value) }.toList()
         val matches = mutableListOf<Match>()

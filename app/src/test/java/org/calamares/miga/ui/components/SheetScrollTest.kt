@@ -77,4 +77,34 @@ class SheetScrollTest {
         }
         assertFalse(open)
     }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun `flinging the list back to its top does not move the sheet`() {
+        var open by mutableStateOf(true)
+        compose.setContent {
+            MigaTheme(darkTheme = false) {
+                if (open) {
+                    ModalBottomSheet(onDismissRequest = { open = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+                        Column(modifier = Modifier.keepScrollInSheet()) {
+                            Column(
+                                modifier = Modifier.testTag("list").heightIn(max = sheetContentHeight(0.9f)).verticalScroll(remember { androidx.compose.foundation.ScrollState(0) })
+                            ) {
+                                repeat(40) { Text("Tip $it", modifier = Modifier.padding(16.dp)) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        val sheetTop = compose.onNodeWithTag("list").getBoundsInRoot().top
+        compose.onNodeWithTag("list").performTouchInput { swipeUp(durationMillis = 300) }
+        compose.waitForIdle()
+        // A quick flick down: the list reaches its top with momentum to spare.
+        compose.onNodeWithTag("list").performTouchInput { swipeDown(startY = centerY, endY = centerY + 200f, durationMillis = 40) }
+        compose.waitForIdle()
+        assertEquals(true, open)
+        assertEquals(sheetTop, compose.onNodeWithTag("list").getBoundsInRoot().top)
+    }
 }

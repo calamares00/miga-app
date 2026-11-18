@@ -3,6 +3,7 @@ package org.calamares.miga.data.model
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import org.calamares.miga.data.allergens.Allergen
 
 /**
  * A search the user saved under a name: the text and the filter sheet's conditions (not the
@@ -19,6 +20,10 @@ data class SavedFilter(
     val ingredients: Set<String> = emptySet(),
     val origins: Set<String> = emptySet(),
     val onlyFavorites: Boolean = false,
+    /** Allergen names (Allergen constants). */
+    val withoutAllergens: Set<String> = emptySet(),
+    val allowMayContain: Boolean = false,
+    val coeliacFriendly: Boolean = false,
     val sortOption: String = SortOption.NAME_ASC.name
 ) {
     fun toFilter(): RecipeFilter = RecipeFilter(
@@ -30,6 +35,9 @@ data class SavedFilter(
         ingredients = ingredients,
         origins = origins,
         onlyFavorites = onlyFavorites,
+        withoutAllergens = withoutAllergens.mapNotNull { name -> Allergen.entries.firstOrNull { it.name == name } }.toSet(),
+        allowMayContain = allowMayContain,
+        coeliacFriendly = coeliacFriendly,
         sortOption = SortOption.entries.firstOrNull { it.name == sortOption } ?: SortOption.NAME_ASC
     )
 
@@ -47,6 +55,9 @@ data class SavedFilter(
             ingredients = filter.ingredients,
             origins = filter.origins,
             onlyFavorites = filter.onlyFavorites,
+            withoutAllergens = filter.withoutAllergens.map { it.name }.toSet(),
+            allowMayContain = filter.allowMayContain,
+            coeliacFriendly = filter.coeliacFriendly,
             sortOption = filter.sortOption.name
         )
 

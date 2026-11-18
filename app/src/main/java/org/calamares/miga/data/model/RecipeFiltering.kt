@@ -2,6 +2,9 @@ package org.calamares.miga.data.model
 
 import org.calamares.miga.L10n
 import org.calamares.miga.R
+import org.calamares.miga.data.allergens.Allergen
+import org.calamares.miga.data.allergens.AllergenAnalysis
+import org.calamares.miga.data.allergens.AllergenLevel
 import java.text.Normalizer
 
 /** Group name used for recipes without a category, in the current app language. */
@@ -41,7 +44,7 @@ fun List<Recipe>.applyFilter(filter: RecipeFilter): List<Recipe> {
             (filter.addedSince == null || recipe.createdAt >= filter.addedSince)
 
         matchesQuery && matchesCategory && matchesDifficulty && matchesUtensils && matchesTags && matchesIngredients &&
-            matchesFavorite && matchesOrigin && matchesStats
+            matchesFavorite && matchesOrigin && matchesStats && recipe.matchesAllergens(filter)
     }
 
     return when (filter.sortOption) {
@@ -51,6 +54,15 @@ fun List<Recipe>.applyFilter(filter: RecipeFilter): List<Recipe> {
         SortOption.PREP_TIME -> filtered.sortedBy { it.prepTimeMinutes ?: Int.MAX_VALUE }
         SortOption.BEST_RATED -> filtered.sortedByDescending { it.rating ?: -1 }
     }
+}
+
+/** The allergen conditions of [filter]; the analysis only runs when one is set. */
+private fun Recipe.matchesAllergens(filter: RecipeFilter): Boolean {
+    if (filter.withoutAllergens.isEmpty() && !filter.coeliacFriendly) return true
+    val allergens = AllergenAnalysis.ofRecipe(this)
+    val worstAllowed = if (filter.allowMayContain) AllergenLevel.MAY_CONTAIN else AllergenLevel.FREE
+    return filter.withoutAllergens.all { allergens.level(it) <= worstAllowed } &&
+        (!filter.coeliacFriendly || allergens.level(Allergen.GLUTEN) != AllergenLevel.CONTAINS)
 }
 
 /** Lowercase text without diacritics, for accent-insensitive search ("Café" -> "cafe"). */
