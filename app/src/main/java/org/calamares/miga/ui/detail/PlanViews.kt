@@ -60,13 +60,22 @@ internal fun complementText(group: FoodGroup, portions: Double): String {
     fun n(value: Double) = readableQuantity(value)
     // Weights to the nearest 5 g: nobody weighs 113 g of fish.
     fun g(value: Double) = (Math.round(value / 5) * 5).toInt()
+    // Plural from more than 1, as cooks write it ("1½ vasos", "½ vaso").
+    fun many(value: Double) = value > 1.0
     return when (group) {
-        FoodGroup.STARCHES -> L10n.str(R.string.complement_starches_x, g(portions * 20), n(portions / 2))
-        FoodGroup.FRUIT -> L10n.str(R.string.complement_fruit_x, n(portions / 2))
-        FoodGroup.VEGETABLES -> L10n.str(R.string.complement_vegetables_x, n(portions))
-        FoodGroup.MILK -> L10n.str(R.string.complement_milk_x, n(portions), n(portions * 2))
+        FoodGroup.STARCHES -> L10n.str(
+            if (many(portions / 2)) R.string.complement_starches_many_x else R.string.complement_starches_x,
+            g(portions * 20), n(portions / 2)
+        )
+        FoodGroup.FRUIT -> L10n.str(if (many(portions / 2)) R.string.complement_fruit_many_x else R.string.complement_fruit_x, n(portions / 2))
+        FoodGroup.VEGETABLES -> L10n.str(if (many(portions)) R.string.complement_vegetables_many_x else R.string.complement_vegetables_x, n(portions))
+        FoodGroup.MILK -> when {
+            portions <= 0.5 -> L10n.str(R.string.complement_milk_half)
+            many(portions) -> L10n.str(R.string.complement_milk_many_x, n(portions), n(portions * 2))
+            else -> L10n.str(R.string.complement_milk_x, n(portions), n(portions * 2))
+        }
         FoodGroup.PROTEIN -> L10n.str(R.string.complement_protein_x, g(portions * 50), g(portions * 75))
-        FoodGroup.FAT -> L10n.str(R.string.complement_fat_x, n(portions))
+        FoodGroup.FAT -> L10n.str(if (many(portions)) R.string.complement_fat_many_x else R.string.complement_fat_x, n(portions))
     }
 }
 
@@ -180,6 +189,10 @@ internal fun PlanSheetContent(perServing: GroupPortions, plan: PortionPlan, reci
             fit.over.forEach { (group, portions) ->
                 GroupRow(group, portions, if (group == FoodGroup.FAT) L10n.str(R.string.plan_over_fat) else L10n.str(R.string.plan_over_other))
             }
+        }
+
+        if (perServing.cookingOil) {
+            Text(L10n.str(R.string.plan_cooking_oil), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         if (fit.fromRecipe.otherCarbs >= 1) {
