@@ -1,0 +1,4 @@
+What's new in version 1.0.41:
+• My portion plan (Settings › Health): copy your care team's plan by meals and groups. On each recipe, "Fit to my meal" says how much to take and what to add (bread, fruit, salad…), in kitchen measures.
+• Settings › Health: choose which allergens to see (all, yours or none), warnings in lists and coeliac mode.
+• Ingredient amounts in plain text.
