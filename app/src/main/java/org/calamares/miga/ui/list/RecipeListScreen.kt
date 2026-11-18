@@ -479,7 +479,11 @@ fun RecipeListScreen(
                     availableIngredients = uiState.availableIngredients,
                     availableOrigins = uiState.availableOrigins,
                     onApply = { newFilter -> viewModel.applyFilter(newFilter) },
-                    onClear = { viewModel.clearFilters() }
+                    onClear = { viewModel.clearFilters() },
+                    resultCount = uiState.groups.sumOf { it.recipes.size },
+                    onShowResults = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion { showFilters = false }
+                    }
                 )
             }
         }
