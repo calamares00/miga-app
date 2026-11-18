@@ -1,0 +1,5 @@
+Novedades de la versión 1.0.42:
+• «Ajustar a mi comida» acierta más: carne y pescado por piezas, sin huesos, conchas ni caldos, dulces como mucho 1 ración, nunca más calorías que la comida, y avisa si la receta no encaja en esa comida (una hamburguesa antes de dormir).
+• El aceite de freír cuenta como mucho 3 cucharadas por persona.
+• Plurales correctos en las medidas caseras.
+• Ayuda actualizada: alérgenos en Ajustes, hidratos y plan de raciones.
