@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.calamares.miga.L10n
 import org.calamares.miga.R
+import org.calamares.miga.data.allergens.Allergen
 import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.MissingField
 import org.calamares.miga.data.model.displayCategoryName
@@ -58,6 +59,14 @@ fun ActiveFilterChips(
         filter.tags.forEach { add("#$it" to filter.copy(tags = filter.tags - it)) }
         filter.ingredients.forEach { add(it to filter.copy(ingredients = filter.ingredients - it)) }
         filter.origins.forEach { add(RecipeOrigin.label(null, it).orEmpty() to filter.copy(origins = filter.origins - it)) }
+        if (filter.coeliacFriendly) add(L10n.str(R.string.filter_coeliac) to filter.copy(coeliacFriendly = false))
+        filter.withoutAllergens.forEach { allergen ->
+            val without = filter.withoutAllergens - allergen
+            add(withoutLabel(allergen) to filter.copy(withoutAllergens = without, allowMayContain = filter.allowMayContain && without.isNotEmpty()))
+        }
+        if (filter.allowMayContain && filter.withoutAllergens.isNotEmpty()) {
+            add(L10n.str(R.string.filter_allow_may_chip) to filter.copy(allowMayContain = false))
+        }
         if (filter.onlyCooked) add(L10n.str(R.string.search_cond_cooked) to filter.copy(onlyCooked = false))
         if (filter.onlyRated) add(L10n.str(R.string.search_cond_rated) to filter.copy(onlyRated = false))
         filter.bookNames.forEach { add(L10n.str(R.string.search_cond_book_x, it) to filter.copy(bookNames = filter.bookNames - it)) }
@@ -96,6 +105,14 @@ fun ActiveFilterChips(
         }
     }
 }
+
+/**
+ * "Without egg". Gluten says "No gluten ingredients": "gluten-free" is a legal claim a home recipe
+ * cannot make (Regulation (EU) No 828/2014).
+ */
+fun withoutLabel(allergen: Allergen): String =
+    if (allergen == Allergen.GLUTEN) L10n.str(R.string.filter_without_gluten)
+    else L10n.str(R.string.filter_without_x, allergen.label.lowercase(L10n.locale()))
 
 /** "12 recipes" and the sort order, which opens a menu: above every list of recipes. */
 @Composable

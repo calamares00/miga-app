@@ -1466,4 +1466,17 @@
     <string name="unit_full">"Unidad"</string>
     <string name="editor_tab_steps">"Pasos"</string>
     <string name="editor_tab_count_x">"%1$s · %2$d"</string>
+    <string name="filter_max_time">"Tiempo total, como mucho"</string>
+    <string name="filter_any">"Cualquiera"</string>
+    <string name="filter_coeliac">"Para celíacos"</string>
+    <string name="filter_coeliac_hint">"Sin ingredientes que siempre lleven gluten. Algunas piden comprar productos certificados."</string>
+    <string name="filter_without_title">"Sin estos alérgenos"</string>
+    <string name="filter_allow_may_contain">"Incluir las que dependen del producto"</string>
+    <string name="filter_allow_may_contain_hint">"Caldo, embutido, salsa de soja…: revisa la etiqueta al comprar."</string>
+    <string name="filter_no_results">"Ninguna receta coincide"</string>
+    <string name="filter_show_one">"Ver 1 receta"</string>
+    <string name="filter_show_n">"Ver %1$d recetas"</string>
+    <string name="filter_without_x">"Sin %1$s"</string>
+    <string name="filter_without_gluten">"Sin ingredientes con gluten"</string>
+    <string name="filter_allow_may_chip">"Incluye «puede contener»"</string>
 </resources>
