@@ -113,7 +113,7 @@ object CarbAnalysis {
             else -> 1.0
         }
         val unitWord = words.firstOrNull { it !in BIG && it !in SMALL }
-        if (unitWord == null) return food.gramsPerPiece?.let { amount * it * size }
+        if (unitWord == null) return (food.gramsPerPiece ?: Units.pieceFromName(nameWords))?.let { amount * it * size }
         Units.massGrams(unitWord)?.let { return amount * it }
         Units.volumeMl(unitWord)?.let { return amount * it * size * food.gramsPerMl }
         Units.pieceGrams(unitWord, food)?.let { return amount * it * size }
@@ -159,6 +159,28 @@ internal object Units {
         "gajo", "wedge", "barra", "loaf", "filete", "fillet", "vaina", "pod", "knob", "nuez", "hebra", "stick", "tira",
         "strip", "racion", "porcion", "portion"
     )
+
+    /**
+     * Usual weight of a piece named in the ingredient, for foods without one of their own (meat
+     * and fish come in many cuts): "4 lomos de bacalao", "2 pechugas de pollo".
+     */
+    private val PIECES_BY_NAME = mapOf(
+        "lomo" to 150.0, "filete" to 150.0, "rodaja" to 150.0, "supremas" to 150.0, "suprema" to 150.0, "fillet" to 150.0,
+        "steak" to 200.0, "loin" to 150.0, "pechuga" to 200.0, "breast" to 200.0, "muslo" to 120.0, "thigh" to 100.0,
+        "contramuslo" to 100.0, "drumstick" to 100.0, "ala" to 60.0, "alita" to 50.0, "wing" to 60.0, "chuleta" to 150.0,
+        "chop" to 150.0, "chuleton" to 500.0, "entrecot" to 250.0, "hamburguesa" to 120.0, "burger" to 120.0,
+        "salchicha" to 60.0, "sausage" to 60.0, "codorniz" to 150.0, "quail" to 150.0, "picanton" to 400.0,
+        "dorada" to 400.0, "lubina" to 400.0, "trucha" to 300.0, "caballa" to 300.0, "sardina" to 50.0, "sardine" to 50.0,
+        "boqueron" to 20.0, "salmonete" to 120.0, "gamba" to 15.0, "langostino" to 25.0, "prawn" to 15.0, "cigala" to 60.0,
+        "mejillon" to 15.0, "mussel" to 15.0, "almeja" to 10.0, "clam" to 10.0, "vieira" to 40.0, "scallop" to 40.0,
+        "calamar" to 200.0, "sepia" to 300.0, "pulpo" to 1500.0, "chorizo" to 100.0, "morcilla" to 150.0,
+        "butifarra" to 150.0, "solomillo" to 450.0, "magret" to 350.0, "lenguado" to 300.0, "bogavante" to 600.0,
+        "conejo" to 1200.0, "gallina" to 1800.0, "paletilla" to 900.0, "codillo" to 900.0, "presa" to 150.0,
+        "mozzarella" to 125.0, "lengua" to 1000.0, "manitas" to 300.0, "porciones" to 15.0
+    )
+
+    fun pieceFromName(words: Set<String>): Double? =
+        words.firstNotNullOfOrNull { word -> PIECES_BY_NAME[word] ?: PIECES_BY_NAME[word.removeSuffix("es")] ?: PIECES_BY_NAME[word.removeSuffix("s")] }
 
     fun massGrams(word: String): Double? = MASS[key(word)]
 

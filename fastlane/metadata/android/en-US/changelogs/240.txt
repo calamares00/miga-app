@@ -1,0 +1,5 @@
+What's new in version 1.0.42:
+• "Fit to my meal" is more accurate: meat and fish by the piece, no bones, shells or stock, sweets at most 1 serving, never more kcal than the meal, and it says when a recipe does not fit that meal (a burger at bedtime).
+• Frying oil counts 3 tablespoons per serving at most.
+• Correct plurals in kitchen measures.
+• Help updated: allergens in Settings, carbohydrates and portion plan.
