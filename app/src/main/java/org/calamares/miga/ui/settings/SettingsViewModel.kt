@@ -17,6 +17,7 @@ import org.calamares.miga.data.export.RecipeExportDto
 import org.calamares.miga.data.export.RecipeExporter
 import org.calamares.miga.data.export.RecipeImportResult
 import org.calamares.miga.data.export.toDraft
+import org.calamares.miga.data.local.DEFAULT_CARB_PORTION_GRAMS
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.ColorTheme
 import org.calamares.miga.data.model.PhotoFrame
@@ -170,6 +171,19 @@ class SettingsViewModel(
 
     fun setAiNutritionEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setAiNutritionEnabled(enabled) }
+    }
+
+    val carbCountingEnabled: StateFlow<Boolean> = settingsRepository.observeCarbCountingEnabled()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val carbPortionGrams: StateFlow<Int> = settingsRepository.observeCarbPortionGrams()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_CARB_PORTION_GRAMS)
+
+    fun setCarbCountingEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setCarbCountingEnabled(enabled) }
+    }
+
+    fun setCarbPortionGrams(grams: Int) {
+        viewModelScope.launch { settingsRepository.setCarbPortionGrams(grams) }
     }
 
     val providerOrder: StateFlow<List<AiProvider>> = settingsRepository.observeProviderOrder()
