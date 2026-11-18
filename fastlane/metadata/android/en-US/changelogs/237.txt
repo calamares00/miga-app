@@ -1,0 +1,4 @@
+What's new in version 1.0.39:
+• Carbohydrate portions: turn them on in Settings › Health and each recipe shows how many it has per serving, worked out from its ingredients and amounts. Tap them to see what each ingredient brings and what could not be counted.
+• You choose the grams per portion (10 by default, 0 to 30).
+• USDA values checked against BEDCA. A guide only: it does not replace your care team's advice.

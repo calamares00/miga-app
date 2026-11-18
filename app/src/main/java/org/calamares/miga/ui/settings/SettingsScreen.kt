@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.data.local.MAX_CARB_PORTION_GRAMS
+import kotlin.math.roundToInt
+import androidx.compose.material3.Slider
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Tag
 import org.calamares.miga.data.model.ContentKind
@@ -150,6 +153,8 @@ fun SettingsSectionScreen(
     val aiEnabled by viewModel.aiEnabled.collectAsStateWithLifecycle()
     val aiHealthEnabled by viewModel.aiHealthEnabled.collectAsStateWithLifecycle()
     val aiNutritionEnabled by viewModel.aiNutritionEnabled.collectAsStateWithLifecycle()
+    val carbCounting by viewModel.carbCountingEnabled.collectAsStateWithLifecycle()
+    val carbPortion by viewModel.carbPortionGrams.collectAsStateWithLifecycle()
     val ttsVoiceName by viewModel.ttsVoiceName.collectAsStateWithLifecycle()
     var voiceMenuExpanded by remember { mutableStateOf(false) }
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
@@ -390,6 +395,18 @@ fun SettingsSectionScreen(
             ) {
                 AiProvidersSettings(viewModel)
             }
+            }
+                }
+                SettingsSection.HEALTH -> {
+            SettingsCard(title = L10n.str(R.string.carb_counting_section), description = L10n.str(R.string.carb_counting_desc)) {
+                AiSwitchRow(
+                    title = L10n.str(R.string.carb_counting_title),
+                    subtitle = L10n.str(R.string.carb_counting_subtitle),
+                    checked = carbCounting,
+                    onCheckedChange = { viewModel.setCarbCountingEnabled(it) }
+                )
+                if (carbCounting) CarbPortionSlider(carbPortion) { viewModel.setCarbPortionGrams(it) }
+                Text(L10n.str(R.string.carb_disclaimer), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
                 }
                 SettingsSection.VOICE -> {
@@ -633,6 +650,30 @@ fun SettingsSectionScreen(
                 }
             }
         )
+    }
+}
+
+/** Grams of carbohydrate in one portion, 0 to 30; 0 shows grams only. */
+@Composable
+private fun CarbPortionSlider(grams: Int, onChange: (Int) -> Unit) {
+    var value by remember(grams) { mutableStateOf(grams.toFloat()) }
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(L10n.str(R.string.carb_portion_title), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Text(
+                value.roundToInt().let { if (it == 0) L10n.str(R.string.carb_portion_grams_only) else L10n.str(R.string.carb_portion_x_g, it) },
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        Slider(
+            value = value,
+            onValueChange = { value = it },
+            onValueChangeFinished = { onChange(value.roundToInt()) },
+            valueRange = 0f..MAX_CARB_PORTION_GRAMS.toFloat(),
+            steps = MAX_CARB_PORTION_GRAMS - 1
+        )
+        Text(L10n.str(R.string.carb_portion_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

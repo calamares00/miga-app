@@ -34,6 +34,10 @@ private const val ENCRYPTED_KEY_PREFIX = "enc1:"
 
 private const val MAX_RECENT_SEARCHES = 8
 
+/** Grams of carbohydrate in one portion by default: the Spanish "ración de hidratos". */
+const val DEFAULT_CARB_PORTION_GRAMS = 10
+const val MAX_CARB_PORTION_GRAMS = 30
+
 /** Decrypting through the Keystore on every settings change would be wasteful: cipher text -> key. */
 private val decryptedKeys = java.util.concurrent.ConcurrentHashMap<String, String>()
 
@@ -89,6 +93,8 @@ class SettingsRepository(private val context: Context) {
     private val savedFiltersKey = stringPreferencesKey("saved_filters")
     private val pantryItemsKey = stringPreferencesKey("pantry_items")
     private val tipOfTheDayKey = booleanPreferencesKey("tip_of_the_day_enabled")
+    private val carbCountingKey = booleanPreferencesKey("carb_counting_enabled")
+    private val carbPortionGramsKey = intPreferencesKey("carb_portion_grams")
     private val tipOfTheDayClosedKey = longPreferencesKey("tip_of_the_day_closed_day")
 
     /**
@@ -271,6 +277,25 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setAiNutritionEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { prefs -> prefs[aiNutritionEnabledKey] = enabled }
+    }
+
+    /** Carbohydrates in each recipe, for people who count them (diabetes). Off by default. */
+    fun observeCarbCountingEnabled(): Flow<Boolean> =
+        context.settingsDataStore.data.map { prefs -> prefs[carbCountingKey] ?: false }
+
+    suspend fun setCarbCountingEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[carbCountingKey] = enabled }
+    }
+
+    /**
+     * Grams of carbohydrate in one portion ("ración"; 10 in Spain, 15 for US "carb choices"). 0
+     * shows grams only.
+     */
+    fun observeCarbPortionGrams(): Flow<Int> =
+        context.settingsDataStore.data.map { prefs -> (prefs[carbPortionGramsKey] ?: DEFAULT_CARB_PORTION_GRAMS).coerceIn(0, MAX_CARB_PORTION_GRAMS) }
+
+    suspend fun setCarbPortionGrams(grams: Int) {
+        context.settingsDataStore.edit { prefs -> prefs[carbPortionGramsKey] = grams.coerceIn(0, MAX_CARB_PORTION_GRAMS) }
     }
 
     fun observeBiometricLockEnabled(): Flow<Boolean> =
