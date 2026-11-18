@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.search
 
+import org.calamares.miga.ui.components.AllergenWarning
 import kotlinx.coroutines.launch
 import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.data.model.SavedFilter
@@ -428,6 +429,7 @@ private fun SearchResultCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                AllergenWarning(result.warnAllergens)
             }
         }
     }

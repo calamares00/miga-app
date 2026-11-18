@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.detail
 
+import androidx.compose.ui.res.painterResource
+import org.calamares.miga.data.health.HealthPrefs
+import org.calamares.miga.data.health.AllergenDisplay
 import org.calamares.miga.ui.components.keepScrollInSheet
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -130,6 +133,8 @@ fun RecipeDetailScreen(
     val canRecalculateAnalysis by viewModel.canRecalculateAnalysis.collectAsStateWithLifecycle()
     val nutritionState by viewModel.nutritionState.collectAsStateWithLifecycle()
     val carbPortionGrams by viewModel.carbPortionGrams.collectAsStateWithLifecycle()
+    val healthPrefs by viewModel.healthPrefs.collectAsStateWithLifecycle()
+    var showAllergensFromMenu by remember { mutableStateOf(false) }
     val substitutionDialogState by viewModel.substitutionDialogState.collectAsStateWithLifecycle()
     val polishState by viewModel.polishState.collectAsStateWithLifecycle()
     val polishInBackground by viewModel.polishInBackground.collectAsStateWithLifecycle()
@@ -206,6 +211,7 @@ fun RecipeDetailScreen(
                     nutritionState = nutritionState,
                     onRetryNutrition = { viewModel.retryNutritionCheck() },
                     carbPortionGrams = carbPortionGrams,
+                    health = healthPrefs,
                     onRecalculateAnalysis = { viewModel.recalculateAnalysis() }.takeIf { canRecalculateAnalysis },
                     onSubstituteIngredient = { name: String -> viewModel.findSubstitutesFor(name) }.takeIf { aiEnabled },
                     onRatingChange = { stars -> viewModel.setRating(stars) },
@@ -294,6 +300,11 @@ fun RecipeDetailScreen(
                             leadingIcon = { Icon(Icons.Filled.ShoppingCart, null) },
                             onClick = { showMenu = false; addToShoppingList() }
                         )
+                        DropdownMenuItem(
+                            text = { Text(L10n.str(R.string.allergens_menu)) },
+                            leadingIcon = { Icon(painterResource(R.drawable.ic_allergen_gluten), null) },
+                            onClick = { showMenu = false; showAllergensFromMenu = true }
+                        )
                         if (!currentBookIsPack) {
                             HorizontalDivider()
                             DropdownMenuItem(
@@ -346,6 +357,10 @@ fun RecipeDetailScreen(
             onHide = { viewModel.hidePolishProgress() },
             onCancel = { viewModel.cancelPolish() }
         )
+    }
+
+    if (showAllergensFromMenu) {
+        recipe?.let { current -> AllergenSheet(remember(current.ingredientGroups) { AllergenAnalysis.ofRecipe(current) }) { showAllergensFromMenu = false } }
     }
 
     if (showTipsSheet && recipeTips.isNotEmpty()) {
@@ -496,6 +511,8 @@ private fun RecipeDetailContent(
     onRetryNutrition: () -> Unit,
     /** Grams in a carbohydrate portion when the user counts them; null hides them. */
     carbPortionGrams: Int?,
+    /** Which allergens to show (Settings > Health). */
+    health: HealthPrefs = HealthPrefs(),
     onRecalculateAnalysis: (() -> Unit)?,
     onSubstituteIngredient: ((String) -> Unit)?,
     onRatingChange: (Int) -> Unit,
@@ -577,7 +594,11 @@ private fun RecipeDetailContent(
             val allergens = remember(recipe.ingredientGroups) { AllergenAnalysis.ofRecipe(recipe) }
             var showAllergens by rememberSaveable { mutableStateOf(false) }
             if (recipe.ingredientGroups.any { group -> group.ingredients.any { it.name.isNotBlank() } }) {
-                AllergenLine(allergens) { showAllergens = true }
+                when (health.allergenDisplay) {
+                    AllergenDisplay.ALL -> AllergenLine(allergens) { showAllergens = true }
+                    AllergenDisplay.MINE -> MyAllergenLine(allergens, health.myAllergens, health.coeliac) { showAllergens = true }
+                    AllergenDisplay.NONE -> MyAllergenLine(allergens, null, health.coeliac) { showAllergens = true }
+                }
             }
             if (showAllergens) AllergenSheet(allergens) { showAllergens = false }
 
