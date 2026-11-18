@@ -17,12 +17,14 @@ fun formatIngredientText(
     quantity: Double?,
     unit: String?,
     scale: Double = 1.0,
-    language: String = L10n.locale().language
+    language: String = L10n.locale().language,
+    /** "½" and "1,25" instead of "0.5" and "1.25", for reading in the app (not for exported text). */
+    forReading: Boolean = false
 ): String {
-    val quantityPart = quantity?.let { formatQuantity(it * scale) } ?: return name
+    val quantityPart = quantity?.let { if (forReading) readableQuantity(it * scale, language) else formatQuantity(it * scale) } ?: return name
     if (unit.isNullOrBlank()) return "$quantityPart $name"
     val connector = if (language == "es") " de " else " "
-    return "$quantityPart ${UnitInflection.inflect(unit, quantityPart.toDouble(), language)}$connector$name"
+    return "$quantityPart ${UnitInflection.inflect(unit, quantity * scale, language)}$connector$name"
 }
 
 /**
@@ -34,11 +36,26 @@ fun ingredientParts(
     quantity: Double?,
     unit: String?,
     scale: Double = 1.0,
-    language: String = L10n.locale().language
+    language: String = L10n.locale().language,
+    forReading: Boolean = false
 ): Pair<String?, String> {
-    val quantityPart = quantity?.let { formatQuantity(it * scale) } ?: return null to name
+    val quantityPart = quantity?.let { if (forReading) readableQuantity(it * scale, language) else formatQuantity(it * scale) } ?: return null to name
     if (unit.isNullOrBlank()) return quantityPart to name
-    return "$quantityPart ${UnitInflection.inflect(unit, quantityPart.toDouble(), language)}" to name
+    return "$quantityPart ${UnitInflection.inflect(unit, quantity * scale, language)}" to name
+}
+
+private val FRACTIONS = mapOf(25 to "¼", 50 to "½", 75 to "¾")
+
+/**
+ * An amount as people write it in a recipe: halves and quarters as fractions ("½", "1½"), other
+ * decimals with the language's separator ("1,25" in Spanish).
+ */
+fun readableQuantity(value: Double, language: String = L10n.locale().language): String {
+    val hundredths = Math.round(value * 100)
+    val whole = hundredths / 100
+    FRACTIONS[(hundredths % 100).toInt()]?.let { fraction -> return if (whole == 0L) fraction else "$whole$fraction" }
+    val plain = formatQuantity(value)
+    return if (language == "es") plain.replace('.', ',') else plain
 }
 
 /**
