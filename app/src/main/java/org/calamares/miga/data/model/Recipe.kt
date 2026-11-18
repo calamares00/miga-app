@@ -89,7 +89,9 @@ data class RecipeSummary(
     val utensils: List<String>,
     val createdAt: Long,
     val prepTimeMinutes: Int?,
-    val originCountry: String? = null
+    val originCountry: String? = null,
+    /** The user's allergens this recipe has (Settings > Health), for a warning on its card. */
+    val warnAllergens: List<org.calamares.miga.data.allergens.Allergen> = emptyList()
 )
 
 fun Recipe.toSummary() = RecipeSummary(

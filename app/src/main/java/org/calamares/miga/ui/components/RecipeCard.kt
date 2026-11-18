@@ -1,5 +1,9 @@
 package org.calamares.miga.ui.components
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.material.icons.filled.Warning
+import org.calamares.miga.data.allergens.Allergen
 import org.calamares.miga.ui.theme.recipePhotoFrame
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -148,6 +152,7 @@ fun RecipeCard(
                         }
                     }
                 }
+                AllergenWarning(recipe.warnAllergens)
             }
 
             if (!selectionMode) {
@@ -254,7 +259,23 @@ fun RecipeGridCard(
                         )
                     }
                 }
+                AllergenWarning(recipe.warnAllergens)
             }
         }
+    }
+}
+
+/** "⚠ Huevo, leche" on a recipe card: the user's allergens it has (Settings > Health). */
+@Composable
+fun AllergenWarning(allergens: List<Allergen>) {
+    if (allergens.isEmpty()) return
+    val names = allergens.joinToString(", ") { it.label }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = L10n.str(R.string.allergen_warning_cd, names) }
+    ) {
+        Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(14.dp))
+        Text(names, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
