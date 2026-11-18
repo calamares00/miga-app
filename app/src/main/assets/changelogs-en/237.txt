@@ -1,0 +1,3 @@
+What's new in version 1.0.39:
+• Carbohydrate portions: turn them on in Settings › Health and each recipe shows how many it has per serving, worked out from its ingredients. Tap them to see what each one brings. You choose the grams per portion (10 by default). A guide only: it does not replace your care team's advice.
+• The recipe source can be copied, and links open in the browser.

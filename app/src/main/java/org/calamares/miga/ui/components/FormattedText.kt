@@ -101,7 +101,7 @@ fun FormattedText(
 ) {
     val linkColor = MaterialTheme.colorScheme.primary
     val annotated = remember(text, linkColor, highlightTimes) {
-        val rich = richAnnotatedString(text, linkColor = linkColor)
+        val rich = withBareLinks(richAnnotatedString(text, linkColor = linkColor), linkColor)
         if (!highlightTimes) rich else buildAnnotatedString {
             append(rich)
             CookModeText.highlights(rich.text).forEach { range ->
@@ -121,10 +121,41 @@ fun FormattedText(
         modifier = modifier,
         onClick = { offset ->
             annotated.getStringAnnotations(RICH_LINK_TAG, offset, offset).firstOrNull()?.let { link ->
-                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.item))) }
+                openWebLink(context, link.item)
             }
         }
     )
+}
+
+/** Addresses written as they are ("https://..."), not already inside a [text](url) link. */
+private val BARE_URL = Regex("""https?://[^\s<>"]+[^\s<>".,;:!?)\]'»]""")
+
+/** [text] with its bare web addresses underlined and tappable, like [text](url) links. */
+fun withBareLinks(text: AnnotatedString, linkColor: Color): AnnotatedString {
+    val found = BARE_URL.findAll(text.text)
+        .filter { match -> text.getStringAnnotations(RICH_LINK_TAG, match.range.first, match.range.last + 1).isEmpty() }
+        .toList()
+    if (found.isEmpty()) return text
+    return buildAnnotatedString {
+        append(text)
+        found.forEach { match ->
+            addStyle(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline), match.range.first, match.range.last + 1)
+            addStringAnnotation(RICH_LINK_TAG, match.value, match.range.first, match.range.last + 1)
+        }
+    }
+}
+
+/** The first web address in [text], if any. */
+fun firstWebLink(text: String): String? = BARE_URL.find(text)?.value
+
+/**
+ * Opens a link in the browser. Only http and https: a recipe can come from anyone (shared,
+ * imported), and other schemes could open apps or files.
+ */
+fun openWebLink(context: android.content.Context, url: String) {
+    val uri = runCatching { Uri.parse(url.trim()) }.getOrNull() ?: return
+    if (uri.scheme?.lowercase() !in setOf("http", "https")) return
+    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)) }
 }
 
 /**
