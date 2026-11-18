@@ -1,0 +1,5 @@
+Novedades de la versión 1.0.42:
+• «Ajustar a mi comida» acierta más con la ración: carne y pescado por piezas («4 lomos»), sin huesos, conchas ni caldos, dulces como mucho 1 ración y nunca más de las calorías de la comida.
+• El aceite de confitar o freír cuenta como mucho 3 cucharadas por persona.
+• Plurales correctos en las medidas caseras.
+• Ayuda actualizada: alérgenos en Ajustes, hidratos y plan de raciones.

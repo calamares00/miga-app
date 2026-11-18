@@ -78,4 +78,64 @@ class MealFitTest {
         assertTrue(PortionPlan.decode("{broken").isEmpty)
         assertEquals(listOf(Meal.BREAKFAST, Meal.MID_MORNING, Meal.LUNCH, Meal.AFTERNOON, Meal.DINNER, Meal.BEDTIME), PortionPlan.EXAMPLE_1500.usedMeals)
     }
+
+    @Test
+    fun `cod pil pil is one serving, with its fish counted and the confit oil capped`() {
+        val pilPil = recipe(
+            4,
+            Ingredient("lomos de bacalao desalado con piel", 4.0, null),
+            Ingredient("ajo", 6.0, "diente"),
+            Ingredient("guindilla", 1.0, null),
+            Ingredient("aceite de oliva virgen extra", 300.0, "ml")
+        )
+        val perServing = FoodGroups.ofRecipe(pilPil)
+        // A 150 g loin is 2 protein portions; the oil counts 3 tablespoons per serving at most.
+        assertEquals(2.0, perServing[FoodGroup.PROTEIN], 0.01)
+        assertEquals(FoodGroups.MAX_OIL_PER_SERVING, perServing[FoodGroup.FAT], 0.01)
+        assertTrue(perServing.cookingOil)
+        val fit = MealFitter.fit(perServing, PortionPlan.EXAMPLE_1500, Meal.LUNCH)
+        assertEquals(1.0, fit.servings, 0.0)
+        assertEquals(4.0, fit.missing[FoodGroup.STARCHES])
+        assertEquals(2.0, fit.missing[FoodGroup.FRUIT])
+        assertTrue(FoodGroup.PROTEIN !in fit.missing && FoodGroup.PROTEIN !in fit.over)
+    }
+
+    @Test
+    fun `a little garlic does not decide the serving`() {
+        val garlicOnly = GroupPortions(mapOf(FoodGroup.VEGETABLES to 0.25, FoodGroup.FAT to 1.0))
+        assertEquals(1.0, MealFitter.fit(garlicOnly, PortionPlan.EXAMPLE_1500, Meal.LUNCH).servings, 0.0)
+    }
+
+    @Test
+    fun `shells, bones and stock do not count as food eaten`() {
+        val paella = FoodGroups.ofRecipe(
+            recipe(
+                4,
+                Ingredient("arroz bomba", 400.0, "g"),
+                Ingredient("mejillones", 500.0, "g"),
+                Ingredient("sepia o calamar limpio", 300.0, "g"),
+                Ingredient("fumet de pescado", 1.2, "l"),
+                Ingredient("hueso de jamón", 1.0, null)
+            )
+        )
+        // 300 g of squid and 150 g of mussel meat: 6 portions, 1.5 each.
+        assertEquals(1.5, paella[FoodGroup.PROTEIN], 0.05)
+        assertEquals(0.5, MealFitter.fit(paella, PortionPlan.EXAMPLE_1500, Meal.LUNCH).servings, 0.0)
+        assertEquals(0.65, FoodGroups.edibleShare("chuletas de cordero"), 0.0)
+        assertEquals(1.0, FoodGroups.edibleShare("contramuslos de pollo deshuesados"), 0.0)
+    }
+
+    @Test
+    fun `a sweet is one serving at most`() {
+        val cake = FoodGroups.ofRecipe(
+            recipe(8, Ingredient("harina", 100.0, "g"), Ingredient("azúcar", 200.0, "g"), Ingredient("mantequilla", 100.0, "g"))
+        )
+        assertTrue(MealFitter.fit(cake, PortionPlan.EXAMPLE_1500, Meal.LUNCH).servings <= 1.0)
+    }
+
+    @Test
+    fun `fresh gnocchi are not dry pasta`() {
+        val gnocchi = FoodGroups.ofRecipe(recipe(2, Ingredient("ñoquis de patata", 500.0, "g")))
+        assertEquals(8.0, gnocchi[FoodGroup.STARCHES], 0.1)
+    }
 }

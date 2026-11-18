@@ -8,7 +8,8 @@ Each book is a recipe collection with its own cover: your mum's, a friend's or o
 - When a recipe is open, **swipe left or right** to go to the next or previous recipe of the book.
 - Long-press a recipe to **select several**. At the top you can edit it (if only one), share or delete them (with **Undo** for a few seconds), and under **More actions** change their category, difficulty, servings or source at once, mark them as favourites, move or copy them to another book, add their ingredients to the shopping list or **polish them** ✨ all in one go.
 - In each recipe, **My notes** keeps dated personal notes ("next time, less salt"). They do not change the recipe and go into backups.
-- **Search** looks through every book by name or ingredient. The filter button narrows it down by time, difficulty, category, equipment, tags, ingredients or origin, and active filters show up as chips you can remove one by one. The bookmark **saves the search** under a name, and before you type your saved and recent searches are at hand. **Favourites** works the same, with your favourites only.
+- **Search** looks through every book by name or ingredient. The filter button narrows it down by time, difficulty, category, equipment, tags, ingredients or origin, and also by **allergens** ("No eggs", "No gluten ingredients"…) or **for coeliacs**. At the bottom, **Show N recipes** says how many are left. Active filters show up as chips you can remove one by one. The bookmark **saves the search** under a name, and before you type your saved and recent searches are at hand. **Favourites** works the same, with your favourites only.
+- **Source**: if it is a link, tap it to open the web page; the copy button next to it copies the address.
 - **What can I cook?** (in Search): type the ingredients you have and see the recipes that use them, those needing fewest extra things first, with what is missing. Salt, water, oil and pepper are taken for granted.
 
 ## ✍️ Writing a recipe
@@ -47,7 +48,21 @@ From the ingredients, and without the assistant, Miga works out the **14 allerge
 - In the ingredient list, ingredients that may bring an allergen depending on the product carry ⚠.
 - **Gluten**: "No ingredients with gluten" or "Suitable for coeliacs if…" (for example, if you buy the sausage and stock certified gluten-free and cook without cross-contact). Miga never says just "gluten-free": that is a legal claim that needs the product to be tested. Oats count as a cereal with gluten unless certified. Buckwheat, maize, rice or chickpea flour and lentils have no gluten but may carry traces: the coeliac card reminds you to buy them certified.
 - If you use a certified product, mark it in the editor from the ingredient's menu (⋮): **Gluten-free product (certified)** or **Lactose-free product**. It is added to the name, so it also shows in the shopping list.
+- In **Settings → Health** you choose what recipes show: **All** allergens (as before), **Only mine** or **No**. Allergens are always in the recipe menu (⋮) → **Allergens**.
+- **My allergies and intolerances**: mark yours and the recipe says "Has egg" or "None of your allergens". You can ask for a **warning in recipe lists** and for every search to start with the "No…" filter on.
+- **I cook for coeliacs**: each recipe says whether it has ingredients with gluten and what to buy certified, even if you hide allergens. You can also always search only recipes for coeliacs.
 - It is **for guidance only**: check each product's label and ask your doctor or dietitian.
+
+## 🩺 Carbohydrates and portion plan (diabetes)
+
+For those who count carbohydrate portions. Everything is in **Settings → Health** and starts off.
+
+- **Count carbohydrate portions**: each recipe shows how many portions it has per serving, worked out from its ingredients and amounts, without the assistant. Tap the line to see what each ingredient brings, what could not be counted (for example "flour to coat" with no amount) and what has hardly any carbohydrate.
+- **Grams per portion**: 10 by default (1 portion = 10 g in Spain; US carb choices are 15 g). Use the one your care team gave you; at 0 only grams are shown.
+- **My portion plan**: copy your care team's plan, with the portions of each group (milk, protein, vegetables, starches, fruit and fat) at each meal. There is a 1,500 kcal example to start with, but always use yours.
+- With a plan, each recipe shows its portions by group, and **Fit to my meal** tells you how much to take for that meal and what to add to complete it (bread, fruit, salad…) in kitchen measures, or what is over.
+- It counts the part that is eaten (no bones or shells), oil to fry or confit as 3 tablespoons per serving at most, and sweets as 1 serving at most.
+- Values come from USDA FoodData Central checked against BEDCA (AESAN), raw. It is **for guidance only**: it does not replace your care team's advice.
 
 ## 🍳 Cooking mode
 

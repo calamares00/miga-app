@@ -8,7 +8,8 @@ Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo
 - Al abrir una receta, **desliza a izquierda o derecha** para pasar a la siguiente o a la anterior del libro.
 - Mantén pulsada una receta para **seleccionar varias**. Arriba puedes editarla (si es solo una), compartirlas o eliminarlas (con **Deshacer** durante unos segundos), y en **Más acciones** cambiarles a la vez la categoría, la dificultad, las raciones o la fuente, marcarlas como favoritas, moverlas o copiarlas a otro libro, añadir sus ingredientes a la lista de la compra o **mejorarlas** ✨ todas de una vez.
 - En cada receta, **Mis notas** guarda notas personales con fecha («la próxima vez, menos sal»). No cambian la receta y van en las copias de seguridad.
-- **Buscar** busca en todos los libros por nombre o ingrediente. Con el botón de filtros afinas por tiempo, dificultad, categoría, equipamiento, etiquetas, ingredientes u origen, y los filtros activos aparecen como chips que puedes quitar de uno en uno. Con el marcador **guardas la búsqueda** con un nombre, y antes de escribir tienes a mano tus búsquedas guardadas y las recientes. **Favoritos** funciona igual, solo con tus favoritas.
+- **Buscar** busca en todos los libros por nombre o ingrediente. Con el botón de filtros afinas por tiempo, dificultad, categoría, equipamiento, etiquetas, ingredientes u origen, y también por **alérgenos** («Sin huevo», «Sin ingredientes con gluten»…) o **para celíacos**. Abajo, **Ver N recetas** dice cuántas quedan. Los filtros activos aparecen como chips que puedes quitar de uno en uno. Con el marcador **guardas la búsqueda** con un nombre, y antes de escribir tienes a mano tus búsquedas guardadas y las recientes. **Favoritos** funciona igual, solo con tus favoritas.
+- **Fuente**: si es un enlace, tócalo para abrir la web; el botón de copiar al lado copia la dirección.
 - **¿Qué cocino con lo que tengo?** (en Buscar): escribe los ingredientes que tienes y verás las recetas que los usan, primero las que necesitan menos cosas, con lo que te falta. La sal, el agua, el aceite y la pimienta se dan por supuestos.
 
 ## ✍️ Escribir una receta
@@ -47,7 +48,21 @@ Miga calcula, a partir de los ingredientes y sin usar el asistente, los **14 al�
 - En la lista de ingredientes, los que pueden llevar un alérgeno según el producto llevan ⚠.
 - **Gluten**: «Sin ingredientes con gluten» o «Apta para celíacos si…» (por ejemplo, si compras el chorizo y el caldo certificados sin gluten y cocinas sin contaminación cruzada). Miga nunca dice «sin gluten» a secas: es una mención legal que exige análisis del producto. La avena cuenta como cereal con gluten salvo que sea certificada. El trigo sarraceno, las harinas de maíz, arroz o garbanzo y las lentejas no llevan gluten, pero pueden tener trazas: la ficha para celíacos recuerda comprarlos certificados.
 - Si usas un producto certificado, márcalo en el editor desde el menú (⋮) del ingrediente: **Producto sin gluten (certificado)** o **Producto sin lactosa**. Se añade al nombre, así se ve también en la lista de la compra.
+- En **Ajustes → Salud** eliges qué ver en las recetas: **Todos** los alérgenos (como hasta ahora), **Solo los míos** o **No**. Los alérgenos siempre están en el menú (⋮) de la receta → **Alérgenos**.
+- **Mis alergias e intolerancias**: marca las tuyas y la receta dirá «Lleva huevo» o «Sin tus alérgenos». Puedes pedir un **aviso en las listas de recetas** y que cada búsqueda empiece con el filtro «Sin…» puesto.
+- **Cocino para celíacos**: cada receta dice si tiene ingredientes con gluten y qué comprar certificado, aunque no muestres los alérgenos. También puedes buscar siempre solo recetas para celíacos.
 - Es **orientativo**: revisa la etiqueta de cada producto y consulta a tu médico o dietista.
+
+## 🩺 Hidratos y plan de raciones (diabetes)
+
+Para quien cuenta raciones de hidratos de carbono. Todo está en **Ajustes → Salud** y viene desactivado.
+
+- **Contar raciones de hidratos**: cada receta muestra cuántas raciones lleva por persona, calculadas con sus ingredientes y cantidades, sin el asistente. Toca la línea para ver qué aporta cada ingrediente, qué no se ha podido calcular (por ejemplo, «harina para rebozar» sin cantidad) y lo que casi no tiene hidratos.
+- **Gramos por ración**: 10 por defecto (en España, 1 ración = 10 g). Usa la que te haya indicado tu equipo médico; a 0 se ven solo gramos.
+- **Mi plan de raciones**: copia el plan de tu equipo médico, con las raciones de cada grupo (leche, proteicos, verdura, harinas, fruta y grasa) en cada comida. Hay un ejemplo de 1.500 kcal para empezar, pero usa siempre el tuyo.
+- Con un plan, cada receta muestra sus raciones por grupo, y **Ajustar a mi comida** te dice cuánto servirte para esa comida y qué añadir para completarla (pan, fruta, ensalada…) en medidas caseras, o qué te sobra.
+- Cuenta la parte que se come (sin huesos ni conchas), el aceite de freír o confitar como mucho 3 cucharadas por persona y los dulces como mucho 1 ración.
+- Los valores son de USDA FoodData Central contrastados con BEDCA (AESAN), en crudo. Es **orientativo**: no sustituye la pauta de tu equipo médico.
 
 ## 🍳 Modo cocina
 

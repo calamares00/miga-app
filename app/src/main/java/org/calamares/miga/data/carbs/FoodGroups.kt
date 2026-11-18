@@ -4,6 +4,7 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.model.Ingredient
 import org.calamares.miga.data.model.Recipe
+import org.calamares.miga.data.model.searchKey
 
 /**
  * The six groups of the Spanish portion plans for diabetes ("planes de alimentación por
@@ -32,15 +33,21 @@ private sealed interface Counts {
 }
 
 /** Portions of each group, and the carbohydrate that falls outside the groups (sugar, sweets...). */
-data class GroupPortions(val portions: Map<FoodGroup, Double> = emptyMap(), val otherCarbs: Double = 0.0) {
+data class GroupPortions(
+    val portions: Map<FoodGroup, Double> = emptyMap(),
+    val otherCarbs: Double = 0.0,
+    /** Oil to fry or confit with: only [MAX_OIL_PER_SERVING] portions per serving are counted. */
+    val cookingOil: Boolean = false
+) {
     operator fun get(group: FoodGroup): Double = portions[group] ?: 0.0
 
     operator fun plus(other: GroupPortions) = GroupPortions(
         FoodGroup.entries.associateWith { this[it] + other[it] }.filterValues { it > 0.0 },
-        otherCarbs + other.otherCarbs
+        otherCarbs + other.otherCarbs,
+        cookingOil || other.cookingOil
     )
 
-    fun times(factor: Double) = GroupPortions(portions.mapValues { it.value * factor }, otherCarbs * factor)
+    fun times(factor: Double) = GroupPortions(portions.mapValues { it.value * factor }, otherCarbs * factor, cookingOil)
 
     /** Approximate energy, from the method's average portions (sugar and the like at 4 kcal/g). */
     val kcal: Double get() = FoodGroup.entries.sumOf { this[it] * it.kcal } + otherCarbs * 4
@@ -57,7 +64,7 @@ data class GroupPortions(val portions: Map<FoodGroup, Double> = emptyMap(), val 
 object FoodGroups {
     private val STARCH_FOODS = setOf(
         "rice", "brown_rice", "cooked_rice", "oats", "couscous", "bulgur", "quinoa", "wheat_flour", "wholewheat_flour",
-        "corn_flour", "rice_flour", "chickpea_flour", "starch", "semolina", "pasta", "rice_noodles", "cooked_pasta",
+        "corn_flour", "rice_flour", "chickpea_flour", "starch", "semolina", "pasta", "gnocchi", "rice_noodles", "cooked_pasta",
         "bread", "sliced_bread", "wholemeal_bread", "toast", "breadcrumbs", "tortilla_wheat", "tortilla_corn",
         "puff_pastry", "shortcrust", "pizza_dough", "biscuits", "cornflakes", "chickpeas", "chickpeas_cooked", "lentils",
         "lentils_cooked", "beans", "beans_cooked", "peas", "split_peas", "broad_beans", "soy_beans", "cassava", "potato",
@@ -94,6 +101,34 @@ object FoodGroups {
         if (food.id == "blood_sausage_rice") add(Counts.ByWeight(FoodGroup.PROTEIN, 40.0))
     }
 
+    private val WORD = Regex("[a-z0-9]+")
+
+    /** Bones and shells for stock: they flavour the dish but are not eaten. */
+    private val NOT_EATEN = setOf("hueso", "huesos", "carcasa", "carcasas", "espinas", "cabezas", "bone", "bones", "carcass", "carcasses", "tuetano")
+    private val BONELESS = setOf("deshuesado", "deshuesados", "deshuesada", "deshuesadas", "fileteado", "fileteada", "lomo", "lomos", "filete", "filetes", "pelado", "pelados", "peladas", "pelada", "carne", "boneless", "peeled", "fillet", "fillets", "sin")
+    private val IN_SHELL = setOf("mejillon", "mejillones", "almeja", "almejas", "berberecho", "berberechos", "navaja", "navajas", "chirla", "chirlas", "ostra", "ostras", "zamburina", "zamburinas", "caracol", "caracoles", "mussels", "clams", "cockles", "oysters", "snails")
+    private val WHOLE_SHELLFISH = setOf("gamba", "gambas", "langostino", "langostinos", "cigala", "cigalas", "carabinero", "carabineros", "bogavante", "langosta", "centollo", "necora", "necoras", "cangrejo", "cangrejos", "prawns", "shrimp", "langoustines", "lobster", "crab")
+    private val ON_THE_BONE = setOf("chuleta", "chuletas", "chuletilla", "chuletillas", "costilla", "costillas", "costillar", "rack", "alita", "alitas", "ala", "alas", "muslo", "muslos", "contramuslo", "contramuslos", "troceado", "troceada", "entero", "entera", "conejo", "codorniz", "codornices", "perdiz", "perdices", "rabo", "osobuco", "jarrete", "codillo", "codillos", "manitas", "paletilla", "paletillas", "pierna", "cochinillo", "picantones", "chuleton", "gallina", "ribs", "chops", "wings", "drumsticks", "thighs", "shank", "oxtail")
+    private val WHOLE_FISH = setOf("dorada", "doradas", "lubina", "lubinas", "besugo", "trucha", "truchas", "lenguado", "lenguados", "rodaballo", "sargo", "salmonete", "salmonetes", "caballa", "caballas", "sardinas", "boquerones")
+
+    /**
+     * The part of a meat or fish that is eaten, from its name: the method weighs food "raw and
+     * clean", but recipes weigh mussels in their shells and chops on the bone.
+     */
+    internal fun edibleShare(name: String): Double {
+        val words = WORD.findAll(searchKey(name)).map { it.value }.toSet()
+        val boneless = words.any { it in BONELESS }
+        return when {
+            words.any { it in NOT_EATEN } -> 0.0
+            boneless -> 1.0
+            words.any { it in IN_SHELL } -> 0.3
+            words.any { it in WHOLE_SHELLFISH } -> 0.45
+            words.any { it in WHOLE_FISH } -> 0.5
+            words.any { it in ON_THE_BONE } -> 0.65
+            else -> 1.0
+        }
+    }
+
     /** The portions of one ingredient, for the whole recipe; empty when its amount is unknown. */
     fun ofIngredient(ingredient: Ingredient): GroupPortions {
         val food = CarbAnalysis.foodOf(ingredient.name) ?: return GroupPortions()
@@ -103,18 +138,32 @@ object FoodGroups {
         counts.forEach { count ->
             when (count) {
                 is Counts.ByCarbs -> portions.merge(count.group, grams * food.carbsPer100 / 100 / 10, Double::plus)
-                is Counts.ByWeight -> portions.merge(count.group, grams / count.gramsPerPortion, Double::plus)
+                is Counts.ByWeight -> {
+                    val edible = if (count.group == FoodGroup.PROTEIN) edibleShare(ingredient.name) else 1.0
+                    portions.merge(count.group, grams * edible / count.gramsPerPortion, Double::plus)
+                }
             }
         }
         val carbsInGroups = counts.any { it is Counts.ByCarbs }
         return GroupPortions(portions, if (carbsInGroups) 0.0 else grams * food.carbsPer100 / 100)
     }
 
-    /** Per serving (or the whole recipe when it says no servings), optional ingredients left out. */
+    /**
+     * Per serving (or the whole recipe when it says no servings), optional ingredients left out.
+     * Oil beyond [MAX_OIL_PER_SERVING] portions per serving is for frying or confit and mostly
+     * stays in the pan, so it is not counted (and [GroupPortions.cookingOil] says so).
+     */
     fun ofRecipe(recipe: Recipe): GroupPortions {
-        val total = recipe.ingredientGroups.flatMap { it.ingredients }
-            .filter { it.name.isNotBlank() && !it.optional }
-            .fold(GroupPortions()) { sum, ingredient -> sum + ofIngredient(ingredient) }
-        return if (recipe.servings > 0) total.times(1.0 / recipe.servings) else total
+        val ingredients = recipe.ingredientGroups.flatMap { it.ingredients }.filter { it.name.isNotBlank() && !it.optional }
+        val servings = recipe.servings.takeIf { it > 0 } ?: 1
+        val oil = ingredients.filter { CarbAnalysis.foodOf(it.name)?.id == "oil" }
+        val others = (ingredients - oil.toSet()).fold(GroupPortions()) { sum, ingredient -> sum + ofIngredient(ingredient) }
+        val oilPortions = oil.sumOf { ofIngredient(it)[FoodGroup.FAT] } / servings
+        val capped = oilPortions > MAX_OIL_PER_SERVING
+        val oilPerServing = GroupPortions(mapOf(FoodGroup.FAT to minOf(oilPortions, MAX_OIL_PER_SERVING)).filterValues { it > 0.0 }, 0.0, capped)
+        return others.times(1.0 / servings) + oilPerServing
     }
+
+    /** Portions of oil (tablespoons) per serving a dish can really take; more is cooking oil. */
+    const val MAX_OIL_PER_SERVING = 3.0
 }

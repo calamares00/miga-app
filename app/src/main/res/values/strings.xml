@@ -1587,4 +1587,11 @@
     <string name="complement_protein_x">"%1$d g of meat or %2$d g of fish"</string>
     <string name="complement_fat_x">"%1$s tablespoon of oil"</string>
     <string name="plan_take_part_x">"Take %1$s of a serving of the recipe"</string>
+    <string name="plan_cooking_oil">"It uses a lot of oil to confit or fry: we count at most 3 tablespoons per serving, what usually ends up on the plate."</string>
+    <string name="complement_starches_many_x">"%1$d g of bread, or %2$s measuring cups of cooked rice, pasta or pulses"</string>
+    <string name="complement_fruit_many_x">"%1$s medium pieces of fruit"</string>
+    <string name="complement_vegetables_many_x">"%1$s plates of vegetables or salad"</string>
+    <string name="complement_milk_many_x">"%1$s cups of milk or %2$s yogurts"</string>
+    <string name="complement_fat_many_x">"%1$s tablespoons of oil"</string>
+    <string name="complement_milk_half">"½ cup of milk or 1 yogurt"</string>
 </resources>

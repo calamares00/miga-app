@@ -87,4 +87,31 @@ class PlanViewsTest {
         compose.onNodeWithText("Mi plan de raciones").assertExists()
         captureScreenRoboImage("src/test/snapshots/plan_editor.png")
     }
+
+    @Test
+    fun `cod pil pil fitted to lunch`() {
+        val pilPil = lentils.copy(
+            name = "Bacalao al pil pil",
+            ingredientGroups = listOf(
+                IngredientGroup(
+                    null,
+                    listOf(
+                        Ingredient("lomos de bacalao desalado con piel", 4.0, null),
+                        Ingredient("dientes de ajo", 6.0, null),
+                        Ingredient("guindilla", 1.0, null),
+                        Ingredient("aceite de oliva virgen extra", 300.0, "ml")
+                    )
+                )
+            )
+        )
+        val perServing = FoodGroups.ofRecipe(pilPil)
+        compose.setContent {
+            MigaTheme(darkTheme = false) {
+                Surface { PlanSheetContent(perServing, PortionPlan.EXAMPLE_1500, 4, initialMeal = Meal.LUNCH) }
+            }
+        }
+        compose.onNodeWithText("Sírvete 1 ración de la receta").assertExists()
+        compose.onNodeWithText("2 vasos medidores", substring = true).assertExists()
+        captureScreenRoboImage("src/test/snapshots/plan_fit_pil_pil.png")
+    }
 }
