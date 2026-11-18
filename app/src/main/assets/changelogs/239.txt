@@ -1,3 +1,4 @@
 Novedades de la versión 1.0.41:
-• Mi plan de raciones (Ajustes › Salud, con las raciones de hidratos activadas): copia el plan de tu equipo médico por comidas y grupos (leche, harinas, fruta, verdura, proteicos, grasa).
-• En cada receta, sus raciones por grupo y «Ajustar a mi comida»: cuánto servirte y qué añadir para completar la comida (pan, fruta, ensalada…), en medidas caseras.
+• Mi plan de raciones (Ajustes › Salud): copia el plan de tu equipo médico por comidas y grupos. En cada receta, «Ajustar a mi comida» dice cuánto servirte y qué añadir (pan, fruta, ensalada…), en medidas caseras.
+• Ajustes › Salud: elige qué alérgenos ver (todos, los tuyos o ninguno), avisos en las listas y modo celíacos.
+• Cantidades de los ingredientes en texto normal.
