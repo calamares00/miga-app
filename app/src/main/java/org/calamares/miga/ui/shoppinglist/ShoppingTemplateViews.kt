@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.shoppinglist
 
+import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.L10n
 import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.R
@@ -365,98 +366,100 @@ internal fun TemplateEditorSheet(
     }
 
     ModalBottomSheet(onDismissRequest = { close() }) {
-        Column(modifier = Modifier.height(sheetContentHeight(0.92f)).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(template.name, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        if (template.items.size == 1) L10n.str(R.string.n_1_item) else L10n.str(R.string.x_items, template.items.size),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                IconButton(onClick = { renaming = true }) { Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.rename_template)) }
-                IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete_template)) }
-            }
-
-            if (searching) {
-                TextButton(onClick = { searching = false; viewModel.clearSearch() }) {
-                    ButtonContent(Icons.Filled.Close, L10n.str(R.string.back_template))
-                }
-                Box(modifier = Modifier.weight(1f)) {
-                    ProductSearchContent(
-                        viewModel = viewModel,
-                        initialQuery = text.trim(),
-                        addDescription = L10n.str(R.string.add_template),
-                        onAdd = { product ->
-                            viewModel.addToTemplate(template.id, product.toTemplateItem())
-                            onMessage(L10n.str(R.string.added_x_x, template.name, product.name))
-                        },
-                        onSaveToTemplate = null
-                    )
-                }
-            } else {
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(L10n.str(R.string.add_2_kg_tomatoes_milk)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { submitText() }),
-                    trailingIcon = {
-                        if (text.isNotBlank()) {
-                            IconButton(onClick = { submitText() }) { Icon(Icons.Filled.Add, contentDescription = L10n.str(R.string.add_template)) }
-                        }
-                    }
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AssistChip(
-                        onClick = { searching = true },
-                        label = { Text(L10n.str(R.string.search_open_food_facts_2)) },
-                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                    )
-                    AssistChip(
-                        onClick = {
-                            scanLauncher.launch(
-                                ScanOptions().apply {
-                                    setDesiredBarcodeFormats(ScanOptions.PRODUCT_CODE_TYPES)
-                                    setPrompt(L10n.str(R.string.point_product_barcode))
-                                    setBeepEnabled(false)
-                                    setOrientationLocked(false)
-                                }
-                            )
-                        },
-                        label = { Text(L10n.str(R.string.scan)) },
-                        leadingIcon = { Icon(Icons.Filled.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                    )
-                }
-                if (template.items.isEmpty()) {
-                    Text(
-                        L10n.str(R.string.empty_template_type_items_search),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 16.dp)
-                    )
-                }
-                LazyColumn(modifier = Modifier.weight(1f)) {
-                    itemsIndexed(template.items, key = { index, item -> "$index-${item.name}" }) { index, item ->
-                        TemplateItemRow(
-                            item = item,
-                            onOpen = if (item.info != null) ({ detail = item }) else null,
-                            onRemove = { viewModel.removeFromTemplate(template.id, index) }
+        Column(modifier = Modifier.keepScrollInSheet()) {
+            Column(modifier = Modifier.height(sheetContentHeight(0.92f)).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(template.name, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            if (template.items.size == 1) L10n.str(R.string.n_1_item) else L10n.str(R.string.x_items, template.items.size),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    IconButton(onClick = { renaming = true }) { Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.rename_template)) }
+                    IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete_template)) }
                 }
-                Button(
-                    onClick = {
-                        viewModel.applyTemplate(template)
-                        onMessage(L10n.str(R.string.added_x_items_x, template.items.size, template.name))
-                        close()
-                    },
-                    enabled = template.items.isNotEmpty(),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-                ) { Text(L10n.str(R.string.add_list_2)) }
+
+                if (searching) {
+                    TextButton(onClick = { searching = false; viewModel.clearSearch() }) {
+                        ButtonContent(Icons.Filled.Close, L10n.str(R.string.back_template))
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        ProductSearchContent(
+                            viewModel = viewModel,
+                            initialQuery = text.trim(),
+                            addDescription = L10n.str(R.string.add_template),
+                            onAdd = { product ->
+                                viewModel.addToTemplate(template.id, product.toTemplateItem())
+                                onMessage(L10n.str(R.string.added_x_x, template.name, product.name))
+                            },
+                            onSaveToTemplate = null
+                        )
+                    }
+                } else {
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text(L10n.str(R.string.add_2_kg_tomatoes_milk)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { submitText() }),
+                        trailingIcon = {
+                            if (text.isNotBlank()) {
+                                IconButton(onClick = { submitText() }) { Icon(Icons.Filled.Add, contentDescription = L10n.str(R.string.add_template)) }
+                            }
+                        }
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AssistChip(
+                            onClick = { searching = true },
+                            label = { Text(L10n.str(R.string.search_open_food_facts_2)) },
+                            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        )
+                        AssistChip(
+                            onClick = {
+                                scanLauncher.launch(
+                                    ScanOptions().apply {
+                                        setDesiredBarcodeFormats(ScanOptions.PRODUCT_CODE_TYPES)
+                                        setPrompt(L10n.str(R.string.point_product_barcode))
+                                        setBeepEnabled(false)
+                                        setOrientationLocked(false)
+                                    }
+                                )
+                            },
+                            label = { Text(L10n.str(R.string.scan)) },
+                            leadingIcon = { Icon(Icons.Filled.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        )
+                    }
+                    if (template.items.isEmpty()) {
+                        Text(
+                            L10n.str(R.string.empty_template_type_items_search),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                    }
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        itemsIndexed(template.items, key = { index, item -> "$index-${item.name}" }) { index, item ->
+                            TemplateItemRow(
+                                item = item,
+                                onOpen = if (item.info != null) ({ detail = item }) else null,
+                                onRemove = { viewModel.removeFromTemplate(template.id, index) }
+                            )
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            viewModel.applyTemplate(template)
+                            onMessage(L10n.str(R.string.added_x_items_x, template.items.size, template.name))
+                            close()
+                        },
+                        enabled = template.items.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                    ) { Text(L10n.str(R.string.add_list_2)) }
+                }
             }
         }
     }
@@ -558,13 +561,15 @@ internal fun ShoppingTemplatesSheet(
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.height(sheetContentHeight(0.92f))) {
-            Text(
-                L10n.str(R.string.templates),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
-            )
-            TemplatesContent(templates, listIsEmpty, onApply, onEdit, onNew, onSaveList)
+        Column(modifier = Modifier.keepScrollInSheet()) {
+            Column(modifier = Modifier.height(sheetContentHeight(0.92f))) {
+                Text(
+                    L10n.str(R.string.templates),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                )
+                TemplatesContent(templates, listIsEmpty, onApply, onEdit, onNew, onSaveList)
+            }
         }
     }
 }

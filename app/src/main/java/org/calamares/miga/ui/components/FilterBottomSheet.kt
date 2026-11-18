@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.components
 
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.Search
@@ -93,6 +94,8 @@ fun FilterSheetContent(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            // Capped by the window, not the sheet, so the sheet settles (see sheetContentHeight).
+            .heightIn(max = sheetContentHeight(0.9f))
             .verticalScroll(rememberScrollState())
             .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)

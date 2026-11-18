@@ -39,11 +39,9 @@
     <string name="add_list">"Añadir a la lista"</string>
     <string name="add_shopping_list">"Añadir a la lista de la compra"</string>
     <string name="add_step">"Añadir paso"</string>
-    <string name="add_steps_sub_recipe_e">"Añadir pasos de una subreceta (p. ej., una salsa)"</string>
     <string name="add_template">"Añadir a la plantilla"</string>
     <string name="add_cover">"Añadir portada"</string>
     <string name="add_without_deleting">"Añadir sin borrar"</string>
-    <string name="add_sub_recipe_e_g">"Añadir subreceta (p. ej., una salsa)"</string>
     <string name="add_supermarket">"Añadir supermercado"</string>
     <string name="add_list_2">"Añadir todo a la lista"</string>
     <string name="add_utensil">"Añadir equipamiento"</string>
@@ -1462,4 +1460,10 @@
     <string name="coeliac_suitable_if_x">"Apta para celíacos si compras sin gluten: %1$s"</string>
     <string name="coeliac_not_suitable_x">"No apta para celíacos: %1$s"</string>
     <string name="servings_count_x">"%1$d raciones"</string>
+    <string name="sub_recipe">"Subreceta"</string>
+    <string name="editor_ingredients_hint">"Toca un ingrediente para editarlo · arrastra ⠿ para moverlo"</string>
+    <string name="editor_add_ingredient_hint">"Añadir: p. ej. 200 g de patatas"</string>
+    <string name="unit_full">"Unidad"</string>
+    <string name="editor_tab_steps">"Pasos"</string>
+    <string name="editor_tab_count_x">"%1$s · %2$d"</string>
 </resources>

@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.data.model.formatIngredientText
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -87,9 +88,9 @@ class RecipeDetailLayoutTest {
                 )
             }
         }
-        compose.waitUntil(10_000) { compose.onAllNodes(hasText("aguja de ternera")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodes(hasText(formatIngredientText("aguja de ternera", 600.0, "g", forReading = true))).fetchSemanticsNodes().isNotEmpty() }
         assertTrue(compose.onAllNodes(hasText("1 h 10 min")).fetchSemanticsNodes().isNotEmpty())
-        assertTrue(compose.onAllNodes(hasText("600 g")).fetchSemanticsNodes().isNotEmpty())
+        assertTrue(compose.onAllNodes(hasText(formatIngredientText("ajo", 2.0, "diente", forReading = true))).fetchSemanticsNodes().isNotEmpty())
         captureScreenRoboImage("src/test/snapshots/recipe_compact_top.png")
         compose.onNodeWithText("Añada el aceite", substring = true).performScrollTo()
         compose.waitForIdle()

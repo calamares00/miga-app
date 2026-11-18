@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.ui.components.sheetContentHeight
+import androidx.compose.foundation.layout.heightIn
+import org.calamares.miga.ui.components.keepScrollInSheet
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,16 +40,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.allergens.Allergen
-import org.calamares.miga.data.allergens.AllergenAnalysis
 import org.calamares.miga.data.allergens.AllergenLevel
 import org.calamares.miga.data.allergens.RecipeAllergens
 
@@ -171,14 +170,16 @@ internal fun AllergenLine(allergens: RecipeAllergens, onClick: () -> Unit) {
 @Composable
 internal fun AllergenSheet(allergens: RecipeAllergens, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        AllergenSheetContent(allergens)
+        Column(modifier = Modifier.keepScrollInSheet()) {
+            AllergenSheetContent(allergens)
+        }
     }
 }
 
 @Composable
 internal fun AllergenSheetContent(allergens: RecipeAllergens) {
     Column(
-        modifier = Modifier.verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
+        modifier = Modifier.heightIn(max = sheetContentHeight(0.9f)).verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(L10n.str(R.string.allergens_sheet_title), style = MaterialTheme.typography.titleLarge)
@@ -301,15 +302,5 @@ private fun Legend(color: Color, text: String) {
         Box(Modifier.size(10.dp).clip(CircleShape).background(color))
         Spacer(Modifier.width(4.dp))
         Text(text, style = MaterialTheme.typography.labelSmall)
-    }
-}
-
-/** An ingredient line with what surely brings an allergen in bold, like a food label. */
-internal fun ingredientWithAllergens(text: String): AnnotatedString {
-    val highlights = AllergenAnalysis.ofIngredient(text).highlights
-    if (highlights.isEmpty()) return AnnotatedString(text)
-    return buildAnnotatedString {
-        append(text)
-        highlights.forEach { addStyle(SpanStyle(fontWeight = FontWeight.Bold), it.first, it.last + 1) }
     }
 }
