@@ -1,2 +1,4 @@
 What's new in version 1.0.40:
-• Ingredient amounts are shown in plain text, like the name, without bold or colour (in the recipe and in the editor).
+• Settings › Health: choose whether recipes show all allergens, only yours or none. Mark your allergies and intolerances to see "Has egg" on the recipe, a warning in lists and, if you like, searches that start without them.
+• "I cook for coeliacs": each recipe says what is needed. Allergens are still in the ⋮ menu.
+• Ingredient amounts in plain text, without bold or colour.

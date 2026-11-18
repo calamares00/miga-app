@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.list
 
+import org.calamares.miga.data.health.withHealthDefaults
+import org.calamares.miga.data.health.allergenWarnings
+import org.calamares.miga.data.allergens.Allergen
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.content.Context
@@ -411,11 +414,23 @@ class RecipeListViewModel(
         filterOptions
     ) { recipes, filter, options -> RecipeListBase(recipes, filter, options) }
 
-    val uiState: StateFlow<RecipeListUiState> = combine(base, repository.books.observeRecipeBook(bookId)) { data, book ->
+    init {
+        // Searches start with the user's health conditions (Settings > Health); they can be removed.
+        viewModelScope.launch {
+            val health = settingsRepository.observeHealthPrefs().first()
+            _filter.update { it.withHealthDefaults(health) }
+        }
+    }
+
+    val uiState: StateFlow<RecipeListUiState> = combine(
+        base,
+        repository.books.observeRecipeBook(bookId),
+        settingsRepository.observeHealthPrefs().map { it.listWarnings }
+    ) { data, book, warnings ->
         RecipeListUiState(
             isLoading = false,
             bookName = book?.name.orEmpty(),
-            groups = buildGroups(data.recipes, data.filter),
+            groups = buildGroups(data.recipes, data.filter, warnings),
             totalCount = data.recipes.size,
             availableCategories = data.options.categories.map { it.name },
             availableTags = data.options.tags.map { it.name },
@@ -470,11 +485,13 @@ class RecipeListViewModel(
         viewModelScope.launch { repository.books.setRecipeBookPinned(bookId, !uiState.value.isPinned) }
     }
 
-    private fun buildGroups(recipes: List<Recipe>, filter: RecipeFilter): List<RecipeGroup> {
+    private fun buildGroups(recipes: List<Recipe>, filter: RecipeFilter, warnings: Set<Allergen> = emptySet()): List<RecipeGroup> {
         return recipes.applyFilter(filter)
             .groupBy { it.categoryName ?: UNCATEGORIZED_CATEGORY_LABEL }
             .toSortedMap(compareBy { if (it == UNCATEGORIZED_CATEGORY_LABEL) "￿" else it.lowercase() })
-            .map { (category, recipesInGroup) -> RecipeGroup(category, recipesInGroup.map { it.toSummary() }) }
+            .map { (category, recipesInGroup) ->
+                RecipeGroup(category, recipesInGroup.map { it.toSummary().copy(warnAllergens = it.allergenWarnings(warnings)) })
+            }
     }
 }
 
