@@ -726,9 +726,7 @@ private fun RecipeDetailContent(
                         Section(title = L10n.str(R.string.notes)) { FormattedText(recipe.notes, style = MaterialTheme.typography.bodyLarge) }
                     }
                     if (recipe.source.isNotBlank()) {
-                        Section(title = L10n.str(R.string.source)) {
-                            Text(recipe.source, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                        Section(title = L10n.str(R.string.source)) { SourceLine(recipe.source) }
                     }
                     if (recipe.tags.isNotEmpty()) {
                         Section(title = L10n.str(R.string.tags)) {

@@ -1512,4 +1512,6 @@
     <string name="carb_free_title">"Hardly any carbohydrate"</string>
     <string name="carb_sources">"Available carbohydrate (without fibre), per 100 g of raw food. Values from USDA FoodData Central checked against BEDCA (AESAN)."</string>
     <string name="carb_for_x_people">"for %1$d people"</string>
+    <string name="source_copied">"Link copied"</string>
+    <string name="copy_source">"Copy the source"</string>
 </resources>
