@@ -160,6 +160,9 @@ class GlobalSearchViewModel(
                 tags = emptySet(),
                 ingredients = emptySet(),
                 origins = emptySet(),
+                withoutAllergens = emptySet(),
+                allowMayContain = false,
+                coeliacFriendly = false,
                 onlyFavorites = initialOnlyFavorites
             ).withoutStatsConditions()
         }

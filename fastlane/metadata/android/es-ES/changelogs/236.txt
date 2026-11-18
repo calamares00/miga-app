@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.38:
+• Filtros renovados: tiempo y dificultad en botones, categorías resumidas y las listas largas (ingredientes, equipamiento, etiquetas, origen) plegadas. Abajo, «Ver 23 recetas».
+• Filtrar por alérgenos: elige los que quieres evitar, o «Para celíacos». Opción para incluir las que dependen del producto.
+• La hoja de filtros ya no rebota al volver arriba de la lista.

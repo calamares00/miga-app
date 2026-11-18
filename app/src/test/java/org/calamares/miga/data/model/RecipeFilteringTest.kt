@@ -1,5 +1,6 @@
 package org.calamares.miga.data.model
 
+import org.calamares.miga.data.allergens.Allergen
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -130,5 +131,41 @@ class RecipeFilteringTest {
         val recipes = listOf(recipe(id = 1, prepTimeMinutes = null), recipe(id = 2, prepTimeMinutes = 10))
         val result = recipes.applyFilter(RecipeFilter(sortOption = SortOption.PREP_TIME))
         assertEquals(listOf(2L, 1L), result.map { it.id })
+    }
+
+    private val allergenRecipes = listOf(
+        recipe(id = 1, ingredientNames = listOf("patatas", "aceite de oliva", "sal")),
+        recipe(id = 2, ingredientNames = listOf("patatas", "huevos", "pastilla de caldo")),
+        recipe(id = 3, ingredientNames = listOf("harina de trigo", "leche", "mantequilla")),
+        recipe(id = 4, ingredientNames = listOf("arroz", "pastilla de caldo sin gluten"))
+    )
+
+    @Test
+    fun `without an allergen leaves out recipes that have it or may have it`() {
+        assertEquals(listOf(1L, 3L, 4L), allergenRecipes.applyFilter(RecipeFilter(withoutAllergens = setOf(Allergen.EGGS))).map { it.id })
+        // The stock cube may bring gluten: out, unless "may contain" is allowed.
+        assertEquals(listOf(1L, 4L), allergenRecipes.applyFilter(RecipeFilter(withoutAllergens = setOf(Allergen.GLUTEN))).map { it.id })
+        assertEquals(
+            listOf(1L, 2L, 4L),
+            allergenRecipes.applyFilter(RecipeFilter(withoutAllergens = setOf(Allergen.GLUTEN), allowMayContain = true)).map { it.id }
+        )
+    }
+
+    @Test
+    fun `several allergens must all be absent`() {
+        val filter = RecipeFilter(withoutAllergens = setOf(Allergen.EGGS, Allergen.MILK))
+        assertEquals(listOf(1L, 4L), allergenRecipes.applyFilter(filter).map { it.id })
+    }
+
+    @Test
+    fun `coeliac friendly keeps recipes whose gluten depends on the product`() {
+        assertEquals(listOf(1L, 2L, 4L), allergenRecipes.applyFilter(RecipeFilter(coeliacFriendly = true)).map { it.id })
+    }
+
+    @Test
+    fun `allergen conditions count in the filter badge`() {
+        val filter = RecipeFilter(withoutAllergens = setOf(Allergen.EGGS, Allergen.MILK), allowMayContain = true, coeliacFriendly = true)
+        assertEquals(3, filter.activeConditions())
+        assertEquals(true, filter.isActive)
     }
 }
