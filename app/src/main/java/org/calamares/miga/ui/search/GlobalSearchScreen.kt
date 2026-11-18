@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.search
 
+import kotlinx.coroutines.launch
 import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.data.model.SavedFilter
 import androidx.compose.foundation.lazy.LazyListScope
@@ -79,6 +80,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -123,6 +125,7 @@ fun GlobalSearchScreen(
     BackHandler(enabled = pantryMode) { viewModel.setPantryMode(false) }
     var deletingSaved by remember { mutableStateOf<SavedFilter?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val filterScope = rememberCoroutineScope()
 
     /** In Favourites, "only favourites" is implicit and does not count as an applied filter. */
     val activeCount = filter.activeConditions(ignoreFavorites = favoritesOnly)
@@ -331,7 +334,11 @@ fun GlobalSearchScreen(
                     availableOrigins = uiState.availableOrigins,
                     onApply = { newFilter -> viewModel.applyFilter(newFilter) },
                     onClear = { viewModel.clearFilters() },
-                    showFavoritesToggle = !favoritesOnly
+                    showFavoritesToggle = !favoritesOnly,
+                    resultCount = uiState.results.size,
+                    onShowResults = {
+                        filterScope.launch { sheetState.hide() }.invokeOnCompletion { showFilters = false }
+                    }
                 )
             }
         }
