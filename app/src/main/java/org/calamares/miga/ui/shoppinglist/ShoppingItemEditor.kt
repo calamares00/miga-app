@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.shoppinglist
 
+import org.calamares.miga.ui.components.sheetContentHeight
+import androidx.compose.foundation.layout.heightIn
+import org.calamares.miga.ui.components.keepScrollInSheet
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -56,66 +59,68 @@ internal fun ShoppingItemEditorSheet(
     val quantityError = quantity.isNotBlank() && (parsedQuantity == null || parsedQuantity <= 0)
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(L10n.str(R.string.edit_item), style = MaterialTheme.typography.titleMedium)
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(L10n.str(R.string.name)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                modifier = Modifier.fillMaxWidth()
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(modifier = Modifier.keepScrollInSheet()) {
+            Column(
+                modifier = Modifier.heightIn(max = sheetContentHeight(0.9f)).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(L10n.str(R.string.edit_item), style = MaterialTheme.typography.titleMedium)
                 OutlinedTextField(
-                    value = quantity,
-                    onValueChange = { quantity = it },
-                    label = { Text(L10n.str(R.string.quantity)) },
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(L10n.str(R.string.name)) },
                     singleLine = true,
-                    isError = quantityError,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.weight(1f)
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = unit,
-                    onValueChange = { unit = it },
-                    label = { Text(L10n.str(R.string.unit_of_measure)) },
-                    placeholder = { Text(L10n.str(R.string.e_g_kg_packs)) },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Text(
-                L10n.str(R.string.aisle),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            Text(
-                L10n.str(R.string.aisle_remembered_explanation),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                aisles.forEach { category ->
-                    FilterChip(
-                        selected = aisle == category,
-                        onClick = { aisle = if (aisle == category) null else category },
-                        label = { Text("${ShoppingVisuals.categoryStyle(category).emoji} ${displayCategoryName(category)}") }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = quantity,
+                        onValueChange = { quantity = it },
+                        label = { Text(L10n.str(R.string.quantity)) },
+                        singleLine = true,
+                        isError = quantityError,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = unit,
+                        onValueChange = { unit = it },
+                        label = { Text(L10n.str(R.string.unit_of_measure)) },
+                        placeholder = { Text(L10n.str(R.string.e_g_kg_packs)) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
                     )
                 }
-            }
-            Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp)) {
-                TextButton(onClick = onDelete) { Text(L10n.str(R.string.remove), color = MaterialTheme.colorScheme.error) }
-                Spacer(modifier = Modifier.weight(1f))
-                TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) }
-                TextButton(
-                    onClick = { onSave(name.trim(), parsedQuantity, unit.trim().ifEmpty { null }, aisle) },
-                    enabled = name.isNotBlank() && !quantityError
-                ) { Text(L10n.str(R.string.save)) }
+                Text(
+                    L10n.str(R.string.aisle),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                Text(
+                    L10n.str(R.string.aisle_remembered_explanation),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    aisles.forEach { category ->
+                        FilterChip(
+                            selected = aisle == category,
+                            onClick = { aisle = if (aisle == category) null else category },
+                            label = { Text("${ShoppingVisuals.categoryStyle(category).emoji} ${displayCategoryName(category)}") }
+                        )
+                    }
+                }
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 12.dp)) {
+                    TextButton(onClick = onDelete) { Text(L10n.str(R.string.remove), color = MaterialTheme.colorScheme.error) }
+                    Spacer(modifier = Modifier.weight(1f))
+                    TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) }
+                    TextButton(
+                        onClick = { onSave(name.trim(), parsedQuantity, unit.trim().ifEmpty { null }, aisle) },
+                        enabled = name.isNotBlank() && !quantityError
+                    ) { Text(L10n.str(R.string.save)) }
+                }
             }
         }
     }

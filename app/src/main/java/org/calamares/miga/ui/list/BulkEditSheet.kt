@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.list
 
+import org.calamares.miga.ui.components.sheetContentHeight
+import org.calamares.miga.ui.components.keepScrollInSheet
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -89,39 +91,41 @@ fun BulkEditSheet(
     }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 24.dp).verticalScroll(rememberScrollState())) {
-            Text(
-                L10n.str(R.string.more_actions),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
-            )
-            Text(
-                selectedRecipesText(count),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
-            )
-            onSelectAll?.let { selectAll -> BulkRow(Icons.Filled.SelectAll, L10n.str(R.string.select_all)) { selectAll(); onDismiss() } }
-            if (!readOnly) BulkRow(Icons.Filled.Folder, L10n.str(R.string.move_another_book)) { dialog = BulkDialog.MOVE }
-            BulkRow(Icons.Filled.ContentCopy, L10n.str(R.string.bulk_copy)) { dialog = BulkDialog.COPY }
-            if (!readOnly) {
+        Column(modifier = Modifier.keepScrollInSheet()) {
+            Column(modifier = Modifier.heightIn(max = sheetContentHeight(0.9f)).padding(start = 8.dp, end = 8.dp, bottom = 24.dp).verticalScroll(rememberScrollState())) {
+                Text(
+                    L10n.str(R.string.more_actions),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
+                )
+                Text(
+                    selectedRecipesText(count),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                )
+                onSelectAll?.let { selectAll -> BulkRow(Icons.Filled.SelectAll, L10n.str(R.string.select_all)) { selectAll(); onDismiss() } }
+                if (!readOnly) BulkRow(Icons.Filled.Folder, L10n.str(R.string.move_another_book)) { dialog = BulkDialog.MOVE }
+                BulkRow(Icons.Filled.ContentCopy, L10n.str(R.string.bulk_copy)) { dialog = BulkDialog.COPY }
+                if (!readOnly) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    BulkRow(Icons.Filled.Category, L10n.str(R.string.bulk_change_category)) { dialog = BulkDialog.CATEGORY }
+                    BulkRow(Icons.Filled.SignalCellularAlt, L10n.str(R.string.bulk_change_difficulty)) { dialog = BulkDialog.DIFFICULTY }
+                    BulkRow(Icons.Filled.People, L10n.str(R.string.bulk_change_servings)) { dialog = BulkDialog.SERVINGS }
+                    BulkRow(Icons.Filled.Link, L10n.str(R.string.bulk_change_source)) { dialog = BulkDialog.SOURCE }
+                }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                BulkRow(Icons.Filled.Category, L10n.str(R.string.bulk_change_category)) { dialog = BulkDialog.CATEGORY }
-                BulkRow(Icons.Filled.SignalCellularAlt, L10n.str(R.string.bulk_change_difficulty)) { dialog = BulkDialog.DIFFICULTY }
-                BulkRow(Icons.Filled.People, L10n.str(R.string.bulk_change_servings)) { dialog = BulkDialog.SERVINGS }
-                BulkRow(Icons.Filled.Link, L10n.str(R.string.bulk_change_source)) { dialog = BulkDialog.SOURCE }
-            }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-            if (allFavorite) {
-                BulkRow(Icons.Filled.FavoriteBorder, L10n.str(R.string.bulk_favorite_off)) { done { onFavorite(false) } }
-            } else {
-                BulkRow(Icons.Filled.Favorite, L10n.str(R.string.bulk_favorite_on)) { done { onFavorite(true) } }
-            }
-            BulkRow(Icons.Filled.ShoppingCart, L10n.str(R.string.bulk_add_to_shopping)) { done(onShopping) }
-            if (!readOnly) {
-                onPolish?.let { polish -> BulkRow(Icons.Filled.AutoAwesome, L10n.str(R.string.bulk_polish_action)) { done(polish) } }
-                if (aiAvailable) {
-                    BulkRow(Icons.Filled.AutoAwesome, L10n.str(R.string.bulk_recalculate_ai)) { done(onRecalculateAi) }
+                if (allFavorite) {
+                    BulkRow(Icons.Filled.FavoriteBorder, L10n.str(R.string.bulk_favorite_off)) { done { onFavorite(false) } }
+                } else {
+                    BulkRow(Icons.Filled.Favorite, L10n.str(R.string.bulk_favorite_on)) { done { onFavorite(true) } }
+                }
+                BulkRow(Icons.Filled.ShoppingCart, L10n.str(R.string.bulk_add_to_shopping)) { done(onShopping) }
+                if (!readOnly) {
+                    onPolish?.let { polish -> BulkRow(Icons.Filled.AutoAwesome, L10n.str(R.string.bulk_polish_action)) { done(polish) } }
+                    if (aiAvailable) {
+                        BulkRow(Icons.Filled.AutoAwesome, L10n.str(R.string.bulk_recalculate_ai)) { done(onRecalculateAi) }
+                    }
                 }
             }
         }

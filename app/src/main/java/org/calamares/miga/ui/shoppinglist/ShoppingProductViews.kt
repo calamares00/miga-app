@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.shoppinglist
 
+import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -217,183 +218,185 @@ internal fun ProductDetailSheet(
     val score = remember(info) { ProductScoring.compute(info) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .height(sheetContentHeight(0.9f))
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            if (selectedPhoto != null) {
-                AsyncImage(
-                    model = selectedPhoto,
-                    contentDescription = L10n.str(R.string.photo_x, name),
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth().height(260.dp)
-                )
-                if (photos.size > 1) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-                    ) {
-                        photos.forEach { url ->
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.clip(MaterialTheme.shapes.small).clickable { selectedPhoto = url }.padding(4.dp)
-                            ) {
-                                AsyncImage(
-                                    model = url,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .size(56.dp)
-                                        .clip(MaterialTheme.shapes.small)
-                                        .then(if (url == selectedPhoto) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier)
-                                )
-                                Text(photoLabels[url] ?: L10n.str(R.string.photo), style = MaterialTheme.typography.labelSmall)
+        Column(modifier = Modifier.keepScrollInSheet()) {
+            Column(
+                modifier = Modifier
+                    .height(sheetContentHeight(0.9f))
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (selectedPhoto != null) {
+                    AsyncImage(
+                        model = selectedPhoto,
+                        contentDescription = L10n.str(R.string.photo_x, name),
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxWidth().height(260.dp)
+                    )
+                    if (photos.size > 1) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                        ) {
+                            photos.forEach { url ->
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.clip(MaterialTheme.shapes.small).clickable { selectedPhoto = url }.padding(4.dp)
+                                ) {
+                                    AsyncImage(
+                                        model = url,
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(56.dp)
+                                            .clip(MaterialTheme.shapes.small)
+                                            .then(if (url == selectedPhoto) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier)
+                                    )
+                                    Text(photoLabels[url] ?: L10n.str(R.string.photo), style = MaterialTheme.typography.labelSmall)
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            Text(name, style = MaterialTheme.typography.headlineSmall)
-            val subtitle = listOfNotNull(info.brand, info.quantity).joinToString(" · ")
-            if (subtitle.isNotEmpty()) {
-                Text(subtitle, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            actions()
+                Text(name, style = MaterialTheme.typography.headlineSmall)
+                val subtitle = listOfNotNull(info.brand, info.quantity).joinToString(" · ")
+                if (subtitle.isNotEmpty()) {
+                    Text(subtitle, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                actions()
 
-            if (nutriLetter != null || info.nova != null || ecoLetter != null || score != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (nutriLetter != null) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            NutriScoreBadge(letter = nutriLetter, large = true)
-                            Text("  Nutri-Score", style = MaterialTheme.typography.labelLarge)
+                if (nutriLetter != null || info.nova != null || ecoLetter != null || score != null) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (nutriLetter != null) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                NutriScoreBadge(letter = nutriLetter, large = true)
+                                Text("  Nutri-Score", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+                        if (score != null) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                ScoreChip(score = score, large = true)
+                                Text(L10n.str(R.string.score), style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+                        val novaColor = ProductLabels.novaArgb(info.nova)
+                        if (info.nova != null && novaColor != null) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(novaColor)),
+                                    contentAlignment = Alignment.Center
+                                ) { Text("${info.nova}", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White) }
+                                Text("  NOVA", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+                        if (ecoLetter != null) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                NutriScoreBadge(letter = ecoLetter, large = true)
+                                Text("  Eco-Score", style = MaterialTheme.typography.labelLarge)
+                            }
                         }
                     }
-                    if (score != null) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            ScoreChip(score = score, large = true)
-                            Text(L10n.str(R.string.score), style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
-                    val novaColor = ProductLabels.novaArgb(info.nova)
-                    if (info.nova != null && novaColor != null) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(novaColor)),
-                                contentAlignment = Alignment.Center
-                            ) { Text("${info.nova}", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White) }
-                            Text("  NOVA", style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
-                    if (ecoLetter != null) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            NutriScoreBadge(letter = ecoLetter, large = true)
-                            Text("  Eco-Score", style = MaterialTheme.typography.labelLarge)
-                        }
+                    ProductLabels.novaDescription(info.nova)?.let {
+                        Text("NOVA ${info.nova}: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                ProductLabels.novaDescription(info.nova)?.let {
-                    Text("NOVA ${info.nova}: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
 
-            if (badges.isNotEmpty()) {
-                Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    badges.forEach { SuggestionChip(onClick = {}, label = { Text(it) }) }
+                if (badges.isNotEmpty()) {
+                    Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        badges.forEach { SuggestionChip(onClick = {}, label = { Text(it) }) }
+                    }
                 }
-            }
 
-            if (score != null) {
-                HorizontalDivider()
-                Text(
-                    L10n.str(R.string.score_x_100_x, score.value, score.tier.label),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color(score.tier.argb)
-                )
-                Text(
-                    L10n.str(R.string.nutrition_x_100_60_additives, score.nutrition, score.additives) +
-                        if (score.organicBonus > 0) L10n.str(R.string.organic_x, score.organicBonus) else "",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                if (score.cappedByRiskyAdditive) {
+                if (score != null) {
+                    HorizontalDivider()
                     Text(
-                        L10n.str(R.string.capped_49_because_contains_high),
+                        L10n.str(R.string.score_x_100_x, score.value, score.tier.label),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = Color(score.tier.argb)
+                    )
+                    Text(
+                        L10n.str(R.string.nutrition_x_100_60_additives, score.nutrition, score.additives) +
+                            if (score.organicBonus > 0) L10n.str(R.string.organic_x, score.organicBonus) else "",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    if (score.cappedByRiskyAdditive) {
+                        Text(
+                            L10n.str(R.string.capped_49_because_contains_high),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    Text(
+                        L10n.str(R.string.migas_own_estimate_based_open),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Text(
-                    L10n.str(R.string.migas_own_estimate_based_open),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
 
-            val additiveCodes = info.additives.orEmpty()
-            if (additiveCodes.isNotEmpty()) {
-                HorizontalDivider()
-                Text(L10n.str(R.string.additives_x, additiveCodes.size), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-                Text(
-                    additiveCodes.joinToString(", ") { code ->
-                        val risk = ProductScoring.additiveRisk(code)
-                        code.uppercase() + if (risk == AdditiveRisk.NONE) "" else " (${risk.label})"
-                    },
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-
-            if (info.allergens.isNotEmpty() || info.traces.isNotEmpty()) {
-                HorizontalDivider()
-                Text(L10n.str(R.string.allergens), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-                if (info.allergens.isNotEmpty()) {
-                    Text(L10n.str(R.string.contains_x, info.allergens.joinToString(", ") { ProductLabels.allergenName(it) }), style = MaterialTheme.typography.bodyMedium)
+                val additiveCodes = info.additives.orEmpty()
+                if (additiveCodes.isNotEmpty()) {
+                    HorizontalDivider()
+                    Text(L10n.str(R.string.additives_x, additiveCodes.size), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                    Text(
+                        additiveCodes.joinToString(", ") { code ->
+                            val risk = ProductScoring.additiveRisk(code)
+                            code.uppercase() + if (risk == AdditiveRisk.NONE) "" else " (${risk.label})"
+                        },
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
-                if (info.traces.isNotEmpty()) {
-                    Text(L10n.str(R.string.may_contain_traces) + info.traces.joinToString(", ") { ProductLabels.allergenName(it) }, style = MaterialTheme.typography.bodyMedium)
-                }
-                Text(
-                    L10n.str(R.string.collaborative_data_open_food_facts),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
 
-            if (nutrition.isNotEmpty()) {
-                HorizontalDivider()
-                Text(L10n.str(R.string.nutrition_per_100_g), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-                nutrition.forEach { (label, value) ->
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                if (info.allergens.isNotEmpty() || info.traces.isNotEmpty()) {
+                    HorizontalDivider()
+                    Text(L10n.str(R.string.allergens), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                    if (info.allergens.isNotEmpty()) {
+                        Text(L10n.str(R.string.contains_x, info.allergens.joinToString(", ") { ProductLabels.allergenName(it) }), style = MaterialTheme.typography.bodyMedium)
+                    }
+                    if (info.traces.isNotEmpty()) {
+                        Text(L10n.str(R.string.may_contain_traces) + info.traces.joinToString(", ") { ProductLabels.allergenName(it) }, style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Text(
+                        L10n.str(R.string.collaborative_data_open_food_facts),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (nutrition.isNotEmpty()) {
+                    HorizontalDivider()
+                    Text(L10n.str(R.string.nutrition_per_100_g), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                    nutrition.forEach { (label, value) ->
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                            Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                        }
                     }
                 }
-            }
 
-            if (!info.ingredients.isNullOrBlank()) {
-                HorizontalDivider()
-                Text(L10n.str(R.string.ingredients), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-                Text(info.ingredients, style = MaterialTheme.typography.bodyMedium)
-            }
-
-            HorizontalDivider()
-            TextButton(onClick = {
-                runCatching {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://world.openfoodfacts.org/product/${info.barcode}")))
+                if (!info.ingredients.isNullOrBlank()) {
+                    HorizontalDivider()
+                    Text(L10n.str(R.string.ingredients), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                    Text(info.ingredients, style = MaterialTheme.typography.bodyMedium)
                 }
-            }) { Text(L10n.str(R.string.view_open_food_facts)) }
-            Text(
-                L10n.str(R.string.data_open_food_facts_odbl),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
+
+                HorizontalDivider()
+                TextButton(onClick = {
+                    runCatching {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://world.openfoodfacts.org/product/${info.barcode}")))
+                    }
+                }) { Text(L10n.str(R.string.view_open_food_facts)) }
+                Text(
+                    L10n.str(R.string.data_open_food_facts_odbl),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+            }
         }
     }
 }

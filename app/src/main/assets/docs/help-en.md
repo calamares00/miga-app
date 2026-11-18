@@ -14,6 +14,8 @@ Each book is a recipe collection with its own cover: your mum's, a friend's or o
 ## ✍️ Writing a recipe
 
 - **Ingredients**: as you type the name, the app suggests the ones you have used before. From each ingredient's menu (⋮) you can mark it as **optional** (parsley to garnish, for example): it shows "(optional)" without changing its name.
+- **Tabs** at the top (Basics, Ingredients, Steps, More) jump to each part of the recipe.
+- **Ingredients**: they look as in the recipe; tap one to edit its name, amount and unit. To add one, type "200 g potatoes" in the box below and Miga splits amount, unit and name.
 - **Paste a list**: paste several ingredients or steps at once (or use **Paste list**) and they are split one per line, without bullets or numbers; ingredients are split into quantity, unit and name.
 - **Reorder**: drag the handle (⋮⋮) of an ingredient or step to move it.
 - **Repeated recipes**: if you already have a recipe with the same name, you are asked before saving.
@@ -42,7 +44,7 @@ Options marked ✨ are done by the kitchen assistant and only appear once it is 
 From the ingredients, and without the assistant, Miga works out the **14 allergens** EU law requires to be declared (gluten, crustaceans, eggs, fish, peanuts, soy, milk, tree nuts, celery, mustard, sesame, sulphites, lupin and molluscs) and **lactose**.
 
 - In the recipe, an **Allergens** line shows only the ones it has: red for what it **contains**; amber with "!" for what it **may contain** depending on the product you buy (stock cubes, sausages, spice mixes, chocolate…). Tap it to see all of them, which ingredient brings each one and advice for coeliacs.
-- In the ingredient list the allergen is in **bold**, as on food labels, and ingredients that depend on the product carry ⚠.
+- In the ingredient list, ingredients that may bring an allergen depending on the product carry ⚠.
 - **Gluten**: "No ingredients with gluten" or "Suitable for coeliacs if…" (for example, if you buy the sausage and stock certified gluten-free and cook without cross-contact). Miga never says just "gluten-free": that is a legal claim that needs the product to be tested. Oats count as a cereal with gluten unless certified. Buckwheat, maize, rice or chickpea flour and lentils have no gluten but may carry traces: the coeliac card reminds you to buy them certified.
 - If you use a certified product, mark it in the editor from the ingredient's menu (⋮): **Gluten-free product (certified)** or **Lactose-free product**. It is added to the name, so it also shows in the shopping list.
 - It is **for guidance only**: check each product's label and ask your doctor or dietitian.

@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.components
 
+import androidx.compose.foundation.layout.heightIn
 import android.text.format.Formatter
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -70,29 +71,31 @@ import org.calamares.miga.data.export.ShareAction
 @Composable
 fun ShareSheet(title: String, actions: List<ShareAction>, onAction: (ShareAction) -> Unit, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 24.dp).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                L10n.str(R.string.share_x, title),
-                style = MaterialTheme.typography.titleLarge,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            ShareAction.entries.filter { it in actions }.forEach { action ->
-                val (icon, name, description) = when (action) {
-                    ShareAction.SEND_FILE -> Triple(Icons.Filled.Share, R.string.share_action_send, R.string.share_action_send_desc)
-                    ShareAction.LINK -> Triple(Icons.Filled.Link, R.string.share_action_link, R.string.share_action_link_desc)
-                    ShareAction.PDF -> Triple(Icons.Filled.PictureAsPdf, R.string.export_format_pdf, R.string.export_format_pdf_desc)
-                    ShareAction.IMAGE -> Triple(Icons.Filled.Image, R.string.export_format_image, R.string.export_format_image_desc)
-                    ShareAction.TEXT -> Triple(Icons.Filled.ShortText, R.string.export_format_text, R.string.export_format_text_desc)
-                    ShareAction.SAVE_COPY -> Triple(Icons.Filled.Archive, R.string.share_action_copy, R.string.export_format_miga_desc)
-                }
-                ExportOption(icon, L10n.str(name), L10n.str(description)) {
-                    onDismiss()
-                    onAction(action)
+        Column(modifier = Modifier.keepScrollInSheet()) {
+            Column(
+                modifier = Modifier.heightIn(max = sheetContentHeight(0.9f)).padding(start = 20.dp, end = 20.dp, bottom = 24.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    L10n.str(R.string.share_x, title),
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                ShareAction.entries.filter { it in actions }.forEach { action ->
+                    val (icon, name, description) = when (action) {
+                        ShareAction.SEND_FILE -> Triple(Icons.Filled.Share, R.string.share_action_send, R.string.share_action_send_desc)
+                        ShareAction.LINK -> Triple(Icons.Filled.Link, R.string.share_action_link, R.string.share_action_link_desc)
+                        ShareAction.PDF -> Triple(Icons.Filled.PictureAsPdf, R.string.export_format_pdf, R.string.export_format_pdf_desc)
+                        ShareAction.IMAGE -> Triple(Icons.Filled.Image, R.string.export_format_image, R.string.export_format_image_desc)
+                        ShareAction.TEXT -> Triple(Icons.Filled.ShortText, R.string.export_format_text, R.string.export_format_text_desc)
+                        ShareAction.SAVE_COPY -> Triple(Icons.Filled.Archive, R.string.share_action_copy, R.string.export_format_miga_desc)
+                    }
+                    ExportOption(icon, L10n.str(name), L10n.str(description)) {
+                        onDismiss()
+                        onAction(action)
+                    }
                 }
             }
         }

@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.shoppinglist
 
+import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.ui.components.ButtonContent
 import org.calamares.miga.L10n
@@ -204,30 +205,32 @@ internal fun ShoppingAddSheet(
     val catalog by viewModel.catalog.collectAsStateWithLifecycle()
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.height(sheetContentHeight(0.92f))) {
-            TabRow(selectedTabIndex = tab.ordinal, containerColor = Color.Transparent) {
-                AddTab.entries.forEach { entry ->
-                    Tab(selected = tab == entry, onClick = { tab = entry }, text = { Text(entry.title, maxLines = 1) })
+        Column(modifier = Modifier.keepScrollInSheet()) {
+            Column(modifier = Modifier.height(sheetContentHeight(0.92f))) {
+                TabRow(selectedTabIndex = tab.ordinal, containerColor = Color.Transparent) {
+                    AddTab.entries.forEach { entry ->
+                        Tab(selected = tab == entry, onClick = { tab = entry }, text = { Text(entry.title, maxLines = 1) })
+                    }
                 }
-            }
-            Box(modifier = Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp)) {
-                when (tab) {
-                    AddTab.CATALOG -> CatalogContent(
-                        catalog = catalog,
-                        pendingNames = pendingNames,
-                        onToggle = { viewModel.toggleCatalogItem(it) }
-                    )
-                    AddTab.PRODUCTS -> Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                        ProductSearchContent(
-                            viewModel = viewModel,
-                            initialQuery = initialQuery,
-                            addDescription = L10n.str(R.string.add_list),
-                            onAdd = { product ->
-                                viewModel.addSearchedProduct(product)
-                                onMessage(L10n.str(R.string.added_x, product.name))
-                            },
-                            onSaveToTemplate = { product -> onSaveToTemplate(product.toTemplateItem()) }
+                Box(modifier = Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp)) {
+                    when (tab) {
+                        AddTab.CATALOG -> CatalogContent(
+                            catalog = catalog,
+                            pendingNames = pendingNames,
+                            onToggle = { viewModel.toggleCatalogItem(it) }
                         )
+                        AddTab.PRODUCTS -> Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                            ProductSearchContent(
+                                viewModel = viewModel,
+                                initialQuery = initialQuery,
+                                addDescription = L10n.str(R.string.add_list),
+                                onAdd = { product ->
+                                    viewModel.addSearchedProduct(product)
+                                    onMessage(L10n.str(R.string.added_x, product.name))
+                                },
+                                onSaveToTemplate = { product -> onSaveToTemplate(product.toTemplateItem()) }
+                            )
+                        }
                     }
                 }
             }

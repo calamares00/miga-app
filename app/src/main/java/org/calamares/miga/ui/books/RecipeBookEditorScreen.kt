@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.books
 
+import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.net.Uri
@@ -267,17 +268,19 @@ fun RecipeBookEditorScreen(
 
     if (showPhotoSourceSheet) {
         ModalBottomSheet(onDismissRequest = { showPhotoSourceSheet = false }, sheetState = photoSheetState) {
-            PhotoSourceSheet(
-                title = L10n.str(R.string.add_cover),
-                onCameraClick = {
-                    showPhotoSourceSheet = false
-                    cameraCapture.launch()
-                },
-                onGalleryClick = {
-                    showPhotoSourceSheet = false
-                    coverPicker.launch("image/*")
-                }
-            )
+            Column(modifier = Modifier.keepScrollInSheet()) {
+                PhotoSourceSheet(
+                    title = L10n.str(R.string.add_cover),
+                    onCameraClick = {
+                        showPhotoSourceSheet = false
+                        cameraCapture.launch()
+                    },
+                    onGalleryClick = {
+                        showPhotoSourceSheet = false
+                        coverPicker.launch("image/*")
+                    }
+                )
+            }
         }
     }
 
