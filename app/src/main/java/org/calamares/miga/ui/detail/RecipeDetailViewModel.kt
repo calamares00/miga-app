@@ -6,6 +6,7 @@ import org.calamares.miga.ui.navigation.Destinations
 import org.calamares.miga.R
 import org.calamares.miga.L10n
 import org.calamares.miga.data.health.HealthPrefs
+import org.calamares.miga.data.health.PortionPlan
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.Job
 import org.calamares.miga.data.ai.AiJobState
@@ -132,6 +133,13 @@ class RecipeDetailViewModel(
     /** Allergens and coeliac settings (Settings > Health). */
     val healthPrefs: StateFlow<HealthPrefs> = settingsRepository.observeHealthPrefs()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HealthPrefs())
+
+    /** The user's portion plan when they count carbohydrates and have one; null otherwise. */
+    val portionPlan: StateFlow<PortionPlan?> = combine(
+        settingsRepository.observeCarbCountingEnabled(),
+        settingsRepository.observePortionPlan()
+    ) { enabled, plan -> plan.takeIf { enabled && !it.isEmpty } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     /** Grams in a carbohydrate portion when the user counts them (Settings), or null. */
     val carbPortionGrams: StateFlow<Int?> = combine(
