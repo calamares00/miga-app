@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.data.health.AllergenDisplay
 import androidx.compose.ui.graphics.Color
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.L10n
@@ -84,6 +85,7 @@ fun SettingsHomeScreen(
     val yourName by viewModel.yourName.collectAsStateWithLifecycle()
     val carbCounting by viewModel.carbCountingEnabled.collectAsStateWithLifecycle()
     val carbPortion by viewModel.carbPortionGrams.collectAsStateWithLifecycle()
+    val health by viewModel.healthPrefs.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     AdaptiveScaffold(
@@ -126,11 +128,21 @@ fun SettingsHomeScreen(
                     HomeItem(SettingsSection.VOICE.icon, SettingsSection.VOICE.title, selected = selectedSection == SettingsSection.VOICE, summary = L10n.str(R.string.dictation_x, DictationLanguages.label(dictationLanguage))) {
                         onOpenSection(SettingsSection.VOICE)
                     },
-                    HomeItem(SettingsSection.HEALTH.icon, SettingsSection.HEALTH.title, selected = selectedSection == SettingsSection.HEALTH, summary = when {
-                        !carbCounting -> L10n.str(R.string.carb_counting_off)
-                        carbPortion == 0 -> L10n.str(R.string.carb_counting_grams_only)
-                        else -> L10n.str(R.string.carb_counting_portion_x, carbPortion)
-                    }) { onOpenSection(SettingsSection.HEALTH) }
+                    HomeItem(SettingsSection.HEALTH.icon, SettingsSection.HEALTH.title, selected = selectedSection == SettingsSection.HEALTH, summary = listOfNotNull(
+                        L10n.str(
+                            when (health.allergenDisplay) {
+                                AllergenDisplay.NONE -> R.string.health_summary_allergens_none
+                                AllergenDisplay.MINE -> R.string.health_summary_allergens_mine
+                                AllergenDisplay.ALL -> R.string.health_summary_allergens_all
+                            }
+                        ),
+                        L10n.str(R.string.health_summary_coeliac).takeIf { health.coeliac },
+                        when {
+                            !carbCounting -> null
+                            carbPortion == 0 -> L10n.str(R.string.carb_counting_grams_only)
+                            else -> L10n.str(R.string.carb_counting_portion_x, carbPortion)
+                        }
+                    ).joinToString(" · ")) { onOpenSection(SettingsSection.HEALTH) }
                 )
             )
             HomeGroup(

@@ -17,6 +17,7 @@ import org.calamares.miga.data.export.RecipeExportDto
 import org.calamares.miga.data.export.RecipeExporter
 import org.calamares.miga.data.export.RecipeImportResult
 import org.calamares.miga.data.export.toDraft
+import org.calamares.miga.data.health.HealthPrefs
 import org.calamares.miga.data.local.DEFAULT_CARB_PORTION_GRAMS
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.ColorTheme
@@ -177,6 +178,13 @@ class SettingsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
     val carbPortionGrams: StateFlow<Int> = settingsRepository.observeCarbPortionGrams()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_CARB_PORTION_GRAMS)
+
+    val healthPrefs: StateFlow<HealthPrefs> = settingsRepository.observeHealthPrefs()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HealthPrefs())
+
+    fun updateHealthPrefs(change: (HealthPrefs) -> HealthPrefs) {
+        viewModelScope.launch { settingsRepository.setHealthPrefs(change(healthPrefs.value)) }
+    }
 
     fun setCarbCountingEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setCarbCountingEnabled(enabled) }

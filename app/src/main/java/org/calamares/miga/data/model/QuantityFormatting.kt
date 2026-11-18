@@ -27,23 +27,6 @@ fun formatIngredientText(
     return "$quantityPart ${UnitInflection.inflect(unit, quantity * scale, language)}$connector$name"
 }
 
-/**
- * The same as [formatIngredientText] in two parts, for a list with the amounts in a column of
- * their own: ("2 tazas", "harina"), (null, "sal"). No "de" between them: the column separates.
- */
-fun ingredientParts(
-    name: String,
-    quantity: Double?,
-    unit: String?,
-    scale: Double = 1.0,
-    language: String = L10n.locale().language,
-    forReading: Boolean = false
-): Pair<String?, String> {
-    val quantityPart = quantity?.let { if (forReading) readableQuantity(it * scale, language) else formatQuantity(it * scale) } ?: return null to name
-    if (unit.isNullOrBlank()) return quantityPart to name
-    return "$quantityPart ${UnitInflection.inflect(unit, quantity * scale, language)}" to name
-}
-
 private val FRACTIONS = mapOf(25 to "¼", 50 to "½", 75 to "¾")
 
 /**
