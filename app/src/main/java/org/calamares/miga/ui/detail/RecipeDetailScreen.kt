@@ -4,6 +4,7 @@ import org.calamares.miga.ui.components.keepScrollInSheet
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.saveable.rememberSaveable
 import org.calamares.miga.data.allergens.AllergenAnalysis
+import org.calamares.miga.data.carbs.CarbAnalysis
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.SnackbarDuration
@@ -128,6 +129,7 @@ fun RecipeDetailScreen(
     val healthState by viewModel.healthState.collectAsStateWithLifecycle()
     val canRecalculateAnalysis by viewModel.canRecalculateAnalysis.collectAsStateWithLifecycle()
     val nutritionState by viewModel.nutritionState.collectAsStateWithLifecycle()
+    val carbPortionGrams by viewModel.carbPortionGrams.collectAsStateWithLifecycle()
     val substitutionDialogState by viewModel.substitutionDialogState.collectAsStateWithLifecycle()
     val polishState by viewModel.polishState.collectAsStateWithLifecycle()
     val polishInBackground by viewModel.polishInBackground.collectAsStateWithLifecycle()
@@ -203,6 +205,7 @@ fun RecipeDetailScreen(
                     onRetryHealth = { viewModel.retryHealthCheck() },
                     nutritionState = nutritionState,
                     onRetryNutrition = { viewModel.retryNutritionCheck() },
+                    carbPortionGrams = carbPortionGrams,
                     onRecalculateAnalysis = { viewModel.recalculateAnalysis() }.takeIf { canRecalculateAnalysis },
                     onSubstituteIngredient = { name: String -> viewModel.findSubstitutesFor(name) }.takeIf { aiEnabled },
                     onRatingChange = { stars -> viewModel.setRating(stars) },
@@ -491,6 +494,8 @@ private fun RecipeDetailContent(
     onRetryHealth: () -> Unit,
     nutritionState: NutritionState,
     onRetryNutrition: () -> Unit,
+    /** Grams in a carbohydrate portion when the user counts them; null hides them. */
+    carbPortionGrams: Int?,
     onRecalculateAnalysis: (() -> Unit)?,
     onSubstituteIngredient: ((String) -> Unit)?,
     onRatingChange: (Int) -> Unit,
@@ -575,6 +580,14 @@ private fun RecipeDetailContent(
                 AllergenLine(allergens) { showAllergens = true }
             }
             if (showAllergens) AllergenSheet(allergens) { showAllergens = false }
+
+            // Carbohydrates per serving, for those who count them.
+            if (carbPortionGrams != null && recipe.ingredientGroups.any { group -> group.ingredients.any { it.name.isNotBlank() } }) {
+                val carbs = remember(recipe.ingredientGroups, recipe.servings) { CarbAnalysis.ofRecipe(recipe) }
+                var showCarbs by rememberSaveable { mutableStateOf(false) }
+                CarbLine(carbs, carbPortionGrams) { showCarbs = true }
+                if (showCarbs) CarbSheet(carbs, carbPortionGrams) { showCarbs = false }
+            }
 
             // Ingredients
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

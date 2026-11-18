@@ -1479,4 +1479,36 @@
     <string name="filter_without_x">"Sin %1$s"</string>
     <string name="filter_without_gluten">"Sin ingredientes con gluten"</string>
     <string name="filter_allow_may_chip">"Incluye «puede contener»"</string>
+    <string name="settings_health">"Salud"</string>
+    <string name="carb_counting_off">"Raciones de hidratos: no"</string>
+    <string name="carb_counting_grams_only">"Hidratos de carbono en gramos"</string>
+    <string name="carb_counting_portion_x">"Raciones de hidratos de %1$d g"</string>
+    <string name="carb_counting_section">"Hidratos de carbono"</string>
+    <string name="carb_counting_desc">"Para quien cuenta raciones de hidratos (por ejemplo, con diabetes): cada receta muestra cuántas lleva por persona, calculadas con sus ingredientes."</string>
+    <string name="carb_counting_title">"Contar raciones de hidratos"</string>
+    <string name="carb_counting_subtitle">"Muestra los hidratos de carbono en cada receta."</string>
+    <string name="carb_portion_title">"Gramos por ración"</string>
+    <string name="carb_portion_x_g">"%1$d g"</string>
+    <string name="carb_portion_grams_only">"Solo gramos"</string>
+    <string name="carb_portion_hint">"En España 1 ración = 10 g de hidratos. Usa la que te haya indicado tu equipo médico; a 0 se muestran solo los gramos."</string>
+    <string name="carb_disclaimer">"Orientativo: calculado con valores medios de los ingredientes. No sustituye la pauta de tu equipo médico."</string>
+    <string name="carb_title">"Hidratos de carbono"</string>
+    <string name="carb_open">"Ver hidratos por ingrediente"</string>
+    <string name="carb_grams_x">"%1$d g"</string>
+    <string name="carb_portion_under_half">"menos de ½ ración"</string>
+    <string name="carb_portion_one_x">"%1$s ración"</string>
+    <string name="carb_portions_x">"%1$s raciones"</string>
+    <string name="carb_per_serving_x">"%1$s por persona"</string>
+    <string name="carb_whole_recipe_x">"%1$s en toda la receta"</string>
+    <string name="carb_missing_one">"falta 1 ingrediente"</string>
+    <string name="carb_missing_x">"faltan %1$d ingredientes"</string>
+    <string name="carb_missing_title">"Sin calcular"</string>
+    <string name="carb_no_amount">"sin cantidad"</string>
+    <string name="carb_unknown_food">"no reconocido"</string>
+    <string name="carb_missing_hint">"No se suman: añade la cantidad en la receta para tenerlos en cuenta."</string>
+    <string name="carb_by_ingredient">"Por ingrediente (toda la receta)"</string>
+    <string name="carb_optional_title">"Opcionales (no sumados)"</string>
+    <string name="carb_free_title">"Casi sin hidratos"</string>
+    <string name="carb_sources">"Hidratos disponibles (sin fibra), por 100 g de alimento crudo. Valores de USDA FoodData Central contrastados con BEDCA (AESAN)."</string>
+    <string name="carb_for_x_people">"para %1$d personas"</string>
 </resources>
