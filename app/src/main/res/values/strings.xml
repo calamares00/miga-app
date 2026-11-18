@@ -1594,4 +1594,8 @@
     <string name="complement_milk_many_x">"%1$s cups of milk or %2$s yogurts"</string>
     <string name="complement_fat_many_x">"%1$s tablespoons of oil"</string>
     <string name="complement_milk_half">"½ cup of milk or 1 yogurt"</string>
+    <string name="plan_not_suitable_x">"It does not fit \"%1$s\""</string>
+    <string name="plan_not_suitable_why_x">"This recipe is mostly %1$s, and your plan has none at that meal."</string>
+    <string name="plan_suits_x">"It fits: %1$s."</string>
+    <string name="plan_suits_none">"It does not fit any meal of your plan."</string>
 </resources>

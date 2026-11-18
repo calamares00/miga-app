@@ -1593,4 +1593,8 @@
     <string name="complement_milk_many_x">"%1$s tazas de leche o %2$s yogures"</string>
     <string name="complement_fat_many_x">"%1$s cucharadas de aceite"</string>
     <string name="complement_milk_half">"½ taza de leche o 1 yogur"</string>
+    <string name="plan_not_suitable_x">"No encaja en «%1$s»"</string>
+    <string name="plan_not_suitable_why_x">"Esta receta es sobre todo %1$s, y tu plan no lo lleva en esa comida."</string>
+    <string name="plan_suits_x">"Encaja en: %1$s."</string>
+    <string name="plan_suits_none">"No encaja en ninguna comida de tu plan."</string>
 </resources>
