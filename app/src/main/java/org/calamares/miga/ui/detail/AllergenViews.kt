@@ -304,3 +304,62 @@ private fun Legend(color: Color, text: String) {
         Text(text, style = MaterialTheme.typography.labelSmall)
     }
 }
+
+/**
+ * The allergen row for "only mine" and for coeliacs (Settings > Health): whether the recipe has
+ * any of [mine] (null when the user did not ask for them) and, with [coeliac], the note for
+ * coeliacs. Nothing is drawn when neither applies.
+ */
+@Composable
+internal fun MyAllergenLine(allergens: RecipeAllergens, mine: Set<Allergen>?, coeliac: Boolean, onClick: () -> Unit) {
+    if (mine == null && !coeliac) return
+    val present = mine.orEmpty().filter { allergens.level(it) != AllergenLevel.FREE }
+        .sortedBy { if (allergens.level(it) == AllergenLevel.CONTAINS) 0 else 1 }
+    val contains = present.filter { allergens.level(it) == AllergenLevel.CONTAINS }
+    val names = { list: List<Allergen> -> list.joinToString(", ") { it.label.lowercase(L10n.locale()) } }
+    val (title, titleColor) = when {
+        mine == null -> null to Color.Unspecified
+        mine.isEmpty() -> L10n.str(R.string.allergens_mine_unset) to MaterialTheme.colorScheme.onSurfaceVariant
+        present.isEmpty() -> L10n.str(R.string.allergens_mine_none) to MaterialTheme.colorScheme.primary
+        contains.isNotEmpty() -> L10n.str(R.string.allergens_mine_contains_x, names(contains)) to ALLERGEN_RED
+        else -> L10n.str(R.string.allergens_mine_may_x, names(present)) to ALLERGEN_AMBER
+    }
+    val note = if (coeliac) glutenNote(allergens) else null
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClickLabel = L10n.str(R.string.allergens_open), role = Role.Button, onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = listOfNotNull(L10n.str(R.string.allergens_title), title, note).joinToString(". ") }
+    ) {
+        Row(modifier = Modifier.padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (title != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (present.isNotEmpty()) {
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                present.forEach { AllergenBadge(it, allergens.level(it), 28) }
+                            }
+                            Spacer(Modifier.width(10.dp))
+                        }
+                        Text(title, style = MaterialTheme.typography.titleSmall, color = titleColor)
+                    }
+                }
+                if (note != null) {
+                    Text(
+                        note,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = when (allergens.level(Allergen.GLUTEN)) {
+                            AllergenLevel.FREE -> MaterialTheme.colorScheme.primary
+                            AllergenLevel.MAY_CONTAIN -> ALLERGEN_AMBER
+                            AllergenLevel.CONTAINS -> ALLERGEN_RED
+                        }
+                    )
+                }
+            }
+            Icon(Icons.Filled.ChevronRight, contentDescription = null)
+        }
+    }
+}

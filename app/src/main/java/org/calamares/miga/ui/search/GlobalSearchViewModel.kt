@@ -1,5 +1,10 @@
 package org.calamares.miga.ui.search
 
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
+import org.calamares.miga.data.health.withHealthDefaults
+import org.calamares.miga.data.health.allergenWarnings
+import org.calamares.miga.data.allergens.Allergen
 import org.calamares.miga.data.model.recipesWithWhatYouHave
 import org.calamares.miga.data.model.PantryMatch
 import org.calamares.miga.data.model.SavedFilter
@@ -26,7 +31,9 @@ data class SearchResult(
     val recipeName: String,
     val bookName: String,
     val photoUri: String?,
-    val difficultyLabel: String
+    val difficultyLabel: String,
+    /** The user's allergens this recipe has, for a warning (Settings > Health). */
+    val warnAllergens: List<Allergen> = emptyList()
 )
 
 data class GlobalSearchUiState(
@@ -66,14 +73,26 @@ class GlobalSearchViewModel(
         repository.observeIngredientNames()
     ) { categories, tags, utensils, ingredientNames -> FilterOptions(categories, tags, utensils, ingredientNames) }
 
+    init {
+        // Searches start with the user's health conditions (Settings > Health), except when
+        // opened from the statistics with a filter of their own.
+        if (initialFilter == null) {
+            viewModelScope.launch {
+                val health = settingsRepository.observeHealthPrefs().first()
+                _filter.update { it.withHealthDefaults(health) }
+            }
+        }
+    }
+
     val uiState: StateFlow<GlobalSearchUiState> = combine(
         repository.observeAllRecipes(),
         _filter,
-        filterOptions
-    ) { recipes, filter, options ->
+        filterOptions,
+        settingsRepository.observeHealthPrefs().map { it.listWarnings }
+    ) { recipes, filter, options, warnings ->
         GlobalSearchUiState(
             isLoading = false,
-            results = recipes.applyFilter(filter).map { it.toSearchResult() },
+            results = recipes.applyFilter(filter).map { it.toSearchResult().copy(warnAllergens = it.allergenWarnings(warnings)) },
             availableCategories = options.categories.map { it.name },
             availableTags = options.tags.map { it.name },
             availableUtensils = options.utensils.map { it.name },

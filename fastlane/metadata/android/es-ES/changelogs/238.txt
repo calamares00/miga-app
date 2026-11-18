@@ -1,2 +1,4 @@
 Novedades de la versión 1.0.40:
-• Las cantidades de los ingredientes se ven en texto normal, igual que el nombre, sin negrita ni color (en la receta y en el editor).
+• Ajustes › Salud: elige si las recetas muestran todos los alérgenos, solo los tuyos o ninguno. Marca tus alergias e intolerancias para ver «Lleva huevo» en la receta, un aviso en las listas y, si quieres, búsquedas que empiezan sin ellas.
+• «Cocino para celíacos»: cada receta dice qué hace falta. Los alérgenos siguen en el menú ⋮.
+• Cantidades de los ingredientes en texto normal, sin negrita ni color.

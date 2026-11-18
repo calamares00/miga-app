@@ -73,7 +73,7 @@ private val TIME_LIMITS = listOf(15, 30, 60)
 private const val COLLAPSED_CHIPS = 8
 
 /** Allergen toggles per row. */
-private const val ALLERGENS_PER_ROW = 5
+const val ALLERGENS_PER_ROW = 5
 
 /**
  * The filters of a list of recipes, applied as they change. The quick decisions first (time,
@@ -385,7 +385,7 @@ private fun AllergenFilters(
 
 /** One allergen of the grid: its icon in a circle, crossed out when the recipes must not have it. */
 @Composable
-private fun AllergenToggle(allergen: Allergen, selected: Boolean, onToggle: () -> Unit, modifier: Modifier) {
+fun AllergenToggle(allergen: Allergen, selected: Boolean, onToggle: () -> Unit, modifier: Modifier) {
     val scheme = MaterialTheme.colorScheme
     val strike = scheme.error
     Column(

@@ -23,6 +23,9 @@ import org.calamares.miga.data.remote.DEFAULT_PACKS_CATALOG
 import org.calamares.miga.data.ai.defaultModelFor
 import org.calamares.miga.data.ai.guessModelReadsImages
 import org.calamares.miga.data.ai.AiProvider
+import org.calamares.miga.data.allergens.Allergen
+import org.calamares.miga.data.health.AllergenDisplay
+import org.calamares.miga.data.health.HealthPrefs
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.combine
@@ -95,6 +98,12 @@ class SettingsRepository(private val context: Context) {
     private val tipOfTheDayKey = booleanPreferencesKey("tip_of_the_day_enabled")
     private val carbCountingKey = booleanPreferencesKey("carb_counting_enabled")
     private val carbPortionGramsKey = intPreferencesKey("carb_portion_grams")
+    private val allergenDisplayKey = stringPreferencesKey("allergen_display")
+    private val myAllergensKey = stringSetPreferencesKey("my_allergens")
+    private val allergenWarnInListsKey = booleanPreferencesKey("allergen_warn_in_lists")
+    private val allergenHideInSearchKey = booleanPreferencesKey("allergen_hide_in_search")
+    private val coeliacKey = booleanPreferencesKey("coeliac_mode")
+    private val coeliacInSearchKey = booleanPreferencesKey("coeliac_in_search")
     private val tipOfTheDayClosedKey = longPreferencesKey("tip_of_the_day_closed_day")
 
     /**
@@ -296,6 +305,30 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setCarbPortionGrams(grams: Int) {
         context.settingsDataStore.edit { prefs -> prefs[carbPortionGramsKey] = grams.coerceIn(0, MAX_CARB_PORTION_GRAMS) }
+    }
+
+    /** Allergens and coeliac settings (Settings > Health). */
+    fun observeHealthPrefs(): Flow<HealthPrefs> = context.settingsDataStore.data.map { prefs ->
+        val defaults = HealthPrefs()
+        HealthPrefs(
+            allergenDisplay = AllergenDisplay.entries.firstOrNull { it.name == prefs[allergenDisplayKey] } ?: defaults.allergenDisplay,
+            myAllergens = prefs[myAllergensKey].orEmpty().mapNotNull { name -> Allergen.entries.firstOrNull { it.name == name } }.toSet(),
+            warnInLists = prefs[allergenWarnInListsKey] ?: defaults.warnInLists,
+            hideMineInSearch = prefs[allergenHideInSearchKey] ?: defaults.hideMineInSearch,
+            coeliac = prefs[coeliacKey] ?: defaults.coeliac,
+            coeliacInSearch = prefs[coeliacInSearchKey] ?: defaults.coeliacInSearch
+        )
+    }
+
+    suspend fun setHealthPrefs(health: HealthPrefs) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[allergenDisplayKey] = health.allergenDisplay.name
+            prefs[myAllergensKey] = health.myAllergens.map { it.name }.toSet()
+            prefs[allergenWarnInListsKey] = health.warnInLists
+            prefs[allergenHideInSearchKey] = health.hideMineInSearch
+            prefs[coeliacKey] = health.coeliac
+            prefs[coeliacInSearchKey] = health.coeliacInSearch
+        }
     }
 
     fun observeBiometricLockEnabled(): Flow<Boolean> =
