@@ -1,5 +1,13 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.ui.components.firstWebLink
+import org.calamares.miga.ui.components.FormattedText
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.ContentCopy
+import android.widget.Toast
+import android.os.Build
+import android.content.ClipboardManager
+import android.content.ClipData
 import org.calamares.miga.data.model.formatIngredientText
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -361,5 +369,32 @@ internal fun NutritionStat(value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(value, style = MaterialTheme.typography.titleMedium)
         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/**
+ * Where the recipe comes from: web addresses open in the browser, and a button copies the address
+ * (or the whole text when there is none).
+ */
+@Composable
+internal fun SourceLine(source: String) {
+    val context = LocalContext.current
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        FormattedText(
+            source,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        IconButton(onClick = {
+            val text = firstWebLink(source) ?: source.trim()
+            context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText(L10n.str(R.string.source), text))
+            // Android 13 and later show their own notice.
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                Toast.makeText(context, L10n.str(R.string.source_copied), Toast.LENGTH_SHORT).show()
+            }
+        }) {
+            Icon(Icons.Filled.ContentCopy, contentDescription = L10n.str(R.string.copy_source))
+        }
     }
 }
