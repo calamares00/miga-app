@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.40:
+• Las cantidades de los ingredientes se ven en texto normal, igual que el nombre, sin negrita ni color (en la receta y en el editor).
