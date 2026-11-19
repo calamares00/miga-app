@@ -1,5 +1,16 @@
 package org.calamares.miga.ui.detail
 
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.rememberTooltipState
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.ExperimentalMaterial3Api
+import org.calamares.miga.data.health.ingredientWarning
+import org.calamares.miga.data.health.IngredientWarning
+import org.calamares.miga.data.allergens.Allergen
+import org.calamares.miga.data.allergens.AllergenLevel
 import org.calamares.miga.ui.components.firstWebLink
 import org.calamares.miga.ui.components.FormattedText
 import androidx.compose.ui.platform.LocalContext
@@ -9,7 +20,6 @@ import android.os.Build
 import android.content.ClipboardManager
 import android.content.ClipData
 import org.calamares.miga.data.model.formatIngredientText
-import org.calamares.miga.data.allergens.AllergenAnalysis
 import org.calamares.miga.data.model.Ingredient
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.width
@@ -273,6 +283,40 @@ internal fun FactsStrip(facts: List<Fact>) {
  * stands out, with a warning when an allergen depends on the product. Tap ticks it; a long press
  * offers a substitute.
  */
+/** "Puede llevar gluten y apio según el producto: mira la etiqueta" / "Lleva huevo". */
+internal fun warningText(warning: IngredientWarning): String {
+    val names = warning.allergens.map { it.label.lowercase(L10n.locale()) }
+    val list = if (names.size > 1) names.dropLast(1).joinToString(", ") + L10n.str(R.string.list_and) + names.last() else names.single()
+    return if (warning.level == AllergenLevel.CONTAINS) L10n.str(R.string.ingredient_contains_x, list)
+    else L10n.str(R.string.ingredient_may_contain_x, list)
+}
+
+/** The ⚠ next to an ingredient; a tap says which allergens and why. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AllergenWarningIcon(warning: IngredientWarning) {
+    val message = warningText(warning)
+    val state = rememberTooltipState(isPersistent = true)
+    val scope = rememberCoroutineScope()
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        tooltip = { PlainTooltip { Text(message) } },
+        state = state
+    ) {
+        Icon(
+            Icons.Outlined.WarningAmber,
+            contentDescription = message,
+            tint = if (warning.level == AllergenLevel.CONTAINS) ALLERGEN_RED else ALLERGEN_AMBER,
+            modifier = Modifier
+                .padding(start = 2.dp)
+                .clip(CircleShape)
+                .clickable(role = Role.Button, onClickLabel = message) { scope.launch { state.show() } }
+                .padding(4.dp)
+                .size(16.dp)
+        )
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun IngredientLine(
@@ -280,11 +324,13 @@ internal fun IngredientLine(
     scale: Double,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    onSubstitute: (() -> Unit)?
+    onSubstitute: (() -> Unit)?,
+    /** Allergens to warn about (see HealthPrefs.ingredientWarnings): null for all. */
+    watchedAllergens: Set<Allergen>? = null
 ) {
     val text = formatIngredientText(ingredient.name, ingredient.quantity, ingredient.unit, scale, forReading = true) +
         if (ingredient.optional) " " + L10n.str(R.string.ingredient_optional_suffix) else ""
-    val mayContain = remember(ingredient.name) { AllergenAnalysis.ofIngredient(ingredient.name).mayContain }
+    val warning = remember(ingredient.name, watchedAllergens) { ingredientWarning(ingredient.name, watchedAllergens) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -311,14 +357,7 @@ internal fun IngredientLine(
             textDecoration = if (checked) TextDecoration.LineThrough else TextDecoration.None,
             modifier = Modifier.padding(start = 12.dp).weight(1f, fill = false)
         )
-        if (mayContain) {
-            Icon(
-                Icons.Outlined.WarningAmber,
-                contentDescription = L10n.str(R.string.ingredient_may_contain),
-                tint = ALLERGEN_AMBER,
-                modifier = Modifier.padding(start = 6.dp, top = 3.dp).size(16.dp)
-            )
-        }
+        warning?.let { AllergenWarningIcon(it) }
     }
 }
 

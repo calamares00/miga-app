@@ -1,0 +1,3 @@
+Novedades de la versión 1.0.43:
+• El aviso ⚠ junto a los ingredientes sigue tus ajustes de Salud: con «Todos» marca lo que depende del producto; con «Solo los míos», solo tus alérgenos (en rojo si los lleva seguro); con «No», ninguno (salvo el gluten si cocinas para celíacos).
+• Toca el ⚠ y te dice qué alérgeno es y por qué.
