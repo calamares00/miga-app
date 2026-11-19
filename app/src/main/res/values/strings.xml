@@ -1450,7 +1450,6 @@
     <string name="coeliac_buy_certified_x">"You buy these certified gluten-free (crossed grain symbol): %1$s."</string>
     <string name="coeliac_kitchen">"You cook without cross-contact: clean surfaces and utensils, fresh oil for frying, no flour nearby."</string>
     <string name="allergens_disclaimer">"For guidance only, worked out from the ingredients. Check each product\'s label and ask your doctor or dietitian."</string>
-    <string name="ingredient_may_contain">"May contain allergens depending on the product"</string>
     <string name="ingredient_mark_gluten_free">"Gluten-free product (certified)"</string>
     <string name="ingredient_mark_lactose_free">"Lactose-free product"</string>
     <string name="ingredient_gluten_free_phrase">"gluten-free"</string>
@@ -1560,7 +1559,7 @@
     <string name="plan_editor_desc">"Copy your care team’s plan: 10 g portions of each group at each meal. The kcal are approximate, from the method’s average portions."</string>
     <string name="plan_load_example">"Load example (1,500 kcal)"</string>
     <string name="plan_clear">"Clear plan"</string>
-    <string name="plan_disclaimer">"The example comes from an article on the Clínic method (Hospital Clínic, 2004), only to start with. Always use the plan you were given."</string>
+    <string name="plan_disclaimer">"The example is only to start with. Always use the plan you were given."</string>
     <string name="plan_less_x">"Less %1$s"</string>
     <string name="plan_more_x">"More %1$s"</string>
     <string name="plan_line_title">"In your plan’s portions, per serving"</string>
@@ -1598,4 +1597,7 @@
     <string name="plan_not_suitable_why_x">"This recipe is mostly %1$s, and your plan has none at that meal."</string>
     <string name="plan_suits_x">"It fits: %1$s."</string>
     <string name="plan_suits_none">"It does not fit any meal of your plan."</string>
+    <string name="ingredient_contains_x">"Has %1$s"</string>
+    <string name="ingredient_may_contain_x">"May have %1$s depending on the product: check the label"</string>
+    <string name="list_and">" and "</string>
 </resources>

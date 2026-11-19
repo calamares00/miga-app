@@ -1449,7 +1449,6 @@
     <string name="coeliac_buy_certified_x">"Compras certificados sin gluten (espiga barrada): %1$s."</string>
     <string name="coeliac_kitchen">"Cocinas sin contaminación cruzada: superficies y utensilios limpios, aceite sin usar para freír y sin harina cerca."</string>
     <string name="allergens_disclaimer">"Orientativo, calculado a partir de los ingredientes. Revisa la etiqueta de cada producto y consulta a tu médico o dietista."</string>
-    <string name="ingredient_may_contain">"Puede contener alérgenos según el producto"</string>
     <string name="ingredient_mark_gluten_free">"Producto sin gluten (certificado)"</string>
     <string name="ingredient_mark_lactose_free">"Producto sin lactosa"</string>
     <string name="ingredient_gluten_free_phrase">"sin gluten"</string>
@@ -1559,7 +1558,7 @@
     <string name="plan_editor_desc">"Copia el plan de tu equipo médico: raciones de 10 g de cada grupo en cada comida. Las kcal son aproximadas, con las raciones medias del método."</string>
     <string name="plan_load_example">"Cargar ejemplo (1.500 kcal)"</string>
     <string name="plan_clear">"Borrar plan"</string>
-    <string name="plan_disclaimer">"El ejemplo es el de un artículo del método Clínic (Hospital Clínic, 2004), solo para empezar. Usa siempre el plan que te hayan dado."</string>
+    <string name="plan_disclaimer">"El ejemplo es solo para empezar. Usa siempre el plan que te hayan dado."</string>
     <string name="plan_less_x">"Menos %1$s"</string>
     <string name="plan_more_x">"Más %1$s"</string>
     <string name="plan_line_title">"En raciones de tu plan, por persona"</string>
@@ -1597,4 +1596,7 @@
     <string name="plan_not_suitable_why_x">"Esta receta es sobre todo %1$s, y tu plan no lo lleva en esa comida."</string>
     <string name="plan_suits_x">"Encaja en: %1$s."</string>
     <string name="plan_suits_none">"No encaja en ninguna comida de tu plan."</string>
+    <string name="ingredient_contains_x">"Lleva %1$s"</string>
+    <string name="ingredient_may_contain_x">"Puede llevar %1$s según el producto: mira la etiqueta"</string>
+    <string name="list_and">" y "</string>
 </resources>

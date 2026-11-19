@@ -1,0 +1,3 @@
+What's new in version 1.0.43:
+• The ⚠ warning next to ingredients follows your Health settings: with "All" it flags what depends on the product; with "Only mine", only your allergens (red when it surely has them); with "No", none (except gluten if you cook for coeliacs).
+• Tap the ⚠ to see which allergen it is and why.
