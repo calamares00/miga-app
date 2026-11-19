@@ -643,7 +643,8 @@ private fun RecipeDetailContent(
                                     scale = scale,
                                     checked = checkedIngredients[key] ?: false,
                                     onCheckedChange = { checkedIngredients[key] = it },
-                                    onSubstitute = onSubstituteIngredient?.let { substitute -> { substitute(ingredient.name) } }
+                                    onSubstitute = onSubstituteIngredient?.let { substitute -> { substitute(ingredient.name) } },
+                                    watchedAllergens = health.ingredientWarnings
                                 )
                             }
                         }
