@@ -27,6 +27,18 @@ data class HealthPrefs(
     /** Searches start with "for coeliacs". */
     val coeliacInSearch: Boolean = false
 ) {
+    /**
+     * The allergens the ingredient list warns about: null for all of them (may contain only, as
+     * the allergen row shows them all), the user's own with "only mine", none with "no". Coeliac
+     * mode adds gluten.
+     */
+    val ingredientWarnings: Set<Allergen>?
+        get() = when (allergenDisplay) {
+            AllergenDisplay.ALL -> null
+            AllergenDisplay.MINE -> myAllergens + (if (coeliac) setOf(Allergen.GLUTEN) else emptySet())
+            AllergenDisplay.NONE -> if (coeliac) setOf(Allergen.GLUTEN) else emptySet()
+        }
+
     /** The allergens to warn about on recipe cards: none unless the user picked some. */
     val listWarnings: Set<Allergen> get() = if (warnInLists) myAllergens else emptySet()
 }
