@@ -1559,7 +1559,7 @@
     <string name="plan_editor_desc">"Copy your care team’s plan: 10 g portions of each group at each meal. The kcal are approximate, from the method’s average portions."</string>
     <string name="plan_load_example">"Load example (1,500 kcal)"</string>
     <string name="plan_clear">"Clear plan"</string>
-    <string name="plan_disclaimer">"The example comes from an article on the Clínic method (Hospital Clínic, 2004), only to start with. Always use the plan you were given."</string>
+    <string name="plan_disclaimer">"The example is only to start with. Always use the plan you were given."</string>
     <string name="plan_less_x">"Less %1$s"</string>
     <string name="plan_more_x">"More %1$s"</string>
     <string name="plan_line_title">"In your plan’s portions, per serving"</string>

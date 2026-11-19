@@ -1558,7 +1558,7 @@
     <string name="plan_editor_desc">"Copia el plan de tu equipo médico: raciones de 10 g de cada grupo en cada comida. Las kcal son aproximadas, con las raciones medias del método."</string>
     <string name="plan_load_example">"Cargar ejemplo (1.500 kcal)"</string>
     <string name="plan_clear">"Borrar plan"</string>
-    <string name="plan_disclaimer">"El ejemplo es el de un artículo del método Clínic (Hospital Clínic, 2004), solo para empezar. Usa siempre el plan que te hayan dado."</string>
+    <string name="plan_disclaimer">"El ejemplo es solo para empezar. Usa siempre el plan que te hayan dado."</string>
     <string name="plan_less_x">"Menos %1$s"</string>
     <string name="plan_more_x">"Más %1$s"</string>
     <string name="plan_line_title">"En raciones de tu plan, por persona"</string>
