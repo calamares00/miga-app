@@ -1,0 +1,3 @@
+What's new in version 1.0.46:
+• Recipes from Instagram: the photo is saved at full size and without the video's play button.
+• If the post's page does not show the caption, Miga reads it from the version for embedding in websites, so more posts can be imported.
