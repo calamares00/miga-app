@@ -73,6 +73,9 @@ fun formatDuration(minutes: Int): String {
     }
 }
 
-/** "200 g flour", with "(optional)" after it when the ingredient can be left out. */
-fun Ingredient.displayText(scale: Double = 1.0): String =
-    formatIngredientText(name, quantity, unit, scale) + if (optional) " " + L10n.str(R.string.ingredient_optional_suffix) else ""
+/**
+ * "200 g flour", with "(optional)" after it when the ingredient can be left out. [forReading] for
+ * screens ("½", "1,2"), not for exported text.
+ */
+fun Ingredient.displayText(scale: Double = 1.0, forReading: Boolean = false): String =
+    formatIngredientText(name, quantity, unit, scale, forReading = forReading) + if (optional) " " + L10n.str(R.string.ingredient_optional_suffix) else ""
