@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.detail
 
+import org.calamares.miga.data.model.displayText
 import org.calamares.miga.data.repository.copyRecipeToBook
 import android.content.Context
 import org.calamares.miga.ui.navigation.Destinations
@@ -246,7 +247,7 @@ class RecipeDetailViewModel(
 
     private fun ingredientsText(recipe: Recipe): String = recipe.ingredientGroups.joinToString("\n") { group ->
         val header = group.name?.let { "$it:\n" }.orEmpty()
-        header + group.ingredients.joinToString("\n") { "- ${formatIngredient(it, 1.0)}" }
+        header + group.ingredients.joinToString("\n") { "- ${it.displayText()}" }
     }
 
     private fun stepsText(recipe: Recipe): String = recipe.stepGroups.joinToString("\n") { group ->
