@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import android.content.Intent
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -33,6 +34,7 @@ import org.calamares.miga.data.health.HealthPrefs
 import org.calamares.miga.data.health.PortionPlan
 import org.calamares.miga.data.local.entity.RecipeBookEntity
 import org.calamares.miga.data.repository.copyRecipeToBook
+import org.calamares.miga.data.share.RecipeLinkIntents
 import org.calamares.miga.ui.list.TestMigaApp
 import org.calamares.miga.ui.navigation.MigaNavHost
 import org.calamares.miga.ui.theme.MigaTheme
@@ -175,6 +177,10 @@ abstract class StoreShotsTest(
 
     private fun str(id: Int) = L10n.str(id)
 
+    private companion object {
+        const val INSTAGRAM_LINK = "https://www.instagram.com/reel/DMigaRecetas/"
+    }
+
     @Test
     fun tour() {
         assumeTrue(out != null && dist != null)
@@ -241,6 +247,12 @@ abstract class StoreShotsTest(
         tapFab()
         shot("12_new_recipe")
         back()
+
+        // A reel shared from Instagram to Miga asks which book to import it into.
+        RecipeLinkIntents.handle(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, INSTAGRAM_LINK))
+        waitFor(str(R.string.shared_link_title_instagram))
+        shot("16_share_instagram")
+        tap(str(R.string.cancel), substring = false)
         back()
         tapIcon(str(R.string.ideas))
         shot("14_ideas")

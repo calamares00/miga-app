@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.47:
+• «Nueva receta › Desde una página web» indica que también sirve para publicaciones de Instagram, y ya no dice que lo lee el asistente: casi todas las webs de recetas y muchos reels se importan sin él.
