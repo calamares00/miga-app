@@ -43,6 +43,11 @@ object ShoppingIntents {
         return true
     }
 
+    /** Shared text that was not taken as something else after all (a link the user wants as an item). */
+    fun shareText(text: String) {
+        text.trim().take(MAX_SHARED_CHARS).takeIf { it.isNotEmpty() }?.let { _event.value = ShoppingIntentEvent.SharedText(it) }
+    }
+
     fun consume() {
         _event.value = null
     }
