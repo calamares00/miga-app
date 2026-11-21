@@ -18,3 +18,4 @@ captures/
 *.jks
 release.keystore
 !debug.keystore
+.kotlin/

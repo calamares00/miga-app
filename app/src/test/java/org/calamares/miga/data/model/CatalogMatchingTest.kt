@@ -28,4 +28,19 @@ class CatalogMatchingTest {
         assertNull(CatalogMatching.bestMatch("Sopa de pescado", categories))
         assertNull(CatalogMatching.bestMatch("Pescado", listOf("Pescado al horno", "Pescado frito")))
     }
+
+    private val catalog = listOf("Limón", "Tomate", "Leche entera", "Leche desnatada", "Leche de coco", "Huevo de gallina", "Clara de huevo", "Aceite de oliva", "Aceite de oliva virgen extra", "Pan rallado")
+    private val index = CatalogMatching.Index(catalog) { it }
+
+    @Test
+    fun `free shopping names find their catalogue entries`() {
+        assertEquals(listOf("Limón"), index.matches("limones"))
+        assertEquals(listOf("Tomate"), index.matches("tomates"))
+        assertEquals(listOf("Leche entera", "Leche desnatada", "Leche de coco"), index.matches("leche"))
+        assertEquals(listOf("Huevo de gallina", "Clara de huevo"), index.matches("huevos"))
+        // The most specific entry inside the name wins.
+        assertEquals(listOf("Aceite de oliva"), index.matches("aceite de oliva suave"))
+        assertEquals(listOf("Aceite de oliva virgen extra"), index.matches("aceite de oliva virgen extra"))
+        assertEquals(emptyList<String>(), index.matches("pan de barra"))
+    }
 }

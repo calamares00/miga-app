@@ -22,6 +22,7 @@ import org.calamares.miga.data.model.ShoppingTemplate
 import org.calamares.miga.data.model.ShoppingTemplateCodec
 import org.calamares.miga.data.model.TemplateItem
 import org.calamares.miga.data.share.ShoppingListShareCodec
+import org.calamares.miga.data.model.CatalogMatching
 import org.calamares.miga.data.model.UNCATEGORIZED_INGREDIENT_LABEL
 import org.calamares.miga.data.sync.ShoppingItemSyncDto
 import org.calamares.miga.data.sync.ShoppingListSyncDto
@@ -78,8 +79,16 @@ class ShoppingRepository internal constructor(
         combine(shoppingListDao.observeAll(listUid), ingredientCatalogDao.observeAll(), ingredientCategoryDao.observeAll()) { items, catalog, categories ->
             val categoryNameById = categories.associateBy({ it.id }, { it.name })
             val categoryIdByIngredientName = catalog.associate { it.name.trim().lowercase() to it.categoryId }
+            // Items written freely ("limones", "leche") take the category of the catalogue entries
+            // they refer to: the one most of them share ("leche" is mostly dairy, though "Leche de
+            // coco" is not), and none on a tie.
+            val index = CatalogMatching.Index(catalog.filter { it.categoryId != null }) { it.name }
             items.map { entity ->
                 val categoryId = categoryIdByIngredientName[entity.normalizedName]
+                    ?: index.matches(entity.name).groupingBy { it.categoryId }.eachCount().let { counts ->
+                        val most = counts.values.maxOrNull()
+                        counts.filterValues { it == most }.keys.singleOrNull()
+                    }
                 val categoryName = categoryId?.let { categoryNameById[it] } ?: UNCATEGORIZED_INGREDIENT_LABEL
                 ShoppingListItem(
                     id = entity.id,
