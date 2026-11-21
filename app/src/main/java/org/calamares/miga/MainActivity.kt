@@ -68,6 +68,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.data.model.ThemeMode
 import org.calamares.miga.data.share.AppShortcuts
 import org.calamares.miga.data.share.BookFileIntents
+import org.calamares.miga.data.share.RecipeLinkIntents
 import org.calamares.miga.data.share.ShoppingIntents
 import org.calamares.miga.ui.StartupGate
 import org.calamares.miga.ui.navigation.Destinations
@@ -95,7 +96,7 @@ class MainActivity : FragmentActivity() {
         setIntent(intent)
         // The return of "Connect with OpenRouter" is a link of its own, not shared text or a file.
         if (!OpenRouterConnect.handle(this, intent)) {
-            ShoppingIntents.handle(intent)
+            if (!RecipeLinkIntents.handle(intent)) ShoppingIntents.handle(intent)
             AppShortcuts.handle(intent)
             BookFileIntents.handle(this, intent)
             AiJobs.handle(intent)
@@ -143,7 +144,7 @@ class MainActivity : FragmentActivity() {
         if (savedInstanceState == null) {
             // The return of "Connect with OpenRouter" is a link of its own, not shared text or a file.
             if (!OpenRouterConnect.handle(this, intent)) {
-                ShoppingIntents.handle(intent)
+                if (!RecipeLinkIntents.handle(intent)) ShoppingIntents.handle(intent)
                 AppShortcuts.handle(intent)
                 BookFileIntents.handle(this, intent)
                 AiJobs.handle(intent)
