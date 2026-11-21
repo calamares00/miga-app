@@ -1,5 +1,6 @@
 package org.calamares.miga.data.search
 
+import kotlinx.serialization.json.Json
 import org.calamares.miga.data.export.IngredientDto
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -159,5 +160,38 @@ class SocialPostRecipeTest {
         assertEquals("cocinadeprueba.com", SocialPostRecipe.recipeElsewhere(post(text)))
         assertNull(SocialPostRecipe.recipeElsewhere(post("Qué rica la comida de hoy")))
         assertNull(SocialPostRecipe.recipeElsewhere(post(caption.replace("&#x1f4dd; ", "") + "\nMás en cocinadeprueba.com")))
+    }
+
+    private fun embedPage(caption: String) = Json.encodeToString(
+        """{"context":{"type":"media"},"gql_data":{"shortcode_media":{"__typename":"GraphVideo","is_video":true,""" +
+            """"display_url":"https://instagram.fmad10-2.fna.fbcdn.net/v/foto_grande.jpg?stp=dst-jpg_e15_tt6&oh=a",""" +
+            """"video_url":"https://instagram.fmad8-1.fna.fbcdn.net/o1/v/video.mp4?oh=b",""" +
+            """"owner":{"username":"cocinadeprueba"},""" +
+            """"edge_media_to_caption":{"edges":[{"node":{"text":${Json.encodeToString(caption)}}}]}}}}"""
+    ).let { """<html><script>s.handle({"require":[["Embed","init",null,[{"contextJSON":$it,"isAd":false}]]]});</script></html>""" }
+
+    @Test
+    fun `the embed page gives the photo without the play button`() {
+        assertEquals("https://www.instagram.com/p/ABC123/embed/captioned/", SocialPostRecipe.instagramEmbedUrl("https://www.instagram.com/reel/ABC123/?igsh=x"))
+        assertNull(SocialPostRecipe.instagramEmbedUrl("https://www.example.com/reel/ABC123/"))
+        val embed = SocialPostRecipe.readInstagramEmbed(embedPage("Garbanzos\n\nINGREDIENTES:\n- 400 g de garbanzos"))!!
+        assertEquals("https://instagram.fmad10-2.fna.fbcdn.net/v/foto_grande.jpg?stp=dst-jpg_e15_tt6&oh=a", embed.imageUrl)
+        assertEquals("https://instagram.fmad8-1.fna.fbcdn.net/o1/v/video.mp4?oh=b", embed.videoUrl)
+        assertEquals("@cocinadeprueba", embed.author)
+        assertTrue(embed.caption!!.startsWith("Garbanzos\n"))
+
+        val fromPage = SocialPostRecipe.read(page("1 likes, 1 comments - cocinadeprueba on May 1, 2026: &quot;$caption&quot;"), url)!!
+        val merged = SocialPostRecipe.withEmbed(fromPage, embed, url)!!
+        assertEquals(embed.imageUrl, merged.imageUrl)
+        assertEquals(fromPage.text, merged.text)
+    }
+
+    @Test
+    fun `the embed page alone, when the post page hides the caption`() {
+        val embed = SocialPostRecipe.readInstagramEmbed(embedPage("Garbanzos\n.\n#recetas"))
+        val post = SocialPostRecipe.withEmbed(null, embed, "https://www.instagram.com/reel/ABC123/?igsh=x")!!
+        assertEquals("Garbanzos", post.text)
+        assertEquals("https://www.instagram.com/reel/ABC123/", post.url)
+        assertNull(SocialPostRecipe.readInstagramEmbed("<html>Sin datos</html>"))
     }
 }

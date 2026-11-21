@@ -25,6 +25,9 @@ import org.calamares.miga.data.support.AppDispatchers
 /** An image already in memory, ready to be sent to a model that can read images. */
 class AiImage(val bytes: ByteArray, val mimeType: String)
 
+/** A sound recording for a model that can listen (only Gemini's transport sends it). */
+class AiAudio(val bytes: ByteArray, val mimeType: String)
+
 /**
  * A single-turn request to a model.
  *
@@ -35,7 +38,8 @@ data class AiRequest(
     val prompt: String,
     val maxTokens: Int,
     val images: List<AiImage> = emptyList(),
-    val expectJson: Boolean = true
+    val expectJson: Boolean = true,
+    val audio: AiAudio? = null
 )
 
 /** Raw text answer of a model, or a user-facing error built with [org.calamares.miga.data.support.AiErrors]. */
@@ -191,7 +195,7 @@ internal suspend fun postJson(url: String, body: String, headers: Map<String, St
         }
     }
 
-private val HTTP_EXECUTOR = AppDispatchers.io.asExecutor()
+internal val HTTP_EXECUTOR = AppDispatchers.io.asExecutor()
 
 /** Blocking GET; call it from AppDispatchers.io. Network failures are thrown as IOException. */
 internal fun getJson(url: String, headers: Map<String, String>, timeoutMillis: Int): HttpResponse {

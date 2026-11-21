@@ -5,6 +5,7 @@ import org.calamares.miga.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -63,6 +64,40 @@ object RecipeUrlFetcher {
                 connection.disconnect()
             }
         }.getOrNull()
+    }
+
+    /**
+     * Downloads [url] into [file] (a video, say), giving up past [maxBytes]. False when it fails;
+     * the file may then be left half written.
+     */
+    suspend fun downloadToFile(url: String, file: File, maxBytes: Long): Boolean = withContext(AppDispatchers.io) {
+        runCatching {
+            val connection = URL(url).openConnection() as HttpURLConnection
+            try {
+                connection.connectTimeout = TIMEOUT_MILLIS
+                connection.readTimeout = TIMEOUT_MILLIS
+                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Android) Miga-Recipe-App")
+                if (connection.responseCode != HttpURLConnection.HTTP_OK) return@runCatching false
+                if (connection.contentLengthLong > maxBytes) return@runCatching false
+                var total = 0L
+                connection.inputStream.use { input ->
+                    file.outputStream().use { output ->
+                        val buffer = ByteArray(64 * 1024)
+                        while (true) {
+                            coroutineContext.ensureActive()
+                            val read = input.read(buffer)
+                            if (read < 0) break
+                            total += read
+                            if (total > maxBytes) return@runCatching false
+                            output.write(buffer, 0, read)
+                        }
+                    }
+                }
+                total > 0
+            } finally {
+                connection.disconnect()
+            }
+        }.getOrDefault(false)
     }
 
     /** Downloads [url] (following redirects) and returns its HTML. */
