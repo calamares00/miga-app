@@ -1,0 +1,4 @@
+What's new in version 1.0.46:
+• Recipes from Instagram videos: if the text has no recipe, the assistant listens to the video. Gemini hears the audio; OpenAI, Groq and Mistral transcribe it. The recipe gets a note to check the quantities.
+• The photo is saved at full size and without the play button.
+• If the page hides the text, Miga reads it from the version for embedding in websites.

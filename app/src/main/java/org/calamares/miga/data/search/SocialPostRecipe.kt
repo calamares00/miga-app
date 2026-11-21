@@ -4,6 +4,10 @@ import org.calamares.miga.data.export.IngredientDto
 import org.calamares.miga.data.export.IngredientGroupDto
 import org.calamares.miga.data.export.StepGroupDto
 import org.calamares.miga.data.model.PastedLists
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.calamares.miga.data.vision.RecipeVisionResultDto
 import java.net.URI
 
@@ -17,6 +21,13 @@ data class SocialPost(
     val url: String,
     val site: String
 )
+
+/**
+ * What Instagram's public embed page ("…/p/<code>/embed/captioned/") says about a post: the photo
+ * at full size and without the play button that the page's own preview ("og:image") has drawn on
+ * reels, the caption and the video.
+ */
+data class InstagramMedia(val caption: String?, val imageUrl: String?, val videoUrl: String?, val author: String?)
 
 /**
  * Recipes shared as posts on Instagram and similar sites: they carry no schema.org Recipe, but the
@@ -34,6 +45,67 @@ object SocialPostRecipe {
     fun isInstagram(url: String): Boolean {
         val uri = runCatching { URI(url.trim()) }.getOrNull() ?: return false
         return uri.host?.lowercase() in INSTAGRAM_HOSTS && INSTAGRAM_POST.containsMatchIn(uri.path.orEmpty())
+    }
+
+    private val INSTAGRAM_CODE = Regex("/(?:p|reel|reels|tv)/([A-Za-z0-9_-]+)")
+
+    /** The embed page of an Instagram post ([InstagramMedia]); null for other links. */
+    fun instagramEmbedUrl(url: String): String? {
+        if (!isInstagram(url)) return null
+        val code = INSTAGRAM_CODE.find(URI(url.trim()).path.orEmpty())?.groupValues?.get(1) ?: return null
+        return "https://www.instagram.com/p/$code/embed/captioned/"
+    }
+
+    private val CONTEXT_JSON_START = Regex(""""contextJSON"\s*:\s*"""")
+
+    /**
+     * The JSON string literal after "contextJSON": (escapes kept), read by hand: it is long, and a
+     * regular expression with alternation would overflow the stack.
+     */
+    private fun contextJsonLiteral(html: String): String? {
+        val start = CONTEXT_JSON_START.find(html)?.range?.last?.plus(1) ?: return null
+        var i = start
+        while (i < html.length) {
+            when (html[i]) {
+                '\\' -> i += 2
+                '"' -> return html.substring(start, i)
+                else -> i++
+            }
+        }
+        return null
+    }
+    private val lenientJson = Json { ignoreUnknownKeys = true; isLenient = true }
+
+    private fun JsonObject.obj(key: String) = this[key] as? JsonObject
+    private fun JsonObject.text(key: String) = (this[key] as? JsonPrimitive)?.takeIf { it.isString }?.content?.takeIf { it.isNotBlank() }
+
+    /** The post in Instagram's embed page; null when the page does not carry it (private, changed...). */
+    fun readInstagramEmbed(html: String): InstagramMedia? {
+        val raw = contextJsonLiteral(html) ?: return null
+        val media = runCatching {
+            // A JSON document inside a JSON string: undo the string first.
+            val context = lenientJson.decodeFromString<String>("\"$raw\"")
+            (lenientJson.parseToJsonElement(context) as? JsonObject)?.obj("gql_data")?.obj("shortcode_media")
+        }.getOrNull() ?: return null
+        val caption = ((media.obj("edge_media_to_caption")?.get("edges") as? JsonArray)?.firstOrNull() as? JsonObject)
+            ?.obj("node")?.text("text")
+        return InstagramMedia(
+            caption = caption,
+            imageUrl = media.text("display_url"),
+            videoUrl = media.text("video_url"),
+            author = media.obj("owner")?.text("username")?.let { "@$it" }
+        )
+    }
+
+    /**
+     * [post] (from the post's page) completed with its [embed]: the photo without the play button
+     * and, when the page did not show the caption, the caption. Null when neither has text.
+     */
+    fun withEmbed(post: SocialPost?, embed: InstagramMedia?, url: String): SocialPost? {
+        embed ?: return post
+        if (post != null) return post.copy(imageUrl = embed.imageUrl ?: post.imageUrl, author = post.author ?: embed.author)
+        val text = embed.caption?.let(::cleanText)?.takeIf { it.isNotBlank() } ?: return null
+        return SocialPost(text, embed.imageUrl, embed.author, withoutQuery(url), "Instagram")
     }
 
     private fun meta(html: String, key: String): String? {
