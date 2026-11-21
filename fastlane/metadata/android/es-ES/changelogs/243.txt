@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.45:
+• Recetas de Instagram: pega el enlace de una publicación o reel, o compártelo desde Instagram con Miga y elige el libro.
+• Si el texto trae ingredientes y pasos con sus títulos, Miga crea la receta sin el asistente, con foto, raciones, y consejos y autor en las notas. Si no, la lee el asistente de cocina.
+• Un enlace compartido con Miga ya no acaba en la lista de la compra (puedes mandarlo allí).

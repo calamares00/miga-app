@@ -52,7 +52,7 @@
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
-            <!-- Text shared from other apps (notes, messages...) becomes shopping list items. -->
+            <!-- Text shared from other apps: a recipe link (Instagram, the browser) is imported as a recipe; other text (notes, messages...) becomes shopping list items. -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
