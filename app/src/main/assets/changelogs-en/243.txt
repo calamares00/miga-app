@@ -1,0 +1,4 @@
+What's new in version 1.0.45:
+• Recipes from Instagram: paste the link to a post or reel, or share it from Instagram to Miga and pick the book.
+• If the caption has ingredients and steps under their headings, Miga creates the recipe without the assistant, with photo, servings, and tips and author in the notes. Otherwise the cooking assistant reads it.
+• A link shared to Miga no longer ends up in the shopping list (you can still send it there).

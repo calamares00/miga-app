@@ -7,6 +7,9 @@ import org.calamares.miga.data.polish.PolishedRecipe
 import org.calamares.miga.data.polish.RecipePolishResult
 import org.calamares.miga.data.search.PageFetchResult
 import org.calamares.miga.data.search.SchemaOrgRecipe
+import org.calamares.miga.data.search.SchemaRecipe
+import org.calamares.miga.data.search.SocialPost
+import org.calamares.miga.data.search.SocialPostRecipe
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.searchKey
 import org.calamares.miga.data.model.ParsedShoppingEntry
@@ -376,37 +379,29 @@ class RecipeEditorViewModel(
             }
             val structured = withContext(AppDispatchers.default) { SchemaOrgRecipe.parse(page.html, page.url) }
             if (structured != null) {
-                applyVisionResult(structured.recipe, byAi = false)
-                structured.imageUrl?.let { imageUrl ->
-                    progress.step(L10n.str(R.string.ai_step_downloading_photo))
-                    val saved = RecipeUrlFetcher.fetchImage(imageUrl)?.let { bytes ->
-                        withContext(AppDispatchers.io) { PhotoStorage.saveDownloaded(appContext, bytes) }
-                    }
-                    saved?.let { addPhoto(it) }
-                }
-                // With the assistant set up, the texts read from the page are improved as with
-                // "Polish the recipe"; the editor offers to undo it.
-                if (settingsRepository.aiCandidates().isNotEmpty()) {
-                    progress.step(L10n.str(R.string.polish_working))
-                    val polish = settingsRepository.runAi<RecipePolishResult>(
-                        errorOf = { (it as? RecipePolishResult.Error)?.reason },
-                        error = { RecipePolishResult.Error(it) },
-                        progress = progress
-                    ) { ai -> ai.polishRecipe(formAsRecipe()) }
-                    when (polish) {
-                        is RecipePolishResult.Success -> applyWebPolish(polish.polished)
-                        is RecipePolishResult.Error -> webPolishError = polish.reason
-                        null -> Unit
-                    }
-                }
-                _visionState.value = VisionState.Loaded
+                applyReadRecipe(appContext, structured, progress)
+                return@launchAiTask
+            }
+            // Instagram and similar posts: the recipe is in the caption.
+            val post = withContext(AppDispatchers.default) { SocialPostRecipe.read(page.html, page.url) }
+            val fromPost = post?.let { withContext(AppDispatchers.default) { SocialPostRecipe.parse(it) } }
+            if (fromPost != null) {
+                applyReadRecipe(appContext, fromPost, progress)
+                return@launchAiTask
+            }
+            post?.let { SocialPostRecipe.recipeElsewhere(it) }?.let { website ->
+                _visionState.value = VisionState.Error(L10n.str(R.string.web_import_post_recipe_elsewhere, website))
+                return@launchAiTask
+            }
+            if (post == null && SocialPostRecipe.isInstagram(url)) {
+                _visionState.value = VisionState.Error(L10n.str(R.string.web_import_instagram_no_text))
                 return@launchAiTask
             }
             if (settingsRepository.aiCandidates().isEmpty()) {
-                _visionState.value = VisionState.Error(L10n.str(R.string.web_import_needs_assistant))
+                _visionState.value = VisionState.Error(L10n.str(if (post != null) R.string.web_import_post_needs_assistant else R.string.web_import_needs_assistant))
                 return@launchAiTask
             }
-            val pageText = when (val text = RecipeUrlFetcher.readableText(page.html)) {
+            val pageText = if (post != null) postText(post) else when (val text = RecipeUrlFetcher.readableText(page.html)) {
                 is UrlFetchResult.Success -> text.text
                 is UrlFetchResult.Error -> {
                     _visionState.value = VisionState.Error(text.reason)
@@ -418,17 +413,55 @@ class RecipeEditorViewModel(
                     errorOf = { (it as? RecipeVisionResult.Error)?.reason },
                     error = { RecipeVisionResult.Error(it) },
                     progress = progress
-                ) { ai -> ai.importRecipeFromPage(url, pageText, known) }
+                ) { ai -> ai.importRecipeFromPage(post?.url ?: url, pageText, known) }
             } ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
             when (result) {
                 is RecipeVisionResult.Success -> {
-                    applyVisionResult(result.recipe)
+                    val recipe = if (post != null && result.recipe.source.isBlank()) result.recipe.copy(source = post.url) else result.recipe
+                    applyVisionResult(recipe)
+                    post?.imageUrl?.let { downloadPhoto(appContext, it, progress) }
                     _visionState.value = VisionState.Loaded
                 }
                 is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(result.reason)
             }
         }
     }
+
+    /**
+     * Fills the form with a recipe read from a page without AI (schema.org or a post's caption),
+     * downloads its photo and, with the assistant set up, improves the texts as with "Polish the
+     * recipe"; the editor offers to undo it.
+     */
+    private suspend fun applyReadRecipe(appContext: Context, read: SchemaRecipe, progress: AiProgressReporter) {
+        applyVisionResult(read.recipe, byAi = false)
+        read.imageUrl?.let { downloadPhoto(appContext, it, progress) }
+        if (settingsRepository.aiCandidates().isNotEmpty()) {
+            progress.step(L10n.str(R.string.polish_working))
+            val polish = settingsRepository.runAi<RecipePolishResult>(
+                errorOf = { (it as? RecipePolishResult.Error)?.reason },
+                error = { RecipePolishResult.Error(it) },
+                progress = progress
+            ) { ai -> ai.polishRecipe(formAsRecipe()) }
+            when (polish) {
+                is RecipePolishResult.Success -> applyWebPolish(polish.polished)
+                is RecipePolishResult.Error -> webPolishError = polish.reason
+                null -> Unit
+            }
+        }
+        _visionState.value = VisionState.Loaded
+    }
+
+    private suspend fun downloadPhoto(appContext: Context, imageUrl: String, progress: AiProgressReporter) {
+        progress.step(L10n.str(R.string.ai_step_downloading_photo))
+        val saved = RecipeUrlFetcher.fetchImage(imageUrl)?.let { bytes ->
+            withContext(AppDispatchers.io) { PhotoStorage.saveDownloaded(appContext, bytes) }
+        }
+        saved?.let { addPhoto(it) }
+    }
+
+    /** What the assistant reads of a post: its caption, saying where it was posted and by whom. */
+    private fun postText(post: SocialPost): String =
+        listOfNotNull("${post.site}${post.author?.let { " ($it)" }.orEmpty()}", post.text).joinToString("\n\n")
 
     private fun photoHints() = listOf(
         L10n.str(R.string.ai_hint_reading_text),
