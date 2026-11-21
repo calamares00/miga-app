@@ -1,0 +1,3 @@
+Novedades de la versión 1.0.46:
+• Recetas de Instagram: la foto se guarda a tamaño completo y sin el botón de reproducir del vídeo.
+• Si la página de la publicación no deja ver el texto, Miga lo lee de la versión para insertar en webs, así que se pueden importar más publicaciones.

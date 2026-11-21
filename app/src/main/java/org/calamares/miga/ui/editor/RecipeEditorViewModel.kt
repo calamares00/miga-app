@@ -383,7 +383,16 @@ class RecipeEditorViewModel(
                 return@launchAiTask
             }
             // Instagram and similar posts: the recipe is in the caption.
-            val post = withContext(AppDispatchers.default) { SocialPostRecipe.read(page.html, page.url) }
+            val pagePost = withContext(AppDispatchers.default) { SocialPostRecipe.read(page.html, page.url) }
+            // Instagram's embed page has the photo without the play button (and the caption, when
+            // the post's page hides it).
+            val postUrl = listOf(page.url, url).firstOrNull { SocialPostRecipe.isInstagram(it) } ?: page.url
+            val embed = SocialPostRecipe.instagramEmbedUrl(postUrl)?.let { embedUrl ->
+                (RecipeUrlFetcher.fetchPage(embedUrl) as? PageFetchResult.Success)?.let { embedPage ->
+                    withContext(AppDispatchers.default) { SocialPostRecipe.readInstagramEmbed(embedPage.html) }
+                }
+            }
+            val post = SocialPostRecipe.withEmbed(pagePost, embed, postUrl)
             val fromPost = post?.let { withContext(AppDispatchers.default) { SocialPostRecipe.parse(it) } }
             if (fromPost != null) {
                 applyReadRecipe(appContext, fromPost, progress)
