@@ -51,4 +51,28 @@ object CatalogMatching {
             words.isNotEmpty() && (covers(words, target) || covers(target, words))
         }.singleOrNull()
     }
+
+    /**
+     * The catalogue entries [name] refers to, for its shopping category: the entry with the same
+     * words (ignoring case, accents and plural: "limones" is "Limón"), or else the most specific
+     * entries contained in the name ("aceite de oliva suave" is "Aceite de oliva"), or else those
+     * that contain the name ("leche" is "Leche entera" and "Leche desnatada"). Built once per
+     * catalogue; [matches] is cheap.
+     */
+    class Index<T>(entries: List<T>, nameOf: (T) -> String) {
+        private val indexed = entries.map { it to words(nameOf(it)) }.filter { it.second.isNotEmpty() }
+
+        fun matches(name: String): List<T> {
+            val target = words(name)
+            if (target.isEmpty()) return emptyList()
+            indexed.filter { (_, words) -> words.size == target.size && covers(words, target) }.takeIf { it.isNotEmpty() }
+                ?.let { return it.map { pair -> pair.first } }
+            val inName = indexed.filter { (_, words) -> covers(target, words) }
+            if (inName.isNotEmpty()) {
+                val most = inName.maxOf { it.second.size }
+                return inName.filter { it.second.size == most }.map { it.first }
+            }
+            return indexed.filter { (_, words) -> covers(words, target) }.map { it.first }
+        }
+    }
 }
