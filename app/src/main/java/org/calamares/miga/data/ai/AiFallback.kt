@@ -40,6 +40,7 @@ suspend fun SettingsRepository.aiCandidates(): List<AiCandidate> {
  * another model would most likely say the same.
  *
  * @param needsImages skips providers whose model cannot read images.
+ * @param accepts skips the providers it rejects (those that cannot take audio, say).
  * @param errorOf returns the error reason when [T] is an error, or null when it is a success.
  * @param error builds an error [T], used when no provider can read images and for the final
  *   summary when every provider failed.
@@ -48,12 +49,13 @@ suspend fun SettingsRepository.aiCandidates(): List<AiCandidate> {
  */
 suspend fun <T> SettingsRepository.runAi(
     needsImages: Boolean = false,
+    accepts: (AiCandidate) -> Boolean = { true },
     errorOf: (T) -> String?,
     error: (String) -> T,
     progress: AiProgressReporter? = null,
     call: suspend (AiCandidate) -> T
 ): T? {
-    val configured = aiCandidates()
+    val configured = aiCandidates().filter(accepts)
     if (configured.isEmpty()) return null
     val usable = if (needsImages) configured.filter { supportsImages(it.provider) } else configured
     if (usable.isEmpty()) return error(L10n.str(R.string.ai_no_image_provider))
