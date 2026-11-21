@@ -1,0 +1,3 @@
+What's new in version 1.0.44:
+• Shopping list: what you write your own way ("lemons", "milk", "eggs") goes to its aisle, not "No category".
+• Cooking mode: amounts as in the recipe ("½ tsp", "1.2 kg").
