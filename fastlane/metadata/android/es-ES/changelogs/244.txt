@@ -1,3 +1,4 @@
 Novedades de la versión 1.0.46:
-• Recetas de Instagram: la foto se guarda a tamaño completo y sin el botón de reproducir del vídeo.
-• Si la página de la publicación no deja ver el texto, Miga lo lee de la versión para insertar en webs, así que se pueden importar más publicaciones.
+• Recetas de vídeos de Instagram: si el texto no trae la receta, el asistente escucha el vídeo. Gemini oye el audio; OpenAI, Groq y Mistral lo transcriben. La receta lleva una nota para revisar las cantidades.
+• La foto se guarda a tamaño completo y sin el botón de reproducir.
+• Si la página no deja ver el texto, Miga lo lee de la versión para insertar en webs.

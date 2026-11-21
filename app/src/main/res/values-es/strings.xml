@@ -1418,6 +1418,12 @@
     <string name="shared_link_to_shopping">"A la lista de la compra"</string>
     <string name="web_import_instagram_no_text">"Instagram no ha dejado ver el texto de esta publicación (puede ser privada o pedir iniciar sesión). Copia el texto de la publicación y pégalo en una receta nueva."</string>
     <string name="web_import_post_recipe_elsewhere">"Esta publicación no trae la receta: dice que está en %1$s. Búscala allí y pega el enlace de esa página."</string>
+    <string name="ai_step_downloading_video">"Descargando el vídeo…"</string>
+    <string name="ai_step_transcribing_x">"Transcribiendo el audio con %1$s…"</string>
+    <string name="ai_hint_listening_video">"Escuchando el vídeo…"</string>
+    <string name="no_recipe_in_post_video">"No se ha encontrado la receta ni en el texto de la publicación ni en lo que se dice en el vídeo."</string>
+    <string name="recipe_from_video_note">"Receta sacada del audio del vídeo: revisa las cantidades."</string>
+    <string name="ai_no_transcription">"%1$s no tiene servicio de transcripción."</string>
     <string name="web_import_post_needs_assistant">"El texto de esta publicación no trae la receta con ingredientes y pasos. Configura el asistente de cocina en Ajustes para importarla."</string>
     <string name="ai_step_downloading_photo">"Descargando la foto…"</string>
     <string name="web_polish_title">"Leída de la web y mejorada por el asistente de cocina"</string>

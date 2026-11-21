@@ -20,6 +20,9 @@ import kotlinx.coroutines.ensureActive
 private const val GEMINI_ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 private const val TIMEOUT_MILLIS = 60_000
 
+// Listening to a video's audio takes longer than reading text.
+private const val AUDIO_TIMEOUT_MILLIS = 180_000
+
 @Serializable
 internal data class GeminiRequest(val contents: List<GeminiContent>, val generationConfig: GeminiGenerationConfig)
 
@@ -64,7 +67,9 @@ internal object GeminiTransport : AiTransport {
         try {
             val parts = request.images.map {
                 GeminiPart(inlineData = GeminiInlineData(it.mimeType, Base64.getEncoder().encodeToString(it.bytes)))
-            } + GeminiPart(text = request.prompt)
+            } + listOfNotNull(request.audio?.let {
+                GeminiPart(inlineData = GeminiInlineData(it.mimeType, Base64.getEncoder().encodeToString(it.bytes)))
+            }) + GeminiPart(text = request.prompt)
             val body = aiJson.encodeToString(
                 GeminiRequest.serializer(),
                 GeminiRequest(
@@ -77,7 +82,7 @@ internal object GeminiTransport : AiTransport {
                 url = "$GEMINI_ENDPOINT_BASE/$model:generateContent",
                 body = body,
                 headers = mapOf("x-goog-api-key" to apiKey),
-                timeoutMillis = TIMEOUT_MILLIS
+                timeoutMillis = if (request.audio != null) AUDIO_TIMEOUT_MILLIS else TIMEOUT_MILLIS
             )
             if (!response.isSuccessful) {
                 val message = runCatching { aiJson.decodeFromString(GeminiErrorEnvelope.serializer(), response.body).error?.message }.getOrNull()
