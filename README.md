@@ -13,4 +13,6 @@
 | ![](07-manzana-libro.svg) | `07-manzana-libro.svg` | An apple with an open book in it |
 | ![](08-plato.svg) | `08-plato.svg` | A plate with a fork and a leaf |
 
+See also [magia/](magia/): "magic crumb" proposals (miga + AI).
+
 All are 108×108 vector SVGs (Android adaptive icon size) in the app's "Huerta" colours.
