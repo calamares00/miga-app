@@ -10,6 +10,9 @@ import org.calamares.miga.data.search.SchemaOrgRecipe
 import org.calamares.miga.data.search.SchemaRecipe
 import org.calamares.miga.data.search.SocialPost
 import org.calamares.miga.data.search.SocialPostRecipe
+import org.calamares.miga.data.search.PostAudioExtractor
+import org.calamares.miga.data.search.importRecipeFromPostAudio
+import org.calamares.miga.data.ai.audioSupport
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.searchKey
 import org.calamares.miga.data.model.ParsedShoppingEntry
@@ -398,7 +401,40 @@ class RecipeEditorViewModel(
                 applyReadRecipe(appContext, fromPost, progress)
                 return@launchAiTask
             }
-            post?.let { SocialPostRecipe.recipeElsewhere(it) }?.let { website ->
+            val elsewhere = post?.let { SocialPostRecipe.recipeElsewhere(it) }
+            // A video without the recipe in its caption: it is usually told aloud.
+            val videoUrl = embed?.videoUrl
+            if (post != null && videoUrl != null && settingsRepository.aiCandidates().any { it.audioSupport != null }) {
+                progress.step(L10n.str(R.string.ai_step_downloading_video))
+                val audio = PostAudioExtractor.fromVideo(appContext, videoUrl)
+                if (audio != null) {
+                    val result = progress.withHints(videoHints()) {
+                        settingsRepository.runAi<RecipeVisionResult>(
+                            accepts = { it.audioSupport != null },
+                            errorOf = { (it as? RecipeVisionResult.Error)?.reason },
+                            error = { RecipeVisionResult.Error(it) },
+                            progress = progress
+                        ) { ai -> ai.importRecipeFromPostAudio(post, audio, known, progress) }
+                    }
+                    when (result) {
+                        is RecipeVisionResult.Success -> {
+                            val recipe = result.recipe.copy(
+                                source = post.url,
+                                notes = listOf(result.recipe.notes, L10n.str(R.string.recipe_from_video_note)).filter { it.isNotBlank() }.joinToString("\n\n")
+                            )
+                            applyVisionResult(recipe)
+                            post.imageUrl?.let { downloadPhoto(appContext, it, progress) }
+                            _visionState.value = VisionState.Loaded
+                        }
+                        is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(
+                            elsewhere?.let { L10n.str(R.string.web_import_post_recipe_elsewhere, it) } ?: result.reason
+                        )
+                        null -> _visionState.value = VisionState.Error(L10n.str(R.string.ai_no_provider))
+                    }
+                    return@launchAiTask
+                }
+            }
+            elsewhere?.let { website ->
                 _visionState.value = VisionState.Error(L10n.str(R.string.web_import_post_recipe_elsewhere, website))
                 return@launchAiTask
             }
@@ -484,6 +520,12 @@ class RecipeEditorViewModel(
         L10n.str(R.string.ai_hint_choosing_ingredients),
         L10n.str(R.string.ai_hint_writing_steps),
         L10n.str(R.string.ai_hint_times)
+    )
+
+    private fun videoHints() = listOf(
+        L10n.str(R.string.ai_hint_listening_video),
+        L10n.str(R.string.ai_hint_ingredients),
+        L10n.str(R.string.ai_hint_steps)
     )
 
     private fun webHints() = listOf(
