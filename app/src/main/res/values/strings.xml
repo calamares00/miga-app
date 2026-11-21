@@ -1414,6 +1414,12 @@
     <string name="ai_use_key">"Use it"</string>
     <string name="ai_key_not_in_clipboard_x">"No %1$s key found in what you copied. Copy it on the page and paste it in the field above."</string>
     <string name="web_import_needs_assistant">"This page does not include the recipe in the standard format (schema.org). Set up the cooking assistant in Settings to import it."</string>
+    <string name="shared_link_title">"Import this recipe?"</string>
+    <string name="shared_link_title_instagram">"Import the recipe from this Instagram post?"</string>
+    <string name="shared_link_to_shopping">"To the shopping list"</string>
+    <string name="web_import_instagram_no_text">"Instagram did not show the text of this post (it may be private or need signing in). Copy the post text and paste it as a new recipe instead."</string>
+    <string name="web_import_post_recipe_elsewhere">"This post does not include the recipe: it says it is on %1$s. Look for it there and paste the link to that page."</string>
+    <string name="web_import_post_needs_assistant">"The text of this post is not written as a recipe with ingredients and steps. Set up the cooking assistant in Settings to import it."</string>
     <string name="ai_step_downloading_photo">"Downloading the photo…"</string>
     <string name="web_polish_title">"Read from the web and improved by the cooking assistant"</string>
     <string name="web_polish_undo">"Undo the improvement"</string>

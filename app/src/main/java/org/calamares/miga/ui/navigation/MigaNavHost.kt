@@ -114,6 +114,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.data.share.AppShortcuts
+import org.calamares.miga.data.share.RecipeLinkIntents
 import org.calamares.miga.data.share.ShoppingIntents
 import org.calamares.miga.ui.shoppinglist.ShoppingListScreen
 import org.calamares.miga.ui.shoppinglist.ShoppingListViewModel
@@ -233,6 +234,29 @@ fun MigaNavHost(initialRoute: String? = null) {
                 restoreState = true
             }
         }
+    }
+
+    /** A recipe link shared to Miga (Instagram, the browser): import it in the book the user picks. */
+    val sharedLink by RecipeLinkIntents.event.collectAsStateWithLifecycle()
+    sharedLink?.let { link ->
+        val books by remember { repository.books.observeRecipeBooks() }.collectAsStateWithLifecycle(initialValue = emptyList())
+        SharedRecipeLinkDialog(
+            link = link,
+            books = books.filterNot { it.isPack },
+            onImport = { bookId ->
+                RecipeLinkIntents.consume()
+                navController.navigate(Destinations.BOOKS_ROUTE) {
+                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                    launchSingleTop = true
+                }
+                navController.navigate(Destinations.editor(bookId = bookId, sourceRecipeUrl = link.url)) { launchSingleTop = true }
+            },
+            onShoppingList = {
+                RecipeLinkIntents.consume()
+                ShoppingIntents.shareText(link.text)
+            },
+            onDismiss = { RecipeLinkIntents.consume() }
+        )
     }
 
     /**
