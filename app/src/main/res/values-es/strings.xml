@@ -480,7 +480,7 @@
     <string name="previous_step">"Paso anterior"</string>
     <string name="step_x">"Paso %1$s"</string>
     <string name="main_steps">"Pasos principales"</string>
-    <string name="paste_link_recipe_website_ai">"Pega el enlace de una receta de cualquier web: el asistente la lee y te rellena el editor."</string>
+    <string name="paste_link_recipe_website_ai">"Pega el enlace de una receta de una web o de una publicación de Instagram: Miga la lee y te rellena el editor."</string>
     <string name="dangerous_food_allergies_health">"Peligroso: alimentos, alergias o salud"</string>
     <string name="changes_lost">"Se perderán los cambios que has hecho."</string>
     <string name="custom">"Personalizado…"</string>
@@ -1335,7 +1335,7 @@
     <string name="new_recipe_from_photos">"Desde fotos"</string>
     <string name="new_recipe_from_photos_desc">"Una o varias recetas: haz fotos o elígelas de la galería"</string>
     <string name="new_recipe_from_web">"Desde una página web"</string>
-    <string name="new_recipe_from_web_desc">"Pega el enlace de la receta"</string>
+    <string name="new_recipe_from_web_desc">"Una web o una publicación de Instagram"</string>
     <string name="new_recipe_from_file">"Desde un archivo de Miga"</string>
     <string name="new_recipe_from_file_desc">"Recetas exportadas desde Miga (.miga, .zip o JSON)"</string>
     <string name="new_recipe_suggest_desc">"Di un plato y el asistente te propone la receta"</string>

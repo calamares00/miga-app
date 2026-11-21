@@ -1,0 +1,2 @@
+What's new in version 1.0.47:
+• "New recipe › From a web page" now says it also works for Instagram posts, and no longer says the assistant reads it: most recipe websites and many reels are imported without it.
