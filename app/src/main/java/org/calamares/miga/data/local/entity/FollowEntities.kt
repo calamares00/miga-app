@@ -24,7 +24,14 @@ data class FollowedSourceEntity(
     /** When the user last opened it: posts published later are "new". */
     val lastOpenedAt: Long,
     /** When its latest posts were last downloaded; null before the first time. */
-    val checkedAt: Long? = null
+    val checkedAt: Long? = null,
+    /**
+     * For a website made with WordPress: its public API ("https://site/wp-json/wp/v2/"), for more
+     * recipes, pictures and searching; null for other websites and for channels and profiles.
+     */
+    val wpApi: String? = null,
+    /** The WordPress category followed (a section such as "Recetas"); null for the whole site. */
+    val wpCategory: Long? = null
 )
 
 /**
