@@ -142,7 +142,7 @@ Aquí están las listas de categorías de recetas, equipamiento, etiquetas, ingr
 
 ## 👋 Paseo y permisos
 
-El **paseo de bienvenida** resume lo que puedes hacer con Miga. Para verlo otra vez: **Ajustes › Ayuda › Ver ahora**.
+El **paseo de bienvenida** resume lo que puedes hacer con Miga: recetas, cocinar, consejos, compra, salud y asistente. Para verlo otra vez: **Ajustes › Ayuda › Ver ahora**.
 
 Miga solo pide permisos cuando los necesita, y todos son opcionales:
 - **Notificaciones**: avisos de los temporizadores y de cuando el asistente termina una tarea.

@@ -1632,6 +1632,12 @@
     <string name="tour_cooking_point_mode">"Los pasos en grande y la pantalla siempre encendida."</string>
     <string name="tour_cooking_point_timers">"Temporizadores de un toque que siguen aunque salgas de la app."</string>
     <string name="tour_cooking_point_voice">"Lectura en voz alta y manos libres: «siguiente», «repite»…"</string>
+    <string name="tour_kicker_tips">"Consejos"</string>
+    <string name="tour_tips_title">"Trucos para cocinar mejor"</string>
+    <string name="tour_tips_body">"Cientos de consejos cortos que funcionan sin conexión."</string>
+    <string name="tour_tips_point_daily">"Un consejo del día en tu biblioteca: técnicas, conservar, aprovechar sobras…"</string>
+    <string name="tour_tips_point_recipe">"En cada receta, los consejos que ayudan con sus ingredientes y pasos."</string>
+    <string name="tour_tips_point_save">"Busca por temas, guarda tus favoritos y compártelos."</string>
     <string name="tour_kicker_shopping">"Compra"</string>
     <string name="tour_shopping_title">"La compra, por pasillos"</string>
     <string name="tour_shopping_body">"Una lista que se ordena sola como tu supermercado."</string>
