@@ -49,7 +49,9 @@ data class FavoritePost(
     /** The recipe imported from it, when there is one. */
     val imported: ImportedRecipe? = null,
     /** Its text has the recipe written as such: importing needs no assistant. */
-    val readsWithoutAssistant: Boolean = false
+    val readsWithoutAssistant: Boolean = false,
+    /** Nothing in it is about cooking (see CookingFilter): feeds leave it out unless asked. */
+    val offTopic: Boolean = false
 ) {
     val id: String get() = "${network.name}:$postKey"
 }
@@ -101,6 +103,9 @@ class FollowRepository(db: AppDatabase) {
         posts.mapNotNull { post ->
             val source = sourceById[post.sourceId] ?: return@mapNotNull null
             val network = SocialNetwork.valueOf(source.network)
+            val isSaved = "${source.network}:${post.postKey}" in savedKeys
+            val importedRecipe = imported["${source.network}:${post.postKey}"]
+            val reads = readsWithoutAssistant(post.title, post.description, source.handle ?: source.name)
             FavoritePost(
                 network = network,
                 postKey = post.postKey,
@@ -114,9 +119,11 @@ class FollowRepository(db: AppDatabase) {
                 publishedAt = post.publishedAt,
                 sourceId = source.id,
                 isNew = post.publishedAt > source.lastOpenedAt,
-                isSaved = "${source.network}:${post.postKey}" in savedKeys,
-                imported = imported["${source.network}:${post.postKey}"],
-                readsWithoutAssistant = readsWithoutAssistant(post.title, post.description, source.handle ?: source.name)
+                isSaved = isSaved,
+                imported = importedRecipe,
+                readsWithoutAssistant = reads,
+                // What the user saved or imported stays, and so does a post that has a recipe in it.
+                offTopic = !isSaved && importedRecipe == null && !reads && CookingFilter.isOffTopic(post.title, post.description)
             )
         }
     }

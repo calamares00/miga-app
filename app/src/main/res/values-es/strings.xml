@@ -1733,6 +1733,8 @@
     <string name="favorites_no_channels">"Aún no sigues ningún canal"</string>
     <string name="favorites_no_posts">"Aún no has guardado vídeos ni reels"</string>
     <string name="favorites_not_imported">"Sin importar"</string>
+    <string name="favorites_show_off_topic">"Ver las %1$d publicaciones ocultas (no son de cocina)"</string>
+    <string name="favorites_hide_off_topic">"Ocultar las que no son de cocina"</string>
     <string name="favorites_empty_title">"Tus favoritos, en un solo sitio"</string>
     <string name="favorites_empty_body">"Marca recetas con ♥, sigue canales de YouTube y perfiles de Instagram de cocina, y guarda los vídeos y reels que quieras importar."</string>
     <string name="favorites_add_title">"Añadir a favoritos"</string>

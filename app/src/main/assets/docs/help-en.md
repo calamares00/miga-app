@@ -48,6 +48,7 @@ Options marked ✨ are done by the kitchen assistant and only appear once it is 
 Everything you like, in one place: at the top choose **All**, **Recipes**, **Channels** or **Videos and reels**.
 
 - **Channels**: follow cooking channels on YouTube and profiles on Instagram. Tap **Add** and paste their link, or share the channel or profile from YouTube or Instagram to Miga. You see their latest videos (15 on YouTube) or reels (6 on Instagram), with a number when there is something new. They update when you open Favourites (at most once an hour) or with **Refresh**.
+- Posts that are **not about cooking** (a family photo, a trip…) do not show in Favourites. Miga decides from the text: it only hides those with a long text and no cooking word in it. In a channel's view, **Show the N hidden posts** shows them.
 - **Videos and reels**: save the ones you want to cook with ♡, or by pasting or sharing their link. They stay even when the channel posts more.
 - **Import**: creates the recipe in the book you choose. Without ✨ the recipe is written in the text and no assistant is needed; with ✨ the assistant takes it from the video. Imported ones show **✓ In "book"** and take you to the recipe.
 - Private accounts cannot be followed, and Instagram may stop showing a profile's posts without signing in.
