@@ -83,7 +83,8 @@ class FollowRepository(db: AppDatabase) {
                 name = source.name,
                 avatarUrl = source.avatarUrl,
                 url = source.url,
-                newCount = bySource[source.id].orEmpty().count { it.publishedAt > source.lastOpenedAt },
+                // Posts not about cooking are hidden, so they are not counted as new either.
+                newCount = bySource[source.id].orEmpty().count { it.publishedAt > source.lastOpenedAt && !CookingFilter.isOffTopic(it.title, it.description) },
                 checkedAt = source.checkedAt
             )
         }.sortedWith(compareByDescending<FollowedSource> { it.newCount > 0 }.thenBy { it.name.lowercase() })
