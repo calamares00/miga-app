@@ -24,7 +24,7 @@ object CookingFilter {
         "huevo", "ous", "tortilla", "queso", "formatge", "mantequilla", "harina", "farina", "masa", "chocolate", "azucar", "aceite",
         "salsa", "marinad", "hervir", "hervid", "cuece", "cocer", "cocid", "amasa", "rebozad", "empanad", "croqueta", "albondiga",
         "legumbre", "lentejas", "garbanzo", "patata", "tomate", "cebolla", "pimiento", "especia", "sabros", "deliciós", "delicios",
-        "gastronom", "menú", "tapas", "pan casero", "vegano", "vegetarian", "sin gluten", "tupper", "batch cooking", "thermomix",
+        "gastronom", "paladar", "sabor", "gourmet", "menú", "tapas", "pan casero", "vegano", "vegetarian", "sin gluten", "tupper", "batch cooking", "thermomix",
         // English
         "cook", "bake", "baking", "recipe", "dinner", "lunch", "breakfast", "dessert", "sauce", "soup", "salad", "chicken", "beef",
         "pork", "fish", "seafood", "noodle", "cheese", "flour", "dough", "cake", "cookie", "bread", "food", "kitchen", "chef",
@@ -47,10 +47,30 @@ object CookingFilter {
     private fun fold(text: String): String =
         Normalizer.normalize(text.lowercase(), Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "")
 
+    /** Channels with fewer posts long enough to judge are never called off topic. */
+    const val MIN_POSTS_TO_JUDGE = 3
+
+    private fun text(title: String, description: String) = fold(listOf(title, description).joinToString(" ").replace('#', ' ')).trim()
+
     /** True when the post's [title] and [description] are long enough to judge and are not about food. */
     fun isOffTopic(title: String, description: String): Boolean {
-        val text = fold(listOf(title, description).joinToString(" ").replace('#', ' ')).trim()
+        val text = text(title, description)
         if (text.length < MIN_TEXT_LENGTH) return false
         return !PATTERN.containsMatchIn(text)
+    }
+
+    /** True when [text] has a food or cooking word, as a website's address "cocinaconcoqui.com" does. */
+    fun mentionsFood(text: String): Boolean = PATTERN.containsMatchIn(text(text, ""))
+
+    /**
+     * True when a channel, profile or website seems not to be about cooking, to warn before
+     * following it: its [name] has no food word and most of its latest [posts] (title and text) that
+     * can be judged are off topic. With fewer than [MIN_POSTS_TO_JUDGE] of them it cannot tell.
+     */
+    fun isOffTopicSource(name: String, posts: List<Pair<String, String>>): Boolean {
+        if (mentionsFood(name)) return false
+        val judged = posts.filter { (title, description) -> text(title, description).length >= MIN_TEXT_LENGTH }
+        if (judged.size < MIN_POSTS_TO_JUDGE) return false
+        return judged.count { (title, description) -> isOffTopic(title, description) } * 2 > judged.size
     }
 }

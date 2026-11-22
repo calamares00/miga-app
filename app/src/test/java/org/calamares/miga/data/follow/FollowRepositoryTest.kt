@@ -94,4 +94,22 @@ class FollowRepositoryTest {
         assertEquals(1, follows.observeFeed().first().size)
         assertEquals(1, follows.observeFeed(ids[1]).first().size)
     }
+
+    @Test
+    fun `another section of a followed website is found`() = runBlocking {
+        val id = dao.insertSource(
+            FollowedSourceEntity(network = "WEB", key = "https://www.hogarmania.com/cocina/recetas/feed/", handle = "hogarmania.com", name = "Hogarmania",
+                avatarUrl = null, url = "https://www.hogarmania.com/cocina/recetas/", addedAt = 0, lastOpenedAt = 0, checkedAt = 0)
+        )
+        dao.insertSource(
+            FollowedSourceEntity(network = "YOUTUBE", key = "UCaaaaaaaaaaaaaaaaaaaaaa", handle = "@hogarmania", name = "Hogarmania", avatarUrl = null,
+                url = "https://www.youtube.com/@hogarmania", addedAt = 0, lastOpenedAt = 0, checkedAt = 0)
+        )
+        assertEquals(id, follows.followedSite("https://hogarmania.com/cocina/recetas/postres/")?.id)
+        // The address it redirects to counts too.
+        assertEquals(id, follows.followedSite("https://hogarmania.example/", "https://www.hogarmania.com/cocina/")?.id)
+        assertNull(follows.followedSite("https://cocinaconcoqui.com/recetas/"))
+        assertNull("a YouTube channel is not a website", follows.followedSite("https://www.youtube.com/@hogarmania"))
+    }
 }
+
