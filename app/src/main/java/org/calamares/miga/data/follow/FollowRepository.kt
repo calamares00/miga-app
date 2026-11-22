@@ -142,7 +142,8 @@ class FollowRepository(db: AppDatabase) {
                 // What the user saved or imported stays, and so does a post that has a recipe in it.
                 offTopic = !isSaved && importedRecipe == null && !hasRecipe && CookingFilter.isOffTopic(post.title, post.description)
             )
-        }
+        // Two followed sections of one website can list the same recipe: show it once.
+        }.distinctBy { it.id }
     }
 
     fun observeSavedPosts(): Flow<List<FavoritePost>> = combine(dao.observeSavedPosts(), observeImported()) { saved, imported ->
