@@ -34,6 +34,16 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
+      # Robolectric downloads Android itself (android-all, ~100 MB) from Maven Central on the
+      # first test; when that download fails every Robolectric test fails with it. Kept between
+      # runs, keyed on the dependencies, so it is downloaded once.
+      - name: Cache Robolectric's Android
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('gradle/libs.versions.toml', 'app/build.gradle.kts') }}
+          restore-keys: robolectric-
+
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 
