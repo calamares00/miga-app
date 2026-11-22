@@ -64,6 +64,9 @@ data class RecipeGroup(
 data class RecipeListUiState(
     val isLoading: Boolean = true,
     val bookName: String = "",
+    /** The book's description and author, shown above its recipes (see RecipeBookEntity.description). */
+    val bookDescription: String = "",
+    val bookAuthor: String = "",
     val groups: List<RecipeGroup> = emptyList(),
     val totalCount: Int = 0,
     val availableCategories: List<String> = emptyList(),
@@ -430,6 +433,8 @@ class RecipeListViewModel(
         RecipeListUiState(
             isLoading = false,
             bookName = book?.name.orEmpty(),
+            bookDescription = book?.description.orEmpty(),
+            bookAuthor = book?.author.orEmpty(),
             groups = buildGroups(data.recipes, data.filter, warnings),
             totalCount = data.recipes.size,
             availableCategories = data.options.categories.map { it.name },

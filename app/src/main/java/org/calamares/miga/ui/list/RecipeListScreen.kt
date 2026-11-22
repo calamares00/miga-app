@@ -1,6 +1,7 @@
 package org.calamares.miga.ui.list
 
 import org.calamares.miga.ui.components.keepScrollInSheet
+import org.calamares.miga.ui.books.BookAbout
 import org.calamares.miga.ui.components.ButtonContent
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
@@ -366,6 +367,9 @@ fun RecipeListScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    if (uiState.bookDescription.isNotBlank() || uiState.bookAuthor.isNotBlank()) {
+                        item(key = "about", span = { GridItemSpan(maxLineSpan) }) { BookAbout(uiState.bookDescription, uiState.bookAuthor) }
+                    }
                     uiState.groups.forEach { group ->
                         val collapsed = collapsingEnabled && group.categoryName in collapsedCategories
                         item(key = "header_${group.categoryName}", span = { GridItemSpan(maxLineSpan) }) {
@@ -397,6 +401,9 @@ fun RecipeListScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    if (uiState.bookDescription.isNotBlank() || uiState.bookAuthor.isNotBlank()) {
+                        item(key = "about") { BookAbout(uiState.bookDescription, uiState.bookAuthor) }
+                    }
                     uiState.groups.forEach { group ->
                         val collapsed = collapsingEnabled && group.categoryName in collapsedCategories
                         item(key = "header_${group.categoryName}") {

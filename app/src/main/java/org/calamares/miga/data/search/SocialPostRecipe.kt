@@ -64,7 +64,7 @@ object SocialPostRecipe {
      * The JSON string literal after "contextJSON": (escapes kept), read by hand: it is long, and a
      * regular expression with alternation would overflow the stack.
      */
-    private fun contextJsonLiteral(html: String): String? {
+    internal fun contextJsonLiteral(html: String): String? {
         val start = CONTEXT_JSON_START.find(html)?.range?.last?.plus(1) ?: return null
         var i = start
         while (i < html.length) {

@@ -300,6 +300,28 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
     }
 }
 
+/** v24 -> v25: a book's description, author and the colour and emoji of a cover without a photo. */
+val MIGRATION_24_25 = object : Migration(24, 25) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `recipe_books` ADD COLUMN `description` TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE `recipe_books` ADD COLUMN `author` TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE `recipe_books` ADD COLUMN `coverColor` TEXT")
+        db.execSQL("ALTER TABLE `recipe_books` ADD COLUMN `coverEmoji` TEXT")
+    }
+}
+
+/** v25 -> v26: YouTube channels and Instagram profiles followed in Favourites, their latest posts and saved posts. */
+val MIGRATION_25_26 = object : Migration(25, 26) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `followed_sources` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `network` TEXT NOT NULL, `key` TEXT NOT NULL, `handle` TEXT, `name` TEXT NOT NULL, `avatarUrl` TEXT, `url` TEXT NOT NULL, `addedAt` INTEGER NOT NULL, `lastOpenedAt` INTEGER NOT NULL, `checkedAt` INTEGER)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_followed_sources_network_key` ON `followed_sources` (`network`, `key`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `source_posts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sourceId` INTEGER NOT NULL, `postKey` TEXT NOT NULL, `url` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `thumbnailUrl` TEXT, `publishedAt` INTEGER NOT NULL, `kind` TEXT NOT NULL, FOREIGN KEY(`sourceId`) REFERENCES `followed_sources`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_source_posts_sourceId_postKey` ON `source_posts` (`sourceId`, `postKey`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `saved_posts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `network` TEXT NOT NULL, `postKey` TEXT NOT NULL, `url` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `thumbnailUrl` TEXT, `author` TEXT, `authorUrl` TEXT, `kind` TEXT NOT NULL, `savedAt` INTEGER NOT NULL)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_saved_posts_network_postKey` ON `saved_posts` (`network`, `postKey`)")
+    }
+}
+
 /**
  * Every migration, from the oldest database that can still be upgraded (v4) to the current one,
  * in order. MigaApp opens the database with them and MigrationTest checks that they chain up to
@@ -309,5 +331,5 @@ val ALL_MIGRATIONS: Array<Migration> = arrayOf(
     MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
     MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
     MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23,
-    MIGRATION_23_24
+    MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26
 )

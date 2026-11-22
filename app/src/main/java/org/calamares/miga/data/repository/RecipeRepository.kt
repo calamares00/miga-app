@@ -1,6 +1,7 @@
 package org.calamares.miga.data.repository
 
 import org.calamares.miga.data.support.AppDispatchers
+import org.calamares.miga.data.follow.FollowRepository
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.CoroutineScope
 import org.calamares.miga.data.content.CleanupProposal
@@ -72,6 +73,9 @@ class RecipeRepository(
 
     /** Recipe books and installed packs. */
     val books = BookRepository(db, this, sync, onSyncChangeEnqueued)
+
+    /** YouTube channels and Instagram profiles followed in Favourites, and saved videos and reels. */
+    val follows = FollowRepository(db)
 
     /** Recipes and books deleted with "Undo" still available: left out of the lists until then. */
     val pendingDeletions = PendingDeletions(CoroutineScope(SupervisorJob() + AppDispatchers.io))

@@ -3,6 +3,7 @@ package org.calamares.miga.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import org.calamares.miga.data.local.dao.CategoryDao
+import org.calamares.miga.data.local.dao.FollowDao
 import org.calamares.miga.data.local.dao.ContentDao
 import org.calamares.miga.data.local.dao.IngredientCatalogDao
 import org.calamares.miga.data.local.dao.IngredientCategoryDao
@@ -18,6 +19,9 @@ import org.calamares.miga.data.local.dao.SyncConnectionDao
 import org.calamares.miga.data.local.dao.TagDao
 import org.calamares.miga.data.local.dao.UtensilDao
 import org.calamares.miga.data.local.entity.CategoryEntity
+import org.calamares.miga.data.local.entity.FollowedSourceEntity
+import org.calamares.miga.data.local.entity.SavedPostEntity
+import org.calamares.miga.data.local.entity.SourcePostEntity
 import org.calamares.miga.data.local.entity.IngredientCatalogEntity
 import org.calamares.miga.data.local.entity.IngredientCategoryEntity
 import org.calamares.miga.data.local.entity.IngredientEntity
@@ -60,7 +64,10 @@ import org.calamares.miga.data.local.dao.RecipeNoteDao
         ShoppingListEntity::class,
         SyncConnectionEntity::class,
         PendingSyncChangeEntity::class,
-        RecipeNoteEntity::class
+        RecipeNoteEntity::class,
+        FollowedSourceEntity::class,
+        SourcePostEntity::class,
+        SavedPostEntity::class
     ],
     // The schema of each version is exported to app/schemas by Room's Gradle plugin (see
     // app/build.gradle.kts) for the migration tests; a new version needs its JSON committed.
@@ -84,11 +91,12 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun pendingSyncChangeDao(): PendingSyncChangeDao
     abstract fun contentDao(): ContentDao
     abstract fun recipeNoteDao(): RecipeNoteDao
+    abstract fun followDao(): FollowDao
 
     companion object {
         const val DATABASE_NAME = "recetario.db"
 
         /** Current schema version; a new one needs a migration in ALL_MIGRATIONS and its schema committed. */
-        const val VERSION = 24
+        const val VERSION = 26
     }
 }

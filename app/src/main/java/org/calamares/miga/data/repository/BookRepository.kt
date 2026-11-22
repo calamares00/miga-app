@@ -17,6 +17,7 @@ import org.calamares.miga.data.local.entity.StepEntity
 import org.calamares.miga.data.local.entity.SyncChangeType
 import org.calamares.miga.data.local.entity.SyncEntityType
 import org.calamares.miga.data.model.KitchenEquipment
+import org.calamares.miga.data.model.BookDetails
 import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.data.model.HealthColorLevel
@@ -52,7 +53,7 @@ class BookRepository internal constructor(
                 RecipeBookSummary(
                     it.book.id, it.book.name, it.book.coverPhotoUri, it.recipeCount,
                     it.book.packId, it.book.packVersion, it.book.syncConnectionId, it.book.isPinned,
-                    it.book.packSeries, it.book.sharedBy
+                    it.book.packSeries, it.book.sharedBy, it.book.author, it.book.coverColor, it.book.coverEmoji
                 )
             }
         }
@@ -106,7 +107,11 @@ class BookRepository internal constructor(
                     name = draft.name.trim(),
                     coverPhotoUri = draft.coverPhotoUri,
                     createdAt = now,
-                    updatedAt = now
+                    updatedAt = now,
+                    description = draft.description.trim(),
+                    author = draft.author.trim(),
+                    coverColor = draft.coverColor,
+                    coverEmoji = draft.coverEmoji
                 )
             )
         } else {
@@ -124,7 +129,11 @@ class BookRepository internal constructor(
                     isPinned = existing?.isPinned ?: false,
                     packSeries = existing?.packSeries,
                     sharedBy = existing?.sharedBy,
-                    sharedAt = existing?.sharedAt
+                    sharedAt = existing?.sharedAt,
+                    description = draft.description.trim(),
+                    author = draft.author.trim(),
+                    coverColor = draft.coverColor,
+                    coverEmoji = draft.coverEmoji
                 )
             )
             existing?.syncConnectionId?.let {
@@ -195,7 +204,8 @@ class BookRepository internal constructor(
         uid: String? = null,
         coverPhotoUri: String? = null,
         sharedBy: String? = null,
-        sharedAt: Long? = null
+        sharedAt: Long? = null,
+        details: BookDetails = BookDetails()
     ): Long {
         val trimmed = name.trim().ifBlank { L10n.str(R.string.untitled) }
         recipeBookDao.findByName(trimmed)?.let { return it.id }
@@ -206,7 +216,11 @@ class BookRepository internal constructor(
                 coverPhotoUri = coverPhotoUri,
                 createdAt = System.currentTimeMillis(),
                 sharedBy = sharedBy,
-                sharedAt = sharedAt
+                sharedAt = sharedAt,
+                description = details.description,
+                author = details.author,
+                coverColor = details.coverColor,
+                coverEmoji = details.coverEmoji
             )
         )
     }
@@ -215,7 +229,14 @@ class BookRepository internal constructor(
     suspend fun findSharedBookId(uid: String): Long? = recipeBookDao.findByUid(uid)?.takeIf { it.packId == null }?.id
 
     /** A new book that keeps the shared book's [uid] (unless this phone already uses it), even if another has the same name. */
-    suspend fun createBookWithUid(name: String, uid: String, coverPhotoUri: String?, sharedBy: String? = null, sharedAt: Long? = null): Long =
+    suspend fun createBookWithUid(
+        name: String,
+        uid: String,
+        coverPhotoUri: String?,
+        sharedBy: String? = null,
+        sharedAt: Long? = null,
+        details: BookDetails = BookDetails()
+    ): Long =
         recipeBookDao.insert(
             RecipeBookEntity(
                 uid = uid.takeIf { recipeBookDao.findByUid(it) == null } ?: UUID.randomUUID().toString(),
@@ -223,9 +244,21 @@ class BookRepository internal constructor(
                 coverPhotoUri = coverPhotoUri,
                 createdAt = System.currentTimeMillis(),
                 sharedBy = sharedBy,
-                sharedAt = sharedAt
+                sharedAt = sharedAt,
+                description = details.description,
+                author = details.author,
+                coverColor = details.coverColor,
+                coverEmoji = details.coverEmoji
             )
         )
+
+    /** Description, author and cover look of a shared book, after importing a newer copy of it. */
+    suspend fun setBookDetails(bookId: Long, details: BookDetails) {
+        val book = recipeBookDao.getOnce(bookId) ?: return
+        recipeBookDao.update(
+            book.copy(description = details.description, author = details.author, coverColor = details.coverColor, coverEmoji = details.coverEmoji)
+        )
+    }
 
     /** Who shared the book, after importing a newer copy of it. */
     suspend fun setBookSharedBy(bookId: Long, sharedBy: String?, sharedAt: Long?) =

@@ -16,7 +16,12 @@ data class RecipeBook(
     val packSeries: String? = null,
     /** Who shared the book with the user, and when (see RecipeBookEntity.sharedBy). */
     val sharedBy: String? = null,
-    val sharedAt: Long? = null
+    val sharedAt: Long? = null,
+    /** Description, author and the look of a cover without a photo (see RecipeBookEntity.description). */
+    val description: String = "",
+    val author: String = "",
+    val coverColor: String? = null,
+    val coverEmoji: String? = null
 ) {
     /**
      * Pack books are read-only: they cannot be renamed, get a new cover or have recipes added or
@@ -43,7 +48,11 @@ data class RecipeBookSummary(
     val isPinned: Boolean = false,
     val packSeries: String? = null,
     /** Who shared the book with the user (see RecipeBookEntity.sharedBy), shown under its name. */
-    val sharedBy: String? = null
+    val sharedBy: String? = null,
+    /** Shown on the cover (see RecipeBookEntity.author, coverColor and coverEmoji). */
+    val author: String = "",
+    val coverColor: String? = null,
+    val coverEmoji: String? = null
 ) {
     val isPack: Boolean get() = packId != null
     val isSynced: Boolean get() = syncConnectionId != null
@@ -54,9 +63,53 @@ data class RecipeBookDraft(
     /** Only set on import, to keep the uid of the exported book; null generates a new one. */
     val uid: String? = null,
     val name: String,
-    val coverPhotoUri: String?
+    val coverPhotoUri: String?,
+    val description: String = "",
+    val author: String = "",
+    val coverColor: String? = null,
+    val coverEmoji: String? = null
 )
 
-fun RecipeBook.toDraft() = RecipeBookDraft(id = id, uid = uid, name = name, coverPhotoUri = coverPhotoUri)
+fun RecipeBook.toDraft() = RecipeBookDraft(
+    id = id, uid = uid, name = name, coverPhotoUri = coverPhotoUri,
+    description = description, author = author, coverColor = coverColor, coverEmoji = coverEmoji
+)
+
+/**
+ * What a user writes about a book besides its name: description, author and the look of a cover
+ * without a photo. Imported values are trimmed to sensible lengths.
+ */
+data class BookDetails(
+    val description: String = "",
+    val author: String = "",
+    val coverColor: String? = null,
+    val coverEmoji: String? = null
+) {
+    fun cleaned() = BookDetails(
+        description = description.trim().take(MAX_DESCRIPTION),
+        author = author.trim().take(MAX_AUTHOR),
+        coverColor = coverColor?.takeIf { BookColor.fromName(it) != null },
+        coverEmoji = coverEmoji?.trim()?.take(MAX_EMOJI)?.ifEmpty { null }
+    )
+
+    /**
+     * These details updated with what a synced copy sends: null means "not sent" (an older app or
+     * server) and keeps the current value; an empty text clears it.
+     */
+    fun updatedWith(description: String?, author: String?, coverColor: String?, coverEmoji: String?) = BookDetails(
+        description = description ?: this.description,
+        author = author ?: this.author,
+        coverColor = if (coverColor == null) this.coverColor else coverColor.ifEmpty { null },
+        coverEmoji = if (coverEmoji == null) this.coverEmoji else coverEmoji.ifEmpty { null }
+    ).cleaned()
+
+    companion object {
+        const val MAX_DESCRIPTION = 300
+        const val MAX_AUTHOR = 60
+        private const val MAX_EMOJI = 16
+    }
+}
+
+val RecipeBook.details: BookDetails get() = BookDetails(description, author, coverColor, coverEmoji)
 
 fun emptyRecipeBookDraft() = RecipeBookDraft(id = 0L, name = "", coverPhotoUri = null)

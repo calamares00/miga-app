@@ -2,13 +2,14 @@
 
 Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo o uno por temas (las mejores croquetas merecen su propio libro). Las recetas nuevas se guardan en el libro que tengas abierto.
 
+- Al **crear o editar un libro** ves su portada tal como quedará. La foto puede ser de la galería, de la cámara o de una de sus recetas; sin foto, elige su **color** y un **dibujo**. Añade también el **autor** y unas palabras en **Sobre este libro** (una descripción o una dedicatoria): salen al abrir el libro, en su portada y en el PDF del libro.
 - En **Libros**, los filtros de arriba (Todos, Mis libros, Packs, Servidor) muestran cada tipo de libro. También puedes **deslizar a izquierda o derecha** para pasar de uno a otro.
 - Mantén pulsado un libro para **seleccionarlo**; luego toca otros para añadirlos. Arriba tienes Editar, Compartir y Eliminar (al eliminar tienes unos segundos para **Deshacer**), y en **Más acciones**, **Fijar arriba**: los libros fijados salen los primeros, con una chincheta en la portada. Dentro de un libro también puedes fijarlo desde su menú (⋮).
 - Dentro de un libro, las recetas se agrupan por **categoría**. Toca una categoría para plegarla o desplegarla; desde el menú (⋮) puedes plegarlas o desplegarlas todas.
 - Al abrir una receta, **desliza a izquierda o derecha** para pasar a la siguiente o a la anterior del libro.
 - Mantén pulsada una receta para **seleccionar varias**. Arriba puedes editarla (si es solo una), compartirlas o eliminarlas (con **Deshacer** durante unos segundos), y en **Más acciones** cambiarles a la vez la categoría, la dificultad, las raciones o la fuente, marcarlas como favoritas, moverlas o copiarlas a otro libro, añadir sus ingredientes a la lista de la compra o **mejorarlas** ✨ todas de una vez.
 - En cada receta, **Mis notas** guarda notas personales con fecha («la próxima vez, menos sal»). No cambian la receta y van en las copias de seguridad.
-- **Buscar** busca en todos los libros por nombre o ingrediente. Con el botón de filtros afinas por tiempo, dificultad, categoría, equipamiento, etiquetas, ingredientes u origen, y también por **alérgenos** («Sin huevo», «Sin ingredientes con gluten»…) o **para celíacos**. Abajo, **Ver N recetas** dice cuántas quedan. Los filtros activos aparecen como chips que puedes quitar de uno en uno. Con el marcador **guardas la búsqueda** con un nombre, y antes de escribir tienes a mano tus búsquedas guardadas y las recientes. **Favoritos** funciona igual, solo con tus favoritas.
+- **Buscar** busca en todos los libros por nombre o ingrediente. Con el botón de filtros afinas por tiempo, dificultad, categoría, equipamiento, etiquetas, ingredientes u origen, y también por **alérgenos** («Sin huevo», «Sin ingredientes con gluten»…) o **para celíacos**. Abajo, **Ver N recetas** dice cuántas quedan. Los filtros activos aparecen como chips que puedes quitar de uno en uno. Con el marcador **guardas la búsqueda** con un nombre, y antes de escribir tienes a mano tus búsquedas guardadas y las recientes. En **Favoritos › Recetas** tienes lo mismo, solo con tus favoritas.
 - **Fuente**: si es un enlace, tócalo para abrir la web; el botón de copiar al lado copia la dirección.
 - **¿Qué cocino con lo que tengo?** (en Buscar): escribe los ingredientes que tienes y verás las recetas que los usan, primero las que necesitan menos cosas, con lo que te falta. La sal, el agua, el aceite y la pimienta se dan por supuestos.
 
@@ -41,6 +42,15 @@ Desde un libro, pulsa **Nueva receta** y elige de dónde sale:
 - **Sugerir una receta** ✨: escribe el nombre de un plato y elige entre las propuestas.
 
 Las opciones con ✨ las hace el asistente de cocina y solo aparecen si lo tienes configurado.
+
+## ♥ Favoritos
+
+Todo lo que te gusta, en un sitio: arriba eliges **Todo**, **Recetas**, **Canales** o **Vídeos y reels**.
+
+- **Canales**: sigue canales de YouTube y perfiles de Instagram de cocina. Toca **Añadir** y pega su enlace, o comparte el canal o perfil desde YouTube o Instagram con Miga. Verás sus últimos vídeos (15 en YouTube) o reels (6 en Instagram), con un número cuando hay novedades. Se actualizan al abrir Favoritos (como mucho una vez por hora) o con **Actualizar**.
+- **Vídeos y reels**: guarda los que quieras cocinar con el ♡, o pegando o compartiendo su enlace. Se quedan aunque el canal publique más.
+- **Importar**: crea la receta en el libro que elijas. Sin ✨, la receta está escrita en el texto y no hace falta el asistente; con ✨, la saca el asistente del vídeo. Lo importado muestra **✓ En «libro»** y te lleva a la receta.
+- Las cuentas privadas no se pueden seguir, e Instagram puede dejar de mostrar las publicaciones de un perfil sin iniciar sesión.
 
 ## ⚠️ Alérgenos e intolerancias
 
