@@ -4,7 +4,13 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import android.widget.Toast
 import org.calamares.miga.ui.detail.BulkPolishScreen
+import org.calamares.miga.ui.favorites.FavoritesTab
+import org.calamares.miga.ui.favorites.FavoritesViewModel
+import org.calamares.miga.ui.favorites.SourceScreen
+import org.calamares.miga.ui.favorites.SourceViewModel
 import org.calamares.miga.data.polish.BulkPolish
+import org.calamares.miga.data.follow.FollowResult
+import org.calamares.miga.data.follow.SocialFeeds
 import org.calamares.miga.data.ai.AiJobs
 import org.calamares.miga.ui.settings.ContentCleanupScreen
 import org.calamares.miga.ui.settings.ContentCleanupViewModel
@@ -238,11 +244,38 @@ fun MigaNavHost(initialRoute: String? = null) {
 
     /** A recipe link shared to Miga (Instagram, the browser): import it in the book the user picks. */
     val sharedLink by RecipeLinkIntents.event.collectAsStateWithLifecycle()
-    sharedLink?.let { link ->
+    val linkScope = rememberCoroutineScope()
+    val social = sharedLink?.let { SocialFeeds.parse(it.url) }
+    // A channel or profile: follow it in Favourites.
+    if (sharedLink != null && social != null && social.isSource) {
+        FollowSharedDialog(
+            link = social,
+            onFollow = {
+                RecipeLinkIntents.consume()
+                linkScope.launch {
+                    when (val result = repository.follows.follow(social)) {
+                        is FollowResult.Followed -> navController.navigate(Destinations.source(result.sourceId))
+                        is FollowResult.AlreadyFollowing -> navController.navigate(Destinations.source(result.sourceId))
+                        is FollowResult.Error -> Toast.makeText(context, result.reason, Toast.LENGTH_LONG).show()
+                    }
+                }
+            },
+            onDismiss = { RecipeLinkIntents.consume() }
+        )
+    } else sharedLink?.let { link ->
         val books by remember { repository.books.observeRecipeBooks() }.collectAsStateWithLifecycle(initialValue = emptyList())
         SharedRecipeLinkDialog(
             link = link,
             books = books.filterNot { it.isPack },
+            // A video or reel can also be kept in Favourites to cook it later.
+            onSave = if (social != null) ({
+                RecipeLinkIntents.consume()
+                linkScope.launch {
+                    val post = repository.follows.postFromLink(social)
+                    if (post != null) repository.follows.save(post)
+                    Toast.makeText(context, L10n.str(if (post != null) R.string.favorites_post_saved else R.string.follow_not_readable), Toast.LENGTH_SHORT).show()
+                }
+            }) else null,
             onImport = { bookId ->
                 RecipeLinkIntents.consume()
                 navController.navigate(Destinations.BOOKS_ROUTE) {
@@ -418,12 +451,34 @@ private fun NavGraphBuilder.screens(
         val viewModel: GlobalSearchViewModel = viewModel(
             factory = viewModelFactory { initializer { GlobalSearchViewModel(repository, settingsRepository, initialOnlyFavorites = true) } }
         )
-        GlobalSearchScreen(
-            viewModel = viewModel,
+        val favorites: FavoritesViewModel = viewModel(factory = viewModelFactory { initializer { FavoritesViewModel(repository) } })
+        val polish = rememberPolishRecipes(navController, repository, settingsRepository)
+        FavoritesTab(
+            viewModel = favorites,
+            recipes = { header ->
+                GlobalSearchScreen(
+                    viewModel = viewModel,
+                    onRecipeClick = { navController.navigate(Destinations.detail(it)) },
+                    title = L10n.str(R.string.favourites_2),
+                    favoritesOnly = true,
+                    onPolishRecipes = polish,
+                    header = header
+                )
+            },
             onRecipeClick = { navController.navigate(Destinations.detail(it)) },
-            title = L10n.str(R.string.favourites_2),
-            favoritesOnly = true,
-            onPolishRecipes = rememberPolishRecipes(navController, repository, settingsRepository)
+            onOpenSource = { navController.navigate(Destinations.source(it)) },
+            onImport = { bookId, url -> navController.navigate(Destinations.editor(bookId = bookId, sourceRecipeUrl = url)) }
+        )
+    }
+
+    screen(Destinations.SOURCE_ROUTE, listOf(navArgument(Destinations.ARG_SOURCE_ID) { type = NavType.LongType })) { entry ->
+        val sourceId = entry.arguments?.getLong(Destinations.ARG_SOURCE_ID) ?: return@screen
+        val source: SourceViewModel = viewModel(factory = viewModelFactory { initializer { SourceViewModel(repository, sourceId) } })
+        SourceScreen(
+            viewModel = source,
+            onBack = { navController.popBackStack() },
+            onRecipeClick = { navController.navigate(Destinations.detail(it)) },
+            onImport = { bookId, url -> navController.navigate(Destinations.editor(bookId = bookId, sourceRecipeUrl = url)) }
         )
     }
 

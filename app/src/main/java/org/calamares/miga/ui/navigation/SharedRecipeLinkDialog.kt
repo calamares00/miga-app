@@ -19,7 +19,9 @@ import androidx.compose.ui.unit.dp
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.model.RecipeBookSummary
+import org.calamares.miga.data.follow.SocialLink
 import org.calamares.miga.data.search.SocialPostRecipe
+import org.calamares.miga.ui.favorites.linkKind
 import org.calamares.miga.data.search.YouTubeRecipe
 import org.calamares.miga.data.share.SharedRecipeLink
 
@@ -33,7 +35,9 @@ internal fun SharedRecipeLinkDialog(
     books: List<RecipeBookSummary>,
     onImport: (bookId: Long) -> Unit,
     onShoppingList: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    /** Keeps a video or reel in Favourites instead; null for other links. */
+    onSave: (() -> Unit)? = null
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -69,7 +73,31 @@ internal fun SharedRecipeLinkDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onShoppingList) { Text(L10n.str(R.string.shared_link_to_shopping)) } },
+        confirmButton = {
+            if (onSave != null) {
+                TextButton(onClick = onSave) { Text(L10n.str(R.string.favorites_save_post)) }
+            } else {
+                TextButton(onClick = onShoppingList) { Text(L10n.str(R.string.shared_link_to_shopping)) }
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
+    )
+}
+
+/** A YouTube channel or Instagram profile shared to Miga: follow it in Favourites. */
+@Composable
+internal fun FollowSharedDialog(link: SocialLink, onFollow: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(L10n.str(R.string.favorites_follow_shared_title)) },
+        text = {
+            Column {
+                Text(L10n.str(linkKind(link)), style = MaterialTheme.typography.titleSmall)
+                Text(link.url, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(L10n.str(R.string.favorites_follow_desc), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 12.dp))
+            }
+        },
+        confirmButton = { TextButton(onClick = onFollow) { Text(L10n.str(R.string.favorites_follow)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )
 }
