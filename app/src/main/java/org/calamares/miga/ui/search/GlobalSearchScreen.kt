@@ -105,7 +105,9 @@ fun GlobalSearchScreen(
     /** Shows a back arrow: the screen was opened on top of another one (from the statistics). */
     onBack: (() -> Unit)? = null,
     /** Improve the selected recipes with AI, all together (see BulkPolishScreen). */
-    onPolishRecipes: ((List<Long>) -> Unit)? = null
+    onPolishRecipes: ((List<Long>) -> Unit)? = null,
+    /** Shown above the search field (the Favourites tab's views). */
+    header: (@Composable () -> Unit)? = null
 ) {
     val aiEnabled = rememberAiReady()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -199,6 +201,7 @@ fun GlobalSearchScreen(
             return@AdaptiveScaffold
         }
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            header?.invoke()
             // The same header on Search and Favourites: the search field with the filters next to
             // it, the filters applied as chips and, over the results, how many and their order.
             Row(
