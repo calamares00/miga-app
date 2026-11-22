@@ -19,7 +19,9 @@ data class SocialPost(
     val author: String?,
     /** The post's own address, without tracking parameters. */
     val url: String,
-    val site: String
+    val site: String,
+    /** The author's profile, when known. */
+    val authorUrl: String? = null
 )
 
 /**
@@ -103,9 +105,12 @@ object SocialPostRecipe {
      */
     fun withEmbed(post: SocialPost?, embed: InstagramMedia?, url: String): SocialPost? {
         embed ?: return post
-        if (post != null) return post.copy(imageUrl = embed.imageUrl ?: post.imageUrl, author = post.author ?: embed.author)
+        if (post != null) {
+            val author = post.author ?: embed.author
+            return post.copy(imageUrl = embed.imageUrl ?: post.imageUrl, author = author, authorUrl = post.authorUrl ?: author?.let(::instagramProfile))
+        }
         val text = embed.caption?.let(::cleanText)?.takeIf { it.isNotBlank() } ?: return null
-        return SocialPost(text, embed.imageUrl, embed.author, withoutQuery(url), "Instagram")
+        return SocialPost(text, embed.imageUrl, embed.author, withoutQuery(url), "Instagram", embed.author?.let(::instagramProfile))
     }
 
     private fun meta(html: String, key: String): String? {
@@ -149,14 +154,15 @@ object SocialPostRecipe {
             imageUrl = meta(html, "og:image"),
             author = author,
             url = withoutQuery(meta(html, "og:url") ?: pageUrl),
-            site = meta(html, "og:site_name") ?: if (instagram) "Instagram" else URI(pageUrl).host.orEmpty()
+            site = meta(html, "og:site_name") ?: if (instagram) "Instagram" else URI(pageUrl).host.orEmpty(),
+            authorUrl = if (instagram) author?.let(::instagramProfile) else null
         )
     }
 
     private const val MIN_TEXT = 80
 
     /** Hashtag lines and the dots people use to push them down go; the rest stays. */
-    private fun cleanText(text: String): String = text.lines()
+    internal fun cleanText(text: String): String = text.lines()
         .map { it.trimEnd() }
         .filterNot { line -> line.isNotBlank() && (line.matches(FILLER) || line.trim().split(SPACES).all { it.startsWith("#") }) }
         .joinToString("\n")
@@ -165,6 +171,12 @@ object SocialPostRecipe {
 
     private val FILLER = Regex("[.·•\\s]+")
     private val SPACES = Regex("\\s+")
+
+    /** "@poesiadefogon" lives at instagram.com/poesiadefogon/. */
+    private fun instagramProfile(handle: String) = "https://www.instagram.com/${handle.removePrefix("@")}/"
+
+    /** Whether an Instagram address is a reel (a video) rather than a photo post. */
+    fun isReel(url: String) = Regex("/(?:reel|reels|tv)/").containsMatchIn(url)
 
     private fun withoutQuery(url: String): String = url.substringBefore('?').substringBefore('#')
 
@@ -211,14 +223,18 @@ object SocialPostRecipe {
         val ingredientsAt = lines.indexOfFirst { headerOf(it, INGREDIENT_HEADERS) }
         if (ingredientsAt < 0) return null
         val stepsAt = lines.indexOfFirst { headerOf(it, STEP_HEADERS) }.takeIf { it > ingredientsAt }
-        val ingredientLines = lines.subList(ingredientsAt + 1, stepsAt ?: lines.size).map(::plain).filter { it.isNotEmpty() }
-        val ingredients = (if (stepsAt == null) ingredientLines.takeWhile { !looksLikeStep(it) } else ingredientLines)
+        // Without a steps heading the list ends at the first blank line after it, and what follows
+        // only counts as steps when they are numbered (descriptions go on with greetings and links).
+        val listEnd = stepsAt ?: (ingredientsAt + 1 until lines.size).firstOrNull { i ->
+            lines[i].isBlank() && (ingredientsAt + 1 until i).any { plain(lines[it]).isNotEmpty() }
+        } ?: lines.size
+        val ingredients = lines.subList(ingredientsAt + 1, listEnd).map(::plain).filter { it.isNotEmpty() }
+            .let { list -> if (stepsAt == null) list.takeWhile { !looksLikeStep(it) } else list }
             .map { PastedLists.ingredient(it) }
             .filter { it.name.isNotBlank() }
             .map { IngredientDto(spoonSize(it.name, it.unit), it.quantity, it.unit) }
-        val stepSource = if (stepsAt != null) lines.subList(stepsAt + 1, lines.size)
-        else lines.subList(ingredientsAt + 1, lines.size).drop(ingredients.size)
-        val (steps, tips) = steps(stepSource)
+        val stepSource = lines.subList(if (stepsAt != null) stepsAt + 1 else listEnd, lines.size)
+        val (steps, tips) = steps(stepSource, onlyNumbered = stepsAt == null)
         if (ingredients.size < 2 || steps.isEmpty()) return null
 
         val intro = lines.subList(0, ingredientsAt).map(::plain).filter { it.isNotEmpty() }
@@ -226,8 +242,8 @@ object SocialPostRecipe {
         val servings = (listOf(lines[ingredientsAt]) + intro).firstNotNullOfOrNull { line ->
             SERVINGS.find(line)?.let { match -> (match.groupValues[1].ifEmpty { match.groupValues[2] }).toIntOrNull() }
         }
-        val credit = post.author?.let { "${post.site}: $it" } ?: post.site
-        val notes = ((intro.drop(1) + tips).filterNot(::isCallToAction) + listOf(credit)).joinToString("\n\n")
+        // The author goes in the source, with the post (see SourceText).
+        val notes = (intro.drop(1) + tips).filterNot(::isCallToAction).joinToString("\n\n")
         val recipe = RecipeVisionResultDto(
             name = title,
             servings = servings ?: 4,
@@ -278,15 +294,19 @@ object SocialPostRecipe {
     private fun spoonSize(name: String, unit: String?): String =
         if (unit?.startsWith("cuchar") == true) name.replace(SPOON_SIZE, "").ifBlank { name } else name
 
-    private fun looksLikeStep(line: String) = STEP_NUMBER.containsMatchIn(line)
+    /** "1. Batimos..." or "Paso 1": a step, even right under the ingredients. Not "2 Huevos". */
+    private val STRONG_STEP = Regex("""^(?:\d{1,2}\s*[.)]\s+|(?i:paso|step)\s*\d)""")
+
+    private fun looksLikeStep(line: String) = STRONG_STEP.containsMatchIn(line)
 
     /**
      * Steps from the lines after the header: numbered steps ("1️⃣", "1.", "Paso 1") with their
      * following lines joined to them, or one step per line when nothing is numbered. Lines after
      * the last numbered step that start with a symbol ("🔸Una vez terminada…") are tips.
      */
-    private fun steps(source: List<String>): Pair<List<String>, List<String>> {
+    private fun steps(source: List<String>, onlyNumbered: Boolean = false): Pair<List<String>, List<String>> {
         val numbered = source.count { STEP_NUMBER.containsMatchIn(plain(it)) && plain(it).isNotEmpty() } >= 2
+        if (onlyNumbered && !numbered) return emptyList<String>() to emptyList()
         val steps = mutableListOf<String>()
         val tips = mutableListOf<String>()
         for (raw in source) {

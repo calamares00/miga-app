@@ -20,6 +20,7 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.search.SocialPostRecipe
+import org.calamares.miga.data.search.YouTubeRecipe
 import org.calamares.miga.data.share.SharedRecipeLink
 
 /**
@@ -37,7 +38,15 @@ internal fun SharedRecipeLinkDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(L10n.str(if (SocialPostRecipe.isInstagram(link.url)) R.string.shared_link_title_instagram else R.string.shared_link_title))
+            Text(
+                L10n.str(
+                    when {
+                        SocialPostRecipe.isInstagram(link.url) -> R.string.shared_link_title_instagram
+                        YouTubeRecipe.isYouTube(link.url) -> R.string.shared_link_title_youtube
+                        else -> R.string.shared_link_title
+                    }
+                )
+            )
         },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {

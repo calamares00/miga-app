@@ -10,6 +10,10 @@ import org.calamares.miga.data.search.SchemaOrgRecipe
 import org.calamares.miga.data.search.SchemaRecipe
 import org.calamares.miga.data.search.SocialPost
 import org.calamares.miga.data.search.SocialPostRecipe
+import org.calamares.miga.data.model.SourceText
+import org.calamares.miga.data.search.YouTubeRecipe
+import org.calamares.miga.data.search.importRecipeFromYouTube
+import org.calamares.miga.data.search.watchesYouTube
 import org.calamares.miga.data.search.PostAudioExtractor
 import org.calamares.miga.data.search.importRecipeFromPostAudio
 import org.calamares.miga.data.ai.audioSupport
@@ -372,6 +376,10 @@ class RecipeEditorViewModel(
         lastAiOperation = { startUrlImport(appContext, url) }
         launchAiTask(L10n.str(R.string.ai_task_importing_web)) { progress ->
             _visionState.value = VisionState.Loading
+            YouTubeRecipe.videoId(url)?.let { id ->
+                importYouTube(appContext, id, progress)
+                return@launchAiTask
+            }
             progress.step(L10n.str(R.string.ai_step_downloading_page))
             val page = when (val fetchResult = RecipeUrlFetcher.fetchPage(url)) {
                 is PageFetchResult.Success -> fetchResult
@@ -398,7 +406,7 @@ class RecipeEditorViewModel(
             val post = SocialPostRecipe.withEmbed(pagePost, embed, postUrl)
             val fromPost = post?.let { withContext(AppDispatchers.default) { SocialPostRecipe.parse(it) } }
             if (fromPost != null) {
-                applyReadRecipe(appContext, fromPost, progress)
+                applyReadRecipe(appContext, fromPost.withSource(postSource(post)), progress)
                 return@launchAiTask
             }
             val elsewhere = post?.let { SocialPostRecipe.recipeElsewhere(it) }
@@ -419,7 +427,7 @@ class RecipeEditorViewModel(
                     when (result) {
                         is RecipeVisionResult.Success -> {
                             val recipe = result.recipe.copy(
-                                source = post.url,
+                                source = postSource(post),
                                 notes = listOf(result.recipe.notes, L10n.str(R.string.recipe_from_video_note)).filter { it.isNotBlank() }.joinToString("\n\n")
                             )
                             applyVisionResult(recipe)
@@ -462,7 +470,7 @@ class RecipeEditorViewModel(
             } ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
             when (result) {
                 is RecipeVisionResult.Success -> {
-                    val recipe = if (post != null && result.recipe.source.isBlank()) result.recipe.copy(source = post.url) else result.recipe
+                    val recipe = if (post != null) result.recipe.copy(source = postSource(post)) else result.recipe
                     applyVisionResult(recipe)
                     post?.imageUrl?.let { downloadPhoto(appContext, it, progress) }
                     _visionState.value = VisionState.Loaded
@@ -471,6 +479,103 @@ class RecipeEditorViewModel(
             }
         }
     }
+
+    /**
+     * A YouTube video, from the cheapest source to the most expensive: its description written as
+     * a recipe, the recipe on the cook's website linked from it (schema.org), Gemini watching the
+     * video, or another assistant reading the description.
+     */
+    private suspend fun importYouTube(appContext: Context, id: String, progress: AiProgressReporter) {
+        progress.step(L10n.str(R.string.ai_step_downloading_page))
+        val page = RecipeUrlFetcher.fetchPage(YouTubeRecipe.watchUrl(id), RecipeUrlFetcher.PLAIN_USER_AGENT) as? PageFetchResult.Success
+        val video = page?.let { withContext(AppDispatchers.default) { YouTubeRecipe.read(it.html, id) } }
+            ?: (RecipeUrlFetcher.fetchPage(YouTubeRecipe.oEmbedUrl(id)) as? PageFetchResult.Success)?.let { YouTubeRecipe.readOEmbed(it.html, id) }
+        if (video == null) {
+            _visionState.value = VisionState.Error(L10n.str(R.string.youtube_unavailable))
+            return
+        }
+        val post = YouTubeRecipe.asPost(video)
+        withContext(AppDispatchers.default) { SocialPostRecipe.parse(post) }?.let {
+            applyReadRecipe(appContext, it.withSource(postSource(post)), progress)
+            return
+        }
+        // From the cook's website: the source names the video and the page.
+        val withPage = { page: String -> postSource(post, listOf(L10n.str(R.string.source_kind_website) to page)) }
+        val linkedPages = mutableListOf<PageFetchResult.Success>()
+        for (link in YouTubeRecipe.recipePageLinks(video.description)) {
+            progress.step(L10n.str(R.string.ai_step_reading_linked_page))
+            val linked = RecipeUrlFetcher.fetchPage(link) as? PageFetchResult.Success ?: continue
+            val read = withContext(AppDispatchers.default) { SchemaOrgRecipe.parse(linked.html, linked.url) }
+            if (read == null) {
+                linkedPages += linked
+                continue
+            }
+            applyReadRecipe(appContext, SchemaRecipe(read.recipe.copy(source = withPage(linked.url)), read.imageUrl ?: video.thumbnailUrl), progress)
+            return
+        }
+        val candidates = settingsRepository.aiCandidates()
+        if (candidates.isEmpty()) {
+            _visionState.value = VisionState.Error(L10n.str(R.string.youtube_needs_assistant))
+            return
+        }
+        // The cook's website without the standard format: the assistant reads it, which costs less
+        // than watching the video and has the exact quantities.
+        for (linked in linkedPages) {
+            val text = (RecipeUrlFetcher.readableText(linked.html) as? UrlFetchResult.Success)?.text ?: continue
+            val result = progress.withHints(webHints()) {
+                settingsRepository.runAi<RecipeVisionResult>(
+                    errorOf = { (it as? RecipeVisionResult.Error)?.reason },
+                    error = { RecipeVisionResult.Error(it) },
+                    progress = progress
+                ) { ai -> ai.importRecipeFromPage(linked.url, text, known) }
+            }
+            if (result is RecipeVisionResult.Success) {
+                applyVisionResult(result.recipe.copy(source = withPage(linked.url)))
+                video.thumbnailUrl?.let { downloadPhoto(appContext, it, progress) }
+                _visionState.value = VisionState.Loaded
+                return
+            }
+        }
+        val watches = candidates.any { it.watchesYouTube }
+        if (!watches && video.description.isNullOrBlank()) {
+            _visionState.value = VisionState.Error(L10n.str(R.string.youtube_needs_gemini))
+            return
+        }
+        val result = progress.withHints(if (watches) youtubeHints() else webHints()) {
+            if (watches) {
+                settingsRepository.runAi<RecipeVisionResult>(
+                    accepts = { it.watchesYouTube },
+                    errorOf = { (it as? RecipeVisionResult.Error)?.reason },
+                    error = { RecipeVisionResult.Error(it) },
+                    progress = progress
+                ) { ai -> ai.importRecipeFromYouTube(video, known) }
+            } else {
+                settingsRepository.runAi<RecipeVisionResult>(
+                    errorOf = { (it as? RecipeVisionResult.Error)?.reason },
+                    error = { RecipeVisionResult.Error(it) },
+                    progress = progress
+                ) { ai -> ai.importRecipeFromPage(video.url, postText(post), known) }
+            }
+        } ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
+        when (result) {
+            is RecipeVisionResult.Success -> {
+                val notes = if (watches) listOf(result.recipe.notes, L10n.str(R.string.recipe_from_video_note)) else listOf(result.recipe.notes)
+                applyVisionResult(result.recipe.copy(source = postSource(post), notes = notes.filter { it.isNotBlank() }.joinToString("\n\n")))
+                video.thumbnailUrl?.let { downloadPhoto(appContext, it, progress) }
+                _visionState.value = VisionState.Loaded
+            }
+            // Without Gemini, a description with no recipe gets the explanation of what is missing.
+            is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(
+                if (!watches && result.reason == L10n.str(R.string.no_recipe_was_found_page)) L10n.str(R.string.youtube_needs_gemini) else result.reason
+            )
+        }
+    }
+
+    private fun youtubeHints() = listOf(
+        L10n.str(R.string.ai_hint_watching_video),
+        L10n.str(R.string.ai_hint_ingredients),
+        L10n.str(R.string.ai_hint_steps)
+    )
 
     /**
      * Fills the form with a recipe read from a page without AI (schema.org or a post's caption),
@@ -503,6 +608,21 @@ class RecipeEditorViewModel(
         }
         saved?.let { addPhoto(it) }
     }
+
+    /**
+     * The source of a recipe from a post: "[@user](profile) - [reel](post)" (see SourceText), with
+     * [more] links after it (the cook's website).
+     */
+    private fun postSource(post: SocialPost, more: List<Pair<String, String>> = emptyList()): String {
+        val kind = when {
+            post.site == "YouTube" -> R.string.source_kind_video
+            SocialPostRecipe.isReel(post.url) -> R.string.source_kind_reel
+            else -> R.string.source_kind_post
+        }
+        return SourceText.post(post.author, post.authorUrl, listOf(L10n.str(kind) to post.url) + more)
+    }
+
+    private fun SchemaRecipe.withSource(source: String) = copy(recipe = recipe.copy(source = source))
 
     /** What the assistant reads of a post: its caption, saying where it was posted and by whom. */
     private fun postText(post: SocialPost): String =

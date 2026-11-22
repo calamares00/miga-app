@@ -1,6 +1,6 @@
 # Miga privacy policy
 
-Last updated: 21 November 2026.
+Last updated: 22 November 2026.
 
 Miga is a family recipe book and shopping list app. This document explains what data the app handles, where it goes and what control you have over it.
 
@@ -37,6 +37,7 @@ All of them start from an action of yours or a feature you have turned on. None 
    - **Recipes from photos**: the photos you choose. Cropping the dish photo is then done on your device.
    - **Improving a photo**: the photo you choose. The assistant only suggests colour, brightness and sharpness adjustments, which are applied on your device.
    - **Recipes from a web page**: the text of the page.
+   - **Recipes from YouTube videos** (when neither the description nor the linked website has the recipe in the standard format): with Gemini, the video's address, which Google analyses (what is said and what is shown), with its title and description; with other providers, only the description or the text of the linked website.
    - **Recipes from Instagram videos** (when the post's text has no recipe): that text and the audio of the video, which Gemini listens to or the speech-to-text service of OpenAI, Groq or Mistral transcribes. Claude, DeepSeek and OpenRouter do not receive it.
    - **Find a recipe with AI**: the name and description of the dish.
    - **Health rating, nutrition estimate and substitutes**: the recipe's ingredients and steps.
@@ -51,7 +52,7 @@ All of them start from an action of yours or a feature you have turned on. None 
 
    With the official catalogue, the app also reads from miga-stats.calamares.org how many times each pack has been installed and, when you install a new one (not when updating it), sends there only the pack's identifier to add one install. No data about you or your device is sent. To count each install only once a day, the server keeps an encrypted fingerprint of the date, your IP address and the pack, which cannot be turned back into the IP and is deleted every day; only totals per pack and day are kept. You can turn it off in Settings → Recipe packs → Contribute to the install counter.
 4. **Your own sync server (optional).** If you add a connection to a server you host yourself (miga-server), the books, recipes and photos you link and, if you turn it on, the shopping list (with the name you set as author) are sent only to that server. The app syncs when it opens, periodically in the background and every few seconds while you view a shared list. QR invitations contain the server address, the shared space and an access token: whoever scans the code can read and change that space. If the server uses http:// outside your local network, the app warns you that the connection is not encrypted.
-5. **Import from a URL.** The app downloads the page you enter and, if it carries the recipe in the standard format (schema.org), its photo too. Only when it does not, and you use AI, is the page text sent to the chosen provider (see point 1). For an Instagram post it also downloads its version for embedding in websites (for the photo without the play button) and, if the text has no recipe and your provider takes audio, the video: only its audio is taken out, and the video is deleted as soon as that is done.
+5. **Import from a URL.** The app downloads the page you enter and, if it carries the recipe in the standard format (schema.org), its photo too. Only when it does not, and you use AI, is the page text sent to the chosen provider (see point 1). For an Instagram post it also downloads its version for embedding in websites (for the photo without the play button) and, if the text has no recipe and your provider takes audio, the video: only its audio is taken out, and the video is deleted as soon as that is done. For a YouTube video it downloads its public page (or, when that is not possible, its basic data from YouTube: title, channel and thumbnail), its thumbnail and, if the description links to the author's website, that page; the video itself is not downloaded.
 6. **Reports and contact.** If you report AI-generated content or a problem, the app opens your email app with the message to miga@calamares.org already written; you decide whether to send it.
 
 ## Crash reports

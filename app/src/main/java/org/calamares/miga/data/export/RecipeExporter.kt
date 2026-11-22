@@ -1,6 +1,7 @@
 package org.calamares.miga.data.export
 
 import org.calamares.miga.data.model.formatDuration
+import org.calamares.miga.data.model.SourceText
 import org.calamares.miga.data.model.displayText
 import org.calamares.miga.data.model.RichText
 import android.content.Context
@@ -875,7 +876,7 @@ object RecipeExporter {
         }
         if (recipe.source.isNotBlank()) {
             appendLine()
-            appendLine(L10n.str(R.string.source) + ": " + recipe.source)
+            appendLine(L10n.str(R.string.source) + ": " + SourceText.plain(recipe.source))
         }
     }
 }
