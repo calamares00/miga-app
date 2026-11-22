@@ -48,6 +48,7 @@ Las opciones con ✨ las hace el asistente de cocina y solo aparecen si lo tiene
 Todo lo que te gusta, en un sitio: arriba eliges **Todo**, **Recetas**, **Canales** o **Vídeos y reels**.
 
 - **Canales**: sigue canales de YouTube y perfiles de Instagram de cocina. Toca **Añadir** y pega su enlace, o comparte el canal o perfil desde YouTube o Instagram con Miga. Verás sus últimos vídeos (15 en YouTube) o reels (6 en Instagram), con un número cuando hay novedades. Se actualizan al abrir Favoritos (como mucho una vez por hora) o con **Actualizar**.
+- Las publicaciones que **no son de cocina** (una foto de familia, un viaje…) no salen en Favoritos. Miga lo decide por el texto: solo oculta las que tienen un texto largo sin ninguna palabra de cocina. En la vista de un canal, **Ver las N publicaciones ocultas** las muestra.
 - **Vídeos y reels**: guarda los que quieras cocinar con el ♡, o pegando o compartiendo su enlace. Se quedan aunque el canal publique más.
 - **Importar**: crea la receta en el libro que elijas. Sin ✨, la receta está escrita en el texto y no hace falta el asistente; con ✨, la saca el asistente del vídeo. Lo importado muestra **✓ En «libro»** y te lleva a la receta.
 - Las cuentas privadas no se pueden seguir, e Instagram puede dejar de mostrar las publicaciones de un perfil sin iniciar sesión.

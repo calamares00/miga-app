@@ -72,7 +72,8 @@ class FavoritesViewModel(private val repository: RecipeRepository) : ViewModel()
     val sources: StateFlow<List<FollowedSource>> = follows.observeSources()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val feed: StateFlow<List<FavoritePost>> = follows.observeFeed()
+    /** Posts of the followed sources; the ones not about cooking are left out. */
+    val feed: StateFlow<List<FavoritePost>> = follows.observeFeed().map { list -> list.filterNot { it.offTopic } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val saved: StateFlow<List<FavoritePost>> = follows.observeSavedPosts()
@@ -202,8 +203,18 @@ class SourceViewModel(private val repository: RecipeRepository, val sourceId: Lo
     val source: StateFlow<FollowedSource?> = follows.observeSource(sourceId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val posts: StateFlow<List<FavoritePost>> = follows.observeFeed(sourceId)
+    private val allPosts: StateFlow<List<FavoritePost>> = follows.observeFeed(sourceId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Posts not about cooking are left out until the user asks to see them. */
+    val showOffTopic = MutableStateFlow(false)
+
+    val posts: StateFlow<List<FavoritePost>> = combine(allPosts, showOffTopic) { list, all -> if (all) list else list.filterNot { it.offTopic } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** How many posts are left out. */
+    val hiddenCount: StateFlow<Int> = combine(allPosts, showOffTopic) { list, all -> if (all) 0 else list.count { it.offTopic } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val books: StateFlow<List<RecipeBookSummary>> = repository.books.observeRecipeBooks().map { list -> list.filterNot { it.isPack } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
