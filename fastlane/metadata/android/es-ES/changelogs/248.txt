@@ -1,5 +1,3 @@
 Novedades de la versión 1.0.50:
-• Libros más tuyos: al crear o editar un libro ves su portada tal como quedará, y eliges la foto de la galería, de la cámara o de una de sus recetas.
-• Portada sin foto con el color y el dibujo que quieras.
-• «Sobre este libro» y autor: salen al abrir el libro, en su portada y en el PDF.
-• Sugerencias para el nombre de un libro nuevo.
+• Favoritos: sigue canales de YouTube y perfiles de Instagram de cocina, ve sus últimos vídeos y reels, guarda los que quieras e impórtalos como receta con un toque.
+• Libros más tuyos: portada en vivo, foto de la galería, la cámara o sus recetas, color y dibujo sin foto, autor y «Sobre este libro» (también en el PDF).

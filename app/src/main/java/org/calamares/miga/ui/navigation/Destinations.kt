@@ -13,6 +13,10 @@ object Destinations {
         "&sourceRecipeUrl={sourceRecipeUrl}"
     const val SEARCH_ROUTE = "search"
     const val FAVORITES_ROUTE = "favorites"
+    const val ARG_SOURCE_ID = "sourceId"
+    /** A YouTube channel or Instagram profile followed in Favourites. */
+    const val SOURCE_ROUTE = "favorites/source/{$ARG_SOURCE_ID}"
+    fun source(id: Long) = "favorites/source/$id"
     const val SHOPPING_LIST_ROUTE = "shoppingList"
     const val STATS_ROUTE = "stats"
     /** Search over the recipes behind a figure of the statistics; see SearchRequests. */
