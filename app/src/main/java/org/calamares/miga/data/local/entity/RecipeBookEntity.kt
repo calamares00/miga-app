@@ -1,5 +1,6 @@
 package org.calamares.miga.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -37,5 +38,16 @@ data class RecipeBookEntity(
      * when; null for the user's own books. Read-only: set only by importing a shared book.
      */
     val sharedBy: String? = null,
-    val sharedAt: Long? = null
+    val sharedAt: Long? = null,
+    /**
+     * A dedication or a few words about the book ("The recipes my mother taught me"), shown under
+     * its title and on its PDF cover; empty for none.
+     */
+    @ColumnInfo(defaultValue = "") val description: String = "",
+    /** Whose recipes they are ("Grandma Carmen"), shown on the cover and in the PDF; empty for none. */
+    @ColumnInfo(defaultValue = "") val author: String = "",
+    /** Colour of the cover without a photo (a BookColor name); null picks one from the name. */
+    val coverColor: String? = null,
+    /** Emoji drawn on the cover without a photo; null for none. */
+    val coverEmoji: String? = null
 )

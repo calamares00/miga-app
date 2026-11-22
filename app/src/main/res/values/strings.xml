@@ -1683,4 +1683,23 @@
     <string name="web_page_features">"features/"</string>
     <string name="web_page_health">"health/"</string>
     <string name="web_page_assistant">"assistant/"</string>
+    <string name="book_cover_gallery">"Gallery"</string>
+    <string name="book_cover_camera">"Camera"</string>
+    <string name="book_cover_from_recipes">"From its recipes"</string>
+    <string name="book_cover_from_recipes_title">"Pick a photo of its recipes"</string>
+    <string name="book_cover_remove_photo">"Remove photo"</string>
+    <string name="book_author">"Author"</string>
+    <string name="book_author_hint">"For example, Grandma Carmen"</string>
+    <string name="book_dedication">"Dedication"</string>
+    <string name="book_dedication_hint">"The recipes my mother taught me"</string>
+    <string name="book_dedication_help">"Shown when you open the book and on the cover of its PDF."</string>
+    <string name="book_cover_style">"Cover without a photo"</string>
+    <string name="book_cover_color">"Colour"</string>
+    <string name="book_cover_emoji">"Picture"</string>
+    <string name="book_cover_automatic">"Automatic"</string>
+    <string name="book_cover_no_emoji">"No picture"</string>
+    <string name="book_color_garden">"Garden"</string>
+    <string name="book_color_wine">"Wine"</string>
+    <string name="book_color_graphite">"Graphite"</string>
+    <string name="book_name_suggestions">"Grandma's recipes|Everyday|Desserts|Quick dinners|Christmas|Packed lunches|Healthy|Cooking with kids"</string>
 </resources>
