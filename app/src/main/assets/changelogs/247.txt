@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.49:
+• Nuevo paseo de bienvenida: lo que puedes hacer con Miga en pocos pasos (recetas, cocinar, consejos, compra, salud y asistente), con enlaces a la web para saber más.
+• Permisos explicados: notificaciones, alarmas, micrófono y cámara, para qué sirve cada uno y su estado. Todos son opcionales.
+• Se muestra una vez a todos; después puedes volver a verlo en Ajustes › Ayuda › Ver ahora.

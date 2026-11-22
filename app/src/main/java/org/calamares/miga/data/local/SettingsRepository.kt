@@ -42,6 +42,15 @@ private const val MAX_RECENT_SEARCHES = 8
 const val DEFAULT_CARB_PORTION_GRAMS = 10
 const val MAX_CARB_PORTION_GRAMS = 30
 
+/**
+ * Version of the welcome tour. Raising it shows the tour once more to everyone who saw an older
+ * one: 2 is the tour of 1.0.49 (Instagram and YouTube, health, the assistant and the permissions).
+ */
+const val WELCOME_TOUR_VERSION = 2
+
+/** The tour is done when it was finished in its current version (before 1.0.49 no version was saved). */
+internal fun welcomeTourDone(done: Boolean?, seenVersion: Int?): Boolean = done == true && (seenVersion ?: 1) >= WELCOME_TOUR_VERSION
+
 /** Decrypting through the Keystore on every settings change would be wasteful: cipher text -> key. */
 private val decryptedKeys = java.util.concurrent.ConcurrentHashMap<String, String>()
 
@@ -55,6 +64,7 @@ class SettingsRepository(private val context: Context) {
     private val aiHealthEnabledKey = booleanPreferencesKey("ai_health_enabled")
     private val aiNutritionEnabledKey = booleanPreferencesKey("ai_nutrition_enabled")
     private val onboardingDoneKey = booleanPreferencesKey("onboarding_done")
+    private val welcomeTourSeenKey = intPreferencesKey("welcome_tour_seen")
     private val welcomeOnNextStartKey = booleanPreferencesKey("welcome_on_next_start")
     private val seedLanguageKey = stringPreferencesKey("seed_language")
     /** Default kitchen equipment and categories created (and old equipment normalised) once. */
@@ -229,25 +239,28 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { prefs -> prefs[defaultsSetUpKey] = true }
     }
 
-    /** True once the first-run welcome has been seen or skipped. */
+    /**
+     * True once the welcome tour has been seen or skipped, in its current version: a new
+     * [WELCOME_TOUR_VERSION] shows it once more to everyone.
+     */
     fun observeOnboardingDone(): Flow<Boolean> =
-        context.settingsDataStore.data.map { prefs -> prefs[onboardingDoneKey] ?: false }
+        context.settingsDataStore.data.map { prefs -> welcomeTourDone(prefs[onboardingDoneKey], prefs[welcomeTourSeenKey]) }
 
     suspend fun setOnboardingDone() {
-        context.settingsDataStore.edit { prefs -> prefs[onboardingDoneKey] = true }
+        context.settingsDataStore.edit { prefs ->
+            prefs[onboardingDoneKey] = true
+            prefs[welcomeTourSeenKey] = WELCOME_TOUR_VERSION
+        }
     }
 
-    /** Whether the welcome tour is shown again the next time the app starts (Settings > Help). */
-    fun observeWelcomeOnNextStart(): Flow<Boolean> =
-        context.settingsDataStore.data.map { prefs -> prefs[welcomeOnNextStartKey] ?: false }
-
-    suspend fun setWelcomeOnNextStart(show: Boolean) {
-        context.settingsDataStore.edit { prefs -> prefs[welcomeOnNextStartKey] = show }
+    /** Shows the welcome tour right away (Settings > Help). */
+    suspend fun showWelcomeAgain() {
+        context.settingsDataStore.edit { prefs -> prefs[onboardingDoneKey] = false }
     }
 
     /**
-     * Called once at startup, before the first screen is chosen: a pending "show the welcome on
-     * the next start" turns the welcome back on, only for this start.
+     * Called once at startup, before the first screen is chosen: a "show the welcome on the next
+     * start" left by an older version (Settings > Help had a switch) turns the welcome back on.
      */
     suspend fun applyWelcomeRequest() {
         context.settingsDataStore.edit { prefs ->
