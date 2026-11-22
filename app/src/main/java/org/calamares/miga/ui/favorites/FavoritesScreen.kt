@@ -32,10 +32,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
@@ -398,6 +401,18 @@ private fun AddSheet(viewModel: FavoritesViewModel, onDismiss: () -> Unit, onImp
                 AddState.Idle -> Unit
                 AddState.Working -> Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 is AddState.NotSupported -> Text(current.text, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                is AddState.Ask -> {
+                    Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(vertical = 8.dp)) {
+                        Icon(Icons.Filled.Info, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+                        Spacer(Modifier.width(12.dp))
+                        Text(current.question, style = MaterialTheme.typography.bodyMedium)
+                    }
+                    if (current.followedId != null) {
+                        AddOption(Icons.Filled.OpenInNew, L10n.str(R.string.follow_open_followed), L10n.str(R.string.follow_open_followed_desc)) { viewModel.openFollowed(current) }
+                    }
+                    AddOption(Icons.Filled.PersonAdd, L10n.str(R.string.follow_anyway), L10n.str(R.string.follow_anyway_desc)) { viewModel.followAnyway(current) }
+                    AddOption(Icons.Filled.Close, L10n.str(R.string.cancel), L10n.str(R.string.follow_cancel_desc)) { viewModel.resetAdd(); onDismiss() }
+                }
                 is AddState.Found -> {
                     val link = current.link
                     val network = when (link) {

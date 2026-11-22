@@ -76,4 +76,40 @@ class FollowRepositoryTest {
         assertTrue(follows.observeFeed().first().isEmpty())
         assertEquals("a saved reel stays after unfollowing", 1, follows.observeSavedPosts().first().size)
     }
+
+    @Test
+    fun `a recipe in two followed sections shows once`() = runBlocking {
+        val ids = listOf("recetas", "postres").map { section ->
+            dao.insertSource(
+                FollowedSourceEntity(network = "WEB", key = "https://cocina.example/$section/feed/", handle = "cocina.example", name = "Cocina", avatarUrl = null,
+                    url = "https://cocina.example/$section/", addedAt = 0, lastOpenedAt = 0, checkedAt = 0)
+            )
+        }
+        ids.forEach { id ->
+            dao.replacePosts(id, listOf(
+                SourcePostEntity(sourceId = id, postKey = "https://cocina.example/flan", url = "https://cocina.example/flan/", title = "Flan de huevo",
+                    description = "", thumbnailUrl = null, publishedAt = 1000, kind = "ARTICLE")
+            ))
+        }
+        assertEquals(1, follows.observeFeed().first().size)
+        assertEquals(1, follows.observeFeed(ids[1]).first().size)
+    }
+
+    @Test
+    fun `another section of a followed website is found`() = runBlocking {
+        val id = dao.insertSource(
+            FollowedSourceEntity(network = "WEB", key = "https://www.hogarmania.com/cocina/recetas/feed/", handle = "hogarmania.com", name = "Hogarmania",
+                avatarUrl = null, url = "https://www.hogarmania.com/cocina/recetas/", addedAt = 0, lastOpenedAt = 0, checkedAt = 0)
+        )
+        dao.insertSource(
+            FollowedSourceEntity(network = "YOUTUBE", key = "UCaaaaaaaaaaaaaaaaaaaaaa", handle = "@hogarmania", name = "Hogarmania", avatarUrl = null,
+                url = "https://www.youtube.com/@hogarmania", addedAt = 0, lastOpenedAt = 0, checkedAt = 0)
+        )
+        assertEquals(id, follows.followedSite("https://hogarmania.com/cocina/recetas/postres/")?.id)
+        // The address it redirects to counts too.
+        assertEquals(id, follows.followedSite("https://hogarmania.example/", "https://www.hogarmania.com/cocina/")?.id)
+        assertNull(follows.followedSite("https://cocinaconcoqui.com/recetas/"))
+        assertNull("a YouTube channel is not a website", follows.followedSite("https://www.youtube.com/@hogarmania"))
+    }
 }
+

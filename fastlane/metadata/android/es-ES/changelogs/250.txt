@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.52:
+• Arreglado: la app se cerraba al abrir Favoritos si seguías dos secciones de una misma web que comparten recetas (por ejemplo, dos de Hogarmanía). Ahora cada receta sale una sola vez.
+• Favoritos ya no oculta por error recetas en inglés como las croquetas.
+• Al seguir una web, Miga avisa si ya sigues otra sección de la misma web, y si un canal, perfil o web no parece de cocina (puedes seguirlo igualmente).
