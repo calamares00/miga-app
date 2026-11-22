@@ -142,7 +142,7 @@ The lists of recipe categories, equipment, tags, ingredients and products, and p
 
 ## 👋 Tour and permissions
 
-The **welcome tour** sums up what you can do with Miga. To see it again: **Settings › Help › See now**.
+The **welcome tour** sums up what you can do with Miga: recipes, cooking, tips, shopping, health and the assistant. To see it again: **Settings › Help › See now**.
 
 Miga only asks for permissions when it needs them, and all of them are optional:
 - **Notifications**: alerts from timers and when the assistant finishes a task.

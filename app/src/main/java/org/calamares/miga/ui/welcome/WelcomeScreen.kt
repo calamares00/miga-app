@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Notifications
@@ -50,6 +51,7 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.WavingHand
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
@@ -126,6 +128,15 @@ private fun tourPages() = listOf(
         L10n.str(R.string.web_page_features)
     ),
     TourPage(
+        Icons.Filled.Lightbulb, L10n.str(R.string.tour_kicker_tips), L10n.str(R.string.tour_tips_title), L10n.str(R.string.tour_tips_body),
+        listOf(
+            Icons.Filled.Lightbulb to L10n.str(R.string.tour_tips_point_daily),
+            Icons.AutoMirrored.Filled.MenuBook to L10n.str(R.string.tour_tips_point_recipe),
+            Icons.Filled.Star to L10n.str(R.string.tour_tips_point_save)
+        ),
+        L10n.str(R.string.web_page_features)
+    ),
+    TourPage(
         Icons.Filled.ShoppingCart, L10n.str(R.string.tour_kicker_shopping), L10n.str(R.string.tour_shopping_title), L10n.str(R.string.tour_shopping_body),
         listOf(
             Icons.Filled.ShoppingCart to L10n.str(R.string.tour_shopping_point_recipe),
@@ -166,7 +177,7 @@ private fun tourPages() = listOf(
 typealias WelcomeDestination = String?
 
 /**
- * The welcome tour: what Miga does, in a few pages with three key points each and a link to the
+ * The welcome tour: what Miga does (recipes, cooking, tips, shopping, health, the assistant), in a few pages with three key points each and a link to the
  * website; the permissions it may ask for and what each one is for; and, at the end, start from
  * scratch, explore recipe packs or restore a backup. [onFinish] receives the route to open.
  */
