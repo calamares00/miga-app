@@ -1705,6 +1705,14 @@
     <string name="follow_refresh_failed">"No se han podido actualizar las publicaciones de %1$s."</string>
     <string name="follow_some_failed">"No se han podido actualizar %1$d canales."</string>
     <string name="follow_already">"Ya sigues este canal."</string>
+    <string name="follow_already_web">"Ya sigues esta web."</string>
+    <string name="follow_same_site">"Ya sigues %1$s, de la misma web. Sus secciones suelen compartir recetas: saldrán una sola vez."</string>
+    <string name="follow_not_cooking">"%1$s no parece de cocina: sus últimas publicaciones no hablan de comida ni de recetas."</string>
+    <string name="follow_open_followed">"Abrir la que sigues"</string>
+    <string name="follow_open_followed_desc">"Ver sus recetas en lugar de añadir otra sección"</string>
+    <string name="follow_anyway">"Seguir igualmente"</string>
+    <string name="follow_anyway_desc">"Añadirlo a tus canales"</string>
+    <string name="follow_cancel_desc">"No seguirlo"</string>
     <string name="favorites_add_not_supported">"Pega el enlace de un canal o vídeo de YouTube, o de un perfil o reel de Instagram."</string>
     <string name="favorites_post_saved">"Guardado en favoritos"</string>
     <string name="favorites_post_removed">"Quitado de favoritos"</string>
