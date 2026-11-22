@@ -1706,6 +1706,14 @@
     <string name="follow_refresh_failed">"The posts of %1$s could not be updated."</string>
     <string name="follow_some_failed">"%1$d channels could not be updated."</string>
     <string name="follow_already">"You already follow this channel."</string>
+    <string name="follow_already_web">"You already follow this website."</string>
+    <string name="follow_same_site">"You already follow %1$s, from the same website. Its sections often share recipes: they will show only once."</string>
+    <string name="follow_not_cooking">"%1$s doesn't seem to be about cooking: its latest posts don't mention food or recipes."</string>
+    <string name="follow_open_followed">"Open the one you follow"</string>
+    <string name="follow_open_followed_desc">"See its recipes instead of adding another section"</string>
+    <string name="follow_anyway">"Follow anyway"</string>
+    <string name="follow_anyway_desc">"Add it to your channels"</string>
+    <string name="follow_cancel_desc">"Don't follow it"</string>
     <string name="favorites_add_not_supported">"Paste the link to a YouTube channel or video, or an Instagram profile or reel."</string>
     <string name="favorites_post_saved">"Saved in Favourites"</string>
     <string name="favorites_post_removed">"Removed from Favourites"</string>

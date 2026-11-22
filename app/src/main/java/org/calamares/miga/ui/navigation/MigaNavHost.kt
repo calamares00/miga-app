@@ -9,6 +9,7 @@ import org.calamares.miga.ui.favorites.FavoritesViewModel
 import org.calamares.miga.ui.favorites.SourceScreen
 import org.calamares.miga.ui.favorites.SourceViewModel
 import org.calamares.miga.data.polish.BulkPolish
+import org.calamares.miga.data.follow.FollowCheck
 import org.calamares.miga.data.follow.FollowResult
 import org.calamares.miga.data.follow.SocialFeeds
 import org.calamares.miga.data.ai.AiJobs
@@ -67,6 +68,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
+import org.calamares.miga.data.follow.SocialLink
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -247,18 +253,31 @@ fun MigaNavHost(initialRoute: String? = null) {
     val linkScope = rememberCoroutineScope()
     val social = sharedLink?.let { SocialFeeds.parse(it.url) }
     // A channel or profile: follow it in Favourites.
+    // A channel that does not look like cooking: asked before following it.
+    var notCooking by remember { mutableStateOf<Pair<SocialLink, String>?>(null) }
+    fun followShared(link: SocialLink, accepted: Set<FollowCheck>) = linkScope.launch {
+        when (val result = repository.follows.follow(link, accepted)) {
+            is FollowResult.Followed -> navController.navigate(Destinations.source(result.sourceId))
+            is FollowResult.AlreadyFollowing -> navController.navigate(Destinations.source(result.sourceId))
+            is FollowResult.SameSite -> navController.navigate(Destinations.source(result.sourceId))
+            is FollowResult.NotAboutCooking -> notCooking = link to L10n.str(R.string.follow_not_cooking, result.name)
+            is FollowResult.Error -> Toast.makeText(context, result.reason, Toast.LENGTH_LONG).show()
+        }
+    }
+    notCooking?.let { (link, question) ->
+        AlertDialog(
+            onDismissRequest = { notCooking = null },
+            text = { Text(question) },
+            confirmButton = { TextButton(onClick = { notCooking = null; followShared(link, setOf(FollowCheck.COOKING)) }) { Text(L10n.str(R.string.follow_anyway)) } },
+            dismissButton = { TextButton(onClick = { notCooking = null }) { Text(L10n.str(R.string.cancel)) } }
+        )
+    }
     if (sharedLink != null && social != null && social.isSource) {
         FollowSharedDialog(
             link = social,
             onFollow = {
                 RecipeLinkIntents.consume()
-                linkScope.launch {
-                    when (val result = repository.follows.follow(social)) {
-                        is FollowResult.Followed -> navController.navigate(Destinations.source(result.sourceId))
-                        is FollowResult.AlreadyFollowing -> navController.navigate(Destinations.source(result.sourceId))
-                        is FollowResult.Error -> Toast.makeText(context, result.reason, Toast.LENGTH_LONG).show()
-                    }
-                }
+                followShared(social, emptySet())
             },
             onDismiss = { RecipeLinkIntents.consume() }
         )
