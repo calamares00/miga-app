@@ -28,7 +28,10 @@ import org.calamares.miga.data.model.SyncConnection
 import kotlinx.coroutines.flow.map
 
 fun RecipeBookEntity.toDomain() =
-    RecipeBook(id, uid, name, coverPhotoUri, packId, packVersion, syncConnectionId, isPinned, packSeries, sharedBy, sharedAt)
+    RecipeBook(
+        id, uid, name, coverPhotoUri, packId, packVersion, syncConnectionId, isPinned, packSeries, sharedBy, sharedAt,
+        description, author, coverColor, coverEmoji
+    )
 
 /**
  * The "?: accessToken" fallback is deliberate: decrypt returns null (it does not throw) for rows

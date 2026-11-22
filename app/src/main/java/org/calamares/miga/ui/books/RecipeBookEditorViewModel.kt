@@ -8,6 +8,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import org.calamares.miga.data.model.BookDetails
+import org.calamares.miga.data.model.RecipeBook
 import org.calamares.miga.data.model.RecipeBookDraft
 import org.calamares.miga.data.model.SyncConnection
 import org.calamares.miga.data.repository.RecipeBookNotEmptyException
@@ -21,7 +23,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-private data class BookSnapshot(val name: String, val coverPhotoUri: String?)
+private data class BookSnapshot(val name: String, val coverPhotoUri: String?, val details: BookDetails)
 
 class RecipeBookEditorViewModel(
     private val repository: RecipeRepository,
@@ -40,6 +42,16 @@ class RecipeBookEditorViewModel(
 
     var name by mutableStateOf("")
     var coverPhotoUri by mutableStateOf<String?>(null)
+    /** A dedication or a few words about the book (see RecipeBookEntity.description). */
+    var description by mutableStateOf("")
+    /** Whose recipes they are. */
+    var author by mutableStateOf("")
+    /** Colour and emoji of the cover without a photo (see BookColor); null for the automatic ones. */
+    var coverColor by mutableStateOf<String?>(null)
+    var coverEmoji by mutableStateOf<String?>(null)
+    /** Photos of the book's recipes, to take the cover from one of them. */
+    var recipePhotos by mutableStateOf<List<String>>(emptyList())
+        private set
     var isDeleting by mutableStateOf(false)
         private set
     var deleteError by mutableStateOf<String?>(null)
@@ -65,23 +77,36 @@ class RecipeBookEditorViewModel(
         if (isEditing) {
             viewModelScope.launch {
                 repository.books.observeRecipeBook(bookId).first()?.let { book ->
-                    name = book.name
-                    coverPhotoUri = book.coverPhotoUri
+                    load(book)
                     isPack = book.isPack
                     syncConnectionId = book.syncConnectionId
                 }
+                recipePhotos = repository.getRecipesForBookOnce(bookId).flatMap { recipe -> recipe.photos.map { it.uri } }.distinct()
                 isLoading = false
-                initialSnapshot = BookSnapshot(name, coverPhotoUri)
+                initialSnapshot = snapshot()
             }
         } else {
-            initialSnapshot = BookSnapshot(name, coverPhotoUri)
+            initialSnapshot = snapshot()
         }
     }
 
     /**
      * Checked when leaving the editor (back button or cancel icon) to warn before losing changes.
      */
-    fun hasUnsavedChanges(): Boolean = initialSnapshot?.let { it != BookSnapshot(name, coverPhotoUri) } ?: false
+    fun hasUnsavedChanges(): Boolean = initialSnapshot?.let { it != snapshot() } ?: false
+
+    private fun details() = BookDetails(description, author, coverColor, coverEmoji)
+
+    private fun snapshot() = BookSnapshot(name, coverPhotoUri, details())
+
+    private fun load(book: RecipeBook) {
+        name = book.name
+        coverPhotoUri = book.coverPhotoUri
+        description = book.description
+        author = book.author
+        coverColor = book.coverColor
+        coverEmoji = book.coverEmoji
+    }
 
     fun save(onSaved: () -> Unit) {
         if (isPack) return
@@ -92,7 +117,13 @@ class RecipeBookEditorViewModel(
         viewModelScope.launch {
             isSaving = true
             repository.books.saveRecipeBook(
-                RecipeBookDraft(id = if (isEditing) bookId else 0L, name = name, coverPhotoUri = coverPhotoUri)
+                details().cleaned().let { details ->
+                    RecipeBookDraft(
+                        id = if (isEditing) bookId else 0L, name = name, coverPhotoUri = coverPhotoUri,
+                        description = details.description, author = details.author,
+                        coverColor = details.coverColor, coverEmoji = details.coverEmoji
+                    )
+                }
             )
             isSaving = false
             onSaved()
@@ -151,9 +182,8 @@ class RecipeBookEditorViewModel(
             when (val outcome = syncEngine.syncConnection(context, connectionId)) {
                 is SyncOutcome.Error -> syncNowError = outcome.reason
                 is SyncOutcome.Success -> repository.books.observeRecipeBook(bookId).first()?.let { book ->
-                    name = book.name
-                    coverPhotoUri = book.coverPhotoUri
-                    initialSnapshot = BookSnapshot(name, coverPhotoUri)
+                    load(book)
+                    initialSnapshot = snapshot()
                 }
             }
             isSyncingNow = false

@@ -2,6 +2,7 @@
 
 Cada libro es un recetario con su propia portada: el de tu madre, el de un amigo o uno por temas (las mejores croquetas merecen su propio libro). Las recetas nuevas se guardan en el libro que tengas abierto.
 
+- Al **crear o editar un libro** ves su portada tal como quedará. La foto puede ser de la galería, de la cámara o de una de sus recetas; sin foto, elige su **color** y un **dibujo**. Añade también el **autor** y una **dedicatoria**: salen al abrir el libro, en su portada y en el PDF del libro.
 - En **Libros**, los filtros de arriba (Todos, Mis libros, Packs, Servidor) muestran cada tipo de libro. También puedes **deslizar a izquierda o derecha** para pasar de uno a otro.
 - Mantén pulsado un libro para **seleccionarlo**; luego toca otros para añadirlos. Arriba tienes Editar, Compartir y Eliminar (al eliminar tienes unos segundos para **Deshacer**), y en **Más acciones**, **Fijar arriba**: los libros fijados salen los primeros, con una chincheta en la portada. Dentro de un libro también puedes fijarlo desde su menú (⋮).
 - Dentro de un libro, las recetas se agrupan por **categoría**. Toca una categoría para plegarla o desplegarla; desde el menú (⋮) puedes plegarlas o desplegarlas todas.
