@@ -1734,7 +1734,7 @@
     <string name="favorites_no_channels">"You don't follow any channel yet"</string>
     <string name="favorites_no_posts">"You haven't saved any videos or reels yet"</string>
     <string name="favorites_not_imported">"Not imported"</string>
-    <string name="favorites_show_off_topic">"Show the %1$d hidden posts (not about cooking)"</string>
+    <string name="favorites_show_off_topic">"Show hidden posts (%1$d, not about cooking)"</string>
     <string name="favorites_hide_off_topic">"Hide the ones not about cooking"</string>
     <string name="favorites_empty_title">"Your favourites, in one place"</string>
     <string name="favorites_empty_body">"Mark recipes with ♥, follow cooking channels on YouTube and profiles on Instagram, and save the videos and reels you want to import."</string>

@@ -76,4 +76,22 @@ class FollowRepositoryTest {
         assertTrue(follows.observeFeed().first().isEmpty())
         assertEquals("a saved reel stays after unfollowing", 1, follows.observeSavedPosts().first().size)
     }
+
+    @Test
+    fun `a recipe in two followed sections shows once`() = runBlocking {
+        val ids = listOf("recetas", "postres").map { section ->
+            dao.insertSource(
+                FollowedSourceEntity(network = "WEB", key = "https://cocina.example/$section/feed/", handle = "cocina.example", name = "Cocina", avatarUrl = null,
+                    url = "https://cocina.example/$section/", addedAt = 0, lastOpenedAt = 0, checkedAt = 0)
+            )
+        }
+        ids.forEach { id ->
+            dao.replacePosts(id, listOf(
+                SourcePostEntity(sourceId = id, postKey = "https://cocina.example/flan", url = "https://cocina.example/flan/", title = "Flan de huevo",
+                    description = "", thumbnailUrl = null, publishedAt = 1000, kind = "ARTICLE")
+            ))
+        }
+        assertEquals(1, follows.observeFeed().first().size)
+        assertEquals(1, follows.observeFeed(ids[1]).first().size)
+    }
 }

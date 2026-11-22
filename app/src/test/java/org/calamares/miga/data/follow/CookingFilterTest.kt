@@ -17,6 +17,7 @@ class CookingFilterTest {
         assertFalse(CookingFilter.isOffTopic("Aperitivo de navidad de bolas de langostinos con pistacho", "Todas las recetas las tienes escritas en mi blog"))
         assertFalse(CookingFilter.isOffTopic("Días de lluvia y cuchara", "#asmr #cocinaconcoqui"))
         assertFalse(CookingFilter.isOffTopic("Crispy chicken thighs, the easy way to a perfect dinner", ""))
+        assertFalse(CookingFilter.isOffTopic("Creamy croquettes like my grandma used to make them", ""))
         assertFalse(CookingFilter.isOffTopic("Receta de tortilla de patatas jugosa", ""))
     }
 
