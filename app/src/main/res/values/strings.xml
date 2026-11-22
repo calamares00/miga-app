@@ -1734,6 +1734,8 @@
     <string name="favorites_no_channels">"You don't follow any channel yet"</string>
     <string name="favorites_no_posts">"You haven't saved any videos or reels yet"</string>
     <string name="favorites_not_imported">"Not imported"</string>
+    <string name="favorites_show_off_topic">"Show the %1$d hidden posts (not about cooking)"</string>
+    <string name="favorites_hide_off_topic">"Hide the ones not about cooking"</string>
     <string name="favorites_empty_title">"Your favourites, in one place"</string>
     <string name="favorites_empty_body">"Mark recipes with ♥, follow cooking channels on YouTube and profiles on Instagram, and save the videos and reels you want to import."</string>
     <string name="favorites_add_title">"Add to Favourites"</string>
@@ -1761,4 +1763,16 @@
     <string name="favorites_new_one">"1 new"</string>
     <string name="favorites_recent_videos_one">"1 recent video"</string>
     <string name="favorites_recent_posts_one">"The latest post"</string>
+    <string name="follow_web_no_feed">"This website doesn't publish its recipes in a way Miga can follow."</string>
+    <string name="favorites_kind_website">"Recipe website"</string>
+    <string name="favorites_network_web">"Website"</string>
+    <string name="favorites_network_webs">"Websites"</string>
+    <string name="favorites_follow_web">"Follow this website"</string>
+    <string name="favorites_follow_web_desc">"You will see its new recipes in Favourites. Paste the whole site or a section, such as /recipes/."</string>
+    <string name="favorites_save_recipe">"Save this recipe"</string>
+    <string name="favorites_more_recipes">"More recipes"</string>
+    <string name="favorites_more_failed">"More recipes could not be loaded. Check the connection."</string>
+    <string name="favorites_search_site">"Search %1$s"</string>
+    <string name="favorites_recipes_one">"1 recipe"</string>
+    <string name="favorites_recipes_count_n">"%1$d recipes"</string>
 </resources>

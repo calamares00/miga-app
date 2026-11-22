@@ -3,6 +3,7 @@ package org.calamares.miga.data.follow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.calamares.miga.L10n
@@ -13,6 +14,7 @@ import org.calamares.miga.data.local.entity.SavedPostEntity
 import org.calamares.miga.data.local.entity.SourcePostEntity
 import org.calamares.miga.data.search.PageFetchResult
 import org.calamares.miga.data.search.RecipeUrlFetcher
+import org.calamares.miga.data.search.SchemaOrgRecipe
 import org.calamares.miga.data.search.SocialPost
 import org.calamares.miga.data.search.SocialPostRecipe
 import org.calamares.miga.data.search.YouTubeRecipe
@@ -49,7 +51,9 @@ data class FavoritePost(
     /** The recipe imported from it, when there is one. */
     val imported: ImportedRecipe? = null,
     /** Its text has the recipe written as such: importing needs no assistant. */
-    val readsWithoutAssistant: Boolean = false
+    val readsWithoutAssistant: Boolean = false,
+    /** Nothing in it is about cooking (see CookingFilter): feeds leave it out unless asked. */
+    val offTopic: Boolean = false
 ) {
     val id: String get() = "${network.name}:$postKey"
 }
@@ -81,7 +85,8 @@ class FollowRepository(db: AppDatabase) {
                 name = source.name,
                 avatarUrl = source.avatarUrl,
                 url = source.url,
-                newCount = bySource[source.id].orEmpty().count { it.publishedAt > source.lastOpenedAt },
+                // Posts not about cooking are hidden, so they are not counted as new either.
+                newCount = bySource[source.id].orEmpty().count { it.publishedAt > source.lastOpenedAt && !CookingFilter.isOffTopic(it.title, it.description) },
                 checkedAt = source.checkedAt
             )
         }.sortedWith(compareByDescending<FollowedSource> { it.newCount > 0 }.thenBy { it.name.lowercase() })
@@ -90,17 +95,34 @@ class FollowRepository(db: AppDatabase) {
     fun observeSource(id: Long): Flow<FollowedSource?> = observeSources().map { list -> list.firstOrNull { it.id == id } }
 
     /** Posts of followed sources (all of them, or [sourceId]'s), newest first, with their state. */
-    fun observeFeed(sourceId: Long? = null): Flow<List<FavoritePost>> = combine(
+    /**
+     * Posts of followed sources (all of them, or [sourceId]'s), newest first, with their state.
+     * [extra] adds posts of [sourceId] that are not kept (a website's older recipes, a search).
+     */
+    fun observeFeed(sourceId: Long? = null, extra: Flow<List<FeedPost>>? = null): Flow<List<FavoritePost>> = combine(
         dao.observeSources(),
         if (sourceId == null) dao.observeAllPosts() else dao.observePosts(sourceId),
         dao.observeSavedPosts(),
-        observeImported()
-    ) { sources, posts, saved, imported ->
+        observeImported(),
+        extra ?: flowOf(emptyList())
+    ) { sources, kept, saved, imported, more ->
         val sourceById = sources.associateBy { it.id }
         val savedKeys = saved.map { "${it.network}:${it.postKey}" }.toSet()
+        val keptKeys = kept.map { it.postKey }.toSet()
+        val posts = kept + more.filter { it.postKey !in keptKeys }.map { post ->
+            SourcePostEntity(
+                sourceId = sourceId ?: 0L, postKey = post.postKey, url = post.url, title = post.title, description = post.description,
+                thumbnailUrl = post.thumbnailUrl, publishedAt = post.publishedAt, kind = post.kind.name
+            )
+        }
         posts.mapNotNull { post ->
             val source = sourceById[post.sourceId] ?: return@mapNotNull null
             val network = SocialNetwork.valueOf(source.network)
+            val isSaved = "${source.network}:${post.postKey}" in savedKeys
+            val importedRecipe = imported["${source.network}:${post.postKey}"]
+            val hasRecipe = readsWithoutAssistant(post.title, post.description, source.handle ?: source.name)
+            // Recipe websites carry the recipe in the standard format: no assistant needed.
+            val reads = hasRecipe || network == SocialNetwork.WEB
             FavoritePost(
                 network = network,
                 postKey = post.postKey,
@@ -114,9 +136,11 @@ class FollowRepository(db: AppDatabase) {
                 publishedAt = post.publishedAt,
                 sourceId = source.id,
                 isNew = post.publishedAt > source.lastOpenedAt,
-                isSaved = "${source.network}:${post.postKey}" in savedKeys,
-                imported = imported["${source.network}:${post.postKey}"],
-                readsWithoutAssistant = readsWithoutAssistant(post.title, post.description, source.handle ?: source.name)
+                isSaved = isSaved,
+                imported = importedRecipe,
+                readsWithoutAssistant = reads,
+                // What the user saved or imported stays, and so does a post that has a recipe in it.
+                offTopic = !isSaved && importedRecipe == null && !hasRecipe && CookingFilter.isOffTopic(post.title, post.description)
             )
         }
     }
@@ -149,7 +173,8 @@ class FollowRepository(db: AppDatabase) {
                     when (val link = SocialFeeds.parse(match.value)) {
                         is SocialLink.YouTubeVideo -> put("YOUTUBE:${link.id}", ImportedRecipe(row.recipeId, row.bookName))
                         is SocialLink.InstagramPost -> put("INSTAGRAM:${link.shortcode}", ImportedRecipe(row.recipeId, row.bookName))
-                        else -> Unit
+                        // A recipe from a website names its page.
+                        else -> put("WEB:${WebFeeds.normalize(match.value)}", ImportedRecipe(row.recipeId, row.bookName))
                     }
                 }
             }
@@ -161,6 +186,7 @@ class FollowRepository(db: AppDatabase) {
 
     /** Follows the channel or profile at [link], downloading its details and latest posts. */
     suspend fun follow(link: SocialLink): FollowResult {
+        if (link is SocialLink.Website) return followWebsite(link.url)
         val fetched = when (link) {
             is SocialLink.YouTubeChannel -> fetchYouTube(link.url)
             is SocialLink.InstagramProfile -> fetchInstagram(link.username)
@@ -182,9 +208,16 @@ class FollowRepository(db: AppDatabase) {
     /** Downloads a source's latest posts again; returns an error to show, or null. */
     suspend fun refresh(sourceId: Long): String? {
         val source = dao.getSource(sourceId) ?: return null
+        if (source.network == SocialNetwork.WEB.name) {
+            val page = webPage(source, 1) ?: return L10n.str(R.string.follow_refresh_failed, source.name)
+            dao.updateSourceInfo(sourceId, source.name, source.handle, source.avatarUrl, System.currentTimeMillis())
+            dao.replacePosts(sourceId, page.posts.map { it.toEntity(sourceId) })
+            return null
+        }
         val fetched = when (SocialNetwork.valueOf(source.network)) {
             SocialNetwork.YOUTUBE -> fetchYouTube("https://www.youtube.com/channel/${source.key}")
             SocialNetwork.INSTAGRAM -> fetchInstagram(source.key)
+            SocialNetwork.WEB -> null
         } ?: return L10n.str(R.string.follow_refresh_failed, source.name)
         val (info, posts) = fetched
         dao.updateSourceInfo(sourceId, info.name, info.handle ?: source.handle, info.avatarUrl ?: source.avatarUrl, System.currentTimeMillis())
@@ -198,6 +231,9 @@ class FollowRepository(db: AppDatabase) {
         val sources = dao.observeSources().first()
         return sources.filter { (it.checkedAt ?: 0L) < now - maxAgeMillis }.count { refresh(it.id) != null }
     }
+
+    /** What is stored about a source (a website's WordPress API, say). */
+    suspend fun storedSource(sourceId: Long): FollowedSourceEntity? = dao.getSource(sourceId)
 
     /** The user looked at a source: its posts stop being new. */
     suspend fun markOpened(sourceId: Long) = dao.markOpened(sourceId, System.currentTimeMillis())
@@ -243,7 +279,129 @@ class FollowRepository(db: AppDatabase) {
                 )
             }
         }
+        is SocialLink.Website -> {
+            val page = RecipeUrlFetcher.fetchPage(link.url) as? PageFetchResult.Success
+            page?.let {
+                val recipe = withContext(AppDispatchers.default) { SchemaOrgRecipe.parse(it.html, it.url) }
+                val site = WebFeeds.readSite(it.html, it.url)
+                val title = recipe?.recipe?.name ?: Regex("""<meta\s+property="og:title"\s+content="([^"]*)"""").find(it.html)?.groupValues?.get(1)
+                    ?.let(RecipeUrlFetcher::decodeEntities) ?: return@let null
+                FavoritePost(
+                    SocialNetwork.WEB, WebFeeds.normalize(it.url), it.url, title, "",
+                    recipe?.imageUrl ?: Regex("""<meta\s+property="og:image"\s+content="([^"]*)"""").find(it.html)?.groupValues?.get(1),
+                    PostKind.ARTICLE, site.name, WebFeeds.originOf(it.url), 0L, readsWithoutAssistant = true
+                )
+            }
+        }
         else -> null
+    }
+
+    // --- Recipe websites ---
+
+    /** Recipes of a website, a page at a time; [next] is the page to ask for to get more. */
+    data class WebPage(val posts: List<FeedPost>, val next: Int, val hasMore: Boolean)
+
+    private suspend fun followWebsite(pageUrl: String): FollowResult {
+        val page = RecipeUrlFetcher.fetchPage(pageUrl) as? PageFetchResult.Success ?: return FollowResult.Error(L10n.str(R.string.follow_not_readable))
+        val site = withContext(AppDispatchers.default) { WebFeeds.readSite(page.html, page.url) }
+        // The address pasted first, then the one it led to (recetasderechupete.com goes to abc.es,
+        // but keeps its feed and API at home).
+        val origins = listOf(WebFeeds.originOf(pageUrl), WebFeeds.originOf(page.url)).distinct()
+        val feed = WebFeeds.chooseFeed(site.feeds, page.url) ?: origins.flatMap { origin -> WebFeeds.COMMON_FEEDS.map { origin + it } }.firstOrNull { url ->
+            (RecipeUrlFetcher.fetchPage(url) as? PageFetchResult.Success)?.let { WebFeeds.readFeed(it.html, url).isNotEmpty() } == true
+        }
+        // WordPress: a section is followed through its category when it has one with posts; else
+        // through its feed, a page at a time.
+        val api = origins.map { WebFeeds.wpApiOf(it) }.firstOrNull { api ->
+            (RecipeUrlFetcher.fetchPage(WebFeeds.wpPostsUrl(api, null, 1).replace("per_page=${WebFeeds.PAGE_SIZE}", "per_page=1")) as? PageFetchResult.Success)
+                ?.let { WebFeeds.readWpPosts(it.html) } != null
+        }
+        val slug = WebFeeds.slugOf(pageUrl)
+        val category = when {
+            api == null -> null
+            slug == null -> null
+            else -> (RecipeUrlFetcher.fetchPage(WebFeeds.wpCategoryUrl(api, slug)) as? PageFetchResult.Success)?.let { WebFeeds.readWpCategory(it.html) }
+                ?: FEED_PAGES.takeIf { feed != null }
+        }
+        if (feed == null && api == null) return FollowResult.Error(L10n.str(R.string.follow_web_no_feed))
+        val key = feed ?: (api + (category?.let { "?category=$it" } ?: ""))
+        dao.findSource(SocialNetwork.WEB.name, key)?.let { return FollowResult.AlreadyFollowing(it.id) }
+        val now = System.currentTimeMillis()
+        val entity = FollowedSourceEntity(
+            network = SocialNetwork.WEB.name, key = key, handle = WebFeeds.hostOf(page.url), name = site.name,
+            avatarUrl = site.iconUrl, url = page.url, addedAt = now, lastOpenedAt = now, checkedAt = now,
+            wpApi = api, wpCategory = category
+        )
+        val first = webPage(entity, 1) ?: return FollowResult.Error(L10n.str(R.string.follow_not_readable))
+        if (first.posts.isEmpty()) return FollowResult.Error(L10n.str(R.string.follow_web_no_feed))
+        val id = dao.insertSource(entity)
+        dao.replacePosts(id, first.posts.map { it.toEntity(id) })
+        return FollowResult.Followed(id)
+    }
+
+    /** More recipes of a followed website, from page [from]; null when they cannot be read. */
+    suspend fun moreFromWebsite(sourceId: Long, from: Int, known: Set<String> = emptySet()): WebPage? =
+        dao.getSource(sourceId)?.let { webPage(it, from, known) }
+
+    /** Recipes of a followed WordPress website that match [query]; null when it cannot search. */
+    suspend fun searchWebsite(sourceId: Long, query: String): List<FeedPost>? {
+        val source = dao.getSource(sourceId) ?: return null
+        val api = source.wpApi ?: return null
+        val category = source.wpCategory?.takeIf { it > 0 }
+        val body = (RecipeUrlFetcher.fetchPage(WebFeeds.wpPostsUrl(api, category, 1, query)) as? PageFetchResult.Success)?.html ?: return null
+        val posts = WebFeeds.readWpPosts(body) ?: return null
+        return WebFeeds.toFeedPosts(posts, wpMedia(api, posts.map { it.mediaId }))
+    }
+
+    /**
+     * A page of a website's recipes: through WordPress's API ([WebFeeds.PAGE_SIZE] at a time) or
+     * through its feed, reading as many of its pages as it takes to get as many recipes.
+     */
+    private suspend fun webPage(source: FollowedSourceEntity, from: Int, known: Set<String> = emptySet()): WebPage? {
+        val api = source.wpApi
+        if (api != null && source.wpCategory != FEED_PAGES) {
+            val body = (RecipeUrlFetcher.fetchPage(WebFeeds.wpPostsUrl(api, source.wpCategory, from)) as? PageFetchResult.Success)?.html
+            // WordPress answers past the last page with an error: there is no more.
+            val posts = body?.let { WebFeeds.readWpPosts(it) } ?: return if (from > 1) WebPage(emptyList(), from, false) else null
+            return WebPage(WebFeeds.toFeedPosts(posts, wpMedia(api, posts.map { it.mediaId })), from + 1, posts.size >= WebFeeds.PAGE_SIZE)
+        }
+        val feed = source.key.takeIf { it.startsWith("http") && "wp-json" !in it } ?: return null
+        val collected = LinkedHashMap<String, FeedPost>()
+        var page = from
+        var more = true
+        // Recipes already shown ([known]) are skipped, so a page brings new ones; a feed that does
+        // not go by pages repeats them all, and the caller notices nothing new came.
+        while (collected.size < WebFeeds.PAGE_SIZE && page < from + MAX_FEED_PAGES) {
+            val body = (RecipeUrlFetcher.fetchPage(WebFeeds.pagedFeedUrl(feed, page)) as? PageFetchResult.Success)?.html
+            val posts = body?.let { withContext(AppDispatchers.default) { WebFeeds.readFeed(it, feed) } }.orEmpty()
+            page++
+            // Past the last page WordPress answers with an error.
+            if (posts.isEmpty()) {
+                more = false
+                break
+            }
+            posts.filter { it.postKey !in collected && it.postKey !in known }.forEach { collected[it.postKey] = it }
+        }
+        if (collected.isEmpty() && from == 1) return null
+        val withPictures = if (api != null) pictures(api, collected.values.toList()) else collected.values.toList()
+        return WebPage(withPictures, page, more && collected.isNotEmpty())
+    }
+
+    /** Feeds without pictures (some WordPress sites): their posts' pictures, through the API. */
+    private suspend fun pictures(api: String, posts: List<FeedPost>): List<FeedPost> {
+        val missing = posts.filter { it.thumbnailUrl == null }
+        if (missing.isEmpty()) return posts
+        val body = (RecipeUrlFetcher.fetchPage(WebFeeds.wpPostsBySlugUrl(api, missing.map { it.url })) as? PageFetchResult.Success)?.html ?: return posts
+        val byLink = WebFeeds.readWpPosts(body).orEmpty().associate { WebFeeds.normalize(it.link) to it.mediaId }
+        val media = wpMedia(api, byLink.values.toList())
+        return posts.map { post -> if (post.thumbnailUrl != null) post else post.copy(thumbnailUrl = byLink[post.postKey]?.let { media[it] }) }
+    }
+
+    private suspend fun wpMedia(api: String, ids: List<Long>): Map<Long, String> {
+        val wanted = ids.filter { it > 0 }.distinct()
+        if (wanted.isEmpty()) return emptyMap()
+        val body = (RecipeUrlFetcher.fetchPage(WebFeeds.wpMediaUrl(api, wanted)) as? PageFetchResult.Success)?.html ?: return emptyMap()
+        return withContext(AppDispatchers.default) { WebFeeds.readWpMedia(body) }
     }
 
     private suspend fun fetchYouTube(channelUrl: String): Pair<SourceInfo, List<FeedPost>>? {
@@ -266,6 +424,12 @@ class FollowRepository(db: AppDatabase) {
 
     companion object {
         private val LINK = Regex("""https?://[^\s<>"()\]]+""")
+
+        /** A website section followed through its feed's pages (see FollowedSourceEntity.wpCategory). */
+        const val FEED_PAGES = -1L
+
+        /** Feed pages read at most for one page of recipes. */
+        private const val MAX_FEED_PAGES = 6
 
         /** Feeds are downloaded again when Favourites opens, at most once an hour. */
         const val STALE_AFTER_MILLIS = 60 * 60 * 1000L

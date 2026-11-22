@@ -97,8 +97,17 @@ class FavoritesShotsTest {
         dao.insertSavedPost(SavedPostEntity(network = "YOUTUBE", postKey = "DDDDDDDDDDD", url = "https://www.youtube.com/watch?v=DDDDDDDDDDD", title = "Merluza en salsa verde como la de mi abuela",
             description = "", thumbnailUrl = picture("merluza", 0xFF9AD0C2.toInt(), 0xFF3F8F80.toInt()), author = "@cocinadelola", authorUrl = null, kind = "VIDEO", savedAt = now - 1))
 
+        val web = dao.insertSource(FollowedSourceEntity(network = "WEB", key = "https://cocina.example/recetas/feed/", handle = "cocina.example", name = "Cocina de prueba",
+            avatarUrl = picture("web", 0xFF2F7A57.toInt(), 0xFF6BBF93.toInt(), 200, 200), url = "https://cocina.example/recetas/", addedAt = 0, lastOpenedAt = now - 30 * hour,
+            checkedAt = now, wpApi = "https://cocina.example/wp-json/wp/v2/", wpCategory = -1))
+        dao.replacePosts(web, listOf(
+            SourcePostEntity(sourceId = web, postKey = "https://cocina.example/sopa-de-pollo", url = "https://cocina.example/sopa-de-pollo/", title = "Sopa de pollo al estilo asiático",
+                description = "Reconfortante, con jengibre y fideos de arroz.", thumbnailUrl = picture("sopa", 0xFFF2C27B.toInt(), 0xFFB5652D.toInt()), publishedAt = now - 5 * hour, kind = "ARTICLE"),
+            SourcePostEntity(sourceId = web, postKey = "https://cocina.example/magdalenas", url = "https://cocina.example/magdalenas/", title = "Magdalenas de canela súper esponjosas",
+                description = "El desayuno del domingo, en 30 minutos.", thumbnailUrl = picture("magdalenas", 0xFFF5D58C.toInt(), 0xFFC27D2A.toInt()), publishedAt = now - 60 * hour, kind = "ARTICLE")
+        ))
         val viewModel = FavoritesViewModel(app.repository)
-        val sources = mapOf(lola to SourceViewModel(app.repository, lola), pasta to SourceViewModel(app.repository, pasta))
+        val sources = mapOf(lola to SourceViewModel(app.repository, lola), pasta to SourceViewModel(app.repository, pasta), web to SourceViewModel(app.repository, web))
         var source by mutableStateOf<Long?>(null)
         compose.setContent {
             MigaTheme(darkTheme = false) {
@@ -121,5 +130,7 @@ class FavoritesShotsTest {
         shot("4_channel")
         source = pasta
         shot("5_profile")
+        source = web
+        shot("6_website")
     }
 }
