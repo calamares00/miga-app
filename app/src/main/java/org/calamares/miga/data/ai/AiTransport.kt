@@ -39,7 +39,9 @@ data class AiRequest(
     val maxTokens: Int,
     val images: List<AiImage> = emptyList(),
     val expectJson: Boolean = true,
-    val audio: AiAudio? = null
+    val audio: AiAudio? = null,
+    /** A public YouTube video for a model that can watch it (only Gemini's transport sends it). */
+    val videoUrl: String? = null
 )
 
 /** Raw text answer of a model, or a user-facing error built with [org.calamares.miga.data.support.AiErrors]. */

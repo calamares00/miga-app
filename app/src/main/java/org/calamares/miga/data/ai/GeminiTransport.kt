@@ -22,6 +22,7 @@ private const val TIMEOUT_MILLIS = 60_000
 
 // Listening to a video's audio takes longer than reading text.
 private const val AUDIO_TIMEOUT_MILLIS = 180_000
+private const val VIDEO_TIMEOUT_MILLIS = 300_000
 
 @Serializable
 internal data class GeminiRequest(val contents: List<GeminiContent>, val generationConfig: GeminiGenerationConfig)
@@ -32,15 +33,24 @@ internal data class GeminiContent(val parts: List<GeminiPart> = emptyList())
 @Serializable
 internal data class GeminiPart(
     @SerialName("inline_data") val inlineData: GeminiInlineData? = null,
+    @SerialName("file_data") val fileData: GeminiFileData? = null,
     val text: String? = null
 )
+
+/** A file the model fetches itself: Gemini takes public YouTube videos by their address. */
+@Serializable
+internal data class GeminiFileData(@SerialName("file_uri") val fileUri: String)
 
 @Serializable
 internal data class GeminiInlineData(@SerialName("mime_type") val mimeType: String, val data: String)
 
 /** Fields with a default value are only encoded when marked with @EncodeDefault. */
 @Serializable
-internal data class GeminiGenerationConfig(@EncodeDefault val responseMimeType: String = "application/json")
+internal data class GeminiGenerationConfig(
+    @EncodeDefault val responseMimeType: String = "application/json",
+    /** Fewer tokens per video frame: enough to read on-screen text, and a long video fits. */
+    val mediaResolution: String? = null
+)
 
 @Serializable
 internal data class GeminiResponse(
@@ -69,12 +79,15 @@ internal object GeminiTransport : AiTransport {
                 GeminiPart(inlineData = GeminiInlineData(it.mimeType, Base64.getEncoder().encodeToString(it.bytes)))
             } + listOfNotNull(request.audio?.let {
                 GeminiPart(inlineData = GeminiInlineData(it.mimeType, Base64.getEncoder().encodeToString(it.bytes)))
-            }) + GeminiPart(text = request.prompt)
+            }) + listOfNotNull(request.videoUrl?.let { GeminiPart(fileData = GeminiFileData(it)) }) + GeminiPart(text = request.prompt)
             val body = aiJson.encodeToString(
                 GeminiRequest.serializer(),
                 GeminiRequest(
                     contents = listOf(GeminiContent(parts)),
-                    generationConfig = GeminiGenerationConfig(if (request.expectJson) "application/json" else "text/plain")
+                    generationConfig = GeminiGenerationConfig(
+                        if (request.expectJson) "application/json" else "text/plain",
+                        mediaResolution = if (request.videoUrl != null) "MEDIA_RESOLUTION_LOW" else null
+                    )
                 )
             )
             // The key goes in a header rather than in the URL so it never ends up in logs.
@@ -82,7 +95,11 @@ internal object GeminiTransport : AiTransport {
                 url = "$GEMINI_ENDPOINT_BASE/$model:generateContent",
                 body = body,
                 headers = mapOf("x-goog-api-key" to apiKey),
-                timeoutMillis = if (request.audio != null) AUDIO_TIMEOUT_MILLIS else TIMEOUT_MILLIS
+                timeoutMillis = when {
+                    request.videoUrl != null -> VIDEO_TIMEOUT_MILLIS
+                    request.audio != null -> AUDIO_TIMEOUT_MILLIS
+                    else -> TIMEOUT_MILLIS
+                }
             )
             if (!response.isSuccessful) {
                 val message = runCatching { aiJson.decodeFromString(GeminiErrorEnvelope.serializer(), response.body).error?.message }.getOrNull()

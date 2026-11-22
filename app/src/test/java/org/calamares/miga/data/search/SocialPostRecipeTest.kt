@@ -67,6 +67,9 @@ class SocialPostRecipeTest {
     fun `reads the caption out of the likes and comments wrapper`() {
         val post = SocialPostRecipe.read(page("21K likes, 232 comments - cocinadeprueba on September 3, 2026: &quot;$caption&quot;."), url)!!
         assertEquals("@cocinadeprueba", post.author)
+        assertEquals("https://www.instagram.com/cocinadeprueba/", post.authorUrl)
+        assertTrue(SocialPostRecipe.isReel(post.url))
+        assertFalse(SocialPostRecipe.isReel("https://www.instagram.com/p/ABC/"))
         assertEquals("https://www.instagram.com/cocinadeprueba/reel/ABC123/", post.url)
         assertEquals("https://scontent.cdninstagram.com/v/foto.jpg?stp=x&oh=y", post.imageUrl)
         assertTrue(post.text.startsWith("Garbanzos con espinacas y huevo"))
@@ -99,7 +102,7 @@ class SocialPostRecipeTest {
         assertEquals("Añadimos las espinacas y las dejamos reducir. Después, el pimentón sin que se queme.", steps[1])
         assertTrue(recipe.notes.contains("Un plato de cuchara rapidísimo"))
         assertTrue("the tip goes to the notes", recipe.notes.contains("Si os gusta con un toque ácido"))
-        assertTrue(recipe.notes.contains("Instagram: @cocinadeprueba"))
+        assertFalse("the author goes in the source, not in the notes", recipe.notes.contains("@cocinadeprueba"))
     }
 
     @Test
