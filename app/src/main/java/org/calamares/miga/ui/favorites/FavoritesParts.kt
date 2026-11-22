@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilledTonalButton
@@ -58,20 +59,26 @@ import org.calamares.miga.data.model.RecipeBookSummary
 private val YOUTUBE_RED = Color(0xFFE53935)
 private val INSTAGRAM_BRUSH = Brush.linearGradient(listOf(Color(0xFFF58529), Color(0xFFDD2A7B), Color(0xFF8134AF)))
 
-/** The small round badge of a network: ▶ for YouTube, ◎ for Instagram. */
+/** The small round badge of a network: ▶ for YouTube, ◎ for Instagram, a globe for websites. */
 @Composable
 internal fun NetworkBadge(network: SocialNetwork, size: Dp = 18.dp, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .size(size)
             .clip(CircleShape)
-            .then(if (network == SocialNetwork.YOUTUBE) Modifier.background(YOUTUBE_RED) else Modifier.background(INSTAGRAM_BRUSH)),
+            .then(
+                when (network) {
+                    SocialNetwork.YOUTUBE -> Modifier.background(YOUTUBE_RED)
+                    SocialNetwork.INSTAGRAM -> Modifier.background(INSTAGRAM_BRUSH)
+                    SocialNetwork.WEB -> Modifier.background(MaterialTheme.colorScheme.primary)
+                }
+            ),
         contentAlignment = Alignment.Center
     ) {
-        if (network == SocialNetwork.YOUTUBE) {
-            Icon(Icons.Filled.PlayArrow, contentDescription = "YouTube", tint = Color.White, modifier = Modifier.size(size * 0.7f))
-        } else {
-            Box(Modifier.size(size * 0.5f).border(1.5.dp, Color.White, RoundedCornerShape(size * 0.15f)))
+        when (network) {
+            SocialNetwork.YOUTUBE -> Icon(Icons.Filled.PlayArrow, contentDescription = "YouTube", tint = Color.White, modifier = Modifier.size(size * 0.7f))
+            SocialNetwork.INSTAGRAM -> Box(Modifier.size(size * 0.5f).border(1.5.dp, Color.White, RoundedCornerShape(size * 0.15f)))
+            SocialNetwork.WEB -> Icon(Icons.Filled.Public, contentDescription = networkLabel(network), tint = Color.White, modifier = Modifier.size(size * 0.7f))
         }
     }
 }
@@ -79,7 +86,11 @@ internal fun NetworkBadge(network: SocialNetwork, size: Dp = 18.dp, modifier: Mo
 /** "1 nuevo" or "3 nuevos". */
 internal fun newCountText(count: Int) = if (count == 1) L10n.str(R.string.favorites_new_one) else L10n.str(R.string.favorites_new_n, count)
 
-internal fun networkLabel(network: SocialNetwork) = if (network == SocialNetwork.YOUTUBE) "YouTube" else "Instagram"
+internal fun networkLabel(network: SocialNetwork) = when (network) {
+    SocialNetwork.YOUTUBE -> "YouTube"
+    SocialNetwork.INSTAGRAM -> "Instagram"
+    SocialNetwork.WEB -> L10n.str(R.string.favorites_network_web)
+}
 
 /** A channel's or profile's picture with its network badge and, when it has some, the new posts count. */
 @Composable
@@ -115,7 +126,7 @@ internal fun PostThumbnail(post: FavoritePost, modifier: Modifier, showNetwork: 
             PostKind.REEL -> L10n.str(R.string.post_kind_reel)
             PostKind.SHORT -> "Short"
             PostKind.PHOTO -> L10n.str(R.string.post_kind_photo)
-            PostKind.VIDEO -> null
+            PostKind.VIDEO, PostKind.ARTICLE -> null
         }
         label?.let {
             Text(
@@ -214,7 +225,7 @@ internal fun PostRow(
 /** A post as a grid cell: tall picture, title and author, and its main action. */
 @Composable
 internal fun PostCell(post: FavoritePost, onImport: () -> Unit, onOpenRecipe: (Long) -> Unit, onOpen: () -> Unit, showNetwork: Boolean) {
-    val vertical = post.kind != PostKind.VIDEO
+    val vertical = post.kind == PostKind.REEL || post.kind == PostKind.SHORT || post.kind == PostKind.PHOTO
     Column {
         PostThumbnail(post, Modifier.fillMaxWidth().aspectRatio(if (vertical) 9f / 13f else 16f / 10f).clickable(onClick = onOpen), showNetwork)
         Text(post.title, style = MaterialTheme.typography.labelLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))

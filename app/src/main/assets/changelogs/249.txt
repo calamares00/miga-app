@@ -1,0 +1,3 @@
+Novedades de la versión 1.0.51:
+• Favoritos: sigue también webs de recetas (o una sección, como /recetas/). Verás sus últimas recetas con foto, «Ver más recetas» y, en muchas webs, un buscador. Impórtalas con un toque.
+• Las publicaciones de tus canales que no son de cocina (fotos de familia, viajes…) ya no aparecen; en cada canal puedes verlas si quieres.

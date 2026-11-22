@@ -14,10 +14,10 @@ import java.time.OffsetDateTime
 import javax.xml.parsers.DocumentBuilderFactory
 
 /** Where a followed source or a saved post lives. Names are stored; do not rename them. */
-enum class SocialNetwork { YOUTUBE, INSTAGRAM }
+enum class SocialNetwork { YOUTUBE, INSTAGRAM, WEB }
 
 /** What a post is. Names are stored; do not rename them. */
-enum class PostKind { VIDEO, SHORT, REEL, PHOTO }
+enum class PostKind { VIDEO, SHORT, REEL, PHOTO, ARTICLE }
 
 /** A link to something Favourites can follow or save. */
 sealed interface SocialLink {
@@ -29,7 +29,10 @@ sealed interface SocialLink {
     data class InstagramProfile(override val url: String, val username: String) : SocialLink
     data class InstagramPost(override val url: String, val shortcode: String) : SocialLink
 
-    val isSource: Boolean get() = this is YouTubeChannel || this is InstagramProfile
+    /** Any other web page: a recipe website (or one of its sections) to follow, or a recipe. */
+    data class Website(override val url: String) : SocialLink
+
+    val isSource: Boolean get() = this is YouTubeChannel || this is InstagramProfile || this is Website
 }
 
 /** A channel's or profile's details, as its page gives them. */

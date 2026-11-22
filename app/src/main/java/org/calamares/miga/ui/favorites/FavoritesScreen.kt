@@ -278,7 +278,7 @@ private fun NetworkChips(viewModel: FavoritesViewModel, extra: @Composable () ->
             FilterChip(
                 selected = network == value,
                 onClick = { viewModel.setNetwork(value) },
-                label = { Text(networkLabel(value)) },
+                label = { Text(if (value == SocialNetwork.WEB) L10n.str(R.string.favorites_network_webs) else networkLabel(value)) },
                 leadingIcon = { NetworkBadge(value, size = 16.dp) }
             )
         }
@@ -378,7 +378,7 @@ private fun AddSheet(viewModel: FavoritesViewModel, onDismiss: () -> Unit, onImp
                 value = text,
                 onValueChange = { text = it; viewModel.inspect(it) },
                 label = { Text(L10n.str(R.string.favorites_add_link)) },
-                placeholder = { Text("https://www.youtube.com/@…") },
+                placeholder = { Text("https://…") },
                 singleLine = true,
                 trailingIcon = {
                     IconButton(onClick = {
@@ -400,13 +400,22 @@ private fun AddSheet(viewModel: FavoritesViewModel, onDismiss: () -> Unit, onImp
                 is AddState.NotSupported -> Text(current.text, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                 is AddState.Found -> {
                     val link = current.link
-                    val network = if (link is SocialLink.YouTubeChannel || link is SocialLink.YouTubeVideo) SocialNetwork.YOUTUBE else SocialNetwork.INSTAGRAM
+                    val network = when (link) {
+                        is SocialLink.YouTubeChannel, is SocialLink.YouTubeVideo -> SocialNetwork.YOUTUBE
+                        is SocialLink.InstagramProfile, is SocialLink.InstagramPost -> SocialNetwork.INSTAGRAM
+                        is SocialLink.Website -> SocialNetwork.WEB
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
                         NetworkBadge(network, size = 28.dp)
                         Spacer(Modifier.width(12.dp))
                         Text(L10n.str(linkKind(link)), style = MaterialTheme.typography.titleSmall)
                     }
-                    if (link.isSource) {
+                    if (link is SocialLink.Website) {
+                        // The page may be the site (or a section) or one of its recipes.
+                        AddOption(Icons.Filled.PersonAdd, L10n.str(R.string.favorites_follow_web), L10n.str(R.string.favorites_follow_web_desc)) { viewModel.follow(link) }
+                        AddOption(Icons.Filled.FavoriteBorder, L10n.str(R.string.favorites_save_recipe), L10n.str(R.string.favorites_save_post_desc)) { viewModel.saveLink(link) }
+                        AddOption(Icons.Filled.Download, L10n.str(R.string.favorites_import_recipe), L10n.str(R.string.favorites_import_recipe_desc)) { onImport(link.url) }
+                    } else if (link.isSource) {
                         AddOption(Icons.Filled.PersonAdd, L10n.str(R.string.favorites_follow), L10n.str(R.string.favorites_follow_desc)) { viewModel.follow(link) }
                     } else {
                         AddOption(Icons.Filled.FavoriteBorder, L10n.str(R.string.favorites_save_post), L10n.str(R.string.favorites_save_post_desc)) { viewModel.saveLink(link) }
@@ -423,6 +432,7 @@ internal fun linkKind(link: SocialLink): Int = when (link) {
     is SocialLink.YouTubeVideo -> R.string.favorites_kind_video
     is SocialLink.InstagramProfile -> R.string.favorites_kind_profile
     is SocialLink.InstagramPost -> R.string.favorites_kind_post
+    is SocialLink.Website -> R.string.favorites_kind_website
 }
 
 @Composable
