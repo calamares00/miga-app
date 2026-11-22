@@ -19,6 +19,7 @@ import org.calamares.miga.data.local.entity.SyncChangeType
 import org.calamares.miga.data.local.entity.SyncConnectionEntity
 import org.calamares.miga.data.local.entity.SyncEntityType
 import org.calamares.miga.data.model.KitchenEquipment
+import org.calamares.miga.data.model.BookDetails
 import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.data.model.Ingredient
@@ -190,7 +191,7 @@ class SyncRepository internal constructor(
 
     suspend fun getRecipeBookSyncDto(bookId: Long): BookSyncDto? {
         val book = recipeBookDao.getOnce(bookId) ?: return null
-        return BookSyncDto(uid = book.uid, name = book.name, hasCoverPhoto = book.coverPhotoUri != null, updatedAt = book.updatedAt)
+        return book.toSyncDto()
     }
 
     suspend fun getRecipeBookSyncDtoByUid(uid: String): BookSyncDto? {
@@ -269,6 +270,24 @@ class SyncRepository internal constructor(
      */
     suspend fun hasLocalPhoto(photoUid: String): Boolean = recipeDao.findPhotoByUid(photoUid) != null
 
+    private fun RecipeBookEntity.toSyncDto() = BookSyncDto(
+        uid = uid,
+        name = name,
+        hasCoverPhoto = coverPhotoUri != null,
+        updatedAt = updatedAt,
+        description = description,
+        author = author,
+        coverColor = coverColor.orEmpty(),
+        coverEmoji = coverEmoji.orEmpty()
+    )
+
+    /** [this] with what [dto] carries of the book's details; what it does not send (null) stays as it was. */
+    private fun RecipeBookEntity.withDetailsOf(dto: BookSyncDto): RecipeBookEntity {
+        val details = BookDetails(description, author, coverColor, coverEmoji)
+            .updatedWith(dto.description, dto.author, dto.coverColor, dto.coverEmoji)
+        return copy(description = details.description, author = details.author, coverColor = details.coverColor, coverEmoji = details.coverEmoji)
+    }
+
     // --- Applying changes received from the server (used by SyncEngine) ---
     //
     // Books are processed in two passes, upserts first and deletions last, because of the RESTRICT
@@ -303,10 +322,10 @@ class SyncRepository internal constructor(
                     createdAt = dto.updatedAt,
                     updatedAt = dto.updatedAt,
                     syncConnectionId = connectionId
-                )
+                ).withDetailsOf(dto)
             )
         } else {
-            recipeBookDao.update(existing.copy(name = dto.name, updatedAt = dto.updatedAt, syncConnectionId = connectionId))
+            recipeBookDao.update(existing.copy(name = dto.name, updatedAt = dto.updatedAt, syncConnectionId = connectionId).withDetailsOf(dto))
             existing.id
         }
     }

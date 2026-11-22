@@ -1,6 +1,7 @@
 package org.calamares.miga.data.export
 
 import kotlinx.serialization.Serializable
+import org.calamares.miga.data.model.BookDetails
 import org.calamares.miga.data.model.TemplateItem
 
 /**
@@ -60,8 +61,15 @@ data class BookExportDto(
     val packSeries: String? = null,
     /** Who shared the book and when (see RecipeBookEntity.sharedBy); set by "Share book" and kept in backups. */
     val sharedBy: String? = null,
-    val sharedAt: Long? = null
-)
+    val sharedAt: Long? = null,
+    /** Dedication, author and the look of a cover without a photo (see RecipeBookEntity.description). */
+    val description: String = "",
+    val author: String = "",
+    val coverColor: String? = null,
+    val coverEmoji: String? = null
+) {
+    val details: BookDetails get() = BookDetails(description, author, coverColor, coverEmoji).cleaned()
+}
 
 @Serializable
 data class RecipeExportDto(

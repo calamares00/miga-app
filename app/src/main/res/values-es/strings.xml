@@ -1682,4 +1682,23 @@
     <string name="web_page_features">"funciones/"</string>
     <string name="web_page_health">"salud/"</string>
     <string name="web_page_assistant">"asistente/"</string>
+    <string name="book_cover_gallery">"Galería"</string>
+    <string name="book_cover_camera">"Cámara"</string>
+    <string name="book_cover_from_recipes">"De sus recetas"</string>
+    <string name="book_cover_from_recipes_title">"Elige una foto de sus recetas"</string>
+    <string name="book_cover_remove_photo">"Quitar foto"</string>
+    <string name="book_author">"Autor"</string>
+    <string name="book_author_hint">"Por ejemplo, Abuela Carmen"</string>
+    <string name="book_dedication">"Dedicatoria"</string>
+    <string name="book_dedication_hint">"Las recetas que me enseñó mi madre"</string>
+    <string name="book_dedication_help">"Sale al abrir el libro y en la portada de su PDF."</string>
+    <string name="book_cover_style">"Portada sin foto"</string>
+    <string name="book_cover_color">"Color"</string>
+    <string name="book_cover_emoji">"Dibujo"</string>
+    <string name="book_cover_automatic">"Automático"</string>
+    <string name="book_cover_no_emoji">"Sin dibujo"</string>
+    <string name="book_color_garden">"Huerta"</string>
+    <string name="book_color_wine">"Vino"</string>
+    <string name="book_color_graphite">"Grafito"</string>
+    <string name="book_name_suggestions">"Recetas de la abuela|De diario|Postres|Cenas rápidas|Navidad|Para llevar|Saludables|Con los peques"</string>
 </resources>

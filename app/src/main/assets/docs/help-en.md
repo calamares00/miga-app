@@ -2,6 +2,7 @@
 
 Each book is a recipe collection with its own cover: your mum's, a friend's or one per theme (the best brownies deserve a book of their own). New recipes are saved in the book you have open.
 
+- When you **create or edit a book** you see its cover as it will look. The photo can come from the gallery, the camera or one of its recipes; without a photo, choose its **colour** and a **picture**. Add an **author** and a **dedication** too: they show when you open the book, on its cover and in the book's PDF.
 - In **Books**, the filters at the top (All, My books, Packs, Server) show each kind of book. You can also **swipe left or right** to move from one to the next.
 - Long-press a book to **select it**, then tap others to add them. At the top you have Edit, Share and Delete (after deleting you have a few seconds to **Undo**), and under **More actions**, **Pin to top**: pinned books come first, with a pin on their cover. Inside a book you can also pin it from its menu (⋮).
 - Inside a book, recipes are grouped by **category**. Tap a category to collapse or expand it; the menu (⋮) collapses or expands them all.

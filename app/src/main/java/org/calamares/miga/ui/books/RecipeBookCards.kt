@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
@@ -64,6 +65,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import org.calamares.miga.data.model.RecipeBookSummary
+import org.calamares.miga.data.model.BookColor
 import org.calamares.miga.data.model.RecipeListViewMode
 
 /** "Shared by Ana · 8 Nov" for a shared book or recipe; null when nobody signed it. */
@@ -254,7 +256,7 @@ internal fun RecipeBookCard(
             .aspectRatio(0.72f)
             .clip(RoundedCornerShape(20.dp))
             .then(if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp)) else Modifier)
-            .background(bookPlaceholderBrush(book.name))
+            .background(bookPlaceholderBrush(book.name, book.coverColor))
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
     ) {
         if (book.coverPhotoUri != null) {
@@ -265,12 +267,7 @@ internal fun RecipeBookCard(
                 modifier = Modifier.fillMaxSize()
             )
         } else {
-            Icon(
-                imageVector = Icons.Outlined.MenuBook,
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.85f),
-                modifier = Modifier.size(56.dp).align(Alignment.Center).padding(bottom = 24.dp)
-            )
+            BookSymbol(book.coverEmoji, 56.dp, Modifier.align(Alignment.Center).padding(bottom = 24.dp))
         }
         // Bottom gradient so the title reads over any cover.
         Box(
@@ -289,6 +286,16 @@ internal fun RecipeBookCard(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+            if (book.author.isNotBlank()) {
+                Text(
+                    text = book.author,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontStyle = FontStyle.Italic,
+                    color = Color.White.copy(alpha = 0.9f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             Text(
                 text = if (book.recipeCount == 1) L10n.str(R.string.recipe_count_one) else L10n.str(R.string.recipe_count_many, book.recipeCount),
                 style = MaterialTheme.typography.bodySmall,
@@ -330,10 +337,12 @@ internal fun BookBadge(icon: ImageVector, description: String) {
     }
 }
 
-/** Background for books without a cover: a gradient with a stable colour derived from the name. */
-internal fun bookPlaceholderBrush(name: String): Brush {
-    val palette = listOf(0xFFC1633D, 0xFF3E8EB5, 0xFF5C9E4B, 0xFF8E6BB5, 0xFFD1709F, 0xFFD9962B, 0xFF3FA39B)
-    val base = Color(palette[Math.floorMod(name.hashCode(), palette.size)])
+/**
+ * Background for books without a cover: a gradient of the chosen colour or, when there is none, a
+ * stable one derived from the name (see BookColor).
+ */
+internal fun bookPlaceholderBrush(name: String, chosen: String? = null): Brush {
+    val base = Color(BookColor.of(chosen, name).argb)
     return Brush.linearGradient(listOf(base, base.copy(red = base.red * 0.7f, green = base.green * 0.7f, blue = base.blue * 0.7f)))
 }
 
@@ -373,7 +382,8 @@ internal fun RecipeBookRow(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(bookPlaceholderBrush(book.name))
+                        .background(bookPlaceholderBrush(book.name, book.coverColor)),
+                    contentAlignment = Alignment.Center
                 ) {
                     if (book.coverPhotoUri != null) {
                         AsyncImage(
@@ -383,12 +393,7 @@ internal fun RecipeBookRow(
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
-                        Icon(
-                            imageVector = Icons.Outlined.MenuBook,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.85f),
-                            modifier = Modifier.padding(14.dp)
-                        )
+                        BookSymbol(book.coverEmoji, 28.dp)
                     }
                 }
             }

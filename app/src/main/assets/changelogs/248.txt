@@ -1,0 +1,5 @@
+Novedades de la versión 1.0.50:
+• Libros más tuyos: al crear o editar un libro ves su portada tal como quedará, y eliges la foto de la galería, de la cámara o de una de sus recetas.
+• Portada sin foto con el color y el dibujo que quieras.
+• Dedicatoria y autor: salen al abrir el libro, en su portada y en el PDF.
+• Sugerencias para el nombre de un libro nuevo.
