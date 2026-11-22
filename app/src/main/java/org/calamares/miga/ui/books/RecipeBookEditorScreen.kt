@@ -234,9 +234,9 @@ fun RecipeBookEditorScreen(
                 OutlinedTextField(
                     value = viewModel.description,
                     onValueChange = { viewModel.description = it.take(BookDetails.MAX_DESCRIPTION) },
-                    label = { Text(L10n.str(R.string.book_dedication)) },
-                    placeholder = { Text(L10n.str(R.string.book_dedication_hint)) },
-                    supportingText = { Text(L10n.str(R.string.book_dedication_help)) },
+                    label = { Text(L10n.str(R.string.book_about)) },
+                    placeholder = { Text(L10n.str(R.string.book_about_hint)) },
+                    supportingText = { Text(L10n.str(R.string.book_about_help)) },
                     minLines = 2,
                     maxLines = 5,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),

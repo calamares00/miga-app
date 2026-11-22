@@ -300,7 +300,7 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
     }
 }
 
-/** v24 -> v25: a book's dedication, author and the colour and emoji of a cover without a photo. */
+/** v24 -> v25: a book's description, author and the colour and emoji of a cover without a photo. */
 val MIGRATION_24_25 = object : Migration(24, 25) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE `recipe_books` ADD COLUMN `description` TEXT NOT NULL DEFAULT ''")

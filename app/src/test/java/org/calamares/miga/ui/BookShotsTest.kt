@@ -26,7 +26,7 @@ import org.calamares.miga.L10n
 import org.calamares.miga.MigaApp
 import org.calamares.miga.R
 import org.calamares.miga.data.model.RecipeBookSummary
-import org.calamares.miga.ui.books.BookDedication
+import org.calamares.miga.ui.books.BookAbout
 import org.calamares.miga.ui.books.RecipeBookCard
 import org.calamares.miga.ui.books.RecipeBookEditorScreen
 import org.calamares.miga.ui.books.RecipeBookEditorViewModel
@@ -41,7 +41,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The book editor, the covers in the library and a book's dedication, for review. Off in normal
+ * The book editor, the covers in the library and a book's description, for review. Off in normal
  * runs; run recordRoborazziDebug with MIGA_SHOTS_DIR set.
  */
 @RunWith(AndroidJUnit4::class)
@@ -102,7 +102,7 @@ class BookShotsTest {
                     } else {
                         Column(Modifier.padding(16.dp)) {
                             Text("Postres de la abuela", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 8.dp))
-                            BookDedication("Las recetas que me enseñó mi madre, para que no se pierdan.", "Abuela Carmen")
+                            BookAbout("Las recetas que me enseñó mi madre, para que no se pierdan.", "Abuela Carmen")
                         }
                     }
                 }
@@ -110,6 +110,6 @@ class BookShotsTest {
         }
         shot("5_library")
         page = 1
-        shot("6_dedication")
+        shot("6_about")
     }
 }
