@@ -24,7 +24,7 @@ data class BookSyncDto(
     val unlinked: Boolean = false,
     val revision: Long = 0,
     /**
-     * Dedication, author and the look of a cover without a photo (see RecipeBookEntity.description).
+     * Description, author and the look of a cover without a photo (see RecipeBookEntity.description).
      * Null means "not sent" (an older app or server), and the copy that receives it keeps its own
      * values; an empty text or a missing colour is sent as "" to clear them.
      */

@@ -42,7 +42,7 @@ class RecipeBookEditorViewModel(
 
     var name by mutableStateOf("")
     var coverPhotoUri by mutableStateOf<String?>(null)
-    /** A dedication or a few words about the book (see RecipeBookEntity.description). */
+    /** A few words about the book (see RecipeBookEntity.description). */
     var description by mutableStateOf("")
     /** Whose recipes they are. */
     var author by mutableStateOf("")

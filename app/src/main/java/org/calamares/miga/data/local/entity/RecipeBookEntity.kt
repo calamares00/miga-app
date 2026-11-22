@@ -40,7 +40,7 @@ data class RecipeBookEntity(
     val sharedBy: String? = null,
     val sharedAt: Long? = null,
     /**
-     * A dedication or a few words about the book ("The recipes my mother taught me"), shown under
+     * A few words about the book ("Our everyday family recipes", or a dedication), shown under
      * its title and on its PDF cover; empty for none.
      */
     @ColumnInfo(defaultValue = "") val description: String = "",

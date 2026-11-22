@@ -56,7 +56,7 @@ private class Paints {
     val coverTitle = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 30f; isFakeBoldText = true }
     val coverSubtitle = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 14f; color = MUTED_COLOR; textAlign = Paint.Align.CENTER }
     val coverAuthor = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 16f; textAlign = Paint.Align.CENTER }
-    val coverDedication = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+    val coverAbout = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         textSize = 15f; color = MUTED_COLOR; typeface = Typeface.create(Typeface.SERIF, Typeface.ITALIC)
     }
     val tocTitle = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 20f; isFakeBoldText = true }
@@ -132,9 +132,9 @@ object PdfRecipeRenderer {
         bookName: String,
         coverPhotoUri: String?,
         recipes: List<Recipe>,
-        /** Whose recipes they are and the book's dedication, on the cover (see RecipeBook.author). */
+        /** Whose recipes they are and a few words about the book, on the cover (see RecipeBook.author). */
         author: String = "",
-        dedication: String = "",
+        about: String = "",
         onPage: (page: Int, total: Int) -> Unit = { _, _ -> }
     ): PdfDocument {
         val paints = Paints()
@@ -166,7 +166,7 @@ object PdfRecipeRenderer {
                 loadBitmapForBox(uri, width * scale, height * scale)
             }
         }
-        drawCoverPage(coverPage.canvas, paints, bookName, coverBitmap, ordered.size, author, dedication)
+        drawCoverPage(coverPage.canvas, paints, bookName, coverBitmap, ordered.size, author, about)
         document.finishPage(coverPage)
 
         val tocByLocalPage = tocPlaced.groupBy { it.page }
@@ -414,7 +414,7 @@ object PdfRecipeRenderer {
         coverBitmap: Bitmap?,
         recipeCount: Int,
         author: String,
-        dedication: String
+        about: String
     ) {
         var y = 140f
         if (coverBitmap != null) {
@@ -441,10 +441,10 @@ object PdfRecipeRenderer {
         }
         val subtitle = if (recipeCount == 1) L10n.str(R.string.recipe_count_one) else L10n.str(R.string.recipe_count_many, recipeCount)
         canvas.drawText(subtitle, PAGE_WIDTH / 2f, y, paints.coverSubtitle)
-        if (dedication.isNotBlank()) {
-            val text = "“${dedication.trim()}”"
+        if (about.isNotBlank()) {
+            val text = "“${about.trim()}”"
             val layout = StaticLayout.Builder
-                .obtain(text, 0, text.length, paints.coverDedication, (CONTENT_WIDTH * 0.8f).toInt())
+                .obtain(text, 0, text.length, paints.coverAbout, (CONTENT_WIDTH * 0.8f).toInt())
                 .setAlignment(Layout.Alignment.ALIGN_CENTER)
                 .build()
             canvas.save()

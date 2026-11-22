@@ -1690,9 +1690,9 @@
     <string name="book_cover_remove_photo">"Remove photo"</string>
     <string name="book_author">"Author"</string>
     <string name="book_author_hint">"For example, Grandma Carmen"</string>
-    <string name="book_dedication">"Dedication"</string>
-    <string name="book_dedication_hint">"The recipes my mother taught me"</string>
-    <string name="book_dedication_help">"Shown when you open the book and on the cover of its PDF."</string>
+    <string name="book_about">"About this book"</string>
+    <string name="book_about_hint">"Our everyday family recipes"</string>
+    <string name="book_about_help">"A few words about the book: shown when you open it and on the cover of its PDF."</string>
     <string name="book_cover_style">"Cover without a photo"</string>
     <string name="book_cover_color">"Colour"</string>
     <string name="book_cover_emoji">"Picture"</string>
