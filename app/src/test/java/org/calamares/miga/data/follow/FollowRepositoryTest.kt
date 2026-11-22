@@ -39,6 +39,19 @@ class FollowRepositoryTest {
         ))
         assertEquals(1, follows.observeSources().first().single().newCount)
 
+        // A new post not about cooking is hidden and not counted.
+        dao.insertPosts(listOf(
+            SourcePostEntity(sourceId = sourceId, postKey = "Trip3", url = "https://www.instagram.com/p/Trip3/", title = "Mis amigas del colegio en el pueblo más bonito del mundo",
+                description = "", thumbnailUrl = null, publishedAt = 3000, kind = "PHOTO")
+        ))
+        assertEquals(1, follows.observeSources().first().single().newCount)
+        assertTrue(follows.observeFeed().first().single { it.postKey == "Trip3" }.offTopic)
+        dao.deletePosts(sourceId)
+        dao.replacePosts(sourceId, listOf(
+            SourcePostEntity(sourceId = sourceId, postKey = "Old1", url = "https://www.instagram.com/p/Old1/", title = "Pesto", description = "", thumbnailUrl = null, publishedAt = 1000, kind = "PHOTO"),
+            SourcePostEntity(sourceId = sourceId, postKey = "New2", url = "https://www.instagram.com/reel/New2/", title = "Carbonara", description = "", thumbnailUrl = null, publishedAt = 2000, kind = "REEL")
+        ))
+
         val feed = follows.observeFeed().first()
         assertEquals(listOf("New2", "Old1"), feed.map { it.postKey })
         assertTrue(feed[0].isNew)
