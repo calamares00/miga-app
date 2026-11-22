@@ -19,6 +19,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
@@ -77,6 +84,11 @@ fun SourceScreen(
     val books by viewModel.books.collectAsStateWithLifecycle()
     val grid by viewModel.grid.collectAsStateWithLifecycle()
     val hidden by viewModel.hiddenCount.collectAsStateWithLifecycle()
+    val canLoadMore by viewModel.canLoadMore.collectAsStateWithLifecycle()
+    val loadingMore by viewModel.loadingMore.collectAsStateWithLifecycle()
+    val canSearch by viewModel.canSearch.collectAsStateWithLifecycle()
+    val query by viewModel.query.collectAsStateWithLifecycle()
+    var searchText by rememberSaveable { mutableStateOf("") }
     val showOffTopic by viewModel.showOffTopic.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     var menu by remember { mutableStateOf(false) }
@@ -120,6 +132,21 @@ fun SourceScreen(
         val header: @Composable () -> Unit = {
             Column {
                 SourceHeader(current, posts.size)
+                if (canSearch) {
+                    OutlinedTextField(
+                        value = searchText,
+                        onValueChange = { searchText = it; if (it.isBlank()) viewModel.search("") },
+                        placeholder = { Text(L10n.str(R.string.favorites_search_site, current.name), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        trailingIcon = {
+                            if (searchText.isNotEmpty()) IconButton(onClick = { searchText = ""; viewModel.search("") }) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.close_search)) }
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { viewModel.search(searchText) }),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
+                }
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
                     SegmentedButton(selected = !grid, onClick = { viewModel.grid.value = false }, shape = SegmentedButtonDefaults.itemShape(0, 2)) { Text(L10n.str(R.string.favorites_list)) }
                     SegmentedButton(selected = grid, onClick = { viewModel.grid.value = true }, shape = SegmentedButtonDefaults.itemShape(1, 2)) { Text(L10n.str(R.string.favorites_grid)) }
@@ -140,6 +167,14 @@ fun SourceScreen(
                 }
             }
         }
+        val moreButton: @Composable () -> Unit = {
+            if (canLoadMore && query == null) {
+                Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                    if (loadingMore) CircularProgressIndicator(modifier = Modifier.size(28.dp))
+                    else OutlinedButton(onClick = viewModel::loadMore) { Text(L10n.str(R.string.favorites_more_recipes)) }
+                }
+            }
+        }
         if (grid) {
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(160.dp),
@@ -152,6 +187,7 @@ fun SourceScreen(
                 items(posts, key = { it.id }) { post ->
                     PostCell(post, { importing = post.url }, onRecipeClick, { openWebLink(context, post.url) }, showNetwork = false)
                 }
+                item(span = { GridItemSpan(maxLineSpan) }) { moreButton() }
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(bottom = 24.dp)) {
@@ -159,6 +195,7 @@ fun SourceScreen(
                 items(posts, key = { it.id }) { post ->
                     PostRow(post, showAuthor = false, { importing = post.url }, onRecipeClick, { openWebLink(context, post.url) }, { viewModel.toggleSaved(post) })
                 }
+                item { moreButton() }
             }
         }
     }
@@ -184,6 +221,7 @@ private fun SourceHeader(source: FollowedSource, count: Int) {
             Text(source.name, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(listOfNotNull(source.handle, networkLabel(source.network)).joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             val recent = when {
+                source.network == SocialNetwork.WEB -> if (count == 1) L10n.str(R.string.favorites_recipes_one) else L10n.str(R.string.favorites_recipes_count_n, count)
                 source.network == SocialNetwork.YOUTUBE && count == 1 -> L10n.str(R.string.favorites_recent_videos_one)
                 source.network == SocialNetwork.YOUTUBE -> L10n.str(R.string.favorites_recent_videos_n, count)
                 count == 1 -> L10n.str(R.string.favorites_recent_posts_one)
