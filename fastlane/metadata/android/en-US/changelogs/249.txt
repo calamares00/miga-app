@@ -1,0 +1,2 @@
+What's new in version 1.0.51:
+• Favourites: posts from your channels that are not about cooking (family photos, trips…) no longer show up. In a channel's view you can see them with one tap if you want.

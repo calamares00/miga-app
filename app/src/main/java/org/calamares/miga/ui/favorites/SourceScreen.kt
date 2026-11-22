@@ -76,6 +76,8 @@ fun SourceScreen(
     val message by viewModel.message.collectAsStateWithLifecycle()
     val books by viewModel.books.collectAsStateWithLifecycle()
     val grid by viewModel.grid.collectAsStateWithLifecycle()
+    val hidden by viewModel.hiddenCount.collectAsStateWithLifecycle()
+    val showOffTopic by viewModel.showOffTopic.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     var menu by remember { mutableStateOf(false) }
     var confirmUnfollow by remember { mutableStateOf(false) }
@@ -121,6 +123,14 @@ fun SourceScreen(
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
                     SegmentedButton(selected = !grid, onClick = { viewModel.grid.value = false }, shape = SegmentedButtonDefaults.itemShape(0, 2)) { Text(L10n.str(R.string.favorites_list)) }
                     SegmentedButton(selected = grid, onClick = { viewModel.grid.value = true }, shape = SegmentedButtonDefaults.itemShape(1, 2)) { Text(L10n.str(R.string.favorites_grid)) }
+                }
+                if (hidden > 0 || showOffTopic) {
+                    TextButton(
+                        onClick = { viewModel.showOffTopic.value = !showOffTopic },
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    ) {
+                        Text(if (showOffTopic) L10n.str(R.string.favorites_hide_off_topic) else L10n.str(R.string.favorites_show_off_topic, hidden))
+                    }
                 }
                 if (posts.isEmpty() && !refreshing) {
                     Column(Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {

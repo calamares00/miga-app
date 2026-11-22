@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.51:
+• Favoritos: las publicaciones de tus canales que no son de cocina (fotos de familia, viajes…) ya no aparecen. En la vista de un canal puedes verlas con un toque si quieres.
