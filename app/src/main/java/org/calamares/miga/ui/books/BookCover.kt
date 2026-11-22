@@ -35,11 +35,11 @@ internal fun BookSymbol(emoji: String?, size: Dp, modifier: Modifier = Modifier)
 }
 
 /**
- * The book's dedication ("The recipes my mother taught me") and author above its recipes, in the
+ * The few words about the book ("Our everyday family recipes") and its author above its recipes, in the
  * style of the first page of a printed recipe book.
  */
 @Composable
-internal fun BookDedication(description: String, author: String, modifier: Modifier = Modifier) {
+internal fun BookAbout(description: String, author: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxWidth()

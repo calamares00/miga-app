@@ -17,7 +17,7 @@ data class RecipeBook(
     /** Who shared the book with the user, and when (see RecipeBookEntity.sharedBy). */
     val sharedBy: String? = null,
     val sharedAt: Long? = null,
-    /** Dedication, author and the look of a cover without a photo (see RecipeBookEntity.description). */
+    /** Description, author and the look of a cover without a photo (see RecipeBookEntity.description). */
     val description: String = "",
     val author: String = "",
     val coverColor: String? = null,
@@ -76,7 +76,7 @@ fun RecipeBook.toDraft() = RecipeBookDraft(
 )
 
 /**
- * What a user writes about a book besides its name: dedication, author and the look of a cover
+ * What a user writes about a book besides its name: description, author and the look of a cover
  * without a photo. Imported values are trimmed to sensible lengths.
  */
 data class BookDetails(

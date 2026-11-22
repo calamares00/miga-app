@@ -252,7 +252,7 @@ class BookRepository internal constructor(
             )
         )
 
-    /** Dedication, author and cover look of a shared book, after importing a newer copy of it. */
+    /** Description, author and cover look of a shared book, after importing a newer copy of it. */
     suspend fun setBookDetails(bookId: Long, details: BookDetails) {
         val book = recipeBookDao.getOnce(bookId) ?: return
         recipeBookDao.update(

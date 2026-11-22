@@ -1,5 +1,5 @@
 What's new in version 1.0.50:
 • Books more your own: when you create or edit a book you see its cover as it will look, and take the photo from the gallery, the camera or one of its recipes.
 • Cover without a photo in the colour and picture you like.
-• Dedication and author: shown when you open the book, on its cover and in the PDF.
+• "About this book" and author: shown when you open the book, on its cover and in the PDF.
 • Name suggestions for a new book.

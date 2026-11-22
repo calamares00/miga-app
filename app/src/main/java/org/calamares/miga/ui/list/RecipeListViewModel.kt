@@ -64,7 +64,7 @@ data class RecipeGroup(
 data class RecipeListUiState(
     val isLoading: Boolean = true,
     val bookName: String = "",
-    /** The book's dedication and author, shown above its recipes (see RecipeBookEntity.description). */
+    /** The book's description and author, shown above its recipes (see RecipeBookEntity.description). */
     val bookDescription: String = "",
     val bookAuthor: String = "",
     val groups: List<RecipeGroup> = emptyList(),

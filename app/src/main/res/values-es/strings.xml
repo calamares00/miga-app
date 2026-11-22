@@ -1689,9 +1689,9 @@
     <string name="book_cover_remove_photo">"Quitar foto"</string>
     <string name="book_author">"Autor"</string>
     <string name="book_author_hint">"Por ejemplo, Abuela Carmen"</string>
-    <string name="book_dedication">"Dedicatoria"</string>
-    <string name="book_dedication_hint">"Las recetas que me enseñó mi madre"</string>
-    <string name="book_dedication_help">"Sale al abrir el libro y en la portada de su PDF."</string>
+    <string name="book_about">"Sobre este libro"</string>
+    <string name="book_about_hint">"Las recetas de casa de toda la vida"</string>
+    <string name="book_about_help">"Unas palabras sobre el libro: salen al abrirlo y en la portada de su PDF."</string>
     <string name="book_cover_style">"Portada sin foto"</string>
     <string name="book_cover_color">"Color"</string>
     <string name="book_cover_emoji">"Dibujo"</string>
