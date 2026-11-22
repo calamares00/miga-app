@@ -4,22 +4,32 @@ import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.net.Uri
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.HideImage
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import org.calamares.miga.data.model.BookDetails
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
@@ -46,18 +56,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
 import org.calamares.miga.ui.components.rememberCameraCapture
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.PhotoEditorOverlay
 import org.calamares.miga.ui.components.PhotoSourceSheet
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun RecipeBookEditorScreen(
     viewModel: RecipeBookEditorViewModel,
@@ -73,6 +80,12 @@ fun RecipeBookEditorScreen(
     var pendingEditUri by remember { mutableStateOf<Uri?>(null) }
     var editingExistingCover by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
+    var showRecipePhotos by remember { mutableStateOf(false) }
+    val nameFocus = remember { FocusRequester() }
+    // A new book starts with the keyboard on its name.
+    LaunchedEffect(viewModel.isLoading) {
+        if (!viewModel.isEditing && !viewModel.isLoading) runCatching { nameFocus.requestFocus() }
+    }
     val attemptExit = { if (viewModel.hasUnsavedChanges()) showDiscardDialog = true else onCancel() }
     val photoSheetState = rememberModalBottomSheetState()
 
@@ -137,54 +150,54 @@ fun RecipeBookEditorScreen(
         }
 
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.5f)
-                    .aspectRatio(0.72f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .let { base ->
-                        if (viewModel.isPack) base else base.clickable {
-                            if (viewModel.coverPhotoUri != null) {
-                                editingExistingCover = true
-                            } else {
-                                showPhotoSourceSheet = true
-                            }
-                        }
-                    }
-            ) {
-                val cover = viewModel.coverPhotoUri
-                if (cover != null) {
-                    AsyncImage(
-                        model = cover,
-                        contentDescription = L10n.str(R.string.cover),
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+            // The cover as the library will show it, updated while typing.
+            CoverPreview(
+                name = viewModel.name,
+                author = viewModel.author,
+                photoUri = viewModel.coverPhotoUri,
+                coverColor = viewModel.coverColor,
+                coverEmoji = viewModel.coverEmoji,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                onClick = if (viewModel.isPack) null else {
+                    { if (viewModel.coverPhotoUri != null) editingExistingCover = true else showPhotoSourceSheet = true }
+                }
+            )
+            if (!viewModel.isPack) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                ) {
+                    AssistChip(
+                        onClick = { coverPicker.launch("image/*") },
+                        label = { Text(L10n.str(R.string.book_cover_gallery)) },
+                        leadingIcon = { Icon(Icons.Filled.PhotoLibrary, null, Modifier.size(18.dp)) }
                     )
-                    if (!viewModel.isPack) {
-                        IconButton(
-                            onClick = { showPhotoSourceSheet = true },
-                            modifier = Modifier.size(28.dp).align(Alignment.BottomEnd).padding(4.dp)
-                        ) {
-                            Icon(
-                                Icons.Filled.AddAPhoto,
-                                contentDescription = L10n.str(R.string.change_cover),
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier
-                                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
-                                    .padding(4.dp)
-                            )
-                        }
-                    }
-                } else {
-                    Icon(
-                        imageVector = Icons.Filled.AddAPhoto,
-                        contentDescription = L10n.str(R.string.add_cover),
-                        modifier = Modifier.size(40.dp).align(Alignment.Center)
+                    AssistChip(
+                        onClick = { cameraCapture.launch() },
+                        label = { Text(L10n.str(R.string.book_cover_camera)) },
+                        leadingIcon = { Icon(Icons.Filled.PhotoCamera, null, Modifier.size(18.dp)) }
                     )
+                    if (viewModel.recipePhotos.isNotEmpty()) {
+                        AssistChip(
+                            onClick = { showRecipePhotos = true },
+                            label = { Text(L10n.str(R.string.book_cover_from_recipes)) },
+                            leadingIcon = { Icon(Icons.Filled.Restaurant, null, Modifier.size(18.dp)) }
+                        )
+                    }
+                    if (viewModel.coverPhotoUri != null) {
+                        AssistChip(
+                            onClick = { viewModel.coverPhotoUri = null },
+                            label = { Text(L10n.str(R.string.book_cover_remove_photo)) },
+                            leadingIcon = { Icon(Icons.Filled.HideImage, null, Modifier.size(18.dp)) }
+                        )
+                    }
                 }
             }
 
@@ -196,8 +209,49 @@ fun RecipeBookEditorScreen(
                 isError = viewModel.nameError,
                 supportingText = { if (viewModel.nameError) Text(L10n.str(R.string.name_required)) },
                 readOnly = viewModel.isPack,
-                modifier = Modifier.fillMaxWidth()
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                modifier = Modifier.fillMaxWidth().focusRequester(nameFocus)
             )
+            if (!viewModel.isEditing && viewModel.name.isBlank()) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    bookNameSuggestions().forEach { suggestion ->
+                        SuggestionChip(onClick = { viewModel.name = suggestion; viewModel.nameError = false }, label = { Text(suggestion) })
+                    }
+                }
+            }
+
+            if (!viewModel.isPack) {
+                OutlinedTextField(
+                    value = viewModel.author,
+                    onValueChange = { viewModel.author = it.take(BookDetails.MAX_AUTHOR) },
+                    label = { Text(L10n.str(R.string.book_author)) },
+                    placeholder = { Text(L10n.str(R.string.book_author_hint)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = viewModel.description,
+                    onValueChange = { viewModel.description = it.take(BookDetails.MAX_DESCRIPTION) },
+                    label = { Text(L10n.str(R.string.book_about)) },
+                    placeholder = { Text(L10n.str(R.string.book_about_hint)) },
+                    supportingText = { Text(L10n.str(R.string.book_about_help)) },
+                    minLines = 2,
+                    maxLines = 5,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (viewModel.coverPhotoUri == null) {
+                    CoverStylePicker(
+                        name = viewModel.name,
+                        coverColor = viewModel.coverColor,
+                        coverEmoji = viewModel.coverEmoji,
+                        onColor = { viewModel.coverColor = it },
+                        onEmoji = { viewModel.coverEmoji = it }
+                    )
+                }
+            }
 
             if (viewModel.isPack) {
                 Text(
@@ -264,6 +318,15 @@ fun RecipeBookEditorScreen(
                 TextButton(onClick = { showDeleteConfirm = false }) { Text(L10n.str(R.string.cancel)) }
             }
         )
+    }
+
+    if (showRecipePhotos) {
+        ModalBottomSheet(onDismissRequest = { showRecipePhotos = false }) {
+            RecipePhotoPicker(viewModel.recipePhotos) { uri ->
+                showRecipePhotos = false
+                pendingEditUri = Uri.parse(uri)
+            }
+        }
     }
 
     if (showPhotoSourceSheet) {

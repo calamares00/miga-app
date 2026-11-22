@@ -3,6 +3,7 @@ package org.calamares.miga.data.share
 import android.content.Intent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import org.calamares.miga.data.follow.SocialFeeds
 import org.calamares.miga.data.search.SocialPostRecipe
 import org.calamares.miga.data.search.YouTubeRecipe
 
@@ -25,13 +26,14 @@ object RecipeLinkIntents {
     val event: StateFlow<SharedRecipeLink?> = _event
 
     /**
-     * The link to import in shared [text]: an Instagram post or a YouTube video anywhere in it, or
+     * The link to import or follow in shared [text]: an Instagram post or profile or a YouTube
+     * video or channel anywhere in it, or
      * the only link of a short text (a page shared from the browser, with its title). Null for
      * notes and lists, which stay shopping items.
      */
     fun recipeLinkIn(text: String): String? {
         val links = URL.findAll(text).map { it.value.trimEnd('.', ',', ';', ':', ')', '!', '?') }.toList()
-        links.firstOrNull { SocialPostRecipe.isInstagram(it) || YouTubeRecipe.isYouTube(it) }?.let { return it }
+        links.firstOrNull { SocialPostRecipe.isInstagram(it) || YouTubeRecipe.isYouTube(it) || SocialFeeds.parse(it)?.isSource == true }?.let { return it }
         val link = links.singleOrNull() ?: return null
         return link.takeIf { text.replace(URL, "").trim().length <= MAX_OTHER_CHARS }
     }

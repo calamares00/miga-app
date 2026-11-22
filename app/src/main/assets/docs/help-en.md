@@ -2,13 +2,14 @@
 
 Each book is a recipe collection with its own cover: your mum's, a friend's or one per theme (the best brownies deserve a book of their own). New recipes are saved in the book you have open.
 
+- When you **create or edit a book** you see its cover as it will look. The photo can come from the gallery, the camera or one of its recipes; without a photo, choose its **colour** and a **picture**. Add an **author** and a few words in **About this book** (a description or a dedication) too: they show when you open the book, on its cover and in the book's PDF.
 - In **Books**, the filters at the top (All, My books, Packs, Server) show each kind of book. You can also **swipe left or right** to move from one to the next.
 - Long-press a book to **select it**, then tap others to add them. At the top you have Edit, Share and Delete (after deleting you have a few seconds to **Undo**), and under **More actions**, **Pin to top**: pinned books come first, with a pin on their cover. Inside a book you can also pin it from its menu (⋮).
 - Inside a book, recipes are grouped by **category**. Tap a category to collapse or expand it; the menu (⋮) collapses or expands them all.
 - When a recipe is open, **swipe left or right** to go to the next or previous recipe of the book.
 - Long-press a recipe to **select several**. At the top you can edit it (if only one), share or delete them (with **Undo** for a few seconds), and under **More actions** change their category, difficulty, servings or source at once, mark them as favourites, move or copy them to another book, add their ingredients to the shopping list or **polish them** ✨ all in one go.
 - In each recipe, **My notes** keeps dated personal notes ("next time, less salt"). They do not change the recipe and go into backups.
-- **Search** looks through every book by name or ingredient. The filter button narrows it down by time, difficulty, category, equipment, tags, ingredients or origin, and also by **allergens** ("No eggs", "No gluten ingredients"…) or **for coeliacs**. At the bottom, **Show N recipes** says how many are left. Active filters show up as chips you can remove one by one. The bookmark **saves the search** under a name, and before you type your saved and recent searches are at hand. **Favourites** works the same, with your favourites only.
+- **Search** looks through every book by name or ingredient. The filter button narrows it down by time, difficulty, category, equipment, tags, ingredients or origin, and also by **allergens** ("No eggs", "No gluten ingredients"…) or **for coeliacs**. At the bottom, **Show N recipes** says how many are left. Active filters show up as chips you can remove one by one. The bookmark **saves the search** under a name, and before you type your saved and recent searches are at hand. **Favourites › Recipes** has the same, with your favourites only.
 - **Source**: if it is a link, tap it to open the web page; the copy button next to it copies the address.
 - **What can I cook?** (in Search): type the ingredients you have and see the recipes that use them, those needing fewest extra things first, with what is missing. Salt, water, oil and pepper are taken for granted.
 
@@ -41,6 +42,15 @@ From a book, tap **New recipe** and choose where it comes from:
 - **Suggest a recipe** ✨: type the name of a dish and choose from the suggestions.
 
 Options marked ✨ are done by the kitchen assistant and only appear once it is set up.
+
+## ♥ Favourites
+
+Everything you like, in one place: at the top choose **All**, **Recipes**, **Channels** or **Videos and reels**.
+
+- **Channels**: follow cooking channels on YouTube and profiles on Instagram. Tap **Add** and paste their link, or share the channel or profile from YouTube or Instagram to Miga. You see their latest videos (15 on YouTube) or reels (6 on Instagram), with a number when there is something new. They update when you open Favourites (at most once an hour) or with **Refresh**.
+- **Videos and reels**: save the ones you want to cook with ♡, or by pasting or sharing their link. They stay even when the channel posts more.
+- **Import**: creates the recipe in the book you choose. Without ✨ the recipe is written in the text and no assistant is needed; with ✨ the assistant takes it from the video. Imported ones show **✓ In "book"** and take you to the recipe.
+- Private accounts cannot be followed, and Instagram may stop showing a profile's posts without signing in.
 
 ## ⚠️ Allergens and intolerances
 
