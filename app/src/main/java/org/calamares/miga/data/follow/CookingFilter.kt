@@ -28,13 +28,15 @@ object CookingFilter {
         // English
         "cook", "bake", "baking", "recipe", "dinner", "lunch", "breakfast", "dessert", "sauce", "soup", "salad", "chicken", "beef",
         "pork", "fish", "seafood", "noodle", "cheese", "flour", "dough", "cake", "cookie", "bread", "food", "kitchen", "chef",
-        "delicious", "tasty", "yummy", "snack", "meal", "dish", "roast", "grill", "fried", "vegan", "foodie", "ingredients"
+        "delicious", "tasty", "yummy", "snack", "meal", "dish", "roast", "grill", "fried", "vegan", "foodie", "ingredients",
+        "croquett", "spaghetti", "muffin", "stew", "curry", "lentil", "potato", "tomato", "vegetabl", "pancake", "burger",
+        "sandwich", "omelette", "pudding", "brownie", "biscuit", "pastry", "gazpacho", "salmon", "prawn", "garlic", "onion"
     )
 
     /** Short words that must match whole, or they would be found inside others. */
     private val WORDS = listOf(
         "sal", "ajo", "pan", "olla", "wok", "cena", "tapa", "plato", "vino", "cafe", "rice", "egg", "eggs", "oil",
-        "salt", "meat", "bbq", "sushi", "taco", "tacos", "paella", "cocido", "fideua", "croissant"
+        "salt", "meat", "bbq", "sushi", "taco", "tacos", "paella", "cocido", "fideua", "croissant", "pie", "pies", "hake", "tuna"
     )
 
     private val PATTERN = Regex(

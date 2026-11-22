@@ -1,0 +1,3 @@
+What's new in version 1.0.52:
+• Fixed: the app closed when opening Favourites if you followed two sections of the same website sharing recipes. Each recipe now shows only once.
+• Favourites no longer hides some English recipes (such as croquettes) by mistake.
