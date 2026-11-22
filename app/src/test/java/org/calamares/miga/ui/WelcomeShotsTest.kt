@@ -36,7 +36,7 @@ abstract class WelcomeShotsTest {
     fun tour() {
         assumeTrue(out != null)
         compose.setContent { MigaTheme(darkTheme = false) { Surface(Modifier.fillMaxSize()) { WelcomeScreen("packs", "backup") {} } } }
-        val pages = 8
+        val pages = 9
         for (page in 1..pages) {
             compose.waitForIdle()
             Thread.sleep(600)

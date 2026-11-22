@@ -1633,6 +1633,12 @@
     <string name="tour_cooking_point_mode">"Big steps and the screen always on."</string>
     <string name="tour_cooking_point_timers">"One-tap timers that keep running even if you leave the app."</string>
     <string name="tour_cooking_point_voice">"Read aloud and hands-free: "next", "repeat"…"</string>
+    <string name="tour_kicker_tips">"Tips"</string>
+    <string name="tour_tips_title">"Tricks to cook better"</string>
+    <string name="tour_tips_body">"Hundreds of short tips that work offline."</string>
+    <string name="tour_tips_point_daily">"A tip of the day in your library: techniques, storage, using leftovers…"</string>
+    <string name="tour_tips_point_recipe">"In every recipe, the tips that help with its ingredients and steps."</string>
+    <string name="tour_tips_point_save">"Browse by topic, save your favourites and share them."</string>
     <string name="tour_kicker_shopping">"Shopping"</string>
     <string name="tour_shopping_title">"Shopping, by aisle"</string>
     <string name="tour_shopping_body">"A list that sorts itself like your supermarket."</string>
