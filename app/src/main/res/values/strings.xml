@@ -1763,4 +1763,16 @@
     <string name="favorites_new_one">"1 new"</string>
     <string name="favorites_recent_videos_one">"1 recent video"</string>
     <string name="favorites_recent_posts_one">"The latest post"</string>
+    <string name="follow_web_no_feed">"This website doesn't publish its recipes in a way Miga can follow."</string>
+    <string name="favorites_kind_website">"Recipe website"</string>
+    <string name="favorites_network_web">"Website"</string>
+    <string name="favorites_network_webs">"Websites"</string>
+    <string name="favorites_follow_web">"Follow this website"</string>
+    <string name="favorites_follow_web_desc">"You will see its new recipes in Favourites. Paste the whole site or a section, such as /recipes/."</string>
+    <string name="favorites_save_recipe">"Save this recipe"</string>
+    <string name="favorites_more_recipes">"More recipes"</string>
+    <string name="favorites_more_failed">"More recipes could not be loaded. Check the connection."</string>
+    <string name="favorites_search_site">"Search %1$s"</string>
+    <string name="favorites_recipes_one">"1 recipe"</string>
+    <string name="favorites_recipes_count_n">"%1$d recipes"</string>
 </resources>

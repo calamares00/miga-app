@@ -1762,4 +1762,16 @@
     <string name="favorites_new_one">"1 nuevo"</string>
     <string name="favorites_recent_videos_one">"1 vídeo reciente"</string>
     <string name="favorites_recent_posts_one">"La última publicación"</string>
+    <string name="follow_web_no_feed">"Esta web no publica sus recetas en un formato que Miga pueda seguir."</string>
+    <string name="favorites_kind_website">"Web de recetas"</string>
+    <string name="favorites_network_web">"Web"</string>
+    <string name="favorites_network_webs">"Webs"</string>
+    <string name="favorites_follow_web">"Seguir esta web"</string>
+    <string name="favorites_follow_web_desc">"Verás sus recetas nuevas en Favoritos. Pega la web entera o una sección, como /recetas/."</string>
+    <string name="favorites_save_recipe">"Guardar esta receta"</string>
+    <string name="favorites_more_recipes">"Ver más recetas"</string>
+    <string name="favorites_more_failed">"No se han podido cargar más recetas. Comprueba la conexión."</string>
+    <string name="favorites_search_site">"Buscar en %1$s"</string>
+    <string name="favorites_recipes_one">"1 receta"</string>
+    <string name="favorites_recipes_count_n">"%1$d recetas"</string>
 </resources>
