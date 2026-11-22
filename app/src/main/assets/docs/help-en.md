@@ -140,6 +140,18 @@ The lists of recipe categories, equipment, tags, ingredients and products, and p
 - **Import recipes or a book** adds what a Miga file holds: one recipe, a selection or a whole book. For a book, it asks whether to add its recipes to one of your books or create it as a new book.
 - While exporting or importing, Miga shows the progress (also in a notification, so you can keep using the app).
 
+## 👋 Tour and permissions
+
+The **welcome tour** sums up what you can do with Miga. To see it again: **Settings › Help › See now**.
+
+Miga only asks for permissions when it needs them, and all of them are optional:
+- **Notifications**: alerts from timers and when the assistant finishes a task.
+- **Alarms on time**: timers go off on time even with the screen off.
+- **Microphone**: dictating recipes and the shopping list, and hands-free cooking mode.
+- **Camera**: taking photos of your dishes and recipes, and scanning barcodes and QR codes.
+
+You can change them at any time in Android's settings.
+
 ## 📊 Statistics
 
 Figures about your recipes: recipes per book, category and difficulty, favourites, best rated and most cooked, times, most used ingredients and tags, world cuisines and recipes to complete (no photo, no steps…). Tap a figure to see its recipes. At the bottom you can see how much space Miga takes on the phone, with options to clear the cache and delete photos no recipe uses any more.
