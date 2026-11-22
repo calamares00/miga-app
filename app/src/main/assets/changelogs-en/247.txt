@@ -1,0 +1,4 @@
+What's new in version 1.0.49:
+• New welcome tour: what you can do with Miga in a few steps (recipes, cooking, shopping, health and the assistant), with links to the website to learn more.
+• Permissions explained: notifications, alarms, microphone and camera, what each one is for and whether it is allowed. All are optional.
+• Shown once to everyone; then see it again in Settings › Help › See now.
