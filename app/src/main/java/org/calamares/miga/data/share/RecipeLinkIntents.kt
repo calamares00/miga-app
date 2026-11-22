@@ -4,14 +4,15 @@ import android.content.Intent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.calamares.miga.data.search.SocialPostRecipe
+import org.calamares.miga.data.search.YouTubeRecipe
 
 /** A link shared to Miga ("Share" in Instagram or the browser): the recipe to import, and the text it came in. */
 data class SharedRecipeLink(val url: String, val text: String)
 
 /**
- * Links shared to Miga as text: a recipe page or an Instagram post is imported as a recipe (the
- * navigation asks in which book) instead of becoming shopping list items. Kept until consumed,
- * like [ShoppingIntents]. Must run before [ShoppingIntents.handle].
+ * Links shared to Miga as text: a recipe page, an Instagram post or a YouTube video is imported
+ * as a recipe (the navigation asks in which book) instead of becoming shopping list items. Kept
+ * until consumed, like [ShoppingIntents]. Must run before [ShoppingIntents.handle].
  */
 object RecipeLinkIntents {
 
@@ -24,13 +25,13 @@ object RecipeLinkIntents {
     val event: StateFlow<SharedRecipeLink?> = _event
 
     /**
-     * The link to import in shared [text]: an Instagram post anywhere in it, or the only link of a
-     * short text (a page shared from the browser, with its title). Null for notes and lists, which
-     * stay shopping items.
+     * The link to import in shared [text]: an Instagram post or a YouTube video anywhere in it, or
+     * the only link of a short text (a page shared from the browser, with its title). Null for
+     * notes and lists, which stay shopping items.
      */
     fun recipeLinkIn(text: String): String? {
         val links = URL.findAll(text).map { it.value.trimEnd('.', ',', ';', ':', ')', '!', '?') }.toList()
-        links.firstOrNull { SocialPostRecipe.isInstagram(it) }?.let { return it }
+        links.firstOrNull { SocialPostRecipe.isInstagram(it) || YouTubeRecipe.isYouTube(it) }?.let { return it }
         val link = links.singleOrNull() ?: return null
         return link.takeIf { text.replace(URL, "").trim().length <= MAX_OTHER_CHARS }
     }

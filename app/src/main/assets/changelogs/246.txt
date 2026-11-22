@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.48:
+• Recetas de YouTube: pega el enlace de un vídeo o Short, o compártelo desde YouTube con Miga.
+• Si la descripción trae la receta o enlaza a la web del autor, Miga la importa de ahí, con la miniatura. Si no, Gemini ve el vídeo: lo que se dice y lo que sale escrito en pantalla.
+• En las recetas de Instagram y YouTube, la fuente es «@autor - reel» o «vídeo», con enlace a su perfil y a la publicación.

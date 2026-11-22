@@ -481,7 +481,7 @@
     <string name="previous_step">"Previous step"</string>
     <string name="step_x">"Step %1$s"</string>
     <string name="main_steps">"Main steps"</string>
-    <string name="paste_link_recipe_website_ai">"Paste the link to a recipe on a website or an Instagram post: Miga reads it and fills in the editor for you."</string>
+    <string name="paste_link_recipe_website_ai">"Paste the link to a recipe on a website, Instagram or YouTube: Miga reads it and fills in the editor for you."</string>
     <string name="dangerous_food_allergies_health">"Dangerous: food, allergies or health"</string>
     <string name="changes_lost">"The changes you've made will be lost."</string>
     <string name="custom">"Custom…"</string>
@@ -1336,7 +1336,7 @@
     <string name="new_recipe_from_photos">"From photos"</string>
     <string name="new_recipe_from_photos_desc">"One or several recipes: take photos or pick them from the gallery"</string>
     <string name="new_recipe_from_web">"From a web page"</string>
-    <string name="new_recipe_from_web_desc">"A website or an Instagram post"</string>
+    <string name="new_recipe_from_web_desc">"A website, Instagram or YouTube"</string>
     <string name="new_recipe_from_file">"From a Miga file"</string>
     <string name="new_recipe_from_file_desc">"Recipes exported from Miga (.miga, .zip or JSON)"</string>
     <string name="new_recipe_suggest_desc">"Name a dish and the assistant proposes the recipe"</string>
@@ -1425,6 +1425,17 @@
     <string name="no_recipe_in_post_video">"No recipe was found in the post’s text or in what is said in the video."</string>
     <string name="recipe_from_video_note">"Recipe taken from the video’s audio: check the quantities."</string>
     <string name="ai_no_transcription">"%1$s has no speech-to-text service."</string>
+    <string name="ai_step_reading_linked_page">"Reading the recipe on the author’s website…"</string>
+    <string name="ai_hint_watching_video">"Watching the video…"</string>
+    <string name="no_recipe_in_youtube_video">"No recipe was found in the video or its description."</string>
+    <string name="youtube_unavailable">"YouTube did not show this video (it may be private or no longer available)."</string>
+    <string name="youtube_needs_gemini">"This video’s description has no recipe. For the assistant to watch the video (what is said and what is written on screen), add Gemini in Settings."</string>
+    <string name="youtube_needs_assistant">"This video’s description has no recipe. Set up Gemini in Settings so the assistant can watch the video."</string>
+    <string name="shared_link_title_youtube">"Import the recipe from this YouTube video?"</string>
+    <string name="source_kind_reel">"reel"</string>
+    <string name="source_kind_post">"post"</string>
+    <string name="source_kind_video">"video"</string>
+    <string name="source_kind_website">"website"</string>
     <string name="web_import_post_needs_assistant">"The text of this post is not written as a recipe with ingredients and steps. Set up the cooking assistant in Settings to import it."</string>
     <string name="ai_step_downloading_photo">"Downloading the photo…"</string>
     <string name="web_polish_title">"Read from the web and improved by the cooking assistant"</string>
