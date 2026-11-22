@@ -1,6 +1,7 @@
 package org.calamares.miga.data.export
 
 import org.calamares.miga.data.model.formatDuration
+import org.calamares.miga.data.model.BookDetails
 import org.calamares.miga.data.model.SourceText
 import org.calamares.miga.data.model.displayText
 import org.calamares.miga.data.model.RichText
@@ -181,7 +182,7 @@ object RecipeExporter {
     suspend fun writeBookPdf(context: Context, book: RecipeBook, recipes: List<Recipe>, onPage: (Int, Int) -> Unit): File =
         withContext(AppDispatchers.io) {
             writePdf(File(exportsDir(context), sanitizeFileName(book.name) + ".pdf")) {
-                PdfRecipeRenderer.renderBook(book.name, book.coverPhotoUri, recipes, onPage)
+                PdfRecipeRenderer.renderBook(book.name, book.coverPhotoUri, recipes, book.author, book.description, onPage)
             }
         }
 
@@ -273,7 +274,7 @@ object RecipeExporter {
     suspend fun writeRecipesPdf(context: Context, title: String, recipes: List<Recipe>, onPage: (Int, Int) -> Unit): File =
         withContext(AppDispatchers.io) {
             writePdf(File(exportsDir(context), sanitizeFileName(title) + ".pdf")) {
-                PdfRecipeRenderer.renderBook(title, null, recipes, onPage)
+                PdfRecipeRenderer.renderBook(title, null, recipes, onPage = onPage)
             }
         }
 
@@ -417,7 +418,7 @@ object RecipeExporter {
             dto.recipes.filter { it.uid !in packRecipeUids }.forEach { recipeDto ->
                 val bookId = targetBookId ?: bookIdsByName.getOrPut(recipeDto.recipeBookName) {
                     val bookMeta = dto.books.find { it.name == recipeDto.recipeBookName }
-                    repository.books.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName, bookMeta?.uid, coverOf(bookMeta), bookMeta?.sharedBy, bookMeta?.sharedAt)
+                    repository.books.getOrCreateRecipeBookIdByName(recipeDto.recipeBookName, bookMeta?.uid, coverOf(bookMeta), bookMeta?.sharedBy, bookMeta?.sharedAt, bookMeta?.details ?: BookDetails())
                 }
                 val photos = resolvePhotos(recipeDto.uid, recipeDto.photos, extracted)
                 val recipeId = repository.saveRecipe(recipeDto.toDraft(bookId, photos))
@@ -429,7 +430,7 @@ object RecipeExporter {
             if (targetBookId != null) return@withContext LibraryImportResult.Success(dto.recipes.size)
             // Books without recipes are restored too.
             dto.books.filter { it.name !in bookIdsByName }.forEach { bookMeta ->
-                bookIdsByName[bookMeta.name] = repository.books.getOrCreateRecipeBookIdByName(bookMeta.name, bookMeta.uid, coverOf(bookMeta), bookMeta.sharedBy, bookMeta.sharedAt)
+                bookIdsByName[bookMeta.name] = repository.books.getOrCreateRecipeBookIdByName(bookMeta.name, bookMeta.uid, coverOf(bookMeta), bookMeta.sharedBy, bookMeta.sharedAt, bookMeta.details)
             }
             // Templates and supermarkets are only added when there is none with the same name.
             val existingTemplates = repository.shopping.observeShoppingTemplates().first().map { it.name.trim().lowercase() }.toSet()
@@ -527,8 +528,11 @@ object RecipeExporter {
                 val cover = bookMeta.coverPhotoFileName?.let { extracted["books/${bookMeta.uid}/$it"] }
                 val existingBookId = repository.books.findSharedBookId(bookMeta.uid)
                 val bookId = existingBookId
-                    ?: repository.books.createBookWithUid(bookMeta.name, bookMeta.uid, cover, bookMeta.sharedBy, bookMeta.sharedAt)
-                if (existingBookId != null && bookMeta.sharedBy != null) repository.books.setBookSharedBy(existingBookId, bookMeta.sharedBy, bookMeta.sharedAt)
+                    ?: repository.books.createBookWithUid(bookMeta.name, bookMeta.uid, cover, bookMeta.sharedBy, bookMeta.sharedAt, bookMeta.details)
+                if (existingBookId != null && bookMeta.sharedBy != null) {
+                    repository.books.setBookSharedBy(existingBookId, bookMeta.sharedBy, bookMeta.sharedAt)
+                    repository.books.setBookDetails(existingBookId, bookMeta.details)
+                }
                 if (firstBookId == 0L) firstBookId = bookId
                 recipesByBook[bookMeta].orEmpty().forEach { recipeDto ->
                     val existing = repository.books.findRecipeStateByUid(recipeDto.uid)
@@ -640,7 +644,11 @@ object RecipeExporter {
         packVersion = book.packVersion.takeIf { withPack },
         packSeries = book.packSeries.takeIf { withPack },
         sharedBy = book.sharedBy,
-        sharedAt = book.sharedAt
+        sharedAt = book.sharedAt,
+        description = book.description,
+        author = book.author,
+        coverColor = book.coverColor,
+        coverEmoji = book.coverEmoji
     )
 
     private fun photoSourcesFor(books: List<RecipeBook>, recipes: List<Recipe>): List<Pair<String, String>> {

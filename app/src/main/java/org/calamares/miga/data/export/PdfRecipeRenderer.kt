@@ -55,6 +55,10 @@ private const val RULE_COLOR = 0xFFE0D8CE.toInt()
 private class Paints {
     val coverTitle = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 30f; isFakeBoldText = true }
     val coverSubtitle = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 14f; color = MUTED_COLOR; textAlign = Paint.Align.CENTER }
+    val coverAuthor = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 16f; textAlign = Paint.Align.CENTER }
+    val coverAbout = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+        textSize = 15f; color = MUTED_COLOR; typeface = Typeface.create(Typeface.SERIF, Typeface.ITALIC)
+    }
     val tocTitle = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 20f; isFakeBoldText = true }
     val tocCategory = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 13f; isFakeBoldText = true; color = ACCENT_COLOR }
     val tocEntry = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 12.5f }
@@ -128,6 +132,9 @@ object PdfRecipeRenderer {
         bookName: String,
         coverPhotoUri: String?,
         recipes: List<Recipe>,
+        /** Whose recipes they are and a few words about the book, on the cover (see RecipeBook.author). */
+        author: String = "",
+        about: String = "",
         onPage: (page: Int, total: Int) -> Unit = { _, _ -> }
     ): PdfDocument {
         val paints = Paints()
@@ -159,7 +166,7 @@ object PdfRecipeRenderer {
                 loadBitmapForBox(uri, width * scale, height * scale)
             }
         }
-        drawCoverPage(coverPage.canvas, paints, bookName, coverBitmap, ordered.size)
+        drawCoverPage(coverPage.canvas, paints, bookName, coverBitmap, ordered.size, author, about)
         document.finishPage(coverPage)
 
         val tocByLocalPage = tocPlaced.groupBy { it.page }
@@ -400,7 +407,15 @@ object PdfRecipeRenderer {
         canvas.drawText(pageText, MARGIN + CONTENT_WIDTH, baseline, paints.tocPageNum)
     }
 
-    private fun drawCoverPage(canvas: Canvas, paints: Paints, bookName: String, coverBitmap: Bitmap?, recipeCount: Int) {
+    private fun drawCoverPage(
+        canvas: Canvas,
+        paints: Paints,
+        bookName: String,
+        coverBitmap: Bitmap?,
+        recipeCount: Int,
+        author: String,
+        about: String
+    ) {
         var y = 140f
         if (coverBitmap != null) {
             val scale = min(COVER_IMAGE_BOX / coverBitmap.width, COVER_IMAGE_BOX / coverBitmap.height)
@@ -419,8 +434,24 @@ object PdfRecipeRenderer {
         titleLayout.draw(canvas)
         canvas.restore()
         y += titleLayout.height + 12f
+        if (author.isNotBlank()) {
+            y += 8f
+            canvas.drawText(author.trim(), PAGE_WIDTH / 2f, y, paints.coverAuthor)
+            y += 22f
+        }
         val subtitle = if (recipeCount == 1) L10n.str(R.string.recipe_count_one) else L10n.str(R.string.recipe_count_many, recipeCount)
         canvas.drawText(subtitle, PAGE_WIDTH / 2f, y, paints.coverSubtitle)
+        if (about.isNotBlank()) {
+            val text = "“${about.trim()}”"
+            val layout = StaticLayout.Builder
+                .obtain(text, 0, text.length, paints.coverAbout, (CONTENT_WIDTH * 0.8f).toInt())
+                .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .build()
+            canvas.save()
+            canvas.translate(MARGIN + CONTENT_WIDTH * 0.1f, y + 36f)
+            layout.draw(canvas)
+            canvas.restore()
+        }
     }
 
     private fun drawHeaderFooter(canvas: Canvas, paints: Paints, headerText: String?, pageNum: Int, totalPages: Int) {
