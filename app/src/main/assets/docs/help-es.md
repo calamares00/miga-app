@@ -140,6 +140,18 @@ Aquí están las listas de categorías de recetas, equipamiento, etiquetas, ingr
 - **Importar recetas o un libro** añade lo que haya en un archivo de Miga: una receta, una selección o un libro entero. Si es un libro, te pregunta si añadir sus recetas a uno de tus libros o crearlo como libro nuevo.
 - Mientras exporta o importa, Miga muestra el progreso (también en una notificación, así que puedes seguir usando la app).
 
+## 👋 Paseo y permisos
+
+El **paseo de bienvenida** resume lo que puedes hacer con Miga: recetas, cocinar, consejos, compra, salud y asistente. Para verlo otra vez: **Ajustes › Ayuda › Ver ahora**.
+
+Miga solo pide permisos cuando los necesita, y todos son opcionales:
+- **Notificaciones**: avisos de los temporizadores y de cuando el asistente termina una tarea.
+- **Alarmas a su hora**: que los temporizadores suenen puntuales aunque la pantalla esté apagada.
+- **Micrófono**: dictar recetas y la lista de la compra, y el modo manos libres al cocinar.
+- **Cámara**: hacer fotos de tus platos y recetas, y escanear códigos de barras y QR.
+
+Puedes cambiarlos cuando quieras en los ajustes de Android.
+
 ## 📊 Estadísticas
 
 Cifras de tu recetario: recetas por libro, categoría y dificultad, favoritas, mejor valoradas y más cocinadas, tiempos, ingredientes y etiquetas más usados, cocinas del mundo y recetas por completar (sin foto, sin pasos…). Toca una cifra para ver sus recetas. Abajo verás cuánto ocupa Miga en el móvil, con opciones para vaciar la caché y borrar fotos que ya no usa ninguna receta.

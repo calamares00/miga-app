@@ -3,13 +3,10 @@ package org.calamares.miga.ui.settings
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material.icons.filled.SearchOff
 import org.calamares.miga.ui.components.EmptyState
-import androidx.compose.foundation.selection.toggleable
 import org.calamares.miga.ui.components.AdaptiveScaffold
 import org.calamares.miga.ui.components.ButtonContent
 import androidx.compose.material.icons.filled.Tour
-import androidx.compose.material3.Switch
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.semantics.Role
 import kotlinx.coroutines.launch
 import org.calamares.miga.MigaApp
 import android.content.Intent
@@ -62,7 +59,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.BuildConfig
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -217,35 +213,24 @@ private fun HelpTopicCard(topic: HelpTopic, expanded: Boolean, onToggle: () -> U
     }
 }
 
-/** Shows the welcome tour again on the next start, for whoever wants to see it again. */
+/** Shows the welcome tour again right away, for whoever wants to see it again. */
 @Composable
 private fun WelcomeTourCard() {
     val context = LocalContext.current
     val settings = remember { (context.applicationContext as MigaApp).settingsRepository }
     val scope = rememberCoroutineScope()
-    val enabled by settings.observeWelcomeOnNextStart().collectAsStateWithLifecycle(initialValue = false)
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(20.dp),
         modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .toggleable(value = enabled, role = Role.Switch) { checked -> scope.launch { settings.setWelcomeOnNextStart(checked) } }
-                .padding(18.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.Tour, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Column(modifier = Modifier.weight(1f).padding(horizontal = 14.dp)) {
                 Text(L10n.str(R.string.welcome_again_title), style = MaterialTheme.typography.titleMedium)
-                Text(
-                    L10n.str(if (enabled) R.string.welcome_again_on else R.string.welcome_again_desc),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text(L10n.str(R.string.welcome_again_desc), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Switch(checked = enabled, onCheckedChange = null)
+            FilledTonalButton(onClick = { scope.launch { settings.showWelcomeAgain() } }) { Text(L10n.str(R.string.welcome_again_action)) }
         }
     }
 }
