@@ -16,6 +16,7 @@ import org.calamares.miga.data.support.AppDispatchers
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.follow.FavoritePost
+import org.calamares.miga.data.follow.FeedPost
 import org.calamares.miga.data.follow.FollowRepository
 import org.calamares.miga.data.follow.FollowResult
 import org.calamares.miga.data.follow.SocialFeeds
@@ -72,7 +73,8 @@ class FavoritesViewModel(private val repository: RecipeRepository) : ViewModel()
     val sources: StateFlow<List<FollowedSource>> = follows.observeSources()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val feed: StateFlow<List<FavoritePost>> = follows.observeFeed()
+    /** Posts of the followed sources; the ones not about cooking are left out. */
+    val feed: StateFlow<List<FavoritePost>> = follows.observeFeed().map { list -> list.filterNot { it.offTopic } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val saved: StateFlow<List<FavoritePost>> = follows.observeSavedPosts()
@@ -131,7 +133,8 @@ class FavoritesViewModel(private val repository: RecipeRepository) : ViewModel()
     /** What a link pasted in the "Add" sheet is. */
     fun inspect(text: String) {
         val url = Regex("""https?://\S+""").find(text)?.value
-        val link = url?.let { SocialFeeds.parse(it) }
+        // Any other web page is a recipe website to follow, or a recipe to import or save.
+        val link = url?.let { SocialFeeds.parse(it) ?: SocialLink.Website(it) }
         _addState.value = when {
             text.isBlank() -> AddState.Idle
             link != null -> AddState.Found(link)
@@ -202,8 +205,40 @@ class SourceViewModel(private val repository: RecipeRepository, val sourceId: Lo
     val source: StateFlow<FollowedSource?> = follows.observeSource(sourceId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val posts: StateFlow<List<FavoritePost>> = follows.observeFeed(sourceId)
+    /** A website's older recipes loaded with "More recipes", or the results of a search in it. */
+    private val extra = MutableStateFlow<List<FeedPost>>(emptyList())
+
+    private val allPosts: StateFlow<List<FavoritePost>> = follows.observeFeed(sourceId, extra)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private var nextPage = 0
+    private val _canLoadMore = MutableStateFlow(false)
+    /** A website with more recipes than those shown. */
+    val canLoadMore: StateFlow<Boolean> = _canLoadMore.asStateFlow()
+
+    private val _loadingMore = MutableStateFlow(false)
+    val loadingMore: StateFlow<Boolean> = _loadingMore.asStateFlow()
+
+    /** The website can be searched (WordPress). */
+    val canSearch = MutableStateFlow(false)
+
+    /** The search shown, or null for the latest recipes. */
+    private val _query = MutableStateFlow<String?>(null)
+    val query: StateFlow<String?> = _query.asStateFlow()
+    private var latest: List<FeedPost> = emptyList()
+
+    /** Posts not about cooking are left out until the user asks to see them. */
+    val showOffTopic = MutableStateFlow(false)
+
+    val posts: StateFlow<List<FavoritePost>> = combine(allPosts, showOffTopic, _query, extra) { list, all, query, more ->
+        // A search shows only what it found.
+        val shown = if (query != null) more.map { it.postKey }.toSet().let { found -> list.filter { it.postKey in found } } else list
+        if (all) shown else shown.filterNot { it.offTopic }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** How many posts are left out. */
+    val hiddenCount: StateFlow<Int> = combine(allPosts, showOffTopic) { list, all -> if (all) 0 else list.count { it.offTopic } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val books: StateFlow<List<RecipeBookSummary>> = repository.books.observeRecipeBooks().map { list -> list.filterNot { it.isPack } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -218,6 +253,12 @@ class SourceViewModel(private val repository: RecipeRepository, val sourceId: Lo
 
     init {
         viewModelScope.launch {
+            val stored = follows.storedSource(sourceId)
+            if (stored?.network == SocialNetwork.WEB.name) {
+                canSearch.value = stored.wpApi != null
+                nextPage = 2
+                _canLoadMore.value = true
+            }
             val checked = follows.observeSource(sourceId).firstOrNull()?.checkedAt
             if ((checked ?: 0L) < System.currentTimeMillis() - FollowRepository.STALE_AFTER_MILLIS) refresh()
         }
@@ -234,6 +275,50 @@ class SourceViewModel(private val repository: RecipeRepository, val sourceId: Lo
 
     fun consumeMessage() {
         _message.value = null
+    }
+
+    /** The website's next recipes (see FollowRepository.moreFromWebsite). */
+    fun loadMore() {
+        if (_loadingMore.value || !_canLoadMore.value) return
+        viewModelScope.launch {
+            _loadingMore.value = true
+            val known = (allPosts.value.map { it.postKey } + extra.value.map { it.postKey }).toSet()
+            val page = follows.moreFromWebsite(sourceId, nextPage, known)
+            if (page == null) {
+                _message.value = L10n.str(R.string.favorites_more_failed)
+            } else {
+                val fresh = page.posts.filter { it.postKey !in known }
+                extra.value = extra.value + fresh
+                nextPage = page.next
+                // A feed that does not go by pages gives the same recipes again: there are no more.
+                _canLoadMore.value = page.hasMore && fresh.isNotEmpty()
+            }
+            _loadingMore.value = false
+        }
+    }
+
+    /** Searches the website (blank goes back to its latest recipes). */
+    fun search(text: String) {
+        val query = text.trim()
+        if (query.isEmpty()) {
+            if (_query.value != null) {
+                _query.value = null
+                extra.value = latest
+            }
+            return
+        }
+        viewModelScope.launch {
+            _refreshing.value = true
+            val results = follows.searchWebsite(sourceId, query)
+            _refreshing.value = false
+            if (results == null) {
+                _message.value = L10n.str(R.string.favorites_more_failed)
+                return@launch
+            }
+            if (_query.value == null) latest = extra.value
+            _query.value = query
+            extra.value = results
+        }
     }
 
     /**

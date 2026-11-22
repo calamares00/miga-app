@@ -1,0 +1,3 @@
+What's new in version 1.0.51:
+• Favourites: also follow recipe websites (or a section, such as /recipes/). See their latest recipes with photos, "More recipes" and, on many websites, a search. Import them in one tap.
+• Posts from your channels that are not about cooking (family photos, trips…) no longer show up; in each channel you can see them if you want.
