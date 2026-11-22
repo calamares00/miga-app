@@ -56,7 +56,7 @@ object RecipeUrlFetcher {
             try {
                 connection.connectTimeout = TIMEOUT_MILLIS
                 connection.readTimeout = TIMEOUT_MILLIS
-                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Android) Miga-Recipe-App")
+                connection.setRequestProperty("User-Agent", USER_AGENT)
                 if (connection.responseCode != HttpURLConnection.HTTP_OK) return@runCatching null
                 if (connection.contentType?.startsWith("image/") == false) return@runCatching null
                 connection.inputStream.use { readAtMost(it, MAX_IMAGE_BYTES) }
@@ -76,7 +76,7 @@ object RecipeUrlFetcher {
             try {
                 connection.connectTimeout = TIMEOUT_MILLIS
                 connection.readTimeout = TIMEOUT_MILLIS
-                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Android) Miga-Recipe-App")
+                connection.setRequestProperty("User-Agent", USER_AGENT)
                 if (connection.responseCode != HttpURLConnection.HTTP_OK) return@runCatching false
                 if (connection.contentLengthLong > maxBytes) return@runCatching false
                 var total = 0L
@@ -100,8 +100,17 @@ object RecipeUrlFetcher {
         }.getOrDefault(false)
     }
 
+    /** How Miga presents itself to websites. */
+    const val USER_AGENT = "Mozilla/5.0 (Android) Miga-Recipe-App"
+
+    /**
+     * The same without "Android", for YouTube: with it, YouTube sends phones to a page that says
+     * the browser is not supported.
+     */
+    const val PLAIN_USER_AGENT = "Miga-Recipe-App/1.0"
+
     /** Downloads [url] (following redirects) and returns its HTML. */
-    suspend fun fetchPage(url: String): PageFetchResult = withContext(AppDispatchers.io) {
+    suspend fun fetchPage(url: String, userAgent: String = USER_AGENT): PageFetchResult = withContext(AppDispatchers.io) {
         try {
             var target = URL(url.trim())
             for (attempt in 0..MAX_REDIRECTS) {
@@ -113,7 +122,7 @@ object RecipeUrlFetcher {
                 // HttpURLConnection does not follow redirects between http and https, so they are
                 // followed by hand.
                 connection.instanceFollowRedirects = false
-                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Android) Miga-Recipe-App")
+                connection.setRequestProperty("User-Agent", userAgent)
                 try {
                     val responseCode = connection.responseCode
                     val location = connection.getHeaderField("Location")

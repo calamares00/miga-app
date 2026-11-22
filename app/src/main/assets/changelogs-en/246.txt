@@ -1,0 +1,4 @@
+What's new in version 1.0.48:
+• Recipes from YouTube: paste the link to a video or Short, or share it from YouTube to Miga.
+• If the description has the recipe or links to the author's website, Miga imports it from there, with the thumbnail. Otherwise Gemini watches the video: what is said and what is written on screen.
+• For Instagram and YouTube recipes, the source is "@author - reel" or "video", linked to their profile and the post.

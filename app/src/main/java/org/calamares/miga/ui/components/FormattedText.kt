@@ -145,9 +145,6 @@ fun withBareLinks(text: AnnotatedString, linkColor: Color): AnnotatedString {
     }
 }
 
-/** The first web address in [text], if any. */
-fun firstWebLink(text: String): String? = BARE_URL.find(text)?.value
-
 /**
  * Opens a link in the browser. Only http and https: a recipe can come from anyone (shared,
  * imported), and other schemes could open apps or files.
