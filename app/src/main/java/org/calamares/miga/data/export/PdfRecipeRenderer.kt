@@ -1,6 +1,7 @@
 package org.calamares.miga.data.export
 
 import org.calamares.miga.data.model.formatDuration
+import org.calamares.miga.data.model.SourceText
 import org.calamares.miga.data.model.displayText
 import org.calamares.miga.data.model.RichText
 import android.graphics.Typeface
@@ -264,7 +265,7 @@ object PdfRecipeRenderer {
             items += Item.Text(richSpanned(recipe.notes), paints.body, 4f)
         }
         if (recipe.source.isNotBlank()) {
-            items += Item.Text(L10n.str(R.string.source) + ": " + recipe.source, paints.body, 10f)
+            items += Item.Text(L10n.str(R.string.source) + ": " + SourceText.plain(recipe.source), paints.body, 10f)
         }
 
         return items

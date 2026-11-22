@@ -8,10 +8,10 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import org.calamares.miga.data.health.ingredientWarning
+import org.calamares.miga.data.model.SourceText
 import org.calamares.miga.data.health.IngredientWarning
 import org.calamares.miga.data.allergens.Allergen
 import org.calamares.miga.data.allergens.AllergenLevel
-import org.calamares.miga.ui.components.firstWebLink
 import org.calamares.miga.ui.components.FormattedText
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material.icons.filled.ContentCopy
@@ -398,8 +398,9 @@ internal fun NutritionStat(value: String, label: String) {
 }
 
 /**
- * Where the recipe comes from: web addresses open in the browser, and a button copies the address
- * (or the whole text when there is none).
+ * Where the recipe comes from: web addresses and links ("[@user](profile) - [reel](post)") open
+ * in the browser, and a button copies the address of the post (or the whole text when there is
+ * none).
  */
 @Composable
 internal fun SourceLine(source: String) {
@@ -412,7 +413,7 @@ internal fun SourceLine(source: String) {
             modifier = Modifier.weight(1f)
         )
         IconButton(onClick = {
-            val text = firstWebLink(source) ?: source.trim()
+            val text = SourceText.mainLink(source) ?: source.trim()
             context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText(L10n.str(R.string.source), text))
             // Android 13 and later show their own notice.
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {

@@ -5,6 +5,7 @@ import org.calamares.miga.R
 import org.calamares.miga.data.ai.AiAudio
 import org.calamares.miga.data.ai.AiCandidate
 import org.calamares.miga.data.ai.AiProgressReporter
+import org.calamares.miga.data.ai.AiProvider
 import org.calamares.miga.data.ai.AiRequest
 import org.calamares.miga.data.ai.AiText
 import org.calamares.miga.data.ai.AudioSupport
@@ -84,3 +85,34 @@ If neither the video nor the caption contains a recipe, leave "name" empty. Put 
 (${post.url}) in "source". If you cannot determine a value, use null (or an empty list) instead of making it up.
 """.trimIndent() + knownLabelsInstruction(known) + transcriptionLanguageInstruction()
 }
+
+/** Providers whose model can watch a YouTube video by its address. */
+val AiCandidate.watchesYouTube: Boolean get() = provider == AiProvider.GEMINI
+
+/**
+ * The recipe cooked in a YouTube [video]: Gemini watches it (what is said and what is written on
+ * screen) together with its title and description.
+ */
+suspend fun AiCandidate.importRecipeFromYouTube(video: YouTubeVideo, known: KnownLabels = KnownLabels.NONE): RecipeVisionResult {
+    val request = AiRequest(buildYouTubePrompt(video, known), RECIPE_MAX_TOKENS, videoUrl = video.url)
+    return parseRecipeAnswer(completeInAppLanguage(request)) { L10n.str(R.string.no_recipe_in_youtube_video) }
+}
+
+internal fun buildYouTubePrompt(video: YouTubeVideo, known: KnownLabels = KnownLabels.NONE): String = """
+You are a cooking assistant. The attached YouTube video (${video.url}) is "${video.title}"${video.author?.let { " by $it" }.orEmpty()}.
+Watch it: the recipe is usually told aloud and shown on screen (ingredient lists, quantities and
+times written over the images). Its description, which may also have the recipe or part of it:
+---
+${video.description.orEmpty().ifBlank { "(no description)" }}
+---
+
+Write the recipe that is cooked in the video, joining what is said, what is written on screen and
+the description. Use only quantities that are said, shown or written; when one is not given, leave
+"quantity" null rather than guessing. Ignore greetings, sponsors and requests to subscribe, like or
+comment. If the video has several recipes, write the main one.
+
+Return ONLY a compact JSON object (no indentation or line breaks) with exactly this format, with no explanations or extra text:
+$RECIPE_JSON_FORMAT
+If the video does not contain a recipe, leave "name" empty. Put the video's URL (${video.url}) in
+"source". If you cannot determine a value, use null (or an empty list) instead of making it up.
+""".trimIndent() + knownLabelsInstruction(known) + transcriptionLanguageInstruction()
