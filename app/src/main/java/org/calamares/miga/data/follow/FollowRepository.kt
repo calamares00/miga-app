@@ -62,9 +62,18 @@ data class ImportedRecipe(val recipeId: Long, val bookName: String)
 
 sealed interface FollowResult {
     data class Followed(val sourceId: Long) : FollowResult
-    data class AlreadyFollowing(val sourceId: Long) : FollowResult
+    data class AlreadyFollowing(val sourceId: Long, val network: SocialNetwork) : FollowResult
+
+    /** Another section of the website (or the whole site) is followed already: [sourceId], [name]. */
+    data class SameSite(val sourceId: Long, val name: String) : FollowResult
+
+    /** Its latest posts are not about cooking (see CookingFilter.isOffTopicSource). */
+    data class NotAboutCooking(val name: String) : FollowResult
     data class Error(val reason: String) : FollowResult
 }
+
+/** Warnings the user has seen and accepted, so following goes ahead anyway. */
+enum class FollowCheck { SAME_SITE, COOKING }
 
 /**
  * YouTube channels and Instagram profiles followed in Favourites, their latest posts (downloaded
@@ -142,7 +151,8 @@ class FollowRepository(db: AppDatabase) {
                 // What the user saved or imported stays, and so does a post that has a recipe in it.
                 offTopic = !isSaved && importedRecipe == null && !hasRecipe && CookingFilter.isOffTopic(post.title, post.description)
             )
-        }
+        // Two followed sections of one website can list the same recipe: show it once.
+        }.distinctBy { it.id }
     }
 
     fun observeSavedPosts(): Flow<List<FavoritePost>> = combine(dao.observeSavedPosts(), observeImported()) { saved, imported ->
@@ -184,16 +194,23 @@ class FollowRepository(db: AppDatabase) {
     private fun readsWithoutAssistant(title: String, description: String, author: String?): Boolean =
         SocialPostRecipe.parse(SocialPost(listOf(title, description).joinToString("\n\n"), null, author, "", "")) != null
 
-    /** Follows the channel or profile at [link], downloading its details and latest posts. */
-    suspend fun follow(link: SocialLink): FollowResult {
-        if (link is SocialLink.Website) return followWebsite(link.url)
+    /**
+     * Follows the channel, profile or website at [link], downloading its details and latest posts.
+     * It asks first (a result the user answers) when the website is followed through another of its
+     * sections or when the source is not about cooking, unless [accepted] says it was answered.
+     */
+    suspend fun follow(link: SocialLink, accepted: Set<FollowCheck> = emptySet()): FollowResult {
+        if (link is SocialLink.Website) return followWebsite(link.url, accepted)
         val fetched = when (link) {
             is SocialLink.YouTubeChannel -> fetchYouTube(link.url)
             is SocialLink.InstagramProfile -> fetchInstagram(link.username)
             else -> null
         } ?: return FollowResult.Error(L10n.str(R.string.follow_not_readable))
         val (info, posts) = fetched
-        dao.findSource(info.network.name, info.key)?.let { return FollowResult.AlreadyFollowing(it.id) }
+        dao.findSource(info.network.name, info.key)?.let { return FollowResult.AlreadyFollowing(it.id, info.network) }
+        if (FollowCheck.COOKING !in accepted && CookingFilter.isOffTopicSource(listOfNotNull(info.name, info.handle).joinToString(" "), posts.map { it.title to it.description })) {
+            return FollowResult.NotAboutCooking(info.name)
+        }
         val now = System.currentTimeMillis()
         val id = dao.insertSource(
             FollowedSourceEntity(
@@ -301,7 +318,13 @@ class FollowRepository(db: AppDatabase) {
     /** Recipes of a website, a page at a time; [next] is the page to ask for to get more. */
     data class WebPage(val posts: List<FeedPost>, val next: Int, val hasMore: Boolean)
 
-    private suspend fun followWebsite(pageUrl: String): FollowResult {
+    /** A followed website on the host of one of [urls] ("www." aside), or null. */
+    suspend fun followedSite(vararg urls: String): FollowedSourceEntity? {
+        val hosts = urls.map { WebFeeds.hostOf(it) }.filter { it.isNotEmpty() }.toSet()
+        return dao.observeSources().first().firstOrNull { it.network == SocialNetwork.WEB.name && WebFeeds.hostOf(it.url) in hosts }
+    }
+
+    private suspend fun followWebsite(pageUrl: String, accepted: Set<FollowCheck>): FollowResult {
         val page = RecipeUrlFetcher.fetchPage(pageUrl) as? PageFetchResult.Success ?: return FollowResult.Error(L10n.str(R.string.follow_not_readable))
         val site = withContext(AppDispatchers.default) { WebFeeds.readSite(page.html, page.url) }
         // The address pasted first, then the one it led to (recetasderechupete.com goes to abc.es,
@@ -325,7 +348,9 @@ class FollowRepository(db: AppDatabase) {
         }
         if (feed == null && api == null) return FollowResult.Error(L10n.str(R.string.follow_web_no_feed))
         val key = feed ?: (api + (category?.let { "?category=$it" } ?: ""))
-        dao.findSource(SocialNetwork.WEB.name, key)?.let { return FollowResult.AlreadyFollowing(it.id) }
+        dao.findSource(SocialNetwork.WEB.name, key)?.let { return FollowResult.AlreadyFollowing(it.id, SocialNetwork.WEB) }
+        // Two sections of one website share recipes: say which is followed and let the user choose.
+        if (FollowCheck.SAME_SITE !in accepted) followedSite(pageUrl, page.url)?.let { return FollowResult.SameSite(it.id, it.name) }
         val now = System.currentTimeMillis()
         val entity = FollowedSourceEntity(
             network = SocialNetwork.WEB.name, key = key, handle = WebFeeds.hostOf(page.url), name = site.name,
@@ -334,6 +359,12 @@ class FollowRepository(db: AppDatabase) {
         )
         val first = webPage(entity, 1) ?: return FollowResult.Error(L10n.str(R.string.follow_not_readable))
         if (first.posts.isEmpty()) return FollowResult.Error(L10n.str(R.string.follow_web_no_feed))
+        // A recipe's address usually says it is one ("/recetas/…"): it counts with its title.
+        if (FollowCheck.COOKING !in accepted &&
+            CookingFilter.isOffTopicSource("${site.name} ${WebFeeds.hostOf(page.url)}", first.posts.map { it.title to "${it.description} ${it.url}" })
+        ) {
+            return FollowResult.NotAboutCooking(site.name)
+        }
         val id = dao.insertSource(entity)
         dao.replacePosts(id, first.posts.map { it.toEntity(id) })
         return FollowResult.Followed(id)

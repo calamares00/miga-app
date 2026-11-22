@@ -18,6 +18,7 @@ import org.calamares.miga.R
 import org.calamares.miga.data.follow.FavoritePost
 import org.calamares.miga.data.follow.FeedPost
 import org.calamares.miga.data.follow.FollowRepository
+import org.calamares.miga.data.follow.FollowCheck
 import org.calamares.miga.data.follow.FollowResult
 import org.calamares.miga.data.follow.SocialFeeds
 import org.calamares.miga.data.follow.FollowedSource
@@ -36,6 +37,12 @@ sealed interface AddState {
     data object Working : AddState
     data class Found(val link: SocialLink) : AddState
     data class NotSupported(val text: String) : AddState
+
+    /**
+     * Following [link] needs an answer to [question] ([check]); [followedId] is the source already
+     * followed on the same website, to open it instead.
+     */
+    data class Ask(val link: SocialLink, val question: String, val check: FollowCheck, val accepted: Set<FollowCheck>, val followedId: Long? = null) : AddState
 }
 
 /**
@@ -142,23 +149,37 @@ class FavoritesViewModel(private val repository: RecipeRepository) : ViewModel()
         }
     }
 
+    /** "Follow anyway" after a warning. */
+    fun followAnyway(ask: AddState.Ask) = follow(ask.link, ask.accepted + ask.check)
+
+    /** Opens the source already followed on the same website instead of following another. */
+    fun openFollowed(ask: AddState.Ask) {
+        _addState.value = AddState.Idle
+        _openSource.value = ask.followedId
+    }
+
     fun resetAdd() {
         _addState.value = AddState.Idle
     }
 
-    fun follow(link: SocialLink) {
+    /** Follows [link]; [accepted] are the warnings the user has already answered with "Follow anyway". */
+    fun follow(link: SocialLink, accepted: Set<FollowCheck> = emptySet()) {
         viewModelScope.launch {
             _addState.value = AddState.Working
-            when (val result = follows.follow(link)) {
+            when (val result = follows.follow(link, accepted)) {
                 is FollowResult.Followed -> {
                     _addState.value = AddState.Idle
                     _openSource.value = result.sourceId
                 }
                 is FollowResult.AlreadyFollowing -> {
                     _addState.value = AddState.Idle
-                    _message.value = L10n.str(R.string.follow_already)
+                    _message.value = L10n.str(if (result.network == SocialNetwork.WEB) R.string.follow_already_web else R.string.follow_already)
                     _openSource.value = result.sourceId
                 }
+                is FollowResult.SameSite -> _addState.value =
+                    AddState.Ask(link, L10n.str(R.string.follow_same_site, result.name), FollowCheck.SAME_SITE, accepted, result.sourceId)
+                is FollowResult.NotAboutCooking -> _addState.value =
+                    AddState.Ask(link, L10n.str(R.string.follow_not_cooking, result.name), FollowCheck.COOKING, accepted)
                 is FollowResult.Error -> {
                     _addState.value = AddState.Found(link)
                     _message.value = result.reason
