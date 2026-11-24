@@ -360,22 +360,25 @@ class RecipeBooksViewModel(
     }
 
     /**
-     * Deletes the selected books: packs are uninstalled with their recipes; one's own books only
-     * when empty, as from the book editor (their recipes are moved or deleted first).
+     * Deletes the selected books: packs are uninstalled with their recipes and synced books are
+     * removed from this device with theirs (they stay on the server); one's own books only when
+     * empty, as from the book editor (their recipes are moved or deleted first).
      */
     fun deleteSelected() {
         val selected = selectedBooks()
         clearSelection()
         val packs = selected.filter { it.isPack }.map { it.id }.toSet()
-        val empty = selected.filter { !it.isPack && it.recipeCount == 0 }.map { it.id }.toSet()
-        val kept = selected.size - packs.size - empty.size
-        val deleted = packs.size + empty.size
+        val synced = selected.filter { !it.isPack && it.isSynced }.map { it.id }.toSet()
+        val empty = selected.filter { !it.isPack && !it.isSynced && it.recipeCount == 0 }.map { it.id }.toSet()
+        val kept = selected.size - packs.size - synced.size - empty.size
+        val deleted = packs.size + synced.size + empty.size
         if (deleted > 0) {
             // "Undo" is offered for a while (see PendingDeletions); books with recipes are kept.
             repository.books.deleteRecipeBooksWithUndo(
                 empty,
                 packs,
-                listOfNotNull(
+                syncedIds = synced,
+                message = listOfNotNull(
                     if (deleted == 1) L10n.str(R.string.book_deleted) else L10n.str(R.string.books_deleted_n, deleted),
                     L10n.str(R.string.books_not_deleted_n, kept).takeIf { kept > 0 }
                 ).joinToString(". ")

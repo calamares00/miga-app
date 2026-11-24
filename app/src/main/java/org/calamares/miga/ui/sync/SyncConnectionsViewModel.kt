@@ -11,6 +11,7 @@ import org.calamares.miga.data.share.SyncInvite
 import org.calamares.miga.data.share.SyncInviteCodec
 import org.calamares.miga.data.sync.SyncClient
 import org.calamares.miga.data.sync.SyncEngine
+import org.calamares.miga.data.sync.BookCatalogResult
 import org.calamares.miga.data.sync.SyncInvitationResult
 import org.calamares.miga.data.sync.SyncPingResult
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +39,7 @@ sealed interface InviteState {
     data class Error(val reason: String) : InviteState
 }
 
-class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewModel() {
+class SyncConnectionsViewModel(internal val repository: RecipeRepository) : ViewModel() {
 
     private val syncEngine = SyncEngine(repository)
 
@@ -60,6 +61,30 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
             syncEngine.syncConnection(context, connectionId)
             _syncingConnectionIds.value = _syncingConnectionIds.value - connectionId
         }
+    }
+
+    /** The connection whose books are being chosen, and whether it is right after joining it. */
+    private val _serverBooks = MutableStateFlow<Pair<Long, Boolean>?>(null)
+    val serverBooks: StateFlow<Pair<Long, Boolean>?> = _serverBooks
+
+    fun openServerBooks(connectionId: Long, firstTime: Boolean = false) {
+        _serverBooks.value = connectionId to firstTime
+    }
+
+    fun closeServerBooks() {
+        _serverBooks.value = null
+    }
+
+    /**
+     * Right after joining a server that has books and lets each device choose (miga-server
+     * 1.3.0): nothing is downloaded until the user picks the books. Returns true when the choice
+     * is to be shown.
+     */
+    private suspend fun chooseBooksFirst(connectionId: Long): Boolean {
+        val connection = repository.sync.getSyncConnectionOnce(connectionId) ?: return false
+        val catalog = (SyncClient.fetchBookCatalog(connection) as? BookCatalogResult.Success)?.catalog ?: return false
+        if (catalog.books.isEmpty() || catalog.selective) return false
+        return SyncClient.putBookSelection(connection, emptyList(), followNewBooks = true) is BookCatalogResult.Success
     }
 
     private val _inviteState = MutableStateFlow<InviteState>(InviteState.Idle)
@@ -127,10 +152,12 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
                 is SyncPingResult.Success -> {
                     val id = repository.sync.addSyncConnection(label.ifBlank { invite.namespaceId }, invite.serverUrl, invite.namespaceId, invite.token)
                     if (syncShopping) repository.shopping.setShoppingSyncConnection(id)
+                    val choose = chooseBooksFirst(id)
                     _syncingConnectionIds.value = _syncingConnectionIds.value + id
                     syncEngine.syncConnection(context, id)
                     _syncingConnectionIds.value = _syncingConnectionIds.value - id
                     _message.value = L10n.str(R.string.connection_x_added, label.ifBlank { invite.namespaceId })
+                    if (choose) openServerBooks(id, firstTime = true)
                 }
             }
         }
@@ -166,7 +193,8 @@ class SyncConnectionsViewModel(private val repository: RecipeRepository) : ViewM
 
     fun addConnection(label: String, serverUrl: String, namespaceId: String, accessToken: String) {
         viewModelScope.launch {
-            repository.sync.addSyncConnection(label, serverUrl, namespaceId, accessToken)
+            val id = repository.sync.addSyncConnection(label, serverUrl, namespaceId, accessToken)
+            if (chooseBooksFirst(id)) openServerBooks(id, firstTime = true)
         }
     }
 

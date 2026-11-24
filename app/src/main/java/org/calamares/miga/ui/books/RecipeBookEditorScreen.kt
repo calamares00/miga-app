@@ -298,13 +298,22 @@ fun RecipeBookEditorScreen(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text(if (viewModel.isPack) L10n.str(R.string.uninstall_pack) else L10n.str(R.string.delete_book_2)) },
+            title = {
+                Text(
+                    when {
+                        viewModel.isPack -> L10n.str(R.string.uninstall_pack)
+                        viewModel.syncConnectionId != null -> L10n.str(R.string.remove_book_from_device_x, viewModel.name)
+                        else -> L10n.str(R.string.delete_book_2)
+                    }
+                )
+            },
             text = {
                 Text(
-                    if (viewModel.isPack) {
-                        L10n.str(R.string.sure_want_uninstall_x_recipes, viewModel.name)
-                    } else {
-                        L10n.str(R.string.sure_want_delete_x_cant, viewModel.name)
+                    when {
+                        viewModel.isPack -> L10n.str(R.string.sure_want_uninstall_x_recipes, viewModel.name)
+                        // Removing a synced book never deletes it from the server or the other devices.
+                        viewModel.syncConnectionId != null -> L10n.str(R.string.delete_synced_books_body)
+                        else -> L10n.str(R.string.sure_want_delete_x_cant, viewModel.name)
                     }
                 )
             },

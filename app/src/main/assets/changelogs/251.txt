@@ -1,0 +1,4 @@
+Novedades de la versión 1.0.53:
+• Elige qué libros del servidor quieres en cada móvil, en Ajustes › Servidor de sincronización › Libros del servidor. Los demás no ocupan espacio ni datos. Al unirte a un servidor eliges antes de descargar nada.
+• Borrar un libro sincronizado lo quita solo de este móvil: sigue en el servidor y en los demás. Para borrarlo de todos, usa la web del servidor.
+• Necesita miga-server 1.3.0 o posterior.

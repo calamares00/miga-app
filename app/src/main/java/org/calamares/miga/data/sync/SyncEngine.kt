@@ -82,6 +82,44 @@ class SyncEngine(private val repository: RecipeRepository) {
         return SyncOutcome.Success(pulled, pushed)
     }
 
+    /**
+     * Tells the server this device stops syncing [bookUid] (it was removed from this device). A
+     * server before 1.3.0 cannot choose books: there is nothing to tell it. False to retry later.
+     */
+    private suspend fun unfollowOnServer(connection: SyncConnection, bookUid: String): Boolean =
+        when (val current = SyncClient.fetchBookCatalog(connection)) {
+            BookCatalogResult.Unsupported -> true
+            is BookCatalogResult.Error -> false
+            is BookCatalogResult.Success -> {
+                val followed = current.catalog.books.filter { it.followed }.map { it.uid }
+                if (bookUid !in followed && current.catalog.selective) {
+                    true
+                } else {
+                    SyncClient.putBookSelection(connection, followed - bookUid, current.catalog.followNewBooks) is BookCatalogResult.Success
+                }
+            }
+        }
+
+    /**
+     * Downloads whole books this device has just started following ([BookContentDto]): the book,
+     * its recipes and photos, applied like any change. Returns how many could not be downloaded.
+     */
+    suspend fun downloadBooks(context: Context, connectionId: Long, bookUids: Collection<String>): Int = syncLock.withLock {
+        val connection = repository.sync.getSyncConnectionOnce(connectionId) ?: return@withLock bookUids.size
+        bookUids.count { uid ->
+            when (val result = SyncClient.fetchBookContent(connection, uid)) {
+                is BookContentResult.Success -> {
+                    val content = result.content
+                    // The cursor does not move: later changes of the book still arrive as usual.
+                    val failedPhotos = applyChanges(context, connection, ChangesResponseDto(0, listOf(content.book), content.recipes, content.photos))
+                    failedPhotos.isNotEmpty()
+                }
+                BookContentResult.NotFound -> false
+                is BookContentResult.Error -> true
+            }
+        }
+    }
+
     /** Lists are applied before items: an item of a new list needs that list to exist locally. */
     private suspend fun applyRemoteShopping(changes: ChangesResponseDto) {
         repository.shopping.applyRemoteShoppingLists(changes.shoppingLists)
@@ -215,6 +253,7 @@ class SyncEngine(private val repository: RecipeRepository) {
 
     private suspend fun pushBookChange(context: Context, connection: SyncConnection, uid: String, changeType: SyncChangeType): Boolean =
         when (changeType) {
+            SyncChangeType.UNFOLLOW -> unfollowOnServer(connection, uid)
             SyncChangeType.DELETE -> when (val result = SyncClient.deleteBook(connection, uid, System.currentTimeMillis())) {
                 is SyncPushResult.Applied -> true
                 is SyncPushResult.Conflict -> { applyServerBookCopy(context, connection, result.serverCopy); true }
@@ -261,6 +300,7 @@ class SyncEngine(private val repository: RecipeRepository) {
 
     private suspend fun pushRecipeChange(connection: SyncConnection, uid: String, changeType: SyncChangeType): Boolean =
         when (changeType) {
+            SyncChangeType.UNFOLLOW -> true // only books are followed
             SyncChangeType.DELETE -> when (val result = SyncClient.deleteRecipe(connection, uid, System.currentTimeMillis())) {
                 is SyncPushResult.Applied -> true
                 is SyncPushResult.Conflict -> { applyServerRecipeCopy(result.serverCopy); true }
@@ -305,6 +345,7 @@ class SyncEngine(private val repository: RecipeRepository) {
      */
     private suspend fun pushPhotoChange(context: Context, connection: SyncConnection, change: PendingSyncChangeEntity, changeType: SyncChangeType): Boolean =
         when (changeType) {
+            SyncChangeType.UNFOLLOW -> true // only books are followed
             SyncChangeType.DELETE -> {
                 val recipeUid = change.parentUid
                 if (recipeUid == null) {
