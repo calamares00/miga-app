@@ -1,4 +1,4 @@
 What's new in version 1.0.54:
-• Favourites is much smoother with many channels, profiles and websites: scrolling no longer jumps while they update.
-• If you import a trick or a tip rather than a recipe, the assistant offers to keep it in your tips library, under "Imported", with its source.
+• Favourites is much smoother with many channels, profiles and websites: scrolling no longer jumps.
+• If you import a trick or a tip, or a recipe that comes with tips, the assistant offers to keep them in your tips library, under "Imported", with their source.
 • Fuller recipes from websites that only give the ingredients: the assistant reads the whole page, steps included.

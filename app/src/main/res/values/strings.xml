@@ -1824,4 +1824,9 @@
     <string name="tip_found_add">"Add to my tips"</string>
     <string name="tip_found_added">"Tip added to your library"</string>
     <string name="ai_step_page_recipe_incomplete">"The page's recipe has no steps: the assistant reads the whole page"</string>
+    <string name="extra_tips_title">"There are also %1$d tips"</string>
+    <string name="extra_tips_body">"Besides the recipe, the assistant found these tips. Choose the ones you want to keep in your tips library."</string>
+    <string name="extra_tips_save">"Save"</string>
+    <string name="extra_tips_skip">"Not now"</string>
+    <string name="extra_tips_saved">"Tips saved: %1$d"</string>
 </resources>

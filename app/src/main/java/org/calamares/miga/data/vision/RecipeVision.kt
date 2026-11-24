@@ -47,7 +47,9 @@ data class RecipeVisionResultDto(
     /** Photos of the finished dish found in the images (only when importing from photos). */
     val dishPhotos: List<DishPhotoDto> = emptyList(),
     /** Set instead of a recipe when what was imported is a cooking tip (see TIP_INSTEAD_OF_RECIPE). */
-    val tip: FoundTipDto? = null
+    val tip: FoundTipDto? = null,
+    /** Cooking tips given besides the recipe, useful beyond it (see TIP_INSTEAD_OF_RECIPE). */
+    val tips: List<FoundTipDto> = emptyList()
 )
 
 /**
