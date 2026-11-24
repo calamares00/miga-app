@@ -1823,4 +1823,9 @@
     <string name="tip_found_add">"Añadir a mis consejos"</string>
     <string name="tip_found_added">"Consejo añadido a tu biblioteca"</string>
     <string name="ai_step_page_recipe_incomplete">"La receta de la página viene sin pasos: la lee entera el asistente"</string>
+    <string name="extra_tips_title">"También hay %1$d consejos"</string>
+    <string name="extra_tips_body">"Además de la receta, el asistente ha encontrado estos consejos. Elige los que quieras guardar en tu biblioteca de consejos."</string>
+    <string name="extra_tips_save">"Guardar"</string>
+    <string name="extra_tips_skip">"Ahora no"</string>
+    <string name="extra_tips_saved">"Consejos guardados: %1$d"</string>
 </resources>

@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.editor
 
+import androidx.compose.material3.Checkbox
 import org.calamares.miga.data.tips.TipCategory
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
@@ -443,6 +444,44 @@ fun RecipeEditorScreen(
                 }
             },
             onCancel = onCancel
+        )
+    }
+
+    // Tips given besides the recipe: the user picks which ones go to the tips library.
+    val extraTips by viewModel.extraTips.collectAsStateWithLifecycle()
+    val extraOffer = extraTips
+    if (extraOffer != null && visionState !is VisionState.Loading) {
+        var chosen by remember(extraOffer) { mutableStateOf(extraOffer.tips.indices.toSet()) }
+        AlertDialog(
+            onDismissRequest = viewModel::dismissExtraTips,
+            icon = { Text("💡", style = MaterialTheme.typography.headlineMedium) },
+            title = { Text(L10n.str(R.string.extra_tips_title, extraOffer.tips.size)) },
+            text = {
+                Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
+                    Text(L10n.str(R.string.extra_tips_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    extraOffer.tips.forEachIndexed { index, tip ->
+                        Row(
+                            verticalAlignment = Alignment.Top,
+                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(12.dp))
+                                .clickable { chosen = if (index in chosen) chosen - index else chosen + index }
+                        ) {
+                            Checkbox(checked = index in chosen, onCheckedChange = { chosen = if (it) chosen + index else chosen - index })
+                            Column(Modifier.padding(top = 10.dp, end = 4.dp)) {
+                                Text(tip.title, style = MaterialTheme.typography.titleSmall)
+                                Text(tip.body, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = chosen.isNotEmpty(), onClick = {
+                    viewModel.saveExtraTips(chosen) { count ->
+                        Toast.makeText(context, L10n.str(R.string.extra_tips_saved, count), Toast.LENGTH_SHORT).show()
+                    }
+                }) { Text(L10n.str(R.string.extra_tips_save)) }
+            },
+            dismissButton = { TextButton(onClick = viewModel::dismissExtraTips) { Text(L10n.str(R.string.extra_tips_skip)) } }
         )
     }
 

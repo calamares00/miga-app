@@ -73,6 +73,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import org.calamares.miga.data.model.ContentKind
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -447,6 +448,7 @@ class RecipeEditorViewModel(
                             )
                             applyVisionResult(recipe)
                             post.imageUrl?.let { downloadPhoto(appContext, it, progress) }
+                            offerExtraTips(result.recipe.tips, postSource(post))
                             _visionState.value = VisionState.Loaded
                         }
                         is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(
@@ -490,6 +492,7 @@ class RecipeEditorViewModel(
                     val recipe = if (post != null) result.recipe.copy(source = postSource(post)) else result.recipe
                     applyVisionResult(recipe)
                     (post?.imageUrl ?: structured?.imageUrl ?: SchemaOrgRecipe.pageImage(page.html))?.let { downloadPhoto(appContext, it, progress) }
+                    offerExtraTips(result.recipe.tips, recipe.source.ifBlank { url })
                     _visionState.value = VisionState.Loaded
                 }
                 // The incomplete standard recipe is better than nothing.
@@ -554,6 +557,7 @@ class RecipeEditorViewModel(
             if (result is RecipeVisionResult.Success) {
                 applyVisionResult(result.recipe.copy(source = withPage(linked.url)))
                 video.thumbnailUrl?.let { downloadPhoto(appContext, it, progress) }
+                offerExtraTips(result.recipe.tips, withPage(linked.url))
                 _visionState.value = VisionState.Loaded
                 return
             }
@@ -584,6 +588,7 @@ class RecipeEditorViewModel(
                 val notes = if (watches) listOf(result.recipe.notes, L10n.str(R.string.recipe_from_video_note)) else listOf(result.recipe.notes)
                 applyVisionResult(result.recipe.copy(source = postSource(post), notes = notes.filter { it.isNotBlank() }.joinToString("\n\n")))
                 video.thumbnailUrl?.let { downloadPhoto(appContext, it, progress) }
+                offerExtraTips(result.recipe.tips, postSource(post))
                 _visionState.value = VisionState.Loaded
             }
             // Without Gemini, a description with no recipe gets the explanation of what is missing.
@@ -617,6 +622,32 @@ class RecipeEditorViewModel(
             }
         }
         _visionState.value = VisionState.Loaded
+    }
+
+    /** Tips given besides an imported recipe, offered for the tips library once it is loaded. */
+    data class ExtraTips(val tips: List<FoundTipDto>, val source: String)
+
+    private val _extraTips = MutableStateFlow<ExtraTips?>(null)
+    val extraTips: StateFlow<ExtraTips?> = _extraTips.asStateFlow()
+
+    private fun offerExtraTips(tips: List<FoundTipDto>, source: String) {
+        val useful = tips.filter { it.title.isNotBlank() && it.body.isNotBlank() }.take(MAX_EXTRA_TIPS)
+        if (useful.isNotEmpty()) _extraTips.value = ExtraTips(useful, source)
+    }
+
+    /** Adds the chosen tips ([chosen] are their positions) to the tips library. */
+    fun saveExtraTips(chosen: Set<Int>, onSaved: (Int) -> Unit) {
+        val offer = _extraTips.value ?: return
+        _extraTips.value = null
+        viewModelScope.launch {
+            val tips = offer.tips.filterIndexed { index, _ -> index in chosen }
+            tips.forEach { settingsRepository.addImportedTip(ImportedTip.create(it.category, it.title, it.body, it.keywords, offer.source)) }
+            onSaved(tips.size)
+        }
+    }
+
+    fun dismissExtraTips() {
+        _extraTips.value = null
     }
 
     private fun offerTip(tip: FoundTipDto, source: String) {
@@ -1035,3 +1066,6 @@ class RecipeEditorViewModel(
         }
     }
 }
+
+/** Tips offered at most besides an imported recipe. */
+private const val MAX_EXTRA_TIPS = 3

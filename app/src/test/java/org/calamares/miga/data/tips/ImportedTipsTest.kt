@@ -70,4 +70,16 @@ class ImportedTipsTest {
         assertEquals(emptyList<ImportedTip>(), ImportedTip.decode("not json"))
         assertEquals(emptyList<ImportedTip>(), ImportedTip.decode(null))
     }
+
+    @Test
+    fun `a recipe can come with tips useful beyond it`() {
+        val result = parse(
+            """{"name":"Gambas al ajillo","stepGroups":[{"name":null,"instructions":["Dora el ajo."]}],
+            "tips":[{"category":"TECHNIQUES","title":"Ajo sin quemar","body":"Échalo con el aceite aún frío.","keywords":["ajo"]}]}"""
+        )
+        val recipe = (result as RecipeVisionResult.Success).recipe
+        assertEquals(listOf("Ajo sin quemar"), recipe.tips.map { it.title })
+        assertTrue(buildUrlImportPrompt("https://example.com", "texto").contains("\"tips\""))
+    }
 }
+
