@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import org.calamares.miga.L10n
 import org.calamares.miga.R
+import org.calamares.miga.data.model.Ingredient
 import org.calamares.miga.data.model.RichText
 import org.calamares.miga.data.model.RichTextEditing
 
@@ -97,17 +98,14 @@ fun FormattedText(
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
     /** Times, temperatures and speeds in the theme colour, as in cooking mode (recipe steps). */
-    highlightTimes: Boolean = false
+    highlightTimes: Boolean = false,
+    /** The recipe's ingredients, shown in italics where the text names them (see StepMarks). */
+    ingredients: List<Ingredient> = emptyList()
 ) {
     val linkColor = MaterialTheme.colorScheme.primary
-    val annotated = remember(text, linkColor, highlightTimes) {
+    val annotated = remember(text, linkColor, highlightTimes, ingredients) {
         val rich = withBareLinks(richAnnotatedString(text, linkColor = linkColor), linkColor)
-        if (!highlightTimes) rich else buildAnnotatedString {
-            append(rich)
-            CookModeText.highlights(rich.text).forEach { range ->
-                addStyle(SpanStyle(color = linkColor, fontWeight = FontWeight.SemiBold), range.first, range.last + 1)
-            }
-        }
+        if (!highlightTimes && ingredients.isEmpty()) rich else withStepStyles(rich, SpanStyle(color = linkColor, fontWeight = FontWeight.SemiBold), ingredients)
     }
     if (annotated.getStringAnnotations(RICH_LINK_TAG, 0, annotated.length).isEmpty()) {
         Text(annotated, style = style, color = color, modifier = modifier)
@@ -125,6 +123,19 @@ fun FormattedText(
             }
         }
     )
+}
+
+/**
+ * The styles the app gives every step (see StepMarks): the recipe's [ingredients] in italics and
+ * times, temperatures, heat and settings in [highlight]. The highlight goes last, so a bold word
+ * inside it ("fuego medio-**fuerte**") looks like the rest of it.
+ */
+fun withStepStyles(text: AnnotatedString, highlight: SpanStyle, ingredients: List<Ingredient>): AnnotatedString = buildAnnotatedString {
+    append(text)
+    CookModeText.ingredientMentions(text.text, ingredients).forEach { range ->
+        addStyle(SpanStyle(fontStyle = FontStyle.Italic), range.first, range.last + 1)
+    }
+    CookModeText.highlights(text.text).forEach { range -> addStyle(highlight, range.first, range.last + 1) }
 }
 
 /** Addresses written as they are ("https://..."), not already inside a [text](url) link. */
