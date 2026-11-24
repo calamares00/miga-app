@@ -124,6 +124,7 @@ import org.calamares.miga.data.model.StepTimerParsing
 import org.calamares.miga.data.voice.DictationResult
 import org.calamares.miga.data.voice.SpeechDictation
 import org.calamares.miga.ui.components.richAnnotatedString
+import org.calamares.miga.ui.components.withStepStyles
 
 private data class CookStep(val groupName: String?, val stepNumberInGroup: Int, val instruction: String)
 
@@ -147,13 +148,8 @@ private fun cookPrefs(context: Context) = context.getSharedPreferences(COOK_PREF
  * base text is large, so weight alone is not enough to tell it apart) and the times,
  * temperatures, speeds and heat levels in [highlight].
  */
-private fun cookStepText(instruction: String, boldColor: Color, highlight: SpanStyle): AnnotatedString {
-    val formatted = richAnnotatedString(instruction, boldColor)
-    return buildAnnotatedString {
-        append(formatted)
-        CookModeText.highlights(formatted.text).forEach { range -> addStyle(highlight, range.first, range.last + 1) }
-    }
-}
+private fun cookStepText(instruction: String, boldColor: Color, highlight: SpanStyle, ingredients: List<Ingredient>): AnnotatedString =
+    withStepStyles(richAnnotatedString(instruction, boldColor), highlight, ingredients)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -776,11 +772,12 @@ private fun StepPage(
 ) {
     val colors = MaterialTheme.colorScheme
     // Times, temperatures and speeds in the theme's colour, like the bold text.
-    val text = remember(step.instruction, colors.primary) {
+    val text = remember(step.instruction, colors.primary, ingredients) {
         cookStepText(
             step.instruction,
             boldColor = colors.primary,
-            highlight = SpanStyle(color = colors.primary, fontWeight = FontWeight.SemiBold)
+            highlight = SpanStyle(color = colors.primary, fontWeight = FontWeight.SemiBold),
+            ingredients = ingredients
         )
     }
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {

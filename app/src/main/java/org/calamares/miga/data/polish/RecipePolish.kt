@@ -16,6 +16,7 @@ import org.calamares.miga.data.model.Ingredient
 import org.calamares.miga.data.model.IngredientGroup
 import org.calamares.miga.data.model.Recipe
 import org.calamares.miga.data.model.StepGroup
+import org.calamares.miga.data.model.StepMarks
 import org.calamares.miga.data.support.AiErrors
 import org.calamares.miga.data.vision.RECIPE_MAX_TOKENS
 import kotlin.coroutines.coroutineContext
@@ -47,8 +48,8 @@ sealed interface RecipePolishResult {
 }
 
 /**
- * Rewrites the texts of [recipe] (see [buildPolishPrompt]): clearer steps with times, speeds and
- * temperatures in bold and ingredients in italics, ingredients in standard units, spelling fixed.
+ * Rewrites the texts of [recipe] (see [buildPolishPrompt]): clearer steps (bold only for a
+ * warning, see StepMarks), ingredients in standard units, spelling fixed.
  * The answer is checked before it is offered: an answer that loses ingredients or steps is
  * treated as unreadable rather than shown.
  */
@@ -78,11 +79,15 @@ internal fun PolishedRecipeDto.toPolished(original: Recipe): PolishedRecipe {
                 }
         )
     }.filter { it.ingredients.isNotEmpty() }
+    // Times, heat and ingredients are styled by the app (see StepMarks): marks over them go.
+    val allIngredients = ingredients.flatMap { it.ingredients }
     val steps = stepGroups.map { group ->
         StepGroup(
             name = group.name?.trim()?.ifEmpty { null },
             // The app numbers the steps itself.
-            instructions = group.instructions.map { it.replace(STEP_NUMBER, "").trim() }.filter { it.isNotEmpty() }
+            instructions = group.instructions
+                .map { StepMarks.withoutRedundantMarks(it.replace(STEP_NUMBER, "").trim(), allIngredients) }
+                .filter { it.isNotEmpty() }
         )
     }.filter { it.instructions.isNotEmpty() }
 
@@ -93,7 +98,7 @@ internal fun PolishedRecipeDto.toPolished(original: Recipe): PolishedRecipe {
 
     return PolishedRecipe(
         name = name.trim().ifEmpty { original.name },
-        notes = if (original.notes.isBlank()) original.notes else notes.trim().ifEmpty { original.notes },
+        notes = if (original.notes.isBlank()) original.notes else StepMarks.withoutRedundantMarks(notes.trim(), allIngredients).ifEmpty { original.notes },
         ingredientGroups = ingredients,
         stepGroups = steps,
         changes = changes.map { it.trim() }.filter { it.isNotEmpty() }.take(MAX_CHANGES)
@@ -135,11 +140,11 @@ internal fun buildPolishPrompt(recipe: Recipe): String {
           missing for the result (for example preheating the oven before baking, or letting a dough
           rest when the recipe relies on it); never invent ingredients.
         - Never change quantities, times, temperatures or speeds.
-        - Put in bold, with **double asterisks**, every time or duration ("**10 minutes**"),
-          temperature or heat level ("**180 °C**", "**medium heat**") and speed of an appliance
-          ("**speed 4**", "**spoon speed**").
-        - Put in italics, with *single asterisks*, the ingredients when they are mentioned
-          ("add the *onion*").
+        - Do not mark times, temperatures, heat levels, appliance settings or ingredients: the app
+          highlights them by itself. Remove bold or italics that only mark one of those.
+        - Use bold, with **double asterisks**, only for a warning the cook must not miss
+          ("without moving them", "do not let it boil"), at most once per step and only when the
+          step has one. Keep any other bold or italics already in the recipe.
         - No other formatting: no headings, lists or numbers at the start of a step.
 
         Ingredients:
@@ -159,7 +164,7 @@ internal fun buildPolishPrompt(recipe: Recipe): String {
           note is then removed from the name. Keep true the ones already optional.
 
         Name and notes: fix only spelling and capitalisation of the name. Improve the notes like the
-        steps, with the same bold and italics, keeping all their information; leave them empty if
+        steps, with the same rules for bold, keeping all their information; leave them empty if
         they are empty.
 
         In "changes" list, in $appLanguage, at most 6 short sentences with the kinds of improvement

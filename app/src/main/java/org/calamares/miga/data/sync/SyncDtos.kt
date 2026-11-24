@@ -142,3 +142,47 @@ data class RevisionDto(val revision: Long)
 
 @Serializable
 internal data class SyncErrorDto(val message: String)
+
+// --- Books each device syncs (miga-server 1.3.0) ---
+
+/** A book of the server as this device sees it when choosing what to sync. */
+@Serializable
+data class ServerBookDto(
+    val uid: String,
+    val name: String,
+    val hasCoverPhoto: Boolean = false,
+    val coverColor: String? = null,
+    val coverEmoji: String? = null,
+    val description: String = "",
+    val author: String = "",
+    val recipeCount: Int = 0,
+    val photoCount: Int = 0,
+    /** Photos and cover, in bytes: about what following it downloads. */
+    val bytes: Long = 0,
+    val updatedAt: Long = 0,
+    /** Name of the device that uploaded it first, when the server knows it. */
+    val createdBy: String? = null,
+    /** This device syncs it. */
+    val followed: Boolean = false,
+    /** How many devices sync it. */
+    val devices: Int = 0
+)
+
+@Serializable
+data class BookCatalogDto(
+    /** This device chose its books; false means it gets all of them. */
+    val selective: Boolean = false,
+    val followNewBooks: Boolean = true,
+    val books: List<ServerBookDto> = emptyList()
+)
+
+@Serializable
+data class BookSelectionRequest(val books: List<String>, val followNewBooks: Boolean)
+
+/** A whole book, downloaded when this device starts following it. */
+@Serializable
+data class BookContentDto(
+    val book: BookSyncDto,
+    val recipes: List<RecipeSyncDto> = emptyList(),
+    val photos: List<PhotoMetaDto> = emptyList()
+)

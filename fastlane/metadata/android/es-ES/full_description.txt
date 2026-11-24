@@ -1,32 +1,48 @@
-Miga es el recetario de tu familia y tu lista de la compra en una sola app: sin anuncios, sin cuentas y con tus datos guardados en el teléfono.
+Miga es el recetario de tu familia y tu lista de la compra en una sola app: sin anuncios, sin cuentas y con tus recetas guardadas en tu móvil.
 
 LIBROS DE RECETAS
-• Organiza tus recetas en libros (por ejemplo, uno por cada persona de la familia), cada uno con su portada.
-• Recetas completas: ingredientes con cantidad y unidad, pasos, fotos, equipamiento necesario, dificultad, etiquetas y subrecetas (salsas, guarniciones…).
-• Búsqueda y filtros por categoría, etiqueta, equipamiento, ingrediente o dificultad, y favoritas a un toque.
-• Modo cocina: paso a paso en pantalla completa, con temporizadores y control por voz.
+• Organiza tus recetas en libros: el de la abuela, el de un amigo o uno por temas, cada uno con su portada, color, emoji y unas palabras sobre el libro.
+• Recetas completas: ingredientes con cantidad y unidad, pasos con formato, fotos, tiempos, dificultad, origen, etiquetas, equipamiento y subrecetas.
 • Ajusta las raciones y las cantidades se recalculan solas.
+• Busca por nombre o ingrediente y filtra por tiempo, dificultad, categoría, alérgenos y más. «¿Qué cocino con lo que tengo?» con lo que hay en tu despensa.
+
+GUARDA RECETAS DE DONDE ESTÉN
+• Pega o comparte el enlace de una web de recetas, un reel o un vídeo y queda guardado como una receta más, con su foto y el autor en la fuente.
+• Si la receta está escrita en la página o en el texto de la publicación, Miga la lee sin el asistente.
+• Fotografía una receta de un libro o escrita a mano y precarga el editor.
+• Packs de recetas listos para instalar: cocinas del mundo, arroces, panadería y más.
+
+FAVORITOS: TUS COCINEROS Y WEBS
+• Sigue canales de vídeo, perfiles y webs de recetas, y mira lo último que han publicado, con lo nuevo marcado.
+• En muchas webs, «Ver más recetas» y buscador.
+• Guarda los vídeos y reels que quieras cocinar e impórtalos con un toque. Lo que no es de cocina se oculta solo.
+
+MODO COCINA
+• Pasos en grande y pantalla siempre encendida.
+• Varios temporizadores que siguen aunque salgas de la app.
+• Lectura en voz alta y control por voz, con las manos libres.
 
 LISTA DE LA COMPRA
-• Añade escribiendo, dictando o escaneando el código de barras.
-• Se agrupa por categorías y se ordena por los pasillos de tu supermercado.
-• Varias listas a la vez y plantillas reutilizables (también con productos escaneados).
-• Ficha de producto de Open Food Facts: Nutri-Score, NOVA, alérgenos, aditivos y tabla nutricional, con una puntuación orientativa de 0 a 100.
-• Modo tienda: desliza para marcar y la pantalla no se apaga.
-• Widget para añadir artículos sin abrir la app.
+• Añade los ingredientes de una receta de una vez, escribiendo, dictando o escaneando el código de barras.
+• Ordenada por los pasillos de tu supermercado. Varias listas y plantillas.
+• Modo tienda: desliza para marcar y la pantalla no se apaga. Widget y lista compartida por QR.
+• Ficha del producto de Open Food Facts: Nutri-Score, NOVA, alérgenos y aditivos.
 
-IMPORTAR Y COMPARTIR
-• Exporta e importa recetas y libros (texto, PDF, JSON/ZIP con fotos) y haz copias de seguridad completas.
-• Packs de recetas listos para instalar.
-• Comparte la lista por texto o por código QR.
+ALÉRGENOS Y SALUD (OPCIONAL)
+• Los 14 alérgenos de la normativa europea y la lactosa, calculados a partir de los ingredientes: ves todos, solo los tuyos o ninguno.
+• Modo celíacos: qué conviene comprar certificado y cómo evitar la contaminación cruzada.
+• Raciones de hidratos por persona y «Ajustar a mi comida» según tu plan.
+Es información orientativa: revisa siempre las etiquetas y sigue la pauta de tu equipo médico.
 
-FUNCIONES OPCIONALES CON IA
-Con tu propia clave de Google Gemini, Anthropic Claude, OpenAI u OpenRouter (con modelos gratuitos): crea recetas a partir de una foto o de una página web, busca recetas de un plato, estima la nutrición y la valoración de salud o encuentra sustitutos de ingredientes. Solo se activan si configuras tu clave; el contenido generado se marca como tal y se puede reportar.
+ASISTENTE DE COCINA (OPCIONAL)
+Con tu propia clave de un proveedor de IA (hay opciones con modelos gratuitos): recetas desde fotos o desde el nombre de un plato, recetas de vídeos que no la traen escrita (escucha o ve el vídeo), mejorar la redacción, ideas y menús, y sustitutos de ingredientes. Muestra en cada momento los pasos que está haciendo de verdad. Solo funciona si configuras tu clave, que se guarda cifrada en el móvil.
 
-SINCRONIZACIÓN CON TU PROPIO SERVIDOR
-¿Quieres compartir libros y la lista de la compra en familia? Conecta Miga a un servidor que alojes tú mismo (miga-server) e invita a otros con un código QR.
+COMPARTIR, COPIAS Y FAMILIA
+• Comparte una receta o un libro como enlace cifrado, PDF con portada, imagen o archivo de Miga.
+• Copias de seguridad completas, con fotos y cifrado opcional.
+• Sincroniza libros y la lista de la compra en familia con un servidor que alojas tú (miga-server), invitando con un código QR. Cada móvil elige qué libros quiere.
 
 PRIVACIDAD
-Sin publicidad, sin analítica y sin cuentas. Internet solo se usa para las funciones que eliges: IA con tu clave, Open Food Facts, el catálogo de packs y tu servidor de sincronización.
+Sin publicidad, sin analítica y sin cuentas. Bloqueo con huella, rostro o PIN. Internet solo se usa para lo que tú eliges: importar recetas, Favoritos, el asistente con tu clave, Open Food Facts, el catálogo de packs y tu servidor.
 
-Los datos de productos proceden de Open Food Facts (licencia ODbL).
+Tema claro u oscuro, ocho colores de acento, en español e inglés. Los datos de productos proceden de Open Food Facts (licencia ODbL).

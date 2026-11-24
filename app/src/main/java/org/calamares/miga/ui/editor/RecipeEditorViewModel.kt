@@ -25,6 +25,7 @@ import kotlinx.coroutines.withContext
 import org.calamares.miga.data.ai.aiCandidates
 import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.ai.AiProgress
+import org.calamares.miga.data.follow.WebFeeds
 import org.calamares.miga.data.ai.AiProgressReporter
 import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.L10n
@@ -262,7 +263,7 @@ class RecipeEditorViewModel(
                 _visionState.value = VisionState.Error(L10n.str(R.string.couldnt_read_photos))
                 return@launchAiTask
             }
-            val result = progress.withHints(photoHints()) {
+            val result = progress.doing(::readingPhotos) {
                 settingsRepository.runAi<RecipeExtractionResult>(
                     needsImages = true,
                     errorOf = { (it as? RecipeExtractionResult.Error)?.reason },
@@ -346,7 +347,7 @@ class RecipeEditorViewModel(
                 return@launchAiTask
             }
             val dish = DishSuggestion(dishName, dishDescription, dishOrigin)
-            val result = progress.withHints(generationHints()) {
+            val result = progress.doing(::writingRecipe) {
                 settingsRepository.runAi<RecipeVisionResult>(
                     errorOf = { (it as? RecipeVisionResult.Error)?.reason },
                     error = { RecipeVisionResult.Error(it) },
@@ -380,7 +381,7 @@ class RecipeEditorViewModel(
                 importYouTube(appContext, id, progress)
                 return@launchAiTask
             }
-            progress.step(L10n.str(R.string.ai_step_downloading_page))
+            progress.step(L10n.str(if (SocialPostRecipe.isInstagram(url)) R.string.ai_step_downloading_post else R.string.ai_step_downloading_page))
             val page = when (val fetchResult = RecipeUrlFetcher.fetchPage(url)) {
                 is PageFetchResult.Success -> fetchResult
                 is PageFetchResult.Error -> {
@@ -390,6 +391,7 @@ class RecipeEditorViewModel(
             }
             val structured = withContext(AppDispatchers.default) { SchemaOrgRecipe.parse(page.html, page.url) }
             if (structured != null) {
+                progress.step(L10n.str(R.string.ai_step_found_in_page))
                 applyReadRecipe(appContext, structured, progress)
                 return@launchAiTask
             }
@@ -406,9 +408,11 @@ class RecipeEditorViewModel(
             val post = SocialPostRecipe.withEmbed(pagePost, embed, postUrl)
             val fromPost = post?.let { withContext(AppDispatchers.default) { SocialPostRecipe.parse(it) } }
             if (fromPost != null) {
+                progress.step(L10n.str(R.string.ai_step_found_in_post))
                 applyReadRecipe(appContext, fromPost.withSource(postSource(post)), progress)
                 return@launchAiTask
             }
+            if (post != null) progress.step(L10n.str(R.string.ai_step_post_without_recipe))
             val elsewhere = post?.let { SocialPostRecipe.recipeElsewhere(it) }
             // A video without the recipe in its caption: it is usually told aloud.
             val videoUrl = embed?.videoUrl
@@ -416,7 +420,7 @@ class RecipeEditorViewModel(
                 progress.step(L10n.str(R.string.ai_step_downloading_video))
                 val audio = PostAudioExtractor.fromVideo(appContext, videoUrl)
                 if (audio != null) {
-                    val result = progress.withHints(videoHints()) {
+                    val result = progress.doing(::listeningAudio) {
                         settingsRepository.runAi<RecipeVisionResult>(
                             accepts = { it.audioSupport != null },
                             errorOf = { (it as? RecipeVisionResult.Error)?.reason },
@@ -454,6 +458,7 @@ class RecipeEditorViewModel(
                 _visionState.value = VisionState.Error(L10n.str(if (post != null) R.string.web_import_post_needs_assistant else R.string.web_import_needs_assistant))
                 return@launchAiTask
             }
+            if (post == null) progress.step(L10n.str(R.string.ai_step_page_not_standard))
             val pageText = if (post != null) postText(post) else when (val text = RecipeUrlFetcher.readableText(page.html)) {
                 is UrlFetchResult.Success -> text.text
                 is UrlFetchResult.Error -> {
@@ -461,7 +466,7 @@ class RecipeEditorViewModel(
                     return@launchAiTask
                 }
             }
-            val result = progress.withHints(webHints()) {
+            val result = progress.doing(::readingPage) {
                 settingsRepository.runAi<RecipeVisionResult>(
                     errorOf = { (it as? RecipeVisionResult.Error)?.reason },
                     error = { RecipeVisionResult.Error(it) },
@@ -486,7 +491,7 @@ class RecipeEditorViewModel(
      * video, or another assistant reading the description.
      */
     private suspend fun importYouTube(appContext: Context, id: String, progress: AiProgressReporter) {
-        progress.step(L10n.str(R.string.ai_step_downloading_page))
+        progress.step(L10n.str(R.string.ai_step_downloading_video_page))
         val page = RecipeUrlFetcher.fetchPage(YouTubeRecipe.watchUrl(id), RecipeUrlFetcher.PLAIN_USER_AGENT) as? PageFetchResult.Success
         val video = page?.let { withContext(AppDispatchers.default) { YouTubeRecipe.read(it.html, id) } }
             ?: (RecipeUrlFetcher.fetchPage(YouTubeRecipe.oEmbedUrl(id)) as? PageFetchResult.Success)?.let { YouTubeRecipe.readOEmbed(it.html, id) }
@@ -496,17 +501,20 @@ class RecipeEditorViewModel(
         }
         val post = YouTubeRecipe.asPost(video)
         withContext(AppDispatchers.default) { SocialPostRecipe.parse(post) }?.let {
+            progress.step(L10n.str(R.string.ai_step_found_in_description))
             applyReadRecipe(appContext, it.withSource(postSource(post)), progress)
             return
         }
+        progress.step(L10n.str(R.string.ai_step_description_without_recipe))
         // From the cook's website: the source names the video and the page.
         val withPage = { page: String -> postSource(post, listOf(L10n.str(R.string.source_kind_website) to page)) }
         val linkedPages = mutableListOf<PageFetchResult.Success>()
         for (link in YouTubeRecipe.recipePageLinks(video.description)) {
-            progress.step(L10n.str(R.string.ai_step_reading_linked_page))
+            progress.step(L10n.str(R.string.ai_step_reading_author_site_x, WebFeeds.hostOf(link)))
             val linked = RecipeUrlFetcher.fetchPage(link) as? PageFetchResult.Success ?: continue
             val read = withContext(AppDispatchers.default) { SchemaOrgRecipe.parse(linked.html, linked.url) }
             if (read == null) {
+                progress.step(L10n.str(R.string.ai_step_page_not_standard))
                 linkedPages += linked
                 continue
             }
@@ -522,7 +530,7 @@ class RecipeEditorViewModel(
         // than watching the video and has the exact quantities.
         for (linked in linkedPages) {
             val text = (RecipeUrlFetcher.readableText(linked.html) as? UrlFetchResult.Success)?.text ?: continue
-            val result = progress.withHints(webHints()) {
+            val result = progress.doing(::readingPage) {
                 settingsRepository.runAi<RecipeVisionResult>(
                     errorOf = { (it as? RecipeVisionResult.Error)?.reason },
                     error = { RecipeVisionResult.Error(it) },
@@ -541,7 +549,7 @@ class RecipeEditorViewModel(
             _visionState.value = VisionState.Error(L10n.str(R.string.youtube_needs_gemini))
             return
         }
-        val result = progress.withHints(if (watches) youtubeHints() else webHints()) {
+        val result = progress.doing(if (watches) ::watchingVideo else ::readingDescription) {
             if (watches) {
                 settingsRepository.runAi<RecipeVisionResult>(
                     accepts = { it.watchesYouTube },
@@ -571,12 +579,6 @@ class RecipeEditorViewModel(
         }
     }
 
-    private fun youtubeHints() = listOf(
-        L10n.str(R.string.ai_hint_watching_video),
-        L10n.str(R.string.ai_hint_ingredients),
-        L10n.str(R.string.ai_hint_steps)
-    )
-
     /**
      * Fills the form with a recipe read from a page without AI (schema.org or a post's caption),
      * downloads its photo and, with the assistant set up, improves the texts as with "Polish the
@@ -586,12 +588,13 @@ class RecipeEditorViewModel(
         applyVisionResult(read.recipe, byAi = false)
         read.imageUrl?.let { downloadPhoto(appContext, it, progress) }
         if (settingsRepository.aiCandidates().isNotEmpty()) {
-            progress.step(L10n.str(R.string.polish_working))
-            val polish = settingsRepository.runAi<RecipePolishResult>(
-                errorOf = { (it as? RecipePolishResult.Error)?.reason },
-                error = { RecipePolishResult.Error(it) },
-                progress = progress
-            ) { ai -> ai.polishRecipe(formAsRecipe()) }
+            val polish = progress.doing(::polishing) {
+                settingsRepository.runAi<RecipePolishResult>(
+                    errorOf = { (it as? RecipePolishResult.Error)?.reason },
+                    error = { RecipePolishResult.Error(it) },
+                    progress = progress
+                ) { ai -> ai.polishRecipe(formAsRecipe()) }
+            }
             when (polish) {
                 is RecipePolishResult.Success -> applyWebPolish(polish.polished)
                 is RecipePolishResult.Error -> webPolishError = polish.reason
@@ -600,6 +603,15 @@ class RecipeEditorViewModel(
         }
         _visionState.value = VisionState.Loaded
     }
+
+    // What the assistant does while it works, as a step with its provider ("Gemini is reading the page").
+    private fun readingPhotos(provider: String) = L10n.str(R.string.ai_doing_reading_photos, provider)
+    private fun writingRecipe(provider: String) = L10n.str(R.string.ai_doing_writing_recipe, provider)
+    private fun listeningAudio(provider: String) = L10n.str(R.string.ai_doing_listening_audio, provider)
+    private fun readingPage(provider: String) = L10n.str(R.string.ai_doing_reading_page, provider)
+    private fun watchingVideo(provider: String) = L10n.str(R.string.ai_doing_watching_video, provider)
+    private fun readingDescription(provider: String) = L10n.str(R.string.ai_doing_reading_description, provider)
+    private fun polishing(provider: String) = L10n.str(R.string.ai_doing_polishing, provider)
 
     private suspend fun downloadPhoto(appContext: Context, imageUrl: String, progress: AiProgressReporter) {
         progress.step(L10n.str(R.string.ai_step_downloading_photo))
@@ -627,32 +639,6 @@ class RecipeEditorViewModel(
     /** What the assistant reads of a post: its caption, saying where it was posted and by whom. */
     private fun postText(post: SocialPost): String =
         listOfNotNull("${post.site}${post.author?.let { " ($it)" }.orEmpty()}", post.text).joinToString("\n\n")
-
-    private fun photoHints() = listOf(
-        L10n.str(R.string.ai_hint_reading_text),
-        L10n.str(R.string.ai_hint_ingredients),
-        L10n.str(R.string.ai_hint_steps),
-        L10n.str(R.string.ai_hint_times),
-        L10n.str(R.string.ai_hint_dish_photo)
-    )
-
-    private fun generationHints() = listOf(
-        L10n.str(R.string.ai_hint_choosing_ingredients),
-        L10n.str(R.string.ai_hint_writing_steps),
-        L10n.str(R.string.ai_hint_times)
-    )
-
-    private fun videoHints() = listOf(
-        L10n.str(R.string.ai_hint_listening_video),
-        L10n.str(R.string.ai_hint_ingredients),
-        L10n.str(R.string.ai_hint_steps)
-    )
-
-    private fun webHints() = listOf(
-        L10n.str(R.string.ai_hint_finding_recipe_in_page),
-        L10n.str(R.string.ai_hint_ingredients),
-        L10n.str(R.string.ai_hint_steps)
-    )
 
     /**
      * Runs an AI operation that fills this form, showing [title] in the AI notification and, when
