@@ -175,7 +175,8 @@ private fun BulkImportRowItem(row: BulkImportRow, progress: AiProgress?, onClick
                 progress = progress,
                 fallback = L10n.str(R.string.processing),
                 modifier = Modifier.weight(1f),
-                spinnerSize = 20.dp
+                spinnerSize = 20.dp,
+                showDone = false
             )
             is BulkImportRowState.Success -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
