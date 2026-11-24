@@ -211,13 +211,7 @@ class BulkImportViewModel(
         }
         val sources = readable.map { it.first }
         val images = readable.map { it.second }
-        val hints = listOf(
-            L10n.str(R.string.ai_hint_reading_text),
-            L10n.str(R.string.ai_hint_ingredients),
-            L10n.str(R.string.ai_hint_steps),
-            L10n.str(R.string.ai_hint_dish_photo)
-        )
-        val result = progress.withHints(hints) {
+        val result = progress.doing({ L10n.str(R.string.ai_doing_reading_photos, it) }) {
             settingsRepository.runAi<RecipeExtractionResult>(
                 needsImages = true,
                 errorOf = { (it as? RecipeExtractionResult.Error)?.reason },

@@ -63,11 +63,9 @@ suspend fun <T> SettingsRepository.runAi(
     val failures = mutableListOf<Pair<AiCandidate, String>>()
     AiKeepAlive.hold {
         for ((position, candidate) in usable.withIndex()) {
-            val previous = failures.lastOrNull()?.first
-            progress?.step(
-                if (previous == null) L10n.str(R.string.ai_step_asking_x, candidate.provider.label)
-                else L10n.str(R.string.ai_step_fallback_x_y, previous.provider.label, candidate.provider.label)
-            )
+            // What this provider is doing ("Gemini is reading the page"); a failed one before it is
+            // already listed with its reason.
+            progress?.step(progress.doingFor(candidate.provider.label) ?: L10n.str(R.string.ai_step_asking_x, candidate.provider.label))
             var result = call(candidate)
             var reason = errorOf(result) ?: return@hold result
             if (!ErrorDetail.isAiError(reason)) return@hold result
@@ -76,6 +74,7 @@ suspend fun <T> SettingsRepository.runAi(
             // chance before moving on to the next provider.
             val summary = ErrorDetail.summary(reason)
             if (summary == L10n.str(R.string.ai_error_bad_response) || summary == L10n.str(R.string.ai_error_network)) {
+                progress?.fail(summary)
                 progress?.step(L10n.str(R.string.ai_step_retrying_x, candidate.provider.label))
                 if (summary == L10n.str(R.string.ai_error_network)) delay(NETWORK_RETRY_DELAY_MILLIS)
                 result = call(candidate)
@@ -88,12 +87,14 @@ suspend fun <T> SettingsRepository.runAi(
             while (position == usable.lastIndex && rateLimitRetries < MAX_RATE_LIMIT_RETRIES) {
                 val wait = RateLimits.waitMillis(reason)?.takeIf { it <= MAX_RATE_LIMIT_WAIT_MILLIS } ?: break
                 rateLimitRetries++
+                progress?.fail(ErrorDetail.summary(reason))
                 waitForRateLimit(candidate, wait + RATE_LIMIT_MARGIN_MILLIS, progress)
                 result = call(candidate)
                 reason = errorOf(result) ?: return@hold result
                 if (!ErrorDetail.isAiError(reason)) return@hold result
             }
             failures += candidate to reason
+            progress?.fail(ErrorDetail.summary(reason))
         }
         null
     }?.let { return it }

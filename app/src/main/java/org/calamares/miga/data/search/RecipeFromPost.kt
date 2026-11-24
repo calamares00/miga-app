@@ -39,13 +39,14 @@ suspend fun AiCandidate.importRecipeFromPostAudio(
             parseRecipeAnswer(completeInAppLanguage(request), noRecipe)
         }
         AudioSupport.TRANSCRIBES -> {
-            progress?.step(L10n.str(R.string.ai_step_transcribing_x, provider.label))
+            // It does not listen: the step it was given ("is listening to the audio") is a transcription.
+            progress?.replace(L10n.str(R.string.ai_step_transcribing_x, provider.label))
             when (val transcript = transcribe(audio.m4a)) {
                 is AiText.Error -> RecipeVisionResult.Error(transcript.reason)
                 is AiText.Success -> if (transcript.text.isBlank()) {
                     RecipeVisionResult.Error(noRecipe())
                 } else {
-                    progress?.step(L10n.str(R.string.ai_step_asking_x, provider.label))
+                    progress?.step(L10n.str(R.string.ai_doing_reading_transcript, provider.label))
                     val request = AiRequest(buildPostAudioPrompt(post, transcript.text, known), RECIPE_MAX_TOKENS)
                     parseRecipeAnswer(completeInAppLanguage(request), noRecipe)
                 }
