@@ -88,4 +88,17 @@ class SchemaOrgRecipeTest {
         assertNull(SchemaOrgRecipe.minutes(JsonPrimitive("PT0M")))
         assertNull(SchemaOrgRecipe.minutes(JsonPrimitive("30 minutos")))
     }
+
+    @Test
+    fun `a standard recipe without its steps is told apart, and the page picture is found`() {
+        val html = """<html><head><meta property="og:image" content="https://example.com/coctel.jpg" />
+            <script type="application/ld+json">{"@type":"Recipe","name":"Cóctel de gambas","recipeYield":"4",
+            "recipeIngredient":["24 gambas","1 huevo","2 cucharadas de kétchup"],"recipeInstructions":null}</script></head></html>"""
+        val read = SchemaOrgRecipe.parse(html, "https://www.hogarmania.com/cocina/recetas/coctel.html")!!
+        org.junit.Assert.assertFalse(read.hasSteps())
+        assertEquals("https://example.com/coctel.jpg", SchemaOrgRecipe.pageImage(html))
+        val full = html.replace("\"recipeInstructions\":null", "\"recipeInstructions\":[\"Cuece las gambas.\"]")
+        org.junit.Assert.assertTrue(SchemaOrgRecipe.parse(full, "https://example.com/r")!!.hasSteps())
+    }
 }
+

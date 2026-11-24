@@ -397,11 +397,15 @@ class RecipeEditorViewModel(
                 }
             }
             val structured = withContext(AppDispatchers.default) { SchemaOrgRecipe.parse(page.html, page.url) }
-            if (structured != null) {
+            // Some sites give the standard recipe without its steps (Hogarmanía: only the
+            // ingredients, all in one list): with the assistant the whole page is read instead.
+            val incomplete = structured != null && !structured.hasSteps() && settingsRepository.aiCandidates().isNotEmpty()
+            if (structured != null && !incomplete) {
                 progress.step(L10n.str(R.string.ai_step_found_in_page))
                 applyReadRecipe(appContext, structured, progress)
                 return@launchAiTask
             }
+            if (incomplete) progress.step(L10n.str(R.string.ai_step_page_recipe_incomplete))
             // Instagram and similar posts: the recipe is in the caption.
             val pagePost = withContext(AppDispatchers.default) { SocialPostRecipe.read(page.html, page.url) }
             // Instagram's embed page has the photo without the play button (and the caption, when
@@ -466,7 +470,7 @@ class RecipeEditorViewModel(
                 _visionState.value = VisionState.Error(L10n.str(if (post != null) R.string.web_import_post_needs_assistant else R.string.web_import_needs_assistant))
                 return@launchAiTask
             }
-            if (post == null) progress.step(L10n.str(R.string.ai_step_page_not_standard))
+            if (post == null && structured == null) progress.step(L10n.str(R.string.ai_step_page_not_standard))
             val pageText = if (post != null) postText(post) else when (val text = RecipeUrlFetcher.readableText(page.html)) {
                 is UrlFetchResult.Success -> text.text
                 is UrlFetchResult.Error -> {
@@ -485,10 +489,11 @@ class RecipeEditorViewModel(
                 is RecipeVisionResult.Success -> {
                     val recipe = if (post != null) result.recipe.copy(source = postSource(post)) else result.recipe
                     applyVisionResult(recipe)
-                    post?.imageUrl?.let { downloadPhoto(appContext, it, progress) }
+                    (post?.imageUrl ?: structured?.imageUrl ?: SchemaOrgRecipe.pageImage(page.html))?.let { downloadPhoto(appContext, it, progress) }
                     _visionState.value = VisionState.Loaded
                 }
-                is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(result.reason)
+                // The incomplete standard recipe is better than nothing.
+                is RecipeVisionResult.Error -> if (structured != null) applyReadRecipe(appContext, structured, progress) else _visionState.value = VisionState.Error(result.reason)
                 is RecipeVisionResult.Tip -> offerTip(result.tip, if (post != null) postSource(post) else url)
             }
         }
@@ -521,7 +526,7 @@ class RecipeEditorViewModel(
         for (link in YouTubeRecipe.recipePageLinks(video.description)) {
             progress.step(L10n.str(R.string.ai_step_reading_author_site_x, WebFeeds.hostOf(link)))
             val linked = RecipeUrlFetcher.fetchPage(link) as? PageFetchResult.Success ?: continue
-            val read = withContext(AppDispatchers.default) { SchemaOrgRecipe.parse(linked.html, linked.url) }
+            val read = withContext(AppDispatchers.default) { SchemaOrgRecipe.parse(linked.html, linked.url) }?.takeIf { it.hasSteps() }
             if (read == null) {
                 progress.step(L10n.str(R.string.ai_step_page_not_standard))
                 linkedPages += linked
