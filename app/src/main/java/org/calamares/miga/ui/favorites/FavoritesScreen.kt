@@ -210,7 +210,7 @@ private fun AllView(viewModel: FavoritesViewModel, actions: PostCallbacks, onRec
         EmptyFavorites(onAdd)
         return
     }
-    val news = feed.filter { it.isNew }.take(MAX_NEWS)
+    val news = remember(feed) { feed.filter { it.isNew }.take(MAX_NEWS) }
     LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
         if (sources.isNotEmpty()) {
             item { SectionTitle(L10n.str(R.string.favorites_your_channels), L10n.str(R.string.favorites_see_all)) { viewModel.setFilter(FavoritesFilter.CHANNELS) } }
@@ -230,7 +230,7 @@ private fun AllView(viewModel: FavoritesViewModel, actions: PostCallbacks, onRec
             val shown = news.ifEmpty { feed.take(MAX_LATEST) }
             if (shown.isNotEmpty()) {
                 item { SectionTitle(L10n.str(if (news.isEmpty()) R.string.favorites_latest else R.string.favorites_news)) }
-                items(shown, key = { "feed_" + it.id }) { post ->
+                items(shown, key = { "feed_" + it.id }, contentType = { "post" }) { post ->
                     PostRow(post, showAuthor = true, { actions.onImport(post) }, actions.onOpenRecipe, { actions.onOpen(post) }, { actions.onToggleSaved(post) })
                 }
             }
@@ -331,7 +331,7 @@ private fun PostsView(viewModel: FavoritesViewModel, actions: PostCallbacks, onA
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        items(posts, key = { it.id }) { post ->
+        items(posts, key = { it.id }, contentType = { "post" }) { post ->
             Box {
                 PostCell(post, { actions.onImport(post) }, actions.onOpenRecipe, { actions.onOpen(post) }, showNetwork = true)
                 IconButton(onClick = { actions.onToggleSaved(post) }, modifier = Modifier.align(Alignment.TopEnd)) {

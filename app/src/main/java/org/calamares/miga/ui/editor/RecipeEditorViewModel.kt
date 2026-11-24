@@ -25,6 +25,8 @@ import kotlinx.coroutines.withContext
 import org.calamares.miga.data.ai.aiCandidates
 import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.ai.AiProgress
+import org.calamares.miga.data.tips.ImportedTip
+import org.calamares.miga.data.vision.FoundTipDto
 import org.calamares.miga.data.follow.WebFeeds
 import org.calamares.miga.data.ai.AiProgressReporter
 import org.calamares.miga.data.ai.runAi
@@ -92,6 +94,9 @@ sealed interface VisionState {
     /** Several recipes were found in the photos; see [DetectedRecipes]. */
     data object Choosing : VisionState
     data class Error(val reason: String) : VisionState
+
+    /** What was imported is a cooking tip, not a recipe: offered for the tips library. */
+    data class TipFound(val tip: FoundTipDto, val source: String) : VisionState
 }
 
 /**
@@ -360,6 +365,8 @@ class RecipeEditorViewModel(
                     _visionState.value = VisionState.Loaded
                 }
                 is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(result.reason)
+                // Writing a dish's recipe never gives a tip.
+                is RecipeVisionResult.Tip -> _visionState.value = VisionState.Error(L10n.str(R.string.couldnt_generate_recipe))
             }
         }
     }
@@ -441,6 +448,7 @@ class RecipeEditorViewModel(
                         is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(
                             elsewhere?.let { L10n.str(R.string.web_import_post_recipe_elsewhere, it) } ?: result.reason
                         )
+                        is RecipeVisionResult.Tip -> offerTip(result.tip, postSource(post))
                         null -> _visionState.value = VisionState.Error(L10n.str(R.string.ai_no_provider))
                     }
                     return@launchAiTask
@@ -481,6 +489,7 @@ class RecipeEditorViewModel(
                     _visionState.value = VisionState.Loaded
                 }
                 is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(result.reason)
+                is RecipeVisionResult.Tip -> offerTip(result.tip, if (post != null) postSource(post) else url)
             }
         }
     }
@@ -576,6 +585,7 @@ class RecipeEditorViewModel(
             is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(
                 if (!watches && result.reason == L10n.str(R.string.no_recipe_was_found_page)) L10n.str(R.string.youtube_needs_gemini) else result.reason
             )
+            is RecipeVisionResult.Tip -> offerTip(result.tip, postSource(post))
         }
     }
 
@@ -602,6 +612,26 @@ class RecipeEditorViewModel(
             }
         }
         _visionState.value = VisionState.Loaded
+    }
+
+    private fun offerTip(tip: FoundTipDto, source: String) {
+        _visionState.value = VisionState.TipFound(tip, source)
+    }
+
+    /** Adds the tip found instead of a recipe to the user's tips library, marked as imported. */
+    fun addFoundTip(onAdded: () -> Unit) {
+        val found = _visionState.value as? VisionState.TipFound ?: return
+        viewModelScope.launch {
+            settingsRepository.addImportedTip(
+                ImportedTip.create(found.tip.category, found.tip.title, found.tip.body, found.tip.keywords, found.source)
+            )
+            _visionState.value = VisionState.Idle
+            onAdded()
+        }
+    }
+
+    fun dismissFoundTip() {
+        _visionState.value = VisionState.Idle
     }
 
     // What the assistant does while it works, as a step with its provider ("Gemini is reading the page").
