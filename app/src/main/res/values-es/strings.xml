@@ -1822,4 +1822,5 @@
     <string name="tip_found_body">"El asistente ha encontrado un consejo de cocina. ¿Lo añades a tu biblioteca de consejos?"</string>
     <string name="tip_found_add">"Añadir a mis consejos"</string>
     <string name="tip_found_added">"Consejo añadido a tu biblioteca"</string>
+    <string name="ai_step_page_recipe_incomplete">"La receta de la página viene sin pasos: la lee entera el asistente"</string>
 </resources>

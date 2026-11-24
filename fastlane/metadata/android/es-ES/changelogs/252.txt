@@ -1,3 +1,4 @@
 Novedades de la versión 1.0.54:
 • Favoritos va mucho más fluido con muchos canales, perfiles y webs: el scroll ya no da saltos mientras se actualizan.
-• Al importar un enlace que es un truco o un consejo en vez de una receta, el asistente lo detecta y te ofrece guardarlo en tu biblioteca de consejos, en la nueva sección «Importados», con su fuente.
+• Si importas un truco o un consejo en vez de una receta, el asistente te ofrece guardarlo en tu biblioteca de consejos, en «Importados», con su fuente.
+• Recetas más completas de webs que solo dan los ingredientes (como Hogarmanía): el asistente lee la página entera, con sus pasos.

@@ -27,8 +27,11 @@ internal const val RECIPE_JSON_FORMAT = """{
  */
 internal const val TIP_INSTEAD_OF_RECIPE = """
 If the content is not a recipe but a cooking tip or trick (a technique, how to keep, choose or
-prepare an ingredient, a kitchen hack, how to fix a mistake), do not make up a recipe: return
-instead only this JSON object, written in the same language as the rest of your answer must be:
+prepare an ingredient, a kitchen hack, how to fix a mistake, how to improve or adapt a dish in
+general), do not make up a recipe: return instead only this JSON object, written in the same
+language as the rest of your answer must be. An article that explains how to make a dish better,
+healthier or easier without giving its list of ingredients with quantities is a tip, even if it
+names some ingredients; a recipe has its ingredients and steps.
 {"name": "", "tip": {"category": "TECHNIQUES" | "PRESERVING" | "LEFTOVERS" | "SUBSTITUTIONS" | "SAFETY" | "BAKING" | "TIME_SAVING" | "KITCHEN", "title": "short title of the tip", "body": "the tip itself in 1 to 4 clear sentences, with the useful details (times, amounts)", "keywords": ["2 to 5 ingredients, techniques or tools it is about", ...]}}"""
 
 /** Language the AI must write in: the app's, "es" or "en". */

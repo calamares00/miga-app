@@ -1823,4 +1823,5 @@
     <string name="tip_found_body">"The assistant found a cooking tip. Add it to your tips library?"</string>
     <string name="tip_found_add">"Add to my tips"</string>
     <string name="tip_found_added">"Tip added to your library"</string>
+    <string name="ai_step_page_recipe_incomplete">"The page's recipe has no steps: the assistant reads the whole page"</string>
 </resources>
