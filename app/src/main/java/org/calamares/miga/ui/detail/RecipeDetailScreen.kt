@@ -667,6 +667,7 @@ private fun RecipeDetailContent(
 
             // Steps
             if (recipe.stepGroups.any { it.instructions.isNotEmpty() }) {
+                val stepIngredients = remember(recipe.ingredientGroups) { recipe.ingredientGroups.flatMap { it.ingredients } }
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(L10n.str(R.string.method), style = MaterialTheme.typography.titleLarge)
                     recipe.stepGroups.filter { it.instructions.isNotEmpty() }.forEach { group ->
@@ -688,7 +689,8 @@ private fun RecipeDetailContent(
                                     instruction,
                                     style = MaterialTheme.typography.bodyLarge,
                                     modifier = Modifier.weight(1f).padding(top = 2.dp),
-                                    highlightTimes = true
+                                    highlightTimes = true,
+                                    ingredients = stepIngredients
                                 )
                             }
                         }

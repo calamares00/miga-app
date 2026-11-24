@@ -1,4 +1,5 @@
 What's new in version 1.0.53:
-• Choose which server books you want on each phone (Settings › Sync server › Server books); the rest take no space. Needs miga-server 1.3.0.
-• Deleting a synced book only removes it from this phone: to delete it for everyone, use the server's web admin.
-• The assistant shows the steps it really takes (downloading, reading the page, watching the video…) with their seconds, no repeating messages.
+• Choose which server books you want on each phone (Settings › Sync server). Needs miga-server 1.3.0.
+• Deleting a synced book only removes it from this phone; to delete it for everyone, use the server's web admin.
+• The assistant shows the steps it really takes, with their seconds.
+• Clearer steps in every recipe: times and heat in colour, ingredients in italics.

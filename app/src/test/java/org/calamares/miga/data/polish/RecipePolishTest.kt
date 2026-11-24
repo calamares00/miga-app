@@ -49,8 +49,9 @@ class RecipePolishTest {
         assertEquals("Tortilla de patatas", polished.name)
         // The recipe had no notes: the model does not get to add some.
         assertEquals("", polished.notes)
+        // Times, heat and ingredients are styled by the app: the marks the model put on them go.
         assertEquals(
-            listOf("Pela las *patatas* y fríelas **20 minutos**.", "Bate los *huevos*.", "Cuaja la tortilla a **fuego medio**."),
+            listOf("Pela las patatas y fríelas 20 minutos.", "Bate los huevos.", "Cuaja la tortilla a fuego medio."),
             polished.stepGroups.single().instructions
         )
         assertNull(polished.ingredientGroups.single().ingredients[1].unit)
@@ -86,5 +87,19 @@ class RecipePolishTest {
         assertEquals("nata" to true, org.calamares.miga.data.model.splitOptionalMarker("nata - opcional"))
         assertEquals("pan opcionalmente tostado" to false, org.calamares.miga.data.model.splitOptionalMarker("pan opcionalmente tostado"))
         assertEquals("Optional" to false, org.calamares.miga.data.model.splitOptionalMarker("Optional"))
+    }
+
+    @Test
+    fun `a warning in bold stays`() {
+        val answer = """
+            {"name": "Tortilla de patatas", "notes": "",
+             "ingredientGroups": [{"name": null, "ingredients": [{"name": "patata", "quantity": 1, "unit": "kg"}, {"name": "huevo", "quantity": 6, "unit": null}]}],
+             "stepGroups": [{"name": null, "instructions": ["Fríe las *patatas* **sin que se doren**.", "Cuaja a fuego medio-**fuerte**."]}],
+             "changes": []}
+        """.trimIndent()
+        assertEquals(
+            listOf("Fríe las patatas **sin que se doren**.", "Cuaja a fuego medio-fuerte."),
+            decodeAiJson(PolishedRecipeDto.serializer(), answer).toPolished(recipe).stepGroups.single().instructions
+        )
     }
 }
