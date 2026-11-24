@@ -159,13 +159,7 @@ class IdeasViewModel(
                     status(progress.detail ?: progress.step)
                 }
                 reporter.step(L10n.str(R.string.ai_step_reviewing_recipes_n, all.size))
-                val hints = listOf(
-                    L10n.str(R.string.ai_hint_matching_recipes),
-                    L10n.str(R.string.ai_hint_variety_season),
-                    L10n.str(R.string.ai_hint_writing_tips),
-                    L10n.str(R.string.ai_hint_new_dishes)
-                )
-                reporter.withHints(hints) {
+                reporter.doing({ L10n.str(R.string.ai_doing_ideas, it) }) {
                     settingsRepository.runAi<IdeasResult>(
                         errorOf = { (it as? IdeasResult.Error)?.reason },
                         error = { IdeasResult.Error(it) },

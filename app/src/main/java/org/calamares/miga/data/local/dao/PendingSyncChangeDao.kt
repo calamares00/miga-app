@@ -20,6 +20,9 @@ interface PendingSyncChangeDao {
     @Query("DELETE FROM pending_sync_changes WHERE id = :id")
     suspend fun clear(id: Long)
 
+    @Query("DELETE FROM pending_sync_changes WHERE uid IN (:uids)")
+    suspend fun clearForUids(uids: List<String>)
+
     @Query("DELETE FROM pending_sync_changes WHERE syncConnectionId = :syncConnectionId")
     suspend fun clearAllForConnection(syncConnectionId: Long)
 }

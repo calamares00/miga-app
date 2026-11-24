@@ -1,0 +1,5 @@
+Novedades de la versión 1.0.53:
+• Elige qué libros del servidor quieres en cada móvil (Ajustes › Servidor de sincronización). Requiere miga-server 1.3.0.
+• Borrar un libro sincronizado lo quita solo de este móvil; para borrarlo de todos, usa la web del servidor.
+• El asistente muestra los pasos que hace de verdad, con sus segundos.
+• Pasos más claros en todas las recetas: tiempos y fuego en color e ingredientes en cursiva.

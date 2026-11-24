@@ -51,4 +51,46 @@ class CookModeTextTest {
         org.junit.Assert.assertTrue(parts.toString(), "velocidad 3½" in parts)
         org.junit.Assert.assertTrue(parts.toString(), "velocidad 5-10" in parts)
     }
+
+    @Test
+    fun `every way of saying the heat or the hob's level is highlighted whole`() {
+        assertEquals(listOf("fuego medio-fuerte", "8 a 10 minutos"), highlighted("Tapar y cocinar a fuego medio-fuerte durante unos 8 a 10 minutos para que reduzca."))
+        assertEquals(listOf("fuego al máximo (nivel 9 de 9)"), highlighted("Subir el fuego al máximo (nivel 9 de 9) y añadir el pollo."))
+        assertEquals(listOf("fuego medio (nivel 6 de 9)"), highlighted("Calentar a fuego medio (nivel 6 de 9)."))
+        assertEquals(listOf("fuego mínimo"), highlighted("Dejar a fuego mínimo."))
+        assertEquals(listOf("potencia 7", "2 minutos"), highlighted("Calentar en el microondas a potencia 7 durante 2 minutos"))
+        assertEquals(listOf("toda la noche"), highlighted("Dejar en remojo toda la noche."))
+        assertEquals(listOf("medium-high heat", "level 5 of 9"), highlighted("Cook over medium-high heat, level 5 of 9."))
+    }
+
+    @Test
+    fun `the full stop after a time is not part of it, the dot of an abbreviation in a sentence is`() {
+        assertEquals(listOf("1 o 2 minutos"), highlighted("Saltear todo junto durante 1 o 2 minutos."))
+        assertEquals(listOf("5 min"), highlighted("Hornear 5 min."))
+        assertEquals(listOf("5 min."), highlighted("Hornear 5 min. y dar la vuelta."))
+    }
+
+    private val ajillo = listOf(
+        Ingredient("Contramuslos de pollo troceados", 1.2, "kg"),
+        Ingredient("Cabezas de ajo", 2.0, null),
+        Ingredient("Vino blanco", 150.0, "ml"),
+        Ingredient("Perejil seco", null, null),
+        Ingredient("Aceite de oliva virgen extra", null, null),
+        Ingredient("Sal", null, null)
+    )
+
+    private fun mentioned(step: String) = CookModeText.ingredientMentions(step, ajillo).map { step.substring(it) }
+
+    @Test
+    fun `ingredients named in a step are found with the words that join them`() {
+        assertEquals(listOf("contramuslos de pollo"), mentioned("Añadir los contramuslos de pollo troceados y dorarlos."))
+        assertEquals(listOf("ajos", "pollo"), mentioned("Reincorporar los ajos y saltear con el pollo."))
+        assertEquals(listOf("vino", "pollo"), mentioned("Verter el vino blanco hasta cubrir la mitad del pollo."))
+        assertEquals(listOf("perejil", "aceite", "sal"), mentioned("Añadir el perejil seco, el aceite y la sal."))
+    }
+
+    @Test
+    fun `words that only look like an ingredient are not taken`() {
+        assertEquals(emptyList<String>(), mentioned("Salir de la cocina y secar la sartén en un lugar seco."))
+    }
 }

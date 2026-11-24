@@ -15,7 +15,11 @@ cambian las funciones de red, los permisos o la IA (y actualizar a la vez `PRIVA
 - ID de la aplicación: `org.calamares.miga` (permanente una vez publicada).
 - Categoría: Comida y bebida. Etiquetas sugeridas: recetas, lista de la compra.
 - Recursos gráficos: icono 512×512 y gráfico destacado 1024×500 en `fastlane/metadata/android/*/images/`.
-  **Pendiente**: 4-8 capturas de teléfono por idioma (`images/phoneScreenshots/`, mínimo 2).
+  Capturas de teléfono: 8 por idioma en `images/phoneScreenshots/`, 1080×1920 (9:16) PNG sin
+  transparencia (válidas para destacar la app). Se generan con la app real y recetas de los packs:
+  `StoreShots{Es,En}Test` y `FavoritesShots{Es,En}Test` (cada test de capturas en su propio
+  `./gradlew`, que comparten los ajustes guardados) y `tools/playstore/compose.py`, que pone titular,
+  subtítulo y marco de móvil. Se suben a mano en Play Console (el CI solo sube la app y las notas).
 - No usar marcas de terceros en la ficha (salvo la atribución "Datos de Open Food Facts").
 
 ## Seguridad de los datos (Data safety)

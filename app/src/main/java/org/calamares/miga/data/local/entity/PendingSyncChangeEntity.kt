@@ -6,7 +6,11 @@ import androidx.room.PrimaryKey
 
 enum class SyncEntityType { BOOK, RECIPE, PHOTO }
 
-enum class SyncChangeType { UPSERT, DELETE }
+/**
+ * [UNFOLLOW] (books only, miga-server 1.3.0): this device stops syncing the book; it stays on the
+ * server and on the other devices.
+ */
+enum class SyncChangeType { UPSERT, DELETE, UNFOLLOW }
 
 /**
  * Sync outbox: one row per book, recipe or photo of a synced book that was created, edited or

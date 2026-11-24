@@ -10,9 +10,12 @@ object CookModeText {
 
     private const val NUMBER = """\d+(?:[.,]\d+)?(?:\s*(?:-|–|a|o|to|or|y|and)\s*\d+(?:[.,]\d+)?)?"""
 
-    /** "10 minutos", "8-10 min", "1 hora", "30 s", "2 h". */
+    /**
+     * "10 minutos", "8-10 min", "1 o 2 minutos", "1 hora", "30 s", "2 h", "toda la noche". An
+     * abbreviation keeps its dot only inside a sentence ("10 min. y"), not the full stop at its end.
+     */
     private val DURATION = Regex(
-        """(?<![\p{L}\d])$NUMBER\s*(?:horas?|hours?|hrs?|minutos?|minutes?|mins?|segundos?|seconds?|secs?|seg|h|s)(?![\p{L}\d])\.?""",
+        """(?<![\p{L}\d])(?:$NUMBER\s*(?:horas?|hours?|minutos?|minutes?|segundos?|seconds?|(?:hrs?|mins?|secs?|seg|h|s)(?:\.(?=\s*[a-záéíóúñ\d]))?)|toda la noche|overnight)(?![\p{L}\d])""",
         RegexOption.IGNORE_CASE
     )
 
@@ -28,15 +31,24 @@ object CookModeText {
         RegexOption.IGNORE_CASE
     )
 
-    /** Heat level: "fuego medio", "fuego lento", "medium heat", "low heat". */
+    /** Heat: "fuego medio", "fuego medio-fuerte", "fuego al máximo", "a fuego mínimo", "medium heat". */
     private val HEAT = Regex(
-        """(?<![\p{L}\d])(?:fuego\s+(?:muy\s+)?(?:lento|bajo|suave|medio|medio-alto|medio-bajo|alto|fuerte|vivo)|(?:low|medium|medium-high|medium-low|high)\s+heat)(?![\p{L}\d])""",
+        """(?<![\p{L}\d])(?:fuego\s+(?:muy\s+)?(?:medio(?:[\s-](?:alto|bajo|fuerte|suave|vivo))?|lento|bajo|suave|alto|fuerte|vivo|máximo|maximo|mínimo|minimo)|fuego\s+al?\s+(?:máximo|maximo|mínimo|minimo|tope)|(?:low|medium|medium-high|medium-low|high|full|maximum|max)\s+heat)(?![\p{L}\d])""",
         RegexOption.IGNORE_CASE
     )
 
+    /** A hob's or appliance's setting: "nivel 6", "nivel 9 de 9", "potencia 7", "level 5 of 9". */
+    private val LEVEL = Regex(
+        """(?<![\p{L}\d])(?:nivel|potencia|level|power)\s+\d{1,2}(?:\s*(?:de|of|/)\s*\d{1,2})?(?![\p{L}\d])""",
+        RegexOption.IGNORE_CASE
+    )
+
+    /** Between two highlights, an opening bracket: "fuego al máximo (nivel 9 de 9)". */
+    private val JOINABLE_GAP = Regex("""\s*\(\s*""")
+
     /** Ranges of [text] to highlight, sorted and without overlaps. */
     fun highlights(text: String): List<IntRange> {
-        val ranges = listOf(DURATION, TEMPERATURE, SPEED, HEAT)
+        val ranges = listOf(DURATION, TEMPERATURE, SPEED, HEAT, LEVEL)
             .flatMap { pattern -> pattern.findAll(text).map { it.range } }
             .sortedWith(compareBy<IntRange> { it.first }.thenByDescending { it.last })
         val merged = mutableListOf<IntRange>()
@@ -48,7 +60,21 @@ object CookModeText {
                 merged += range
             }
         }
-        return merged
+        // "fuego al máximo (nivel 9 de 9)" reads as one setting: one highlight, its brackets included.
+        val joined = mutableListOf<IntRange>()
+        for (range in merged) {
+            val last = joined.lastOrNull()
+            if (last != null && JOINABLE_GAP.matches(text.substring(last.last + 1, range.first))) {
+                joined[joined.lastIndex] = last.first..range.last
+            } else {
+                joined += range
+            }
+        }
+        return joined.map { range ->
+            val inside = text.substring(range.first, range.last + 1)
+            val open = inside.count { it == '(' } > inside.count { it == ')' }
+            if (open && text.getOrNull(range.last + 1) == ')') range.first..range.last + 1 else range
+        }
     }
 
     /** Words that say nothing about which ingredient it is ("de", "picado", "cucharada"...). */
@@ -62,8 +88,41 @@ object CookModeText {
         "teaspoon", "teaspoons", "taza", "tazas", "cup", "cups", "diente", "dientes", "clove", "cloves", "pizca", "pinch",
         "chorro", "chorrito", "splash", "trozo", "trozos", "rodaja", "rodajas", "hoja", "hojas", "rama", "ramas",
         "ramita", "ramitas", "lata", "latas", "bote", "sobre", "vaso", "vasos", "gramos", "tipo", "virgen", "extra",
-        "blanco", "blanca", "negro", "negra", "rojo", "roja", "verde", "verdes", "maduro", "madura", "maduros", "maduras"
+        "blanco", "blanca", "negro", "negra", "rojo", "roja", "verde", "verdes", "maduro", "madura", "maduros", "maduras",
+        "troceados", "troceadas", "cortados", "cortadas", "rallados", "ralladas", "molidos", "molidas", "enteros", "enteras",
+        "seco", "seca", "secos", "secas", "dried", "sliced", "diced", "minced", "peeled", "pelado", "pelada", "pelados", "peladas",
+        "gusto", "taste", "opcional", "optional", "necesario", "needed"
     )
+
+    private val WORD = Regex("""[\p{L}\d]+""")
+
+    /** Only "de" or "del" between two words of an ingredient: "contramuslos de pollo". */
+    private val INGREDIENT_GAP = Regex("""\s+(?:de|del|of)?\s*""", RegexOption.IGNORE_CASE)
+
+    /**
+     * Where [text] names one of [ingredients], to show it in italics: the words of an ingredient's
+     * name that identify it ("pollo", "ajos", "aceite"), in singular or plural, and the words
+     * between two of them joined by "de" ("contramuslos de pollo").
+     */
+    fun ingredientMentions(text: String, ingredients: List<Ingredient>): List<IntRange> {
+        val keys = ingredients
+            .flatMap { words(it.name.substringBefore(',')) }
+            .filter { it.length >= 3 && it !in NOT_INGREDIENT_WORDS }
+            .flatMap { forms(it) }
+            .toSet()
+        if (keys.isEmpty()) return emptyList()
+        val hits = WORD.findAll(text).filter { normalize(it.value) in keys }.map { it.range }.toList()
+        val joined = mutableListOf<IntRange>()
+        for (range in hits) {
+            val last = joined.lastOrNull()
+            if (last != null && INGREDIENT_GAP.matches(text.substring(last.last + 1, range.first))) {
+                joined[joined.lastIndex] = last.first..range.last
+            } else {
+                joined += range
+            }
+        }
+        return joined
+    }
 
     /** Lower case, without accents. */
     private fun normalize(text: String): String =

@@ -1,32 +1,48 @@
-Miga is your family recipe book and shopping list in one app: no ads, no accounts, and your data stays on your phone.
+Miga is your family cookbook and shopping list in one app: no ads, no accounts, and your recipes stay on your phone.
 
 RECIPE BOOKS
-• Organise your recipes in books (for example, one for each family member), each with its own cover.
-• Complete recipes: ingredients with quantity and unit, steps, photos, equipment needed, difficulty, tags and sub-recipes (sauces, sides…).
-• Search and filter by category, tag, equipment, ingredient or difficulty, and keep favourites one tap away.
-• Cooking mode: step by step on full screen, with timers and voice control.
+• Organise your recipes in books: grandma's, a friend's or one per theme, each with its own cover, colour, emoji and a few words about it.
+• Complete recipes: ingredients with quantity and unit, formatted steps, photos, times, difficulty, origin, tags, equipment and sub-recipes.
 • Adjust the servings and the quantities are recalculated for you.
+• Search by name or ingredient and filter by time, difficulty, category, allergens and more. "What can I cook with what I have?" from your pantry.
+
+SAVE RECIPES FROM ANYWHERE
+• Paste or share the link to a recipe website, a reel or a video and keep it as just another recipe, with its photo and the author in the source.
+• When the recipe is written on the page or in the post's text, Miga reads it without the assistant.
+• Take a photo of a recipe in a book or a handwritten one to fill in the editor.
+• Ready-to-install recipe packs: world cuisines, rice dishes, baking and more.
+
+FAVOURITES: YOUR COOKS AND WEBSITES
+• Follow video channels, profiles and recipe websites, and see what they posted last, with what's new marked.
+• On many websites, "More recipes" and a search.
+• Save the videos and reels you want to cook and import them with one tap. Posts that aren't about cooking are hidden.
+
+COOKING MODE
+• Big steps and the screen always on.
+• Several timers that keep going when you leave the app.
+• Reading aloud and voice control, hands-free.
 
 SHOPPING LIST
-• Add items by typing, dictating or scanning the barcode.
-• Grouped by category and sorted by the aisles of your supermarket.
-• Several lists at once and reusable templates (including scanned products).
-• Open Food Facts product sheet: Nutri-Score, NOVA, allergens, additives and nutrition table, plus a 0–100 guide score.
-• Shop mode: swipe to tick items and the screen stays on.
-• Widget to add items without opening the app.
+• Add a recipe's ingredients at once, or type, dictate or scan the barcode.
+• Sorted by the aisles of your supermarket. Several lists and templates.
+• Shop mode: swipe to tick items and the screen stays on. Widget, and the list shared by QR code.
+• Open Food Facts product sheet: Nutri-Score, NOVA, allergens and additives.
 
-IMPORT AND SHARE
-• Export and import recipes and books (text, PDF, JSON/ZIP with photos) and make full backups.
-• Ready-to-install recipe packs.
-• Share the list as text or with a QR code.
+ALLERGENS AND HEALTH (OPTIONAL)
+• The 14 allergens of EU law plus lactose, worked out from the ingredients: show all of them, only yours or none.
+• Coeliac mode: what to buy certified and how to avoid cross-contamination.
+• Carbohydrate portions per serving and "Fit to my meal" with your plan.
+This is a guide only: always check the labels and follow your healthcare team's advice.
 
-OPTIONAL AI FEATURES
-With your own Google Gemini, Anthropic Claude, OpenAI or OpenRouter key (free models included): create recipes from a photo or a web page, find recipes for a dish, estimate nutrition and a health rating, or find ingredient substitutes. They're only enabled if you add your key; generated content is labelled and can be reported.
+COOKING ASSISTANT (OPTIONAL)
+With your own key for an AI provider (some offer free models): recipes from photos or from a dish's name, recipes from videos that don't have it written down (it listens to or watches the video), polishing the wording, ideas and menus, and ingredient substitutes. It shows the steps it is really taking. It only works if you add your key, which is stored encrypted on your phone.
 
-SYNC WITH YOUR OWN SERVER
-Want to share books and the shopping list with your family? Connect Miga to a server you host yourself (miga-server) and invite others with a QR code.
+SHARING, BACKUPS AND FAMILY
+• Share a recipe or a book as an encrypted link, a PDF with a cover, an image or a Miga file.
+• Full backups, with photos and optional encryption.
+• Sync books and the shopping list with your family through a server you host yourself (miga-server), inviting with a QR code. Each phone chooses which books it wants.
 
 PRIVACY
-No ads, no analytics and no accounts. The internet is only used for the features you choose: AI with your key, Open Food Facts, the pack catalogue and your sync server.
+No ads, no analytics and no accounts. Lock with fingerprint, face or PIN. The internet is only used for what you choose: importing recipes, Favourites, the assistant with your key, Open Food Facts, the pack catalogue and your server.
 
-Available in English and Spanish. Product data from Open Food Facts (ODbL licence).
+Light or dark theme, eight accent colours, in English and Spanish. Product data from Open Food Facts (ODbL licence).

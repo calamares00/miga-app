@@ -488,6 +488,7 @@ fun RecipeBooksScreen(
 
     if (showDeleteConfirm && selectedBooks.isNotEmpty()) {
         val packs = selectedBooks.count { it.isPack }
+        val synced = selectedBooks.count { !it.isPack && it.isSynced }
         val own = selectedBooks.size - packs
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
@@ -504,7 +505,9 @@ fun RecipeBooksScreen(
             text = {
                 Text(
                     listOfNotNull(
-                        L10n.str(R.string.delete_books_body).takeIf { own > 0 },
+                        L10n.str(R.string.delete_books_body).takeIf { own > synced },
+                        // Synced books only leave this device: the server and the other devices keep them.
+                        L10n.str(R.string.delete_synced_books_body).takeIf { synced > 0 },
                         if (packs == 1 && own == 0) L10n.str(R.string.sure_want_uninstall_x_recipes, selectedBooks.single().name)
                         else L10n.str(R.string.uninstall_packs_body).takeIf { packs > 0 }
                     ).joinToString("\n\n")
