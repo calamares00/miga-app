@@ -135,7 +135,9 @@ class RecipeBookEditorViewModel(
         viewModelScope.launch {
             isDeleting = true
             // "Undo" is offered for a while by the books screen (see PendingDeletions).
-            val count = if (isPack) 0 else repository.books.countRecipes(bookId)
+            // A synced book leaves this device with its recipes (it stays on the server).
+            val synced = !isPack && syncConnectionId != null
+            val count = if (isPack || synced) 0 else repository.books.countRecipes(bookId)
             isDeleting = false
             if (count > 0) {
                 deleteError = if (count == 1) L10n.str(R.string.book_not_empty_one)
@@ -143,9 +145,10 @@ class RecipeBookEditorViewModel(
                 return@launch
             }
             repository.books.deleteRecipeBooksWithUndo(
-                ids = if (isPack) emptySet() else setOf(bookId),
+                ids = if (isPack || synced) emptySet() else setOf(bookId),
                 packIds = if (isPack) setOf(bookId) else emptySet(),
-                message = L10n.str(R.string.book_deleted)
+                message = L10n.str(if (synced) R.string.book_removed_from_device else R.string.book_deleted),
+                syncedIds = if (synced) setOf(bookId) else emptySet()
             )
             onDeleted()
         }

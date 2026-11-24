@@ -37,6 +37,19 @@ sealed interface PhotoDownloadResult {
     data class Error(val reason: String) : PhotoDownloadResult
 }
 
+/** The server's books for this device; [Unsupported] for servers before 1.3.0, which sync them all. */
+sealed interface BookCatalogResult {
+    data class Success(val catalog: BookCatalogDto) : BookCatalogResult
+    data object Unsupported : BookCatalogResult
+    data class Error(val reason: String) : BookCatalogResult
+}
+
+sealed interface BookContentResult {
+    data class Success(val content: BookContentDto) : BookContentResult
+    data object NotFound : BookContentResult
+    data class Error(val reason: String) : BookContentResult
+}
+
 sealed interface SyncFetchResult {
     data class Success(val changes: ChangesResponseDto) : SyncFetchResult
     data class Error(val reason: String) : SyncFetchResult
@@ -94,6 +107,51 @@ object SyncClient {
         } catch (e: Exception) {
             coroutineContext.ensureActive()
             SyncFetchResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
+        }
+    }
+
+    /** The server's books, which of them this device syncs and their sizes. */
+    suspend fun fetchBookCatalog(connection: SyncConnection): BookCatalogResult = catalogCall(connection, "GET", "/sync/books", null)
+
+    /** The books this device syncs from now on; answers with the catalogue. */
+    suspend fun putBookSelection(connection: SyncConnection, books: Collection<String>, followNewBooks: Boolean): BookCatalogResult =
+        catalogCall(
+            connection, "PUT", "/sync/selection",
+            json.encodeToString(BookSelectionRequest.serializer(), BookSelectionRequest(books.distinct(), followNewBooks)).toByteArray()
+        )
+
+    private suspend fun catalogCall(connection: SyncConnection, method: String, path: String, body: ByteArray?): BookCatalogResult =
+        withContext(AppDispatchers.io) {
+            try {
+                val result = request(connection, method, path, body)
+                when (result.code) {
+                    HttpURLConnection.HTTP_OK -> BookCatalogResult.Success(json.decodeFromString(BookCatalogDto.serializer(), result.body))
+                    // Servers before 1.3.0 do not have the route: they sync every book.
+                    HttpURLConnection.HTTP_NOT_FOUND, HttpURLConnection.HTTP_BAD_METHOD -> BookCatalogResult.Unsupported
+                    else -> BookCatalogResult.Error(errorMessageFor(result))
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                coroutineContext.ensureActive()
+                BookCatalogResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
+            }
+        }
+
+    /** A whole book with its recipes and photo details, to start following it. */
+    suspend fun fetchBookContent(connection: SyncConnection, uid: String): BookContentResult = withContext(AppDispatchers.io) {
+        try {
+            val result = request(connection, "GET", "/sync/books/$uid/content", body = null)
+            when (result.code) {
+                HttpURLConnection.HTTP_OK -> BookContentResult.Success(json.decodeFromString(BookContentDto.serializer(), result.body))
+                HttpURLConnection.HTTP_NOT_FOUND -> BookContentResult.NotFound
+                else -> BookContentResult.Error(errorMessageFor(result))
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            coroutineContext.ensureActive()
+            BookContentResult.Error(e.message ?: e::class.simpleName ?: L10n.str(R.string.unknown_error))
         }
     }
 

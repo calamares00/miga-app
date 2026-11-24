@@ -161,6 +161,48 @@ class SyncRepository internal constructor(
         recipeBookDao.update(book.copy(syncConnectionId = null))
     }
 
+    /**
+     * Removes a synced book from this device only: the book, its recipes, photos and cover, and
+     * its changes not uploaded yet. Nothing is deleted on the server or on the other devices. With
+     * [unfollow], the server is told this device stops syncing it (see [SyncChangeType.UNFOLLOW]);
+     * without it the caller has already changed the device's selection. Returns false when the
+     * book is not synced.
+     */
+    suspend fun removeSyncedBookLocally(bookId: Long, unfollow: Boolean = true): Boolean {
+        val removed = db.withTransaction {
+            val book = recipeBookDao.getOnce(bookId) ?: return@withTransaction null
+            val connectionId = book.syncConnectionId ?: return@withTransaction null
+            val recipes = recipeDao.getAllWithDetailsForBookOnce(bookId)
+            val files = recipes.flatMap { details -> recipeDao.getPhotosOnce(details.recipe.id).map { it.uri } } + listOfNotNull(book.coverPhotoUri)
+            pendingSyncChangeDao.clearForUids(recipes.map { it.recipe.uid } + book.uid)
+            recipeDao.deleteAllForBook(bookId)
+            recipeBookDao.delete(bookId)
+            if (unfollow) enqueueSyncChange(connectionId, SyncEntityType.BOOK, book.uid, SyncChangeType.UNFOLLOW)
+            connectionId to files
+        } ?: return false
+        removed.second.forEach { PhotoStorage.deleteFile(it) }
+        if (unfollow) onSyncChangeEnqueued(removed.first)
+        return true
+    }
+
+    /**
+     * Keeps a synced book as a regular local book on this device and stops syncing it, like
+     * [removeSyncedBookLocally] but without deleting anything.
+     */
+    suspend fun keepSyncedBookAsLocal(bookId: Long, unfollow: Boolean = true) {
+        val book = recipeBookDao.getOnce(bookId) ?: return
+        val connectionId = book.syncConnectionId ?: return
+        db.withTransaction {
+            recipeBookDao.update(book.copy(syncConnectionId = null))
+            if (unfollow) enqueueSyncChange(connectionId, SyncEntityType.BOOK, book.uid, SyncChangeType.UNFOLLOW)
+        }
+        if (unfollow) onSyncChangeEnqueued(connectionId)
+    }
+
+    /** The local books synced with [connectionId], by uid. */
+    suspend fun syncedBooks(connectionId: Long): Map<String, Long> =
+        recipeBookDao.findBySyncConnectionId(connectionId).associate { it.uid to it.id }
+
     // --- Outbox: queue local changes for upload ---
 
     internal suspend fun enqueueSyncChange(

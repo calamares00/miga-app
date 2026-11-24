@@ -147,13 +147,15 @@ class BookRepository internal constructor(
     suspend fun countRecipes(bookId: Long): Int = recipeBookDao.countRecipes(bookId)
 
     /**
-     * Deletes empty books of one's own and uninstalls packs ([packIds]) after the undo window
-     * (see [PendingDeletions]); until then they are hidden. A book that got recipes meanwhile is
-     * kept.
+     * Deletes empty books of one's own, uninstalls packs ([packIds]) and removes synced books from
+     * this device ([syncedIds], with their recipes: see [SyncRepository.removeSyncedBookLocally])
+     * after the undo window (see [PendingDeletions]); until then they are hidden. A book of one's
+     * own that got recipes meanwhile is kept.
      */
-    fun deleteRecipeBooksWithUndo(ids: Set<Long>, packIds: Set<Long>, message: String): UndoOffer =
-        recipeRepository.pendingDeletions.schedule(message, bookIds = ids + packIds) {
+    fun deleteRecipeBooksWithUndo(ids: Set<Long>, packIds: Set<Long>, message: String, syncedIds: Set<Long> = emptySet()): UndoOffer =
+        recipeRepository.pendingDeletions.schedule(message, bookIds = ids + packIds + syncedIds) {
             packIds.forEach { uninstallPack(it) }
+            syncedIds.forEach { sync.removeSyncedBookLocally(it) }
             ids.forEach { id ->
                 try {
                     deleteRecipeBook(id)
@@ -163,16 +165,16 @@ class BookRepository internal constructor(
             }
         }
 
-    /** Throws [RecipeBookNotEmptyException] when the book still contains recipes. */
+    /**
+     * Throws [RecipeBookNotEmptyException] when the book still contains recipes. A synced book is
+     * only removed from this device (it is never deleted on the server from the app: that is done
+     * from the server's web admin), recipes included.
+     */
     suspend fun deleteRecipeBook(id: Long) {
+        if (sync.removeSyncedBookLocally(id)) return
         val count = recipeBookDao.countRecipes(id)
         if (count > 0) throw RecipeBookNotEmptyException(count)
-        val book = recipeBookDao.getOnce(id)
         recipeBookDao.delete(id)
-        book?.syncConnectionId?.let {
-            sync.enqueueSyncChange(it, SyncEntityType.BOOK, book.uid, SyncChangeType.DELETE)
-            onSyncChangeEnqueued(it)
-        }
     }
 
     /**

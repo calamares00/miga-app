@@ -21,6 +21,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Error
@@ -79,6 +81,14 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
     val inviteState by viewModel.inviteState.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val serverBooks by viewModel.serverBooks.collectAsStateWithLifecycle()
+    serverBooks?.let { (connectionId, firstTime) ->
+        val booksViewModel = viewModel(key = "server-books-$connectionId-$firstTime") {
+            ServerBooksViewModel(viewModel.repository, connectionId, firstTime, context)
+        }
+        ServerBooksScreen(booksViewModel, onBack = viewModel::closeServerBooks)
+        return
+    }
 
     LaunchedEffect(message) {
         message?.let {
@@ -159,6 +169,10 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (connection.lastSyncError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            TextButton(onClick = { viewModel.openServerBooks(connection.id) }, contentPadding = PaddingValues(0.dp)) {
+                                Icon(Icons.Filled.LibraryBooks, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Text(L10n.str(R.string.server_books), modifier = Modifier.padding(start = 6.dp))
+                            }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     L10n.str(R.string.share_shopping_list),
