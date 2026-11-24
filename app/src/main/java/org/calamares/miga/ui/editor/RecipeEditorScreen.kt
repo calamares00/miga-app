@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.data.tips.TipCategory
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -442,6 +443,33 @@ fun RecipeEditorScreen(
                 }
             },
             onCancel = onCancel
+        )
+    }
+
+    // A cooking tip found instead of a recipe: offered for the tips library, then the editor closes.
+    (visionState as? VisionState.TipFound)?.let { found ->
+        val category = runCatching { TipCategory.valueOf(found.tip.category.uppercase()) }.getOrDefault(TipCategory.KITCHEN)
+        AlertDialog(
+            onDismissRequest = viewModel::dismissFoundTip,
+            icon = { Text(category.emoji, style = MaterialTheme.typography.headlineMedium) },
+            title = { Text(L10n.str(R.string.tip_found_title)) },
+            text = {
+                Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                    Text(L10n.str(R.string.tip_found_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(found.tip.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp))
+                    Text(found.tip.body, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                    Text(category.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.addFoundTip {
+                        Toast.makeText(context, L10n.str(R.string.tip_found_added), Toast.LENGTH_SHORT).show()
+                        onCancel()
+                    }
+                }) { Text(L10n.str(R.string.tip_found_add)) }
+            },
+            dismissButton = { TextButton(onClick = viewModel::dismissFoundTip) { Text(L10n.str(R.string.cancel)) } }
         )
     }
 

@@ -1,6 +1,15 @@
 package org.calamares.miga.data.follow
 
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -95,11 +104,11 @@ class FollowRepository(db: AppDatabase) {
                 avatarUrl = source.avatarUrl,
                 url = source.url,
                 // Posts not about cooking are hidden, so they are not counted as new either.
-                newCount = bySource[source.id].orEmpty().count { it.publishedAt > source.lastOpenedAt && !CookingFilter.isOffTopic(it.title, it.description) },
+                newCount = bySource[source.id].orEmpty().count { it.publishedAt > source.lastOpenedAt && !isOffTopic(it.title, it.description) },
                 checkedAt = source.checkedAt
             )
         }.sortedWith(compareByDescending<FollowedSource> { it.newCount > 0 }.thenBy { it.name.lowercase() })
-    }
+    }.smooth()
 
     fun observeSource(id: Long): Flow<FollowedSource?> = observeSources().map { list -> list.firstOrNull { it.id == id } }
 
@@ -149,11 +158,11 @@ class FollowRepository(db: AppDatabase) {
                 imported = importedRecipe,
                 readsWithoutAssistant = reads,
                 // What the user saved or imported stays, and so does a post that has a recipe in it.
-                offTopic = !isSaved && importedRecipe == null && !hasRecipe && CookingFilter.isOffTopic(post.title, post.description)
+                offTopic = !isSaved && importedRecipe == null && !hasRecipe && isOffTopic(post.title, post.description)
             )
         // Two followed sections of one website can list the same recipe: show it once.
         }.distinctBy { it.id }
-    }
+    }.smooth()
 
     fun observeSavedPosts(): Flow<List<FavoritePost>> = combine(dao.observeSavedPosts(), observeImported()) { saved, imported ->
         saved.map { post ->
@@ -173,7 +182,7 @@ class FollowRepository(db: AppDatabase) {
                 readsWithoutAssistant = readsWithoutAssistant(post.title, post.description, post.author)
             )
         }
-    }
+    }.smooth()
 
     /** Recipes imported from posts, by "NETWORK:postKey" (taken from the links in their sources). */
     private fun observeImported(): Flow<Map<String, ImportedRecipe>> = dao.observeRecipeSources().map { rows ->
@@ -189,10 +198,29 @@ class FollowRepository(db: AppDatabase) {
                 }
             }
         }
-    }
+    }.flowOn(AppDispatchers.default)
+
+    // What is worked out from a post's text (reading a recipe in it, telling whether it is about
+    // cooking) costs regular expressions over the whole text: done once per text and remembered,
+    // as the feeds are worked out again on every change of any source.
+    private val readsCache = TextCache<Boolean>()
+    private val offTopicCache = TextCache<Boolean>()
 
     private fun readsWithoutAssistant(title: String, description: String, author: String?): Boolean =
-        SocialPostRecipe.parse(SocialPost(listOf(title, description).joinToString("\n\n"), null, author, "", "")) != null
+        readsCache.get("$author\u0000$title\u0000$description") {
+            SocialPostRecipe.parse(SocialPost(listOf(title, description).joinToString("\n\n"), null, author, "", "")) != null
+        }
+
+    private fun isOffTopic(title: String, description: String): Boolean =
+        offTopicCache.get("$title\u0000$description") { CookingFilter.isOffTopic(title, description) }
+
+    /**
+     * Feeds are worked out away from the main thread, and a burst of changes (a refresh writes
+     * every source in turn) reaches the screen as one update, so the list does not jump while it
+     * is scrolled.
+     */
+    @OptIn(FlowPreview::class)
+    private fun <T> Flow<T>.smooth(): Flow<T> = flowOn(AppDispatchers.default).debounce(BURST_MILLIS).conflate()
 
     /**
      * Follows the channel, profile or website at [link], downloading its details and latest posts.
@@ -245,8 +273,12 @@ class FollowRepository(db: AppDatabase) {
     /** Refreshes the sources not checked for [maxAgeMillis]; returns how many could not be read. */
     suspend fun refreshStale(maxAgeMillis: Long = STALE_AFTER_MILLIS): Int {
         val now = System.currentTimeMillis()
-        val sources = dao.observeSources().first()
-        return sources.filter { (it.checkedAt ?: 0L) < now - maxAgeMillis }.count { refresh(it.id) != null }
+        val stale = dao.observeSources().first().filter { (it.checkedAt ?: 0L) < now - maxAgeMillis }
+        // A few at a time: much faster than one after another, without flooding the network.
+        val gate = Semaphore(PARALLEL_REFRESHES)
+        return coroutineScope {
+            stale.map { source -> async { gate.withPermit { refresh(source.id) } } }.awaitAll().count { it != null }
+        }
     }
 
     /** What is stored about a source (a website's WordPress API, say). */
@@ -461,6 +493,12 @@ class FollowRepository(db: AppDatabase) {
 
         /** Feed pages read at most for one page of recipes. */
         private const val MAX_FEED_PAGES = 6
+
+        /** Changes closer together than this reach the screen as one (see smooth). */
+        private const val BURST_MILLIS = 150L
+
+        /** Sources downloaded at the same time when refreshing. */
+        private const val PARALLEL_REFRESHES = 4
 
         /** Feeds are downloaded again when Favourites opens, at most once an hour. */
         const val STALE_AFTER_MILLIS = 60 * 60 * 1000L

@@ -1813,4 +1813,14 @@
     <string name="ai_step_found_in_description">"Recipe found in the video's description"</string>
     <string name="ai_step_description_without_recipe">"The video's description has no recipe"</string>
     <string name="ai_step_reading_author_site_x">"Reading the author's website (%1$s)"</string>
+    <string name="tips_imported">"Imported"</string>
+    <string name="tip_imported_badge">"Imported"</string>
+    <string name="tip_source">"Source: %1$s"</string>
+    <string name="tip_delete">"Delete tip"</string>
+    <string name="tips_imported_empty_title">"No imported tips yet"</string>
+    <string name="tips_imported_empty_body">"When you import a link that is a trick or a tip rather than a recipe, the assistant will offer to keep it here."</string>
+    <string name="tip_found_title">"It's a tip, not a recipe"</string>
+    <string name="tip_found_body">"The assistant found a cooking tip. Add it to your tips library?"</string>
+    <string name="tip_found_add">"Add to my tips"</string>
+    <string name="tip_found_added">"Tip added to your library"</string>
 </resources>

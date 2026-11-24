@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.tips
 
+import org.calamares.miga.ui.components.FormattedText
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material.icons.filled.SearchOff
 import android.content.Context
@@ -82,23 +84,28 @@ import org.calamares.miga.ui.components.EmptyState
 internal sealed class TipFilter(val key: String) {
     data object All : TipFilter("all")
     data object Saved : TipFilter("saved")
+
+    /** Tips the assistant found in what the user imported. */
+    data object Imported : TipFilter("imported")
     data class Category(val category: TipCategory) : TipFilter(category.name)
 
     val label: String
         get() = when (this) {
             All -> L10n.str(R.string.tips_all)
             Saved -> L10n.str(R.string.tips_saved)
+            Imported -> L10n.str(R.string.tips_imported)
             is Category -> category.label
         }
 
     fun apply(tips: List<CookingTip>, saved: Set<String>): List<CookingTip> = when (this) {
         All -> tips
         Saved -> tips.filter { it.id in saved }
+        Imported -> tips.filter { it.imported }
         is Category -> tips.filter { it.category == category }
     }
 
     companion object {
-        val entries: List<TipFilter> = listOf(All, Saved) + TipCategory.entries.map { Category(it) }
+        val entries: List<TipFilter> = listOf(All, Saved, Imported) + TipCategory.entries.map { Category(it) }
     }
 }
 
@@ -112,7 +119,7 @@ internal sealed class TipFilter(val key: String) {
 @Composable
 fun TipsScreen(viewModel: TipsViewModel, initialTipId: String?, onBack: () -> Unit) {
     val context = LocalContext.current
-    val tips = viewModel.tips
+    val tips by viewModel.tips.collectAsStateWithLifecycle()
     val saved by viewModel.savedIds.collectAsStateWithLifecycle()
     val tipOfTheDayEnabled by viewModel.tipOfTheDayEnabled.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
@@ -137,7 +144,8 @@ fun TipsScreen(viewModel: TipsViewModel, initialTipId: String?, onBack: () -> Un
             saved = tip.id in saved,
             onToggle = { toggle(tip.id) },
             onSavedChange = { viewModel.setSaved(tip.id, it) },
-            onShare = { shareTip(context, tip) }
+            onShare = { shareTip(context, tip) },
+            onDelete = if (tip.imported) ({ viewModel.deleteImported(tip.id) }) else null
         )
     }
 
@@ -223,6 +231,13 @@ fun TipsScreen(viewModel: TipsViewModel, initialTipId: String?, onBack: () -> Un
                             body = L10n.str(R.string.tips_saved_empty_body),
                             modifier = Modifier.fillMaxSize()
                         )
+                    } else if (shown.isEmpty() && filter == TipFilter.Imported) {
+                        EmptyState(
+                            icon = Icons.Outlined.Lightbulb,
+                            title = L10n.str(R.string.tips_imported_empty_title),
+                            body = L10n.str(R.string.tips_imported_empty_body),
+                            modifier = Modifier.fillMaxSize()
+                        )
                     } else {
                         // The tip it was opened on starts in view.
                         val start = if (page == startPage) shown.indexOfFirst { it.id == initialTipId }.coerceAtLeast(0) else 0
@@ -259,7 +274,9 @@ internal fun TipCard(
     onSavedChange: (Boolean) -> Unit,
     onShare: () -> Unit,
     modifier: Modifier = Modifier,
-    showCategory: Boolean = true
+    showCategory: Boolean = true,
+    /** Only for an imported tip, which the user can delete. */
+    onDelete: (() -> Unit)? = null
 ) {
     val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "tipArrow")
     Surface(
@@ -272,8 +289,15 @@ internal fun TipCard(
                 CategoryBadge(tip.category)
                 Spacer(modifier = Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    if (showCategory) {
-                        Text(tip.category.label.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                    if (showCategory || tip.imported) {
+                        Text(
+                            listOfNotNull(
+                                tip.category.label.uppercase().takeIf { showCategory },
+                                L10n.str(R.string.tip_imported_badge).uppercase().takeIf { tip.imported }
+                            ).joinToString(" · "),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                     Text(tip.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 }
@@ -300,7 +324,21 @@ internal fun TipCard(
             AnimatedVisibility(visible = expanded) {
                 Column(modifier = Modifier.padding(start = 54.dp, end = 8.dp, top = 8.dp)) {
                     Text(tip.body, style = MaterialTheme.typography.bodyLarge)
+                    // Where an imported tip came from, with its links.
+                    tip.source?.takeIf { it.isNotBlank() }?.let { source ->
+                        FormattedText(
+                            L10n.str(R.string.tip_source, source),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        if (onDelete != null) {
+                            IconButton(onClick = onDelete) {
+                                Icon(Icons.Outlined.Delete, contentDescription = L10n.str(R.string.tip_delete), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                         IconButton(onClick = { onSavedChange(!saved) }) {
                             Icon(
                                 if (saved) Icons.Filled.Star else Icons.Outlined.StarBorder,

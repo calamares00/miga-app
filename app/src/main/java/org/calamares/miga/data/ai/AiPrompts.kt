@@ -21,6 +21,16 @@ internal const val RECIPE_JSON_FORMAT = """{
   "utensils": ["appliance or special equipment the recipe needs (oven, air fryer, food processor, pressure cooker...); never basics every kitchen has such as knife, pot, pan, bowl or fridge", ...]
 }"""
 
+/**
+ * Added to the prompts that import a link (a page, a post, a video): what was shared may be a
+ * cooking tip rather than a recipe, and then the tip is returned instead (see ImportedTip).
+ */
+internal const val TIP_INSTEAD_OF_RECIPE = """
+If the content is not a recipe but a cooking tip or trick (a technique, how to keep, choose or
+prepare an ingredient, a kitchen hack, how to fix a mistake), do not make up a recipe: return
+instead only this JSON object, written in the same language as the rest of your answer must be:
+{"name": "", "tip": {"category": "TECHNIQUES" | "PRESERVING" | "LEFTOVERS" | "SUBSTITUTIONS" | "SAFETY" | "BAKING" | "TIME_SAVING" | "KITCHEN", "title": "short title of the tip", "body": "the tip itself in 1 to 4 clear sentences, with the useful details (times, amounts)", "keywords": ["2 to 5 ingredients, techniques or tools it is about", ...]}}"""
+
 /** Language the AI must write in: the app's, "es" or "en". */
 internal fun appLanguageCode(): String = if (L10n.locale().language == "es") "es" else "en"
 

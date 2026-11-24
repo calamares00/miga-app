@@ -184,7 +184,7 @@ fun SourceScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 item(span = { GridItemSpan(maxLineSpan) }) { header() }
-                items(posts, key = { it.id }) { post ->
+                items(posts, key = { it.id }, contentType = { "post" }) { post ->
                     PostCell(post, { importing = post.url }, onRecipeClick, { openWebLink(context, post.url) }, showNetwork = false)
                 }
                 item(span = { GridItemSpan(maxLineSpan) }) { moreButton() }
@@ -192,7 +192,7 @@ fun SourceScreen(
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(bottom = 24.dp)) {
                 item { header() }
-                items(posts, key = { it.id }) { post ->
+                items(posts, key = { it.id }, contentType = { "post" }) { post ->
                     PostRow(post, showAuthor = false, { importing = post.url }, onRecipeClick, { openWebLink(context, post.url) }, { viewModel.toggleSaved(post) })
                 }
                 item { moreButton() }

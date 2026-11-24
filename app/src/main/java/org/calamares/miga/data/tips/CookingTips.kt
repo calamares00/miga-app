@@ -34,7 +34,11 @@ data class CookingTip(
     val category: TipCategory,
     val title: String,
     val body: String,
-    val keywords: List<String>
+    val keywords: List<String>,
+    /** Where an imported tip came from (see ImportedTip); null for the bundled ones. */
+    val source: String? = null,
+    /** Found by the assistant in something the user imported, not bundled with the app. */
+    val imported: Boolean = false
 )
 
 @Serializable

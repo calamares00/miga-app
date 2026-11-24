@@ -1812,4 +1812,14 @@
     <string name="ai_step_found_in_description">"Receta encontrada en la descripción del vídeo"</string>
     <string name="ai_step_description_without_recipe">"La descripción del vídeo no trae la receta"</string>
     <string name="ai_step_reading_author_site_x">"Leyendo la web del autor (%1$s)"</string>
+    <string name="tips_imported">"Importados"</string>
+    <string name="tip_imported_badge">"Importado"</string>
+    <string name="tip_source">"Fuente: %1$s"</string>
+    <string name="tip_delete">"Borrar consejo"</string>
+    <string name="tips_imported_empty_title">"Aún no hay consejos importados"</string>
+    <string name="tips_imported_empty_body">"Cuando importes un enlace que sea un truco o un consejo en vez de una receta, el asistente te ofrecerá guardarlo aquí."</string>
+    <string name="tip_found_title">"Es un consejo, no una receta"</string>
+    <string name="tip_found_body">"El asistente ha encontrado un consejo de cocina. ¿Lo añades a tu biblioteca de consejos?"</string>
+    <string name="tip_found_add">"Añadir a mis consejos"</string>
+    <string name="tip_found_added">"Consejo añadido a tu biblioteca"</string>
 </resources>
