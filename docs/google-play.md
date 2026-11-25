@@ -97,7 +97,7 @@ considera "compartir" igualmente, por eso se declaran.
 - `targetSdk` 36 y `compileSdk` 36 (Android 16).
 - La app no se actualiza por su cuenta: las actualizaciones llegan solo por Google Play.
 - Sin bibliotecas nativas propias (no aplica el requisito de páginas de 16 KB).
-- Subir el AAB (`bundleRelease`) con Play App Signing; guardar copia segura de la clave de subida.
+- Subir el AAB (`bundlePlayRelease`) con Play App Signing; guardar copia segura de la clave de subida.
 - Firma: el CI firma el AAB y los APK de release si existen los secretos de GitHub
   `RELEASE_KEYSTORE_BASE64`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS` y `RELEASE_KEY_PASSWORD`.
   Crear la clave de subida una sola vez:

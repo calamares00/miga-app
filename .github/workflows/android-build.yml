@@ -164,7 +164,7 @@ jobs:
           restore-keys: robolectric-
 
       - name: Unit tests
-        run: ./gradlew :app:testDebugUnitTest --stacktrace
+        run: ./gradlew :app:testPlayDebugUnitTest :app:compileFdroidDebugUnitTestKotlin --stacktrace
 
       # Every database version needs its Room schema (app/schemas) committed, or migrations to
       # later versions cannot be tested. The build exports it; a new or changed one fails here and
@@ -197,7 +197,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: miga-unit-test-report-${{ steps.ref.outputs.safe_ref }}-${{ steps.ref.outputs.short_sha }}
-          path: app/build/reports/tests/testDebugUnitTest
+          path: app/build/reports/tests/testPlayDebugUnitTest
           if-no-files-found: ignore
           retention-days: 14
 
@@ -269,44 +269,44 @@ jobs:
       # The output is unsigned (no keystore secrets in this step) and is not published.
       - name: Build release APK (check R8 minification)
         if: steps.mode.outputs.mode != 'release'
-        run: ./gradlew :app:assembleRelease --stacktrace
+        run: ./gradlew :app:assembleFdroidRelease --stacktrace
 
       # The AAB for Play is otherwise only built on main, so a change that breaks it was only seen
       # after merging (it happened with the ABI splits). Unsigned and not published.
       - name: Build release AAB (check the Play bundle)
         if: steps.mode.outputs.mode != 'release'
-        run: ./gradlew :app:bundleRelease --stacktrace
+        run: ./gradlew :app:bundlePlayRelease --stacktrace
 
       # On every branch: a lint error is cheaper to fix where it appears.
       - name: Lint
-        run: ./gradlew :app:lintDebug --stacktrace
+        run: ./gradlew :app:lintPlayDebug :app:lintFdroidDebug --stacktrace
 
       # --- main without a new version: check compilation ---
 
       - name: Build debug APK (check)
         if: steps.mode.outputs.mode == 'check'
-        run: ./gradlew :app:assembleDebug --stacktrace
+        run: ./gradlew :app:assembleFdroidDebug --stacktrace
 
       - name: Upload debug APK (check)
         if: steps.mode.outputs.mode == 'check'
         uses: actions/upload-artifact@v7
         with:
           name: miga-debug-${{ steps.mode.outputs.safe_ref }}-${{ steps.mode.outputs.short_sha }}
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/fdroid/debug/*.apk
           if-no-files-found: error
           retention-days: 14
 
       # --- push to a branch other than main (or a manual run): debug APK only ---
       - name: Build debug APK (rama de desarrollo)
         if: steps.mode.outputs.mode == 'dev_debug'
-        run: ./gradlew :app:assembleDebug --stacktrace
+        run: ./gradlew :app:assembleFdroidDebug --stacktrace
 
       - name: Upload debug APK (rama de desarrollo)
         if: steps.mode.outputs.mode == 'dev_debug'
         uses: actions/upload-artifact@v7
         with:
           name: miga-debug-${{ steps.mode.outputs.safe_ref }}
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/fdroid/debug/*.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -318,10 +318,10 @@ jobs:
           set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
           mkdir -p dist
-          for f in app/build/outputs/apk/debug/*.apk; do
+          for f in app/build/outputs/apk/fdroid/debug/*.apk; do
             [ -e "$f" ] || continue
             base=$(basename "$f")
-            abi="${base#app-}"
+            abi="${base#app-fdroid-}"
             abi="${abi%-debug.apk}"
             cp "$f" "dist/miga-v${VERSION}-${abi}-debug.apk"
           done
@@ -358,7 +358,7 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: ./gradlew :app:assembleDebug :app:assembleRelease --stacktrace
+        run: ./gradlew :app:assembleFdroidDebug :app:assembleFdroidRelease --stacktrace
 
       - name: Build release AAB (Play Store)
         if: steps.mode.outputs.mode == 'release'
@@ -366,7 +366,7 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: ./gradlew :app:bundleRelease --stacktrace
+        run: ./gradlew :app:bundlePlayRelease --stacktrace
 
       - name: Normalize output file names
         if: steps.mode.outputs.mode == 'release'
@@ -377,12 +377,12 @@ jobs:
           mkdir -p dist
 
           rename_apks() {
-            local dir="app/build/outputs/apk/$1"
+            local dir="app/build/outputs/apk/fdroid/$1"
             [ -d "$dir" ] || return 0
             for f in "$dir"/*.apk; do
               [ -e "$f" ] || continue
               base=$(basename "$f")
-              mid="${base#app-}"
+              mid="${base#app-fdroid-}"
               mid="${mid%.apk}"
               suffix=""
               if [[ "$mid" == *-unsigned ]]; then
@@ -405,7 +405,7 @@ jobs:
           if [ -z "${RELEASE_KEYSTORE_PATH:-}" ]; then
             aab_suffix="-unsigned"
           fi
-          aab_dir="app/build/outputs/bundle/release"
+          aab_dir="app/build/outputs/bundle/playRelease"
           if [ -d "$aab_dir" ]; then
             for f in "$aab_dir"/*.aab; do
               [ -e "$f" ] || continue
@@ -439,7 +439,7 @@ jobs:
           set -euo pipefail
           CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
           mkdir -p play/whatsnew
-          cp app/build/outputs/mapping/release/mapping.txt play/mapping.txt
+          cp app/build/outputs/mapping/playRelease/mapping.txt play/mapping.txt
           for dir in fastlane/metadata/android/*/; do
             locale=$(basename "$dir")
             notes="$dir/changelogs/$CODE.txt"
@@ -606,3 +606,7 @@ jobs:
           python3 .github/scripts/play_promote.py --package org.calamares.miga \
             --from-track "${{ vars.PLAY_TRACK || 'internal' }}" --version-code "$code" --rollout 100
           echo "### Publicada en producción (env/pro): versionCode $code" >> "$GITHUB_STEP_SUMMARY"
+          # The public tag F-Droid follows (see play-production.yml).
+          tag="v${{ needs.build.outputs.version }}"
+          git fetch -q origin "refs/tags/$tag:refs/tags/$tag"
+          git tag "public-$tag" "$tag^{commit}" && git push origin "refs/tags/public-$tag"

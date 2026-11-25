@@ -20,6 +20,11 @@ Android recipe and shopping list app (`org.calamares.miga`): Kotlin, Jetpack Com
     (max 500 characters each, in **every** language: Google Play rejects the whole upload
     otherwise, which kept 1.0.35 out of Play). `ReleaseNotesTest` checks it; run it before
     merging. Older notes stay.
+- Two product flavors, identical except for update checks: `play` (the Play AAB, Play's in-app
+  updates through `UpdateSource` in `src/play`) and `fdroid` (GitHub and F-Droid APKs, no Google
+  libraries; `UpdateSource` in `src/fdroid` reads the latest stable GitHub Release). Anything
+  flavor-specific goes in those source sets with the same API in both. Tests run on
+  `testPlayDebugUnitTest`; CI also compiles and lints `fdroid`.
 - The app cannot be built in Claude Code cloud sessions (Maven is blocked): rely on CI, which also
   builds the release AAB on every branch.
 - Units go through `UnitInflection` (singular/plural). `calamares00/miga-server` keeps a copy for

@@ -31,9 +31,8 @@ import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.ChangelogParser
 import org.calamares.miga.data.model.RecipeBookSummary
 import org.calamares.miga.data.model.RecipeListViewMode
-import org.calamares.miga.data.remote.AppInstallSource
-import org.calamares.miga.data.remote.AppRelease
-import org.calamares.miga.data.remote.AppUpdateClient
+import org.calamares.miga.data.update.AvailableUpdate
+import org.calamares.miga.data.update.UpdateSource
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.sync.SyncEngine
 import org.calamares.miga.data.sync.SyncOutcome
@@ -412,35 +411,31 @@ class RecipeBooksViewModel(
     private val _crashReport = MutableStateFlow(CrashReporter.pendingReport())
     val crashReport: StateFlow<String?> = _crashReport
 
-    /** A newer version on Google Play, found when the app opens (see [checkForUpdate]). */
-    private val _availableUpdate = MutableStateFlow<AppRelease?>(null)
-    val availableUpdate: StateFlow<AppRelease?> = _availableUpdate
+    /** A newer version, found when the app opens (see [checkForUpdate]). */
+    private val _availableUpdate = MutableStateFlow<AvailableUpdate?>(null)
+    val availableUpdate: StateFlow<AvailableUpdate?> = _availableUpdate
     private var updateCheckStarted = false
 
     /**
-     * Looks for a newer Miga each time the app opens, when it was installed from Google Play
-     * (F-Droid and sideloaded installs update elsewhere, so they make no request). A release is
-     * announced as soon as it is published, even if Play has not approved it yet. Once per
+     * Looks for a newer Miga each time the app opens, the way this build updates (UpdateSource:
+     * Google Play or GitHub Releases), unless the user said "Not now" to that version. Once per
      * ViewModel instance, so coming back to the books tab does not ask again.
      */
     fun checkForUpdate(context: Context) {
-        if (updateCheckStarted || !AppInstallSource.isGooglePlay(context)) return
+        if (updateCheckStarted) return
         updateCheckStarted = true
+        val appContext = context.applicationContext
         viewModelScope.launch {
-            val latest = AppUpdateClient.fetchLatest() ?: return@launch
-            if (AppUpdateClient.isNewer(latest.versionName, BuildConfig.VERSION_NAME) &&
-                latest.versionName != settingsRepository.dismissedUpdateVersion()
-            ) {
-                _availableUpdate.value = latest
-            }
+            val update = UpdateSource.check(appContext) ?: return@launch
+            if (update.key != settingsRepository.dismissedUpdateVersion()) _availableUpdate.value = update
         }
     }
 
     /** [forever] ("Not now") stops announcing this version; otherwise it comes back the next time the app opens. */
     fun dismissUpdate(forever: Boolean) {
-        val release = _availableUpdate.value ?: return
+        val update = _availableUpdate.value ?: return
         _availableUpdate.value = null
-        if (forever) viewModelScope.launch { settingsRepository.setDismissedUpdateVersion(release.versionName) }
+        if (forever) viewModelScope.launch { settingsRepository.setDismissedUpdateVersion(update.key) }
     }
 
     fun dismissCrashReport() {

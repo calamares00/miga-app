@@ -10,7 +10,8 @@
     <string name="update_available">"Actualización disponible"</string>
     <string name="update">"Actualizar"</string>
     <string name="new_version_available">"Hay una versión nueva"</string>
-    <string name="miga_x_available_play">"Miga %1$s ya está en Google Play (tienes la %2$s)."</string>
+    <string name="miga_update_available_play">"Hay una versión nueva de Miga en Google Play (tienes la %1$s). Se instala desde aquí, sin salir de la app."</string>
+    <string name="miga_x_available_github">"Ya está Miga %1$s (tienes la %2$s). Descárgala desde su página."</string>
     <string name="not_now">"Ahora no"</string>
     <string name="additives_x">"Aditivos (%1$s)"</string>
     <string name="settings">"Ajustes"</string>

@@ -24,8 +24,8 @@ android {
         // versionCode goes up on every commit (Play requires it to always grow). versionName is the
         // public version and only changes when a new version is released (1.0.0, 1.0.1, 1.1.0...),
         // with release notes in assets/changelogs and fastlane/.../changelogs (<versionCode>.txt).
-        versionCode = 253
-        versionName = "1.0.55"
+        versionCode = 254
+        versionName = "1.0.56"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -59,6 +59,18 @@ android {
                 keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
             }
         }
+    }
+
+    // Two builds of the same app, which differ only in how they learn about a new version:
+    // - play: the AAB for Google Play, with Play's in-app updates (knows the user's track, so
+    //   testers hear about betas and everyone else about public versions);
+    // - fdroid: the APKs on GitHub and F-Droid, without any Google library; they look at the latest
+    //   stable GitHub Release (never a prerelease).
+    // Both share applicationId and everything else.
+    flavorDimensions += "store"
+    productFlavors {
+        create("play") { dimension = "store" }
+        create("fdroid") { dimension = "store" }
     }
 
     // One APK per ABI (smaller) plus a universal one, like Obtainium-style releases. Only for
@@ -156,6 +168,7 @@ room {
 }
 
 dependencies {
+    "playImplementation"(libs.play.app.update.ktx)
     implementation(libs.core.ktx)
     implementation(libs.core.splashscreen)
     // Installs the baseline profile (src/main/baseline-prof.txt) so start-up code runs compiled.

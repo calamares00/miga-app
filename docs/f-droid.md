@@ -56,20 +56,26 @@ Builds:
     commit: <hash completo del commit de la etiqueta v1.0.0>
     subdir: app
     gradle:
-      - yes
-    output: build/outputs/apk/release/app-universal-release-unsigned.apk
+      - fdroid
+    output: build/outputs/apk/fdroid/release/app-fdroid-universal-release-unsigned.apk
 
 AllowedAPKSigningKeys: <huella SHA-256 del certificado>
 
 AutoUpdateMode: Version
-UpdateCheckMode: Tags
+UpdateCheckMode: Tags ^public-v
 CurrentVersion: 1.0.0
 CurrentVersionCode: 194
 ```
 
 - `versionCode` y `CurrentVersionCode`: el `versionCode` de `app/build.gradle.kts` en la etiqueta.
 - `Categories`: el revisor puede pedir otra; F-Droid revisa su lista de categorías a menudo.
+- `gradle: fdroid`: la variante sin librerías de Google (la `play` lleva las actualizaciones
+  integradas de Play). Avisa de versiones nuevas con la última Release estable de GitHub, salvo si
+  la instaló un cliente de F-Droid, que ya actualiza por su cuenta.
 - `output`: con las divisiones por ABI, Gradle genera varios APK; F-Droid usa solo el universal.
+- `UpdateCheckMode: Tags ^public-v`: F-Droid solo coge las versiones públicas. Cada versión de la
+  beta cerrada también tiene su etiqueta `v<versión>`, así que el workflow «Publicar en
+  producción» añade `public-v<versión>` al publicarla (y lo mismo la etiqueta `env/pro`).
 - `Binaries` + `AllowedAPKSigningKeys` piden una **compilación reproducible**: F-Droid compila,
   compara su APK con el de la Release y, si son idénticos, publica el nuestro con nuestra firma.
   Así quien instala desde F-Droid, GitHub u Obtainium puede pasar de uno a otro sin desinstalar.
