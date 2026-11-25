@@ -34,23 +34,15 @@ android {
     }
 
     /**
-     * Release signing is read from environment variables, never from values in the repository
-     * (unlike the debug keystore). Locally, without them, the release build is simply unsigned; CI
-     * fills them from GitHub Actions secrets only when they exist, so the workflow keeps working
-     * before they are configured.
+     * Release signing is read from environment variables, never from values in the repository.
+     * Locally, without them, the release build is simply unsigned; CI fills them from GitHub
+     * Actions secrets only when they exist, so the workflow keeps working before they are
+     * configured. Debug builds use each machine's own debug key: a key in this public repository
+     * would let anyone sign an APK that updates an installed copy.
      */
     val releaseKeystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
 
     signingConfigs {
-        getByName("debug") {
-            // Fixed debug keystore shared through the repository, so every debug APK (including
-            // those built by CI on fresh runners) has the same signature and installs as an update
-            // without uninstalling first.
-            storeFile = file("../debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-        }
         if (releaseKeystorePath != null) {
             create("release") {
                 storeFile = file(releaseKeystorePath)

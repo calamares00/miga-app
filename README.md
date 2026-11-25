@@ -74,10 +74,8 @@ Tests unitarios (JVM, sin emulador) de la lógica de dominio: filtrado y
 orden de recetas, huella de invalidación de la valoración de salud, construcción
 de la URL del catálogo de packs, y la regla de solo-lectura de un pack.
 
-El APK debug se firma con el keystore `debug.keystore` (versionado a
-propósito en este repo — es el mismo tipo de clave que genera Android
-Studio por defecto, sin datos sensibles) para que las instalaciones se
-puedan actualizar sin desinstalar antes.
+El APK debug se firma con la clave debug de cada ordenador: no hay ninguna clave en el
+repositorio. Las versiones de prueba llegan a los testers por la beta cerrada de Google Play.
 
 ## CI/CD
 

@@ -107,9 +107,10 @@ considera "compartir" igualmente, por eso se declaran.
     -keyalg RSA -keysize 4096 -validity 10000
   base64 -w0 miga-upload.jks   # valor de RELEASE_KEYSTORE_BASE64
   ```
-- Los APK de GitHub (`beta-latest`) van firmados con la clave debug: quien los tenga instalados no
-  puede actualizar a la versión de Play sin desinstalar. Avisar a los testers de que hagan antes una
-  copia de seguridad desde Ajustes.
+- Ya no se publican APK de prueba (`beta-latest`): las versiones de prueba van solo por la beta
+  cerrada de Play. Quien tenga instalado un `beta-latest` antiguo (firmado con la clave debug) no
+  puede pasar a la versión de Play sin desinstalar: que haga antes una copia de seguridad desde
+  Ajustes.
 
 ## Pruebas antes de producción
 
