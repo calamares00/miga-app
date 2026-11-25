@@ -27,7 +27,7 @@ open class MigaApp : Application() {
             .addMigrations(*ALL_MIGRATIONS)
             // Only databases older than the first migration may be wiped; a missing migration for a
             // newer version fails loudly instead of silently deleting the user's recipes.
-            .fallbackToDestructiveMigrationFrom(1, 2, 3)
+            .fallbackToDestructiveMigrationFrom(true, 1, 2, 3)
             .build()
     }
 

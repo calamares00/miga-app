@@ -159,10 +159,11 @@ fun ServerBooksScreen(viewModel: ServerBooksViewModel, onBack: () -> Unit) {
                 }
                 item {
                     ListItem(
-                        headlineContent = { Text(L10n.str(R.string.server_books_follow_new)) },
                         supportingContent = { Text(L10n.str(R.string.server_books_follow_new_desc)) },
                         trailingContent = { Switch(checked = state.followNewBooks, onCheckedChange = viewModel::setFollowNewBooks) }
-                    )
+                    ) {
+                        Text(L10n.str(R.string.server_books_follow_new))
+                    }
                     HorizontalDivider()
                 }
                 items(state.books, key = { it.dto.uid }) { book ->
@@ -215,27 +216,12 @@ private fun Notice(text: String, modifier: Modifier) {
 private fun ServerBookRow(book: ServerBook, chosen: Boolean, size: String, onToggle: () -> Unit) {
     val dto = book.dto
     ListItem(
-        modifier = Modifier.clickable(onClick = onToggle),
+        onClick = onToggle,
         leadingContent = {
             Box(
                 Modifier.size(width = 44.dp, height = 58.dp).clip(RoundedCornerShape(6.dp)).background(Color(BookColor.of(dto.coverColor, dto.name).argb)),
                 contentAlignment = Alignment.Center
             ) { BookSymbol(dto.coverEmoji, 26.dp) }
-        },
-        headlineContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(dto.name, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                if (book.isNew) {
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        L10n.str(R.string.server_books_new),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.tertiaryContainer)
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
-            }
         },
         supportingContent = {
             Column {
@@ -253,5 +239,19 @@ private fun ServerBookRow(book: ServerBook, chosen: Boolean, size: String, onTog
             }
         },
         trailingContent = { Checkbox(checked = chosen, onCheckedChange = { onToggle() }) }
-    )
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(dto.name, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+            if (book.isNew) {
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    L10n.str(R.string.server_books_new),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.tertiaryContainer)
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+        }
+    }
 }

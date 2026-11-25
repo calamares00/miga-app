@@ -12,6 +12,7 @@ import org.calamares.miga.data.health.HealthPrefs
 import org.calamares.miga.data.local.MAX_CARB_PORTION_GRAMS
 import kotlin.math.roundToInt
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Tag
 import org.calamares.miga.data.model.ContentKind
@@ -52,7 +53,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Restore
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -62,7 +63,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.Palette
@@ -185,7 +186,7 @@ fun SettingsSectionScreen(
             }
         }
         tts = engine
-        onDispose { engine?.stop(); engine?.shutdown() }
+        onDispose { engine.stop(); engine.shutdown() }
     }
     val activity = context as? FragmentActivity
     val scope = rememberCoroutineScope()
@@ -250,7 +251,7 @@ fun SettingsSectionScreen(
                 title = { Text(section.title) },
                 navigationIcon = {
                     if (onBack != null) {
-                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -752,22 +753,20 @@ internal fun HealthAllergenSettings(health: HealthPrefs, onChange: ((HealthPrefs
 /** Grams of carbohydrate in one portion, 0 to 30; 0 shows grams only. */
 @Composable
 private fun CarbPortionSlider(grams: Int, onChange: (Int) -> Unit) {
-    var value by remember(grams) { mutableStateOf(grams.toFloat()) }
+    val slider = remember(grams) { SliderState(value = grams.toFloat(), steps = MAX_CARB_PORTION_GRAMS - 1, trackRange = 0f..MAX_CARB_PORTION_GRAMS.toFloat()) }
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(L10n.str(R.string.carb_portion_title), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             Text(
-                value.roundToInt().let { if (it == 0) L10n.str(R.string.carb_portion_grams_only) else L10n.str(R.string.carb_portion_x_g, it) },
+                slider.value.roundToInt().let { if (it == 0) L10n.str(R.string.carb_portion_grams_only) else L10n.str(R.string.carb_portion_x_g, it) },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
         }
         Slider(
-            value = value,
-            onValueChange = { value = it },
-            onValueChangeFinished = { onChange(value.roundToInt()) },
-            valueRange = 0f..MAX_CARB_PORTION_GRAMS.toFloat(),
-            steps = MAX_CARB_PORTION_GRAMS - 1
+            state = slider,
+            onValueChange = { slider.value = it },
+            onValueChangeFinished = { onChange(slider.value.roundToInt()) }
         )
         Text(L10n.str(R.string.carb_portion_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }

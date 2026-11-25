@@ -118,7 +118,7 @@ android {
     }
 
     // Room schemas, one JSON per database version, read by the migration tests (see room {} below).
-    sourceSets.getByName("debug").assets.srcDir("$projectDir/schemas")
+    sourceSets.getByName("debug").assets.directories.add("$projectDir/schemas")
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
@@ -135,6 +135,13 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
+// Screenshot tests use Roborazzi's options API, still marked experimental.
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    if (name.contains("UnitTest")) {
+        compilerOptions.optIn.add("com.github.takahirom.roborazzi.ExperimentalRoborazziApi")
     }
 }
 

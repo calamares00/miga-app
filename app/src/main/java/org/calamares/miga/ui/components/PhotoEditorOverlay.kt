@@ -22,8 +22,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.RotateLeft
-import androidx.compose.material.icons.filled.RotateRight
+import androidx.compose.material.icons.automirrored.filled.RotateLeft
+import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,7 +62,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Compare
-import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.OutlinedButton
@@ -183,7 +183,7 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
                                 original = original?.let { PhotoStorage.rotateBitmap(it, -90f) }
                                 cropRect = null
                             }
-                        ) { Icon(Icons.Filled.RotateLeft, contentDescription = L10n.str(R.string.rotate_left)) }
+                        ) { Icon(Icons.AutoMirrored.Filled.RotateLeft, contentDescription = L10n.str(R.string.rotate_left)) }
                         IconButton(
                             enabled = bmp != null && !enhancing,
                             onClick = {
@@ -191,7 +191,7 @@ fun PhotoEditorOverlay(sourceUri: Uri, onSave: (String) -> Unit, onCancel: () ->
                                 original = original?.let { PhotoStorage.rotateBitmap(it, 90f) }
                                 cropRect = null
                             }
-                        ) { Icon(Icons.Filled.RotateRight, contentDescription = L10n.str(R.string.rotate_right)) }
+                        ) { Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = L10n.str(R.string.rotate_right)) }
                     }
                     IconButton(
                         enabled = bmp != null && imageRect != null && cropRect != null && !enhancing,
@@ -395,7 +395,7 @@ private fun EnhanceBar(
                     ButtonContent(Icons.Filled.Compare, L10n.str(R.string.photo_compare))
                 }
                 TextButton(onClick = onUndo) {
-                    ButtonContent(Icons.Filled.Undo, L10n.str(R.string.photo_undo_enhance))
+                    ButtonContent(Icons.AutoMirrored.Filled.Undo, L10n.str(R.string.photo_undo_enhance))
                 }
             }
         }

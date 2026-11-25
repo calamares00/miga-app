@@ -65,7 +65,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FormatSize
@@ -73,7 +73,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -247,8 +247,8 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
         }
         tts = engine
         onDispose {
-            engine?.stop()
-            engine?.shutdown()
+            engine.stop()
+            engine.shutdown()
             activeRecognizer?.destroy()
         }
     }
@@ -624,7 +624,7 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                         Text(if (pageIndex < totalPages - 1) L10n.str(R.string.next).trim() else L10n.str(R.string.finish))
                         if (pageIndex < totalPages - 1) {
                             Spacer(modifier = Modifier.width(8.dp))
-                            Icon(Icons.Filled.ArrowForwardIos, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, modifier = Modifier.size(16.dp))
                         }
                     }
                 }
@@ -802,7 +802,7 @@ private fun StepPage(
                 modifier = Modifier.weight(1f)
             )
             IconButton(onClick = onListen) {
-                Icon(Icons.Filled.VolumeUp, contentDescription = L10n.str(R.string.listen_step), tint = colors.onSurfaceVariant)
+                Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = L10n.str(R.string.listen_step), tint = colors.onSurfaceVariant)
             }
         }
         Spacer(modifier = Modifier.height(16.dp))

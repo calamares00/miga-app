@@ -11,7 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -129,7 +129,7 @@ fun ResultsHeader(count: Int, sort: SortOption, onSort: (SortOption) -> Unit) {
             modifier = Modifier.weight(1f)
         )
         Box {
-            TextButton(onClick = { menu = true }) { ButtonContent(Icons.Filled.Sort, sort.label) }
+            TextButton(onClick = { menu = true }) { ButtonContent(Icons.AutoMirrored.Filled.Sort, sort.label) }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 SortOption.entries.forEach { option ->
                     DropdownMenuItem(

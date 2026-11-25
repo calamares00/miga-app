@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.ui.components.SecretField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,8 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -58,28 +57,8 @@ internal fun passwordStrength(password: String): Int {
 }
 
 @Composable
-private fun PasswordField(value: String, onValueChange: (String) -> Unit, label: String, isError: Boolean = false, supporting: String? = null) {
-    var visible by remember { mutableStateOf(false) }
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        singleLine = true,
-        isError = isError,
-        supportingText = supporting?.let { { Text(it) } },
-        visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrect = false, imeAction = ImeAction.Next),
-        trailingIcon = {
-            IconButton(onClick = { visible = !visible }) {
-                Icon(
-                    if (visible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                    contentDescription = L10n.str(if (visible) R.string.hide_password else R.string.show_password)
-                )
-            }
-        },
-        modifier = Modifier.fillMaxWidth()
-    )
-}
+private fun PasswordField(value: String, onValueChange: (String) -> Unit, label: String, isError: Boolean = false, supporting: String? = null) =
+    SecretField(value, onValueChange, label, isError = isError, supporting = supporting, imeAction = ImeAction.Next)
 
 /**
  * Asked before creating a backup: optionally protect it with a password (entered twice). [onConfirm]

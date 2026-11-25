@@ -101,7 +101,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -126,7 +126,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -207,7 +207,7 @@ internal fun ShoppingAddSheet(
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.keepScrollInSheet()) {
             Column(modifier = Modifier.height(sheetContentHeight(0.92f))) {
-                TabRow(selectedTabIndex = tab.ordinal, containerColor = Color.Transparent) {
+                SecondaryTabRow(selectedTabIndex = tab.ordinal, containerColor = Color.Transparent) {
                     AddTab.entries.forEach { entry ->
                         Tab(selected = tab == entry, onClick = { tab = entry }, text = { Text(entry.title, maxLines = 1) })
                     }

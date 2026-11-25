@@ -43,7 +43,7 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewHeadline
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -199,7 +199,7 @@ internal fun FilterEmptyState(
             Button(onClick = onExplorePacks) { Text(L10n.str(R.string.open_pack_catalogue)) }
         }
         BookFilter.LOCAL -> EmptyState(
-            icon = Icons.Outlined.MenuBook,
+            icon = Icons.AutoMirrored.Outlined.MenuBook,
             title = L10n.str(R.string.no_own_books),
             body = L10n.str(R.string.no_own_books_body),
             modifier = modifier

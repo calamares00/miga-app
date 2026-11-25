@@ -16,15 +16,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CallMerge
-import androidx.compose.material.icons.filled.CallSplit
+import androidx.compose.material.icons.automirrored.filled.CallMerge
+import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.DriveFileRenameOutline
-import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -220,7 +220,7 @@ fun ContentCleanupScreen(viewModel: ContentCleanupViewModel, onBack: () -> Unit)
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(L10n.str(R.string.cleanup_title)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) } }
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) } }
             )
         },
         bottomBar = {
@@ -319,9 +319,9 @@ fun ContentCleanupScreen(viewModel: ContentCleanupViewModel, onBack: () -> Unit)
 @Composable
 private fun CleanupSectionHeader(action: CleanupAction, count: Int, allTicked: Boolean, onToggleAll: () -> Unit) {
     val (icon, title) = when (action) {
-        CleanupAction.MERGE -> Icons.Filled.CallMerge to L10n.str(R.string.cleanup_section_merge, count)
+        CleanupAction.MERGE -> Icons.AutoMirrored.Filled.CallMerge to L10n.str(R.string.cleanup_section_merge, count)
         CleanupAction.RENAME -> Icons.Filled.DriveFileRenameOutline to L10n.str(R.string.cleanup_section_rename, count)
-        CleanupAction.SPLIT -> Icons.Filled.CallSplit to L10n.str(R.string.cleanup_section_split, count)
+        CleanupAction.SPLIT -> Icons.AutoMirrored.Filled.CallSplit to L10n.str(R.string.cleanup_section_split, count)
         CleanupAction.DELETE -> Icons.Filled.DeleteSweep to L10n.str(R.string.cleanup_section_delete, count)
     }
     Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -471,7 +471,7 @@ private fun CleanupDoneView(done: CleanupDone, onUndo: () -> Unit, onClose: () -
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
     ) {
         Icon(
-            if (done.undone) Icons.Filled.Undo else Icons.Filled.CheckCircle,
+            if (done.undone) Icons.AutoMirrored.Filled.Undo else Icons.Filled.CheckCircle,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(56.dp)
@@ -481,15 +481,15 @@ private fun CleanupDoneView(done: CleanupDone, onUndo: () -> Unit, onClose: () -
             style = MaterialTheme.typography.titleLarge
         )
         if (!done.undone) {
-            DoneLine(Icons.Filled.CallMerge, L10n.str(R.string.cleanup_done_merged, done.merged))
+            DoneLine(Icons.AutoMirrored.Filled.CallMerge, L10n.str(R.string.cleanup_done_merged, done.merged))
             DoneLine(Icons.Filled.DriveFileRenameOutline, L10n.str(R.string.cleanup_done_renamed, done.renamed))
-            if (done.split > 0) DoneLine(Icons.Filled.CallSplit, L10n.str(R.string.cleanup_done_split, done.split))
+            if (done.split > 0) DoneLine(Icons.AutoMirrored.Filled.CallSplit, L10n.str(R.string.cleanup_done_split, done.split))
             DoneLine(Icons.Filled.DeleteSweep, L10n.str(R.string.cleanup_done_deleted, done.deleted))
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             if (!done.undone) {
-                OutlinedButton(onClick = onUndo) { ButtonContent(Icons.Filled.Undo, L10n.str(R.string.undo)) }
+                OutlinedButton(onClick = onUndo) { ButtonContent(Icons.AutoMirrored.Filled.Undo, L10n.str(R.string.undo)) }
             }
             Button(onClick = onClose) { Text(L10n.str(R.string.close)) }
         }
