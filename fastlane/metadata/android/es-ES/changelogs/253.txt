@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.55:
+• Limpiar contenido explica mejor qué se elimina: cada elemento dice si es porque está sin usar o porque es un utensilio básico que no hace falta como equipamiento.

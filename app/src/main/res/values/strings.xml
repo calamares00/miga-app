@@ -1172,7 +1172,9 @@
     <string name="cleanup_nothing">"Everything's spick and span"</string>
     <string name="cleanup_section_merge">"Merge duplicates (%1$d)"</string>
     <string name="cleanup_section_rename">"Unify names (%1$d)"</string>
-    <string name="cleanup_section_delete">"Delete unused or basic entries (%1$d)"</string>
+    <string name="cleanup_reason_unused">"Unused"</string>
+    <string name="cleanup_reason_basic">"Kitchen basic: not needed as equipment"</string>
+    <string name="cleanup_section_delete">"Delete (%1$d)"</string>
     <string name="cleanup_tick_all">"Tick all"</string>
     <string name="cleanup_untick_all">"Untick all"</string>
     <string name="cleanup_from_ai">"Suggested by the assistant"</string>

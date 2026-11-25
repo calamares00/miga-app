@@ -73,6 +73,7 @@ import org.calamares.miga.data.content.suggestContentCleanup
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.ContentItem
 import org.calamares.miga.data.model.ContentKind
+import org.calamares.miga.data.model.KitchenEquipment
 import org.calamares.miga.data.model.RecipeCategories
 import org.calamares.miga.data.repository.ContentSnapshot
 import org.calamares.miga.data.repository.RecipeRepository
@@ -345,6 +346,7 @@ private fun ProposalRow(proposal: CleanupProposal, ticked: Boolean, onToggle: ()
                 val details = buildList {
                     add(proposal.kind.title)
                     if (proposal.affected > 0) add(proposal.kind.usageLabel(proposal.affected))
+                    deleteReason(proposal)?.let { add(it) }
                 }.joinToString(" · ")
                 Text(details, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -454,6 +456,14 @@ private fun CategoryChoice(name: String, description: String?, selected: Boolean
             description?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
+}
+
+/** Why an entry is offered for deletion: nothing uses it, or it is a kitchen basic listed as equipment. */
+private fun deleteReason(proposal: CleanupProposal): String? {
+    if (proposal.action != CleanupAction.DELETE) return null
+    val item = proposal.items.single()
+    val basic = proposal.kind == ContentKind.EQUIPMENT && KitchenEquipment.isObvious(item.name)
+    return L10n.str(if (basic) R.string.cleanup_reason_basic else R.string.cleanup_reason_unused)
 }
 
 private fun proposalText(proposal: CleanupProposal): String = when (proposal.action) {

@@ -1202,7 +1202,9 @@
     <string name="cleanup_nothing">"Todo está como los chorros del oro"</string>
     <string name="cleanup_section_merge">"Fusionar duplicados (%1$d)"</string>
     <string name="cleanup_section_rename">"Unificar nombres (%1$d)"</string>
-    <string name="cleanup_section_delete">"Eliminar lo sin usar o básico (%1$d)"</string>
+    <string name="cleanup_reason_unused">"Sin usar"</string>
+    <string name="cleanup_reason_basic">"Utensilio básico: no hace falta como equipamiento"</string>
+    <string name="cleanup_section_delete">"Eliminar (%1$d)"</string>
     <string name="cleanup_tick_all">"Marcar todo"</string>
     <string name="cleanup_untick_all">"Desmarcar todo"</string>
     <string name="cleanup_from_ai">"Sugerido por el asistente"</string>
