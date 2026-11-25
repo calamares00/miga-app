@@ -19,6 +19,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.data.model.ContentKind
+import org.calamares.miga.data.model.RecipeCategories
 import org.calamares.miga.data.content.ContentCleanup
 import org.calamares.miga.ui.components.rememberCameraCapture
 import org.calamares.miga.ui.components.AdaptiveScaffold
@@ -716,9 +717,12 @@ private fun OriginField(
 @Composable
 private fun CategoryField(value: String, suggestions: List<String>, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
-    // "postre" when "Postres" exists: offered instead of creating a near duplicate.
+    val language = L10n.locale().language
+    // "postre" when "Postres" exists, or "Tartas" when "Repostería" does: offered instead of
+    // creating a near duplicate.
     val similar = remember(value, suggestions) {
-        ContentCleanup.similarExisting(ContentKind.CATEGORY, value, suggestions, L10n.locale().language)
+        ContentCleanup.similarExisting(ContentKind.CATEGORY, value, suggestions, language)
+            ?: RecipeCategories.builtInFor(value)?.name(language)?.takeIf { name -> name != value && suggestions.any { it.equals(name, ignoreCase = true) } }
     }
     Column(modifier = modifier) {
         OutlinedTextField(
@@ -742,13 +746,17 @@ private fun CategoryField(value: String, suggestions: List<String>, onValueChang
             if (filtered.isNotEmpty()) {
                 Column {
                     filtered.take(5).forEach { suggestion ->
-                        Text(
-                            text = suggestion,
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onValueChange(suggestion); expanded = false }
-                                .padding(vertical = 8.dp)
-                        )
+                                .padding(vertical = 6.dp)
+                        ) {
+                            Text(suggestion)
+                            RecipeCategories.description(suggestion, language)?.let { description ->
+                                Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                     }
                 }
             }

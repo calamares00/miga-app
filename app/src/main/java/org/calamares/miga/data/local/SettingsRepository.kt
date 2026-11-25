@@ -70,6 +70,7 @@ class SettingsRepository(private val context: Context) {
     private val seedLanguageKey = stringPreferencesKey("seed_language")
     /** Default kitchen equipment and categories created (and old equipment normalised) once. */
     private val defaultsSetUpKey = booleanPreferencesKey("defaults_set_up_v2")
+    private val newCategoriesSetUpKey = booleanPreferencesKey("new_categories_set_up_v1")
     private val shoppingImagesKey = booleanPreferencesKey("shopping_images_enabled")
     private val shoppingStoreKey = longPreferencesKey("shopping_store_id")
     private val shoppingListUidKey = stringPreferencesKey("shopping_list_uid")
@@ -239,6 +240,13 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setDefaultsSetUp() {
         context.settingsDataStore.edit { prefs -> prefs[defaultsSetUpKey] = true }
+    }
+
+    /** Whether the categories added after the first versions (RecipeCategories.ADDED_LATER) were created. */
+    suspend fun areNewCategoriesSetUp(): Boolean = context.settingsDataStore.data.first()[newCategoriesSetUpKey] ?: false
+
+    suspend fun setNewCategoriesSetUp() {
+        context.settingsDataStore.edit { prefs -> prefs[newCategoriesSetUpKey] = true }
     }
 
     /**

@@ -114,20 +114,50 @@ class ContentManagementTest {
 
     @Test
     fun `a cleanup is applied and undone`() = runBlocking {
-        val flan = save("Flan", "merienda", tags = listOf("dulce"))
-        save("Bizcocho", "meriendas")
+        val flan = save("Flan", "fiambrera", tags = listOf("dulce"))
+        save("Bizcocho", "fiambreras")
         repository.addContent(ContentKind.TAG, "sin usar")
         val (content, shopping) = repository.contentForCleanup()
         val proposals = org.calamares.miga.data.content.ContentCleanup.propose(content, "es", shopping)
 
         val snapshot = repository.applyCleanup(proposals)
-        assertEquals("Meriendas", recipe(flan).categoryName)
+        assertEquals("Fiambreras", recipe(flan).categoryName)
         assertNull(repository.observeContent(ContentKind.TAG).first().firstOrNull { it.name == "sin usar" })
 
         repository.undoCleanup(snapshot)
-        assertEquals("merienda", recipe(flan).categoryName)
+        assertEquals("fiambrera", recipe(flan).categoryName)
         assertEquals(listOf("dulce"), recipe(flan).tags)
-        assertEquals(setOf("merienda", "meriendas"), repository.observeContent(ContentKind.CATEGORY).first().map { it.name }.toSet())
+        assertEquals(setOf("fiambrera", "fiambreras"), repository.observeContent(ContentKind.CATEGORY).first().map { it.name }.toSet())
         assertEquals(setOf("dulce", "sin usar"), repository.observeContent(ContentKind.TAG).first().map { it.name }.toSet())
+    }
+
+    @Test
+    fun `a mixed category is split by dish, tagged and undone`() = runBlocking {
+        repository.seedDefaultCategories("es")
+        val turron = save("Turrón de chocolate", "Navidad")
+        val cordero = save("Cordero asado", "Navidad")
+        val sopa = save("Sopa de almendras", "Navidad")
+        val misterio = save("Receta de la abuela", "Navidad")
+        val (content, shopping) = repository.contentForCleanup()
+        val proposals = org.calamares.miga.data.content.ContentCleanup.propose(content, "es", shopping, repository.recipesForCleanup())
+        val split = proposals.single { it.action == org.calamares.miga.data.content.CleanupAction.SPLIT }
+
+        val snapshot = repository.applyCleanup(listOf(split))
+        assertEquals("Repostería", recipe(turron).categoryName)
+        assertEquals("Carnes", recipe(cordero).categoryName)
+        assertEquals("Sopas y cremas", recipe(sopa).categoryName)
+        // Unclear: stays, so the category stays too.
+        assertEquals("Navidad", recipe(misterio).categoryName)
+        assertEquals(listOf("navidad"), recipe(turron).tags)
+
+        repository.undoCleanup(snapshot)
+        assertEquals("Navidad", recipe(turron).categoryName)
+        assertTrue(recipe(turron).tags.isEmpty())
+
+        // Once all are filed, the user's category goes.
+        val filed = split.copy(assignments = split.assignments.map { if (it.recipeId == misterio) it.copy(target = "Postres") else it })
+        repository.applyCleanup(listOf(filed))
+        assertEquals("Postres", recipe(misterio).categoryName)
+        assertNull(repository.observeContent(ContentKind.CATEGORY).first().firstOrNull { it.name == "Navidad" })
     }
 }

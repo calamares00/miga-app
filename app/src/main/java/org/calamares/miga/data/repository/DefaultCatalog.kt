@@ -1,6 +1,7 @@
 package org.calamares.miga.data.repository
 
 import org.calamares.miga.data.model.KitchenEquipment
+import org.calamares.miga.data.model.RecipeCategories
 
 /**
  * Entries the app creates by itself on the first start (categories, kitchen equipment, ingredient
@@ -8,20 +9,11 @@ import org.calamares.miga.data.model.KitchenEquipment
  */
 object DefaultCatalog {
 
-    fun categories(language: String): List<String> = if (language == "es") listOf(
-        "Entrantes", "Ensaladas", "Sopas y cremas", "Arroces", "Pastas", "Legumbres", "Verduras", "Carnes",
-        "Pescados y mariscos", "Huevos", "Panes y masas", "Salsas", "Postres", "Bebidas"
-    ) else listOf(
-        "Starters", "Salads", "Soups", "Rice", "Pasta", "Legumes", "Vegetables", "Meat",
-        "Fish and seafood", "Eggs", "Breads and doughs", "Sauces", "Desserts", "Drinks"
-    )
-
-    /** Categories created by older versions, still shown as defaults. */
-    private val LEGACY_CATEGORIES = listOf("Postres", "Cremas", "Pastas", "Desserts", "Soups", "Pasta")
+    fun categories(language: String): List<String> = RecipeCategories.names(language)
 
     private fun keys(names: List<String>): Set<String> = names.map(KitchenEquipment::key).toSet()
 
-    private val categoryKeys by lazy { keys(categories("es") + categories("en") + LEGACY_CATEGORIES) }
+    private val categoryKeys by lazy { keys(categories("es") + categories("en")) }
     private val equipmentKeys by lazy { keys(KitchenEquipment.defaults("es") + KitchenEquipment.defaults("en")) }
     private val ingredientSeeds by lazy { IngredientCatalogSeed.forLanguage("es") + IngredientCatalogSeed.forLanguage("en") }
     private val ingredientCategoryKeys by lazy { keys(ingredientSeeds.map { it.first }) }

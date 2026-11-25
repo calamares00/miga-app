@@ -1,5 +1,6 @@
 Novedades de la versión 1.0.54:
-• Favoritos va mucho más fluido con muchos canales, perfiles y webs.
-• Si importas un truco o un consejo, o una receta que trae consejos, el asistente te ofrece guardarlos en tu biblioteca de consejos, en «Importados».
-• Recetas más completas de webs que solo dan los ingredientes: el asistente lee la página entera.
-• Limpiar contenido escribe todo igual: etiquetas en singular y minúscula, ingredientes en singular.
+• Favoritos va mucho más fluido con muchos canales y webs.
+• Los consejos que importes, solos o con una receta, se guardan en tu biblioteca, en «Importados».
+• Recetas más completas de webs que solo dan los ingredientes.
+• Nuevas categorías: Repostería, Helados y sorbetes, Aperitivos y tapas, Guisos y potajes… con lo que incluye cada una.
+• Limpiar contenido pasa tus categorías a las de la app y reparte las mezcladas receta a receta.

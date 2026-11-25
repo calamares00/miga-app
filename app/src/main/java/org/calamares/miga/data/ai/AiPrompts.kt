@@ -1,6 +1,7 @@
 package org.calamares.miga.data.ai
 
 import org.calamares.miga.L10n
+import org.calamares.miga.data.model.RecipeCategories
 
 /** JSON format of every prompt that produces a full recipe; decoded into RecipeVisionResultDto. */
 internal const val RECIPE_JSON_FORMAT = """{
@@ -89,8 +90,11 @@ private const val MAX_KNOWN_LABELS = 80
 internal fun knownLabelsInstruction(known: KnownLabels): String = buildString {
     if (known.categories.isNotEmpty()) {
         append("\n\nThe user already has these recipe categories: ")
-        append(known.categories.take(MAX_KNOWN_LABELS).joinToString(", ") { "\"$it\"" })
-        append(". For \"categoryName\" use the one that best fits the recipe, written exactly as above; only if none fits, propose a short new category.")
+        append(known.categories.take(MAX_KNOWN_LABELS).joinToString(", ") { name ->
+            val description = RecipeCategories.named(name)?.description("en")
+            if (description != null) "\"$name\" ($description)" else "\"$name\""
+        })
+        append(". A category says only the kind of dish (cuisines, diets and occasions are tags). For \"categoryName\" use the one that best fits the recipe, written exactly as above; only if none fits at all, propose a short new category.")
     }
     if (known.equipment.isNotEmpty()) {
         append("\n\nThe user already has this kitchen equipment: ")
