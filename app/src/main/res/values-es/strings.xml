@@ -1238,6 +1238,8 @@
         <item quantity="other">"%1$d se quedan"</item>
     </plurals>
     <string name="cleanup_split_tag">"Etiqueta «%1$s»"</string>
+    <string name="cleanup_split_none">"Ninguna receta tiene un tipo de plato claro: toca «Ver recetas» y elige la categoría de cada una, o pide «Más sugerencias»."</string>
+    <string name="cleanup_split_pick">"Elegir categoría"</string>
     <string name="cleanup_split_show">"Ver recetas"</string>
     <string name="cleanup_split_hide">"Ocultar recetas"</string>
     <string name="cleanup_split_choose">"¿A qué categoría va «%1$s»?"</string>

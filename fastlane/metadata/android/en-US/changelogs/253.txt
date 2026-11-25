@@ -1,2 +1,4 @@
 What's new in version 1.0.55:
 • Content cleanup explains what it deletes: each entry says whether it is unused or a kitchen basic not needed as equipment.
+• When splitting a category, recipes without a clear kind of dish ask you to pick their category, and a split that changes nothing is no longer offered again and again.
+• More meat dishes recognised: sausages, chorizo, black pudding, game…
