@@ -694,7 +694,8 @@
     <string name="editor_more">"More"</string>
     <string name="notes_variants">"Notes / variations"</string>
     <string name="gemini_blocked_x">"Gemini blocked the response under its content policy (%1$s)."</string>
-    <string name="gemini_max_tokens">"Gemini cut the response short (too long). Try fewer photos at once or a simpler photo."</string>
+    <string name="gemini_max_tokens">"Gemini cut the answer off before finishing: it was too long. Try again or with another model."</string>
+    <string name="gemini_max_tokens_photos">"Gemini cut the response short (too long). Try fewer photos at once or a simpler photo."</string>
     <string name="gemini_safety">"Gemini blocked the response under its content policy."</string>
     <string name="gemini_recitation">"Gemini blocked the response because of possible protected content."</string>
     <string name="gemini_incomplete_x">"Gemini didn't finish the response (reason: %1$s)."</string>
@@ -712,7 +713,8 @@
     <string name="ai_health_disclaimer">"AI-generated estimate. It may contain errors and is not a substitute for advice from a health professional."</string>
     <string name="ai_nutrition_desc">"Estimates calories and macros per serving when you open a recipe."</string>
     <string name="ai_disabled_summary">"Disabled"</string>
-    <string name="ai_incomplete_too_long">"%1$s cut the answer off before finishing (too long). Try fewer photos at once or a simpler photo."</string>
+    <string name="ai_incomplete_too_long">"%1$s cut the answer off before finishing: it was too long. Try again or with another model."</string>
+    <string name="ai_incomplete_too_long_photos">"%1$s cut the answer off before finishing (too long). Try fewer photos at once or a simpler photo."</string>
     <string name="ai_incomplete_refused">"%1$s declined the request because of its content policy."</string>
     <string name="ai_incomplete_empty">"%1$s returned no result."</string>
     <string name="ai_incomplete_other">"%1$s didn't finish the answer (reason: %2$s)."</string>
@@ -1168,11 +1170,14 @@
     <string name="cleanup_intro">"Review what can be tidied up and untick anything you want to keep. Your categories move into the app's ones, and those mixing dishes are split recipe by recipe (tap a recipe to change where it goes). The entries that come with the app are never renamed or deleted."</string>
     <string name="cleanup_ai">"More suggestions"</string>
     <string name="cleanup_ai_working">"Looking for synonyms, typos and recipes to file…"</string>
+    <string name="cleanup_ai_incomplete">"The assistant could not review everything: these are the suggestions that came back. You can apply them and ask for more again."</string>
     <string name="cleanup_ai_done">"Extra suggestions added"</string>
     <string name="cleanup_nothing">"Everything's spick and span"</string>
     <string name="cleanup_section_merge">"Merge duplicates (%1$d)"</string>
     <string name="cleanup_section_rename">"Unify names (%1$d)"</string>
-    <string name="cleanup_section_delete">"Delete unused or basic entries (%1$d)"</string>
+    <string name="cleanup_reason_unused">"Unused"</string>
+    <string name="cleanup_reason_basic">"Kitchen basic: not needed as equipment"</string>
+    <string name="cleanup_section_delete">"Delete (%1$d)"</string>
     <string name="cleanup_tick_all">"Tick all"</string>
     <string name="cleanup_untick_all">"Untick all"</string>
     <string name="cleanup_from_ai">"Suggested by the assistant"</string>
@@ -1201,6 +1206,8 @@
         <item quantity="other">"%1$d stay"</item>
     </plurals>
     <string name="cleanup_split_tag">"Tag «%1$s»"</string>
+    <string name="cleanup_split_none">"No recipe has a clear kind of dish: tap «Show recipes» and pick each one's category, or ask for «More suggestions»."</string>
+    <string name="cleanup_split_pick">"Pick a category"</string>
     <string name="cleanup_split_show">"Show recipes"</string>
     <string name="cleanup_split_hide">"Hide recipes"</string>
     <string name="cleanup_split_choose">"Which category does «%1$s» go to?"</string>

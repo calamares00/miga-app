@@ -73,6 +73,7 @@ import org.calamares.miga.data.content.suggestContentCleanup
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.ContentItem
 import org.calamares.miga.data.model.ContentKind
+import org.calamares.miga.data.model.KitchenEquipment
 import org.calamares.miga.data.model.RecipeCategories
 import org.calamares.miga.data.repository.ContentSnapshot
 import org.calamares.miga.data.repository.RecipeRepository
@@ -90,6 +91,8 @@ data class CleanupUiState(
     val askingAi: Boolean = false,
     val aiAsked: Boolean = false,
     val aiError: String? = null,
+    /** Set when the assistant answered only part of the request. */
+    val aiIncomplete: Boolean = false,
     val applying: Boolean = false,
     /** Set once applied: what was done, and how to undo it. */
     val done: CleanupDone? = null
@@ -134,17 +137,19 @@ class ContentCleanupViewModel(
         state.copy(ticked = if (state.ticked.containsAll(keys)) state.ticked - keys else state.ticked + keys)
     }
 
-    /** Sends the recipe [recipeId] of the split [proposal] to [target] (null: it stays). */
+    /** Sends the recipe [recipeId] of the split [proposal] to [target] (null: it stays); a split that now moves something is ticked. */
     fun reassign(proposal: CleanupProposal, recipeId: Long, target: String?) = _state.update { state ->
-        state.copy(proposals = state.proposals.map { current ->
+        val proposals = state.proposals.map { current ->
             if (current.key != proposal.key) current
             else current.copy(assignments = current.assignments.map { if (it.recipeId == recipeId) it.copy(target = target, fromAi = false) else it })
-        })
+        }
+        val moves = proposals.first { it.key == proposal.key }.assignments.any { it.target != null }
+        state.copy(proposals = proposals, ticked = if (moves) state.ticked + proposal.key else state.ticked - proposal.key)
     }
 
     fun refineWithAi() {
         if (_state.value.askingAi) return
-        _state.update { it.copy(askingAi = true, aiError = null) }
+        _state.update { it.copy(askingAi = true, aiError = null, aiIncomplete = false) }
         viewModelScope.launch {
             val current = _state.value.proposals
             val result = settingsRepository.runAi<AiCleanupResult>(
@@ -155,17 +160,26 @@ class ContentCleanupViewModel(
                 when (result) {
                     null -> state.copy(askingAi = false, aiError = L10n.str(R.string.ai_no_provider))
                     is AiCleanupResult.Error -> state.copy(askingAi = false, aiError = result.reason)
-                    is AiCleanupResult.Success -> state.copy(
-                        askingAi = false,
-                        aiAsked = true,
-                        proposals = state.proposals.map { proposal ->
+                    is AiCleanupResult.Success -> {
+                        val proposals = state.proposals.map { proposal ->
                             if (proposal.action != CleanupAction.SPLIT) proposal
                             else proposal.copy(assignments = proposal.assignments.map { assignment ->
                                 val filed = result.assignments[assignment.recipeId]
                                 if (assignment.target == null && filed != null) assignment.copy(target = filed, fromAi = true) else assignment
                             })
                         } + result.proposals.filter { new -> state.proposals.none { it.key == new.key } }
-                    )
+                        // Splits the assistant has given something to move are ticked.
+                        val nowMoving = proposals.filter { proposal ->
+                            proposal.action == CleanupAction.SPLIT && proposal.assignments.any { it.fromAi && it.target != null }
+                        }.map { it.key }
+                        state.copy(
+                            askingAi = false,
+                            aiAsked = true,
+                            aiIncomplete = result.incomplete,
+                            proposals = proposals,
+                            ticked = state.ticked + nowMoving
+                        )
+                    }
                 }
             }
         }
@@ -262,16 +276,23 @@ fun ContentCleanupScreen(viewModel: ContentCleanupViewModel, onBack: () -> Unit)
                 if (aiEnabled) {
                     item(key = "ai") {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilledTonalButton(onClick = { viewModel.refineWithAi() }, enabled = !state.askingAi && !state.aiAsked) {
+                            FilledTonalButton(onClick = { viewModel.refineWithAi() }, enabled = !state.askingAi && (!state.aiAsked || state.aiIncomplete)) {
                                 if (state.askingAi) {
                                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                     Spacer(modifier = Modifier.size(8.dp))
                                     Text(L10n.str(R.string.cleanup_ai_working))
                                 } else {
-                                    ButtonContent(Icons.Filled.AutoAwesome, L10n.str(if (state.aiAsked) R.string.cleanup_ai_done else R.string.cleanup_ai))
+                                    ButtonContent(Icons.Filled.AutoAwesome, L10n.str(if (state.aiAsked && !state.aiIncomplete) R.string.cleanup_ai_done else R.string.cleanup_ai))
                                 }
                             }
                             state.aiError?.let { ErrorMessage(it, onRetry = { viewModel.refineWithAi() }) }
+                            if (state.aiIncomplete) {
+                                Text(
+                                    L10n.str(R.string.cleanup_ai_incomplete),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
@@ -345,6 +366,7 @@ private fun ProposalRow(proposal: CleanupProposal, ticked: Boolean, onToggle: ()
                 val details = buildList {
                     add(proposal.kind.title)
                     if (proposal.affected > 0) add(proposal.kind.usageLabel(proposal.affected))
+                    deleteReason(proposal)?.let { add(it) }
                 }.joinToString(" · ")
                 Text(details, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -379,7 +401,7 @@ private fun SplitProposalRow(proposal: CleanupProposal, ticked: Boolean, onToggl
                 Checkbox(checked = ticked, onCheckedChange = { onToggle() })
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(proposalText(proposal), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                    val summary = buildList {
+                    val summary = if (proposal.assignments.none { it.target != null }) L10n.str(R.string.cleanup_split_none) else buildList {
                         proposal.assignments.mapNotNull { it.target }.groupingBy { it }.eachCount().entries
                             .sortedByDescending { it.value }.forEach { (name, count) -> add("$name $count") }
                         val stays = proposal.assignments.count { it.target == null }
@@ -411,9 +433,9 @@ private fun SplitProposalRow(proposal: CleanupProposal, ticked: Boolean, onToggl
                             )
                         }
                         Text(
-                            "→ " + (assignment.target ?: source.name),
+                            assignment.target?.let { "→ $it" } ?: L10n.str(R.string.cleanup_split_pick),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (assignment.target != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -454,6 +476,14 @@ private fun CategoryChoice(name: String, description: String?, selected: Boolean
             description?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
+}
+
+/** Why an entry is offered for deletion: nothing uses it, or it is a kitchen basic listed as equipment. */
+private fun deleteReason(proposal: CleanupProposal): String? {
+    if (proposal.action != CleanupAction.DELETE) return null
+    val item = proposal.items.single()
+    val basic = proposal.kind == ContentKind.EQUIPMENT && KitchenEquipment.isObvious(item.name)
+    return L10n.str(if (basic) R.string.cleanup_reason_basic else R.string.cleanup_reason_unused)
 }
 
 private fun proposalText(proposal: CleanupProposal): String = when (proposal.action) {

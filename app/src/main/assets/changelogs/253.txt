@@ -1,0 +1,6 @@
+Novedades de la versión 1.0.55:
+• Limpiar contenido dice por qué propone eliminar algo: sin usar o utensilio básico.
+• Las recetas sin tipo de plato claro piden que elijas su categoría; un reparto que no cambia nada ya no se repite.
+• «Más sugerencias» funciona con muchos elementos: el asistente los revisa por partes.
+• Más platos de carne reconocidos: salchichas, chorizo, caza…
+• Errores más claros cuando el asistente corta la respuesta.

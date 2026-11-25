@@ -87,7 +87,7 @@ internal object AnthropicTransport : AiTransport {
             val text = decoded.content.firstOrNull { it.type == "text" }?.text
             // An answer cut off by the output limit is unusable (half a JSON), so it counts as a failure.
             if (text.isNullOrBlank() || decoded.stopReason == "max_tokens") {
-                AiText.Error(describeIncomplete(decoded.stopReason))
+                AiText.Error(describeIncomplete(decoded.stopReason, request.images.isNotEmpty()))
             } else {
                 AiText.Success(text)
             }
@@ -100,11 +100,11 @@ internal object AnthropicTransport : AiTransport {
     }
 
     /** Explains why Claude returned no text (output limit reached, refusal...). */
-    private fun describeIncomplete(stopReason: String?): String {
+    private fun describeIncomplete(stopReason: String?, withImages: Boolean): String {
         val name = AiProvider.ANTHROPIC.shortName
         return ErrorDetail.markAsAi(
             when (stopReason) {
-                "max_tokens" -> L10n.str(R.string.ai_incomplete_too_long, name)
+                "max_tokens" -> L10n.str(if (withImages) R.string.ai_incomplete_too_long_photos else R.string.ai_incomplete_too_long, name)
                 "refusal" -> L10n.str(R.string.ai_incomplete_refused, name)
                 null -> L10n.str(R.string.ai_incomplete_empty, name)
                 else -> L10n.str(R.string.ai_incomplete_other, name, stopReason)
