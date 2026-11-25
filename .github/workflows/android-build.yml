@@ -207,9 +207,39 @@ jobs:
   # dev_debug: push to any other branch, or a manual run -> compile checks only, nothing published.
   # Files ready to publish are left in dist/ and uploaded as an artifact so the publish job
   # (which runs on another runner) can download them without rebuilding.
+  # Lint of each flavor on its own runner, at the same time as the tests and the build (it is the
+  # longest step). On every branch: a lint error is cheaper to fix where it appears.
+  lint:
+    name: Lint (${{ matrix.flavor }})
+    needs: changes
+    if: github.event_name != 'pull_request' && (needs.changes.outputs.app == 'true' || needs.changes.outputs.release == 'true')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: [Play, Fdroid]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Lint
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:lint${{ matrix.flavor }}Debug --stacktrace
+
+  # Runs at the same time as the tests and lint; publish waits for all three.
   build:
     name: Build
-    needs: [changes, test]
+    needs: changes
     # Only when the app changed (or there is a version to publish); not on pull requests (see changes).
     if: github.event_name != 'pull_request' && (needs.changes.outputs.app == 'true' || needs.changes.outputs.release == 'true')
     runs-on: ubuntu-latest
@@ -276,10 +306,6 @@ jobs:
       - name: Build release AAB (check the Play bundle)
         if: steps.mode.outputs.mode != 'release'
         run: ./gradlew :app:bundlePlayRelease --stacktrace
-
-      # On every branch: a lint error is cheaper to fix where it appears.
-      - name: Lint
-        run: ./gradlew :app:lintPlayDebug :app:lintFdroidDebug --stacktrace
 
       # --- any run without a new version: the debug APK only has to compile ---
       # Nothing is published: test builds reach testers through the Play closed beta, never as
@@ -411,7 +437,8 @@ jobs:
   # the build job (nothing is rebuilt) and uploads it to a GitHub Release and Google Play.
   publish:
     name: Publish
-    needs: [changes, build]
+    # Only when tests, lint and build all passed (a failed or cancelled one skips publishing).
+    needs: [changes, test, lint, build]
     if: needs.build.outputs.mode == 'release'
     runs-on: ubuntu-latest
     permissions:
