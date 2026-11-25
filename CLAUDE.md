@@ -10,8 +10,10 @@ Android recipe and shopping list app (`org.calamares.miga`): Kotlin, Jetpack Com
 - In the app, the AI features are called the "cooking assistant" (asistente de cocina), not "AI".
   Its guardrails keep it on cooking topics only.
 - Every merge to `main` with a new `versionName` publishes a release: signed APKs, AAB and
-  `SHA256SUMS.txt` on GitHub, plus an upload to Google Play (track from the `PLAY_TRACK` repo
-  variable). So any change to `main` needs:
+  `SHA256SUMS.txt` on GitHub (as a prerelease), plus an upload to the Google Play closed beta
+  (track from the `PLAY_TRACK` repo variable, `alpha`). The public gets it later, the same AAB,
+  with the "Publicar en producción" workflow, or right away when the PR has the `env/pro` label
+  (see `docs/google-play.md`). So any change to the app in `main` needs:
   - `versionName` bumped and `versionCode` + 1 in `app/build.gradle.kts`;
   - release notes `<versionCode>.txt` in `app/src/main/assets/changelogs` (es),
     `app/src/main/assets/changelogs-en` and `fastlane/metadata/android/{es-ES,en-US}/changelogs`
