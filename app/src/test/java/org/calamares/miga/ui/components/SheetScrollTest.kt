@@ -5,17 +5,18 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.getBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
@@ -47,7 +48,7 @@ class SheetScrollTest {
         compose.setContent {
             MigaTheme(darkTheme = false) {
                 if (open) {
-                    ModalBottomSheet(onDismissRequest = { open = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+                    ModalBottomSheet(onDismissRequest = { open = false }, sheetState = rememberBottomSheetState(SheetValue.Hidden, setOf(SheetValue.Hidden, SheetValue.Expanded))) {
                         Column(modifier = Modifier.keepScrollInSheet()) {
                             Column(
                                 modifier = Modifier.testTag("list").heightIn(max = sheetContentHeight(0.9f)).verticalScroll(remember { androidx.compose.foundation.ScrollState(0) })
@@ -85,7 +86,7 @@ class SheetScrollTest {
         compose.setContent {
             MigaTheme(darkTheme = false) {
                 if (open) {
-                    ModalBottomSheet(onDismissRequest = { open = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+                    ModalBottomSheet(onDismissRequest = { open = false }, sheetState = rememberBottomSheetState(SheetValue.Hidden, setOf(SheetValue.Hidden, SheetValue.Expanded))) {
                         Column(modifier = Modifier.keepScrollInSheet()) {
                             Column(
                                 modifier = Modifier.testTag("list").heightIn(max = sheetContentHeight(0.9f)).verticalScroll(remember { androidx.compose.foundation.ScrollState(0) })

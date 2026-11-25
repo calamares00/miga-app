@@ -1,5 +1,6 @@
 package org.calamares.miga.data.polish
 
+import android.annotation.SuppressLint
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +42,8 @@ data class BulkPolishItem(val recipe: Recipe, val state: BulkPolishState)
  * and its list stays until a new one starts. The "AI is working" notification counts the recipes;
  * when all are done, a notification opens the list (see AiJobs). One list at a time.
  */
+// Keeps the app-wide repositories, built on the application context: no activity leaks.
+@SuppressLint("StaticFieldLeak")
 object BulkPolish {
     /** Navigation route of the screen (see MigaNavHost); the notification opens it. */
     const val ROUTE = "bulkPolish"
@@ -132,7 +135,7 @@ object BulkPolish {
         val settings = settings ?: return
         job = scope.launch {
             val total = _items.value.count { it.state == BulkPolishState.Queued }
-            AiKeepAlive.hold(L10n.str(R.string.bulk_polish_working_n, total)) {
+            AiKeepAlive.hold(L10n.plural(R.plurals.bulk_polish_working_n, total)) {
                 var done = 0
                 while (true) {
                     val next = _items.value.firstOrNull { it.state == BulkPolishState.Queued } ?: break
@@ -163,7 +166,7 @@ object BulkPolish {
                 val ready = _items.value.count { it.state is BulkPolishState.Ready }
                 val failed = _items.value.count { it.state is BulkPolishState.Failed }
                 AiKeepAlive.announce(
-                    if (failed == 0) L10n.str(R.string.bulk_polish_done_n, ready) else L10n.str(R.string.bulk_polish_done_n_failed_m, ready, failed),
+                    if (failed == 0) L10n.plural(R.plurals.bulk_polish_done_n, ready) else L10n.plural(R.plurals.bulk_polish_done_n_failed_m, ready, ready, failed),
                     openRoute = ROUTE
                 )
             }

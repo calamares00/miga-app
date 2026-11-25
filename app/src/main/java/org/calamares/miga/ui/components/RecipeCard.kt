@@ -94,7 +94,7 @@ fun RecipeCard(
             if (selectionMode) {
                 Icon(
                     imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                    contentDescription = if (isSelected) L10n.str(R.string.selected) else L10n.str(R.string.not_selected),
+                    contentDescription = if (isSelected) L10n.str(R.string.item_selected) else L10n.str(R.string.item_not_selected),
                     tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else if (!compact) {
@@ -145,7 +145,7 @@ fun RecipeCard(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = formatDuration(recipe.totalTimeMinutes ?: 0),
+                                text = formatDuration(recipe.totalTimeMinutes),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -220,7 +220,7 @@ fun RecipeGridCard(
                 if (selectionMode) {
                     Icon(
                         imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                        contentDescription = if (isSelected) L10n.str(R.string.selected) else L10n.str(R.string.not_selected),
+                        contentDescription = if (isSelected) L10n.str(R.string.item_selected) else L10n.str(R.string.item_not_selected),
                         tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
                         modifier = Modifier
                             .align(Alignment.TopStart)
@@ -253,7 +253,7 @@ fun RecipeGridCard(
                     )
                     if (recipe.totalTimeMinutes != null) {
                         Text(
-                            text = formatDuration(recipe.totalTimeMinutes ?: 0),
+                            text = formatDuration(recipe.totalTimeMinutes),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

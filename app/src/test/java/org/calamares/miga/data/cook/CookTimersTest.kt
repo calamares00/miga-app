@@ -35,7 +35,7 @@ class CookTimersTest {
         assertEquals(1, oven.secondsLeft(90_000L))
         assertEquals(0, oven.secondsLeft(91_000L))
         assertEquals(2, alarms.scheduledAlarms.size)
-        assertTrue(alarms.scheduledAlarms.any { it.triggerAtTime == 601_000L })
+        assertTrue(alarms.scheduledAlarms.any { it.triggerAtMs == 601_000L })
     }
 
     @Test

@@ -29,7 +29,7 @@ internal const val RECIPE_MAX_TOKENS = 8192
  */
 @Serializable
 data class RecipeVisionResultDto(
-    val name: String,
+    val name: String = "",
     val categoryName: String? = null,
     val difficulty: String = "MEDIUM",
     val prepTimeMinutes: Int? = null,
@@ -45,7 +45,11 @@ data class RecipeVisionResultDto(
     val origin: String? = null,
     val originCountry: String? = null,
     /** Photos of the finished dish found in the images (only when importing from photos). */
-    val dishPhotos: List<DishPhotoDto> = emptyList()
+    val dishPhotos: List<DishPhotoDto> = emptyList(),
+    /** Set instead of a recipe when what was imported is a cooking tip (see TIP_INSTEAD_OF_RECIPE). */
+    val tip: FoundTipDto? = null,
+    /** Cooking tips given besides the recipe, useful beyond it (see TIP_INSTEAD_OF_RECIPE). */
+    val tips: List<FoundTipDto> = emptyList()
 )
 
 /**
@@ -77,7 +81,19 @@ sealed interface RecipeExtractionResult {
 sealed interface RecipeVisionResult {
     data class Success(val recipe: RecipeVisionResultDto) : RecipeVisionResult
     data class Error(val reason: String) : RecipeVisionResult
+
+    /** What was imported is a cooking tip, not a recipe: offered for the tips library. */
+    data class Tip(val tip: FoundTipDto) : RecipeVisionResult
 }
+
+/** A cooking tip found instead of a recipe (see TIP_INSTEAD_OF_RECIPE). */
+@Serializable
+data class FoundTipDto(
+    val category: String = "KITCHEN",
+    val title: String = "",
+    val body: String = "",
+    val keywords: List<String> = emptyList()
+)
 
 /**
  * Transcribes the recipes in one or more photos. Several images are treated as pages of the same
@@ -114,7 +130,12 @@ internal fun parseRecipeAnswer(result: AiText, emptyMessage: () -> String): Reci
     is AiText.Error -> RecipeVisionResult.Error(result.reason)
     is AiText.Success -> try {
         val recipe = decodeAiJson(RecipeVisionResultDto.serializer(), result.text)
-        if (recipe.name.isBlank()) RecipeVisionResult.Error(emptyMessage()) else RecipeVisionResult.Success(recipe)
+        val tip = recipe.tip?.takeIf { it.title.isNotBlank() && it.body.isNotBlank() }
+        when {
+            recipe.name.isNotBlank() -> RecipeVisionResult.Success(recipe)
+            tip != null -> RecipeVisionResult.Tip(tip)
+            else -> RecipeVisionResult.Error(emptyMessage())
+        }
     } catch (e: Exception) {
         RecipeVisionResult.Error(AiErrors.badResponse(e, result.text))
     }

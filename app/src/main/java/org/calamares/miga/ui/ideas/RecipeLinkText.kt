@@ -1,6 +1,9 @@
 package org.calamares.miga.ui.ideas
 
-import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import org.calamares.miga.ui.components.withTappableLinks
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -58,19 +61,13 @@ internal fun RecipeLinkText(
     modifier: Modifier = Modifier
 ) {
     val linkColor = MaterialTheme.colorScheme.primary
+    val currentOnRecipeClick by rememberUpdatedState(onRecipeClick)
     val annotated = remember(text, names, linkColor) {
         recipeLinkedString(
             text,
             names,
             SpanStyle(color = linkColor, fontWeight = FontWeight.SemiBold, textDecoration = TextDecoration.Underline)
-        )
+        ).withTappableLinks(RECIPE_TAG) { id -> currentOnRecipeClick(id.toLong()) }
     }
-    ClickableText(
-        text = annotated,
-        style = style.merge(TextStyle(color = LocalContentColor.current)),
-        modifier = modifier,
-        onClick = { offset ->
-            annotated.getStringAnnotations(RECIPE_TAG, offset, offset).firstOrNull()?.let { onRecipeClick(it.item.toLong()) }
-        }
-    )
+    Text(annotated, style = style, modifier = modifier)
 }

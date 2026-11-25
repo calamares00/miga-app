@@ -8,6 +8,7 @@ import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.data.model.Ingredient
 import org.calamares.miga.data.model.IngredientGroup
 import org.calamares.miga.data.model.KitchenEquipment
+import org.calamares.miga.data.model.RecipeCategories
 import org.calamares.miga.data.model.RecipeDraft
 import org.calamares.miga.data.model.RecipeOrigin
 import org.calamares.miga.data.model.StepGroup
@@ -93,12 +94,16 @@ fun List<RecipeVisionResultDto>.mergedIntoOne(): RecipeVisionResultDto {
 
 /**
  * This recipe with its category and equipment written as the user's existing ones when one fits
- * ("Postre" -> "Postres", "Horno eléctrico" -> "Horno"), so saving it does not create near
+ * ("Postre" -> "Postres", "Tartas" -> "Repostería", "Horno eléctrico" -> "Horno"), so saving it does not create near
  * duplicates. The model is asked to do this already; this catches what it misses.
  */
 fun RecipeVisionResultDto.matchedTo(known: KnownLabels): RecipeVisionResultDto {
     val parts = categoryName?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
-    val category = parts.firstOrNull()?.let { CatalogMatching.bestMatch(it, known.categories) ?: it }
+    val category = parts.firstOrNull()?.let { name ->
+        CatalogMatching.bestMatch(name, known.categories)
+            ?: RecipeCategories.builtInFor(name)?.let { builtIn -> known.categories.firstOrNull { RecipeCategories.named(it) == builtIn } }
+            ?: name
+    }
     return copy(
         categoryName = (listOfNotNull(category) + parts.drop(1)).joinToString(", ").ifEmpty { null },
         utensils = utensils.map { name -> matchEquipment(name, known.equipment) }.distinctBy { KitchenEquipment.key(it) }

@@ -1,9 +1,9 @@
 package org.calamares.miga.ui.components
 
+import androidx.core.net.toUri
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -110,7 +110,7 @@ private fun AiReportDialog(feature: String, content: () -> String, onDismiss: ()
                 val subject = AiContentReport.subject(feature)
                 val body = AiContentReport.body(feature, reason, comment, content(), BuildConfig.VERSION_NAME)
                 val opened = runCatching {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(AiContentReport.targetUrl(subject, body))))
+                    context.startActivity(Intent(Intent.ACTION_VIEW, AiContentReport.targetUrl(subject, body).toUri()))
                 }.isSuccess
                 if (!opened) Toast.makeText(context, L10n.str(R.string.theres_no_app_send_report), Toast.LENGTH_SHORT).show()
                 onDismiss()

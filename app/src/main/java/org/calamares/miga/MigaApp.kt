@@ -8,6 +8,7 @@ import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.local.ALL_MIGRATIONS
 import org.calamares.miga.data.local.AppDatabase
 import org.calamares.miga.data.local.SettingsRepository
+import org.calamares.miga.data.model.RecipeCategories
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.data.repository.ShoppingContext
 import org.calamares.miga.data.support.AppDispatchers
@@ -26,7 +27,7 @@ open class MigaApp : Application() {
             .addMigrations(*ALL_MIGRATIONS)
             // Only databases older than the first migration may be wiped; a missing migration for a
             // newer version fails loudly instead of silently deleting the user's recipes.
-            .fallbackToDestructiveMigrationFrom(1, 2, 3)
+            .fallbackToDestructiveMigrationFrom(true, 1, 2, 3)
             .build()
     }
 
@@ -74,6 +75,12 @@ open class MigaApp : Application() {
                 repository.seedDefaultCategories(seedLanguage)
                 repository.seedIngredientCatalogDefaults(seedLanguage)
                 settingsRepository.setDefaultsSetUp()
+            }
+            // Categories added later (Repostería, Helados y sorbetes...), once: Clean up offers to
+            // move the user's similar ones into them.
+            if (!settingsRepository.areNewCategoriesSetUp()) {
+                repository.seedCategories(RecipeCategories.ADDED_LATER.map { it.name(seedLanguage) })
+                settingsRepository.setNewCategoriesSetUp()
             }
         }
         schedulePeriodicSync()

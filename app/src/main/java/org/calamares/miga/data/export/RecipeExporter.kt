@@ -1,5 +1,6 @@
 package org.calamares.miga.data.export
 
+import androidx.core.net.toUri
 import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.BookDetails
 import org.calamares.miga.data.model.SourceText
@@ -809,7 +810,7 @@ object RecipeExporter {
             photoSources.forEachIndexed { index, (path, sourceUri) ->
                 onPhoto(index + 1, photoSources.size)
                 // A photo deleted outside the app must not abort the whole export.
-                val input = runCatching { context.contentResolver.openInputStream(Uri.parse(sourceUri)) }.getOrNull()
+                val input = runCatching { context.contentResolver.openInputStream(sourceUri.toUri()) }.getOrNull()
                 input?.use {
                     zip.putNextEntry(ZipEntry(path))
                     it.copyTo(zip)

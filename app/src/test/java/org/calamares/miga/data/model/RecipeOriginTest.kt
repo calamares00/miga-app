@@ -30,9 +30,9 @@ class RecipeOriginTest {
 
     @Test
     fun `label shows the flag with the text or the country name`() {
-        assertEquals("🇪🇸 Córdoba", RecipeOrigin.label("Córdoba", "ES", Locale("es")))
-        assertEquals("🇯🇵 Japón", RecipeOrigin.label(null, "JP", Locale("es")))
-        assertEquals("Casera", RecipeOrigin.label("Casera", null, Locale("es")))
-        assertNull(RecipeOrigin.label(" ", null, Locale("es")))
+        assertEquals("🇪🇸 Córdoba", RecipeOrigin.label("Córdoba", "ES", Locale.forLanguageTag("es")))
+        assertEquals("🇯🇵 Japón", RecipeOrigin.label(null, "JP", Locale.forLanguageTag("es")))
+        assertEquals("Casera", RecipeOrigin.label("Casera", null, Locale.forLanguageTag("es")))
+        assertNull(RecipeOrigin.label(" ", null, Locale.forLanguageTag("es")))
     }
 }

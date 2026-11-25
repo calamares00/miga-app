@@ -122,6 +122,14 @@ class SocialPostRecipeTest {
         assertNull(SocialPostRecipe.read(html, "https://www.example.com/tienda"))
     }
 
+    @Test
+    fun `an article of a blog or magazine is a web page, a post of a social network is a post`() {
+        val article = """<meta property="og:type" content="article" /><meta property="og:description" content="${"Cuando hacemos un caldo solemos desechar las verduras. ".repeat(3)}" />"""
+        assertNull(SocialPostRecipe.read(article, "https://www.directoalpaladar.com/curso-de-cocina/como-mejorar-tu-sopa"))
+        assertTrue(SocialPostRecipe.read(article, "https://www.tiktok.com/@cocina/video/123") != null)
+        assertTrue(SocialPostRecipe.isSocialNetwork("https://m.facebook.com/cocina/posts/1"))
+    }
+
     private fun post(text: String) = SocialPost(text, null, "@prueba", "https://www.instagram.com/p/X/", "Instagram")
 
     @Test

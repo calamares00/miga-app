@@ -1,8 +1,8 @@
 package org.calamares.miga.ui.components
 
+import androidx.core.net.toUri
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,10 +12,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -66,7 +65,7 @@ private fun documentText(text: String, linkColor: Color): AnnotatedString {
 }
 
 private fun openLink(context: Context, target: String) {
-    val uri = Uri.parse(target)
+    val uri = target.toUri()
     val intent = if (uri.scheme == "mailto") Intent(Intent.ACTION_SENDTO, uri) else Intent(Intent.ACTION_VIEW, uri)
     runCatching { context.startActivity(intent) }
 }
@@ -75,15 +74,10 @@ private fun openLink(context: Context, target: String) {
 private fun DocumentText(text: String, style: TextStyle, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val linkColor = MaterialTheme.colorScheme.primary
-    val annotated = remember(text, linkColor) { documentText(text, linkColor) }
-    ClickableText(
-        text = annotated,
-        style = style.merge(TextStyle(color = LocalContentColor.current)),
-        modifier = modifier,
-        onClick = { offset ->
-            annotated.getStringAnnotations(LINK_TAG, offset, offset).firstOrNull()?.let { openLink(context, it.item) }
-        }
-    )
+    val annotated = remember(text, linkColor, context) {
+        documentText(text, linkColor).withTappableLinks(LINK_TAG) { target -> openLink(context, target) }
+    }
+    Text(annotated, style = style, modifier = modifier)
 }
 
 /** The blocks of a document (see [MarkdownDocument]) styled with the app theme. */
@@ -132,7 +126,7 @@ fun DocumentScreen(title: String, assetPath: String, onBack: () -> Unit) {
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(title) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                 }
             )
         }

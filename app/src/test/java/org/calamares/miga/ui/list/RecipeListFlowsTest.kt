@@ -3,7 +3,7 @@ package org.calamares.miga.ui.list
 import android.net.Uri
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -137,7 +137,7 @@ class RecipeListFlowsTest {
         }
 
         viewModel.importRecipeFile(app, Uri.fromFile(file)) {}
-        waitForText(L10n.str(R.string.import_n_recipes_title, 2))
+        waitForText(L10n.plural(R.plurals.import_n_recipes_title, 2))
         snapshot("import_recipes_dialog")
 
         compose.onNodeWithText(L10n.str(R.string.import_action)).performClick()

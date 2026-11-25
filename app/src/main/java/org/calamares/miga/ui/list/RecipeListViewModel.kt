@@ -220,7 +220,7 @@ class RecipeListViewModel(
         viewModelScope.launch {
             val recipes = takeSelectedRecipes()
             recipes.forEach { repository.saveRecipe(transform(it.toDraft())) }
-            onMessage(L10n.str(R.string.bulk_updated_n, recipes.size))
+            onMessage(L10n.plural(R.plurals.bulk_updated_n, recipes.size))
         }
     }
 
@@ -252,7 +252,7 @@ class RecipeListViewModel(
         viewModelScope.launch {
             val recipes = takeSelectedRecipes()
             recipes.forEach { repository.toggleFavorite(it.id, favorite) }
-            onMessage(L10n.str(R.string.bulk_updated_n, recipes.size))
+            onMessage(L10n.plural(R.plurals.bulk_updated_n, recipes.size))
         }
     }
 
@@ -260,7 +260,7 @@ class RecipeListViewModel(
         viewModelScope.launch {
             val recipes = takeSelectedRecipes()
             recipes.forEach { repository.moveRecipeToBook(it.id, targetBookId) }
-            onMessage(L10n.str(R.string.bulk_moved_n, recipes.size))
+            onMessage(L10n.plural(R.plurals.bulk_moved_n, recipes.size))
         }
     }
 
@@ -272,7 +272,7 @@ class RecipeListViewModel(
         viewModelScope.launch {
             val recipes = takeSelectedRecipes()
             recipes.forEach { repository.copyRecipeToBook(context, it, targetBookId) }
-            onMessage(L10n.str(R.string.bulk_copied_n, recipes.size))
+            onMessage(L10n.plural(R.plurals.bulk_copied_n, recipes.size))
         }
     }
 
@@ -280,7 +280,7 @@ class RecipeListViewModel(
         viewModelScope.launch {
             val recipes = takeSelectedRecipes()
             repository.shopping.addIngredientsToShoppingList(recipes.flatMap { recipe -> recipe.ingredientGroups.flatMap { it.ingredients } })
-            onMessage(L10n.str(R.string.bulk_added_to_shopping_n, recipes.size))
+            onMessage(L10n.plural(R.plurals.bulk_added_to_shopping_n, recipes.size))
         }
     }
 
@@ -299,7 +299,7 @@ class RecipeListViewModel(
             }
             val doHealth = settingsRepository.observeAiHealthEnabled().first()
             val doNutrition = settingsRepository.observeAiNutritionEnabled().first()
-            onMessage(L10n.str(R.string.bulk_ai_started_n, recipes.size))
+            onMessage(L10n.plural(R.plurals.bulk_ai_started_n, recipes.size))
             var failed = 0
             AiKeepAlive.hold(L10n.str(R.string.ai_task_bulk_analysis)) {
                 recipes.forEachIndexed { index, recipe ->
@@ -342,9 +342,9 @@ class RecipeListViewModel(
                 }
             }
             val summary = if (failed == 0) {
-                L10n.str(R.string.bulk_ai_done_n, recipes.size)
+                L10n.plural(R.plurals.bulk_ai_done_n, recipes.size)
             } else {
-                L10n.str(R.string.bulk_ai_done_with_errors, recipes.size, failed)
+                L10n.plural(R.plurals.bulk_ai_done_with_errors, recipes.size, recipes.size, L10n.plural(R.plurals.errors_n, failed))
             }
             onMessage(summary)
             AiKeepAlive.announceIfInBackground(summary)

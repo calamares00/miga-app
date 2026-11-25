@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.components
 
+import androidx.compose.ui.platform.toClipEntry
+import androidx.compose.ui.platform.LocalClipboard
+import android.content.ClipData
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.material3.Button
 import org.calamares.miga.data.ai.OpenRouterModels
@@ -41,8 +44,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.L10n
@@ -219,9 +220,19 @@ fun AiModelPickerSheet(onPicked: () -> Unit, onDismiss: () -> Unit) {
     }
 }
 
+/** A function that copies a text to the clipboard, for a "Copy" button. */
+@Composable
+fun rememberCopyToClipboard(): (String) -> Unit {
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+    return remember(clipboard, scope) {
+        { text -> scope.launch { clipboard.setClipEntry(ClipData.newPlainText(null, text).toClipEntry()) } }
+    }
+}
+
 @Composable
 fun ErrorDetailDialog(detail: String, onDismiss: () -> Unit) {
-    val clipboard = LocalClipboardManager.current
+    val copy = rememberCopyToClipboard()
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(L10n.str(R.string.error_details)) },
@@ -230,7 +241,7 @@ fun ErrorDetailDialog(detail: String, onDismiss: () -> Unit) {
                 SelectionContainer { Text(detail, style = MaterialTheme.typography.bodySmall) }
             }
         },
-        confirmButton = { TextButton(onClick = { clipboard.setText(AnnotatedString(detail)) }) { Text(L10n.str(R.string.copy)) } },
+        confirmButton = { TextButton(onClick = { copy(detail) }) { Text(L10n.str(R.string.copy)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.close)) } }
     )
 }

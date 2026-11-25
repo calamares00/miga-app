@@ -1,5 +1,8 @@
 package org.calamares.miga.data.export
 
+import androidx.core.graphics.scale
+import androidx.core.graphics.withTranslation
+import androidx.core.net.toUri
 import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.SourceText
 import org.calamares.miga.data.model.displayText
@@ -16,7 +19,6 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
-import android.net.Uri
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -358,10 +360,7 @@ object PdfRecipeRenderer {
         when (item) {
             is Item.Text -> {
                 val layout = textLayout(item.text, item.paint)
-                canvas.save()
-                canvas.translate(MARGIN, y)
-                layout.draw(canvas)
-                canvas.restore()
+                canvas.withTranslation(MARGIN, y) { layout.draw(this) }
             }
             is Item.Image -> {
                 val (w, h) = imageDrawSize(item.width, item.height)
@@ -429,10 +428,7 @@ object PdfRecipeRenderer {
             .obtain(bookName, 0, bookName.length, paints.coverTitle, CONTENT_WIDTH)
             .setAlignment(Layout.Alignment.ALIGN_CENTER)
             .build()
-        canvas.save()
-        canvas.translate(MARGIN, y)
-        titleLayout.draw(canvas)
-        canvas.restore()
+        canvas.withTranslation(MARGIN, y) { titleLayout.draw(this) }
         y += titleLayout.height + 12f
         if (author.isNotBlank()) {
             y += 8f
@@ -447,10 +443,7 @@ object PdfRecipeRenderer {
                 .obtain(text, 0, text.length, paints.coverAbout, (CONTENT_WIDTH * 0.8f).toInt())
                 .setAlignment(Layout.Alignment.ALIGN_CENTER)
                 .build()
-            canvas.save()
-            canvas.translate(MARGIN + CONTENT_WIDTH * 0.1f, y + 36f)
-            layout.draw(canvas)
-            canvas.restore()
+            canvas.withTranslation(MARGIN + CONTENT_WIDTH * 0.1f, y + 36f) { layout.draw(this) }
         }
     }
 
@@ -463,7 +456,7 @@ object PdfRecipeRenderer {
     }
 
     private fun filePath(uri: String): String? =
-        runCatching { Uri.parse(uri).path }.getOrNull()?.takeIf { File(it).exists() }
+        runCatching { uri.toUri().path }.getOrNull()?.takeIf { File(it).exists() }
 
     /** Pixel size of a stored photo without decoding it, or null when it cannot be read. */
     private fun imageSize(uri: String): Pair<Int, Int>? {
@@ -494,7 +487,7 @@ object PdfRecipeRenderer {
         val targetHeight = (height * IMAGE_PIXELS_PER_POINT).toInt().coerceAtLeast(1)
         val decoded = loadScaledBitmap(uri, targetWidth) ?: return null
         if (decoded.width <= targetWidth) return decoded
-        return Bitmap.createScaledBitmap(decoded, targetWidth, targetHeight, true).also {
+        return decoded.scale(targetWidth, targetHeight).also {
             if (it !== decoded) decoded.recycle()
         }
     }
@@ -504,7 +497,7 @@ object PdfRecipeRenderer {
         val left = (bitmap.width - srcSize) / 2
         val top = (bitmap.height - srcSize) / 2
         val cropped = Bitmap.createBitmap(bitmap, left, top, srcSize, srcSize)
-        val scaled = Bitmap.createScaledBitmap(cropped, size, size, true)
+        val scaled = cropped.scale(size, size)
         if (cropped !== bitmap && cropped !== scaled) cropped.recycle()
         return scaled
     }

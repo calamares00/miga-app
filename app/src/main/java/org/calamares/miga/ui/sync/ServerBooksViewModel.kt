@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.sync
 
+import androidx.core.content.edit
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -160,10 +161,10 @@ class ServerBooksViewModel(
                 else repository.sync.removeSyncedBookLocally(id, unfollow = false)
             }
             val failed = engine.downloadBooks(context, connectionId, current.toDownload.map { it.dto.uid })
-            prefs.edit().putStringSet(seenKey(), current.books.map { it.dto.uid }.toSet()).apply()
+            prefs.edit { putStringSet(seenKey(), current.books.map { it.dto.uid }.toSet()) }
             _state.update { it.copy(saving = false) }
             _message.value = when {
-                failed > 0 -> L10n.str(R.string.server_books_some_failed, failed) to false
+                failed > 0 -> L10n.plural(R.plurals.server_books_some_failed, failed) to false
                 else -> L10n.str(R.string.server_books_saved) to true
             }
             if (failed > 0) load()

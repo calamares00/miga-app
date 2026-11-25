@@ -3,14 +3,23 @@ package org.calamares.miga.data.content
 import org.calamares.miga.data.model.ContentItem
 import org.calamares.miga.data.model.ContentKind
 import org.calamares.miga.data.model.KitchenEquipment
+import org.calamares.miga.data.model.RecipeCategories
 import java.text.Normalizer
 
-enum class CleanupAction { MERGE, RENAME, DELETE }
+enum class CleanupAction { MERGE, RENAME, SPLIT, DELETE }
+
+/** A recipe of a category being split and the category it goes to; null to leave it there. */
+data class CategoryAssignment(val recipeId: Long, val recipeName: String, val target: String?, val fromAi: Boolean = false)
+
+/** A recipe with a category, as the cleanup needs it to file it elsewhere. */
+data class RecipeBrief(val id: Long, val name: String, val categoryId: Long, val ingredients: List<String> = emptyList())
 
 /**
  * One change the cleanup proposes. [items] are the entries it touches: the ones merged (with the
- * [target] they go into), the one renamed or the one deleted. [newName] is the final name of the
- * merged or renamed entry. [recommended] proposals start ticked; [fromAi] ones come from the AI.
+ * [target] they go into), the one renamed, split or deleted. [newName] is the final name of the
+ * merged or renamed entry. A split category sends each recipe to its [assignments] target (and
+ * gives them [tag]); it is deleted when it ends up empty and is not one of the app's.
+ * [recommended] proposals start ticked; [fromAi] ones come from the AI.
  */
 data class CleanupProposal(
     val kind: ContentKind,
@@ -19,20 +28,22 @@ data class CleanupProposal(
     val target: ContentItem? = null,
     val newName: String? = null,
     val recommended: Boolean = true,
-    val fromAi: Boolean = false
+    val fromAi: Boolean = false,
+    val assignments: List<CategoryAssignment> = emptyList(),
+    val tag: String? = null
 ) {
     /** Stable across scans, to keep the user's ticks. */
     val key: String = "${kind.name}:${action.name}:${items.map { it.id }.sorted().joinToString(",")}:${target?.id}:$newName"
 
     /** Recipes (or ingredients) that will show the change. */
-    val affected: Int = items.sumOf { it.usage }
+    val affected: Int get() = if (action == CleanupAction.SPLIT) assignments.count { it.target != null } else items.sumOf { it.usage }
 }
 
 /**
  * Finds what can be tidied in the user's content, without AI and without changing anything:
  * duplicates written differently ("Postre" and "postres", "Airfryer" and "Freidora de aire") to
  * merge, names to write the same way as the rest (categories in plural with a capital letter...) and
- * the user's own entries nothing uses, to delete.
+ * the user's own entries nothing uses, or kitchen basics listed as equipment, to delete.
  *
  * The entries the app brings are never renamed or deleted; they can be what a duplicate of the
  * user's is merged into. Pure logic, so it can be unit tested.
@@ -43,16 +54,35 @@ object ContentCleanup {
      * @param shoppingNames names on the shopping lists and in the shopping history, lower case:
      *   an ingredient written there is in use even when no recipe has it.
      */
-    fun propose(content: Map<ContentKind, List<ContentItem>>, language: String, shoppingNames: Set<String> = emptySet()): List<CleanupProposal> =
-        content.flatMap { (kind, items) -> proposeFor(kind, items, language, shoppingNames) }
+    fun propose(
+        content: Map<ContentKind, List<ContentItem>>,
+        language: String,
+        shoppingNames: Set<String> = emptySet(),
+        recipes: List<RecipeBrief> = emptyList()
+    ): List<CleanupProposal> =
+        content.flatMap { (kind, items) -> proposeFor(kind, items, language, shoppingNames, recipes) }
 
-    private fun proposeFor(kind: ContentKind, items: List<ContentItem>, language: String, shoppingNames: Set<String>): List<CleanupProposal> {
+    private fun proposeFor(kind: ContentKind, items: List<ContentItem>, language: String, shoppingNames: Set<String>, recipes: List<RecipeBrief>): List<CleanupProposal> {
         val proposals = mutableListOf<CleanupProposal>()
         val handled = mutableSetOf<Long>()
+        if (kind == ContentKind.CATEGORY) proposals += proposeCategories(items, language, recipes, handled)
+        // Basics every kitchen has (knife, pan, mould...) are not equipment, even when recipes have them.
+        if (kind == ContentKind.EQUIPMENT) {
+            items.filter { !it.isDefault && KitchenEquipment.isObvious(it.name) }.forEach { item ->
+                proposals += CleanupProposal(kind, CleanupAction.DELETE, listOf(item))
+                handled += item.id
+            }
+        }
 
-        // 1. Duplicates: grouped, the user's ones go into the app's (or the most used) one.
-        duplicateGroups(kind, items, language).forEach { group ->
-            val target = group.sortedWith(compareByDescending<ContentItem> { it.isDefault }.thenByDescending { it.usage }.thenBy { it.name }).first()
+        // 1. Duplicates: grouped, the user's ones go into the app's one or, without one, into the
+        // one already written as Miga writes that list (see normalizedName); the most used last.
+        duplicateGroups(kind, items.filter { it.id !in handled }, language).forEach { group ->
+            val target = group.sortedWith(
+                compareByDescending<ContentItem> { it.isDefault }
+                    .thenByDescending { it.name == normalizedName(kind, it.name, language) }
+                    .thenByDescending { it.usage }
+                    .thenBy { it.name }
+            ).first()
             val sources = group.filter { it.id != target.id && !it.isDefault }
             if (sources.isEmpty()) return@forEach
             val finalName = if (target.isDefault) target.name else normalizedName(kind, target.name, language)
@@ -72,6 +102,56 @@ object ContentCleanup {
                     proposals += CleanupProposal(kind, CleanupAction.RENAME, listOf(item), newName = normalized)
                 }
             }
+        }
+        return proposals
+    }
+
+    /**
+     * Recipe categories against the app's ([RecipeCategories]): the user's that mean one of them
+     * ("Tartas", "Smoothies") go into it, or take its name when it does not exist; those mixing
+     * kinds of dish ("Platos principales", "Arroces y pastas") or naming a theme ("Navidad") are
+     * split recipe by recipe; and the app's that gave part of what they held to a newer one
+     * ("Postres" to "Repostería" and "Helados y sorbetes") offer to move those recipes.
+     * Adds the ids it handles to [handled].
+     */
+    private fun proposeCategories(items: List<ContentItem>, language: String, recipes: List<RecipeBrief>, handled: MutableSet<Long>): List<CleanupProposal> {
+        val proposals = mutableListOf<CleanupProposal>()
+        val byCategory = recipes.groupBy { it.categoryId }
+
+        items.filter { !it.isDefault }.groupBy { RecipeCategories.builtInFor(it.name) }.forEach { (builtIn, mine) ->
+            if (builtIn == null) return@forEach
+            val name = builtIn.name(language)
+            val existing = items.firstOrNull { it.isDefault && RecipeCategories.named(it.name) == builtIn }
+            val target = existing ?: mine.maxWith(compareBy<ContentItem> { it.usage }.thenBy { it.name })
+            val sources = mine.filter { it.id != target.id }
+            proposals += if (sources.isEmpty()) {
+                CleanupProposal(ContentKind.CATEGORY, CleanupAction.RENAME, listOf(target), newName = name)
+            } else {
+                CleanupProposal(ContentKind.CATEGORY, CleanupAction.MERGE, listOf(target) + sources, target = target, newName = name)
+            }
+            handled += mine.map { it.id }
+        }
+
+        items.filter { it.id !in handled && it.usage > 0 }.forEach { item ->
+            val inside = byCategory[item.id].orEmpty().sortedBy { it.name.lowercase() }
+            if (inside.isEmpty()) return@forEach
+            val builtIn = if (item.isDefault) RecipeCategories.named(item.name) else null
+            val assignments = if (item.isDefault) {
+                val targets = builtIn?.let { RecipeCategories.redistributionOf(it) }.orEmpty()
+                if (targets.isEmpty()) return@forEach
+                inside.mapNotNull { recipe ->
+                    RecipeCategories.classify(recipe.name, targets)?.let { CategoryAssignment(recipe.id, recipe.name, it.name(language)) }
+                }
+            } else {
+                val split = RecipeCategories.splitFor(item.name, language) ?: return@forEach
+                inside.map { recipe ->
+                    CategoryAssignment(recipe.id, recipe.name, RecipeCategories.fileRecipe(split, recipe.name, recipe.ingredients)?.name(language))
+                }
+            }
+            if (assignments.none { it.target != null } && item.isDefault) return@forEach
+            val tag = if (item.isDefault) null else RecipeCategories.splitFor(item.name, language)?.tag?.let { normalizedName(ContentKind.TAG, it, language) }
+            proposals += CleanupProposal(ContentKind.CATEGORY, CleanupAction.SPLIT, listOf(item), assignments = assignments, tag = tag)
+            handled += item.id
         }
         return proposals
     }
@@ -157,10 +237,13 @@ object ContentCleanup {
     }
 
     /**
-     * How an entry of [kind] is written in Miga: extra spaces removed, a capital first letter and,
-     * for categories, a single word in plural ("postre" -> "Postres"). Ingredients and tags keep
-     * their words as written (only spaces and the first letter of ingredients change); equipment
-     * takes its default name when it is a known variant.
+     * How an entry of [kind] is written in Miga, the same whatever form is used most:
+     * - categories in plural with a capital letter ("postre" -> "Postres");
+     * - ingredients and products in singular with a capital letter, as the app's catalogue
+     *   ("almendras crudas" -> "Almendra cruda");
+     * - equipment by its default name, with a capital letter;
+     * - tags in singular and lower case, as in the recipe packs ("Aperitivos" -> "aperitivo");
+     * acronyms and brands are kept, and a few plural-only words too ("bebés"); see ContentNames.
      */
     fun normalizedName(kind: ContentKind, name: String, language: String): String {
         val clean = name.trim().replace(Regex("""\s+"""), " ")
@@ -168,10 +251,18 @@ object ContentCleanup {
         return when (kind) {
             ContentKind.CATEGORY -> capitalized(if (' ' in clean) clean else plural(clean, language))
             ContentKind.EQUIPMENT -> capitalized(KitchenEquipment.canonical(clean, language))
-            ContentKind.INGREDIENT, ContentKind.INGREDIENT_CATEGORY -> capitalized(clean)
-            ContentKind.TAG -> clean
+            ContentKind.INGREDIENT -> capitalized(ContentNames.singular(lowerInitial(clean), language))
+            ContentKind.INGREDIENT_CATEGORY -> capitalized(clean)
+            ContentKind.TAG -> ContentNames.singular(
+                clean.split(' ').joinToString(" ") { if (ContentNames.isAcronymOrBrand(it)) it else it.lowercase() },
+                language
+            )
         }
     }
+
+    /** "Almendras" -> "almendras" so its words read as plain words (an acronym stays). */
+    private fun lowerInitial(text: String): String =
+        if (text.isNotEmpty() && !ContentNames.isAcronymOrBrand(text.substringBefore(' '))) text.replaceFirstChar { it.lowercase() } else text
 
     private fun capitalized(text: String): String = text.replaceFirstChar { it.uppercase() }
 

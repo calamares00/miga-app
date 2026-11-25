@@ -19,6 +19,8 @@ import org.calamares.miga.ui.components.ActiveFilterChips
 import org.calamares.miga.ui.theme.recipePhotoFrame
 import org.calamares.miga.L10n
 import org.calamares.miga.R
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -51,14 +53,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.InputChip
 import org.calamares.miga.data.model.MissingField
 import org.calamares.miga.data.model.RecipeFilter
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material3.Badge
@@ -76,7 +78,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -127,7 +128,7 @@ fun GlobalSearchScreen(
     val openRecipe: (Long) -> Unit = { id -> viewModel.rememberQuery(); onRecipeClick(id) }
     BackHandler(enabled = pantryMode) { viewModel.setPantryMode(false) }
     var deletingSaved by remember { mutableStateOf<SavedFilter?>(null) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberBottomSheetState(SheetValue.Hidden, setOf(SheetValue.Hidden, SheetValue.Expanded))
     val filterScope = rememberCoroutineScope()
 
     /** In Favourites, "only favourites" is implicit and does not count as an applied filter. */
@@ -153,7 +154,7 @@ fun GlobalSearchScreen(
             if (selectionMode) {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                    title = { Text(L10n.str(R.string.n_selected, selectedIds.size)) },
+                    title = { Text(L10n.plural(R.plurals.n_selected, selectedIds.size)) },
                     navigationIcon = {
                         IconButton(onClick = viewModel::clearSelection) {
                             Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel_selection))
@@ -179,9 +180,9 @@ fun GlobalSearchScreen(
                     title = { Text(if (pantryMode) L10n.str(R.string.pantry_title) else title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     navigationIcon = {
                         if (pantryMode) {
-                            IconButton(onClick = { viewModel.setPantryMode(false) }) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                            IconButton(onClick = { viewModel.setPantryMode(false) }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                         } else if (onBack != null) {
-                            IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                         }
                     },
                 )
@@ -378,7 +379,7 @@ private fun SearchResultCard(
             if (selectionMode) {
                 Icon(
                     imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                    contentDescription = if (isSelected) L10n.str(R.string.selected) else L10n.str(R.string.not_selected),
+                    contentDescription = if (isSelected) L10n.str(R.string.item_selected) else L10n.str(R.string.item_not_selected),
                     tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
@@ -415,7 +416,7 @@ private fun SearchResultCard(
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Outlined.MenuBook,
+                        imageVector = Icons.AutoMirrored.Outlined.MenuBook,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant

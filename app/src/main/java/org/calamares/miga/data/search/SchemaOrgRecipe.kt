@@ -15,7 +15,10 @@ import org.calamares.miga.data.vision.RecipeVisionResultDto
 import java.net.URL
 
 /** A recipe read from a page's schema.org data, and the address of its photo, if any. */
-data class SchemaRecipe(val recipe: RecipeVisionResultDto, val imageUrl: String?)
+data class SchemaRecipe(val recipe: RecipeVisionResultDto, val imageUrl: String?) {
+    /** Some sites leave the steps out of their standard recipe and only write them in the page. */
+    fun hasSteps(): Boolean = recipe.stepGroups.any { group -> group.instructions.any { it.isNotBlank() } }
+}
 
 /**
  * Reads the schema.org Recipe (https://schema.org/Recipe) that most recipe websites embed as
@@ -32,6 +35,12 @@ object SchemaOrgRecipe {
     private const val MAX_DEPTH = 8
 
     /** The first Recipe in [html], or null when the page has none with ingredients or steps. */
+    private val OG_IMAGE = Regex("""<meta\s+(?:property|name)="og:image"\s+content="([^"]+)"""")
+
+    /** The page's main picture (og:image), for a recipe read from its text. */
+    fun pageImage(html: String): String? =
+        OG_IMAGE.find(html)?.groupValues?.get(1)?.let(RecipeUrlFetcher::decodeEntities)?.takeIf { it.startsWith("http") }
+
     fun parse(html: String, pageUrl: String): SchemaRecipe? {
         SCRIPT.findAll(html).forEach { match ->
             val element = runCatching { json.parseToJsonElement(cleanScript(match.groupValues[1])) }.getOrNull() ?: return@forEach

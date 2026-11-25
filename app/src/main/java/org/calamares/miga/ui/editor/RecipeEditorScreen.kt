@@ -1,5 +1,11 @@
 package org.calamares.miga.ui.editor
 
+import androidx.core.net.toUri
+import org.calamares.miga.ui.components.rememberCopyToClipboard
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.Checkbox
+import org.calamares.miga.data.tips.TipCategory
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -17,6 +23,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.data.model.ContentKind
+import org.calamares.miga.data.model.RecipeCategories
 import org.calamares.miga.data.content.ContentCleanup
 import org.calamares.miga.ui.components.rememberCameraCapture
 import org.calamares.miga.ui.components.AdaptiveScaffold
@@ -96,7 +103,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -107,9 +113,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -144,15 +148,15 @@ fun RecipeEditorScreen(
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
     var pendingEditUri by remember { mutableStateOf<Uri?>(null) }
     var editingPhoto by remember { mutableStateOf<PhotoUi?>(null) }
-    val photoSheetState = rememberModalBottomSheetState()
-    val clipboardManager = LocalClipboardManager.current
+    val photoSheetState = rememberBottomSheetState(SheetValue.Hidden)
+    val copyToClipboard = rememberCopyToClipboard()
     var showDiscardDialog by remember { mutableStateOf(false) }
     val attemptExit = { if (viewModel.hasUnsavedChanges()) showDiscardDialog = true else onCancel() }
 
     BackHandler(onBack = attemptExit)
 
     LaunchedEffect(sourcePhotoUris) {
-        if (sourcePhotoUris.isNotEmpty()) viewModel.startVisionExtraction(context, sourcePhotoUris.map { Uri.parse(it) })
+        if (sourcePhotoUris.isNotEmpty()) viewModel.startVisionExtraction(context, sourcePhotoUris.map { it.toUri() })
     }
     LaunchedEffect(sourceDishName) {
         if (!sourceDishName.isNullOrBlank()) viewModel.startDishGeneration(sourceDishName, sourceDishDescription, sourceDishOrigin)
@@ -166,7 +170,7 @@ fun RecipeEditorScreen(
             pendingEditUri = uri
         }
     }
-    val cameraCapture = rememberCameraCapture { path -> pendingEditUri = Uri.parse(path) }
+    val cameraCapture = rememberCameraCapture { path -> pendingEditUri = path.toUri() }
 
     val formScroll = rememberScrollState()
     val tabScope = rememberCoroutineScope()
@@ -436,12 +440,77 @@ fun RecipeEditorScreen(
             onJoin = { viewModel.importDetectedTogether(it) },
             onOneEach = { selected ->
                 viewModel.importDetectedSeparately(selected) { count, created ->
-                    val message = (listOf(L10n.str(R.string.detected_saved_x, count)) + created).joinToString("\n")
+                    val message = (listOf(L10n.plural(R.plurals.detected_saved_x, count)) + created).joinToString("\n")
                     Toast.makeText(context, message, if (created.isEmpty()) Toast.LENGTH_SHORT else Toast.LENGTH_LONG).show()
                     onCancel()
                 }
             },
             onCancel = onCancel
+        )
+    }
+
+    // Tips given besides the recipe: the user picks which ones go to the tips library.
+    val extraTips by viewModel.extraTips.collectAsStateWithLifecycle()
+    val extraOffer = extraTips
+    if (extraOffer != null && visionState !is VisionState.Loading) {
+        var chosen by remember(extraOffer) { mutableStateOf(extraOffer.tips.indices.toSet()) }
+        AlertDialog(
+            onDismissRequest = viewModel::dismissExtraTips,
+            icon = { Text("💡", style = MaterialTheme.typography.headlineMedium) },
+            title = { Text(L10n.plural(R.plurals.extra_tips_title, extraOffer.tips.size)) },
+            text = {
+                Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
+                    Text(L10n.str(R.string.extra_tips_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    extraOffer.tips.forEachIndexed { index, tip ->
+                        Row(
+                            verticalAlignment = Alignment.Top,
+                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(12.dp))
+                                .clickable { chosen = if (index in chosen) chosen - index else chosen + index }
+                        ) {
+                            Checkbox(checked = index in chosen, onCheckedChange = { chosen = if (it) chosen + index else chosen - index })
+                            Column(Modifier.padding(top = 10.dp, end = 4.dp)) {
+                                Text(tip.title, style = MaterialTheme.typography.titleSmall)
+                                Text(tip.body, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = chosen.isNotEmpty(), onClick = {
+                    viewModel.saveExtraTips(chosen) { count ->
+                        Toast.makeText(context, L10n.str(R.string.extra_tips_saved, count), Toast.LENGTH_SHORT).show()
+                    }
+                }) { Text(L10n.str(R.string.extra_tips_save)) }
+            },
+            dismissButton = { TextButton(onClick = viewModel::dismissExtraTips) { Text(L10n.str(R.string.extra_tips_skip)) } }
+        )
+    }
+
+    // A cooking tip found instead of a recipe: offered for the tips library, then the editor closes.
+    (visionState as? VisionState.TipFound)?.let { found ->
+        val category = runCatching { TipCategory.valueOf(found.tip.category.uppercase()) }.getOrDefault(TipCategory.KITCHEN)
+        AlertDialog(
+            onDismissRequest = viewModel::dismissFoundTip,
+            icon = { Text(category.emoji, style = MaterialTheme.typography.headlineMedium) },
+            title = { Text(L10n.str(R.string.tip_found_title)) },
+            text = {
+                Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                    Text(L10n.str(R.string.tip_found_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(found.tip.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp))
+                    Text(found.tip.body, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                    Text(category.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.addFoundTip {
+                        Toast.makeText(context, L10n.str(R.string.tip_found_added), Toast.LENGTH_SHORT).show()
+                        onCancel()
+                    }
+                }) { Text(L10n.str(R.string.tip_found_add)) }
+            },
+            dismissButton = { TextButton(onClick = viewModel::dismissFoundTip) { Text(L10n.str(R.string.cancel)) } }
         )
     }
 
@@ -464,7 +533,7 @@ fun RecipeEditorScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { clipboardManager.setText(AnnotatedString(reason)) }) { Text(L10n.str(R.string.copy)) }
+                TextButton(onClick = { copyToClipboard(reason) }) { Text(L10n.str(R.string.copy)) }
             },
             dismissButton = {
                 TextButton(onClick = { showVisionErrorDialog = false }) { Text(L10n.str(R.string.close)) }
@@ -491,7 +560,7 @@ fun RecipeEditorScreen(
     }
 
     val editingExistingPhoto = editingPhoto
-    val editSourceUri = pendingEditUri ?: editingExistingPhoto?.let { Uri.parse(it.uri) }
+    val editSourceUri = pendingEditUri ?: editingExistingPhoto?.let { it.uri.toUri() }
     if (editSourceUri != null) {
         PhotoEditorOverlay(
             sourceUri = editSourceUri,
@@ -649,9 +718,12 @@ private fun OriginField(
 @Composable
 private fun CategoryField(value: String, suggestions: List<String>, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
-    // "postre" when "Postres" exists: offered instead of creating a near duplicate.
+    val language = L10n.locale().language
+    // "postre" when "Postres" exists, or "Tartas" when "Repostería" does: offered instead of
+    // creating a near duplicate.
     val similar = remember(value, suggestions) {
-        ContentCleanup.similarExisting(ContentKind.CATEGORY, value, suggestions, L10n.locale().language)
+        ContentCleanup.similarExisting(ContentKind.CATEGORY, value, suggestions, language)
+            ?: RecipeCategories.builtInFor(value)?.name(language)?.takeIf { name -> name != value && suggestions.any { it.equals(name, ignoreCase = true) } }
     }
     Column(modifier = modifier) {
         OutlinedTextField(
@@ -675,13 +747,17 @@ private fun CategoryField(value: String, suggestions: List<String>, onValueChang
             if (filtered.isNotEmpty()) {
                 Column {
                     filtered.take(5).forEach { suggestion ->
-                        Text(
-                            text = suggestion,
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onValueChange(suggestion); expanded = false }
-                                .padding(vertical = 8.dp)
-                        )
+                                .padding(vertical = 6.dp)
+                        ) {
+                            Text(suggestion)
+                            RecipeCategories.description(suggestion, language)?.let { description ->
+                                Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                     }
                 }
             }

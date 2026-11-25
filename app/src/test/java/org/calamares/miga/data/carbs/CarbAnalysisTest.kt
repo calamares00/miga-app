@@ -57,7 +57,7 @@ class CarbAnalysisTest {
         // No unit: pieces; "grande" makes them bigger.
         val onion = CarbAnalysis.foodOf("cebolla")!!
         assertEquals(onion.gramsPerPiece!! * onion.carbsPer100 / 100, carbs("cebolla", 1.0).grams, 0.01)
-        assertEquals(onion.gramsPerPiece!! * 1.3 * onion.carbsPer100 / 100, carbs("cebolla grande", 1.0).grams, 0.01)
+        assertEquals(onion.gramsPerPiece * 1.3 * onion.carbsPer100 / 100, carbs("cebolla grande", 1.0).grams, 0.01)
 
         assertEquals(1000 * CarbAnalysis.foodOf("leche")!!.carbsPer100 / 100 * 1.03, carbs("leche", 1.0, "l").grams, 0.01)
     }

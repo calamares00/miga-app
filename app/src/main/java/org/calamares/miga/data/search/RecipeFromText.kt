@@ -7,6 +7,7 @@ import org.calamares.miga.data.ai.AiRequest
 import org.calamares.miga.data.ai.KnownLabels
 import org.calamares.miga.data.ai.knownLabelsInstruction
 import org.calamares.miga.data.ai.RECIPE_JSON_FORMAT
+import org.calamares.miga.data.ai.TIP_INSTEAD_OF_RECIPE
 import org.calamares.miga.data.ai.completeInAppLanguage
 import org.calamares.miga.data.ai.outputLanguageInstruction
 import org.calamares.miga.data.ai.transcriptionLanguageInstruction
@@ -59,4 +60,5 @@ Return ONLY a compact JSON object (no indentation or line breaks) with exactly t
 $RECIPE_JSON_FORMAT
 If the text does not contain a recognisable recipe, leave "name" empty. Put the original URL ($url)
 in "source". If you cannot determine a value, use null (or an empty list) instead of making it up.
+$TIP_INSTEAD_OF_RECIPE
 """.trimIndent() + knownLabelsInstruction(known) + transcriptionLanguageInstruction()

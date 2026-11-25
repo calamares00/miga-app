@@ -25,6 +25,10 @@ import kotlinx.coroutines.withContext
 import org.calamares.miga.data.ai.aiCandidates
 import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.ai.AiProgress
+import org.calamares.miga.data.model.Ingredient
+import org.calamares.miga.data.content.ContentNames
+import org.calamares.miga.data.tips.ImportedTip
+import org.calamares.miga.data.vision.FoundTipDto
 import org.calamares.miga.data.follow.WebFeeds
 import org.calamares.miga.data.ai.AiProgressReporter
 import org.calamares.miga.data.ai.runAi
@@ -71,6 +75,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import org.calamares.miga.data.model.ContentKind
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -92,6 +97,9 @@ sealed interface VisionState {
     /** Several recipes were found in the photos; see [DetectedRecipes]. */
     data object Choosing : VisionState
     data class Error(val reason: String) : VisionState
+
+    /** What was imported is a cooking tip, not a recipe: offered for the tips library. */
+    data class TipFound(val tip: FoundTipDto, val source: String) : VisionState
 }
 
 /**
@@ -254,7 +262,7 @@ class RecipeEditorViewModel(
             // If some pages cannot be read but others can, carry on with the readable ones; it only
             // fails when all of them fail. The source uri of every image sent is kept because the
             // AI's "dishPhotos" indices refer to the images sent, not to every image picked.
-            progress.step(L10n.str(R.string.ai_step_preparing_photos_n, photoUris.size))
+            progress.step(L10n.plural(R.plurals.ai_step_preparing_photos_n, photoUris.size))
             val readable = photoUris.mapNotNull { uri ->
                 PhotoStorage.readResizedJpegBytes(context, uri)?.let { uri to AiImage(it, "image/jpeg") }
             }
@@ -360,6 +368,8 @@ class RecipeEditorViewModel(
                     _visionState.value = VisionState.Loaded
                 }
                 is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(result.reason)
+                // Writing a dish's recipe never gives a tip.
+                is RecipeVisionResult.Tip -> _visionState.value = VisionState.Error(L10n.str(R.string.couldnt_generate_recipe))
             }
         }
     }
@@ -390,11 +400,15 @@ class RecipeEditorViewModel(
                 }
             }
             val structured = withContext(AppDispatchers.default) { SchemaOrgRecipe.parse(page.html, page.url) }
-            if (structured != null) {
+            // Some sites give the standard recipe without its steps (Hogarmanía: only the
+            // ingredients, all in one list): with the assistant the whole page is read instead.
+            val incomplete = structured != null && !structured.hasSteps() && settingsRepository.aiCandidates().isNotEmpty()
+            if (structured != null && !incomplete) {
                 progress.step(L10n.str(R.string.ai_step_found_in_page))
                 applyReadRecipe(appContext, structured, progress)
                 return@launchAiTask
             }
+            if (incomplete) progress.step(L10n.str(R.string.ai_step_page_recipe_incomplete))
             // Instagram and similar posts: the recipe is in the caption.
             val pagePost = withContext(AppDispatchers.default) { SocialPostRecipe.read(page.html, page.url) }
             // Instagram's embed page has the photo without the play button (and the caption, when
@@ -436,11 +450,13 @@ class RecipeEditorViewModel(
                             )
                             applyVisionResult(recipe)
                             post.imageUrl?.let { downloadPhoto(appContext, it, progress) }
+                            offerExtraTips(result.recipe.tips, postSource(post))
                             _visionState.value = VisionState.Loaded
                         }
                         is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(
                             elsewhere?.let { L10n.str(R.string.web_import_post_recipe_elsewhere, it) } ?: result.reason
                         )
+                        is RecipeVisionResult.Tip -> offerTip(result.tip, postSource(post))
                         null -> _visionState.value = VisionState.Error(L10n.str(R.string.ai_no_provider))
                     }
                     return@launchAiTask
@@ -458,7 +474,7 @@ class RecipeEditorViewModel(
                 _visionState.value = VisionState.Error(L10n.str(if (post != null) R.string.web_import_post_needs_assistant else R.string.web_import_needs_assistant))
                 return@launchAiTask
             }
-            if (post == null) progress.step(L10n.str(R.string.ai_step_page_not_standard))
+            if (post == null && structured == null) progress.step(L10n.str(R.string.ai_step_page_not_standard))
             val pageText = if (post != null) postText(post) else when (val text = RecipeUrlFetcher.readableText(page.html)) {
                 is UrlFetchResult.Success -> text.text
                 is UrlFetchResult.Error -> {
@@ -477,10 +493,13 @@ class RecipeEditorViewModel(
                 is RecipeVisionResult.Success -> {
                     val recipe = if (post != null) result.recipe.copy(source = postSource(post)) else result.recipe
                     applyVisionResult(recipe)
-                    post?.imageUrl?.let { downloadPhoto(appContext, it, progress) }
+                    (post?.imageUrl ?: structured?.imageUrl ?: SchemaOrgRecipe.pageImage(page.html))?.let { downloadPhoto(appContext, it, progress) }
+                    offerExtraTips(result.recipe.tips, recipe.source.ifBlank { url })
                     _visionState.value = VisionState.Loaded
                 }
-                is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(result.reason)
+                // The incomplete standard recipe is better than nothing.
+                is RecipeVisionResult.Error -> if (structured != null) applyReadRecipe(appContext, structured, progress) else _visionState.value = VisionState.Error(result.reason)
+                is RecipeVisionResult.Tip -> offerTip(result.tip, if (post != null) postSource(post) else url)
             }
         }
     }
@@ -512,7 +531,7 @@ class RecipeEditorViewModel(
         for (link in YouTubeRecipe.recipePageLinks(video.description)) {
             progress.step(L10n.str(R.string.ai_step_reading_author_site_x, WebFeeds.hostOf(link)))
             val linked = RecipeUrlFetcher.fetchPage(link) as? PageFetchResult.Success ?: continue
-            val read = withContext(AppDispatchers.default) { SchemaOrgRecipe.parse(linked.html, linked.url) }
+            val read = withContext(AppDispatchers.default) { SchemaOrgRecipe.parse(linked.html, linked.url) }?.takeIf { it.hasSteps() }
             if (read == null) {
                 progress.step(L10n.str(R.string.ai_step_page_not_standard))
                 linkedPages += linked
@@ -540,6 +559,7 @@ class RecipeEditorViewModel(
             if (result is RecipeVisionResult.Success) {
                 applyVisionResult(result.recipe.copy(source = withPage(linked.url)))
                 video.thumbnailUrl?.let { downloadPhoto(appContext, it, progress) }
+                offerExtraTips(result.recipe.tips, withPage(linked.url))
                 _visionState.value = VisionState.Loaded
                 return
             }
@@ -570,12 +590,14 @@ class RecipeEditorViewModel(
                 val notes = if (watches) listOf(result.recipe.notes, L10n.str(R.string.recipe_from_video_note)) else listOf(result.recipe.notes)
                 applyVisionResult(result.recipe.copy(source = postSource(post), notes = notes.filter { it.isNotBlank() }.joinToString("\n\n")))
                 video.thumbnailUrl?.let { downloadPhoto(appContext, it, progress) }
+                offerExtraTips(result.recipe.tips, postSource(post))
                 _visionState.value = VisionState.Loaded
             }
             // Without Gemini, a description with no recipe gets the explanation of what is missing.
             is RecipeVisionResult.Error -> _visionState.value = VisionState.Error(
                 if (!watches && result.reason == L10n.str(R.string.no_recipe_was_found_page)) L10n.str(R.string.youtube_needs_gemini) else result.reason
             )
+            is RecipeVisionResult.Tip -> offerTip(result.tip, postSource(post))
         }
     }
 
@@ -602,6 +624,52 @@ class RecipeEditorViewModel(
             }
         }
         _visionState.value = VisionState.Loaded
+    }
+
+    /** Tips given besides an imported recipe, offered for the tips library once it is loaded. */
+    data class ExtraTips(val tips: List<FoundTipDto>, val source: String)
+
+    private val _extraTips = MutableStateFlow<ExtraTips?>(null)
+    val extraTips: StateFlow<ExtraTips?> = _extraTips.asStateFlow()
+
+    private fun offerExtraTips(tips: List<FoundTipDto>, source: String) {
+        val useful = tips.filter { it.title.isNotBlank() && it.body.isNotBlank() }.take(MAX_EXTRA_TIPS)
+        if (useful.isNotEmpty()) _extraTips.value = ExtraTips(useful, source)
+    }
+
+    /** Adds the chosen tips ([chosen] are their positions) to the tips library. */
+    fun saveExtraTips(chosen: Set<Int>, onSaved: (Int) -> Unit) {
+        val offer = _extraTips.value ?: return
+        _extraTips.value = null
+        viewModelScope.launch {
+            val tips = offer.tips.filterIndexed { index, _ -> index in chosen }
+            tips.forEach { settingsRepository.addImportedTip(ImportedTip.create(it.category, it.title, it.body, it.keywords, offer.source)) }
+            onSaved(tips.size)
+        }
+    }
+
+    fun dismissExtraTips() {
+        _extraTips.value = null
+    }
+
+    private fun offerTip(tip: FoundTipDto, source: String) {
+        _visionState.value = VisionState.TipFound(tip, source)
+    }
+
+    /** Adds the tip found instead of a recipe to the user's tips library, marked as imported. */
+    fun addFoundTip(onAdded: () -> Unit) {
+        val found = _visionState.value as? VisionState.TipFound ?: return
+        viewModelScope.launch {
+            settingsRepository.addImportedTip(
+                ImportedTip.create(found.tip.category, found.tip.title, found.tip.body, found.tip.keywords, found.source)
+            )
+            _visionState.value = VisionState.Idle
+            onAdded()
+        }
+    }
+
+    fun dismissFoundTip() {
+        _visionState.value = VisionState.Idle
     }
 
     // What the assistant does while it works, as a step with its provider ("Gemini is reading the page").
@@ -663,7 +731,7 @@ class RecipeEditorViewModel(
             )
             is VisionState.Error -> AiKeepAlive.announceIfInBackground(L10n.str(R.string.ai_recipe_failed))
             VisionState.Choosing -> AiKeepAlive.announceIfInBackground(
-                L10n.str(R.string.ai_several_recipes_found_x, _detectedRecipes.value?.recipes?.size ?: 0)
+                L10n.plural(R.plurals.ai_several_recipes_found_x, _detectedRecipes.value?.recipes?.size ?: 0)
             )
             else -> Unit
         }
@@ -958,6 +1026,20 @@ class RecipeEditorViewModel(
      * Saves the recipe. Unless [allowDuplicate], a recipe of the same name elsewhere (accents and
      * case aside) stops it and fills [duplicate], so the user can decide.
      */
+    /**
+     * A catalogue ingredient (written in singular, "Huevo") counted in more than one, without a
+     * unit, goes in plural: "3 huevos", not "3 huevo". With a weight or a volume it is kept as
+     * written ("200 g de almendras" or "200 g de harina" depends on the ingredient).
+     */
+    private fun countedFromCatalogue(ingredient: Ingredient): Ingredient {
+        val quantity = ingredient.quantity ?: return ingredient
+        if (quantity <= 1.0 || ingredient.unit != null) return ingredient
+        val catalogue = availableIngredientNames.value
+        if (catalogue.none { it.equals(ingredient.name, ignoreCase = true) }) return ingredient
+        val language = if (L10n.locale().language == "es") "es" else "en"
+        return ingredient.copy(name = ContentNames.plural(ingredient.name, language))
+    }
+
     fun save(onSaved: (Long) -> Unit, allowDuplicate: Boolean = false) {
         if (name.isBlank()) {
             nameError = true
@@ -987,7 +1069,7 @@ class RecipeEditorViewModel(
                 source = source,
                 isFavorite = isFavorite,
                 photos = photos.map { it.toDomain() },
-                ingredientGroups = ingredientGroups.map { it.toDomain() },
+                ingredientGroups = ingredientGroups.map { it.toDomain() }.map { group -> group.copy(ingredients = group.ingredients.map(::countedFromCatalogue)) },
                 stepGroups = stepGroups.map { it.toDomain() },
                 tagNames = selectedTags.toList(),
                 utensilNames = selectedUtensils.toList(),
@@ -1000,3 +1082,6 @@ class RecipeEditorViewModel(
         }
     }
 }
+
+/** Tips offered at most besides an imported recipe. */
+private const val MAX_EXTRA_TIPS = 3

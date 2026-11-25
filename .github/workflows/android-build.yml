@@ -9,11 +9,110 @@ on:
       - main
   workflow_dispatch: {}
 
+# A newer push to the same branch or pull request makes the older run pointless; on main a run is
+# never cancelled, so a release in progress always finishes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
-  # Always runs (any push, PR or manual run), whatever is built or published afterwards: a
-  # broken test blocks the rest just like a compile error.
+  # What changed decides what runs:
+  # - the app (code, resources, Gradle): tests, build and, on a branch, the beta APK;
+  # - only the workflows: tests, to see they still work, and nothing is built or published;
+  # - only docs or the store listing (*.md, docs/, fastlane/metadata/): nothing.
+  # On main, a Release and the Google Play upload happen only for a new version: versionCode up
+  # from the previous commit and no tag v<versionName> yet. A pull request that changes the app
+  # without raising the version or without its release notes fails here, before it is merged.
+  # A pull request run stops after this job: the push of the same commit to its branch already
+  # runs the tests and the build (and its checks show on the pull request), so they are not
+  # repeated.
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.classify.outputs.app }}
+      workflow: ${{ steps.classify.outputs.workflow }}
+      release: ${{ steps.classify.outputs.release }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Classify the changes
+        id: classify
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          BEFORE: ${{ github.event.before }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          code_of() { git show "$1:app/build.gradle.kts" 2>/dev/null | grep -oP 'versionCode = \K[0-9]+' || echo 0; }
+          # What this run is compared with: the pull request's base, the commit before the push,
+          # or (a new branch) where it left main. A manual run checks everything.
+          base=""
+          if [ "$EVENT" = "pull_request" ]; then
+            base="$PR_BASE"
+          elif [ "$EVENT" = "push" ] && [ -n "$BEFORE" ] && ! [[ "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            base="$BEFORE"
+          elif [ "$EVENT" = "push" ]; then
+            base=$(git merge-base origin/main HEAD 2>/dev/null || echo "")
+          fi
+          if [ -z "$base" ]; then
+            files=$(git ls-files)
+          else
+            files=$(git diff --name-only "$base" HEAD)
+          fi
+          echo "Changed files:"; echo "$files" | sed 's/^/  /'
+
+          app=false; workflow=false
+          if echo "$files" | grep -qE '^(app/|gradle/|build\.gradle\.kts$|settings\.gradle\.kts$|gradle\.properties$|gradlew)'; then app=true; fi
+          if echo "$files" | grep -qE '^\.github/'; then workflow=true; fi
+
+          now=$(code_of HEAD)
+          before=$(code_of "${base:-HEAD}")
+          version=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
+
+          release=false
+          if [ "$EVENT" = "push" ] && [ "$REF" = "refs/heads/main" ]; then
+            if [ "$now" -gt "$before" ] && ! git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null 2>&1; then
+              release=true
+            elif [ "$app" = "true" ]; then
+              echo "::warning::The app changed on main without a new version ($version, code $now): nothing is published."
+            fi
+          fi
+
+          # Caught on the pull request, not after merging: an app change needs a new version and
+          # its release notes in the four places.
+          if [ "$EVENT" = "pull_request" ] && [ "$app" = "true" ]; then
+            if [ "$now" -le "$before" ]; then
+              echo "::error::The app changes but versionCode is still $now: raise versionCode and versionName (see CLAUDE.md)."
+              exit 1
+            fi
+            for dir in app/src/main/assets/changelogs app/src/main/assets/changelogs-en fastlane/metadata/android/es-ES/changelogs fastlane/metadata/android/en-US/changelogs; do
+              if [ ! -f "$dir/$now.txt" ]; then
+                echo "::error::Missing release notes $dir/$now.txt."
+                exit 1
+              fi
+            done
+          fi
+
+          echo "app=$app workflow=$workflow release=$release (versionCode $before -> $now, v$version)"
+          { echo "app=$app"; echo "workflow=$workflow"; echo "release=$release"; } >> "$GITHUB_OUTPUT"
+          {
+            echo "### What this run does"
+            echo "- App changed: **$app** · workflows changed: **$workflow**"
+            echo "- New version to publish: **$release** (versionCode $before → $now, v$version)"
+            if [ "$EVENT" = "pull_request" ]; then echo "- Pull request: version and release notes checked; tests and build run on the push of this commit."; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Runs when the app or the workflows changed (see changes); a broken test blocks the rest just
+  # like a compile error.
   test:
     name: Tests
+    needs: changes
+    if: github.event_name != 'pull_request' && (needs.changes.outputs.app == 'true' || needs.changes.outputs.workflow == 'true')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -84,13 +183,15 @@ jobs:
 
   # Compiles (and, depending on the branch, packages) the app. The mode decides what is built:
   # release: direct push to main (usually after merging a PR) -> full signed build.
-  # pr_check: pull request to main -> checks only (compile), nothing to publish.
+  # check: push to main without a new version -> checks only (compile), nothing to publish.
   # dev_debug: push to any other branch, or a manual run -> a quick debug APK only.
   # Files ready to publish are left in dist/ and uploaded as an artifact so the publish job
   # (which runs on another runner) can download them without rebuilding.
   build:
     name: Build
-    needs: test
+    needs: [changes, test]
+    # Only when the app changed (or there is a version to publish); not on pull requests (see changes).
+    if: github.event_name != 'pull_request' && (needs.changes.outputs.app == 'true' || needs.changes.outputs.release == 'true')
     runs-on: ubuntu-latest
     outputs:
       mode: ${{ steps.mode.outputs.mode }}
@@ -108,15 +209,17 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       # release: direct push to main (usually after merging a PR) -> full build + Release.
-      # pr_check: pull request to main -> checks only (compile), nothing is published.
+      # check: push to main without a new version -> checks only (compile), nothing is published.
       # dev_debug: push to any other branch, or a manual run -> a quick debug APK only.
       - name: Determine build mode
         id: mode
         run: |
-          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          if [ "${{ needs.changes.outputs.release }}" = "true" ]; then
             echo "mode=release" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "mode=pr_check" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            # On main without a new version the app is only checked: the existing Release and
+            # Google Play are left alone.
+            echo "mode=check" >> "$GITHUB_OUTPUT"
           else
             echo "mode=dev_debug" >> "$GITHUB_OUTPUT"
           fi
@@ -154,21 +257,21 @@ jobs:
         if: steps.mode.outputs.mode != 'release'
         run: ./gradlew :app:bundleRelease --stacktrace
 
-      # On every branch, not only on pull requests: a lint error is cheaper to fix where it appears.
+      # On every branch: a lint error is cheaper to fix where it appears.
       - name: Lint
         run: ./gradlew :app:lintDebug --stacktrace
 
-      # --- pull request to main: check compilation ---
+      # --- main without a new version: check compilation ---
 
-      - name: Build debug APK (pull request)
-        if: steps.mode.outputs.mode == 'pr_check'
+      - name: Build debug APK (check)
+        if: steps.mode.outputs.mode == 'check'
         run: ./gradlew :app:assembleDebug --stacktrace
 
-      - name: Upload debug APK (pull request)
-        if: steps.mode.outputs.mode == 'pr_check'
+      - name: Upload debug APK (check)
+        if: steps.mode.outputs.mode == 'check'
         uses: actions/upload-artifact@v7
         with:
-          name: miga-debug-pr${{ github.event.pull_request.number }}
+          name: miga-debug-${{ steps.mode.outputs.safe_ref }}-${{ steps.mode.outputs.short_sha }}
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
@@ -333,13 +436,13 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  # Nothing to publish for a pull request (mode == pr_check): the whole job is skipped and shows
+  # Nothing to publish on main without a new version (mode == check): the whole job is skipped and shows
   # as "skipped" in the checks instead of an empty success. It downloads the dist/ prepared by
   # the build job (nothing is rebuilt) and uploads it to a GitHub Release.
   publish:
     name: Publish
     needs: build
-    if: needs.build.outputs.mode != 'pr_check'
+    if: needs.build.outputs.mode != 'check'
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -43,7 +43,7 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewHeadline
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -199,7 +199,7 @@ internal fun FilterEmptyState(
             Button(onClick = onExplorePacks) { Text(L10n.str(R.string.open_pack_catalogue)) }
         }
         BookFilter.LOCAL -> EmptyState(
-            icon = Icons.Outlined.MenuBook,
+            icon = Icons.AutoMirrored.Outlined.MenuBook,
             title = L10n.str(R.string.no_own_books),
             body = L10n.str(R.string.no_own_books_body),
             modifier = modifier
@@ -450,7 +450,7 @@ internal fun RecipeBookRow(
 @Composable
 internal fun SelectionMark(selected: Boolean, onCover: Boolean) {
     val icon = if (selected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked
-    val description = L10n.str(if (selected) R.string.selected else R.string.not_selected)
+    val description = L10n.str(if (selected) R.string.item_selected else R.string.item_not_selected)
     if (onCover) {
         Box(
             modifier = Modifier.size(30.dp).clip(CircleShape).background(if (selected) Color.White else Color.Black.copy(alpha = 0.35f)),
@@ -465,4 +465,4 @@ internal fun SelectionMark(selected: Boolean, onCover: Boolean) {
 
 /** "1 selected" / "3 selected", for the selection bar. */
 internal fun selectedBooksText(count: Int): String =
-    if (count == 1) L10n.str(R.string.one_selected_book) else L10n.str(R.string.n_selected_books, count)
+    if (count == 1) L10n.str(R.string.one_selected_book) else L10n.plural(R.plurals.n_selected_books, count)

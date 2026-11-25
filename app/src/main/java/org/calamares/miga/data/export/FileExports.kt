@@ -141,7 +141,7 @@ object FileExports {
 
     /** One book by its name; several as "3 books". */
     private fun booksTitle(books: List<RecipeBook>): String =
-        books.singleOrNull()?.name ?: L10n.str(R.string.n_books, books.size)
+        books.singleOrNull()?.name ?: L10n.plural(R.plurals.n_books, books.size)
 
     /** "Share recipe": one recipe as a ".miga" file, imported into a book chosen by whoever receives it. */
     fun shareRecipe(context: Context, recipe: Recipe): Boolean =
