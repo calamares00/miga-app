@@ -25,6 +25,8 @@ import kotlinx.coroutines.withContext
 import org.calamares.miga.data.ai.aiCandidates
 import org.calamares.miga.data.ai.AiKeepAlive
 import org.calamares.miga.data.ai.AiProgress
+import org.calamares.miga.data.model.Ingredient
+import org.calamares.miga.data.content.ContentNames
 import org.calamares.miga.data.tips.ImportedTip
 import org.calamares.miga.data.vision.FoundTipDto
 import org.calamares.miga.data.follow.WebFeeds
@@ -1024,6 +1026,20 @@ class RecipeEditorViewModel(
      * Saves the recipe. Unless [allowDuplicate], a recipe of the same name elsewhere (accents and
      * case aside) stops it and fills [duplicate], so the user can decide.
      */
+    /**
+     * A catalogue ingredient (written in singular, "Huevo") counted in more than one, without a
+     * unit, goes in plural: "3 huevos", not "3 huevo". With a weight or a volume it is kept as
+     * written ("200 g de almendras" or "200 g de harina" depends on the ingredient).
+     */
+    private fun countedFromCatalogue(ingredient: Ingredient): Ingredient {
+        val quantity = ingredient.quantity ?: return ingredient
+        if (quantity <= 1.0 || ingredient.unit != null) return ingredient
+        val catalogue = availableIngredientNames.value
+        if (catalogue.none { it.equals(ingredient.name, ignoreCase = true) }) return ingredient
+        val language = if (L10n.locale().language == "es") "es" else "en"
+        return ingredient.copy(name = ContentNames.plural(ingredient.name, language))
+    }
+
     fun save(onSaved: (Long) -> Unit, allowDuplicate: Boolean = false) {
         if (name.isBlank()) {
             nameError = true
@@ -1053,7 +1069,7 @@ class RecipeEditorViewModel(
                 source = source,
                 isFavorite = isFavorite,
                 photos = photos.map { it.toDomain() },
-                ingredientGroups = ingredientGroups.map { it.toDomain() },
+                ingredientGroups = ingredientGroups.map { it.toDomain() }.map { group -> group.copy(ingredients = group.ingredients.map(::countedFromCatalogue)) },
                 stepGroups = stepGroups.map { it.toDomain() },
                 tagNames = selectedTags.toList(),
                 utensilNames = selectedUtensils.toList(),

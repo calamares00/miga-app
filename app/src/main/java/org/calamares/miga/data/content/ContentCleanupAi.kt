@@ -49,7 +49,7 @@ suspend fun AiCandidate.suggestContentCleanup(
     if (answer is AiText.Error) return AiCleanupResult.Error(answer.reason)
     val text = (answer as AiText.Success).text
     return try {
-        AiCleanupResult.Success(decodeAiJson(AiCleanupDto.serializer(), text).toProposals(content, alreadyProposed))
+        AiCleanupResult.Success(decodeAiJson(AiCleanupDto.serializer(), text).toProposals(content, alreadyProposed, language))
     } catch (e: Exception) {
         coroutineContext.ensureActive()
         AiCleanupResult.Error(AiErrors.badResponse(e, text))
@@ -60,7 +60,11 @@ suspend fun AiCandidate.suggestContentCleanup(
  * Turns the answer into proposals on real entries: unknown names, entries the app brings (never
  * renamed) and entries some other proposal already handles are skipped.
  */
-internal fun AiCleanupDto.toProposals(content: Map<ContentKind, List<ContentItem>>, alreadyProposed: List<CleanupProposal>): List<CleanupProposal> {
+internal fun AiCleanupDto.toProposals(
+    content: Map<ContentKind, List<ContentItem>>,
+    alreadyProposed: List<CleanupProposal>,
+    language: String = "es"
+): List<CleanupProposal> {
     val taken = alreadyProposed.flatMap { proposal -> proposal.items.map { proposal.kind to it.id } }.toMutableSet()
     fun find(kind: ContentKind, name: String) = content[kind].orEmpty().firstOrNull { it.name.equals(name.trim(), ignoreCase = true) }
     val proposals = mutableListOf<CleanupProposal>()
@@ -71,7 +75,8 @@ internal fun AiCleanupDto.toProposals(content: Map<ContentKind, List<ContentItem
         val target = find(kind, merge.into)?.takeIf { into -> items.any { it.id == into.id } } ?: return@forEach
         val sources = items.filter { it.id != target.id && !it.isDefault && (kind to it.id) !in taken }
         if (sources.isEmpty() || ((kind to target.id) in taken && !target.isDefault)) return@forEach
-        proposals += CleanupProposal(kind, CleanupAction.MERGE, listOf(target) + sources, target = target, newName = target.name, recommended = false, fromAi = true)
+        val finalName = if (target.isDefault) target.name else ContentCleanup.normalizedName(kind, target.name, language)
+        proposals += CleanupProposal(kind, CleanupAction.MERGE, listOf(target) + sources, target = target, newName = finalName, recommended = false, fromAi = true)
         taken += sources.map { kind to it.id }
         taken += kind to target.id
     }
@@ -79,7 +84,8 @@ internal fun AiCleanupDto.toProposals(content: Map<ContentKind, List<ContentItem
     renames.forEach { rename ->
         val kind = ContentKind.entries.firstOrNull { it.name == rename.kind } ?: return@forEach
         val item = find(kind, rename.from) ?: return@forEach
-        val newName = rename.to.trim().replace(Regex("""\s+"""), " ")
+        // Whatever the model wrote, the name follows Miga's way of writing that list.
+        val newName = ContentCleanup.normalizedName(kind, rename.to, language)
         if (item.isDefault || (kind to item.id) in taken || newName.isEmpty() || newName == item.name || newName.length > 60) return@forEach
         val existing = find(kind, newName)?.takeIf { it.id != item.id }
         proposals += if (existing != null) {
@@ -113,11 +119,12 @@ internal fun buildCleanupPrompt(content: Map<ContentKind, List<ContentItem>>, la
 
         Propose only clear improvements:
         - "merges": entries of the same list that mean the same thing (synonyms, typos, singular and
-          plural, other languages), with "into" the name to keep, preferably a built-in one or the
-          most used.
-        - "renames": spelling mistakes or a name written very differently from the rest of its list
-          (categories go in plural with a capital letter, as "Postres"; equipment and ingredients in
-          singular with a capital letter). Write names in $languageName.
+          plural, other languages), with "into" the name to keep, preferably a built-in one.
+        - "renames": spelling mistakes or a name written very differently from the rest of its list.
+          Names follow one rule per list: categories in plural with a capital letter ("Postres");
+          equipment and ingredients in singular with a capital letter ("Almendra cruda"); tags in
+          singular and lower case ("aperitivo"), except acronyms, brands and plural-only words
+          ("bebés"). Write names in $languageName.
         Never merge things that are different (for example "Pasta" and "Pastel", or two different
         appliances), never invent entries and leave alone what is fine. Use the names exactly as
         listed in "names", "into" and "from".
