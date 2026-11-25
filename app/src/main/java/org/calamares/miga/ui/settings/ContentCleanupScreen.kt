@@ -91,6 +91,8 @@ data class CleanupUiState(
     val askingAi: Boolean = false,
     val aiAsked: Boolean = false,
     val aiError: String? = null,
+    /** Set when the assistant answered only part of the request. */
+    val aiIncomplete: Boolean = false,
     val applying: Boolean = false,
     /** Set once applied: what was done, and how to undo it. */
     val done: CleanupDone? = null
@@ -147,7 +149,7 @@ class ContentCleanupViewModel(
 
     fun refineWithAi() {
         if (_state.value.askingAi) return
-        _state.update { it.copy(askingAi = true, aiError = null) }
+        _state.update { it.copy(askingAi = true, aiError = null, aiIncomplete = false) }
         viewModelScope.launch {
             val current = _state.value.proposals
             val result = settingsRepository.runAi<AiCleanupResult>(
@@ -170,7 +172,13 @@ class ContentCleanupViewModel(
                         val nowMoving = proposals.filter { proposal ->
                             proposal.action == CleanupAction.SPLIT && proposal.assignments.any { it.fromAi && it.target != null }
                         }.map { it.key }
-                        state.copy(askingAi = false, aiAsked = true, proposals = proposals, ticked = state.ticked + nowMoving)
+                        state.copy(
+                            askingAi = false,
+                            aiAsked = true,
+                            aiIncomplete = result.incomplete,
+                            proposals = proposals,
+                            ticked = state.ticked + nowMoving
+                        )
                     }
                 }
             }
@@ -268,16 +276,23 @@ fun ContentCleanupScreen(viewModel: ContentCleanupViewModel, onBack: () -> Unit)
                 if (aiEnabled) {
                     item(key = "ai") {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilledTonalButton(onClick = { viewModel.refineWithAi() }, enabled = !state.askingAi && !state.aiAsked) {
+                            FilledTonalButton(onClick = { viewModel.refineWithAi() }, enabled = !state.askingAi && (!state.aiAsked || state.aiIncomplete)) {
                                 if (state.askingAi) {
                                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                     Spacer(modifier = Modifier.size(8.dp))
                                     Text(L10n.str(R.string.cleanup_ai_working))
                                 } else {
-                                    ButtonContent(Icons.Filled.AutoAwesome, L10n.str(if (state.aiAsked) R.string.cleanup_ai_done else R.string.cleanup_ai))
+                                    ButtonContent(Icons.Filled.AutoAwesome, L10n.str(if (state.aiAsked && !state.aiIncomplete) R.string.cleanup_ai_done else R.string.cleanup_ai))
                                 }
                             }
                             state.aiError?.let { ErrorMessage(it, onRetry = { viewModel.refineWithAi() }) }
+                            if (state.aiIncomplete) {
+                                Text(
+                                    L10n.str(R.string.cleanup_ai_incomplete),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }

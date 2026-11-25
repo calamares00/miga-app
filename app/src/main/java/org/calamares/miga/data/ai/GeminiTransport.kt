@@ -110,7 +110,7 @@ internal object GeminiTransport : AiTransport {
             val text = candidate?.content?.parts?.firstOrNull { it.text != null }?.text
             // An answer cut off by the output limit is unusable (half a JSON), so it counts as a failure.
             if (text.isNullOrBlank() || candidate.finishReason == "MAX_TOKENS") {
-                AiText.Error(describeIncomplete(candidate?.finishReason, decoded.promptFeedback?.blockReason))
+                AiText.Error(describeIncomplete(candidate?.finishReason, decoded.promptFeedback?.blockReason, request.images.isNotEmpty()))
             } else {
                 AiText.Success(text)
             }
@@ -123,10 +123,10 @@ internal object GeminiTransport : AiTransport {
     }
 
     /** Explains why Gemini returned no text: the prompt was blocked or the generation stopped early. */
-    private fun describeIncomplete(finishReason: String?, blockReason: String?): String = ErrorDetail.markAsAi(
+    private fun describeIncomplete(finishReason: String?, blockReason: String?, withImages: Boolean): String = ErrorDetail.markAsAi(
         when {
             blockReason != null -> L10n.str(R.string.gemini_blocked_x, blockReason)
-            finishReason == "MAX_TOKENS" -> L10n.str(R.string.gemini_max_tokens)
+            finishReason == "MAX_TOKENS" -> L10n.str(if (withImages) R.string.gemini_max_tokens_photos else R.string.gemini_max_tokens)
             finishReason == "SAFETY" -> L10n.str(R.string.gemini_safety)
             finishReason == "RECITATION" -> L10n.str(R.string.gemini_recitation)
             finishReason != null -> L10n.str(R.string.gemini_incomplete_x, finishReason)

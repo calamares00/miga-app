@@ -694,7 +694,8 @@
     <string name="editor_more">"Más"</string>
     <string name="notes_variants">"Notas / variantes"</string>
     <string name="gemini_blocked_x">"Gemini bloqueó la respuesta por su política de contenido (%1$s)."</string>
-    <string name="gemini_max_tokens">"Gemini cortó la respuesta antes de terminar (demasiado larga). Prueba con menos fotos a la vez o una foto más sencilla."</string>
+    <string name="gemini_max_tokens">"Gemini cortó la respuesta antes de terminar: era demasiado larga. Vuelve a intentarlo o prueba con otro modelo."</string>
+    <string name="gemini_max_tokens_photos">"Gemini cortó la respuesta antes de terminar (demasiado larga). Prueba con menos fotos a la vez o una foto más sencilla."</string>
     <string name="gemini_safety">"Gemini bloqueó la respuesta por su política de contenido."</string>
     <string name="gemini_recitation">"Gemini bloqueó la respuesta por posible contenido protegido."</string>
     <string name="gemini_incomplete_x">"Gemini no completó la respuesta (motivo: %1$s)."</string>
@@ -712,7 +713,8 @@
     <string name="ai_health_disclaimer">"Estimación generada con IA. Puede contener errores y no sustituye el consejo de un profesional sanitario."</string>
     <string name="ai_nutrition_desc">"Estima calorías y macros por ración al abrir una receta."</string>
     <string name="ai_disabled_summary">"Desactivada"</string>
-    <string name="ai_incomplete_too_long">"%1$s cortó la respuesta antes de terminar (demasiado larga). Prueba con menos fotos a la vez o una foto más sencilla."</string>
+    <string name="ai_incomplete_too_long">"%1$s cortó la respuesta antes de terminar: era demasiado larga. Vuelve a intentarlo o prueba con otro modelo."</string>
+    <string name="ai_incomplete_too_long_photos">"%1$s cortó la respuesta antes de terminar (demasiado larga). Prueba con menos fotos a la vez o una foto más sencilla."</string>
     <string name="ai_incomplete_refused">"%1$s rechazó la petición por su política de contenido."</string>
     <string name="ai_incomplete_empty">"%1$s no devolvió ningún resultado."</string>
     <string name="ai_incomplete_other">"%1$s no completó la respuesta (motivo: %2$s)."</string>
@@ -1198,6 +1200,7 @@
     <string name="cleanup_intro">"Revisa lo que se puede ordenar y desmarca lo que quieras conservar. Tus categorías pasan a las de la app, y las que mezclan platos se reparten receta a receta (toca una receta para cambiar adónde va). Lo que trae la app no se renombra ni se elimina."</string>
     <string name="cleanup_ai">"Más sugerencias"</string>
     <string name="cleanup_ai_working">"Buscando sinónimos, erratas y recetas por repartir…"</string>
+    <string name="cleanup_ai_incomplete">"El asistente no ha podido revisarlo todo: estas son las sugerencias que han llegado. Puedes aplicarlas y volver a pedir más."</string>
     <string name="cleanup_ai_done">"Sugerencias extra añadidas"</string>
     <string name="cleanup_nothing">"Todo está como los chorros del oro"</string>
     <string name="cleanup_section_merge">"Fusionar duplicados (%1$d)"</string>
