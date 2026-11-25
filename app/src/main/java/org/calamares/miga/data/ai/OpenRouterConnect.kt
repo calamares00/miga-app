@@ -1,5 +1,7 @@
 package org.calamares.miga.data.ai
 
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import android.widget.Toast
 import android.os.Looper
 import android.os.Handler
@@ -61,9 +63,9 @@ object OpenRouterConnect {
     fun authorizationUri(context: Context): Uri {
         val verifier = randomToken(48)
         val state = randomToken(16)
-        prefs(context).edit().putString(KEY_VERIFIER, verifier).putString(KEY_STATE, state).apply()
+        prefs(context).edit { putString(KEY_VERIFIER, verifier); putString(KEY_STATE, state) }
         _status.value = Status.Idle
-        return Uri.parse(AUTH_URL).buildUpon()
+        return AUTH_URL.toUri().buildUpon()
             .appendQueryParameter("callback_url", CALLBACK_URL)
             .appendQueryParameter("code_challenge", codeChallenge(verifier))
             .appendQueryParameter("code_challenge_method", "S256")
@@ -103,7 +105,7 @@ object OpenRouterConnect {
                     val settings = (app as MigaApp).settingsRepository
                     settings.setApiKey(AiProvider.OPENROUTER, result.key)
                     settings.setProviderEnabled(AiProvider.OPENROUTER, true)
-                    prefs(app).edit().clear().apply()
+                    prefs(app).edit { clear() }
                     Status.Connected
                 }
                 is Exchange.Error -> Status.Failed(result.reason)

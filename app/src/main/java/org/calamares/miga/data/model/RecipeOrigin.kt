@@ -20,7 +20,8 @@ object RecipeOrigin {
     }
 
     fun countryName(countryCode: String, locale: Locale = Locale.getDefault()): String =
-        Locale("", countryCode).getDisplayCountry(locale).ifBlank { countryCode }
+        runCatching { Locale.Builder().setRegion(countryCode).build() }.getOrNull()
+            ?.getDisplayCountry(locale)?.ifBlank { null } ?: countryCode
 
     /** Every country, by name in [locale]. */
     fun countries(locale: Locale = Locale.getDefault()): List<Pair<String, String>> =
@@ -104,7 +105,7 @@ object RecipeOrigin {
     private var nameKeys: Map<String, String>? = null
 
     private fun countryNameKeys(): Map<String, String> = nameKeys ?: buildMap {
-        listOf(Locale("es"), Locale.ENGLISH).forEach { locale ->
+        listOf(Locale.forLanguageTag("es"), Locale.ENGLISH).forEach { locale ->
             COUNTRY_CODES.forEach { code -> put(KitchenEquipment.key(countryName(code, locale)), code) }
         }
     }.also { nameKeys = it }

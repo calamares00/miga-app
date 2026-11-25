@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.shoppinglist
 
+import androidx.compose.runtime.mutableLongStateOf
 import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.L10n
@@ -128,7 +129,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -305,17 +306,20 @@ internal fun ShoppingListRow(
         }
     }
 
-    // Swipe right to tick, left to remove, in both modes.
-    val swipeState = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
-        when (value) {
-            SwipeToDismissBoxValue.StartToEnd -> currentOnCheckedChange.value(!currentChecked.value)
-            SwipeToDismissBoxValue.EndToStart -> currentOnDelete.value()
-            SwipeToDismissBoxValue.Settled -> Unit
-        }
-        false // the row springs back; if it changes section, Compose moves it
-    })
+    // Swipe right to tick, left to remove, in both modes. The row springs back afterwards; if it
+    // changes section, Compose moves it.
+    val swipeState = rememberSwipeToDismissBoxState()
+    val swipeScope = rememberCoroutineScope()
     SwipeToDismissBox(
         state = swipeState,
+        onDismiss = { direction ->
+            when (direction) {
+                SwipeToDismissBoxValue.StartToEnd -> currentOnCheckedChange.value(!currentChecked.value)
+                SwipeToDismissBoxValue.EndToStart -> currentOnDelete.value()
+                SwipeToDismissBoxValue.Settled -> Unit
+            }
+            swipeScope.launch { swipeState.reset() }
+        },
         backgroundContent = {
             val direction = swipeState.dismissDirection
             Box(
@@ -352,7 +356,7 @@ internal fun StoreEditorSheet(
     onDismiss: () -> Unit
 ) {
     var name by remember { mutableStateOf(store.name) }
-    var argb by remember { mutableStateOf(store.argb) }
+    var argb by remember { mutableLongStateOf(store.argb) }
     var order by remember {
         mutableStateOf(ShoppingAisleOrder.complete(store.aisleOrder.ifEmpty { ShoppingAisleOrder.TYPICAL_ORDER }, categoryNames))
     }

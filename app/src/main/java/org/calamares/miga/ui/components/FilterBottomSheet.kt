@@ -89,11 +89,11 @@ fun FilterSheetContent(
     availableCategories: List<String>,
     availableTags: List<String>,
     availableUtensils: List<String>,
-    availableIngredients: List<String> = emptyList(),
-    availableOrigins: List<String> = emptyList(),
     onApply: (RecipeFilter) -> Unit,
     onClear: () -> Unit,
     modifier: Modifier = Modifier,
+    availableIngredients: List<String> = emptyList(),
+    availableOrigins: List<String> = emptyList(),
     showFavoritesToggle: Boolean = true,
     resultCount: Int? = null,
     onShowResults: (() -> Unit)? = null
@@ -283,7 +283,7 @@ fun FilterSheetContent(
                     when (resultCount) {
                         0 -> L10n.str(R.string.filter_no_results)
                         1 -> L10n.str(R.string.filter_show_one)
-                        else -> L10n.str(R.string.filter_show_n, resultCount)
+                        else -> L10n.plural(R.plurals.filter_show_n, resultCount)
                     }
                 )
             }

@@ -26,7 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -178,7 +178,7 @@ fun SettingsHomeScreen(
                     if (hasChangelog) {
                         add(HomeItem(Icons.Filled.NewReleases, L10n.str(R.string.whats_new), L10n.str(R.string.whats_new_each_version), onClick = onOpenChangelog))
                     }
-                    add(HomeItem(Icons.Filled.HelpOutline, L10n.str(R.string.help_support), L10n.str(R.string.faq_contact), onClick = onHelp))
+                    add(HomeItem(Icons.AutoMirrored.Filled.HelpOutline, L10n.str(R.string.help_support), L10n.str(R.string.faq_contact), onClick = onHelp))
                     add(HomeItem(Icons.Filled.Info, L10n.str(R.string.about), L10n.str(R.string.version_x_privacy_policy, BuildConfig.VERSION_NAME), onClick = onAbout))
                 }
             )

@@ -44,6 +44,14 @@ object SocialPostRecipe {
     private val INSTAGRAM_POST = Regex("^/(?:[^/]+/)?(?:p|reel|reels|tv)/[^/]+")
 
     /** An Instagram post or reel ("instagram.com/reel/…", also with the account in the path). */
+    /** Sites where what is shared is a post whose caption holds the recipe. */
+    private val SOCIAL_HOSTS = listOf("instagram.com", "tiktok.com", "facebook.com", "fb.watch", "x.com", "twitter.com", "threads.net", "pinterest.com", "pinterest.es")
+
+    fun isSocialNetwork(url: String): Boolean {
+        val host = runCatching { URI(url).host?.lowercase() }.getOrNull() ?: return false
+        return SOCIAL_HOSTS.any { host == it || host.endsWith(".$it") }
+    }
+
     fun isInstagram(url: String): Boolean {
         val uri = runCatching { URI(url.trim()) }.getOrNull() ?: return false
         return uri.host?.lowercase() in INSTAGRAM_HOSTS && INSTAGRAM_POST.containsMatchIn(uri.path.orEmpty())
@@ -136,7 +144,9 @@ object SocialPostRecipe {
         val instagram = isInstagram(pageUrl)
         val description = meta(html, "og:description") ?: meta(html, "description") ?: return null
         val type = meta(html, "og:type").orEmpty()
-        if (!instagram && (description.length < MIN_TEXT || !(type.startsWith("video") || type == "article"))) return null
+        // Only social networks: on a blog or a magazine ("article" too) the description is just a
+        // summary, and the page's own text is what has the recipe or the tip.
+        if (!instagram && (!isSocialNetwork(pageUrl) || description.length < MIN_TEXT || !(type.startsWith("video") || type == "article"))) return null
         var text = description
         var author: String? = null
         INSTAGRAM_WRAPPER.find(description)?.let { match ->

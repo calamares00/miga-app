@@ -1,12 +1,13 @@
 package org.calamares.miga.ui.welcome
 
+import android.annotation.SuppressLint
+import androidx.core.net.toUri
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -46,7 +47,7 @@ import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -74,7 +75,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -113,7 +114,7 @@ private fun tourPages() = listOf(
         Icons.AutoMirrored.Filled.MenuBook, L10n.str(R.string.tour_kicker_recipes), L10n.str(R.string.tour_recipes_title), L10n.str(R.string.tour_recipes_body),
         listOf(
             Icons.AutoMirrored.Filled.MenuBook to L10n.str(R.string.tour_recipes_point_books),
-            Icons.Filled.OpenInNew to L10n.str(R.string.tour_recipes_point_import),
+            Icons.AutoMirrored.Filled.OpenInNew to L10n.str(R.string.tour_recipes_point_import),
             Icons.Filled.Favorite to L10n.str(R.string.tour_recipes_point_packs)
         ),
         L10n.str(R.string.web_page_features)
@@ -222,7 +223,7 @@ fun WelcomeScreen(
                 }
                 page.webPage?.let { path ->
                     TextButton(onClick = { openWebLink(context, L10n.str(R.string.web_site) + path) }, modifier = Modifier.padding(top = 8.dp)) {
-                        Icon(Icons.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(L10n.str(R.string.tour_more_on_web))
                     }
@@ -321,6 +322,8 @@ private fun Dots(count: Int, current: Int) {
 
 /** A permission Miga may ask for, with what it is for. All of them are optional. */
 private enum class TourPermission(val icon: ImageVector, val title: Int, val purpose: Int, val permission: String?) {
+    // Only asked on Android 13+, where the permission exists (see isGranted).
+    @SuppressLint("InlinedApi")
     NOTIFICATIONS(Icons.Filled.Notifications, R.string.permission_notifications, R.string.permission_notifications_purpose, Manifest.permission.POST_NOTIFICATIONS),
     ALARMS(Icons.Filled.Alarm, R.string.permission_alarms, R.string.permission_alarms_purpose, null),
     MICROPHONE(Icons.Filled.Mic, R.string.permission_microphone, R.string.permission_microphone_purpose, Manifest.permission.RECORD_AUDIO),
@@ -381,9 +384,9 @@ private fun PermissionList() {
                         FilledTonalButton(onClick = {
                             when {
                                 item == TourPermission.ALARMS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-                                    openSettings(context, Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")))
+                                    openSettings(context, Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, "package:${context.packageName}".toUri()))
                                 item in askedOnce ->
-                                    openSettings(context, Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
+                                    openSettings(context, Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${context.packageName}".toUri()))
                                 else -> {
                                     asking = item
                                     launcher.launch(item.permission!!)

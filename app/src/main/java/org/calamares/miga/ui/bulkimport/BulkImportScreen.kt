@@ -22,7 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -78,7 +78,7 @@ fun BulkImportScreen(
                 title = { Text(L10n.str(R.string.recipes_from_photos)) },
                 navigationIcon = {
                     IconButton(onClick = { if (isProcessing) showExitConfirm = true else onBack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back))
                     }
                 }
             )

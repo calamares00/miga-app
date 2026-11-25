@@ -16,14 +16,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CallMerge
+import androidx.compose.material.icons.automirrored.filled.CallMerge
+import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.DriveFileRenameOutline
-import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,6 +45,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -58,6 +65,7 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import org.calamares.miga.data.ai.runAi
 import org.calamares.miga.data.content.AiCleanupResult
+import org.calamares.miga.data.content.CategoryAssignment
 import org.calamares.miga.data.content.CleanupAction
 import org.calamares.miga.data.content.CleanupProposal
 import org.calamares.miga.data.content.ContentCleanup
@@ -65,6 +73,7 @@ import org.calamares.miga.data.content.suggestContentCleanup
 import org.calamares.miga.data.local.SettingsRepository
 import org.calamares.miga.data.model.ContentItem
 import org.calamares.miga.data.model.ContentKind
+import org.calamares.miga.data.model.RecipeCategories
 import org.calamares.miga.data.repository.ContentSnapshot
 import org.calamares.miga.data.repository.RecipeRepository
 import org.calamares.miga.ui.components.AdaptiveScaffold
@@ -86,7 +95,7 @@ data class CleanupUiState(
     val done: CleanupDone? = null
 )
 
-data class CleanupDone(val merged: Int, val renamed: Int, val deleted: Int, val snapshot: ContentSnapshot, val undone: Boolean = false)
+data class CleanupDone(val merged: Int, val renamed: Int, val split: Int, val deleted: Int, val snapshot: ContentSnapshot, val undone: Boolean = false)
 
 class ContentCleanupViewModel(
     private val repository: RecipeRepository,
@@ -106,7 +115,7 @@ class ContentCleanupViewModel(
         viewModelScope.launch {
             val (lists, shoppingNames) = repository.contentForCleanup()
             content = lists
-            val proposals = ContentCleanup.propose(lists, language, shoppingNames)
+            val proposals = ContentCleanup.propose(lists, language, shoppingNames, repository.recipesForCleanup())
             _state.value = CleanupUiState(
                 scanning = false,
                 proposals = proposals,
@@ -125,6 +134,14 @@ class ContentCleanupViewModel(
         state.copy(ticked = if (state.ticked.containsAll(keys)) state.ticked - keys else state.ticked + keys)
     }
 
+    /** Sends the recipe [recipeId] of the split [proposal] to [target] (null: it stays). */
+    fun reassign(proposal: CleanupProposal, recipeId: Long, target: String?) = _state.update { state ->
+        state.copy(proposals = state.proposals.map { current ->
+            if (current.key != proposal.key) current
+            else current.copy(assignments = current.assignments.map { if (it.recipeId == recipeId) it.copy(target = target, fromAi = false) else it })
+        })
+    }
+
     fun refineWithAi() {
         if (_state.value.askingAi) return
         _state.update { it.copy(askingAi = true, aiError = null) }
@@ -141,7 +158,13 @@ class ContentCleanupViewModel(
                     is AiCleanupResult.Success -> state.copy(
                         askingAi = false,
                         aiAsked = true,
-                        proposals = state.proposals + result.proposals.filter { new -> state.proposals.none { it.key == new.key } }
+                        proposals = state.proposals.map { proposal ->
+                            if (proposal.action != CleanupAction.SPLIT) proposal
+                            else proposal.copy(assignments = proposal.assignments.map { assignment ->
+                                val filed = result.assignments[assignment.recipeId]
+                                if (assignment.target == null && filed != null) assignment.copy(target = filed, fromAi = true) else assignment
+                            })
+                        } + result.proposals.filter { new -> state.proposals.none { it.key == new.key } }
                     )
                 }
             }
@@ -161,6 +184,7 @@ class ContentCleanupViewModel(
                     done = CleanupDone(
                         merged = chosen.count { p -> p.action == CleanupAction.MERGE },
                         renamed = chosen.count { p -> p.action == CleanupAction.RENAME },
+                        split = chosen.count { p -> p.action == CleanupAction.SPLIT },
                         deleted = chosen.count { p -> p.action == CleanupAction.DELETE },
                         snapshot = snapshot
                     )
@@ -196,7 +220,7 @@ fun ContentCleanupScreen(viewModel: ContentCleanupViewModel, onBack: () -> Unit)
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(L10n.str(R.string.cleanup_title)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) } }
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) } }
             )
         },
         bottomBar = {
@@ -210,7 +234,7 @@ fun ContentCleanupScreen(viewModel: ContentCleanupViewModel, onBack: () -> Unit)
                         if (state.applying) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         } else {
-                            ButtonContent(Icons.Filled.CleaningServices, L10n.str(R.string.cleanup_apply_n, chosen))
+                            ButtonContent(Icons.Filled.CleaningServices, L10n.plural(R.plurals.cleanup_apply_n, chosen))
                         }
                     }
                 }
@@ -263,7 +287,7 @@ fun ContentCleanupScreen(viewModel: ContentCleanupViewModel, onBack: () -> Unit)
                         }
                     }
                 }
-                listOf(CleanupAction.MERGE, CleanupAction.RENAME, CleanupAction.DELETE).forEach { action ->
+                listOf(CleanupAction.MERGE, CleanupAction.RENAME, CleanupAction.SPLIT, CleanupAction.DELETE).forEach { action ->
                     val group = state.proposals.filter { it.action == action }
                     if (group.isEmpty()) return@forEach
                     item(key = "header-$action") {
@@ -275,7 +299,16 @@ fun ContentCleanupScreen(viewModel: ContentCleanupViewModel, onBack: () -> Unit)
                         )
                     }
                     items(group, key = { it.key }) { proposal ->
-                        ProposalRow(proposal, ticked = proposal.key in state.ticked, onToggle = { viewModel.toggle(proposal) })
+                        if (proposal.action == CleanupAction.SPLIT) {
+                            SplitProposalRow(
+                                proposal,
+                                ticked = proposal.key in state.ticked,
+                                onToggle = { viewModel.toggle(proposal) },
+                                onReassign = { recipeId, target -> viewModel.reassign(proposal, recipeId, target) }
+                            )
+                        } else {
+                            ProposalRow(proposal, ticked = proposal.key in state.ticked, onToggle = { viewModel.toggle(proposal) })
+                        }
                     }
                 }
             }
@@ -286,8 +319,9 @@ fun ContentCleanupScreen(viewModel: ContentCleanupViewModel, onBack: () -> Unit)
 @Composable
 private fun CleanupSectionHeader(action: CleanupAction, count: Int, allTicked: Boolean, onToggleAll: () -> Unit) {
     val (icon, title) = when (action) {
-        CleanupAction.MERGE -> Icons.Filled.CallMerge to L10n.str(R.string.cleanup_section_merge, count)
+        CleanupAction.MERGE -> Icons.AutoMirrored.Filled.CallMerge to L10n.str(R.string.cleanup_section_merge, count)
         CleanupAction.RENAME -> Icons.Filled.DriveFileRenameOutline to L10n.str(R.string.cleanup_section_rename, count)
+        CleanupAction.SPLIT -> Icons.AutoMirrored.Filled.CallSplit to L10n.str(R.string.cleanup_section_split, count)
         CleanupAction.DELETE -> Icons.Filled.DeleteSweep to L10n.str(R.string.cleanup_section_delete, count)
     }
     Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -326,9 +360,106 @@ private fun ProposalRow(proposal: CleanupProposal, ticked: Boolean, onToggle: ()
     }
 }
 
+/**
+ * A category split recipe by recipe: how many go to each category and, unfolded, every recipe
+ * with where it goes; tapping one picks another category (or leaves it where it is).
+ */
+@Composable
+private fun SplitProposalRow(proposal: CleanupProposal, ticked: Boolean, onToggle: () -> Unit, onReassign: (Long, String?) -> Unit) {
+    var expanded by rememberSaveable(proposal.key) { mutableStateOf(false) }
+    var choosing by remember { mutableStateOf<CategoryAssignment?>(null) }
+    val source = proposal.items.single()
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp)) {
+            Row(modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle), verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = ticked, onCheckedChange = { onToggle() })
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(proposalText(proposal), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                    val summary = buildList {
+                        proposal.assignments.mapNotNull { it.target }.groupingBy { it }.eachCount().entries
+                            .sortedByDescending { it.value }.forEach { (name, count) -> add("$name $count") }
+                        val stays = proposal.assignments.count { it.target == null }
+                        if (stays > 0) add(L10n.plural(R.plurals.cleanup_split_stays, stays))
+                        proposal.tag?.let { add(L10n.str(R.string.cleanup_split_tag, it)) }
+                    }.joinToString(" · ")
+                    Text(summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            TextButton(onClick = { expanded = !expanded }, modifier = Modifier.padding(start = 40.dp)) {
+                Text(L10n.str(if (expanded) R.string.cleanup_split_hide else R.string.cleanup_split_show))
+            }
+            if (expanded) {
+                proposal.assignments.forEach { assignment ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { choosing = assignment }
+                            .padding(start = 48.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(assignment.recipeName, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        if (assignment.fromAi) {
+                            Icon(
+                                Icons.Filled.AutoAwesome,
+                                contentDescription = L10n.str(R.string.cleanup_from_ai),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 4.dp).size(14.dp)
+                            )
+                        }
+                        Text(
+                            "→ " + (assignment.target ?: source.name),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (assignment.target != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+    choosing?.let { assignment ->
+        val language = L10n.locale().language
+        AlertDialog(
+            onDismissRequest = { choosing = null },
+            title = { Text(L10n.str(R.string.cleanup_split_choose, assignment.recipeName), style = MaterialTheme.typography.titleMedium) },
+            text = {
+                LazyColumn {
+                    item(key = "keep") {
+                        CategoryChoice(L10n.str(R.string.cleanup_split_keep, source.name), null, assignment.target == null) {
+                            onReassign(assignment.recipeId, null); choosing = null
+                        }
+                    }
+                    items(RecipeCategories.ALL, key = { it.es }) { category ->
+                        val name = category.name(language)
+                        CategoryChoice(name, category.description(language), assignment.target == name) {
+                            onReassign(assignment.recipeId, name); choosing = null
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { choosing = null }) { Text(L10n.str(R.string.cancel)) } }
+        )
+    }
+}
+
+@Composable
+private fun CategoryChoice(name: String, description: String?, selected: Boolean, onClick: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        RadioButton(selected = selected, onClick = onClick)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(name, style = MaterialTheme.typography.bodyLarge)
+            description?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+    }
+}
+
 private fun proposalText(proposal: CleanupProposal): String = when (proposal.action) {
     CleanupAction.MERGE -> proposal.items.joinToString(", ") { "«${it.name}»" } + " → «${proposal.newName ?: proposal.target?.name}»"
     CleanupAction.RENAME -> "«${proposal.items.single().name}» → «${proposal.newName}»"
+    CleanupAction.SPLIT -> L10n.str(R.string.cleanup_split_title, proposal.items.single().name)
     CleanupAction.DELETE -> "«${proposal.items.single().name}»"
 }
 
@@ -340,7 +471,7 @@ private fun CleanupDoneView(done: CleanupDone, onUndo: () -> Unit, onClose: () -
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
     ) {
         Icon(
-            if (done.undone) Icons.Filled.Undo else Icons.Filled.CheckCircle,
+            if (done.undone) Icons.AutoMirrored.Filled.Undo else Icons.Filled.CheckCircle,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(56.dp)
@@ -350,14 +481,15 @@ private fun CleanupDoneView(done: CleanupDone, onUndo: () -> Unit, onClose: () -
             style = MaterialTheme.typography.titleLarge
         )
         if (!done.undone) {
-            DoneLine(Icons.Filled.CallMerge, L10n.str(R.string.cleanup_done_merged, done.merged))
-            DoneLine(Icons.Filled.DriveFileRenameOutline, L10n.str(R.string.cleanup_done_renamed, done.renamed))
-            DoneLine(Icons.Filled.DeleteSweep, L10n.str(R.string.cleanup_done_deleted, done.deleted))
+            DoneLine(Icons.AutoMirrored.Filled.CallMerge, L10n.plural(R.plurals.cleanup_done_merged, done.merged))
+            DoneLine(Icons.Filled.DriveFileRenameOutline, L10n.plural(R.plurals.cleanup_done_renamed, done.renamed))
+            if (done.split > 0) DoneLine(Icons.AutoMirrored.Filled.CallSplit, L10n.plural(R.plurals.cleanup_done_split, done.split))
+            DoneLine(Icons.Filled.DeleteSweep, L10n.plural(R.plurals.cleanup_done_deleted, done.deleted))
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             if (!done.undone) {
-                OutlinedButton(onClick = onUndo) { ButtonContent(Icons.Filled.Undo, L10n.str(R.string.undo)) }
+                OutlinedButton(onClick = onUndo) { ButtonContent(Icons.AutoMirrored.Filled.Undo, L10n.str(R.string.undo)) }
             }
             Button(onClick = onClose) { Text(L10n.str(R.string.close)) }
         }

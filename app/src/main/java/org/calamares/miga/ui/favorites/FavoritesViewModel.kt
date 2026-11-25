@@ -133,7 +133,7 @@ class FavoritesViewModel(private val repository: RecipeRepository) : ViewModel()
             _refreshing.value = true
             val failed = follows.refreshStale(if (onlyStale) FollowRepository.STALE_AFTER_MILLIS else 0L)
             _refreshing.value = false
-            if (failed > 0 && !onlyStale) _message.value = L10n.str(R.string.follow_some_failed, failed)
+            if (failed > 0 && !onlyStale) _message.value = L10n.plural(R.plurals.follow_some_failed, failed)
         }
     }
 

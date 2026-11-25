@@ -55,7 +55,7 @@ fun DetectedRecipesDialog(
     Dialog(onDismissRequest = {}, properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)) {
         Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(L10n.str(R.string.ai_several_recipes_found_x, names.size), style = MaterialTheme.typography.headlineSmall)
+                Text(L10n.plural(R.plurals.ai_several_recipes_found_x, names.size), style = MaterialTheme.typography.headlineSmall)
                 Text(L10n.str(R.string.detected_choose), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                 Column(modifier = Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState())) {
@@ -102,7 +102,7 @@ fun DetectedRecipesDialog(
                             OptionButton(L10n.str(R.string.detected_join), primary) { onJoin(chosen) }
                         }
                         val oneEach: @Composable (Boolean) -> Unit = { primary ->
-                            OptionButton(L10n.str(R.string.detected_one_each, chosen.size), primary) { onOneEach(chosen) }
+                            OptionButton(L10n.plural(R.plurals.detected_one_each, chosen.size), primary) { onOneEach(chosen) }
                         }
                         if (recommendJoin) {
                             join(true)

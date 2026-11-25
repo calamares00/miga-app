@@ -19,6 +19,11 @@ data class ContentRow(val id: Long, val name: String, val usage: Int)
 /** A recipe and its category, to put it back when a cleanup is undone. */
 data class RecipeCategoryLink(val id: Long, val categoryId: Long?)
 
+/** A recipe's name and category, to file it when a category is split. */
+data class RecipeNameRow(val id: Long, val name: String, val categoryId: Long)
+
+data class IngredientNameRow(val recipeId: Long, val name: String)
+
 /** A recipe whose book syncs, to queue it for upload after one of its labels changed. */
 data class RecipeSyncTarget(val uid: String, val connectionId: Long)
 
@@ -240,4 +245,10 @@ interface ContentDao {
 
     @Query("UPDATE recipes SET categoryId = :categoryId WHERE id = :id")
     suspend fun setRecipeCategory(id: Long, categoryId: Long?)
+
+    @Query("SELECT id, name, categoryId FROM recipes WHERE categoryId IS NOT NULL")
+    suspend fun categorisedRecipes(): List<RecipeNameRow>
+
+    @Query("SELECT i.recipeId, i.name FROM ingredients i JOIN recipes r ON r.id = i.recipeId WHERE r.categoryId IS NOT NULL ORDER BY i.recipeId, i.position")
+    suspend fun ingredientsOfCategorisedRecipes(): List<IngredientNameRow>
 }

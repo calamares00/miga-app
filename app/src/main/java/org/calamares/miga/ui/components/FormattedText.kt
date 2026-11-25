@@ -1,11 +1,13 @@
 package org.calamares.miga.ui.components
 
+import androidx.core.net.toUri
 import org.calamares.miga.data.model.CookModeText
 import android.content.Intent
-import android.net.Uri
-import androidx.compose.foundation.text.ClickableText
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.OutputTransformation
+import androidx.compose.foundation.text.input.TextFieldBuffer
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,7 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
-import androidx.compose.material.icons.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.FormatStrikethrough
 import androidx.compose.material3.Icon
@@ -38,10 +40,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
@@ -112,17 +110,21 @@ fun FormattedText(
         return
     }
     val context = LocalContext.current
-    val baseColor = color.takeOrElse { style.color.takeOrElse { LocalContentColor.current } }
-    ClickableText(
-        text = annotated,
-        style = style.copy(color = baseColor),
-        modifier = modifier,
-        onClick = { offset ->
-            annotated.getStringAnnotations(RICH_LINK_TAG, offset, offset).firstOrNull()?.let { link ->
-                openWebLink(context, link.item)
-            }
-        }
-    )
+    val linked = remember(annotated, context) { annotated.withTappableLinks(RICH_LINK_TAG) { url -> openWebLink(context, url) } }
+    Text(linked, style = style, color = color, modifier = modifier)
+}
+
+/**
+ * [this] with the ranges annotated with [tag] tappable: tapping one calls [onClick] with its
+ * annotation (a web address, a recipe id...).
+ */
+fun AnnotatedString.withTappableLinks(tag: String, onClick: (String) -> Unit): AnnotatedString {
+    val links = getStringAnnotations(tag, 0, length)
+    if (links.isEmpty()) return this
+    return buildAnnotatedString {
+        append(this@withTappableLinks)
+        links.forEach { link -> addLink(LinkAnnotation.Clickable(link.item) { onClick(link.item) }, link.start, link.end) }
+    }
 }
 
 /**
@@ -161,7 +163,7 @@ fun withBareLinks(text: AnnotatedString, linkColor: Color): AnnotatedString {
  * imported), and other schemes could open apps or files.
  */
 fun openWebLink(context: android.content.Context, url: String) {
-    val uri = runCatching { Uri.parse(url.trim()) }.getOrNull() ?: return
+    val uri = runCatching { url.trim().toUri() }.getOrNull() ?: return
     if (uri.scheme?.lowercase() !in setOf("http", "https")) return
     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)) }
 }
@@ -170,25 +172,36 @@ fun openWebLink(context: android.content.Context, url: String) {
  * Styles the text being edited without changing it: bold, italic and strikethrough are applied
  * and the syntax characters are dimmed, so the user sees the result while typing.
  */
-private class RichTextVisualTransformation(private val markerColor: Color) : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
-        val parsed = RichText.parse(text.text)
-        val styled = buildAnnotatedString {
-            append(text.text)
-            val headingChars = BooleanArray(text.length)
-            parsed.lines.filter { it.kind == RichText.LineKind.HEADING }.forEach { line ->
-                for (i in line.contentStart until line.end) headingChars[i] = true
-            }
-            var i = 0
-            while (i < text.length) {
-                val start = i
-                val key = listOf(parsed.marker[i], parsed.bold[i] || headingChars[i], parsed.italic[i], parsed.strike[i])
-                while (i < text.length && listOf(parsed.marker[i], parsed.bold[i] || headingChars[i], parsed.italic[i], parsed.strike[i]) == key) i++
-                val style = if (key[0]) SpanStyle(color = markerColor) else runStyle(key[1], key[2], key[3])
-                addStyle(style, start, i)
-            }
+private class RichTextOutputTransformation(private val markerColor: Color) : OutputTransformation {
+    override fun TextFieldBuffer.transformOutput() {
+        val text = toString()
+        val parsed = RichText.parse(text)
+        val headingChars = BooleanArray(text.length)
+        parsed.lines.filter { it.kind == RichText.LineKind.HEADING }.forEach { line ->
+            for (i in line.contentStart until line.end) headingChars[i] = true
         }
-        return TransformedText(styled, OffsetMapping.Identity)
+        var i = 0
+        while (i < text.length) {
+            val start = i
+            val key = listOf(parsed.marker[i], parsed.bold[i] || headingChars[i], parsed.italic[i], parsed.strike[i])
+            while (i < text.length && listOf(parsed.marker[i], parsed.bold[i] || headingChars[i], parsed.italic[i], parsed.strike[i]) == key) i++
+            val style = if (key[0]) SpanStyle(color = markerColor) else runStyle(key[1], key[2], key[3])
+            addStyle(style, start, i)
+        }
+    }
+}
+
+/** Pressing Enter on a list item starts the next one (see RichTextEditing.continueList). */
+private object ListContinuation : InputTransformation {
+    override fun TextFieldBuffer.transformInput() {
+        val typedLineBreak = length == originalText.length + 1 &&
+            selection.collapsed &&
+            selection.start > 0 &&
+            charAt(selection.start - 1) == '\n'
+        if (!typedLineBreak) return
+        val continued = RichTextEditing.continueList(toString(), selection.start) ?: return
+        replace(0, length, continued.text)
+        selection = TextRange(continued.selectionStart, continued.selectionEnd)
     }
 }
 
@@ -205,52 +218,44 @@ fun RichTextField(
     label: (@Composable () -> Unit)? = null,
     minLines: Int = 1
 ) {
-    var fieldValue by remember { mutableStateOf(TextFieldValue(value, TextRange(value.length))) }
     // The text can also change from outside (dictation, AI): then the cursor goes to the end.
-    val current = if (fieldValue.text == value) fieldValue else TextFieldValue(value, TextRange(value.length))
+    val state = rememberSyncedTextFieldState(value, onValueChange)
     var focused by remember { mutableStateOf(false) }
     val markerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-    val transformation = remember(markerColor) { RichTextVisualTransformation(markerColor) }
+    val output = remember(markerColor) { RichTextOutputTransformation(markerColor) }
 
-    fun update(newValue: TextFieldValue) {
-        fieldValue = newValue
-        if (newValue.text != value) onValueChange(newValue.text)
+    fun apply(edit: RichTextEditing.Edit) = state.edit {
+        replace(0, length, edit.text)
+        selection = TextRange(edit.selectionStart, edit.selectionEnd)
     }
-
-    fun apply(edit: RichTextEditing.Edit) = update(TextFieldValue(edit.text, TextRange(edit.selectionStart, edit.selectionEnd)))
 
     Column(modifier = modifier) {
         OutlinedTextField(
-            value = current,
-            onValueChange = { newValue ->
-                val typedLineBreak = newValue.text.length == current.text.length + 1 &&
-                    newValue.selection.collapsed &&
-                    newValue.selection.start > 0 &&
-                    newValue.text[newValue.selection.start - 1] == '\n'
-                val continued = if (typedLineBreak) RichTextEditing.continueList(newValue.text, newValue.selection.start) else null
-                if (continued != null) apply(continued) else update(newValue)
-            },
-            label = label,
-            minLines = minLines,
-            visualTransformation = transformation,
+            state = state,
+            label = label?.let { content -> { content() } },
+            lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = minLines),
+            inputTransformation = ListContinuation,
+            outputTransformation = output,
             modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused }
         )
         if (focused) {
+            val text = state.text.toString()
+            val selection = state.selection
             Row {
                 FormatButton(Icons.Filled.FormatBold, L10n.str(R.string.format_bold)) {
-                    apply(RichTextEditing.toggleWrap(current.text, current.selection.start, current.selection.end, "**"))
+                    apply(RichTextEditing.toggleWrap(text, selection.start, selection.end, "**"))
                 }
                 FormatButton(Icons.Filled.FormatItalic, L10n.str(R.string.format_italic)) {
-                    apply(RichTextEditing.toggleWrap(current.text, current.selection.start, current.selection.end, "*"))
+                    apply(RichTextEditing.toggleWrap(text, selection.start, selection.end, "*"))
                 }
                 FormatButton(Icons.Filled.FormatStrikethrough, L10n.str(R.string.format_strikethrough)) {
-                    apply(RichTextEditing.toggleWrap(current.text, current.selection.start, current.selection.end, "~~"))
+                    apply(RichTextEditing.toggleWrap(text, selection.start, selection.end, "~~"))
                 }
-                FormatButton(Icons.Filled.FormatListBulleted, L10n.str(R.string.format_bullet_list)) {
-                    apply(RichTextEditing.toggleList(current.text, current.selection.start, current.selection.end, numbered = false))
+                FormatButton(Icons.AutoMirrored.Filled.FormatListBulleted, L10n.str(R.string.format_bullet_list)) {
+                    apply(RichTextEditing.toggleList(text, selection.start, selection.end, numbered = false))
                 }
                 FormatButton(Icons.Filled.FormatListNumbered, L10n.str(R.string.format_numbered_list)) {
-                    apply(RichTextEditing.toggleList(current.text, current.selection.start, current.selection.end, numbered = true))
+                    apply(RichTextEditing.toggleList(text, selection.start, selection.end, numbered = true))
                 }
             }
         }

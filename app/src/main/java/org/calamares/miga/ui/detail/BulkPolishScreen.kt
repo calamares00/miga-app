@@ -17,7 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DoneAll
@@ -98,7 +98,7 @@ fun BulkPolishScreen(onBack: () -> Unit, onOpenRecipe: (Long) -> Unit) {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(L10n.str(R.string.bulk_polish_title)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) } },
                 actions = {
                     when {
                         running -> TextButton(onClick = { BulkPolish.cancel() }) { Text(L10n.str(R.string.cancel)) }
@@ -116,7 +116,7 @@ fun BulkPolishScreen(onBack: () -> Unit, onOpenRecipe: (Long) -> Unit) {
                     Button(
                         onClick = { confirmApplyAll = true },
                         modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)
-                    ) { ButtonContent(Icons.Filled.DoneAll, L10n.str(R.string.bulk_polish_apply_all_n, readyCount)) }
+                    ) { ButtonContent(Icons.Filled.DoneAll, L10n.plural(R.plurals.bulk_polish_apply_all_n, readyCount)) }
                 }
             }
         }
@@ -134,7 +134,7 @@ fun BulkPolishScreen(onBack: () -> Unit, onOpenRecipe: (Long) -> Unit) {
             item(key = "summary") {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        L10n.str(R.string.bulk_polish_summary, finished, total, readyCount),
+                        L10n.plural(R.plurals.bulk_polish_summary, total, finished, total, readyCount),
                         style = MaterialTheme.typography.titleSmall
                     )
                     LinearProgressIndicator(progress = { if (total == 0) 0f else finished.toFloat() / total }, modifier = Modifier.fillMaxWidth())
@@ -145,7 +145,7 @@ fun BulkPolishScreen(onBack: () -> Unit, onOpenRecipe: (Long) -> Unit) {
                     )
                     AiContentNotice(
                         feature = L10n.str(R.string.bulk_polish_title),
-                        content = { L10n.str(R.string.bulk_polish_summary, finished, total, readyCount) }
+                        content = { L10n.plural(R.plurals.bulk_polish_summary, total, finished, total, readyCount) }
                     )
                 }
                 HorizontalDivider()
@@ -187,14 +187,14 @@ fun BulkPolishScreen(onBack: () -> Unit, onOpenRecipe: (Long) -> Unit) {
         AlertDialog(
             onDismissRequest = { confirmApplyAll = false },
             icon = { Icon(Icons.Filled.DoneAll, contentDescription = null) },
-            title = { Text(L10n.str(R.string.bulk_polish_apply_all_n, readyCount)) },
+            title = { Text(L10n.plural(R.plurals.bulk_polish_apply_all_n, readyCount)) },
             text = { Text(L10n.str(R.string.bulk_polish_apply_all_body)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmApplyAll = false
                     scope.launch {
                         val applied = BulkPolish.applyAllReady()
-                        Toast.makeText(context, L10n.str(R.string.bulk_polish_applied_n, applied), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, L10n.plural(R.plurals.bulk_polish_applied_n, applied), Toast.LENGTH_SHORT).show()
                     }
                 }) { Text(L10n.str(R.string.polish_apply)) }
             },
@@ -242,7 +242,7 @@ private fun BulkPolishRow(item: BulkPolishItem, onReview: () -> Unit, onOpenReci
                 }
                 is BulkPolishState.Ready -> StatusLine(
                     Icons.Filled.RateReview,
-                    if (state.polished.changes.isEmpty()) L10n.str(R.string.bulk_polish_ready) else L10n.str(R.string.bulk_polish_ready_n_changes, state.polished.changes.size),
+                    if (state.polished.changes.isEmpty()) L10n.str(R.string.bulk_polish_ready) else L10n.plural(R.plurals.bulk_polish_ready_n_changes, state.polished.changes.size),
                     highlighted = true
                 )
                 is BulkPolishState.Failed -> ErrorMessage(state.reason, onRetry = onRetry)

@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.books
 
+import org.calamares.miga.ui.components.rememberCopyToClipboard
 import org.calamares.miga.ui.components.UndoDeletionSnackbar
 import org.calamares.miga.ui.components.ShareSheet
 import org.calamares.miga.data.export.ShareAction
@@ -16,7 +17,7 @@ import androidx.compose.material3.Checkbox
 import kotlinx.coroutines.flow.filterNotNull
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Share
 import org.calamares.miga.data.share.BookFileIntents
@@ -72,7 +73,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SystemUpdate
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import android.widget.Toast
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
@@ -98,9 +99,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.data.model.RecipeListViewMode
@@ -157,7 +156,7 @@ fun RecipeBooksScreen(
         bookSections(books, filter, grouped, connectionNames, labels)
     }
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+    val copyToClipboard = rememberCopyToClipboard()
 
     LaunchedEffect(Unit) {
         viewModel.syncAllOnOpen(context)
@@ -332,7 +331,7 @@ fun RecipeBooksScreen(
                 Spacer(modifier = Modifier.weight(1f))
             } else if (books.isEmpty()) {
                 EmptyState(
-                    icon = Icons.Outlined.MenuBook,
+                    icon = Icons.AutoMirrored.Outlined.MenuBook,
                     title = L10n.str(R.string.start_recipe_book),
                     body = L10n.str(R.string.create_book_each_person_theme),
                     modifier = Modifier.fillMaxSize().weight(1f)
@@ -450,7 +449,7 @@ fun RecipeBooksScreen(
             icon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
             title = {
                 Text(
-                    if (prompt.bookNames.size > 1) L10n.str(R.string.import_books_x, prompt.bookNames.size)
+                    if (prompt.bookNames.size > 1) L10n.plural(R.plurals.import_books_x, prompt.bookNames.size)
                     else L10n.str(R.string.import_book_x, prompt.bookName)
                 )
             },
@@ -460,7 +459,7 @@ fun RecipeBooksScreen(
                     prompt.bookNames.takeIf { it.size > 1 }?.joinToString("\n", postfix = "\n\n") { "• $it" }.orEmpty() +
                     listOfNotNull(
                         sharedByLine(prompt.sharedBy, prompt.sharedAt),
-                        L10n.str(R.string.x_recipes_count, prompt.recipeCount)
+                        L10n.plural(R.plurals.x_recipes_count, prompt.recipeCount)
                     ).joinToString(" · ") + "\n\n" +
                         L10n.str(if (prompt.alreadyHere) R.string.shared_book_update_explanation else R.string.shared_book_new_explanation)
                 )
@@ -496,9 +495,9 @@ fun RecipeBooksScreen(
                 Text(
                     when {
                         own == 0 && packs == 1 -> L10n.str(R.string.uninstall_pack)
-                        own == 0 -> L10n.str(R.string.uninstall_packs_title_x, packs)
+                        own == 0 -> L10n.plural(R.plurals.uninstall_packs_title_x, packs)
                         selectedBooks.size == 1 -> L10n.str(R.string.delete_book_title_x, selectedBooks.single().name)
-                        else -> L10n.str(R.string.delete_books_title_x, selectedBooks.size)
+                        else -> L10n.plural(R.plurals.delete_books_title_x, selectedBooks.size)
                     }
                 )
             },
@@ -526,7 +525,7 @@ fun RecipeBooksScreen(
 
     if (showShareSheet && selectedBooks.isNotEmpty()) {
         ShareSheet(
-            title = selectedBooks.singleOrNull()?.name ?: L10n.str(R.string.n_books, selectedBooks.size),
+            title = selectedBooks.singleOrNull()?.name ?: L10n.plural(R.plurals.n_books, selectedBooks.size),
             // Several books go together in one file or link; a PDF or a copy is of one book.
             actions = if (selectedBooks.size == 1) listOf(ShareAction.SEND_FILE, ShareAction.LINK, ShareAction.PDF, ShareAction.SAVE_COPY)
             else listOf(ShareAction.SEND_FILE, ShareAction.LINK),
@@ -567,10 +566,10 @@ fun RecipeBooksScreen(
             onDismissRequest = { viewModel.dismissPackUpdates() },
             icon = { Icon(Icons.Filled.SystemUpdate, contentDescription = null) },
             title = { Text(L10n.str(R.string.pack_updates_found_title)) },
-            text = { Text(L10n.str(R.string.pack_updates_found_x, updates.size, updates.joinToString(", ") { it.name })) },
+            text = { Text(L10n.plural(R.plurals.pack_updates_found_x, updates.size, updates.size, updates.joinToString(", ") { it.name })) },
             confirmButton = {
                 TextButton(onClick = {
-                    Toast.makeText(context, L10n.str(R.string.updating_packs_x, updates.size), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, L10n.plural(R.plurals.updating_packs_x, updates.size), Toast.LENGTH_SHORT).show()
                     viewModel.installPackUpdates(context) { message -> Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
                 }) { Text(L10n.str(R.string.update)) }
             },
@@ -628,7 +627,7 @@ fun RecipeBooksScreen(
             },
             dismissButton = {
                 Row {
-                    TextButton(onClick = { clipboardManager.setText(AnnotatedString(report)) }) { Text(L10n.str(R.string.copy)) }
+                    TextButton(onClick = { copyToClipboard(report) }) { Text(L10n.str(R.string.copy)) }
                     TextButton(onClick = { viewModel.dismissCrashReport() }) { Text(L10n.str(R.string.discard)) }
                 }
             }

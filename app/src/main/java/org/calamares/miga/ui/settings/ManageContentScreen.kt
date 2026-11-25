@@ -21,13 +21,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CallMerge
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.CallMerge
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
@@ -69,6 +69,7 @@ import org.calamares.miga.R
 import org.calamares.miga.data.local.entity.IngredientCategoryEntity
 import org.calamares.miga.data.model.ContentItem
 import org.calamares.miga.data.model.ContentKind
+import org.calamares.miga.data.model.RecipeCategories
 import org.calamares.miga.data.model.IngredientCatalogItem
 import org.calamares.miga.data.model.RecipeFilter
 import org.calamares.miga.data.repository.RecipeRepository
@@ -163,7 +164,7 @@ fun ManageContentScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = {
                     when {
-                        selecting -> Text(L10n.str(R.string.n_selected, selected.size))
+                        selecting -> Text(L10n.plural(R.plurals.n_selected, selected.size))
                         searching -> OutlinedTextField(
                             value = query,
                             onValueChange = { query = it },
@@ -178,25 +179,29 @@ fun ManageContentScreen(
                     when {
                         selecting -> IconButton(onClick = { selected = emptySet() }) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel)) }
                         searching -> IconButton(onClick = { searching = false; query = "" }) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.close)) }
-                        else -> IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                        else -> IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                     }
                 },
                 actions = {
                     if (selecting) {
-                        if (selected.size >= 2) {
-                            IconButton(onClick = { merging = all.filter { it.id in selected } }) {
-                                Icon(Icons.Filled.CallMerge, contentDescription = L10n.str(R.string.content_merge))
+                        // The app's entries cannot be deleted, nor merged into another (which deletes them).
+                        val chosen = all.filter { it.id in selected }
+                        if (selected.size >= 2 && chosen.count { it.isDefault } <= 1) {
+                            IconButton(onClick = { merging = chosen }) {
+                                Icon(Icons.AutoMirrored.Filled.CallMerge, contentDescription = L10n.str(R.string.content_merge))
                             }
                         }
-                        IconButton(onClick = { deleting = all.filter { it.id in selected } }) {
-                            Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete))
+                        if (chosen.any { !it.isDefault }) {
+                            IconButton(onClick = { deleting = chosen.filter { !it.isDefault } }) {
+                                Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete))
+                            }
                         }
                     } else {
                         if (!searching) {
                             IconButton(onClick = { searching = true }) { Icon(Icons.Filled.Search, contentDescription = L10n.str(R.string.search)) }
                         }
                         Box {
-                            IconButton(onClick = { showSortMenu = true }) { Icon(Icons.Filled.Sort, contentDescription = L10n.str(R.string.content_sort)) }
+                            IconButton(onClick = { showSortMenu = true }) { Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = L10n.str(R.string.content_sort)) }
                             DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
                                 DropdownMenuItem(
                                     text = { Text(L10n.str(R.string.content_sort_name)) },
@@ -399,6 +404,11 @@ private fun ContentEntryRow(
                 )
                 if (item.isDefault) DefaultBadge(modifier = Modifier.padding(start = 8.dp))
             }
+            if (item.kind == ContentKind.CATEGORY) {
+                RecipeCategories.description(item.name, L10n.locale().language)?.let { description ->
+                    Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
             Text(
                 text = if (item.usage == 0) L10n.str(R.string.content_unused) else item.kind.usageLabel(item.usage),
                 style = MaterialTheme.typography.bodyMedium,
@@ -411,7 +421,9 @@ private fun ContentEntryRow(
         }
         if (!selecting) {
             IconButton(onClick = onRename) { Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.rename)) }
-            IconButton(onClick = onDelete) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete)) }
+            if (!item.isDefault) {
+                IconButton(onClick = onDelete) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete)) }
+            }
         }
     }
 }
@@ -502,7 +514,7 @@ private fun DeleteDialog(
         title = {
             Text(
                 if (items.size == 1) L10n.str(R.string.delete_quoted_x, items.single().name)
-                else L10n.str(R.string.content_delete_n, items.size)
+                else L10n.plural(R.plurals.content_delete_n, items.size)
             )
         },
         text = {
@@ -540,23 +552,25 @@ private fun DeleteDialog(
 /** Merging the selected entries into the one the user picks (the most used one by default). */
 @Composable
 private fun MergeDialog(kind: ContentKind, items: List<ContentItem>, onMerge: (ContentItem) -> Unit, onDismiss: () -> Unit) {
-    var target by remember { mutableStateOf(items.maxByOrNull { it.usage } ?: items.first()) }
+    // When one of the app's entries is among them, the rest go into it.
+    val choices = items.filter { it.isDefault }.ifEmpty { items }
+    var target by remember { mutableStateOf(choices.maxByOrNull { it.usage } ?: choices.first()) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Filled.CallMerge, contentDescription = null) },
-        title = { Text(L10n.str(R.string.content_merge_n, items.size)) },
+        icon = { Icon(Icons.AutoMirrored.Filled.CallMerge, contentDescription = null) },
+        title = { Text(L10n.plural(R.plurals.content_merge_n, items.size)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(L10n.str(R.string.content_merge_keep), style = MaterialTheme.typography.bodyMedium)
                 Column(modifier = Modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState())) {
-                    items.forEach { item ->
+                    choices.forEach { item ->
                         ChoiceRow("${item.name} · ${kind.usageLabel(item.usage)}", target.id == item.id) { target = item }
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onMerge(target) }) { ButtonContent(Icons.Filled.CallMerge, L10n.str(R.string.content_merge)) }
+            TextButton(onClick = { onMerge(target) }) { ButtonContent(Icons.AutoMirrored.Filled.CallMerge, L10n.str(R.string.content_merge)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )

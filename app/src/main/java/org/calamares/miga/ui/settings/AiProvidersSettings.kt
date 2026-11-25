@@ -1,15 +1,16 @@
 package org.calamares.miga.ui.settings
 
+import androidx.core.net.toUri
+import org.calamares.miga.ui.components.SecretField
 import android.content.ClipData
 import android.os.Build
 import org.calamares.miga.ui.components.ButtonContent
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.runtime.DisposableEffect
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalWindowInfo
-import android.net.Uri
 import android.content.ClipboardManager
 import org.calamares.miga.data.ai.ApiKeyPages
 import kotlinx.coroutines.launch
@@ -78,7 +79,6 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -151,7 +151,7 @@ fun AiProvidersSettings(viewModel: SettingsViewModel) {
                 onSwitch = { viewModel.setProviderEnabled(provider, it) },
                 expanded = expanded == provider,
                 isDragging = isDragging,
-                dragHandle = dragHandle,
+                dragHandle = { ProviderDragHandle(dragHandle) },
                 onToggle = { expanded = if (expanded == provider) null else provider },
                 onMoveUp = if (index > 0) ({ viewModel.setProviderOrder(order.moved(index, index - 1)) }) else null,
                 onMoveDown = if (index < order.lastIndex) ({ viewModel.setProviderOrder(order.moved(index, index + 1)) }) else null
@@ -331,7 +331,7 @@ private fun ProviderRow(
     onSwitch: (Boolean) -> Unit,
     expanded: Boolean,
     isDragging: Boolean,
-    dragHandle: Modifier,
+    dragHandle: @Composable () -> Unit,
     onToggle: () -> Unit,
     onMoveUp: (() -> Unit)?,
     onMoveDown: (() -> Unit)?,
@@ -361,13 +361,7 @@ private fun ProviderRow(
                     .padding(end = 12.dp, top = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(modifier = dragHandle.size(48.dp), contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Filled.DragIndicator,
-                        contentDescription = L10n.str(R.string.ai_drag_to_reorder),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                dragHandle()
                 Box(
                     modifier = Modifier
                         .size(26.dp)
@@ -421,15 +415,7 @@ private fun ProviderRow(
 @Composable
 private fun ApiKeyField(value: String, onValueChange: (String) -> Unit, label: String, placeholder: String) {
     val (text, onTextChange) = rememberSettingText(saved = value, save = onValueChange)
-    OutlinedTextField(
-        value = text,
-        onValueChange = onTextChange,
-        label = { Text(label) },
-        placeholder = { Text(placeholder) },
-        singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
-        modifier = Modifier.fillMaxWidth()
-    )
+    SecretField(value = text, onValueChange = onTextChange, label = label, placeholder = placeholder)
 }
 
 /** A model in a picker: its id, whether it reads images and, on OpenRouter, whether it is free. */
@@ -473,7 +459,7 @@ private fun AccountModelField(
         supportingText = when {
             !ready -> L10n.str(if (baseUrl != null) R.string.ai_models_need_address else R.string.ai_models_need_key)
             loading -> L10n.str(R.string.ai_models_loading)
-            accountModels != null -> L10n.str(R.string.ai_models_from_account_n, accountModels!!.size)
+            accountModels != null -> L10n.plural(R.plurals.ai_models_from_account_n, accountModels!!.size)
             else -> L10n.str(R.string.ai_models_load_failed)
         },
         // After a failed download, opening the menu tries again.
@@ -504,7 +490,7 @@ private fun OpenRouterModelField(current: String, supportsImages: Boolean, onSel
         customPlaceholder = "vendor/model:free",
         supportingText = when {
             loading -> L10n.str(R.string.ai_models_loading)
-            catalog != null -> L10n.str(R.string.ai_models_catalog_n, models.size)
+            catalog != null -> L10n.plural(R.plurals.ai_models_catalog_n, models.size)
             else -> L10n.str(R.string.ai_models_load_failed)
         },
         onOpen = { if (catalog == null && !loading) attempt++ },
@@ -731,9 +717,9 @@ internal fun GetKeyBlock(provider: AiProvider, onUse: (String) -> Unit) {
             found = null
             notFound = false
             waiting = true
-            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(ApiKeyPages.pageFor(provider)))) }
+            ApiKeyPages.pageFor(provider)?.let { page -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, page.toUri())) } }
         }) {
-            ButtonContent(Icons.Filled.OpenInNew, L10n.str(R.string.ai_get_key))
+            ButtonContent(Icons.AutoMirrored.Filled.OpenInNew, L10n.str(R.string.ai_get_key))
         }
         found?.let { key ->
             Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
@@ -767,3 +753,15 @@ internal fun GetKeyBlock(provider: AiProvider, onUse: (String) -> Unit) {
 
 /** "gsk_Ab…9f2c": enough to recognise the key without showing it. */
 private fun maskedKey(key: String): String = key.take(6) + "…" + key.takeLast(4)
+
+/** Handle to drag a provider to another place in the order. */
+@Composable
+private fun ProviderDragHandle(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.size(48.dp), contentAlignment = Alignment.Center) {
+        Icon(
+            Icons.Filled.DragIndicator,
+            contentDescription = L10n.str(R.string.ai_drag_to_reorder),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}

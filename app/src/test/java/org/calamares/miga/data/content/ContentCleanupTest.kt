@@ -38,13 +38,13 @@ class ContentCleanupTest {
 
     @Test
     fun `a duplicate of the user's goes into the most used one, renamed the Miga way`() {
-        val mine = item(ContentKind.CATEGORY, "merienda", 5)
-        val other = item(ContentKind.CATEGORY, "Meriendas saladas", 1)
-        val duplicate = item(ContentKind.CATEGORY, "meriendas", 2)
+        val mine = item(ContentKind.CATEGORY, "fiambrera", 5)
+        val other = item(ContentKind.CATEGORY, "Fiambreras saladas", 1)
+        val duplicate = item(ContentKind.CATEGORY, "fiambreras", 2)
         val proposals = ContentCleanup.propose(mapOf(ContentKind.CATEGORY to listOf(mine, other, duplicate)), "es")
         val merge = proposals.single { it.action == CleanupAction.MERGE }
         assertEquals(mine, merge.target)
-        assertEquals("Meriendas", merge.newName)
+        assertEquals("Fiambreras", merge.newName)
         assertEquals(setOf(mine.id, duplicate.id), merge.items.map { it.id }.toSet())
     }
 
@@ -87,7 +87,20 @@ class ContentCleanupTest {
             "es"
         )
         val renames = proposals.filter { it.action == CleanupAction.RENAME }.associate { it.items.single().name to it.newName }
-        assertEquals(mapOf("  cena " to "Cenas", "queso  ahumado de cabra" to "Queso ahumado de cabra"), renames)
+        // Tags go in lower case (and singular), as in the recipe packs.
+        assertEquals(mapOf("  cena " to "Cenas", "queso  ahumado de cabra" to "Queso ahumado de cabra", "Sin Gluten" to "sin gluten"), renames)
+    }
+
+    @Test
+    fun `duplicates end up written by the rule, not by the form used most`() {
+        val tags = listOf(item(ContentKind.TAG, "almendras", 13), item(ContentKind.TAG, "almendra", 2))
+        val merge = ContentCleanup.propose(mapOf(ContentKind.TAG to tags), "es").single { it.action == CleanupAction.MERGE }
+        assertEquals("almendra", merge.newName)
+        assertEquals("almendra", merge.target!!.name)
+        val starters = listOf(item(ContentKind.TAG, "Aperitivo", 67), item(ContentKind.TAG, "Aperitivos", 3))
+        assertEquals("aperitivo", ContentCleanup.propose(mapOf(ContentKind.TAG to starters), "es").single().newName)
+        val ingredients = listOf(item(ContentKind.INGREDIENT, "almendras crudas", 9), item(ContentKind.INGREDIENT, "Almendra cruda", 1))
+        assertEquals("Almendra cruda", ContentCleanup.propose(mapOf(ContentKind.INGREDIENT to ingredients), "es").single().newName)
     }
 
     @Test
@@ -99,5 +112,75 @@ class ContentCleanupTest {
         assertEquals(null, ContentCleanup.similarExisting(ContentKind.CATEGORY, "Postres", categories, "es"))
         assertEquals(null, ContentCleanup.similarExisting(ContentKind.CATEGORY, "Cenas", categories, "es"))
         assertEquals("Freidora de aire", ContentCleanup.similarExisting(ContentKind.EQUIPMENT, "airfryer", listOf("Horno", "Freidora de aire"), "es"))
+    }
+
+    @Test
+    fun `the user's categories go into the app's or are split by dish`() {
+        val cat = { name: String, usage: Int -> item(ContentKind.CATEGORY, name, usage) }
+        val postres = cat("Postres", 3)
+        val reposteria = cat("Repostería", 0)
+        val carnes = cat("Carnes", 5)
+        val reposteriaMia = cat("Repostería y pastelería", 20)
+        val tartas = cat("Tartas", 4)
+        val smoothies = cat("Smoothies", 58)
+        val principales = cat("Platos principales", 2)
+        val arrocesPastas = cat("Arroces y pastas", 2)
+        val navidad = cat("Navidad", 1)
+        val items = listOf(postres, reposteria, carnes, reposteriaMia, tartas, smoothies, principales, arrocesPastas, navidad)
+        val recipes = listOf(
+            RecipeBrief(100, "Tarta de queso", postres.id),
+            RecipeBrief(101, "Flan", postres.id),
+            RecipeBrief(102, "Helado de turrón", postres.id),
+            RecipeBrief(103, "Pollo asado", principales.id),
+            RecipeBrief(104, "Lo de siempre", principales.id),
+            RecipeBrief(105, "Arroz negro", arrocesPastas.id),
+            RecipeBrief(106, "Macarrones con tomate", arrocesPastas.id),
+            RecipeBrief(107, "Polvorones", navidad.id)
+        )
+        val proposals = ContentCleanup.propose(mapOf(ContentKind.CATEGORY to items), "es", recipes = recipes)
+
+        val merge = proposals.single { it.action == CleanupAction.MERGE }
+        assertEquals(reposteria.id, merge.target?.id)
+        assertEquals(setOf(reposteria.id, reposteriaMia.id, tartas.id), merge.items.map { it.id }.toSet())
+        // "Batidos y zumos" does not exist yet: the user's one takes its name.
+        val rename = proposals.single { it.action == CleanupAction.RENAME }
+        assertEquals(smoothies.id, rename.items.single().id)
+        assertEquals("Batidos y zumos", rename.newName)
+
+        val splits = proposals.filter { it.action == CleanupAction.SPLIT }.associateBy { it.items.single().name }
+        assertEquals(
+            mapOf(100L to "Repostería", 102L to "Helados y sorbetes"),
+            splits.getValue("Postres").assignments.associate { it.recipeId to it.target }
+        )
+        assertEquals(
+            mapOf(103L to "Carnes", 104L to null),
+            splits.getValue("Platos principales").assignments.associate { it.recipeId to it.target }
+        )
+        assertEquals(
+            mapOf(105L to "Arroces", 106L to "Pastas"),
+            splits.getValue("Arroces y pastas").assignments.associate { it.recipeId to it.target }
+        )
+        val theme = splits.getValue("Navidad")
+        assertEquals("navidad", theme.tag)
+        assertEquals("Repostería", theme.assignments.single().target)
+        assertEquals(1, splits.getValue("Platos principales").affected)
+        assertTrue(proposals.none { it.action == CleanupAction.DELETE })
+    }
+
+    @Test
+    fun `equipment parts and models go into the appliance, basics are deleted even when used`() {
+        val eq = { name: String, usage: Int -> item(ContentKind.EQUIPMENT, name, usage) }
+        val thermomix = eq("Thermomix", 10)
+        val vaso = eq("Vaso de Thermomix", 4)
+        val tm6 = eq("Thermomix TM6", 2)
+        val tijeras = eq("Tijeras", 3)
+        val molde = eq("Molde de silicona", 1)
+        val mandolina = eq("Mandolina", 1)
+        val proposals = ContentCleanup.propose(mapOf(ContentKind.EQUIPMENT to listOf(thermomix, vaso, tm6, tijeras, molde, mandolina)), "es")
+        val merge = proposals.single { it.action == CleanupAction.MERGE }
+        assertEquals(thermomix, merge.target)
+        assertEquals(setOf(thermomix.id, vaso.id, tm6.id), merge.items.map { it.id }.toSet())
+        assertEquals(setOf(tijeras.id, molde.id), proposals.filter { it.action == CleanupAction.DELETE }.map { it.items.single().id }.toSet())
+        assertTrue(proposals.none { mandolina in it.items })
     }
 }

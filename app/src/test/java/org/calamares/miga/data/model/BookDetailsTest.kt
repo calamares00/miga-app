@@ -7,6 +7,8 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 /** A book's description, author and the look of a cover without a photo. */
+private val lenientJson = Json { ignoreUnknownKeys = true }
+
 class BookDetailsTest {
 
     private val old = listOf(0xFFC1633D, 0xFF3E8EB5, 0xFF5C9E4B, 0xFF8E6BB5, 0xFFD1709F, 0xFFD9962B, 0xFF3FA39B)
@@ -39,7 +41,7 @@ class BookDetailsTest {
 
     @Test
     fun `books exported by older versions read without details`() {
-        val dto = Json { ignoreUnknownKeys = true }.decodeFromString(BookExportDto.serializer(), """{"uid":"u","name":"Postres"}""")
+        val dto = lenientJson.decodeFromString(BookExportDto.serializer(), """{"uid":"u","name":"Postres"}""")
         assertEquals(BookDetails(), dto.details)
     }
 }

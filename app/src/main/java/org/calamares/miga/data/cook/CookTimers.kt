@@ -87,16 +87,14 @@ object CookTimers {
     /** Posts "<name> is ready" with the alarm sound; tapping it opens the app. */
     internal fun notifyFinished(context: Context, id: Int, name: String) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, L10n.str(R.string.cook_timers_channel), NotificationManager.IMPORTANCE_HIGH).apply {
-                setSound(
-                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
-                    AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build()
-                )
-                enableVibration(true)
-            }
-            manager.createNotificationChannel(channel)
+        val channel = NotificationChannel(CHANNEL_ID, L10n.str(R.string.cook_timers_channel), NotificationManager.IMPORTANCE_HIGH).apply {
+            setSound(
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
+                AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build()
+            )
+            enableVibration(true)
         }
+        manager.createNotificationChannel(channel)
         val open = context.packageManager.getLaunchIntentForPackage(context.packageName)?.let {
             PendingIntent.getActivity(context, id, it, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         }

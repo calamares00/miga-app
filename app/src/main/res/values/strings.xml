@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- UI texts, read through L10n.str (see L10n.kt). -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="changelog_assets_dir">changelogs-en</string>
     <string name="app_name" translatable="false">Miga</string>
+    <string name="widget_shopping_icon" translatable="false">"🛒"</string>
+    <string name="widget_shopping_add_symbol" translatable="false">"＋"</string>
     <string name="widget_shopping_label">Add to shopping list</string>
     <string name="open_language_picker">"Open language picker"</string>
     <string name="open_model_picker">"Open model picker"</string>
@@ -20,7 +22,6 @@
     <string name="lupin">"Lupin"</string>
     <string name="add_single_recipe_one_books">"From a Miga file: a recipe, a selection or a whole book"</string>
     <string name="added">"Added"</string>
-    <string name="added_1_item">"Added 1 item"</string>
     <string name="added_shopping_list">"Added to the shopping list"</string>
     <string name="added_template_x">"Added to the template: %1$s"</string>
     <string name="added_x">"Added: %1$s"</string>
@@ -45,7 +46,6 @@
     <string name="add_supermarket">"Add supermarket"</string>
     <string name="add_list_2">"Add all to the list"</string>
     <string name="add_utensil">"Add equipment"</string>
-    <string name="add_x">"Add %1$s"</string>
     <string name="analysing_ai">"Analysing…"</string>
     <string name="previous">" Previous"</string>
     <string name="appearance">"Appearance"</string>
@@ -111,7 +111,6 @@
     <string name="cancel">"Cancel"</string>
     <string name="cancel_selection">"Cancel selection"</string>
     <string name="cancel_timer">"Cancel timer"</string>
-    <string name="qty">"Qty"</string>
     <string name="carbs_g">"Carbs (g)"</string>
     <string name="trolley">"In the trolley"</string>
     <string name="catalogue">"Catalogue"</string>
@@ -121,14 +120,22 @@
     <string name="pack_catalogue">"Pack catalogue"</string>
     <string name="pack_updates_x">"Updates (%1$d)"</string>
     <string name="update_all">"Update all"</string>
-    <string name="x_packs_updated">"%1$d packs updated"</string>
+    <plurals name="x_packs_updated">
+        <item quantity="one">"%1$d pack updated"</item>
+        <item quantity="other">"%1$d packs updated"</item>
+    </plurals>
     <string name="pack_updates_found_title">"Pack updates"</string>
-    <string name="pack_updates_found_x">"New versions of %1$d packs are out: %2$s. Update them now?"</string>
-    <string name="updating_packs_x">"Updating %1$d packs…"</string>
+    <plurals name="pack_updates_found_x">
+        <item quantity="one">"A new version of %1$d pack is out: %2$s. Update it now?"</item>
+        <item quantity="other">"New versions of %1$d packs are out: %2$s. Update them now?"</item>
+    </plurals>
+    <plurals name="updating_packs_x">
+        <item quantity="one">"Updating %1$d pack…"</item>
+        <item quantity="other">"Updating %1$d packs…"</item>
+    </plurals>
     <string name="category">"Category"</string>
     <string name="category_2">"By category"</string>
     <string name="category_x">"Category for \"%1$s\""</string>
-    <string name="categories">"Categories"</string>
     <string name="ingredient_categories">"Product categories"</string>
     <string name="categories_utensils_ingredients">"Recipe categories, equipment, tags and products"</string>
     <string name="close">"Close"</string>
@@ -267,7 +274,6 @@
     <string name="favourites_2">"Favourites"</string>
     <string name="fibre">"Fibre"</string>
     <string name="details_x">"Details for %1$s"</string>
-    <string name="filter_sort">"Filter and sort"</string>
     <string name="filters">"Filters"</string>
     <string name="photo">"Photo"</string>
     <string name="cover_photo">"Cover photo"</string>
@@ -328,7 +334,6 @@
     <string name="language_restart_body">"Miga will restart to apply the language."</string>
     <string name="language_restart_confirm">"Restart"</string>
     <string name="language_restart_title">"Change language"</string>
-    <string name="language_system">"System default"</string>
     <string name="language_title">"Language"</string>
     <string name="milk">"Milk"</string>
     <string name="which_book_want_add_recipe">"Which book do you want to add this recipe to?"</string>
@@ -422,7 +427,7 @@
     <string name="no_items_were_recognised_shared">"No items were recognised in the shared text"</string>
     <string name="no_results_try_other_name">"No results. Try another name."</string>
     <string name="no_results_try_other_name_or_spain">"No results. Try another name or remove the Spain filter."</string>
-    <string name="not_selected">"Not selected"</string>
+    <string name="item_not_selected">"Not selected"</string>
     <string name="dont_have_other_recipe_books">"You don't have any other recipe books yet."</string>
     <string name="dont_have_books_create_one">"You don't have any books yet. Create one first."</string>
     <string name="name">"Name"</string>
@@ -454,7 +459,6 @@
     <string name="open_food_facts_responded_code">"Open Food Facts responded with code %1$s"</string>
     <string name="aisle_order">"Aisle order"</string>
     <string name="sort_shop">"Sort by shop"</string>
-    <string name="sort">"Sort by"</string>
     <string name="source">"Source"</string>
     <string name="source_book_website_etc">"Source (book, website, etc.)"</string>
     <string name="dark">"Dark"</string>
@@ -462,7 +466,7 @@
     <string name="other_phone_settings_sync_manage">"On the other phone: Settings → Sync → Manage connections → scan icon. Anyone who scans this code can read and change this namespace, so only show it to people you trust. You can revoke access from the server."</string>
     <string name="e_g_ana_optional">"e.g. Ana (optional)"</string>
     <string name="e_g_home">"e.g. Home"</string>
-    <string name="e_g_claude_haiku_4">"e.g. claude-haiku-4-5"</string>
+    <string name="e_g_claude_haiku_4" tools:ignore="TypographyDashes">"e.g. claude-haiku-4-5"</string>
     <string name="e_g_weekly_shop">"e.g. Weekly shop"</string>
     <string name="e_g_party_trip_saturday">"e.g. Party, Trip, Saturday dinner"</string>
     <string name="e_g_gemini_3_6">"e.g. gemini-3.6-flash"</string>
@@ -565,12 +569,10 @@
     <string name="keep_editing">"Keep editing"</string>
     <string name="security">"Security"</string>
     <string name="sure_want_delete_items_x">"Delete all the items in \"%1$s\"?"</string>
-    <string name="sure_want_delete_cant_undone">"Are you sure? This can't be undone."</string>
     <string name="sure_want_uninstall_x_recipes">"Uninstall \"%1$s\"? All its recipes will be removed from this device."</string>
     <string name="sure_want_delete_x_cant">"Delete \"%1$s\"? This can't be undone."</string>
     <string name="sure_want_delete_x_recipes">"Delete %1$s recipes? This can't be undone."</string>
-    <string name="selected">"Selected"</string>
-    <string name="selected_2">"Selected"</string>
+    <string name="item_selected">"Selected"</string>
     <string name="server_namespace_qr_invitations">"Server, namespace and QR invitations"</string>
     <string name="own_server_books_recipes_shopping">"Your own server: books, recipes and shopping list"</string>
     <string name="server_responded_code_x">"The server responded with code %1$s"</string>
@@ -616,12 +618,10 @@
     <string name="tap_add_remove_list">"Tap to add to or remove from the list"</string>
     <string name="tap_heart_recipe_keep_handy">"Tap the heart on any recipe and it'll be waiting for you here."</string>
     <string name="there_no_items_yet">"Nothing here yet."</string>
-    <string name="there_no_ingredients_yet">"No ingredients yet."</string>
     <string name="not_synced_yet">"Not synced yet"</string>
     <string name="access_token">"Access token"</string>
     <string name="invalid_revoked_access_token">"Invalid or revoked access token"</string>
     <string name="turquoise">"Turquoise"</string>
-    <string name="unit">"Unit"</string>
     <string name="ultra_processed">"Ultra-processed"</string>
     <string name="join">"Join"</string>
     <string name="join_namespace">"Join namespace"</string>
@@ -737,7 +737,10 @@
     <string name="openrouter_free_note">"Free models have usage limits and can be slow or busy at times; if one fails, the next provider in the list takes over."</string>
     <string name="openrouter_search_models">"Search models"</string>
     <string name="retry_with_these_models">"Retry with these models"</string>
-    <string name="n_selected">"%1$d selected"</string>
+    <plurals name="n_selected">
+        <item quantity="one">"%1$d selected"</item>
+        <item quantity="other">"%1$d selected"</item>
+    </plurals>
     <string name="select_all">"Select all"</string>
     <string name="bulk_change_category">"Change category"</string>
     <string name="bulk_change_difficulty">"Change difficulty"</string>
@@ -754,19 +757,38 @@
     <string name="bulk_source_label">"Source"</string>
     <string name="bulk_source_hint">"Leave it empty to clear the source."</string>
     <string name="bulk_no_other_books">"There are no other books to choose from. Create one first."</string>
-    <string name="bulk_updated_n">"%1$d recipes updated"</string>
-    <string name="bulk_moved_n">"%1$d recipes moved"</string>
-    <string name="bulk_copied_n">"%1$d recipes copied"</string>
-    <string name="bulk_added_to_shopping_n">"Ingredients from %1$d recipes added to the shopping list"</string>
-    <string name="bulk_ai_started_n">"Analysing %1$d recipes…"</string>
-    <string name="bulk_ai_done_n">"Health and nutrition updated for %1$d recipes"</string>
-    <string name="bulk_ai_done_with_errors">"Analysis finished for %1$d recipes, with %2$d errors"</string>
+    <plurals name="bulk_updated_n">
+        <item quantity="one">"%1$d recipe updated"</item>
+        <item quantity="other">"%1$d recipes updated"</item>
+    </plurals>
+    <plurals name="bulk_moved_n">
+        <item quantity="one">"%1$d recipe moved"</item>
+        <item quantity="other">"%1$d recipes moved"</item>
+    </plurals>
+    <plurals name="bulk_copied_n">
+        <item quantity="one">"%1$d recipe copied"</item>
+        <item quantity="other">"%1$d recipes copied"</item>
+    </plurals>
+    <plurals name="bulk_added_to_shopping_n">
+        <item quantity="one">"Ingredients from %1$d recipe added to the shopping list"</item>
+        <item quantity="other">"Ingredients from %1$d recipes added to the shopping list"</item>
+    </plurals>
+    <plurals name="bulk_ai_started_n">
+        <item quantity="one">"Analysing %1$d recipe…"</item>
+        <item quantity="other">"Analysing %1$d recipes…"</item>
+    </plurals>
+    <plurals name="bulk_ai_done_n">
+        <item quantity="one">"Health and nutrition updated for %1$d recipe"</item>
+        <item quantity="other">"Health and nutrition updated for %1$d recipes"</item>
+    </plurals>
+    <plurals name="bulk_ai_done_with_errors">
+        <item quantity="one">"Analysis finished for %1$d recipe, with %2$s"</item>
+        <item quantity="other">"Analysis finished for %1$d recipes, with %2$s"</item>
+    </plurals>
     <string name="untitled">"Untitled"</string>
     <string name="delete_quoted_x">"Delete \"%1$s\""</string>
     <string name="import_quoted_x">"Import \"%1$s\""</string>
     <string name="remove_quoted_x">"Remove \"%1$s\""</string>
-    <string name="ingredient_count_one">"1 ingredient"</string>
-    <string name="ingredient_count_many">"%1$s ingredients"</string>
     <string name="contains_x">"Contains: %1$s"</string>
     <string name="namespace_placeholder">"home"</string>
     <string name="file_name_recipe">"recipe"</string>
@@ -783,7 +805,10 @@
     <string name="ai_done_channel">"Finished tasks"</string>
     <string name="ai_recipe_ready_x">"Recipe ready to review: %1$s"</string>
     <string name="ai_recipe_failed">"The recipe couldn't be generated. Open Miga to see why."</string>
-    <string name="ai_bulk_import_done_x_of_y">"Import finished: %1$d of %2$d recipes"</string>
+    <plurals name="ai_bulk_import_done_x_of_y">
+        <item quantity="one">"Import finished: %1$d of %2$d recipe"</item>
+        <item quantity="other">"Import finished: %1$d of %2$d recipes"</item>
+    </plurals>
     <string name="expand_all">"Expand all"</string>
     <string name="collapse_all">"Collapse all"</string>
     <string name="collapsed">"Collapsed"</string>
@@ -805,7 +830,10 @@
     <string name="ideas_new_dishes">"Dishes you could add"</string>
     <string name="ideas_create">"Create"</string>
     <string name="ideas_add_to_shopping">"Add ingredients to shopping list"</string>
-    <string name="ideas_added_to_shopping_n">"Ingredients of %1$d recipes added to the shopping list"</string>
+    <plurals name="ideas_added_to_shopping_n">
+        <item quantity="one">"Ingredients of %1$d recipe added to the shopping list"</item>
+        <item quantity="other">"Ingredients of %1$d recipes added to the shopping list"</item>
+    </plurals>
     <string name="ideas_ready_x">"Your ideas are ready: %1$s"</string>
     <string name="ideas_what_do_you_fancy">"What do you fancy?"</string>
     <string name="ideas_group_style">"Style"</string>
@@ -860,11 +888,17 @@
     <string name="ideas_done">"Done"</string>
     <string name="ai_step_asking_x">"Asking %1$s…"</string>
     <string name="ai_step_retrying_x">"Trying %1$s again…"</string>
-    <string name="ai_step_preparing_photos_n">"Preparing %1$d photo(s)…"</string>
+    <plurals name="ai_step_preparing_photos_n">
+        <item quantity="one">"Preparing %1$d photo…"</item>
+        <item quantity="other">"Preparing %1$d photos…"</item>
+    </plurals>
     <string name="ai_step_cropping_photo">"Cropping the dish photo…"</string>
     <string name="ai_step_saving_recipe">"Saving the recipe…"</string>
     <string name="ai_step_downloading_page">"Downloading the page…"</string>
-    <string name="ai_step_reviewing_recipes_n">"Reviewing your %1$d recipes…"</string>
+    <plurals name="ai_step_reviewing_recipes_n">
+        <item quantity="one">"Reviewing your %1$d recipe…"</item>
+        <item quantity="other">"Reviewing your %1$d recipes…"</item>
+    </plurals>
     <string name="ai_elapsed_x">"%1$d s"</string>
     <string name="privacy_asset">docs/privacy-en.md</string>
     <string name="help_asset">docs/help-en.md</string>
@@ -875,22 +909,36 @@
     <string name="cook_step_x_of_y">"Step %1$d of %2$d"</string>
     <string name="cook_up_next_x">"Up next: %1$s"</string>
     <string name="cook_in_this_step">"In this step"</string>
-    <string name="cook_ingredients_ready_x_y">"%1$d of %2$d ready"</string>
+    <plurals name="cook_ingredients_ready_x_y">
+        <item quantity="one">"%1$d of %2$d ready"</item>
+        <item quantity="other">"%1$d of %2$d ready"</item>
+    </plurals>
     <string name="stats_others">"Others"</string>
     <string name="stats_times_cooked">"Times cooked"</string>
-    <string name="stats_added_this_month_x">"%1$d added this month"</string>
-    <string name="stats_photos_x">"%1$d photos"</string>
+    <plurals name="stats_added_this_month_x">
+        <item quantity="one">"%1$d added this month"</item>
+        <item quantity="other">"%1$d added this month"</item>
+    </plurals>
+    <plurals name="stats_photos_x">
+        <item quantity="one">"%1$d photo"</item>
+        <item quantity="other">"%1$d photos"</item>
+    </plurals>
     <string name="stats_time">"Cooking time"</string>
     <string name="stats_average_time">"Average time"</string>
     <string name="stats_quick_recipes_x">"Quick (up to %1$d min)"</string>
     <string name="stats_longest">"Longest"</string>
     <string name="stats_top_rated">"Top rated"</string>
-    <string name="stats_average_rating_x_y">"Average of %1$s ★ across %2$d rated recipes"</string>
-    <string name="stats_times_x">"%1$d times"</string>
+    <plurals name="stats_average_rating_x_y">
+        <item quantity="one">"Average of %1$s ★ across %2$d rated recipe"</item>
+        <item quantity="other">"Average of %1$s ★ across %2$d rated recipes"</item>
+    </plurals>
+    <plurals name="stats_times_x">
+        <item quantity="one">"%1$d time"</item>
+        <item quantity="other">"%1$d times"</item>
+    </plurals>
     <string name="stats_by_book">"Recipes per book"</string>
     <string name="stats_top_ingredients">"Most used ingredients"</string>
     <string name="stats_top_tags">"Most used tags"</string>
-    <string name="stats_in_x_recipes">"in %1$d recipes"</string>
     <string name="stats_to_complete">"To complete"</string>
     <string name="stats_without_photo">"Without a photo"</string>
     <string name="stats_without_category">"Without a category"</string>
@@ -907,18 +955,33 @@
     <string name="stats_storage_other">"Settings and other files"</string>
     <string name="stats_clear_cache">"Clear cache"</string>
     <string name="stats_cache_cleared">"Cache cleared. Squeaky clean!"</string>
-    <string name="stats_unused_photos_x_y">"%1$d photos no longer used by any recipe or cover take %2$s."</string>
+    <plurals name="stats_unused_photos_x_y">
+        <item quantity="one">"%1$d photo no longer used by any recipe or cover takes %2$s."</item>
+        <item quantity="other">"%1$d photos no longer used by any recipe or cover take %2$s."</item>
+    </plurals>
     <string name="stats_delete_unused_photos">"Delete unused photos"</string>
-    <string name="stats_delete_unused_photos_confirm_x_y">"%1$d photos (%2$s) that belong to no recipe or cover will be deleted. This can't be undone."</string>
+    <plurals name="stats_delete_unused_photos_confirm_x_y">
+        <item quantity="one">"%1$d photo (%2$s) that belongs to no recipe or cover will be deleted. This can\'t be undone."</item>
+        <item quantity="other">"%1$d photos (%2$s) that belong to no recipe or cover will be deleted. This can't be undone."</item>
+    </plurals>
     <string name="stats_unused_photos_deleted_x">"Photos deleted: %1$d"</string>
-    <string name="ai_several_recipes_found_x">"%1$d recipes found"</string>
+    <plurals name="ai_several_recipes_found_x">
+        <item quantity="one">"%1$d recipe found"</item>
+        <item quantity="other">"%1$d recipes found"</item>
+    </plurals>
     <string name="detected_choose">"Choose which ones to import and how:"</string>
     <string name="detected_suggest_together">"They look like parts of the same dish, so we suggest joining them into one recipe."</string>
     <string name="detected_suggest_separately">"They look like separate recipes, so we suggest saving each one on its own."</string>
-    <string name="detected_one_each">"Save %1$d separate recipes"</string>
+    <plurals name="detected_one_each">
+        <item quantity="one">"Save %1$d separate recipe"</item>
+        <item quantity="other">"Save %1$d separate recipes"</item>
+    </plurals>
     <string name="detected_join">"Join into one recipe"</string>
     <string name="detected_import_selected">"Import the chosen recipe"</string>
-    <string name="detected_saved_x">"%1$d recipes saved in the book"</string>
+    <plurals name="detected_saved_x">
+        <item quantity="one">"%1$d recipe saved in the book"</item>
+        <item quantity="other">"%1$d recipes saved in the book"</item>
+    </plurals>
     <string name="new_labels_title">"Saving will create:"</string>
     <string name="new_labels_category_x">"New category: %1$s"</string>
     <string name="new_labels_equipment_x">"New equipment: %1$s"</string>
@@ -928,7 +991,6 @@
     <string name="origin_hint">"E.g. Mexico, Córdoba, Thai cuisine"</string>
     <string name="origin_country">"Country of origin"</string>
     <string name="origin_no_country">"No country"</string>
-    <string name="origin_country_x">"Country: %1$s · tap the flag to change it"</string>
     <string name="origin_tap_flag">"Tap the globe to choose the country and its flag"</string>
     <string name="stats_world_cuisines">"World cuisines"</string>
     <string name="backup_encrypted_restore_in_settings">"This is a password-protected backup: restore it from Settings → Backup."</string>
@@ -945,7 +1007,10 @@
     <string name="backup_include_settings">"Settings"</string>
     <string name="backup_include_settings_explanation">"Appearance, cooking assistant, voice and views. No API keys or fingerprint lock."</string>
     <string name="backup_password">"Password"</string>
-    <string name="backup_password_min_x">"At least %1$d characters"</string>
+    <plurals name="backup_password_min_x">
+        <item quantity="one">"At least %1$d character"</item>
+        <item quantity="other">"At least %1$d characters"</item>
+    </plurals>
     <string name="backup_password_strong">"Strong password"</string>
     <string name="backup_password_good">"Good password"</string>
     <string name="backup_password_weak">"Weak password: make it longer, or add numbers and symbols"</string>
@@ -983,19 +1048,29 @@
     <string name="export_format_miga_desc">"With the photos, to import it into Miga later, on this phone or another one."</string>
     <string name="export_format_text">"Text"</string>
     <string name="export_format_text_desc">"To paste into a message."</string>
-    <string name="import_n_recipes_title">"Import %1$d recipes"</string>
-    <string name="import_recipes_from_book_x">"The file has %1$d recipes from the book “%2$s”. Where do you want them?"</string>
-    <string name="import_recipes_n">"The file has %1$d recipes. Where do you want them?"</string>
+    <plurals name="import_n_recipes_title">
+        <item quantity="one">"Import %1$d recipe"</item>
+        <item quantity="other">"Import %1$d recipes"</item>
+    </plurals>
+    <plurals name="import_recipes_from_book_x">
+        <item quantity="one">"The file has %1$d recipe from the book “%2$s”. Where do you want it?"</item>
+        <item quantity="other">"The file has %1$d recipes from the book “%2$s”. Where do you want them?"</item>
+    </plurals>
+    <plurals name="import_recipes_n">
+        <item quantity="one">"The file has %1$d recipe. Where do you want it?"</item>
+        <item quantity="other">"The file has %1$d recipes. Where do you want them?"</item>
+    </plurals>
     <string name="import_as_new_book_x">"As a new book “%1$s”"</string>
     <string name="import_as_new_book">"As a new book"</string>
-    <string name="import_into_this_book">"Into this book"</string>
-    <string name="imported_n_recipes_into_x">"%1$d recipes imported into “%2$s”"</string>
     <string name="export_ready_x">"“%1$s” (%2$s) is ready. Save it to your files or share it."</string>
     <string name="api_key_openai">"OpenAI API key"</string>
     <string name="get_one_platform_openai_com">"Get one at platform.openai.com"</string>
     <string name="e_g_gpt_5_mini">"e.g. gpt-5-mini"</string>
     <string name="ai_models_loading">"Loading your account's models…"</string>
-    <string name="ai_models_from_account_n">"%1$d models available with your key"</string>
+    <plurals name="ai_models_from_account_n">
+        <item quantity="one">"%1$d model available with your key"</item>
+        <item quantity="other">"%1$d models available with your key"</item>
+    </plurals>
     <string name="see_all">"See all"</string>
     <string name="stats_tap_to_list">"Tap a figure to see its recipes."</string>
     <string name="search_cond_book_x">"Book: %1$s"</string>
@@ -1068,36 +1143,72 @@
     <string name="content_already_exists_x">"\"%1$s\" already exists."</string>
     <string name="content_rename_in_recipes">"Change it in its %1$s too"</string>
     <string name="content_rename_updates">"Its %1$s will show the new name."</string>
-    <string name="content_delete_n">"Delete %1$d entries"</string>
+    <plurals name="content_delete_n">
+        <item quantity="one">"Delete %1$d entry"</item>
+        <item quantity="other">"Delete %1$d entries"</item>
+    </plurals>
     <string name="content_delete_unused">"Nothing uses it. This can't be undone."</string>
     <string name="content_delete_ingredient_used">"Recipes keep their ingredients as written; it's only removed from suggestions and shopping categories."</string>
     <string name="content_delete_used_x">"Used in %1$s, which will be left without it. You can move them to another one instead."</string>
     <string name="content_move_to">"Move them to"</string>
     <string name="content_move_to_x">"Move to \"%1$s\""</string>
-    <string name="content_merge_n">"Merge %1$d entries"</string>
+    <plurals name="content_merge_n">
+        <item quantity="one">"Merge %1$d entry"</item>
+        <item quantity="other">"Merge %1$d entries"</item>
+    </plurals>
     <string name="content_merge_keep">"Everything that uses them will use the one you keep:"</string>
     <string name="content_summary_x">"%1$d"</string>
     <string name="content_summary_unused_x_y">"%1$d · %2$d of yours unused"</string>
     <string name="cleanup_title">"Clean up content"</string>
     <string name="cleanup_summary">"Duplicates, names to unify and your unused entries"</string>
-    <string name="cleanup_summary_unused_x">"%1$d entries of yours unused"</string>
-    <string name="cleanup_intro">"Review what can be tidied up and untick anything you want to keep. Only your own entries are renamed or deleted; the ones that come with the app stay put."</string>
+    <plurals name="cleanup_summary_unused_x">
+        <item quantity="one">"%1$d entry of yours unused"</item>
+        <item quantity="other">"%1$d entries of yours unused"</item>
+    </plurals>
+    <string name="cleanup_intro">"Review what can be tidied up and untick anything you want to keep. Your categories move into the app's ones, and those mixing dishes are split recipe by recipe (tap a recipe to change where it goes). The entries that come with the app are never renamed or deleted."</string>
     <string name="cleanup_ai">"More suggestions"</string>
-    <string name="cleanup_ai_working">"Looking for synonyms and typos…"</string>
+    <string name="cleanup_ai_working">"Looking for synonyms, typos and recipes to file…"</string>
     <string name="cleanup_ai_done">"Extra suggestions added"</string>
     <string name="cleanup_nothing">"Everything's spick and span"</string>
     <string name="cleanup_section_merge">"Merge duplicates (%1$d)"</string>
     <string name="cleanup_section_rename">"Unify names (%1$d)"</string>
-    <string name="cleanup_section_delete">"Delete unused (%1$d)"</string>
+    <string name="cleanup_section_delete">"Delete unused or basic entries (%1$d)"</string>
     <string name="cleanup_tick_all">"Tick all"</string>
     <string name="cleanup_untick_all">"Untick all"</string>
     <string name="cleanup_from_ai">"Suggested by the assistant"</string>
-    <string name="cleanup_apply_n">"Apply %1$d changes"</string>
+    <plurals name="cleanup_apply_n">
+        <item quantity="one">"Apply %1$d change"</item>
+        <item quantity="other">"Apply %1$d changes"</item>
+    </plurals>
     <string name="cleanup_done">"All tidied up!"</string>
     <string name="cleanup_undone">"Changes undone"</string>
-    <string name="cleanup_done_merged">"%1$d duplicates merged"</string>
-    <string name="cleanup_done_renamed">"%1$d names unified"</string>
-    <string name="cleanup_done_deleted">"%1$d unused entries deleted"</string>
+    <plurals name="cleanup_done_merged">
+        <item quantity="one">"%1$d duplicate merged"</item>
+        <item quantity="other">"%1$d duplicates merged"</item>
+    </plurals>
+    <plurals name="cleanup_done_renamed">
+        <item quantity="one">"%1$d name unified"</item>
+        <item quantity="other">"%1$d names unified"</item>
+    </plurals>
+    <plurals name="cleanup_done_deleted">
+        <item quantity="one">"%1$d entry deleted"</item>
+        <item quantity="other">"%1$d entries deleted"</item>
+    </plurals>
+    <string name="cleanup_section_split">"Split by kind of dish (%1$d)"</string>
+    <string name="cleanup_split_title">"Split «%1$s»"</string>
+    <plurals name="cleanup_split_stays">
+        <item quantity="one">"%1$d stays"</item>
+        <item quantity="other">"%1$d stay"</item>
+    </plurals>
+    <string name="cleanup_split_tag">"Tag «%1$s»"</string>
+    <string name="cleanup_split_show">"Show recipes"</string>
+    <string name="cleanup_split_hide">"Hide recipes"</string>
+    <string name="cleanup_split_choose">"Which category does «%1$s» go to?"</string>
+    <string name="cleanup_split_keep">"Leave in «%1$s»"</string>
+    <plurals name="cleanup_done_split">
+        <item quantity="one">"%1$d category split"</item>
+        <item quantity="other">"%1$d categories split"</item>
+    </plurals>
     <string name="did_you_mean_x">"Did you mean \"%1$s\"? Tap to use it."</string>
     <string name="recipe_categories">"Recipe categories"</string>
     <string name="ingredients_and_products">"Ingredients and products"</string>
@@ -1107,7 +1218,6 @@
     <string name="ai_provider_use_x">"Use %1$s"</string>
     <string name="filters_n">"Filters (%1$d)"</string>
     <string name="clear_all">"Clear all"</string>
-    <string name="filter_total_time">"Total time"</string>
     <string name="filter_up_to_x">"Up to %1$s"</string>
     <string name="filter_find_ingredient">"Find an ingredient"</string>
     <string name="filter_more">"More"</string>
@@ -1122,21 +1232,42 @@
     <string name="polish_show_progress">"Polishing… (see progress)"</string>
     <string name="bulk_polish_title">"Polish recipes"</string>
     <string name="bulk_polish_action">"Polish recipes"</string>
-    <string name="bulk_polish_working_n">"Polishing %1$d recipes"</string>
-    <string name="bulk_polish_done_n">"%1$d recipes polished: tap to review them"</string>
-    <string name="bulk_polish_done_n_failed_m">"%1$d recipes polished, %2$d failed: tap to review them"</string>
+    <plurals name="bulk_polish_working_n">
+        <item quantity="one">"Polishing %1$d recipe"</item>
+        <item quantity="other">"Polishing %1$d recipes"</item>
+    </plurals>
+    <plurals name="bulk_polish_done_n">
+        <item quantity="one">"%1$d recipe polished: tap to review it"</item>
+        <item quantity="other">"%1$d recipes polished: tap to review them"</item>
+    </plurals>
+    <plurals name="bulk_polish_done_n_failed_m">
+        <item quantity="one">"%1$d recipe polished, %2$d failed: tap to review it"</item>
+        <item quantity="other">"%1$d recipes polished, %2$d failed: tap to review them"</item>
+    </plurals>
     <string name="bulk_polish_retry_failed">"Retry failed"</string>
     <string name="bulk_polish_finish">"Finish"</string>
-    <string name="bulk_polish_apply_all_n">"Apply the %1$d ready"</string>
+    <plurals name="bulk_polish_apply_all_n">
+        <item quantity="one">"Apply the %1$d ready"</item>
+        <item quantity="other">"Apply the %1$d ready"</item>
+    </plurals>
     <string name="bulk_polish_apply_all_body">"They'll be saved without reviewing them one by one. The ones you discarded won't be touched."</string>
-    <string name="bulk_polish_applied_n">"%1$d recipes updated"</string>
+    <plurals name="bulk_polish_applied_n">
+        <item quantity="one">"%1$d recipe updated"</item>
+        <item quantity="other">"%1$d recipes updated"</item>
+    </plurals>
     <string name="bulk_polish_empty">"No recipes are being improved right now."</string>
-    <string name="bulk_polish_summary">"%1$d of %2$d done · %3$d to review"</string>
+    <plurals name="bulk_polish_summary">
+        <item quantity="one">"%1$d of %2$d done · %3$d to review"</item>
+        <item quantity="other">"%1$d of %2$d done · %3$d to review"</item>
+    </plurals>
     <string name="bulk_polish_review_hint">"Tap each recipe to review it before and after, and apply or discard it. Nothing is saved until you apply."</string>
     <string name="bulk_polish_reviewing_x_of_y">"%1$d of %2$d to review"</string>
     <string name="bulk_polish_working">"Improving…"</string>
     <string name="bulk_polish_ready">"Ready to review"</string>
-    <string name="bulk_polish_ready_n_changes">"Ready to review · %1$d changes"</string>
+    <plurals name="bulk_polish_ready_n_changes">
+        <item quantity="one">"Ready to review · %1$d change"</item>
+        <item quantity="other">"Ready to review · %1$d changes"</item>
+    </plurals>
     <string name="bulk_polish_applied">"Applied"</string>
     <string name="bulk_polish_discarded">"Discarded"</string>
     <string name="bulk_polish_review">"Review"</string>
@@ -1177,11 +1308,26 @@
     <string name="no_server_yet_body">"With a Miga server, which you install at home or in the cloud, your books sync across your devices and you share them with family or friends: each one joins with an invitation and you all see the same recipes, always up to date."</string>
     <string name="set_up_server">"Set up server"</string>
     <string name="import_book_x">"Import \"%1$s\""</string>
-    <string name="x_recipes_count">"%1$d recipes"</string>
+    <plurals name="x_recipes_count">
+        <item quantity="one">"%1$d recipe"</item>
+        <item quantity="other">"%1$d recipes"</item>
+    </plurals>
     <string name="shared_book_new_explanation">"It will be added as a new book. If it is sent to you again later, it will be updated with the changes."</string>
     <string name="shared_book_update_explanation">"You already have this book: new recipes will be added and changed ones updated. Nothing is deleted and your favourites and ratings are kept."</string>
     <string name="importing_book">"Importing book…"</string>
-    <string name="shared_book_imported_x_x_x">"\"%1$s\": %2$d new recipes, %3$d updated"</string>
+    <string name="shared_book_imported_x_x_x">"\"%1$s\": %2$s, %3$s"</string>
+    <plurals name="errors_n">
+        <item quantity="one">"%1$d error"</item>
+        <item quantity="other">"%1$d errors"</item>
+    </plurals>
+    <plurals name="new_recipes_n">
+        <item quantity="one">"%1$d new recipe"</item>
+        <item quantity="other">"%1$d new recipes"</item>
+    </plurals>
+    <plurals name="updated_recipes_n">
+        <item quantity="one">"%1$d updated"</item>
+        <item quantity="other">"%1$d updated"</item>
+    </plurals>
     <string name="shared_file_not_a_book">"This file is not a Miga book. Full backups are restored from Settings."</string>
     <string name="share_link">"Share link"</string>
     <string name="share_link_preparing_x">"Preparing the link to \"%1$s\""</string>
@@ -1213,24 +1359,44 @@
     <string name="share_action_link">"Create link"</string>
     <string name="share_action_link_desc">"An encrypted link for WhatsApp, email…; it expires in 7 days."</string>
     <string name="share_action_copy">"Save a copy (.zip)"</string>
-    <string name="n_books">"%1$d books"</string>
+    <plurals name="n_books">
+        <item quantity="one">"%1$d book"</item>
+        <item quantity="other">"%1$d books"</item>
+    </plurals>
     <string name="share_books_link_message_x_x_x">"Here are %1$s of Miga recipes: %2$s\nThe link expires on %3$s."</string>
-    <string name="import_books_x">"Import %1$d books"</string>
-    <string name="shared_books_imported_x_x_x">"%1$d books: %2$d new recipes, %3$d updated"</string>
+    <plurals name="import_books_x">
+        <item quantity="one">"Import %1$d book"</item>
+        <item quantity="other">"Import %1$d books"</item>
+    </plurals>
+    <plurals name="shared_books_imported_x_x_x">
+        <item quantity="one">"%1$d book: %2$s, %3$s"</item>
+        <item quantity="other">"%1$d books: %2$s, %3$s"</item>
+    </plurals>
     <string name="one_selected_recipe">"1 selected"</string>
     <string name="one_selected_book">"1 selected"</string>
-    <string name="n_selected_books">"%1$d selected"</string>
+    <plurals name="n_selected_books">
+        <item quantity="one">"%1$d selected"</item>
+        <item quantity="other">"%1$d selected"</item>
+    </plurals>
     <string name="select_all_books">"Select all"</string>
     <string name="more_actions">"More actions"</string>
     <string name="delete_book_title_x">"Delete \"%1$s\"?"</string>
-    <string name="delete_books_title_x">"Delete %1$d books?"</string>
+    <plurals name="delete_books_title_x">
+        <item quantity="one">"Delete %1$d book?"</item>
+        <item quantity="other">"Delete %1$d books?"</item>
+    </plurals>
     <string name="delete_books_body">"Only empty books are deleted: those with recipes stay until you move or delete their recipes."</string>
-    <string name="uninstall_packs_title_x">"Uninstall %1$d packs?"</string>
+    <plurals name="uninstall_packs_title_x">
+        <item quantity="one">"Uninstall %1$d pack?"</item>
+        <item quantity="other">"Uninstall %1$d packs?"</item>
+    </plurals>
     <string name="uninstall_packs_body">"The selected packs are uninstalled with their recipes. You can install them again from the catalogue."</string>
     <string name="books_deleted_n">"Books deleted: %1$d"</string>
-    <string name="books_not_deleted_n">"%1$d books have recipes and were not deleted"</string>
+    <plurals name="books_not_deleted_n">
+        <item quantity="one">"%1$d book has recipes and was not deleted"</item>
+        <item quantity="other">"%1$d books have recipes and were not deleted"</item>
+    </plurals>
     <string name="recipe_copied_to_x">"Copied to \"%1$s\""</string>
-    <string name="set_up_sync">"Set up sync"</string>
     <string name="select_packs">"Select packs"</string>
     <string name="install_x">"Install (%1$d)"</string>
     <string name="uninstall_x">"Uninstall (%1$d)"</string>
@@ -1256,7 +1422,6 @@
     <string name="open_app_settings">"Open settings"</string>
     <string name="installing_packs">"Installing packs"</string>
     <string name="uninstalling_packs">"Uninstalling packs"</string>
-    <string name="tips">"Tips"</string>
     <string name="cooking_tips">"Cooking tips"</string>
     <string name="tip_of_the_day">"Tip of the day"</string>
     <string name="tips_all">"All"</string>
@@ -1270,7 +1435,10 @@
     <string name="tip_of_the_day_show">"Tip of the day in Books"</string>
     <string name="hide_until_tomorrow">"Hide until tomorrow"</string>
     <string name="recipe_tips_one">"A tip for this recipe"</string>
-    <string name="recipe_tips_x">"%1$d tips for this recipe"</string>
+    <plurals name="recipe_tips_x">
+        <item quantity="one">"%1$d tip for this recipe"</item>
+        <item quantity="other">"%1$d tips for this recipe"</item>
+    </plurals>
     <string name="tips_for_recipe">"Tips for this recipe"</string>
     <string name="see_all_tips">"See all tips"</string>
     <string name="tip_category_techniques">"Techniques"</string>
@@ -1309,7 +1477,10 @@
     <string name="ai_models_need_key">"Enter the key to see its models"</string>
     <string name="ai_models_need_address">"Enter the address to see its models"</string>
     <string name="ai_models_load_failed">"The models could not be loaded: open the list to try again"</string>
-    <string name="ai_models_catalog_n">"%1$d models in the OpenRouter catalogue"</string>
+    <plurals name="ai_models_catalog_n">
+        <item quantity="one">"%1$d model in the OpenRouter catalogue"</item>
+        <item quantity="other">"%1$d models in the OpenRouter catalogue"</item>
+    </plurals>
     <string name="new_recipe_by_hand">"Write it yourself"</string>
     <string name="new_recipe_by_hand_desc">"An empty recipe to fill in"</string>
     <string name="new_recipe_from_photos">"From photos"</string>
@@ -1320,7 +1491,10 @@
     <string name="new_recipe_from_file_desc">"Recipes exported from Miga (.miga, .zip or JSON)"</string>
     <string name="new_recipe_suggest_desc">"Name a dish and the assistant proposes the recipe"</string>
     <string name="recipes_from_photos">"Recipes from photos"</string>
-    <string name="another_photo_title_n">"%1$d photo(s) taken"</string>
+    <plurals name="another_photo_title_n">
+        <item quantity="one">"%1$d photo taken"</item>
+        <item quantity="other">"%1$d photos taken"</item>
+    </plurals>
     <string name="another_photo_body">"Take more photos if the recipe continues or you want to add other recipes. Miga works out which photos belong to the same recipe."</string>
     <string name="take_another_photo">"Take another"</string>
     <string name="ai_step_sorting_photos">"Working out which photos go together…"</string>
@@ -1458,7 +1632,10 @@
     <string name="long_press_to_substitute">"Long-press an ingredient to substitute it"</string>
     <string name="coeliac_suitable_if_x">"Suitable for coeliacs if you buy gluten-free: %1$s"</string>
     <string name="coeliac_not_suitable_x">"Not suitable for coeliacs: %1$s"</string>
-    <string name="servings_count_x">"%1$d servings"</string>
+    <plurals name="servings_count_x">
+        <item quantity="one">"%1$d serving"</item>
+        <item quantity="other">"%1$d servings"</item>
+    </plurals>
     <string name="sub_recipe">"Sub-recipe"</string>
     <string name="editor_ingredients_hint">"Tap an ingredient to edit it · drag ⠿ to move it"</string>
     <string name="editor_add_ingredient_hint">"Add: e.g. 200 g potatoes"</string>
@@ -1474,7 +1651,10 @@
     <string name="filter_allow_may_contain_hint">"Stock, sausages, soy sauce…: check the label when you buy."</string>
     <string name="filter_no_results">"No recipes match"</string>
     <string name="filter_show_one">"Show 1 recipe"</string>
-    <string name="filter_show_n">"Show %1$d recipes"</string>
+    <plurals name="filter_show_n">
+        <item quantity="one">"Show %1$d recipe"</item>
+        <item quantity="other">"Show %1$d recipes"</item>
+    </plurals>
     <string name="filter_without_x">"No %1$s"</string>
     <string name="filter_without_gluten">"No gluten ingredients"</string>
     <string name="filter_allow_may_chip">"Includes \"may contain\""</string>
@@ -1499,7 +1679,10 @@
     <string name="carb_per_serving_x">"%1$s per serving"</string>
     <string name="carb_whole_recipe_x">"%1$s in the whole recipe"</string>
     <string name="carb_missing_one">"1 ingredient missing"</string>
-    <string name="carb_missing_x">"%1$d ingredients missing"</string>
+    <plurals name="carb_missing_x">
+        <item quantity="one">"%1$d ingredient missing"</item>
+        <item quantity="other">"%1$d ingredients missing"</item>
+    </plurals>
     <string name="carb_missing_title">"Not counted"</string>
     <string name="carb_no_amount">"no amount"</string>
     <string name="carb_unknown_food">"not recognised"</string>
@@ -1508,7 +1691,10 @@
     <string name="carb_optional_title">"Optional (not added up)"</string>
     <string name="carb_free_title">"Hardly any carbohydrate"</string>
     <string name="carb_sources">"Available carbohydrate (without fibre), per 100 g of raw food. Values from USDA FoodData Central checked against BEDCA (AESAN)."</string>
-    <string name="carb_for_x_people">"for %1$d people"</string>
+    <plurals name="carb_for_x_people">
+        <item quantity="one">"for %1$d person"</item>
+        <item quantity="other">"for %1$d people"</item>
+    </plurals>
     <string name="source_copied">"Link copied"</string>
     <string name="copy_source">"Copy the source"</string>
     <string name="health_intro">"Choose what recipes show. Everything is optional and stays on this phone."</string>
@@ -1552,9 +1738,12 @@
     <string name="meal_bedtime">"Bedtime"</string>
     <string name="plan_title">"My portion plan"</string>
     <string name="plan_none">"No plan: add the one your care team gave you."</string>
-    <string name="plan_summary_x">"%1$d meals · ≈ %2$d kcal"</string>
+    <plurals name="plan_summary_x">
+        <item quantity="one">"%1$d meal · ≈ %2$d kcal"</item>
+        <item quantity="other">"%1$d meals · ≈ %2$d kcal"</item>
+    </plurals>
     <string name="plan_add">"Add"</string>
-    <string name="plan_kcal_x">"≈ %1$d kcal"</string>
+    <string name="plan_kcal_x" tools:ignore="PluralsCandidate">"≈ %1$d kcal"</string>
     <string name="plan_editor_desc">"Copy your care team’s plan: 10 g portions of each group at each meal. The kcal are approximate, from the method’s average portions."</string>
     <string name="plan_load_example">"Load example (1,500 kcal)"</string>
     <string name="plan_clear">"Clear plan"</string>
@@ -1570,7 +1759,7 @@
     <string name="plan_take_one">"Take 1 serving of the recipe"</string>
     <string name="plan_take_x">"Take %1$s servings of the recipe"</string>
     <string name="plan_take_hint_x">"The recipe serves %1$d."</string>
-    <string name="plan_brings_x">"It gives you %1$s · ≈ %2$d kcal"</string>
+    <string name="plan_brings_x" tools:ignore="PluralsCandidate">"It gives you %1$s · ≈ %2$d kcal"</string>
     <string name="plan_to_complete">"To complete your meal"</string>
     <string name="plan_complete">"With this your meal is complete"</string>
     <string name="plan_over">"Over"</string>
@@ -1688,7 +1877,10 @@
     <string name="book_name_suggestions">"Grandma's recipes|Everyday|Desserts|Quick dinners|Christmas|Packed lunches|Healthy|Cooking with kids"</string>
     <string name="follow_not_readable">"It could not be read: check the link and that the account is public."</string>
     <string name="follow_refresh_failed">"The posts of %1$s could not be updated."</string>
-    <string name="follow_some_failed">"%1$d channels could not be updated."</string>
+    <plurals name="follow_some_failed">
+        <item quantity="one">"%1$d channel could not be updated."</item>
+        <item quantity="other">"%1$d channels could not be updated."</item>
+    </plurals>
     <string name="follow_already">"You already follow this channel."</string>
     <string name="follow_already_web">"You already follow this website."</string>
     <string name="follow_same_site">"You already follow %1$s, from the same website. Its sections often share recipes: they will show only once."</string>
@@ -1710,7 +1902,10 @@
     <string name="favorites_save">"Save in Favourites"</string>
     <string name="favorites_unsave">"Remove from Favourites"</string>
     <string name="favorites_new">"New"</string>
-    <string name="favorites_new_n">"%1$d new"</string>
+    <plurals name="favorites_new_n">
+        <item quantity="one">"%1$d new"</item>
+        <item quantity="other">"%1$d new"</item>
+    </plurals>
     <string name="favorites_all">"All"</string>
     <string name="favorites_recipes_n">"Recipes · %1$d"</string>
     <string name="favorites_channels_n">"Channels · %1$d"</string>
@@ -1749,8 +1944,14 @@
     <string name="favorites_list">"List"</string>
     <string name="favorites_grid">"Grid"</string>
     <string name="favorites_no_source_posts">"Their posts could not be read. Check the connection and try again."</string>
-    <string name="favorites_recent_videos_n">"%1$d recent videos"</string>
-    <string name="favorites_recent_posts_n">"Latest %1$d posts"</string>
+    <plurals name="favorites_recent_videos_n">
+        <item quantity="one">"%1$d recent video"</item>
+        <item quantity="other">"%1$d recent videos"</item>
+    </plurals>
+    <plurals name="favorites_recent_posts_n">
+        <item quantity="one">"Latest %1$d post"</item>
+        <item quantity="other">"Latest %1$d posts"</item>
+    </plurals>
     <string name="favorites_follow_shared_title">"Follow in Miga?"</string>
     <string name="favorites_new_one">"1 new"</string>
     <string name="favorites_recent_videos_one">"1 recent video"</string>
@@ -1766,17 +1967,29 @@
     <string name="favorites_more_failed">"More recipes could not be loaded. Check the connection."</string>
     <string name="favorites_search_site">"Search %1$s"</string>
     <string name="favorites_recipes_one">"1 recipe"</string>
-    <string name="favorites_recipes_count_n">"%1$d recipes"</string>
+    <plurals name="favorites_recipes_count_n">
+        <item quantity="one">"%1$d recipe"</item>
+        <item quantity="other">"%1$d recipes"</item>
+    </plurals>
     <string name="server_books">"Server books"</string>
     <string name="server_books_choose">"Choose your books"</string>
-    <string name="server_books_total">"%1$d of %2$d books on this phone · %3$s"</string>
-    <string name="server_books_download_n">"Download %1$d books"</string>
+    <plurals name="server_books_total">
+        <item quantity="one">"%1$d of %2$d book on this phone · %3$s"</item>
+        <item quantity="other">"%1$d of %2$d books on this phone · %3$s"</item>
+    </plurals>
+    <plurals name="server_books_download_n">
+        <item quantity="one">"Download %1$d book"</item>
+        <item quantity="other">"Download %1$d books"</item>
+    </plurals>
     <string name="server_books_save_download">"Save · download %1$d (%2$s)"</string>
-    <string name="server_books_save_remove">"Save · remove %1$d from this phone"</string>
+    <string name="server_books_save_remove" tools:ignore="PluralsCandidate">"Save · remove %1$d from this phone"</string>
     <string name="server_books_unsupported">"This server syncs every book and does not let you choose. To choose, update miga-server to 1.3.0 or later."</string>
     <string name="server_books_load_failed">"The books could not be loaded: %1$s"</string>
     <string name="server_books_empty">"This server has no books yet. Link one from its editor to share it."</string>
-    <string name="server_books_first_time">"This server has %1$d books. Choose the ones you want on this phone: the rest take no space or data. You can change it any time."</string>
+    <plurals name="server_books_first_time">
+        <item quantity="one">"This server has %1$d book. Choose whether you want it on this phone: if not, it takes no space or data. You can change it any time."</item>
+        <item quantity="other">"This server has %1$d books. Choose the ones you want on this phone: the rest take no space or data. You can change it any time."</item>
+    </plurals>
     <string name="server_books_intro">"Only the ticked books are downloaded and synced. Removing one deletes it from this phone, not from the server or the other phones."</string>
     <string name="server_books_follow_new">"Follow new books"</string>
     <string name="server_books_follow_new_desc">"Books others create on the server are downloaded automatically"</string>
@@ -1790,7 +2003,10 @@
     <string name="server_books_on_device">"On this phone"</string>
     <string name="server_books_created_by">"Created by %1$s"</string>
     <string name="server_books_not_saved">"The changes were not saved: %1$s"</string>
-    <string name="server_books_some_failed">"%1$d books could not be downloaded: try again later."</string>
+    <plurals name="server_books_some_failed">
+        <item quantity="one">"%1$d book could not be downloaded: try again later."</item>
+        <item quantity="other">"%1$d books could not be downloaded: try again later."</item>
+    </plurals>
     <string name="server_books_saved">"Books updated"</string>
     <string name="book_removed_from_device">"Book removed from this phone"</string>
     <string name="delete_synced_books_body">"Synced books are only removed from this phone, with their recipes: they stay on the server and on the other phones. To delete them for everyone, do it from the server's web admin."</string>
@@ -1813,4 +2029,23 @@
     <string name="ai_step_found_in_description">"Recipe found in the video's description"</string>
     <string name="ai_step_description_without_recipe">"The video's description has no recipe"</string>
     <string name="ai_step_reading_author_site_x">"Reading the author's website (%1$s)"</string>
+    <string name="tips_imported">"Imported"</string>
+    <string name="tip_imported_badge">"Imported"</string>
+    <string name="tip_source">"Source: %1$s"</string>
+    <string name="tip_delete">"Delete tip"</string>
+    <string name="tips_imported_empty_title">"No imported tips yet"</string>
+    <string name="tips_imported_empty_body">"When you import a link that is a trick or a tip rather than a recipe, the assistant will offer to keep it here."</string>
+    <string name="tip_found_title">"It's a tip, not a recipe"</string>
+    <string name="tip_found_body">"The assistant found a cooking tip. Add it to your tips library?"</string>
+    <string name="tip_found_add">"Add to my tips"</string>
+    <string name="tip_found_added">"Tip added to your library"</string>
+    <string name="ai_step_page_recipe_incomplete">"The page's recipe has no steps: the assistant reads the whole page"</string>
+    <plurals name="extra_tips_title">
+        <item quantity="one">"There is also %1$d tip"</item>
+        <item quantity="other">"There are also %1$d tips"</item>
+    </plurals>
+    <string name="extra_tips_body">"Besides the recipe, the assistant found these tips. Choose the ones you want to keep in your tips library."</string>
+    <string name="extra_tips_save">"Save"</string>
+    <string name="extra_tips_skip">"Not now"</string>
+    <string name="extra_tips_saved">"Tips saved: %1$d"</string>
 </resources>

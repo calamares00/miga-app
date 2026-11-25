@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.text.KeyboardActions
@@ -105,7 +105,7 @@ fun SourceScreen(
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(source?.name.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) } },
                 actions = {
                     if (refreshing) {
                         CircularProgressIndicator(modifier = Modifier.padding(horizontal = 12.dp).size(22.dp), strokeWidth = 2.dp)
@@ -184,7 +184,7 @@ fun SourceScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 item(span = { GridItemSpan(maxLineSpan) }) { header() }
-                items(posts, key = { it.id }) { post ->
+                items(posts, key = { it.id }, contentType = { "post" }) { post ->
                     PostCell(post, { importing = post.url }, onRecipeClick, { openWebLink(context, post.url) }, showNetwork = false)
                 }
                 item(span = { GridItemSpan(maxLineSpan) }) { moreButton() }
@@ -192,7 +192,7 @@ fun SourceScreen(
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(bottom = 24.dp)) {
                 item { header() }
-                items(posts, key = { it.id }) { post ->
+                items(posts, key = { it.id }, contentType = { "post" }) { post ->
                     PostRow(post, showAuthor = false, { importing = post.url }, onRecipeClick, { openWebLink(context, post.url) }, { viewModel.toggleSaved(post) })
                 }
                 item { moreButton() }
@@ -221,11 +221,11 @@ private fun SourceHeader(source: FollowedSource, count: Int) {
             Text(source.name, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(listOfNotNull(source.handle, networkLabel(source.network)).joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             val recent = when {
-                source.network == SocialNetwork.WEB -> if (count == 1) L10n.str(R.string.favorites_recipes_one) else L10n.str(R.string.favorites_recipes_count_n, count)
+                source.network == SocialNetwork.WEB -> if (count == 1) L10n.str(R.string.favorites_recipes_one) else L10n.plural(R.plurals.favorites_recipes_count_n, count)
                 source.network == SocialNetwork.YOUTUBE && count == 1 -> L10n.str(R.string.favorites_recent_videos_one)
-                source.network == SocialNetwork.YOUTUBE -> L10n.str(R.string.favorites_recent_videos_n, count)
+                source.network == SocialNetwork.YOUTUBE -> L10n.plural(R.plurals.favorites_recent_videos_n, count)
                 count == 1 -> L10n.str(R.string.favorites_recent_posts_one)
-                else -> L10n.str(R.string.favorites_recent_posts_n, count)
+                else -> L10n.plural(R.plurals.favorites_recent_posts_n, count)
             }
             val news = if (source.newCount > 0) " · " + newCountText(source.newCount) else ""
             Text(recent + news, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

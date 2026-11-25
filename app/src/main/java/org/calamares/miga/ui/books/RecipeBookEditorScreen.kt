@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.books
 
+import androidx.core.net.toUri
 import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -13,6 +14,8 @@ import androidx.compose.material.icons.filled.HideImage
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.ui.focus.FocusRequester
@@ -47,7 +50,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -87,7 +89,7 @@ fun RecipeBookEditorScreen(
         if (!viewModel.isEditing && !viewModel.isLoading) runCatching { nameFocus.requestFocus() }
     }
     val attemptExit = { if (viewModel.hasUnsavedChanges()) showDiscardDialog = true else onCancel() }
-    val photoSheetState = rememberModalBottomSheetState()
+    val photoSheetState = rememberBottomSheetState(SheetValue.Hidden)
 
     BackHandler(onBack = attemptExit)
     val coverPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -95,7 +97,7 @@ fun RecipeBookEditorScreen(
             pendingEditUri = uri
         }
     }
-    val cameraCapture = rememberCameraCapture { path -> pendingEditUri = Uri.parse(path) }
+    val cameraCapture = rememberCameraCapture { path -> pendingEditUri = path.toUri() }
 
     var showLinkDialog by remember { mutableStateOf(false) }
     val availableSyncConnections by viewModel.availableSyncConnections.collectAsStateWithLifecycle()
@@ -333,7 +335,7 @@ fun RecipeBookEditorScreen(
         ModalBottomSheet(onDismissRequest = { showRecipePhotos = false }) {
             RecipePhotoPicker(viewModel.recipePhotos) { uri ->
                 showRecipePhotos = false
-                pendingEditUri = Uri.parse(uri)
+                pendingEditUri = uri.toUri()
             }
         }
     }
@@ -357,7 +359,7 @@ fun RecipeBookEditorScreen(
     }
 
     val editSourceUri = pendingEditUri
-        ?: (if (editingExistingCover) viewModel.coverPhotoUri?.let { Uri.parse(it) } else null)
+        ?: (if (editingExistingCover) viewModel.coverPhotoUri?.let { it.toUri() } else null)
     if (editSourceUri != null) {
         PhotoEditorOverlay(
             sourceUri = editSourceUri,

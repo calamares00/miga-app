@@ -28,14 +28,14 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.SystemUpdate
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -158,7 +158,7 @@ fun PacksCatalogScreen(
             if (selecting) {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    title = { Text(L10n.str(R.string.n_selected, selected.size)) },
+                    title = { Text(L10n.plural(R.plurals.n_selected, selected.size)) },
                     navigationIcon = {
                         IconButton(onClick = { viewModel.clearSelection() }, enabled = !busy) {
                             Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel))
@@ -175,7 +175,7 @@ fun PacksCatalogScreen(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                     title = { Text(L10n.str(R.string.pack_catalogue)) },
                     navigationIcon = {
-                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                     },
                     actions = {
                         if (seriesGroups.size > 1 && query.isBlank()) {
@@ -489,7 +489,7 @@ private fun PackListCard(
                     )
                 } else {
                     Icon(
-                        imageVector = Icons.Outlined.MenuBook,
+                        imageVector = Icons.AutoMirrored.Outlined.MenuBook,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(16.dp)

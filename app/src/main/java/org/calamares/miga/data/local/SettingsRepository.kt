@@ -1,5 +1,6 @@
 package org.calamares.miga.data.local
 
+import org.calamares.miga.data.tips.ImportedTip
 import org.calamares.miga.data.model.SavedFilter
 import org.calamares.miga.R
 import org.calamares.miga.L10n
@@ -69,6 +70,7 @@ class SettingsRepository(private val context: Context) {
     private val seedLanguageKey = stringPreferencesKey("seed_language")
     /** Default kitchen equipment and categories created (and old equipment normalised) once. */
     private val defaultsSetUpKey = booleanPreferencesKey("defaults_set_up_v2")
+    private val newCategoriesSetUpKey = booleanPreferencesKey("new_categories_set_up_v1")
     private val shoppingImagesKey = booleanPreferencesKey("shopping_images_enabled")
     private val shoppingStoreKey = longPreferencesKey("shopping_store_id")
     private val shoppingListUidKey = stringPreferencesKey("shopping_list_uid")
@@ -103,6 +105,7 @@ class SettingsRepository(private val context: Context) {
     private val dismissedUpdateKey = stringPreferencesKey("dismissed_update_version")
     private val dismissedPackUpdatesKey = stringPreferencesKey("dismissed_pack_updates")
     private val savedTipsKey = stringPreferencesKey("saved_tips")
+    private val importedTipsKey = stringPreferencesKey("imported_tips")
     private val recentSearchesKey = stringPreferencesKey("recent_searches")
     private val savedFiltersKey = stringPreferencesKey("saved_filters")
     private val pantryItemsKey = stringPreferencesKey("pantry_items")
@@ -237,6 +240,13 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setDefaultsSetUp() {
         context.settingsDataStore.edit { prefs -> prefs[defaultsSetUpKey] = true }
+    }
+
+    /** Whether the categories added after the first versions (RecipeCategories.ADDED_LATER) were created. */
+    suspend fun areNewCategoriesSetUp(): Boolean = context.settingsDataStore.data.first()[newCategoriesSetUpKey] ?: false
+
+    suspend fun setNewCategoriesSetUp() {
+        context.settingsDataStore.edit { prefs -> prefs[newCategoriesSetUpKey] = true }
     }
 
     /**
@@ -563,6 +573,24 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
+    /** Tips the assistant found in what the user imported, newest first (see ImportedTip). */
+    fun observeImportedTips(): Flow<List<ImportedTip>> =
+        context.settingsDataStore.data.map { prefs -> ImportedTip.decode(prefs[importedTipsKey]) }
+
+    suspend fun addImportedTip(tip: ImportedTip) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[importedTipsKey] = ImportedTip.encode(listOf(tip) + ImportedTip.decode(prefs[importedTipsKey]).filterNot { it.id == tip.id })
+        }
+    }
+
+    suspend fun removeImportedTip(id: String) {
+        context.settingsDataStore.edit { prefs ->
+            val left = ImportedTip.decode(prefs[importedTipsKey]).filterNot { it.id == id }
+            if (left.isEmpty()) prefs.remove(importedTipsKey) else prefs[importedTipsKey] = ImportedTip.encode(left)
+        }
+        setTipSaved(id, false)
+    }
+
     /** Latest searches, newest first (one per line). */
     fun observeRecentSearches(): Flow<List<String>> =
         context.settingsDataStore.data.map { prefs -> prefs[recentSearchesKey]?.lines()?.filter { it.isNotBlank() }.orEmpty() }
@@ -638,7 +666,7 @@ class SettingsRepository(private val context: Context) {
     private val backupStringKeys = listOf(
         themeModeKey, colorThemeKey, photoFrameKey, shoppingAuthorKey, recipeListViewModeKey,
         recipeBookListViewModeKey, visionProviderKey, customBaseUrlKey, aiProviderOrderKey, aiDisabledProvidersKey, ttsVoiceNameKey, dictationLanguageKey,
-        packsCatalogRepoKey, savedTipsKey, recentSearchesKey, savedFiltersKey, pantryItemsKey
+        packsCatalogRepoKey, savedTipsKey, importedTipsKey, recentSearchesKey, savedFiltersKey, pantryItemsKey
     ) + providerKeys.values.map { it.model }
     private val backupBooleanKeys = listOf(
         aiEnabledKey, aiHealthEnabledKey, aiNutritionEnabledKey, shoppingImagesKey, recipeBookListGroupedKey,

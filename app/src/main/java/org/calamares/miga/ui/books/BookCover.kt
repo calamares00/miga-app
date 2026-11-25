@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 internal fun BookSymbol(emoji: String?, size: Dp, modifier: Modifier = Modifier) {
     if (emoji.isNullOrBlank()) {
-        Icon(Icons.Outlined.MenuBook, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = modifier.size(size))
+        Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = modifier.size(size))
     } else {
         // Font size in sp from the wanted height, so emojis do not grow with the system font scale.
         val fontSize = with(LocalDensity.current) { (size * 0.82f).toSp() / fontScale }

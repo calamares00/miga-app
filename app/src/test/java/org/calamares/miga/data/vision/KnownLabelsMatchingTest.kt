@@ -32,7 +32,9 @@ class KnownLabelsMatchingTest {
     @Test
     fun `defaults are recognised in both languages and old versions`() {
         assertTrue(DefaultCatalog.isDefaultCategory("Sopas y cremas"))
-        assertTrue(DefaultCatalog.isDefaultCategory("Cremas"))
+        assertFalse(DefaultCatalog.isDefaultCategory("Cremas"))
+        assertTrue(DefaultCatalog.isDefaultCategory("Repostería"))
+        assertTrue(DefaultCatalog.isDefaultCategory("Ice cream and sorbets"))
         assertTrue(DefaultCatalog.isDefaultCategory("desserts"))
         assertFalse(DefaultCatalog.isDefaultCategory("Recetas de la abuela"))
         assertTrue(DefaultCatalog.isDefaultEquipment("Freidora de aire"))

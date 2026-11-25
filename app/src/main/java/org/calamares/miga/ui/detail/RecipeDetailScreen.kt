@@ -12,6 +12,8 @@ import org.calamares.miga.data.allergens.AllergenAnalysis
 import org.calamares.miga.data.carbs.CarbAnalysis
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -27,7 +29,6 @@ import org.calamares.miga.L10n
 import org.calamares.miga.R
 import androidx.compose.foundation.layout.heightIn
 import org.calamares.miga.ui.components.sheetContentHeight
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ModalBottomSheet
 import org.calamares.miga.data.tips.CookingTips
 import org.calamares.miga.data.tips.tipsForRecipe
@@ -54,7 +55,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
@@ -249,7 +250,7 @@ fun RecipeDetailScreen(
             ) {
                 val onPhoto = !headerScrolled && current?.coverPhotoUri != null
                 HeaderIconButton(onPhoto = onPhoto, onClick = onBack) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back))
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back))
                 }
                 Text(
                     text = if (headerScrolled) current?.name.orEmpty() else "",
@@ -368,7 +369,7 @@ fun RecipeDetailScreen(
     }
 
     if (showTipsSheet && recipeTips.isNotEmpty()) {
-        ModalBottomSheet(onDismissRequest = { showTipsSheet = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        ModalBottomSheet(onDismissRequest = { showTipsSheet = false }, sheetState = rememberBottomSheetState(SheetValue.Hidden, setOf(SheetValue.Hidden, SheetValue.Expanded))) {
             Column(modifier = Modifier.keepScrollInSheet()) {
                 // Capped by the window, not the sheet, so the sheet doesn't bounce (see sheetContentHeight).
                 Column(modifier = Modifier.heightIn(max = sheetContentHeight(0.9f)).verticalScroll(rememberScrollState())) {
@@ -590,7 +591,7 @@ private fun RecipeDetailContent(
                             ).joinToString(", ")
                         )
                     },
-                    Fact(Icons.Outlined.People, L10n.str(R.string.servings_count_x, servings), null),
+                    Fact(Icons.Outlined.People, L10n.plural(R.plurals.servings_count_x, servings), null),
                     Fact(Icons.Outlined.BarChart, recipe.difficulty.label, L10n.str(R.string.difficulty) + ": " + recipe.difficulty.label)
                 )
             )
