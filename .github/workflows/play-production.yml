@@ -89,6 +89,13 @@ jobs:
             exit 0
           fi
           gh release edit "$tag" --prerelease=false --latest
+          # F-Droid follows only these tags (UpdateCheckMode in docs/f-droid.md): it cannot tell a
+          # prerelease from a public version, and every beta has its v<version> tag too.
+          public="public-$tag"
+          if ! git rev-parse -q --verify "refs/tags/$public" >/dev/null; then
+            git tag "$public" "$tag^{commit}"
+            git push origin "refs/tags/$public"
+          fi
           {
             echo "### Publicada en producción"
             echo "- $tag (versionCode $CODE) para el ${{ inputs.rollout }} % de los usuarios"

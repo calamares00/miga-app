@@ -97,7 +97,7 @@ considera "compartir" igualmente, por eso se declaran.
 - `targetSdk` 36 y `compileSdk` 36 (Android 16).
 - La app no se actualiza por su cuenta: las actualizaciones llegan solo por Google Play.
 - Sin bibliotecas nativas propias (no aplica el requisito de páginas de 16 KB).
-- Subir el AAB (`bundleRelease`) con Play App Signing; guardar copia segura de la clave de subida.
+- Subir el AAB (`bundlePlayRelease`) con Play App Signing; guardar copia segura de la clave de subida.
 - Firma: el CI firma el AAB y los APK de release si existen los secretos de GitHub
   `RELEASE_KEYSTORE_BASE64`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS` y `RELEASE_KEY_PASSWORD`.
   Crear la clave de subida una sola vez:
@@ -107,9 +107,10 @@ considera "compartir" igualmente, por eso se declaran.
     -keyalg RSA -keysize 4096 -validity 10000
   base64 -w0 miga-upload.jks   # valor de RELEASE_KEYSTORE_BASE64
   ```
-- Los APK de GitHub (`beta-latest`) van firmados con la clave debug: quien los tenga instalados no
-  puede actualizar a la versión de Play sin desinstalar. Avisar a los testers de que hagan antes una
-  copia de seguridad desde Ajustes.
+- Ya no se publican APK de prueba (`beta-latest`): las versiones de prueba van solo por la beta
+  cerrada de Play. Quien tenga instalado un `beta-latest` antiguo (firmado con la clave debug) no
+  puede pasar a la versión de Play sin desinstalar: que haga antes una copia de seguridad desde
+  Ajustes.
 
 ## Pruebas antes de producción
 

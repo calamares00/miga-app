@@ -25,9 +25,9 @@ private data class GithubReleaseDto(
 )
 
 /**
- * Finds out whether a newer Miga exists, without Google libraries (the same code is built for
- * F-Droid). CI publishes a GitHub Release ("v1.0.6") together with every Play upload, so the latest
- * stable Release is the latest version; betas are prereleases and are skipped by the API.
+ * Finds out whether a newer Miga exists, without Google libraries (used by the fdroid build). CI
+ * publishes a GitHub Release ("v1.0.6") with every version; versions only in the closed beta are
+ * prereleases, skipped by the API, until they reach production.
  */
 object AppUpdateClient {
 

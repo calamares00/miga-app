@@ -77,7 +77,7 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import android.widget.Toast
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
-import org.calamares.miga.data.remote.AppInstallSource
+import org.calamares.miga.data.update.UpdateSource
 import org.calamares.miga.BuildConfig
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -578,16 +578,22 @@ fun RecipeBooksScreen(
     }
 
     // After "What's new" and the crash report, never on top of them.
-    availableUpdate?.takeIf { changelogAnnouncement == null && crashReport == null }?.let { release ->
+    val startUpdate = UpdateSource.rememberUpdateAction()
+    availableUpdate?.takeIf { changelogAnnouncement == null && crashReport == null }?.let { update ->
         AlertDialog(
             onDismissRequest = { viewModel.dismissUpdate(forever = false) },
             icon = { Icon(Icons.Filled.SystemUpdate, contentDescription = null) },
             title = { Text(L10n.str(R.string.new_version_available)) },
-            text = { Text(L10n.str(R.string.miga_x_available_play, release.versionName, BuildConfig.VERSION_NAME)) },
+            text = {
+                Text(
+                    update.versionName?.let { L10n.str(R.string.miga_x_available_github, it, BuildConfig.VERSION_NAME) }
+                        ?: L10n.str(R.string.miga_update_available_play, BuildConfig.VERSION_NAME)
+                )
+            },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.dismissUpdate(forever = false)
-                    AppInstallSource.openStorePage(context)
+                    startUpdate(update)
                 }) { Text(L10n.str(R.string.update)) }
             },
             dismissButton = { TextButton(onClick = { viewModel.dismissUpdate(forever = true) }) { Text(L10n.str(R.string.not_now)) } }

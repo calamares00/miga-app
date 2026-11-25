@@ -11,7 +11,12 @@ object AppInstallSource {
 
     private const val PLAY_STORE_PACKAGE = "com.android.vending"
 
-    fun isGooglePlay(context: Context): Boolean = installerOf(context) == PLAY_STORE_PACKAGE
+    /** F-Droid and the clients that install from its repository. */
+    private val FDROID_CLIENTS = setOf(
+        "org.fdroid.fdroid", "org.fdroid.basic", "com.looker.droidify", "com.machiav3lli.fdroid", "eu.bubu1.fdroidclassic"
+    )
+
+    fun isFdroid(context: Context): Boolean = installerOf(context) in FDROID_CLIENTS
 
     @Suppress("DEPRECATION")
     private fun installerOf(context: Context): String? = runCatching {

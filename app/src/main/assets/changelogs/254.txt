@@ -1,0 +1,3 @@
+Novedades de la versión 1.0.56:
+• Si instalaste Miga desde Google Play, las versiones nuevas se instalan desde la propia app, sin pasar por la tienda.
+• Las copias de GitHub avisan solo de versiones públicas.

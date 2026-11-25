@@ -57,28 +57,30 @@ conexiones de red que hace (todas opcionales).
 ## Compilar en local
 
 ```bash
-./gradlew :app:assembleDebug
+./gradlew :app:assembleFdroidDebug   # o assemblePlayDebug
 ```
+
+Hay dos variantes de la misma app, que solo cambian en cómo se enteran de una versión nueva:
+`play` (el AAB de Google Play, con las actualizaciones integradas de Play) y `fdroid` (los APK
+de GitHub y F-Droid, sin librerías de Google, que miran la última Release estable de GitHub).
 
 ### Tests
 
 ```bash
-./gradlew :app:testDebugUnitTest
+./gradlew :app:testPlayDebugUnitTest
 ```
 
 Tests unitarios (JVM, sin emulador) de la lógica de dominio: filtrado y
 orden de recetas, huella de invalidación de la valoración de salud, construcción
 de la URL del catálogo de packs, y la regla de solo-lectura de un pack.
 
-El APK debug se firma con el keystore `debug.keystore` (versionado a
-propósito en este repo — es el mismo tipo de clave que genera Android
-Studio por defecto, sin datos sensibles) para que las instalaciones se
-puedan actualizar sin desinstalar antes.
+El APK debug se firma con la clave debug de cada ordenador: no hay ninguna clave en el
+repositorio. Las versiones de prueba llegan a los testers por la beta cerrada de Google Play.
 
 ## CI/CD
 
 El workflow `.github/workflows/android-build.yml` corre siempre, en cualquier
-evento, los tests unitarios y una compilación `assembleRelease` de
+evento, los tests unitarios y una compilación `assembleFdroidRelease` de
 comprobación (para detectar una regla de ProGuard/R8 rota antes de fusionar,
 no solo al llegar a `main`); si algo de eso falla, el resto de pasos no se
 ejecuta. Después, según el evento:

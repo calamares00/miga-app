@@ -24,8 +24,8 @@ android {
         // versionCode goes up on every commit (Play requires it to always grow). versionName is the
         // public version and only changes when a new version is released (1.0.0, 1.0.1, 1.1.0...),
         // with release notes in assets/changelogs and fastlane/.../changelogs (<versionCode>.txt).
-        versionCode = 253
-        versionName = "1.0.55"
+        versionCode = 254
+        versionName = "1.0.56"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -34,23 +34,15 @@ android {
     }
 
     /**
-     * Release signing is read from environment variables, never from values in the repository
-     * (unlike the debug keystore). Locally, without them, the release build is simply unsigned; CI
-     * fills them from GitHub Actions secrets only when they exist, so the workflow keeps working
-     * before they are configured.
+     * Release signing is read from environment variables, never from values in the repository.
+     * Locally, without them, the release build is simply unsigned; CI fills them from GitHub
+     * Actions secrets only when they exist, so the workflow keeps working before they are
+     * configured. Debug builds use each machine's own debug key: a key in this public repository
+     * would let anyone sign an APK that updates an installed copy.
      */
     val releaseKeystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
 
     signingConfigs {
-        getByName("debug") {
-            // Fixed debug keystore shared through the repository, so every debug APK (including
-            // those built by CI on fresh runners) has the same signature and installs as an update
-            // without uninstalling first.
-            storeFile = file("../debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-        }
         if (releaseKeystorePath != null) {
             create("release") {
                 storeFile = file(releaseKeystorePath)
@@ -59,6 +51,18 @@ android {
                 keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
             }
         }
+    }
+
+    // Two builds of the same app, which differ only in how they learn about a new version:
+    // - play: the AAB for Google Play, with Play's in-app updates (knows the user's track, so
+    //   testers hear about betas and everyone else about public versions);
+    // - fdroid: the APKs on GitHub and F-Droid, without any Google library; they look at the latest
+    //   stable GitHub Release (never a prerelease).
+    // Both share applicationId and everything else.
+    flavorDimensions += "store"
+    productFlavors {
+        create("play") { dimension = "store" }
+        create("fdroid") { dimension = "store" }
     }
 
     // One APK per ABI (smaller) plus a universal one, like Obtainium-style releases. Only for
@@ -156,6 +160,7 @@ room {
 }
 
 dependencies {
+    "playImplementation"(libs.play.app.update.ktx)
     implementation(libs.core.ktx)
     implementation(libs.core.splashscreen)
     // Installs the baseline profile (src/main/baseline-prof.txt) so start-up code runs compiled.

@@ -164,7 +164,7 @@ jobs:
           restore-keys: robolectric-
 
       - name: Unit tests
-        run: ./gradlew :app:testDebugUnitTest --stacktrace
+        run: ./gradlew :app:testPlayDebugUnitTest :app:compileFdroidDebugUnitTestKotlin --stacktrace
 
       # Every database version needs its Room schema (app/schemas) committed, or migrations to
       # later versions cannot be tested. The build exports it; a new or changed one fails here and
@@ -197,19 +197,49 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: miga-unit-test-report-${{ steps.ref.outputs.safe_ref }}-${{ steps.ref.outputs.short_sha }}
-          path: app/build/reports/tests/testDebugUnitTest
+          path: app/build/reports/tests/testPlayDebugUnitTest
           if-no-files-found: ignore
           retention-days: 14
 
   # Compiles (and, depending on the branch, packages) the app. The mode decides what is built:
   # release: direct push to main (usually after merging a PR) -> full signed build.
   # check: push to main without a new version -> checks only (compile), nothing to publish.
-  # dev_debug: push to any other branch, or a manual run -> a quick debug APK only.
+  # dev_debug: push to any other branch, or a manual run -> compile checks only, nothing published.
   # Files ready to publish are left in dist/ and uploaded as an artifact so the publish job
   # (which runs on another runner) can download them without rebuilding.
+  # Lint of each flavor on its own runner, at the same time as the tests and the build (it is the
+  # longest step). On every branch: a lint error is cheaper to fix where it appears.
+  lint:
+    name: Lint (${{ matrix.flavor }})
+    needs: changes
+    if: github.event_name != 'pull_request' && (needs.changes.outputs.app == 'true' || needs.changes.outputs.release == 'true')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: [Play, Fdroid]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Lint
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:lint${{ matrix.flavor }}Debug --stacktrace
+
+  # Runs at the same time as the tests and lint; publish waits for all three.
   build:
     name: Build
-    needs: [changes, test]
+    needs: changes
     # Only when the app changed (or there is a version to publish); not on pull requests (see changes).
     if: github.event_name != 'pull_request' && (needs.changes.outputs.app == 'true' || needs.changes.outputs.release == 'true')
     runs-on: ubuntu-latest
@@ -230,7 +260,7 @@ jobs:
 
       # release: direct push to main (usually after merging a PR) -> full build + Release.
       # check: push to main without a new version -> checks only (compile), nothing is published.
-      # dev_debug: push to any other branch, or a manual run -> a quick debug APK only.
+      # dev_debug: push to any other branch, or a manual run -> compile checks only, nothing published.
       - name: Determine build mode
         id: mode
         run: |
@@ -269,77 +299,24 @@ jobs:
       # The output is unsigned (no keystore secrets in this step) and is not published.
       - name: Build release APK (check R8 minification)
         if: steps.mode.outputs.mode != 'release'
-        run: ./gradlew :app:assembleRelease --stacktrace
+        run: ./gradlew :app:assembleFdroidRelease --stacktrace
 
       # The AAB for Play is otherwise only built on main, so a change that breaks it was only seen
       # after merging (it happened with the ABI splits). Unsigned and not published.
       - name: Build release AAB (check the Play bundle)
         if: steps.mode.outputs.mode != 'release'
-        run: ./gradlew :app:bundleRelease --stacktrace
+        run: ./gradlew :app:bundlePlayRelease --stacktrace
 
-      # On every branch: a lint error is cheaper to fix where it appears.
-      - name: Lint
-        run: ./gradlew :app:lintDebug --stacktrace
-
-      # --- main without a new version: check compilation ---
-
+      # --- any run without a new version: the debug APK only has to compile ---
+      # Nothing is published: test builds reach testers through the Play closed beta, never as
+      # APKs on GitHub (a debug key in a public repository would let anyone sign an APK that
+      # updates them).
       - name: Build debug APK (check)
-        if: steps.mode.outputs.mode == 'check'
-        run: ./gradlew :app:assembleDebug --stacktrace
+        if: steps.mode.outputs.mode != 'release'
+        run: ./gradlew :app:assembleFdroidDebug --stacktrace
 
-      - name: Upload debug APK (check)
-        if: steps.mode.outputs.mode == 'check'
-        uses: actions/upload-artifact@v7
-        with:
-          name: miga-debug-${{ steps.mode.outputs.safe_ref }}-${{ steps.mode.outputs.short_sha }}
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-          retention-days: 14
-
-      # --- push to a branch other than main (or a manual run): debug APK only ---
-      - name: Build debug APK (rama de desarrollo)
-        if: steps.mode.outputs.mode == 'dev_debug'
-        run: ./gradlew :app:assembleDebug --stacktrace
-
-      - name: Upload debug APK (rama de desarrollo)
-        if: steps.mode.outputs.mode == 'dev_debug'
-        uses: actions/upload-artifact@v7
-        with:
-          name: miga-debug-${{ steps.mode.outputs.safe_ref }}
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-          retention-days: 14
-
-      # Also puts a renamed copy in dist/ (same naming as the beta Release in the publish job) and
-      # uploads it as its own artifact, so publish does not have to rebuild anything.
-      - name: Normalize debug APK names (canal beta)
-        if: steps.mode.outputs.mode == 'dev_debug'
-        run: |
-          set -euo pipefail
-          VERSION="${{ steps.version.outputs.version }}"
-          mkdir -p dist
-          for f in app/build/outputs/apk/debug/*.apk; do
-            [ -e "$f" ] || continue
-            base=$(basename "$f")
-            abi="${base#app-}"
-            abi="${abi%-debug.apk}"
-            cp "$f" "dist/miga-v${VERSION}-${abi}-debug.apk"
-          done
-          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
-          echo "Ficheros generados:"
-          ls -la dist
-
-      - name: Upload beta dist (para el job publish)
-        if: steps.mode.outputs.mode == 'dev_debug'
-        uses: actions/upload-artifact@v7
-        with:
-          name: miga-beta-dist-${{ steps.mode.outputs.safe_ref }}
-          path: dist/*
-          if-no-files-found: error
-          retention-days: 14
-
-      # --- push to main: full build (debug + release per ABI + AAB) ---
-      # The release keystore never lives in the repository (unlike debug.keystore): it is read from
+      # --- push to main: full build (release per ABI + AAB) ---
+      # The release keystore never lives in the repository: it is read from
       # 4 GitHub Actions secrets. Until they exist the release build is unsigned without breaking CI,
       # and the publish job marks the resulting Release as a pre-release.
       - name: Decode release keystore
@@ -352,13 +329,13 @@ jobs:
             echo "RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
           fi
 
-      - name: Build debug + release APKs (por ABI + universal)
+      - name: Build release APKs (por ABI + universal)
         if: steps.mode.outputs.mode == 'release'
         env:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: ./gradlew :app:assembleDebug :app:assembleRelease --stacktrace
+        run: ./gradlew :app:assembleFdroidRelease --stacktrace
 
       - name: Build release AAB (Play Store)
         if: steps.mode.outputs.mode == 'release'
@@ -366,7 +343,7 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: ./gradlew :app:bundleRelease --stacktrace
+        run: ./gradlew :app:bundlePlayRelease --stacktrace
 
       - name: Normalize output file names
         if: steps.mode.outputs.mode == 'release'
@@ -377,12 +354,12 @@ jobs:
           mkdir -p dist
 
           rename_apks() {
-            local dir="app/build/outputs/apk/$1"
+            local dir="app/build/outputs/apk/fdroid/$1"
             [ -d "$dir" ] || return 0
             for f in "$dir"/*.apk; do
               [ -e "$f" ] || continue
               base=$(basename "$f")
-              mid="${base#app-}"
+              mid="${base#app-fdroid-}"
               mid="${mid%.apk}"
               suffix=""
               if [[ "$mid" == *-unsigned ]]; then
@@ -395,7 +372,6 @@ jobs:
             done
           }
 
-          rename_apks debug
           rename_apks release
 
           # Unlike APKs, Gradle does not add "-unsigned" to the AAB name when there is no
@@ -405,7 +381,7 @@ jobs:
           if [ -z "${RELEASE_KEYSTORE_PATH:-}" ]; then
             aab_suffix="-unsigned"
           fi
-          aab_dir="app/build/outputs/bundle/release"
+          aab_dir="app/build/outputs/bundle/playRelease"
           if [ -d "$aab_dir" ]; then
             for f in "$aab_dir"/*.aab; do
               [ -e "$f" ] || continue
@@ -439,7 +415,7 @@ jobs:
           set -euo pipefail
           CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
           mkdir -p play/whatsnew
-          cp app/build/outputs/mapping/release/mapping.txt play/mapping.txt
+          cp app/build/outputs/mapping/playRelease/mapping.txt play/mapping.txt
           for dir in fastlane/metadata/android/*/; do
             locale=$(basename "$dir")
             notes="$dir/changelogs/$CODE.txt"
@@ -456,13 +432,14 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  # Nothing to publish on main without a new version (mode == check): the whole job is skipped and shows
+  # Only a new version is published (mode == release); otherwise the whole job is skipped and shows
   # as "skipped" in the checks instead of an empty success. It downloads the dist/ prepared by
-  # the build job (nothing is rebuilt) and uploads it to a GitHub Release.
+  # the build job (nothing is rebuilt) and uploads it to a GitHub Release and Google Play.
   publish:
     name: Publish
-    needs: [changes, build]
-    if: needs.build.outputs.mode != 'check'
+    # Only when tests, lint and build all passed (a failed or cancelled one skips publishing).
+    needs: [changes, test, lint, build]
+    if: needs.build.outputs.mode == 'release'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -472,64 +449,6 @@ jobs:
       group: publish-${{ github.ref }}
       cancel-in-progress: false
     steps:
-      # Besides this run's own artifact (uploaded by build), a single "beta-latest" Release is
-      # published or updated (to test development builds by installing the APK by hand) with the
-      # latest debug APK from any development branch. The tag is fixed on purpose: every push
-      # overwrites it, so releases do not pile up.
-      # A run whose commit is no longer the branch head must not replace a newer build.
-      - name: Check this is the latest commit of the branch
-        id: latest
-        if: needs.build.outputs.mode == 'dev_debug'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          head=$(gh api "repos/${{ github.repository }}/commits/${{ github.ref_name }}" --jq .sha || echo "")
-          if [ -z "$head" ] || [ "$head" = "${{ github.sha }}" ]; then
-            echo "publish=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "publish=false" >> "$GITHUB_OUTPUT"
-            echo "The branch already points to $head; beta-latest is left as it is."
-          fi
-
-      - name: Download beta dist
-        if: needs.build.outputs.mode == 'dev_debug' && steps.latest.outputs.publish == 'true'
-        uses: actions/download-artifact@v8
-        with:
-          name: miga-beta-dist-${{ needs.build.outputs.safe_ref }}
-          path: dist
-
-      - name: Publish beta-latest Release
-        if: needs.build.outputs.mode == 'dev_debug' && steps.latest.outputs.publish == 'true'
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: beta-latest
-          name: "Miga v${{ needs.build.outputs.version }} (beta · ${{ github.ref_name }} · ${{ needs.build.outputs.short_sha }})"
-          body: |
-            Build de desarrollo automático, generado desde la rama `${{ github.ref_name }}`
-            (commit ${{ github.sha }}). No es una versión estable: se sobrescribe en cada push
-            a una rama que no es `main`.
-          prerelease: true
-          make_latest: false
-          files: dist/*
-
-      # Keeps beta-latest down to the APKs just published: any other file (older version names)
-      # is deleted, so the release does not pile up old builds.
-      - name: Remove old files from beta-latest
-        if: needs.build.outputs.mode == 'dev_debug' && steps.latest.outputs.publish == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          repo="${{ github.repository }}"
-          release_id=$(gh api "repos/$repo/releases/tags/beta-latest" --jq .id)
-          # The full list is read before deleting anything: deleting while paging shifts the pages
-          # and skips files.
-          assets=$(gh api --paginate "repos/$repo/releases/$release_id/assets?per_page=100" --jq '.[] | "\(.id) \(.name)"')
-          echo "$assets" | while read -r id name; do
-            if [ -n "$id" ] && [ ! -f "dist/$name" ]; then
-              gh api -X DELETE "repos/$repo/releases/assets/$id" && echo "Deleted $name"
-            fi
-          done
-
       # --- push to main: stable GitHub Release with everything build left in dist/ ---
       - name: Download release dist
         if: needs.build.outputs.mode == 'release'
@@ -606,3 +525,7 @@ jobs:
           python3 .github/scripts/play_promote.py --package org.calamares.miga \
             --from-track "${{ vars.PLAY_TRACK || 'internal' }}" --version-code "$code" --rollout 100
           echo "### Publicada en producción (env/pro): versionCode $code" >> "$GITHUB_STEP_SUMMARY"
+          # The public tag F-Droid follows (see play-production.yml).
+          tag="v${{ needs.build.outputs.version }}"
+          git fetch -q origin "refs/tags/$tag:refs/tags/$tag"
+          git tag "public-$tag" "$tag^{commit}" && git push origin "refs/tags/public-$tag"

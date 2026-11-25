@@ -16,9 +16,9 @@ are also limited). It covers:
 
 ## Checking it
 
-`./gradlew assembleRelease` and then:
+`./gradlew assemblePlayRelease` and then:
 
-- `app/build/intermediates/merged_art_profile/release/mergeReleaseArtProfile/baseline-prof.txt`
+- `app/build/intermediates/merged_art_profile/playRelease/mergePlayReleaseArtProfile/baseline-prof.txt`
   contains the `org/calamares/miga` rules;
 - the APK has `assets/dexopt/baseline.prof`.
 

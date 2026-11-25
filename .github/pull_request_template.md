@@ -4,7 +4,7 @@
 
 ## Comprobado
 
-- [ ] Compila (`./gradlew :app:assembleDebug`)
+- [ ] Compila (`./gradlew :app:assemblePlayDebug :app:assembleFdroidDebug`)
 - [ ] Probado manualmente en el emulador/dispositivo
 - [ ] No quedan referencias sueltas a nombres/paquetes antiguos
 
