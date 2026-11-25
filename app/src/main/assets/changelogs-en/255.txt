@@ -1,0 +1,2 @@
+What's new in version 1.0.57:
+• In the steps, temperature and level ranges are highlighted whole: "170-180 °C", "between 160 and 170 degrees", "level 6-7".

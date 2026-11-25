@@ -17,6 +17,18 @@ class CookModeTextTest {
     }
 
     @Test
+    fun `ranges are highlighted whole, with the unit written once`() {
+        assertEquals(listOf("170-180 °C"), highlighted("Calienta abundante aceite de oliva en una sartén hasta alcanzar unos 170-180 °C."))
+        assertEquals(listOf("170–180 ºC"), highlighted("Fríe a 170–180 ºC."))
+        assertEquals(listOf("160 a 170 grados"), highlighted("Hornea a 160 a 170 grados."))
+        assertEquals(listOf("160 y 170 °C"), highlighted("Mantén el aceite entre 160 y 170 °C."))
+        assertEquals(listOf("350-375 °F"), highlighted("Heat the oil to 350-375 °F."))
+        assertEquals(listOf("20 minutos", "180 ºC"), highlighted("Hornea 20 minutos a 180 ºC."))
+        assertEquals(listOf("nivel 6-7"), highlighted("Pon el fuego al nivel 6-7."))
+        assertEquals(listOf("nivel 9 de 9"), highlighted("Sube al nivel 9 de 9."))
+    }
+
+    @Test
     fun `plain quantities are not highlighted`() {
         assertEquals(emptyList<String>(), highlighted("Añade 2 huevos y 3 hojas de laurel."))
     }

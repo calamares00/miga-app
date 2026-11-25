@@ -19,9 +19,12 @@ object CookModeText {
         RegexOption.IGNORE_CASE
     )
 
-    /** "180 ºC", "180°", "200 grados", "350 °F", "180 degrees Celsius". */
+    /**
+     * "180 ºC", "180°", "200 grados", "350 °F", "180 degrees Celsius", and ranges with the unit
+     * once: "170-180 °C", "170–180 ºC", "170 a 180 grados", "entre 160 y 170 °C".
+     */
     private val TEMPERATURE = Regex(
-        """(?<![\p{L}\d])\d{2,3}\s?(?:[º°]\s?[CF]?|grados(?:\s+(?:centígrados|celsius|fahrenheit))?|degrees(?:\s+(?:celsius|fahrenheit))?)(?![\p{L}\d])""",
+        """(?<![\p{L}\d])\d{2,3}(?:\s*(?:-|–|a|y|o|to|and|or)\s*\d{2,3})?\s?(?:[º°]\s?[CF]?|grados(?:\s+(?:centígrados|celsius|fahrenheit))?|degrees(?:\s+(?:celsius|fahrenheit))?)(?![\p{L}\d])""",
         RegexOption.IGNORE_CASE
     )
 
@@ -37,9 +40,9 @@ object CookModeText {
         RegexOption.IGNORE_CASE
     )
 
-    /** A hob's or appliance's setting: "nivel 6", "nivel 9 de 9", "potencia 7", "level 5 of 9". */
+    /** A hob's or appliance's setting: "nivel 6", "nivel 9 de 9", "nivel 6-7", "potencia 7", "level 5 of 9". */
     private val LEVEL = Regex(
-        """(?<![\p{L}\d])(?:nivel|potencia|level|power)\s+\d{1,2}(?:\s*(?:de|of|/)\s*\d{1,2})?(?![\p{L}\d])""",
+        """(?<![\p{L}\d])(?:nivel|potencia|level|power)\s+\d{1,2}(?:\s*(?:-|–|a|o|to|or)\s*\d{1,2})?(?:\s*(?:de|of|/)\s*\d{1,2})?(?![\p{L}\d])""",
         RegexOption.IGNORE_CASE
     )
 
