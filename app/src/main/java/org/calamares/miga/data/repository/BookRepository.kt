@@ -324,7 +324,7 @@ class BookRepository internal constructor(
         }
 
         recipes.forEach { dto ->
-            val categoryId = dto.categoryName?.takeIf { it.isNotBlank() }?.let { recipeRepository.resolveCategoryId(it) }
+            val categoryId = dto.categoryName?.takeIf { it.isNotBlank() }?.let { recipeRepository.resolveImportedCategoryId(it) }
             // A recipe only counts as existing if it is still in this book. If the user moved it to
             // another book (allowed for pack recipes), the next update creates a new copy in the
             // pack instead of touching the moved one.

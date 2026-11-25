@@ -38,13 +38,13 @@ class ContentCleanupTest {
 
     @Test
     fun `a duplicate of the user's goes into the most used one, renamed the Miga way`() {
-        val mine = item(ContentKind.CATEGORY, "merienda", 5)
-        val other = item(ContentKind.CATEGORY, "Meriendas saladas", 1)
-        val duplicate = item(ContentKind.CATEGORY, "meriendas", 2)
+        val mine = item(ContentKind.CATEGORY, "fiambrera", 5)
+        val other = item(ContentKind.CATEGORY, "Fiambreras saladas", 1)
+        val duplicate = item(ContentKind.CATEGORY, "fiambreras", 2)
         val proposals = ContentCleanup.propose(mapOf(ContentKind.CATEGORY to listOf(mine, other, duplicate)), "es")
         val merge = proposals.single { it.action == CleanupAction.MERGE }
         assertEquals(mine, merge.target)
-        assertEquals("Meriendas", merge.newName)
+        assertEquals("Fiambreras", merge.newName)
         assertEquals(setOf(mine.id, duplicate.id), merge.items.map { it.id }.toSet())
     }
 
@@ -112,5 +112,58 @@ class ContentCleanupTest {
         assertEquals(null, ContentCleanup.similarExisting(ContentKind.CATEGORY, "Postres", categories, "es"))
         assertEquals(null, ContentCleanup.similarExisting(ContentKind.CATEGORY, "Cenas", categories, "es"))
         assertEquals("Freidora de aire", ContentCleanup.similarExisting(ContentKind.EQUIPMENT, "airfryer", listOf("Horno", "Freidora de aire"), "es"))
+    }
+
+    @Test
+    fun `the user's categories go into the app's or are split by dish`() {
+        val cat = { name: String, usage: Int -> item(ContentKind.CATEGORY, name, usage) }
+        val postres = cat("Postres", 3)
+        val reposteria = cat("Repostería", 0)
+        val carnes = cat("Carnes", 5)
+        val reposteriaMia = cat("Repostería y pastelería", 20)
+        val tartas = cat("Tartas", 4)
+        val smoothies = cat("Smoothies", 58)
+        val principales = cat("Platos principales", 2)
+        val arrocesPastas = cat("Arroces y pastas", 2)
+        val navidad = cat("Navidad", 1)
+        val items = listOf(postres, reposteria, carnes, reposteriaMia, tartas, smoothies, principales, arrocesPastas, navidad)
+        val recipes = listOf(
+            RecipeBrief(100, "Tarta de queso", postres.id),
+            RecipeBrief(101, "Flan", postres.id),
+            RecipeBrief(102, "Helado de turrón", postres.id),
+            RecipeBrief(103, "Pollo asado", principales.id),
+            RecipeBrief(104, "Lo de siempre", principales.id),
+            RecipeBrief(105, "Arroz negro", arrocesPastas.id),
+            RecipeBrief(106, "Macarrones con tomate", arrocesPastas.id),
+            RecipeBrief(107, "Polvorones", navidad.id)
+        )
+        val proposals = ContentCleanup.propose(mapOf(ContentKind.CATEGORY to items), "es", recipes = recipes)
+
+        val merge = proposals.single { it.action == CleanupAction.MERGE }
+        assertEquals(reposteria.id, merge.target?.id)
+        assertEquals(setOf(reposteria.id, reposteriaMia.id, tartas.id), merge.items.map { it.id }.toSet())
+        // "Batidos y zumos" does not exist yet: the user's one takes its name.
+        val rename = proposals.single { it.action == CleanupAction.RENAME }
+        assertEquals(smoothies.id, rename.items.single().id)
+        assertEquals("Batidos y zumos", rename.newName)
+
+        val splits = proposals.filter { it.action == CleanupAction.SPLIT }.associateBy { it.items.single().name }
+        assertEquals(
+            mapOf(100L to "Repostería", 102L to "Helados y sorbetes"),
+            splits.getValue("Postres").assignments.associate { it.recipeId to it.target }
+        )
+        assertEquals(
+            mapOf(103L to "Carnes", 104L to null),
+            splits.getValue("Platos principales").assignments.associate { it.recipeId to it.target }
+        )
+        assertEquals(
+            mapOf(105L to "Arroces", 106L to "Pastas"),
+            splits.getValue("Arroces y pastas").assignments.associate { it.recipeId to it.target }
+        )
+        val theme = splits.getValue("Navidad")
+        assertEquals("navidad", theme.tag)
+        assertEquals("Repostería", theme.assignments.single().target)
+        assertEquals(1, splits.getValue("Platos principales").affected)
+        assertTrue(proposals.none { it.action == CleanupAction.DELETE })
     }
 }

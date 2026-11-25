@@ -6,8 +6,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.CoroutineScope
 import org.calamares.miga.data.content.CleanupProposal
 import org.calamares.miga.data.content.CleanupAction
+import org.calamares.miga.data.content.RecipeBrief
 import org.calamares.miga.data.model.ContentItem
 import org.calamares.miga.data.model.ContentKind
+import org.calamares.miga.data.model.RecipeCategories
 import androidx.room.withTransaction
 import org.calamares.miga.L10n
 import org.calamares.miga.data.local.AppDatabase
@@ -492,9 +494,15 @@ class RecipeRepository(
         ContentKind.entries.associateWith { observeContent(it).first() } to
             contentDao.shoppingNames().map { it.trim().lowercase() }.toSet()
 
+    /** The recipes that have a category, with their ingredients, to split categories by dish. */
+    suspend fun recipesForCleanup(): List<RecipeBrief> {
+        val ingredients = contentDao.ingredientsOfCategorisedRecipes().groupBy({ it.recipeId }, { it.name })
+        return contentDao.categorisedRecipes().map { RecipeBrief(it.id, it.name, it.categoryId, ingredients[it.id].orEmpty()) }
+    }
+
     /**
      * Applies the proposals of a cleanup (see ContentCleanup) and returns how to undo it. Merges go
-     * first, then renames, then deletions. Ingredients are only changed in the list: recipes keep
+     * first, then renames, splits and deletions. Ingredients are only changed in the list: recipes keep
      * their ingredients as written, since case or plural there is the author's choice.
      */
     suspend fun applyCleanup(proposals: List<CleanupProposal>): ContentSnapshot {
@@ -513,7 +521,7 @@ class RecipeRepository(
                 }.toSet()
             )
         }
-        val order = listOf(CleanupAction.MERGE, CleanupAction.RENAME, CleanupAction.DELETE)
+        val order = listOf(CleanupAction.MERGE, CleanupAction.RENAME, CleanupAction.SPLIT, CleanupAction.DELETE)
         proposals.sortedBy { order.indexOf(it.action) }.forEach { proposal ->
             when (proposal.action) {
                 CleanupAction.MERGE -> {
@@ -525,10 +533,40 @@ class RecipeRepository(
                     }
                 }
                 CleanupAction.RENAME -> proposal.newName?.let { renameContent(proposal.kind, proposal.items.single().id, it, updateRecipes = false) }
+                CleanupAction.SPLIT -> splitCategory(proposal)
                 CleanupAction.DELETE -> deleteContent(proposal.kind, proposal.items.map { it.id })
             }
         }
         return snapshot
+    }
+
+    /**
+     * Moves each recipe of a split category to its assigned one (created if missing), gives them
+     * the proposal's tag, and deletes the category when it is the user's and ends up empty.
+     */
+    private suspend fun splitCategory(proposal: CleanupProposal) {
+        val source = proposal.items.single()
+        val connections = db.withTransaction<Set<Long>> {
+            val affected = mutableSetOf<Long>()
+            val inSource = contentDao.recipesWithCategory(source.id).toSet()
+            proposal.assignments.forEach { assignment ->
+                val target = assignment.target ?: return@forEach
+                if (assignment.recipeId !in inSource) return@forEach
+                val targetId = resolveCategoryId(target)
+                if (targetId == source.id) return@forEach
+                contentDao.setRecipeCategory(assignment.recipeId, targetId)
+                affected += assignment.recipeId
+            }
+            proposal.tag?.takeIf { it.isNotBlank() }?.let { tag ->
+                val tagId = resolveTagId(tag)
+                val tagged = proposal.assignments.map { it.recipeId }.filter { it in inSource }
+                contentDao.insertTagLinks(tagged.map { RecipeTagCrossRef(it, tagId) })
+                affected += tagged
+            }
+            if (!source.isDefault && contentDao.recipesWithCategory(source.id).isEmpty()) contentDao.deleteCategory(source.id)
+            touchRecipesLocked(affected)
+        }
+        connections.forEach { onSyncChangeEnqueued(it) }
     }
 
     /** Puts every list back as it was before [applyCleanup], with the recipes' links. */
@@ -645,10 +683,12 @@ class RecipeRepository(
         if (trimmed.isNotEmpty()) resolveCategoryId(trimmed)
     }
 
-    /** Creates the default categories when the database has none. */
     /** Creates the default categories that are missing. Called once, on the first start. */
-    suspend fun seedDefaultCategories(language: String = "es") {
-        DefaultCatalog.categories(language).forEach { name ->
+    suspend fun seedDefaultCategories(language: String = "es") = seedCategories(DefaultCatalog.categories(language))
+
+    /** Creates the categories of [names] that are missing. */
+    suspend fun seedCategories(names: List<String>) {
+        names.forEach { name ->
             if (categoryDao.findByName(name) == null) {
                 categoryDao.insert(CategoryEntity(name = name))
             }
@@ -825,6 +865,20 @@ class RecipeRepository(
     internal suspend fun resolveCategoryId(name: String): Long {
         val trimmed = name.trim()
         categoryDao.findByName(trimmed)?.let { return it.id }
+        return categoryDao.insert(CategoryEntity(name = trimmed))
+    }
+
+    /**
+     * Like [resolveCategoryId] for recipes coming from a book or pack: a name meaning one of the
+     * app's categories ("Tartas", or "Desserts" in a Spanish app) goes into it when it exists,
+     * instead of creating a near duplicate.
+     */
+    internal suspend fun resolveImportedCategoryId(name: String): Long {
+        val trimmed = name.trim()
+        categoryDao.findByName(trimmed)?.let { return it.id }
+        RecipeCategories.builtInFor(trimmed)?.let { builtIn ->
+            listOf(builtIn.es, builtIn.en).firstNotNullOfOrNull { categoryDao.findByName(it) }?.let { return it.id }
+        }
         return categoryDao.insert(CategoryEntity(name = trimmed))
     }
 

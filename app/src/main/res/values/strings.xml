@@ -1081,9 +1081,9 @@
     <string name="cleanup_title">"Clean up content"</string>
     <string name="cleanup_summary">"Duplicates, names to unify and your unused entries"</string>
     <string name="cleanup_summary_unused_x">"%1$d entries of yours unused"</string>
-    <string name="cleanup_intro">"Review what can be tidied up and untick anything you want to keep. Only your own entries are renamed or deleted; the ones that come with the app stay put."</string>
+    <string name="cleanup_intro">"Review what can be tidied up and untick anything you want to keep. Your categories move into the app's ones, and those mixing dishes are split recipe by recipe (tap a recipe to change where it goes). The entries that come with the app are never renamed or deleted."</string>
     <string name="cleanup_ai">"More suggestions"</string>
-    <string name="cleanup_ai_working">"Looking for synonyms and typos…"</string>
+    <string name="cleanup_ai_working">"Looking for synonyms, typos and recipes to file…"</string>
     <string name="cleanup_ai_done">"Extra suggestions added"</string>
     <string name="cleanup_nothing">"Everything's spick and span"</string>
     <string name="cleanup_section_merge">"Merge duplicates (%1$d)"</string>
@@ -1098,6 +1098,15 @@
     <string name="cleanup_done_merged">"%1$d duplicates merged"</string>
     <string name="cleanup_done_renamed">"%1$d names unified"</string>
     <string name="cleanup_done_deleted">"%1$d unused entries deleted"</string>
+    <string name="cleanup_section_split">"Split by kind of dish (%1$d)"</string>
+    <string name="cleanup_split_title">"Split «%1$s»"</string>
+    <string name="cleanup_split_stays">"%1$d stay"</string>
+    <string name="cleanup_split_tag">"Tag «%1$s»"</string>
+    <string name="cleanup_split_show">"Show recipes"</string>
+    <string name="cleanup_split_hide">"Hide recipes"</string>
+    <string name="cleanup_split_choose">"Which category does «%1$s» go to?"</string>
+    <string name="cleanup_split_keep">"Leave in «%1$s»"</string>
+    <string name="cleanup_done_split">"%1$d categories split"</string>
     <string name="did_you_mean_x">"Did you mean \"%1$s\"? Tap to use it."</string>
     <string name="recipe_categories">"Recipe categories"</string>
     <string name="ingredients_and_products">"Ingredients and products"</string>

@@ -69,6 +69,7 @@ import org.calamares.miga.R
 import org.calamares.miga.data.local.entity.IngredientCategoryEntity
 import org.calamares.miga.data.model.ContentItem
 import org.calamares.miga.data.model.ContentKind
+import org.calamares.miga.data.model.RecipeCategories
 import org.calamares.miga.data.model.IngredientCatalogItem
 import org.calamares.miga.data.model.RecipeFilter
 import org.calamares.miga.data.repository.RecipeRepository
@@ -398,6 +399,11 @@ private fun ContentEntryRow(
                     modifier = Modifier.weight(1f, fill = false)
                 )
                 if (item.isDefault) DefaultBadge(modifier = Modifier.padding(start = 8.dp))
+            }
+            if (item.kind == ContentKind.CATEGORY) {
+                RecipeCategories.description(item.name, L10n.locale().language)?.let { description ->
+                    Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
             Text(
                 text = if (item.usage == 0) L10n.str(R.string.content_unused) else item.kind.usageLabel(item.usage),
