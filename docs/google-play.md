@@ -129,14 +129,33 @@ que mantengan la app instalada **14 días seguidos**.
 1. Sube `versionName` en `app/build.gradle.kts` (1.0.1 para arreglos, 1.1.0 para funciones nuevas)
    y escribe las notas en `fastlane/metadata/android/{es-ES,en-US}/changelogs/<versionCode>.txt`
    (como mucho 500 caracteres; son las notas que muestra Play).
-2. Fusiona en `main`. El CI compila, firma, publica la Release `v<versionName>` en GitHub y, si
-   está configurada la subida automática (abajo), sube el AAB a Google Play con esas notas y el
-   archivo de desofuscación de R8.
-3. Por defecto va a **Prueba interna**. Desde Play Console se promociona a la prueba cerrada o a
-   producción (Probar y publicar → la pista → Promocionar versión).
+2. Fusiona en `main`. El CI compila, firma, publica la Release `v<versionName>` en GitHub (como
+   *pre-release*) y, si está configurada la subida automática (abajo), sube el AAB a la **beta
+   cerrada** (la pista de `PLAY_TRACK`, hoy `alpha`) con esas notas y el archivo de desofuscación.
+3. Para el público, ver «Beta cerrada y producción».
 
 `versionCode` sube en cada commit, así que cada fusión en `main` lleva un código mayor que el
 anterior, como exige Play.
+
+## Beta cerrada y producción
+
+Una sola rama: `main`. Cada versión nueva va primero a la beta cerrada, y a producción se pasa
+**la misma versión** (el mismo AAB que han probado los testers, sin volver a compilar):
+
+- **Después de probarla**: GitHub → Actions → **Publicar en producción** → *Run workflow*. Pide la
+  versión (vacío = la última de la beta) y el porcentaje de usuarios (100 % o una publicación
+  progresiva del 50, 20, 10 o 5 %). Para ampliar una publicación progresiva, se lanza otra vez con
+  la misma versión y más porcentaje. Al llegar al 100 %, la Release de GitHub deja de ser
+  *pre-release* y pasa a ser la última, que es la que lee el aviso de actualización de la app.
+- **Sin esperar a la beta**: pon la etiqueta **`env/pro`** al PR antes de fusionarlo. Al fusionar,
+  la versión sube a la beta y enseguida a producción, al 100 %.
+- No hacen falta commits ni PR para publicar: la versión ya está en `main` y en la beta.
+
+Las versiones de producción pasan la revisión de Google (de horas a días). Para elegir el momento
+exacto, activa en Play Console **Publicación controlada** (Resumen de publicación → Publicación
+controlada): lo aprobado espera hasta que pulses **Publicar cambios**.
+
+La cuenta de servicio necesita el permiso **Lanzar a producción** (paso 3 de abajo).
 
 ## Subida automática a Google Play
 
@@ -156,8 +175,8 @@ configura una vez:
 4. En GitHub, https://github.com/calamares00/miga-app/settings/secrets/actions, crea el secreto
    `PLAY_SERVICE_ACCOUNT_JSON` con el contenido completo del `.json`.
 5. Opcional: en la pestaña **Variables** de la misma página, crea `PLAY_TRACK` con la pista de
-   destino: `internal` (por defecto), `alpha` (prueba cerrada; pasa por revisión de Google) o
-   `production`.
+   la beta: `internal` (por defecto) o `alpha` (prueba cerrada; pasa por revisión de Google). Hoy
+   es `alpha`. Producción no se pone aquí: va con «Publicar en producción» o la etiqueta `env/pro`.
 
 Sin ese secreto, o sin la clave de firma, el paso se salta y solo se publica la Release de GitHub.
 La primera versión de una app tiene que subirse a mano desde Play Console (ya está hecho con la
