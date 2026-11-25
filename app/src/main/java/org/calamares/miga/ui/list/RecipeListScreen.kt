@@ -570,7 +570,7 @@ fun RecipeListScreen(
     if (showAddAnotherPageDialog) {
         AlertDialog(
             onDismissRequest = { showAddAnotherPageDialog = false },
-            title = { Text(L10n.str(R.string.another_photo_title_n, capturedPageUris.size)) },
+            title = { Text(L10n.plural(R.plurals.another_photo_title_n, capturedPageUris.size)) },
             text = { Text(L10n.str(R.string.another_photo_body)) },
             confirmButton = {
                 TextButton(onClick = {

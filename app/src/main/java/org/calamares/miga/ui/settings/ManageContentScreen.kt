@@ -164,7 +164,7 @@ fun ManageContentScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = {
                     when {
-                        selecting -> Text(L10n.str(R.string.n_selected, selected.size))
+                        selecting -> Text(L10n.plural(R.plurals.n_selected, selected.size))
                         searching -> OutlinedTextField(
                             value = query,
                             onValueChange = { query = it },
@@ -514,7 +514,7 @@ private fun DeleteDialog(
         title = {
             Text(
                 if (items.size == 1) L10n.str(R.string.delete_quoted_x, items.single().name)
-                else L10n.str(R.string.content_delete_n, items.size)
+                else L10n.plural(R.plurals.content_delete_n, items.size)
             )
         },
         text = {
@@ -558,7 +558,7 @@ private fun MergeDialog(kind: ContentKind, items: List<ContentItem>, onMerge: (C
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.AutoMirrored.Filled.CallMerge, contentDescription = null) },
-        title = { Text(L10n.str(R.string.content_merge_n, items.size)) },
+        title = { Text(L10n.plural(R.plurals.content_merge_n, items.size)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(L10n.str(R.string.content_merge_keep), style = MaterialTheme.typography.bodyMedium)

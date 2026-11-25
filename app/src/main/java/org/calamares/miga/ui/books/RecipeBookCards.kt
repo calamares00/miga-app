@@ -450,7 +450,7 @@ internal fun RecipeBookRow(
 @Composable
 internal fun SelectionMark(selected: Boolean, onCover: Boolean) {
     val icon = if (selected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked
-    val description = L10n.str(if (selected) R.string.selected else R.string.not_selected)
+    val description = L10n.str(if (selected) R.string.item_selected else R.string.item_not_selected)
     if (onCover) {
         Box(
             modifier = Modifier.size(30.dp).clip(CircleShape).background(if (selected) Color.White else Color.Black.copy(alpha = 0.35f)),
@@ -465,4 +465,4 @@ internal fun SelectionMark(selected: Boolean, onCover: Boolean) {
 
 /** "1 selected" / "3 selected", for the selection bar. */
 internal fun selectedBooksText(count: Int): String =
-    if (count == 1) L10n.str(R.string.one_selected_book) else L10n.str(R.string.n_selected_books, count)
+    if (count == 1) L10n.str(R.string.one_selected_book) else L10n.plural(R.plurals.n_selected_books, count)

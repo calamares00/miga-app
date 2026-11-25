@@ -122,7 +122,7 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
                         IngredientEditRow(
                             row = row,
                             availableNames = availableIngredientNames,
-                            dragHandle = dragHandle,
+                            dragHandle = { DragHandle(dragHandle) },
                             isDragging = isDragging,
                             onPasteLines = { lines -> viewModel.splitIngredientRow(groupIndex, rowIndex, lines) },
                             onRemove = { viewModel.removeIngredientRow(groupIndex, rowIndex) },
@@ -131,7 +131,7 @@ fun IngredientsEditor(viewModel: RecipeEditorViewModel) {
                     } else {
                         IngredientListRow(
                             row = row,
-                            dragHandle = dragHandle,
+                            dragHandle = { DragHandle(dragHandle) },
                             isDragging = isDragging,
                             onClick = { editing = row },
                             onRemove = { viewModel.removeIngredientRow(groupIndex, rowIndex) }
@@ -175,7 +175,7 @@ private fun IngredientRowUi.asWritten(): String {
 @Composable
 private fun IngredientListRow(
     row: IngredientRowUi,
-    dragHandle: Modifier,
+    dragHandle: @Composable () -> Unit,
     isDragging: Boolean,
     onClick: () -> Unit,
     onRemove: () -> Unit
@@ -188,7 +188,7 @@ private fun IngredientListRow(
             .clickable(onClickLabel = L10n.str(R.string.edit_x, row.name), onClick = onClick),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        DragHandle(dragHandle)
+        dragHandle()
         Text(row.asWritten(), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp).weight(1f))
         IngredientMenu(row, onRemove)
     }
@@ -199,7 +199,7 @@ private fun IngredientListRow(
 private fun IngredientEditRow(
     row: IngredientRowUi,
     availableNames: List<String>,
-    dragHandle: Modifier,
+    dragHandle: @Composable () -> Unit,
     isDragging: Boolean,
     onPasteLines: (List<String>) -> Unit,
     onRemove: () -> Unit,
@@ -214,7 +214,7 @@ private fun IngredientEditRow(
     ) {
         Column(modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                DragHandle(dragHandle)
+                dragHandle()
                 OutlinedTextField(
                     value = row.name,
                     onValueChange = { text ->
@@ -503,8 +503,8 @@ fun StepsEditor(viewModel: RecipeEditorViewModel) {
 
 /** Handle to drag an ingredient or step to another place. */
 @Composable
-private fun DragHandle(dragHandle: Modifier) {
-    Box(modifier = dragHandle.size(32.dp), contentAlignment = Alignment.Center) {
+private fun DragHandle(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.size(32.dp), contentAlignment = Alignment.Center) {
         Icon(
             Icons.Filled.DragIndicator,
             contentDescription = L10n.str(R.string.drag_to_reorder),

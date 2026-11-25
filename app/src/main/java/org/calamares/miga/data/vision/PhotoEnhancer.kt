@@ -1,5 +1,7 @@
 package org.calamares.miga.data.vision
 
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.scale
 import android.graphics.Bitmap
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -149,7 +151,7 @@ fun applyAdjustments(source: Bitmap, adjustments: PhotoAdjustments): Bitmap {
     }
     if (a.sharpness > 0f) sharpen(pixels, width, height, a.sharpness * 0.9f)
 
-    return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
+    return createBitmap(width, height).apply {
         setPixels(pixels, 0, width, 0, 0, width, height)
     }
 }
@@ -205,10 +207,5 @@ private fun scaleToFit(bitmap: Bitmap, maxDimension: Int): Bitmap {
     val maxSide = maxOf(bitmap.width, bitmap.height)
     if (maxSide <= maxDimension) return bitmap
     val scale = maxDimension.toFloat() / maxSide
-    return Bitmap.createScaledBitmap(
-        bitmap,
-        (bitmap.width * scale).roundToInt().coerceAtLeast(1),
-        (bitmap.height * scale).roundToInt().coerceAtLeast(1),
-        true
-    )
+    return bitmap.scale((bitmap.width * scale).roundToInt().coerceAtLeast(1), (bitmap.height * scale).roundToInt().coerceAtLeast(1))
 }

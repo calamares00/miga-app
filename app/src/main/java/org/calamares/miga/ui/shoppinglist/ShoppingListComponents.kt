@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.shoppinglist
 
+import androidx.compose.runtime.mutableLongStateOf
 import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.data.model.displayCategoryName
 import org.calamares.miga.L10n
@@ -355,7 +356,7 @@ internal fun StoreEditorSheet(
     onDismiss: () -> Unit
 ) {
     var name by remember { mutableStateOf(store.name) }
-    var argb by remember { mutableStateOf(store.argb) }
+    var argb by remember { mutableLongStateOf(store.argb) }
     var order by remember {
         mutableStateOf(ShoppingAisleOrder.complete(store.aisleOrder.ifEmpty { ShoppingAisleOrder.TYPICAL_ORDER }, categoryNames))
     }

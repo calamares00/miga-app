@@ -130,7 +130,7 @@ class RecipeBooksViewModel(
             val failed = PackInstaller.installAll(appContext, repository, settingsRepository, updates)
             _updatingPacks.value = false
             onDone(
-                if (failed.isEmpty()) L10n.str(R.string.x_packs_updated, updates.size)
+                if (failed.isEmpty()) L10n.plural(R.plurals.x_packs_updated, updates.size)
                 else L10n.str(R.string.couldnt_install_packs_x, failed.joinToString(", "))
             )
         }
@@ -278,8 +278,8 @@ class RecipeBooksViewModel(
             try {
                 _syncMessage.value = when (val result = RecipeExporter.importSharedBook(appContext, prompt.parsed, repository)) {
                     is SharedBookImportResult.Success ->
-                        if (result.bookCount > 1) L10n.str(R.string.shared_books_imported_x_x_x, result.bookCount, result.added, result.updated)
-                        else L10n.str(R.string.shared_book_imported_x_x_x, result.bookName, result.added, result.updated)
+                        if (result.bookCount > 1) L10n.plural(R.plurals.shared_books_imported_x_x_x, result.bookCount, result.bookCount, L10n.plural(R.plurals.new_recipes_n, result.added), L10n.plural(R.plurals.updated_recipes_n, result.updated))
+                        else L10n.str(R.string.shared_book_imported_x_x_x, result.bookName, L10n.plural(R.plurals.new_recipes_n, result.added), L10n.plural(R.plurals.updated_recipes_n, result.updated))
                     is SharedBookImportResult.Error -> result.reason
                 }
             } finally {
@@ -380,11 +380,11 @@ class RecipeBooksViewModel(
                 syncedIds = synced,
                 message = listOfNotNull(
                     if (deleted == 1) L10n.str(R.string.book_deleted) else L10n.str(R.string.books_deleted_n, deleted),
-                    L10n.str(R.string.books_not_deleted_n, kept).takeIf { kept > 0 }
+                    L10n.plural(R.plurals.books_not_deleted_n, kept).takeIf { kept > 0 }
                 ).joinToString(". ")
             )
         } else if (kept > 0) {
-            _syncMessage.value = L10n.str(R.string.books_not_deleted_n, kept)
+            _syncMessage.value = L10n.plural(R.plurals.books_not_deleted_n, kept)
         }
     }
 

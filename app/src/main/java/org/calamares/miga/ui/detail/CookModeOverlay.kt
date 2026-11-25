@@ -1,5 +1,7 @@
 package org.calamares.miga.ui.detail
 
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import kotlin.math.roundToInt
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -11,7 +13,6 @@ import androidx.compose.material.icons.filled.AddAlarm
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.filled.LightMode
 import android.provider.Settings
-import android.net.Uri
 import android.content.Intent
 import android.os.Build
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -393,12 +394,12 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
 
     fun cycleTextSize() {
         textSizeIndex = (textSizeIndex + 1) % TEXT_SIZES.size
-        cookPrefs(context).edit().putInt(KEY_TEXT_SIZE, textSizeIndex).apply()
+        cookPrefs(context).edit { putInt(KEY_TEXT_SIZE, textSizeIndex) }
     }
 
     fun toggleKeepScreenOn() {
         keepScreenOn = !keepScreenOn
-        cookPrefs(context).edit().putBoolean(KEY_KEEP_SCREEN_ON, keepScreenOn).apply()
+        cookPrefs(context).edit { putBoolean(KEY_KEEP_SCREEN_ON, keepScreenOn) }
     }
 
     fun close() {
@@ -536,11 +537,11 @@ fun CookModeOverlay(recipe: Recipe, ttsVoiceName: String?, onClose: () -> Unit) 
                                 }
                             )
                         }
-                        if (!CookTimers.canBeExact(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (!CookTimers.canBeExact(context)) {
                             TextButton(onClick = {
                                 runCatching {
                                     context.startActivity(
-                                        Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}"))
+                                        Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, "package:${context.packageName}".toUri())
                                     )
                                 }
                             }) { Text(L10n.str(R.string.cook_allow_exact_alarms), style = MaterialTheme.typography.bodySmall) }
@@ -713,7 +714,7 @@ private fun IngredientsPage(
     val total = groups.sumOf { it.second.size }
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Text(
-            L10n.str(R.string.cook_ingredients_ready_x_y, ready.size, total),
+            L10n.plural(R.plurals.cook_ingredients_ready_x_y, total, ready.size, total),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(bottom = 4.dp)

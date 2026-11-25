@@ -108,8 +108,8 @@ fun ExportBackupDialog(onConfirm: (password: CharArray?, contents: BackupContent
                         onValueChange = { password = it },
                         label = L10n.str(R.string.backup_password),
                         supporting = when {
-                            password.isEmpty() -> L10n.str(R.string.backup_password_min_x, BackupCrypto.MIN_PASSWORD_LENGTH)
-                            tooShort -> L10n.str(R.string.backup_password_min_x, BackupCrypto.MIN_PASSWORD_LENGTH)
+                            password.isEmpty() -> L10n.plural(R.plurals.backup_password_min_x, BackupCrypto.MIN_PASSWORD_LENGTH)
+                            tooShort -> L10n.plural(R.plurals.backup_password_min_x, BackupCrypto.MIN_PASSWORD_LENGTH)
                             else -> L10n.str(
                                 when (strength) {
                                     3 -> R.string.backup_password_strong

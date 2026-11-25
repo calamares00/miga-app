@@ -178,7 +178,7 @@ private fun Overview(stats: LibraryStats, onOpenRecipes: (String, RecipeFilter) 
         if (stats.addedThisMonth > 0 || stats.photos > 0) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (stats.addedThisMonth > 0) {
-                    val label = L10n.str(R.string.stats_added_this_month_x, stats.addedThisMonth)
+                    val label = L10n.plural(R.plurals.stats_added_this_month_x, stats.addedThisMonth)
                     AssistChip(
                         onClick = {
                             onOpenRecipes(
@@ -192,7 +192,7 @@ private fun Overview(stats: LibraryStats, onOpenRecipes: (String, RecipeFilter) 
                 }
                 if (stats.photos > 0) {
                     Text(
-                        L10n.str(R.string.stats_photos_x, stats.photos),
+                        L10n.plural(R.plurals.stats_photos_x, stats.photos),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -234,7 +234,7 @@ private fun LibraryContent(stats: LibraryStats, onRecipeClick: (Long) -> Unit, o
             onSeeAll = { onOpenRecipes(L10n.str(R.string.most_cooked_2), RecipeFilter(onlyCooked = true, sortOption = SortOption.MOST_COOKED)) }
         ) {
             stats.mostCooked.forEachIndexed { index, entry ->
-                RankedRow(index + 1, entry, L10n.str(R.string.stats_times_x, entry.value)) { onRecipeClick(entry.recipeId) }
+                RankedRow(index + 1, entry, L10n.plural(R.plurals.stats_times_x, entry.value)) { onRecipeClick(entry.recipeId) }
             }
         }
     }
@@ -247,7 +247,7 @@ private fun LibraryContent(stats: LibraryStats, onRecipeClick: (Long) -> Unit, o
         ) {
             stats.averageRating?.let { average ->
                 Text(
-                    L10n.str(R.string.stats_average_rating_x_y, String.format(L10n.locale(), "%.1f", average), stats.ratedRecipes),
+                    L10n.plural(R.plurals.stats_average_rating_x_y, stats.ratedRecipes, String.format(L10n.locale(), "%.1f", average), stats.ratedRecipes),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 4.dp)
@@ -528,7 +528,7 @@ private fun StorageCard(storage: StorageUsage?, busy: Boolean, onClearCache: () 
             if (storage.unusedPhotosCount > 0) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    L10n.str(R.string.stats_unused_photos_x_y, storage.unusedPhotosCount, size(storage.unusedPhotosBytes)),
+                    L10n.plural(R.plurals.stats_unused_photos_x_y, storage.unusedPhotosCount, storage.unusedPhotosCount, size(storage.unusedPhotosBytes)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.onSurfaceVariant
                 )
@@ -554,7 +554,7 @@ private fun StorageCard(storage: StorageUsage?, busy: Boolean, onClearCache: () 
                 AlertDialog(
                     onDismissRequest = { confirmDelete = false },
                     title = { Text(L10n.str(R.string.stats_delete_unused_photos)) },
-                    text = { Text(L10n.str(R.string.stats_delete_unused_photos_confirm_x_y, storage.unusedPhotosCount, size(storage.unusedPhotosBytes))) },
+                    text = { Text(L10n.plural(R.plurals.stats_delete_unused_photos_confirm_x_y, storage.unusedPhotosCount, storage.unusedPhotosCount, size(storage.unusedPhotosBytes))) },
                     confirmButton = {
                         TextButton(onClick = { confirmDelete = false; onDeleteUnusedPhotos() }) {
                             Text(L10n.str(R.string.delete_2), color = colors.error)

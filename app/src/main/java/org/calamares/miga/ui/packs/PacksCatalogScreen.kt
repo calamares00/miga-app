@@ -158,7 +158,7 @@ fun PacksCatalogScreen(
             if (selecting) {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    title = { Text(L10n.str(R.string.n_selected, selected.size)) },
+                    title = { Text(L10n.plural(R.plurals.n_selected, selected.size)) },
                     navigationIcon = {
                         IconButton(onClick = { viewModel.clearSelection() }, enabled = !busy) {
                             Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel))

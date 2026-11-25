@@ -51,7 +51,7 @@ internal fun PortionPlanRow(plan: PortionPlan, onEdit: () -> Unit) {
             Text(L10n.str(R.string.plan_title), style = MaterialTheme.typography.bodyLarge)
             Text(
                 if (plan.isEmpty) L10n.str(R.string.plan_none)
-                else L10n.str(R.string.plan_summary_x, plan.usedMeals.size, plan.kcal.roundToInt()),
+                else L10n.plural(R.plurals.plan_summary_x, plan.usedMeals.size, plan.usedMeals.size, plan.kcal.roundToInt()),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -1,5 +1,6 @@
 package org.calamares.miga
 
+import androidx.core.content.edit
 import org.calamares.miga.data.ai.OpenRouterConnect
 import org.calamares.miga.data.ai.AiJobs
 import android.Manifest
@@ -116,7 +117,7 @@ class MainActivity : FragmentActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return false
         val prefs = getSharedPreferences(PROMPTS_PREFS, Context.MODE_PRIVATE)
         if (prefs.getBoolean(KEY_ASKED_NOTIFICATIONS, false)) return false
-        prefs.edit().putBoolean(KEY_ASKED_NOTIFICATIONS, true).apply()
+        prefs.edit { putBoolean(KEY_ASKED_NOTIFICATIONS, true) }
         return true
     }
 
@@ -204,7 +205,7 @@ class MainActivity : FragmentActivity() {
             val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
             val aiRunning by AiKeepAlive.running.collectAsStateWithLifecycle()
             LaunchedEffect(aiRunning) {
-                if (aiRunning && shouldAskNotificationPermission()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && aiRunning && shouldAskNotificationPermission()) {
                     notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }

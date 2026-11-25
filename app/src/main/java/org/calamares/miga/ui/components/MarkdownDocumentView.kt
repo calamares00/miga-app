@@ -1,8 +1,8 @@
 package org.calamares.miga.ui.components
 
+import androidx.core.net.toUri
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -65,7 +65,7 @@ private fun documentText(text: String, linkColor: Color): AnnotatedString {
 }
 
 private fun openLink(context: Context, target: String) {
-    val uri = Uri.parse(target)
+    val uri = target.toUri()
     val intent = if (uri.scheme == "mailto") Intent(Intent.ACTION_SENDTO, uri) else Intent(Intent.ACTION_VIEW, uri)
     runCatching { context.startActivity(intent) }
 }

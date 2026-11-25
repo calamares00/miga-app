@@ -111,7 +111,7 @@ fun ServerBooksScreen(viewModel: ServerBooksViewModel, onBack: () -> Unit) {
                 Surface(tonalElevation = 3.dp) {
                     Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
                         Text(
-                            L10n.str(R.string.server_books_total, state.chosen.size, state.books.size, size(state.chosenBytes)),
+                            L10n.plural(R.plurals.server_books_total, state.books.size, state.chosen.size, state.books.size, size(state.chosenBytes)),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Spacer(Modifier.height(8.dp))
@@ -129,7 +129,7 @@ fun ServerBooksScreen(viewModel: ServerBooksViewModel, onBack: () -> Unit) {
                             val download = state.toDownload
                             Text(
                                 when {
-                                    viewModel.firstTime -> L10n.str(R.string.server_books_download_n, download.size)
+                                    viewModel.firstTime -> L10n.plural(R.plurals.server_books_download_n, download.size)
                                     download.isNotEmpty() -> L10n.str(R.string.server_books_save_download, download.size, size(download.sumOf { it.dto.bytes }))
                                     state.toRemove.isNotEmpty() -> L10n.str(R.string.server_books_save_remove, state.toRemove.size)
                                     else -> L10n.str(R.string.save)
@@ -152,7 +152,7 @@ fun ServerBooksScreen(viewModel: ServerBooksViewModel, onBack: () -> Unit) {
             else -> LazyColumn(Modifier.padding(padding)) {
                 item {
                     Notice(
-                        if (viewModel.firstTime) L10n.str(R.string.server_books_first_time, state.books.size)
+                        if (viewModel.firstTime) L10n.plural(R.plurals.server_books_first_time, state.books.size)
                         else L10n.str(R.string.server_books_intro),
                         Modifier
                     )
@@ -200,7 +200,7 @@ fun ServerBooksScreen(viewModel: ServerBooksViewModel, onBack: () -> Unit) {
 }
 
 private fun recipesText(count: Int): String =
-    if (count == 1) L10n.str(R.string.recipe_count_one) else L10n.str(R.string.x_recipes_count, count)
+    if (count == 1) L10n.str(R.string.recipe_count_one) else L10n.plural(R.plurals.x_recipes_count, count)
 
 @Composable
 private fun Notice(text: String, modifier: Modifier) {

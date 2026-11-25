@@ -591,7 +591,7 @@ private fun RecipeDetailContent(
                             ).joinToString(", ")
                         )
                     },
-                    Fact(Icons.Outlined.People, L10n.str(R.string.servings_count_x, servings), null),
+                    Fact(Icons.Outlined.People, L10n.plural(R.plurals.servings_count_x, servings), null),
                     Fact(Icons.Outlined.BarChart, recipe.difficulty.label, L10n.str(R.string.difficulty) + ": " + recipe.difficulty.label)
                 )
             )

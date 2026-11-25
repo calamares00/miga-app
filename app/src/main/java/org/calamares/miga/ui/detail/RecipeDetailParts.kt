@@ -341,7 +341,7 @@ internal fun IngredientLine(
                 onClick = { onCheckedChange(!checked) },
                 onLongClick = onSubstitute
             )
-            .semantics { stateDescription = if (checked) L10n.str(R.string.selected) else L10n.str(R.string.not_selected) }
+            .semantics { stateDescription = if (checked) L10n.str(R.string.item_selected) else L10n.str(R.string.item_not_selected) }
             .padding(horizontal = 14.dp, vertical = 7.dp),
         verticalAlignment = Alignment.Top
     ) {

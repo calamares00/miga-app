@@ -46,12 +46,12 @@ fun ImportRecipesDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(L10n.str(R.string.import_n_recipes_title, count)) },
+        title = { Text(L10n.plural(R.plurals.import_n_recipes_title, count)) },
         text = {
             Column {
                 Text(
-                    if (sourceBook != null) L10n.str(R.string.import_recipes_from_book_x, count, sourceBook)
-                    else L10n.str(R.string.import_recipes_n, count),
+                    if (sourceBook != null) L10n.plural(R.plurals.import_recipes_from_book_x, count, count, sourceBook)
+                    else L10n.plural(R.plurals.import_recipes_n, count),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )

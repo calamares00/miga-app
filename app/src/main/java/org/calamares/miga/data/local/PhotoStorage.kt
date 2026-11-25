@@ -1,5 +1,7 @@
 package org.calamares.miga.data.local
 
+import androidx.core.graphics.scale
+import androidx.core.net.toUri
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -166,7 +168,7 @@ object PhotoStorage {
         val scale = maxDimension.toFloat() / maxSide
         val width = (bitmap.width * scale).roundToInt().coerceAtLeast(1)
         val height = (bitmap.height * scale).roundToInt().coerceAtLeast(1)
-        return Bitmap.createScaledBitmap(bitmap, width, height, true)
+        return bitmap.scale(width, height)
     }
 
     /**
@@ -244,12 +246,12 @@ object PhotoStorage {
      * exists.
      */
     fun deleteFile(uri: String) {
-        runCatching { File(Uri.parse(uri).path ?: return@runCatching).delete() }
+        runCatching { File(uri.toUri().path ?: return@runCatching).delete() }
     }
 
     /**
      * Raw bytes of a photo stored by the app ("file://..."), used to upload it to the sync server.
      */
     fun readBytes(uri: String): ByteArray? =
-        runCatching { File(Uri.parse(uri).path ?: return null).readBytes() }.getOrNull()
+        runCatching { File(uri.toUri().path ?: return null).readBytes() }.getOrNull()
 }

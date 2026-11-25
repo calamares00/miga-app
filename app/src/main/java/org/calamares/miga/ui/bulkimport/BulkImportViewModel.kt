@@ -1,7 +1,7 @@
 package org.calamares.miga.ui.bulkimport
 
+import androidx.core.net.toUri
 import android.content.Context
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -128,11 +128,11 @@ class BulkImportViewModel(
                 status(current.detail ?: current.step)
             }
             try {
-                progress.step(L10n.str(R.string.ai_step_preparing_photos_n, photoUris.size))
+                progress.step(L10n.plural(R.plurals.ai_step_preparing_photos_n, photoUris.size))
                 // A photo that cannot be read is left out of the question and becomes a recipe of
                 // its own, where its row says so.
                 val readable = photoUris.indices.mapNotNull { index ->
-                    PhotoStorage.readResizedJpegBytes(context, Uri.parse(photoUris[index]), GROUPING_DIMENSION)?.let { index to AiImage(it, "image/jpeg") }
+                    PhotoStorage.readResizedJpegBytes(context, photoUris[index].toUri(), GROUPING_DIMENSION)?.let { index to AiImage(it, "image/jpeg") }
                 }
                 if (readable.isEmpty()) return@hold ImageGroupingResult.Error(L10n.str(R.string.couldnt_read_photos))
                 progress.step(L10n.str(R.string.ai_step_sorting_photos))
@@ -173,7 +173,7 @@ class BulkImportViewModel(
             }
         }
         val imported = _rows.value.count { it.state is BulkImportRowState.Success }
-        AiKeepAlive.announceIfInBackground(L10n.str(R.string.ai_bulk_import_done_x_of_y, imported, groups.size))
+        AiKeepAlive.announceIfInBackground(L10n.plural(R.plurals.ai_bulk_import_done_x_of_y, groups.size, imported, groups.size))
     }
 
     /** Retries a single failed recipe without touching the other rows. */
@@ -199,10 +199,10 @@ class BulkImportViewModel(
     private suspend fun processOne(context: Context, index: Int, progress: AiProgressReporter) {
         val row = _rows.value.getOrNull(index) ?: return
         updateRow(index) { it.copy(state = BulkImportRowState.Processing) }
-        progress.step(L10n.str(R.string.ai_step_preparing_photos_n, row.photoUris.size))
+        progress.step(L10n.plural(R.plurals.ai_step_preparing_photos_n, row.photoUris.size))
         // Pages that cannot be read are skipped; the uri of each image sent is kept because the
         // AI's "dishPhotos" indices refer to the images sent.
-        val readable = row.photoUris.map { Uri.parse(it) }.mapNotNull { uri ->
+        val readable = row.photoUris.map { it.toUri() }.mapNotNull { uri ->
             PhotoStorage.readResizedJpegBytes(context, uri)?.let { uri to AiImage(it, "image/jpeg") }
         }
         if (readable.isEmpty()) {

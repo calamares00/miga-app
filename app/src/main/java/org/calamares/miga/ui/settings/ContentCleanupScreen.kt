@@ -234,7 +234,7 @@ fun ContentCleanupScreen(viewModel: ContentCleanupViewModel, onBack: () -> Unit)
                         if (state.applying) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         } else {
-                            ButtonContent(Icons.Filled.CleaningServices, L10n.str(R.string.cleanup_apply_n, chosen))
+                            ButtonContent(Icons.Filled.CleaningServices, L10n.plural(R.plurals.cleanup_apply_n, chosen))
                         }
                     }
                 }
@@ -383,7 +383,7 @@ private fun SplitProposalRow(proposal: CleanupProposal, ticked: Boolean, onToggl
                         proposal.assignments.mapNotNull { it.target }.groupingBy { it }.eachCount().entries
                             .sortedByDescending { it.value }.forEach { (name, count) -> add("$name $count") }
                         val stays = proposal.assignments.count { it.target == null }
-                        if (stays > 0) add(L10n.str(R.string.cleanup_split_stays, stays))
+                        if (stays > 0) add(L10n.plural(R.plurals.cleanup_split_stays, stays))
                         proposal.tag?.let { add(L10n.str(R.string.cleanup_split_tag, it)) }
                     }.joinToString(" · ")
                     Text(summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -481,10 +481,10 @@ private fun CleanupDoneView(done: CleanupDone, onUndo: () -> Unit, onClose: () -
             style = MaterialTheme.typography.titleLarge
         )
         if (!done.undone) {
-            DoneLine(Icons.AutoMirrored.Filled.CallMerge, L10n.str(R.string.cleanup_done_merged, done.merged))
-            DoneLine(Icons.Filled.DriveFileRenameOutline, L10n.str(R.string.cleanup_done_renamed, done.renamed))
-            if (done.split > 0) DoneLine(Icons.AutoMirrored.Filled.CallSplit, L10n.str(R.string.cleanup_done_split, done.split))
-            DoneLine(Icons.Filled.DeleteSweep, L10n.str(R.string.cleanup_done_deleted, done.deleted))
+            DoneLine(Icons.AutoMirrored.Filled.CallMerge, L10n.plural(R.plurals.cleanup_done_merged, done.merged))
+            DoneLine(Icons.Filled.DriveFileRenameOutline, L10n.plural(R.plurals.cleanup_done_renamed, done.renamed))
+            if (done.split > 0) DoneLine(Icons.AutoMirrored.Filled.CallSplit, L10n.plural(R.plurals.cleanup_done_split, done.split))
+            DoneLine(Icons.Filled.DeleteSweep, L10n.plural(R.plurals.cleanup_done_deleted, done.deleted))
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

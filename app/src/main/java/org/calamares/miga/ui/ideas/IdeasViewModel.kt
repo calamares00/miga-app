@@ -136,7 +136,7 @@ class IdeasViewModel(
         viewModelScope.launch {
             val recipes = answer.recipeIds.mapNotNull { _recipes.value[it] }
             repository.shopping.addIngredientsToShoppingList(recipes.flatMap { recipe -> recipe.ingredientGroups.flatMap { it.ingredients } })
-            onDone(L10n.str(R.string.ideas_added_to_shopping_n, recipes.size))
+            onDone(L10n.plural(R.plurals.ideas_added_to_shopping_n, recipes.size))
         }
     }
 
@@ -158,7 +158,7 @@ class IdeasViewModel(
                     _progress.value = progress
                     status(progress.detail ?: progress.step)
                 }
-                reporter.step(L10n.str(R.string.ai_step_reviewing_recipes_n, all.size))
+                reporter.step(L10n.plural(R.plurals.ai_step_reviewing_recipes_n, all.size))
                 reporter.doing({ L10n.str(R.string.ai_doing_ideas, it) }) {
                     settingsRepository.runAi<IdeasResult>(
                         errorOf = { (it as? IdeasResult.Error)?.reason },
