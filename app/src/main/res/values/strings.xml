@@ -1203,6 +1203,8 @@
         <item quantity="other">"%1$d stay"</item>
     </plurals>
     <string name="cleanup_split_tag">"Tag «%1$s»"</string>
+    <string name="cleanup_split_none">"No recipe has a clear kind of dish: tap «Show recipes» and pick each one's category, or ask for «More suggestions»."</string>
+    <string name="cleanup_split_pick">"Pick a category"</string>
     <string name="cleanup_split_show">"Show recipes"</string>
     <string name="cleanup_split_hide">"Hide recipes"</string>
     <string name="cleanup_split_choose">"Which category does «%1$s» go to?"</string>

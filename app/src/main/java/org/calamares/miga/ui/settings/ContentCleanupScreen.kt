@@ -135,12 +135,14 @@ class ContentCleanupViewModel(
         state.copy(ticked = if (state.ticked.containsAll(keys)) state.ticked - keys else state.ticked + keys)
     }
 
-    /** Sends the recipe [recipeId] of the split [proposal] to [target] (null: it stays). */
+    /** Sends the recipe [recipeId] of the split [proposal] to [target] (null: it stays); a split that now moves something is ticked. */
     fun reassign(proposal: CleanupProposal, recipeId: Long, target: String?) = _state.update { state ->
-        state.copy(proposals = state.proposals.map { current ->
+        val proposals = state.proposals.map { current ->
             if (current.key != proposal.key) current
             else current.copy(assignments = current.assignments.map { if (it.recipeId == recipeId) it.copy(target = target, fromAi = false) else it })
-        })
+        }
+        val moves = proposals.first { it.key == proposal.key }.assignments.any { it.target != null }
+        state.copy(proposals = proposals, ticked = if (moves) state.ticked + proposal.key else state.ticked - proposal.key)
     }
 
     fun refineWithAi() {
@@ -156,17 +158,20 @@ class ContentCleanupViewModel(
                 when (result) {
                     null -> state.copy(askingAi = false, aiError = L10n.str(R.string.ai_no_provider))
                     is AiCleanupResult.Error -> state.copy(askingAi = false, aiError = result.reason)
-                    is AiCleanupResult.Success -> state.copy(
-                        askingAi = false,
-                        aiAsked = true,
-                        proposals = state.proposals.map { proposal ->
+                    is AiCleanupResult.Success -> {
+                        val proposals = state.proposals.map { proposal ->
                             if (proposal.action != CleanupAction.SPLIT) proposal
                             else proposal.copy(assignments = proposal.assignments.map { assignment ->
                                 val filed = result.assignments[assignment.recipeId]
                                 if (assignment.target == null && filed != null) assignment.copy(target = filed, fromAi = true) else assignment
                             })
                         } + result.proposals.filter { new -> state.proposals.none { it.key == new.key } }
-                    )
+                        // Splits the assistant has given something to move are ticked.
+                        val nowMoving = proposals.filter { proposal ->
+                            proposal.action == CleanupAction.SPLIT && proposal.assignments.any { it.fromAi && it.target != null }
+                        }.map { it.key }
+                        state.copy(askingAi = false, aiAsked = true, proposals = proposals, ticked = state.ticked + nowMoving)
+                    }
                 }
             }
         }
@@ -381,7 +386,7 @@ private fun SplitProposalRow(proposal: CleanupProposal, ticked: Boolean, onToggl
                 Checkbox(checked = ticked, onCheckedChange = { onToggle() })
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(proposalText(proposal), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                    val summary = buildList {
+                    val summary = if (proposal.assignments.none { it.target != null }) L10n.str(R.string.cleanup_split_none) else buildList {
                         proposal.assignments.mapNotNull { it.target }.groupingBy { it }.eachCount().entries
                             .sortedByDescending { it.value }.forEach { (name, count) -> add("$name $count") }
                         val stays = proposal.assignments.count { it.target == null }
@@ -413,9 +418,9 @@ private fun SplitProposalRow(proposal: CleanupProposal, ticked: Boolean, onToggl
                             )
                         }
                         Text(
-                            "→ " + (assignment.target ?: source.name),
+                            assignment.target?.let { "→ $it" } ?: L10n.str(R.string.cleanup_split_pick),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (assignment.target != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }

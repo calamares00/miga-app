@@ -128,6 +128,8 @@ object RecipeCategories {
         synonyms = listOf("carnes", "carne", "carnes y aves", "aves", "pollo", "pavo", "cerdo", "ternera", "cordero", "chicken", "beef", "pork", "carnes rojas", "carnes blancas", "meat", "meats", "poultry", "meat and poultry"),
         keywords = listOf(
             "carne", "pollo", "ternera", "cerdo", "cordero", "solomillo", "lomo", "costillas", "albondigas", "hamburguesa", "filete",
+            "salchicha", "chorizo", "morcilla", "butifarra", "longaniza", "lacon", "panceta", "cabrito", "jabali", "ciervo", "venado",
+            "perdiz", "codorniz", "capon", "manitas", "oreja", "chuleton", "redondo", "aguja", "picana", "pularda", "pintada",
             "chuleta", "chuletas", "pavo", "conejo", "pato", "secreto", "presa", "pluma", "entrecot", "cochinillo", "codillo",
             "carrillada", "carrilleras", "rabo de toro", "callos", "magret", "muslos", "alitas", "pechuga", "contramuslos",
             "flamenquin", "san jacobo", "cachopo", "milanesa", "escalope", "kebab", "tacos", "fajitas", "burrito", "chicken",

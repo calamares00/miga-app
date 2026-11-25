@@ -183,4 +183,21 @@ class ContentCleanupTest {
         assertEquals(setOf(tijeras.id, molde.id), proposals.filter { it.action == CleanupAction.DELETE }.map { it.items.single().id }.toSet())
         assertTrue(proposals.none { mandolina in it.items })
     }
+
+    @Test
+    fun `a split that would move nothing is offered unticked`() {
+        val mains = item(ContentKind.CATEGORY, "Platos principales", 2)
+        val proposals = ContentCleanup.propose(
+            mapOf(ContentKind.CATEGORY to listOf(mains)), "es",
+            recipes = listOf(RecipeBrief(1, "Lo de siempre", mains.id), RecipeBrief(2, "Salchichas al vino", mains.id))
+        )
+        val split = proposals.single()
+        assertEquals("Carnes", split.assignments.single { it.recipeId == 2L }.target)
+        assertTrue(split.recommended)
+
+        val unclear = ContentCleanup.propose(
+            mapOf(ContentKind.CATEGORY to listOf(mains)), "es", recipes = listOf(RecipeBrief(1, "Lo de siempre", mains.id))
+        ).single()
+        assertFalse(unclear.recommended)
+    }
 }

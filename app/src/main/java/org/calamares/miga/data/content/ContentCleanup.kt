@@ -150,7 +150,12 @@ object ContentCleanup {
             }
             if (assignments.none { it.target != null } && item.isDefault) return@forEach
             val tag = if (item.isDefault) null else RecipeCategories.splitFor(item.name, language)?.tag?.let { normalizedName(ContentKind.TAG, it, language) }
-            proposals += CleanupProposal(ContentKind.CATEGORY, CleanupAction.SPLIT, listOf(item), assignments = assignments, tag = tag)
+            // With no recipe filed by the rules, applying would change nothing: left unticked
+            // until the user (or the assistant) gives some recipe a category.
+            proposals += CleanupProposal(
+                ContentKind.CATEGORY, CleanupAction.SPLIT, listOf(item),
+                assignments = assignments, tag = tag, recommended = assignments.any { it.target != null }
+            )
             handled += item.id
         }
         return proposals
