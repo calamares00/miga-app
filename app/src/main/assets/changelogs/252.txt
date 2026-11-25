@@ -1,6 +1,6 @@
 Novedades de la versión 1.0.54:
 • Favoritos va mucho más fluido con muchos canales y webs.
-• Los consejos que importes, solos o con una receta, se guardan en tu biblioteca, en «Importados».
+• Los consejos que importes, solos o con una receta, van a tu biblioteca, en «Importados».
 • Recetas más completas de webs que solo dan los ingredientes.
-• Nuevas categorías: Repostería, Helados y sorbetes, Aperitivos y tapas, Guisos y potajes… con lo que incluye cada una.
-• Limpiar contenido pasa tus categorías a las de la app y reparte las mezcladas receta a receta.
+• Nuevas categorías, con lo que incluye cada una: Repostería, Helados y sorbetes, Aperitivos y tapas…
+• Limpiar contenido pasa tus categorías a las de la app, reparte las mezcladas y une el equipamiento repetido («Vaso de Thermomix» → Thermomix).

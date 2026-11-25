@@ -184,13 +184,17 @@ fun ManageContentScreen(
                 },
                 actions = {
                     if (selecting) {
-                        if (selected.size >= 2) {
-                            IconButton(onClick = { merging = all.filter { it.id in selected } }) {
+                        // The app's entries cannot be deleted, nor merged into another (which deletes them).
+                        val chosen = all.filter { it.id in selected }
+                        if (selected.size >= 2 && chosen.count { it.isDefault } <= 1) {
+                            IconButton(onClick = { merging = chosen }) {
                                 Icon(Icons.Filled.CallMerge, contentDescription = L10n.str(R.string.content_merge))
                             }
                         }
-                        IconButton(onClick = { deleting = all.filter { it.id in selected } }) {
-                            Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete))
+                        if (chosen.any { !it.isDefault }) {
+                            IconButton(onClick = { deleting = chosen.filter { !it.isDefault } }) {
+                                Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete))
+                            }
                         }
                     } else {
                         if (!searching) {
@@ -417,7 +421,9 @@ private fun ContentEntryRow(
         }
         if (!selecting) {
             IconButton(onClick = onRename) { Icon(Icons.Filled.Edit, contentDescription = L10n.str(R.string.rename)) }
-            IconButton(onClick = onDelete) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete)) }
+            if (!item.isDefault) {
+                IconButton(onClick = onDelete) { Icon(Icons.Filled.Delete, contentDescription = L10n.str(R.string.delete)) }
+            }
         }
     }
 }
@@ -546,7 +552,9 @@ private fun DeleteDialog(
 /** Merging the selected entries into the one the user picks (the most used one by default). */
 @Composable
 private fun MergeDialog(kind: ContentKind, items: List<ContentItem>, onMerge: (ContentItem) -> Unit, onDismiss: () -> Unit) {
-    var target by remember { mutableStateOf(items.maxByOrNull { it.usage } ?: items.first()) }
+    // When one of the app's entries is among them, the rest go into it.
+    val choices = items.filter { it.isDefault }.ifEmpty { items }
+    var target by remember { mutableStateOf(choices.maxByOrNull { it.usage } ?: choices.first()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Filled.CallMerge, contentDescription = null) },
@@ -555,7 +563,7 @@ private fun MergeDialog(kind: ContentKind, items: List<ContentItem>, onMerge: (C
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(L10n.str(R.string.content_merge_keep), style = MaterialTheme.typography.bodyMedium)
                 Column(modifier = Modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState())) {
-                    items.forEach { item ->
+                    choices.forEach { item ->
                         ChoiceRow("${item.name} · ${kind.usageLabel(item.usage)}", target.id == item.id) { target = item }
                     }
                 }

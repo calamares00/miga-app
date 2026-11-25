@@ -43,7 +43,7 @@ data class CleanupProposal(
  * Finds what can be tidied in the user's content, without AI and without changing anything:
  * duplicates written differently ("Postre" and "postres", "Airfryer" and "Freidora de aire") to
  * merge, names to write the same way as the rest (categories in plural with a capital letter...) and
- * the user's own entries nothing uses, to delete.
+ * the user's own entries nothing uses, or kitchen basics listed as equipment, to delete.
  *
  * The entries the app brings are never renamed or deleted; they can be what a duplicate of the
  * user's is merged into. Pure logic, so it can be unit tested.
@@ -66,6 +66,13 @@ object ContentCleanup {
         val proposals = mutableListOf<CleanupProposal>()
         val handled = mutableSetOf<Long>()
         if (kind == ContentKind.CATEGORY) proposals += proposeCategories(items, language, recipes, handled)
+        // Basics every kitchen has (knife, pan, mould...) are not equipment, even when recipes have them.
+        if (kind == ContentKind.EQUIPMENT) {
+            items.filter { !it.isDefault && KitchenEquipment.isObvious(it.name) }.forEach { item ->
+                proposals += CleanupProposal(kind, CleanupAction.DELETE, listOf(item))
+                handled += item.id
+            }
+        }
 
         // 1. Duplicates: grouped, the user's ones go into the app's one or, without one, into the
         // one already written as Miga writes that list (see normalizedName); the most used last.
