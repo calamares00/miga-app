@@ -38,7 +38,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
@@ -301,14 +301,15 @@ private fun ChannelsView(viewModel: FavoritesViewModel, onOpenSource: (Long) -> 
     LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
         items(sources, key = { it.id }) { source ->
             ListItem(
-                modifier = Modifier.clickable { onOpenSource(source.id) },
+                onClick = { onOpenSource(source.id) },
                 leadingContent = { SourceAvatar(source, 48.dp, showCount = false) },
-                headlineContent = { Text(source.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 supportingContent = { Text(listOfNotNull(source.handle, networkLabel(source.network)).joinToString(" · "), maxLines = 1) },
                 trailingContent = {
                     if (source.newCount > 0) Text(newCountText(source.newCount), color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.labelLarge)
                 }
-            )
+            ) {
+                Text(source.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
 }
@@ -408,7 +409,7 @@ private fun AddSheet(viewModel: FavoritesViewModel, onDismiss: () -> Unit, onImp
                         Text(current.question, style = MaterialTheme.typography.bodyMedium)
                     }
                     if (current.followedId != null) {
-                        AddOption(Icons.Filled.OpenInNew, L10n.str(R.string.follow_open_followed), L10n.str(R.string.follow_open_followed_desc)) { viewModel.openFollowed(current) }
+                        AddOption(Icons.AutoMirrored.Filled.OpenInNew, L10n.str(R.string.follow_open_followed), L10n.str(R.string.follow_open_followed_desc)) { viewModel.openFollowed(current) }
                     }
                     AddOption(Icons.Filled.PersonAdd, L10n.str(R.string.follow_anyway), L10n.str(R.string.follow_anyway_desc)) { viewModel.followAnyway(current) }
                     AddOption(Icons.Filled.Close, L10n.str(R.string.cancel), L10n.str(R.string.follow_cancel_desc)) { viewModel.resetAdd(); onDismiss() }
@@ -453,11 +454,13 @@ internal fun linkKind(link: SocialLink): Int = when (link) {
 @Composable
 private fun AddOption(icon: ImageVector, title: String, description: String, onClick: () -> Unit) {
     ListItem(
-        modifier = Modifier.clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick),
+        onClick = onClick,
+        modifier = Modifier.clip(RoundedCornerShape(14.dp)),
         leadingContent = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-        headlineContent = { Text(title) },
         supportingContent = { Text(description) }
-    )
+    ) {
+        Text(title)
+    }
 }
 
 private const val MAX_NEWS = 6

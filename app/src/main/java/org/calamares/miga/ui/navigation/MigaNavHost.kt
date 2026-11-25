@@ -58,7 +58,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -123,7 +123,7 @@ import org.calamares.miga.data.share.BookFileIntents
 import kotlinx.coroutines.flow.filterNotNull
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.data.share.AppShortcuts
 import org.calamares.miga.data.share.RecipeLinkIntents
@@ -152,7 +152,7 @@ private fun repositoryOf(context: android.content.Context): RecipeRepository =
 private data class BottomTab(val route: String, val label: String, val icon: ImageVector)
 
 private val BOTTOM_TABS = listOf(
-    BottomTab(Destinations.BOOKS_ROUTE, L10n.str(R.string.books), Icons.Outlined.MenuBook),
+    BottomTab(Destinations.BOOKS_ROUTE, L10n.str(R.string.books), Icons.AutoMirrored.Outlined.MenuBook),
     BottomTab(Destinations.FAVORITES_ROUTE, L10n.str(R.string.favourites_2), Icons.Filled.Favorite),
     BottomTab(Destinations.SHOPPING_LIST_ROUTE, L10n.str(R.string.shopping), Icons.Filled.ShoppingCart),
     BottomTab(Destinations.SEARCH_ROUTE, L10n.str(R.string.search), Icons.Filled.Search),

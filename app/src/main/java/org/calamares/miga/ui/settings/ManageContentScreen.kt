@@ -21,13 +21,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CallMerge
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.CallMerge
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
@@ -179,7 +179,7 @@ fun ManageContentScreen(
                     when {
                         selecting -> IconButton(onClick = { selected = emptySet() }) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel)) }
                         searching -> IconButton(onClick = { searching = false; query = "" }) { Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.close)) }
-                        else -> IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                        else -> IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                     }
                 },
                 actions = {
@@ -188,7 +188,7 @@ fun ManageContentScreen(
                         val chosen = all.filter { it.id in selected }
                         if (selected.size >= 2 && chosen.count { it.isDefault } <= 1) {
                             IconButton(onClick = { merging = chosen }) {
-                                Icon(Icons.Filled.CallMerge, contentDescription = L10n.str(R.string.content_merge))
+                                Icon(Icons.AutoMirrored.Filled.CallMerge, contentDescription = L10n.str(R.string.content_merge))
                             }
                         }
                         if (chosen.any { !it.isDefault }) {
@@ -201,7 +201,7 @@ fun ManageContentScreen(
                             IconButton(onClick = { searching = true }) { Icon(Icons.Filled.Search, contentDescription = L10n.str(R.string.search)) }
                         }
                         Box {
-                            IconButton(onClick = { showSortMenu = true }) { Icon(Icons.Filled.Sort, contentDescription = L10n.str(R.string.content_sort)) }
+                            IconButton(onClick = { showSortMenu = true }) { Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = L10n.str(R.string.content_sort)) }
                             DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
                                 DropdownMenuItem(
                                     text = { Text(L10n.str(R.string.content_sort_name)) },
@@ -557,7 +557,7 @@ private fun MergeDialog(kind: ContentKind, items: List<ContentItem>, onMerge: (C
     var target by remember { mutableStateOf(choices.maxByOrNull { it.usage } ?: choices.first()) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Filled.CallMerge, contentDescription = null) },
+        icon = { Icon(Icons.AutoMirrored.Filled.CallMerge, contentDescription = null) },
         title = { Text(L10n.str(R.string.content_merge_n, items.size)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -570,7 +570,7 @@ private fun MergeDialog(kind: ContentKind, items: List<ContentItem>, onMerge: (C
             }
         },
         confirmButton = {
-            TextButton(onClick = { onMerge(target) }) { ButtonContent(Icons.Filled.CallMerge, L10n.str(R.string.content_merge)) }
+            TextButton(onClick = { onMerge(target) }) { ButtonContent(Icons.AutoMirrored.Filled.CallMerge, L10n.str(R.string.content_merge)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.str(R.string.cancel)) } }
     )

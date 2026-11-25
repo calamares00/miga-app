@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.editor
 
+import org.calamares.miga.ui.components.rememberCopyToClipboard
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.Checkbox
 import org.calamares.miga.data.tips.TipCategory
 import androidx.compose.runtime.rememberCoroutineScope
@@ -99,7 +102,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -110,9 +112,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -147,8 +147,8 @@ fun RecipeEditorScreen(
     var showPhotoSourceSheet by remember { mutableStateOf(false) }
     var pendingEditUri by remember { mutableStateOf<Uri?>(null) }
     var editingPhoto by remember { mutableStateOf<PhotoUi?>(null) }
-    val photoSheetState = rememberModalBottomSheetState()
-    val clipboardManager = LocalClipboardManager.current
+    val photoSheetState = rememberBottomSheetState(SheetValue.Hidden)
+    val copyToClipboard = rememberCopyToClipboard()
     var showDiscardDialog by remember { mutableStateOf(false) }
     val attemptExit = { if (viewModel.hasUnsavedChanges()) showDiscardDialog = true else onCancel() }
 
@@ -532,7 +532,7 @@ fun RecipeEditorScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { clipboardManager.setText(AnnotatedString(reason)) }) { Text(L10n.str(R.string.copy)) }
+                TextButton(onClick = { copyToClipboard(reason) }) { Text(L10n.str(R.string.copy)) }
             },
             dismissButton = {
                 TextButton(onClick = { showVisionErrorDialog = false }) { Text(L10n.str(R.string.close)) }

@@ -32,14 +32,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Kitchen
-import androidx.compose.material.icons.filled.LibraryBooks
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Public
@@ -110,7 +110,7 @@ fun StatsScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(L10n.str(R.string.statistics)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                 }
             )
         }
@@ -165,7 +165,7 @@ private fun Overview(stats: LibraryStats, onOpenRecipes: (String, RecipeFilter) 
             StatTile(Icons.AutoMirrored.Filled.MenuBook, stats.totalRecipes, L10n.str(R.string.recipes), Modifier.weight(1f)) {
                 onOpenRecipes(L10n.str(R.string.recipes), RecipeFilter())
             }
-            StatTile(Icons.Filled.LibraryBooks, stats.totalBooks, L10n.str(R.string.books), Modifier.weight(1f))
+            StatTile(Icons.AutoMirrored.Filled.LibraryBooks, stats.totalBooks, L10n.str(R.string.books), Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatTile(Icons.Filled.Favorite, stats.favorites, L10n.str(R.string.favourites), Modifier.weight(1f)) {
@@ -260,7 +260,7 @@ private fun LibraryContent(stats: LibraryStats, onRecipeClick: (Long) -> Unit, o
     }
 
     if (stats.byBook.size > 1) {
-        StatsCard(Icons.Filled.LibraryBooks, L10n.str(R.string.stats_by_book)) { BarList(stats.byBook, onOpenRecipes) }
+        StatsCard(Icons.AutoMirrored.Filled.LibraryBooks, L10n.str(R.string.stats_by_book)) { BarList(stats.byBook, onOpenRecipes) }
     }
     if (stats.byCategory.isNotEmpty()) {
         StatsCard(Icons.Filled.Category, L10n.str(R.string.category_2)) { BarList(stats.byCategory, onOpenRecipes) }

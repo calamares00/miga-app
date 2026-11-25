@@ -46,7 +46,7 @@ import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -74,7 +74,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -113,7 +113,7 @@ private fun tourPages() = listOf(
         Icons.AutoMirrored.Filled.MenuBook, L10n.str(R.string.tour_kicker_recipes), L10n.str(R.string.tour_recipes_title), L10n.str(R.string.tour_recipes_body),
         listOf(
             Icons.AutoMirrored.Filled.MenuBook to L10n.str(R.string.tour_recipes_point_books),
-            Icons.Filled.OpenInNew to L10n.str(R.string.tour_recipes_point_import),
+            Icons.AutoMirrored.Filled.OpenInNew to L10n.str(R.string.tour_recipes_point_import),
             Icons.Filled.Favorite to L10n.str(R.string.tour_recipes_point_packs)
         ),
         L10n.str(R.string.web_page_features)
@@ -222,7 +222,7 @@ fun WelcomeScreen(
                 }
                 page.webPage?.let { path ->
                     TextButton(onClick = { openWebLink(context, L10n.str(R.string.web_site) + path) }, modifier = Modifier.padding(top = 8.dp)) {
-                        Icon(Icons.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(L10n.str(R.string.tour_more_on_web))
                     }

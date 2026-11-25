@@ -3,10 +3,12 @@ package org.calamares.miga.ui.list
 import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.ui.books.BookAbout
 import org.calamares.miga.ui.components.ButtonContent
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
 import androidx.compose.material.icons.filled.SearchOff
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import org.calamares.miga.ui.components.EmptyState
 import org.calamares.miga.ui.components.UndoDeletionSnackbar
 import org.calamares.miga.ui.components.rememberCameraCapture
@@ -64,7 +66,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
@@ -92,7 +94,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -172,9 +173,9 @@ fun RecipeListScreen(
     var showUrlImportDialog by remember { mutableStateOf(false) }
     val capturedPageUris = remember { mutableStateListOf<String>() }
     var showAddAnotherPageDialog by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState()
-    val photoSheetState = rememberModalBottomSheetState()
-    val newRecipeSheetState = rememberModalBottomSheetState()
+    val sheetState = rememberBottomSheetState(SheetValue.Hidden)
+    val photoSheetState = rememberBottomSheetState(SheetValue.Hidden)
+    val newRecipeSheetState = rememberBottomSheetState(SheetValue.Hidden)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -234,7 +235,7 @@ fun RecipeListScreen(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                     title = { Text(uiState.bookName) },
                     navigationIcon = {
-                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
+                        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) }
                     },
                     actions = {
                         if (!searchVisible) {
@@ -340,7 +341,7 @@ fun RecipeListScreen(
             if (uiState.groups.isEmpty()) {
                 if (uiState.totalCount == 0) {
                     EmptyState(
-                        icon = Icons.Outlined.MenuBook,
+                        icon = Icons.AutoMirrored.Outlined.MenuBook,
                         title = L10n.str(R.string.empty_book_title),
                         body = L10n.str(R.string.empty_book_body),
                         modifier = Modifier.fillMaxSize()

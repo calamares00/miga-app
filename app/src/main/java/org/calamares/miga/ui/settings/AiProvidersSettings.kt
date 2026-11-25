@@ -1,9 +1,10 @@
 package org.calamares.miga.ui.settings
 
+import org.calamares.miga.ui.components.SecretField
 import android.content.ClipData
 import android.os.Build
 import org.calamares.miga.ui.components.ButtonContent
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.runtime.DisposableEffect
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.Lifecycle
@@ -78,7 +79,6 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -421,15 +421,7 @@ private fun ProviderRow(
 @Composable
 private fun ApiKeyField(value: String, onValueChange: (String) -> Unit, label: String, placeholder: String) {
     val (text, onTextChange) = rememberSettingText(saved = value, save = onValueChange)
-    OutlinedTextField(
-        value = text,
-        onValueChange = onTextChange,
-        label = { Text(label) },
-        placeholder = { Text(placeholder) },
-        singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
-        modifier = Modifier.fillMaxWidth()
-    )
+    SecretField(value = text, onValueChange = onTextChange, label = label, placeholder = placeholder)
 }
 
 /** A model in a picker: its id, whether it reads images and, on OpenRouter, whether it is free. */
@@ -733,7 +725,7 @@ internal fun GetKeyBlock(provider: AiProvider, onUse: (String) -> Unit) {
             waiting = true
             runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(ApiKeyPages.pageFor(provider)))) }
         }) {
-            ButtonContent(Icons.Filled.OpenInNew, L10n.str(R.string.ai_get_key))
+            ButtonContent(Icons.AutoMirrored.Filled.OpenInNew, L10n.str(R.string.ai_get_key))
         }
         found?.let { key ->
             Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {

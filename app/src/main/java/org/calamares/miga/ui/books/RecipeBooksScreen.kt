@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.books
 
+import org.calamares.miga.ui.components.rememberCopyToClipboard
 import org.calamares.miga.ui.components.UndoDeletionSnackbar
 import org.calamares.miga.ui.components.ShareSheet
 import org.calamares.miga.data.export.ShareAction
@@ -16,7 +17,7 @@ import androidx.compose.material3.Checkbox
 import kotlinx.coroutines.flow.filterNotNull
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Share
 import org.calamares.miga.data.share.BookFileIntents
@@ -72,7 +73,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SystemUpdate
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import android.widget.Toast
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
@@ -98,9 +99,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.calamares.miga.data.model.RecipeListViewMode
@@ -157,7 +156,7 @@ fun RecipeBooksScreen(
         bookSections(books, filter, grouped, connectionNames, labels)
     }
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+    val copyToClipboard = rememberCopyToClipboard()
 
     LaunchedEffect(Unit) {
         viewModel.syncAllOnOpen(context)
@@ -332,7 +331,7 @@ fun RecipeBooksScreen(
                 Spacer(modifier = Modifier.weight(1f))
             } else if (books.isEmpty()) {
                 EmptyState(
-                    icon = Icons.Outlined.MenuBook,
+                    icon = Icons.AutoMirrored.Outlined.MenuBook,
                     title = L10n.str(R.string.start_recipe_book),
                     body = L10n.str(R.string.create_book_each_person_theme),
                     modifier = Modifier.fillMaxSize().weight(1f)
@@ -628,7 +627,7 @@ fun RecipeBooksScreen(
             },
             dismissButton = {
                 Row {
-                    TextButton(onClick = { clipboardManager.setText(AnnotatedString(report)) }) { Text(L10n.str(R.string.copy)) }
+                    TextButton(onClick = { copyToClipboard(report) }) { Text(L10n.str(R.string.copy)) }
                     TextButton(onClick = { viewModel.dismissCrashReport() }) { Text(L10n.str(R.string.discard)) }
                 }
             }

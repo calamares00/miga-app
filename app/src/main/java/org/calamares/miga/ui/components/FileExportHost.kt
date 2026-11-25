@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.ShortText
+import androidx.compose.material.icons.automirrored.filled.ShortText
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Button
@@ -89,7 +89,7 @@ fun ShareSheet(title: String, actions: List<ShareAction>, onAction: (ShareAction
                         ShareAction.LINK -> Triple(Icons.Filled.Link, R.string.share_action_link, R.string.share_action_link_desc)
                         ShareAction.PDF -> Triple(Icons.Filled.PictureAsPdf, R.string.export_format_pdf, R.string.export_format_pdf_desc)
                         ShareAction.IMAGE -> Triple(Icons.Filled.Image, R.string.export_format_image, R.string.export_format_image_desc)
-                        ShareAction.TEXT -> Triple(Icons.Filled.ShortText, R.string.export_format_text, R.string.export_format_text_desc)
+                        ShareAction.TEXT -> Triple(Icons.AutoMirrored.Filled.ShortText, R.string.export_format_text, R.string.export_format_text_desc)
                         ShareAction.SAVE_COPY -> Triple(Icons.Filled.Archive, R.string.share_action_copy, R.string.export_format_miga_desc)
                     }
                     ExportOption(icon, L10n.str(name), L10n.str(description)) {

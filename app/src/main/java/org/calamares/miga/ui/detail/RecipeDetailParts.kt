@@ -3,6 +3,7 @@ package org.calamares.miga.ui.detail
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.rememberTooltipState
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.PlainTooltip
@@ -299,7 +300,7 @@ private fun AllergenWarningIcon(warning: IngredientWarning) {
     val state = rememberTooltipState(isPersistent = true)
     val scope = rememberCoroutineScope()
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
         tooltip = { PlainTooltip { Text(message) } },
         state = state
     ) {

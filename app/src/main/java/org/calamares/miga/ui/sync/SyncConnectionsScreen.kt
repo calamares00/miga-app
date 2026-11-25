@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.sync
 
+import org.calamares.miga.ui.components.SecretField
 import org.calamares.miga.ui.components.ButtonContent
 import androidx.compose.material3.Button
 import org.calamares.miga.ui.components.EmptyState
@@ -20,9 +21,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.material.icons.filled.LibraryBooks
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Error
@@ -58,7 +59,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -114,7 +114,7 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(L10n.str(R.string.sync_server)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.str(R.string.back)) } },
                 actions = {
                     IconButton(onClick = {
                         scanLauncher.launch(
@@ -170,7 +170,7 @@ fun SyncConnectionsScreen(viewModel: SyncConnectionsViewModel, onBack: () -> Uni
                                 color = if (connection.lastSyncError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             TextButton(onClick = { viewModel.openServerBooks(connection.id) }, contentPadding = PaddingValues(0.dp)) {
-                                Icon(Icons.Filled.LibraryBooks, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Icon(Icons.AutoMirrored.Filled.LibraryBooks, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Text(L10n.str(R.string.server_books), modifier = Modifier.padding(start = 6.dp))
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -379,14 +379,7 @@ private fun AddConnectionDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = accessToken,
-                    onValueChange = { accessToken = it },
-                    label = { Text(L10n.str(R.string.access_token)) },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                SecretField(value = accessToken, onValueChange = { accessToken = it }, label = L10n.str(R.string.access_token))
                 OutlinedButton(
                     onClick = { viewModel.testConnection(serverUrl, namespaceId, accessToken) },
                     enabled = serverUrl.isNotBlank() && namespaceId.isNotBlank() && accessToken.isNotBlank() && testState != TestConnectionState.Testing,

@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.HideImage
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.ui.focus.FocusRequester
@@ -47,7 +49,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -87,7 +88,7 @@ fun RecipeBookEditorScreen(
         if (!viewModel.isEditing && !viewModel.isLoading) runCatching { nameFocus.requestFocus() }
     }
     val attemptExit = { if (viewModel.hasUnsavedChanges()) showDiscardDialog = true else onCancel() }
-    val photoSheetState = rememberModalBottomSheetState()
+    val photoSheetState = rememberBottomSheetState(SheetValue.Hidden)
 
     BackHandler(onBack = attemptExit)
     val coverPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->

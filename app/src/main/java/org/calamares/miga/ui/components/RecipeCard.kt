@@ -145,7 +145,7 @@ fun RecipeCard(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = formatDuration(recipe.totalTimeMinutes ?: 0),
+                                text = formatDuration(recipe.totalTimeMinutes),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -253,7 +253,7 @@ fun RecipeGridCard(
                     )
                     if (recipe.totalTimeMinutes != null) {
                         Text(
-                            text = formatDuration(recipe.totalTimeMinutes ?: 0),
+                            text = formatDuration(recipe.totalTimeMinutes),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
