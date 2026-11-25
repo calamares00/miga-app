@@ -50,9 +50,15 @@ object ContentCleanup {
         val proposals = mutableListOf<CleanupProposal>()
         val handled = mutableSetOf<Long>()
 
-        // 1. Duplicates: grouped, the user's ones go into the app's (or the most used) one.
+        // 1. Duplicates: grouped, the user's ones go into the app's one or, without one, into the
+        // one already written as Miga writes that list (see normalizedName); the most used last.
         duplicateGroups(kind, items, language).forEach { group ->
-            val target = group.sortedWith(compareByDescending<ContentItem> { it.isDefault }.thenByDescending { it.usage }.thenBy { it.name }).first()
+            val target = group.sortedWith(
+                compareByDescending<ContentItem> { it.isDefault }
+                    .thenByDescending { it.name == normalizedName(kind, it.name, language) }
+                    .thenByDescending { it.usage }
+                    .thenBy { it.name }
+            ).first()
             val sources = group.filter { it.id != target.id && !it.isDefault }
             if (sources.isEmpty()) return@forEach
             val finalName = if (target.isDefault) target.name else normalizedName(kind, target.name, language)
@@ -157,10 +163,13 @@ object ContentCleanup {
     }
 
     /**
-     * How an entry of [kind] is written in Miga: extra spaces removed, a capital first letter and,
-     * for categories, a single word in plural ("postre" -> "Postres"). Ingredients and tags keep
-     * their words as written (only spaces and the first letter of ingredients change); equipment
-     * takes its default name when it is a known variant.
+     * How an entry of [kind] is written in Miga, the same whatever form is used most:
+     * - categories in plural with a capital letter ("postre" -> "Postres");
+     * - ingredients and products in singular with a capital letter, as the app's catalogue
+     *   ("almendras crudas" -> "Almendra cruda");
+     * - equipment by its default name, with a capital letter;
+     * - tags in singular and lower case, as in the recipe packs ("Aperitivos" -> "aperitivo");
+     * acronyms and brands are kept, and a few plural-only words too ("bebés"); see ContentNames.
      */
     fun normalizedName(kind: ContentKind, name: String, language: String): String {
         val clean = name.trim().replace(Regex("""\s+"""), " ")
@@ -168,10 +177,18 @@ object ContentCleanup {
         return when (kind) {
             ContentKind.CATEGORY -> capitalized(if (' ' in clean) clean else plural(clean, language))
             ContentKind.EQUIPMENT -> capitalized(KitchenEquipment.canonical(clean, language))
-            ContentKind.INGREDIENT, ContentKind.INGREDIENT_CATEGORY -> capitalized(clean)
-            ContentKind.TAG -> clean
+            ContentKind.INGREDIENT -> capitalized(ContentNames.singular(lowerInitial(clean), language))
+            ContentKind.INGREDIENT_CATEGORY -> capitalized(clean)
+            ContentKind.TAG -> ContentNames.singular(
+                clean.split(' ').joinToString(" ") { if (ContentNames.isAcronymOrBrand(it)) it else it.lowercase() },
+                language
+            )
         }
     }
+
+    /** "Almendras" -> "almendras" so its words read as plain words (an acronym stays). */
+    private fun lowerInitial(text: String): String =
+        if (text.isNotEmpty() && !ContentNames.isAcronymOrBrand(text.substringBefore(' '))) text.replaceFirstChar { it.lowercase() } else text
 
     private fun capitalized(text: String): String = text.replaceFirstChar { it.uppercase() }
 

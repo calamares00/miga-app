@@ -87,7 +87,20 @@ class ContentCleanupTest {
             "es"
         )
         val renames = proposals.filter { it.action == CleanupAction.RENAME }.associate { it.items.single().name to it.newName }
-        assertEquals(mapOf("  cena " to "Cenas", "queso  ahumado de cabra" to "Queso ahumado de cabra"), renames)
+        // Tags go in lower case (and singular), as in the recipe packs.
+        assertEquals(mapOf("  cena " to "Cenas", "queso  ahumado de cabra" to "Queso ahumado de cabra", "Sin Gluten" to "sin gluten"), renames)
+    }
+
+    @Test
+    fun `duplicates end up written by the rule, not by the form used most`() {
+        val tags = listOf(item(ContentKind.TAG, "almendras", 13), item(ContentKind.TAG, "almendra", 2))
+        val merge = ContentCleanup.propose(mapOf(ContentKind.TAG to tags), "es").single { it.action == CleanupAction.MERGE }
+        assertEquals("almendra", merge.newName)
+        assertEquals("almendra", merge.target!!.name)
+        val starters = listOf(item(ContentKind.TAG, "Aperitivo", 67), item(ContentKind.TAG, "Aperitivos", 3))
+        assertEquals("aperitivo", ContentCleanup.propose(mapOf(ContentKind.TAG to starters), "es").single().newName)
+        val ingredients = listOf(item(ContentKind.INGREDIENT, "almendras crudas", 9), item(ContentKind.INGREDIENT, "Almendra cruda", 1))
+        assertEquals("Almendra cruda", ContentCleanup.propose(mapOf(ContentKind.INGREDIENT to ingredients), "es").single().newName)
     }
 
     @Test
