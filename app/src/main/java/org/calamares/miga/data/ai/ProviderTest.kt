@@ -1,5 +1,6 @@
 package org.calamares.miga.data.ai
 
+import androidx.core.graphics.createBitmap
 import android.graphics.Bitmap
 import android.graphics.Color
 import java.io.ByteArrayOutputStream
@@ -44,7 +45,7 @@ object ProviderTest {
 
     /** A small plain red picture: big enough for every API, nothing personal in it. */
     private fun testImage(): ByteArray {
-        val bitmap = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.RED) }
+        val bitmap = createBitmap(64, 64).apply { eraseColor(Color.RED) }
         return ByteArrayOutputStream().use { out ->
             bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
             bitmap.recycle()

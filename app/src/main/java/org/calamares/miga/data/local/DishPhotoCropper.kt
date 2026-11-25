@@ -1,5 +1,6 @@
 package org.calamares.miga.data.local
 
+import androidx.core.graphics.scale
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
@@ -121,7 +122,7 @@ object DishPhotoCropper {
         val scale = min(1f, ANALYSIS_DIMENSION.toFloat() / max(rw, rh))
         val aw = (rw * scale).roundToInt().coerceAtLeast(1)
         val ah = (rh * scale).roundToInt().coerceAtLeast(1)
-        val small = if (scale < 1f) Bitmap.createScaledBitmap(region, aw, ah, true) else region
+        val small = if (scale < 1f) region.scale(aw, ah) else region
         val pixels = IntArray(aw * ah)
         small.getPixels(pixels, 0, aw, 0, 0, aw, ah)
 
@@ -155,7 +156,7 @@ object DishPhotoCropper {
         val scale = min(1f, ANALYSIS_DIMENSION.toFloat() / max(cw, ch))
         val aw = (cw * scale).roundToInt().coerceAtLeast(1)
         val ah = (ch * scale).roundToInt().coerceAtLeast(1)
-        val small = if (scale < 1f) Bitmap.createScaledBitmap(crop, aw, ah, true) else crop
+        val small = if (scale < 1f) crop.scale(aw, ah) else crop
         val pixels = IntArray(aw * ah)
         small.getPixels(pixels, 0, aw, 0, 0, aw, ah)
         val luminance = IntArray(pixels.size) { i -> luminanceOf(pixels[i]) }

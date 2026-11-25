@@ -1,5 +1,7 @@
 package org.calamares.miga
 
+import android.annotation.SuppressLint
+import androidx.core.content.edit
 import android.app.Activity
 import android.app.LocaleManager
 import android.content.ComponentName
@@ -9,6 +11,7 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.os.Build
 import android.os.LocaleList
+import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import java.util.Locale
 import kotlin.system.exitProcess
@@ -35,6 +38,8 @@ enum class AppLanguage(val tag: String?) {
  * On Android 13+ the same choice is the app language of the system settings (see
  * res/xml/locales_config.xml): it is sent there when chosen here and read back from there.
  */
+// Holds only the application context, which lives as long as the process: no activity leaks.
+@SuppressLint("StaticFieldLeak")
 object L10n {
     private const val PREFS = "miga_locale"
     private const val KEY_LANGUAGE = "app_language"
@@ -61,7 +66,7 @@ object L10n {
 
     /** Stores the language and restarts the app to apply it. */
     fun setLanguage(activity: Activity, language: AppLanguage) {
-        activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_LANGUAGE, language.tag).commit()
+        activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit(commit = true) { putString(KEY_LANGUAGE, language.tag) }
         setSystemAppLanguage(activity, language)
         restart(activity)
     }
@@ -84,7 +89,7 @@ object L10n {
         runCatching {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             if (!prefs.getBoolean(KEY_SYSTEM_SYNCED, false)) {
-                prefs.edit().putBoolean(KEY_SYSTEM_SYNCED, true).commit()
+                prefs.edit(commit = true) { putBoolean(KEY_SYSTEM_SYNCED, true) }
                 val chosen = language(context)
                 if (chosen != AppLanguage.SYSTEM) {
                     setSystemAppLanguage(context, chosen)
@@ -94,7 +99,7 @@ object L10n {
             val manager = context.getSystemService(LocaleManager::class.java) ?: return
             val locales = manager.applicationLocales
             val system = if (locales.isEmpty) AppLanguage.SYSTEM else AppLanguage.fromTag(locales[0].language)
-            if (system != language(context)) prefs.edit().putString(KEY_LANGUAGE, system.tag).commit()
+            if (system != language(context)) prefs.edit(commit = true) { putString(KEY_LANGUAGE, system.tag) }
         }
     }
 
@@ -129,6 +134,16 @@ object L10n {
         if (!::app.isInitialized) return "#$id" + args.joinToString(prefix = if (args.isEmpty()) "" else ":", separator = ",")
         val res = resources()
         return if (args.isEmpty()) res.getString(id) else res.getString(id, *args)
+    }
+
+    /**
+     * The form of plural text [id] for [count] in the app language ("1 receta", "3 recetas").
+     * [args] fill its placeholders; by default the count itself.
+     */
+    fun plural(@PluralsRes id: Int, count: Int, vararg args: Any?): String {
+        val values = if (args.isEmpty()) arrayOf<Any?>(count) else args
+        if (!::app.isInitialized) return "#$id:" + values.joinToString(",")
+        return resources().getQuantityString(id, count, *values)
     }
 
     private fun resources(): Resources = forcedResources ?: app.resources

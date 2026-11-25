@@ -262,7 +262,7 @@ class RecipeEditorViewModel(
             // If some pages cannot be read but others can, carry on with the readable ones; it only
             // fails when all of them fail. The source uri of every image sent is kept because the
             // AI's "dishPhotos" indices refer to the images sent, not to every image picked.
-            progress.step(L10n.str(R.string.ai_step_preparing_photos_n, photoUris.size))
+            progress.step(L10n.plural(R.plurals.ai_step_preparing_photos_n, photoUris.size))
             val readable = photoUris.mapNotNull { uri ->
                 PhotoStorage.readResizedJpegBytes(context, uri)?.let { uri to AiImage(it, "image/jpeg") }
             }
@@ -731,7 +731,7 @@ class RecipeEditorViewModel(
             )
             is VisionState.Error -> AiKeepAlive.announceIfInBackground(L10n.str(R.string.ai_recipe_failed))
             VisionState.Choosing -> AiKeepAlive.announceIfInBackground(
-                L10n.str(R.string.ai_several_recipes_found_x, _detectedRecipes.value?.recipes?.size ?: 0)
+                L10n.plural(R.plurals.ai_several_recipes_found_x, _detectedRecipes.value?.recipes?.size ?: 0)
             )
             else -> Unit
         }

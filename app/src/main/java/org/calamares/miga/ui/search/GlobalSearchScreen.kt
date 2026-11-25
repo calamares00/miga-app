@@ -154,7 +154,7 @@ fun GlobalSearchScreen(
             if (selectionMode) {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                    title = { Text(L10n.str(R.string.n_selected, selectedIds.size)) },
+                    title = { Text(L10n.plural(R.plurals.n_selected, selectedIds.size)) },
                     navigationIcon = {
                         IconButton(onClick = viewModel::clearSelection) {
                             Icon(Icons.Filled.Close, contentDescription = L10n.str(R.string.cancel_selection))
@@ -379,7 +379,7 @@ private fun SearchResultCard(
             if (selectionMode) {
                 Icon(
                     imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                    contentDescription = if (isSelected) L10n.str(R.string.selected) else L10n.str(R.string.not_selected),
+                    contentDescription = if (isSelected) L10n.str(R.string.item_selected) else L10n.str(R.string.item_not_selected),
                     tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {

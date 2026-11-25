@@ -56,7 +56,7 @@ fun SecretField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
-    modifier: Modifier = Modifier.fillMaxWidth(),
+    modifier: Modifier = Modifier,
     placeholder: String? = null,
     isError: Boolean = false,
     supporting: String? = null,
@@ -80,6 +80,6 @@ fun SecretField(
                 )
             }
         },
-        modifier = modifier
+        modifier = modifier.fillMaxWidth()
     )
 }

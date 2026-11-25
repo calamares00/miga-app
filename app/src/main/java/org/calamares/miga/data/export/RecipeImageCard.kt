@@ -1,5 +1,8 @@
 package org.calamares.miga.data.export
 
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.withTranslation
+import androidx.core.net.toUri
 import org.calamares.miga.data.model.formatDuration
 import org.calamares.miga.data.model.displayText
 import android.content.Context
@@ -12,7 +15,6 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
-import android.net.Uri
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -62,7 +64,7 @@ object RecipeImageCard {
         val height = fullHeight.coerceAtMost(MAX_HEIGHT.toFloat()).toInt()
         val truncated = fullHeight > MAX_HEIGHT
 
-        val bitmap = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(WIDTH, height)
         val canvas = Canvas(bitmap)
         canvas.drawColor(PAPER)
 
@@ -198,10 +200,7 @@ object RecipeImageCard {
             .build()
 
     private fun drawLayout(canvas: Canvas, layout: StaticLayout, x: Float, y: Float) {
-        canvas.save()
-        canvas.translate(x, y)
-        layout.draw(canvas)
-        canvas.restore()
+        canvas.withTranslation(x, y) { layout.draw(this) }
     }
 
     private fun textPaint(size: Float, color: Int, bold: Boolean = false) = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -220,7 +219,7 @@ object RecipeImageCard {
 
     /** The stored photo scaled and centre-cropped to exactly [width] x [height]. */
     private fun loadCropped(uri: String, width: Int, height: Int): Bitmap? = runCatching {
-        val path = Uri.parse(uri).path?.takeIf { File(it).exists() } ?: return null
+        val path = uri.toUri().path?.takeIf { File(it).exists() } ?: return null
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(path, bounds)
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
@@ -232,7 +231,7 @@ object RecipeImageCard {
         val srcHeight = (height / scale).toInt()
         val left = (decoded.width - srcWidth) / 2
         val top = (decoded.height - srcHeight) / 2
-        val result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val result = createBitmap(width, height)
         Canvas(result).drawBitmap(
             decoded,
             Rect(left, top, left + srcWidth, top + srcHeight),

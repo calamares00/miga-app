@@ -1,12 +1,13 @@
 package org.calamares.miga.ui.welcome
 
+import android.annotation.SuppressLint
+import androidx.core.net.toUri
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -321,6 +322,8 @@ private fun Dots(count: Int, current: Int) {
 
 /** A permission Miga may ask for, with what it is for. All of them are optional. */
 private enum class TourPermission(val icon: ImageVector, val title: Int, val purpose: Int, val permission: String?) {
+    // Only asked on Android 13+, where the permission exists (see isGranted).
+    @SuppressLint("InlinedApi")
     NOTIFICATIONS(Icons.Filled.Notifications, R.string.permission_notifications, R.string.permission_notifications_purpose, Manifest.permission.POST_NOTIFICATIONS),
     ALARMS(Icons.Filled.Alarm, R.string.permission_alarms, R.string.permission_alarms_purpose, null),
     MICROPHONE(Icons.Filled.Mic, R.string.permission_microphone, R.string.permission_microphone_purpose, Manifest.permission.RECORD_AUDIO),
@@ -381,9 +384,9 @@ private fun PermissionList() {
                         FilledTonalButton(onClick = {
                             when {
                                 item == TourPermission.ALARMS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-                                    openSettings(context, Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")))
+                                    openSettings(context, Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, "package:${context.packageName}".toUri()))
                                 item in askedOnce ->
-                                    openSettings(context, Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
+                                    openSettings(context, Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${context.packageName}".toUri()))
                                 else -> {
                                     asking = item
                                     launcher.launch(item.permission!!)

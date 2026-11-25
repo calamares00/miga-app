@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.components
 
+import androidx.core.net.toUri
 import org.calamares.miga.data.model.CookModeText
 import android.content.Intent
 import androidx.compose.foundation.text.input.InputTransformation
@@ -7,7 +8,6 @@ import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.ui.text.LinkAnnotation
-import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -163,7 +163,7 @@ fun withBareLinks(text: AnnotatedString, linkColor: Color): AnnotatedString {
  * imported), and other schemes could open apps or files.
  */
 fun openWebLink(context: android.content.Context, url: String) {
-    val uri = runCatching { Uri.parse(url.trim()) }.getOrNull() ?: return
+    val uri = runCatching { url.trim().toUri() }.getOrNull() ?: return
     if (uri.scheme?.lowercase() !in setOf("http", "https")) return
     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)) }
 }

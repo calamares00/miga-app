@@ -449,7 +449,7 @@ fun RecipeBooksScreen(
             icon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
             title = {
                 Text(
-                    if (prompt.bookNames.size > 1) L10n.str(R.string.import_books_x, prompt.bookNames.size)
+                    if (prompt.bookNames.size > 1) L10n.plural(R.plurals.import_books_x, prompt.bookNames.size)
                     else L10n.str(R.string.import_book_x, prompt.bookName)
                 )
             },
@@ -459,7 +459,7 @@ fun RecipeBooksScreen(
                     prompt.bookNames.takeIf { it.size > 1 }?.joinToString("\n", postfix = "\n\n") { "• $it" }.orEmpty() +
                     listOfNotNull(
                         sharedByLine(prompt.sharedBy, prompt.sharedAt),
-                        L10n.str(R.string.x_recipes_count, prompt.recipeCount)
+                        L10n.plural(R.plurals.x_recipes_count, prompt.recipeCount)
                     ).joinToString(" · ") + "\n\n" +
                         L10n.str(if (prompt.alreadyHere) R.string.shared_book_update_explanation else R.string.shared_book_new_explanation)
                 )
@@ -495,9 +495,9 @@ fun RecipeBooksScreen(
                 Text(
                     when {
                         own == 0 && packs == 1 -> L10n.str(R.string.uninstall_pack)
-                        own == 0 -> L10n.str(R.string.uninstall_packs_title_x, packs)
+                        own == 0 -> L10n.plural(R.plurals.uninstall_packs_title_x, packs)
                         selectedBooks.size == 1 -> L10n.str(R.string.delete_book_title_x, selectedBooks.single().name)
-                        else -> L10n.str(R.string.delete_books_title_x, selectedBooks.size)
+                        else -> L10n.plural(R.plurals.delete_books_title_x, selectedBooks.size)
                     }
                 )
             },
@@ -525,7 +525,7 @@ fun RecipeBooksScreen(
 
     if (showShareSheet && selectedBooks.isNotEmpty()) {
         ShareSheet(
-            title = selectedBooks.singleOrNull()?.name ?: L10n.str(R.string.n_books, selectedBooks.size),
+            title = selectedBooks.singleOrNull()?.name ?: L10n.plural(R.plurals.n_books, selectedBooks.size),
             // Several books go together in one file or link; a PDF or a copy is of one book.
             actions = if (selectedBooks.size == 1) listOf(ShareAction.SEND_FILE, ShareAction.LINK, ShareAction.PDF, ShareAction.SAVE_COPY)
             else listOf(ShareAction.SEND_FILE, ShareAction.LINK),
@@ -566,10 +566,10 @@ fun RecipeBooksScreen(
             onDismissRequest = { viewModel.dismissPackUpdates() },
             icon = { Icon(Icons.Filled.SystemUpdate, contentDescription = null) },
             title = { Text(L10n.str(R.string.pack_updates_found_title)) },
-            text = { Text(L10n.str(R.string.pack_updates_found_x, updates.size, updates.joinToString(", ") { it.name })) },
+            text = { Text(L10n.plural(R.plurals.pack_updates_found_x, updates.size, updates.size, updates.joinToString(", ") { it.name })) },
             confirmButton = {
                 TextButton(onClick = {
-                    Toast.makeText(context, L10n.str(R.string.updating_packs_x, updates.size), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, L10n.plural(R.plurals.updating_packs_x, updates.size), Toast.LENGTH_SHORT).show()
                     viewModel.installPackUpdates(context) { message -> Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
                 }) { Text(L10n.str(R.string.update)) }
             },

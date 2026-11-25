@@ -326,7 +326,7 @@ fun SettingsSectionScreen(
                 ManageRow(
                     icon = Icons.Filled.CleaningServices,
                     label = L10n.str(R.string.cleanup_title),
-                    summary = if (unusedMine > 0) L10n.str(R.string.cleanup_summary_unused_x, unusedMine) else L10n.str(R.string.cleanup_summary),
+                    summary = if (unusedMine > 0) L10n.plural(R.plurals.cleanup_summary_unused_x, unusedMine) else L10n.str(R.string.cleanup_summary),
                     onClick = onCleanUpContent
                 )
             }

@@ -4,8 +4,8 @@
     home network (http://192.168.x.x:port) without TLS. Every other service the app uses (AI
     providers, Open Food Facts, recipe packs) is HTTPS anyway.
 -->
-<network-security-config>
-    <base-config cleartextTrafficPermitted="true">
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <base-config cleartextTrafficPermitted="true" tools:ignore="InsecureBaseConfiguration">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>

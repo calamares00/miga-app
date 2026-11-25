@@ -309,4 +309,4 @@ private fun SourceDialog(onApply: (String) -> Unit, onDismiss: () -> Unit) {
 
 /** "1 selected" / "3 selected", for the selection bar and this sheet. */
 fun selectedRecipesText(count: Int): String =
-    if (count == 1) L10n.str(R.string.one_selected_recipe) else L10n.str(R.string.n_selected, count)
+    if (count == 1) L10n.str(R.string.one_selected_recipe) else L10n.plural(R.plurals.n_selected, count)

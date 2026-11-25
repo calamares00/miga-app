@@ -137,7 +137,7 @@ class RecipeListFlowsTest {
         }
 
         viewModel.importRecipeFile(app, Uri.fromFile(file)) {}
-        waitForText(L10n.str(R.string.import_n_recipes_title, 2))
+        waitForText(L10n.plural(R.plurals.import_n_recipes_title, 2))
         snapshot("import_recipes_dialog")
 
         compose.onNodeWithText(L10n.str(R.string.import_action)).performClick()

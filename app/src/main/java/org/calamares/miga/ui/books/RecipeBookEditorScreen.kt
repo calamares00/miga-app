@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.books
 
+import androidx.core.net.toUri
 import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -96,7 +97,7 @@ fun RecipeBookEditorScreen(
             pendingEditUri = uri
         }
     }
-    val cameraCapture = rememberCameraCapture { path -> pendingEditUri = Uri.parse(path) }
+    val cameraCapture = rememberCameraCapture { path -> pendingEditUri = path.toUri() }
 
     var showLinkDialog by remember { mutableStateOf(false) }
     val availableSyncConnections by viewModel.availableSyncConnections.collectAsStateWithLifecycle()
@@ -334,7 +335,7 @@ fun RecipeBookEditorScreen(
         ModalBottomSheet(onDismissRequest = { showRecipePhotos = false }) {
             RecipePhotoPicker(viewModel.recipePhotos) { uri ->
                 showRecipePhotos = false
-                pendingEditUri = Uri.parse(uri)
+                pendingEditUri = uri.toUri()
             }
         }
     }
@@ -358,7 +359,7 @@ fun RecipeBookEditorScreen(
     }
 
     val editSourceUri = pendingEditUri
-        ?: (if (editingExistingCover) viewModel.coverPhotoUri?.let { Uri.parse(it) } else null)
+        ?: (if (editingExistingCover) viewModel.coverPhotoUri?.let { it.toUri() } else null)
     if (editSourceUri != null) {
         PhotoEditorOverlay(
             sourceUri = editSourceUri,

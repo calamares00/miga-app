@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.shoppinglist
 
+import androidx.core.net.toUri
 import org.calamares.miga.ui.components.keepScrollInSheet
 import org.calamares.miga.L10n
 import org.calamares.miga.R
@@ -8,7 +9,6 @@ import androidx.compose.ui.semantics.contentDescription
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -387,7 +387,7 @@ internal fun ProductDetailSheet(
                 HorizontalDivider()
                 TextButton(onClick = {
                     runCatching {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://world.openfoodfacts.org/product/${info.barcode}")))
+                        context.startActivity(Intent(Intent.ACTION_VIEW, "https://world.openfoodfacts.org/product/${info.barcode}".toUri()))
                     }
                 }) { Text(L10n.str(R.string.view_open_food_facts)) }
                 Text(

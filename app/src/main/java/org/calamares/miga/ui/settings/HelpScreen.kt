@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.settings
 
+import androidx.core.net.toUri
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material.icons.filled.SearchOff
 import org.calamares.miga.ui.components.EmptyState
@@ -10,7 +11,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import org.calamares.miga.MigaApp
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -165,7 +165,7 @@ fun HelpScreen(onBack: () -> Unit) {
                 ContactCard(
                     onContact = {
                         val url = AiContentReport.targetUrl(L10n.str(R.string.miga_support), L10n.str(R.string.version_miga_x_2, BuildConfig.VERSION_NAME))
-                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) }
                     }
                 )
             }

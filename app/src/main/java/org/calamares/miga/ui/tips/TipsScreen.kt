@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.tips
 
+import androidx.compose.runtime.mutableIntStateOf
 import org.calamares.miga.ui.components.FormattedText
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.OutlinedButton
@@ -129,7 +130,7 @@ fun TipsScreen(viewModel: TipsViewModel, initialTipId: String?, onBack: () -> Un
     val initialPage = initialTip?.let { tip -> TipFilter.entries.indexOfFirst { it is TipFilter.Category && it.category == tip.category } } ?: 0
     val startPage = initialPage.coerceAtLeast(0)
     val pager = rememberPagerState(initialPage = startPage) { TipFilter.entries.size }
-    var selectedPage by rememberSaveable { mutableStateOf(startPage) }
+    var selectedPage by rememberSaveable { mutableIntStateOf(startPage) }
     LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect { selectedPage = it } }
     LaunchedEffect(selectedPage) { if (pager.settledPage != selectedPage) pager.animateScrollToPage(selectedPage) }
     val searching = query.isNotBlank()
@@ -420,7 +421,7 @@ fun RecipeTipsRow(count: Int, onClick: () -> Unit, modifier: Modifier = Modifier
             Text("💡", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                if (count == 1) L10n.str(R.string.recipe_tips_one) else L10n.str(R.string.recipe_tips_x, count),
+                if (count == 1) L10n.str(R.string.recipe_tips_one) else L10n.plural(R.plurals.recipe_tips_x, count),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier = Modifier.weight(1f)

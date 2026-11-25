@@ -1,5 +1,6 @@
 package org.calamares.miga.ui.editor
 
+import androidx.core.net.toUri
 import org.calamares.miga.ui.components.rememberCopyToClipboard
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetState
@@ -155,7 +156,7 @@ fun RecipeEditorScreen(
     BackHandler(onBack = attemptExit)
 
     LaunchedEffect(sourcePhotoUris) {
-        if (sourcePhotoUris.isNotEmpty()) viewModel.startVisionExtraction(context, sourcePhotoUris.map { Uri.parse(it) })
+        if (sourcePhotoUris.isNotEmpty()) viewModel.startVisionExtraction(context, sourcePhotoUris.map { it.toUri() })
     }
     LaunchedEffect(sourceDishName) {
         if (!sourceDishName.isNullOrBlank()) viewModel.startDishGeneration(sourceDishName, sourceDishDescription, sourceDishOrigin)
@@ -169,7 +170,7 @@ fun RecipeEditorScreen(
             pendingEditUri = uri
         }
     }
-    val cameraCapture = rememberCameraCapture { path -> pendingEditUri = Uri.parse(path) }
+    val cameraCapture = rememberCameraCapture { path -> pendingEditUri = path.toUri() }
 
     val formScroll = rememberScrollState()
     val tabScope = rememberCoroutineScope()
@@ -439,7 +440,7 @@ fun RecipeEditorScreen(
             onJoin = { viewModel.importDetectedTogether(it) },
             onOneEach = { selected ->
                 viewModel.importDetectedSeparately(selected) { count, created ->
-                    val message = (listOf(L10n.str(R.string.detected_saved_x, count)) + created).joinToString("\n")
+                    val message = (listOf(L10n.plural(R.plurals.detected_saved_x, count)) + created).joinToString("\n")
                     Toast.makeText(context, message, if (created.isEmpty()) Toast.LENGTH_SHORT else Toast.LENGTH_LONG).show()
                     onCancel()
                 }
@@ -456,7 +457,7 @@ fun RecipeEditorScreen(
         AlertDialog(
             onDismissRequest = viewModel::dismissExtraTips,
             icon = { Text("💡", style = MaterialTheme.typography.headlineMedium) },
-            title = { Text(L10n.str(R.string.extra_tips_title, extraOffer.tips.size)) },
+            title = { Text(L10n.plural(R.plurals.extra_tips_title, extraOffer.tips.size)) },
             text = {
                 Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
                     Text(L10n.str(R.string.extra_tips_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -559,7 +560,7 @@ fun RecipeEditorScreen(
     }
 
     val editingExistingPhoto = editingPhoto
-    val editSourceUri = pendingEditUri ?: editingExistingPhoto?.let { Uri.parse(it.uri) }
+    val editSourceUri = pendingEditUri ?: editingExistingPhoto?.let { it.uri.toUri() }
     if (editSourceUri != null) {
         PhotoEditorOverlay(
             sourceUri = editSourceUri,

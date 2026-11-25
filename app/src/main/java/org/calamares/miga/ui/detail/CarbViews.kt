@@ -66,7 +66,7 @@ internal fun CarbLine(carbs: RecipeCarbs, portion: Int, onClick: () -> Unit) {
         when (carbs.missing.size) {
             0 -> null
             1 -> L10n.str(R.string.carb_missing_one)
-            else -> L10n.str(R.string.carb_missing_x, carbs.missing.size)
+            else -> L10n.plural(R.plurals.carb_missing_x, carbs.missing.size)
         }
     ).joinToString(" · ")
     Surface(
@@ -133,7 +133,7 @@ internal fun CarbSheetContent(carbs: RecipeCarbs, portion: Int) {
                 Text(
                     L10n.str(R.string.carb_whole_recipe_x, carbAmount(carbs.total, portion)) +
                         (if (portion > 0) " (${L10n.str(R.string.carb_grams_x, carbs.total.roundToInt())})" else "") +
-                        (carbs.servings?.takeIf { it > 0 }?.let { " · " + L10n.str(R.string.carb_for_x_people, it) } ?: ""),
+                        (carbs.servings?.takeIf { it > 0 }?.let { " · " + L10n.plural(R.plurals.carb_for_x_people, it) } ?: ""),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )

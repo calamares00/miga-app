@@ -72,7 +72,7 @@ object PackJobs {
             finish(
                 when {
                     failed.isNotEmpty() -> L10n.str(R.string.couldnt_install_packs_x, failed.joinToString(", "))
-                    updating -> L10n.str(R.string.x_packs_updated, entries.size)
+                    updating -> L10n.plural(R.plurals.x_packs_updated, entries.size)
                     else -> L10n.str(R.string.x_packs_installed, entries.size)
                 }
             )

@@ -221,11 +221,11 @@ private fun SourceHeader(source: FollowedSource, count: Int) {
             Text(source.name, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(listOfNotNull(source.handle, networkLabel(source.network)).joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             val recent = when {
-                source.network == SocialNetwork.WEB -> if (count == 1) L10n.str(R.string.favorites_recipes_one) else L10n.str(R.string.favorites_recipes_count_n, count)
+                source.network == SocialNetwork.WEB -> if (count == 1) L10n.str(R.string.favorites_recipes_one) else L10n.plural(R.plurals.favorites_recipes_count_n, count)
                 source.network == SocialNetwork.YOUTUBE && count == 1 -> L10n.str(R.string.favorites_recent_videos_one)
-                source.network == SocialNetwork.YOUTUBE -> L10n.str(R.string.favorites_recent_videos_n, count)
+                source.network == SocialNetwork.YOUTUBE -> L10n.plural(R.plurals.favorites_recent_videos_n, count)
                 count == 1 -> L10n.str(R.string.favorites_recent_posts_one)
-                else -> L10n.str(R.string.favorites_recent_posts_n, count)
+                else -> L10n.plural(R.plurals.favorites_recent_posts_n, count)
             }
             val news = if (source.newCount > 0) " · " + newCountText(source.newCount) else ""
             Text(recent + news, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

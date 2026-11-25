@@ -61,7 +61,7 @@ private val INSTAGRAM_BRUSH = Brush.linearGradient(listOf(Color(0xFFF58529), Col
 
 /** The small round badge of a network: ▶ for YouTube, ◎ for Instagram, a globe for websites. */
 @Composable
-internal fun NetworkBadge(network: SocialNetwork, size: Dp = 18.dp, modifier: Modifier = Modifier) {
+internal fun NetworkBadge(network: SocialNetwork, modifier: Modifier = Modifier, size: Dp = 18.dp) {
     Box(
         modifier = modifier
             .size(size)
@@ -84,7 +84,7 @@ internal fun NetworkBadge(network: SocialNetwork, size: Dp = 18.dp, modifier: Mo
 }
 
 /** "1 nuevo" or "3 nuevos". */
-internal fun newCountText(count: Int) = if (count == 1) L10n.str(R.string.favorites_new_one) else L10n.str(R.string.favorites_new_n, count)
+internal fun newCountText(count: Int) = if (count == 1) L10n.str(R.string.favorites_new_one) else L10n.plural(R.plurals.favorites_new_n, count)
 
 internal fun networkLabel(network: SocialNetwork) = when (network) {
     SocialNetwork.YOUTUBE -> "YouTube"
