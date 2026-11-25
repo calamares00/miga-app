@@ -29,10 +29,14 @@ jobs:
   changes:
     name: Changes
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       app: ${{ steps.classify.outputs.app }}
       workflow: ${{ steps.classify.outputs.workflow }}
       release: ${{ steps.classify.outputs.release }}
+      production: ${{ steps.classify.outputs.production }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -46,6 +50,9 @@ jobs:
           REF: ${{ github.ref }}
           BEFORE: ${{ github.event.before }}
           PR_BASE: ${{ github.event.pull_request.base.sha }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           code_of() { git show "$1:app/build.gradle.kts" 2>/dev/null | grep -oP 'versionCode = \K[0-9]+' || echo 0; }
@@ -98,12 +105,25 @@ jobs:
             done
           fi
 
-          echo "app=$app workflow=$workflow release=$release (versionCode $before -> $now, v$version)"
-          { echo "app=$app"; echo "workflow=$workflow"; echo "release=$release"; } >> "$GITHUB_OUTPUT"
+          # A new version whose pull request is labelled env/pro also goes to production (to the
+          # public) right after the closed beta; without the label it stays in the beta until it
+          # is released with the "Publicar en producción" workflow.
+          production=false
+          if [ "$release" = "true" ]; then
+            labels=$(gh api "repos/$REPO/commits/$SHA/pulls" --jq '.[].labels[].name' 2>/dev/null || true)
+            if echo "$labels" | grep -qx 'env/pro'; then production=true; fi
+          fi
+
+          echo "app=$app workflow=$workflow release=$release production=$production (versionCode $before -> $now, v$version)"
+          { echo "app=$app"; echo "workflow=$workflow"; echo "release=$release"; echo "production=$production"; } >> "$GITHUB_OUTPUT"
           {
             echo "### What this run does"
             echo "- App changed: **$app** · workflows changed: **$workflow**"
             echo "- New version to publish: **$release** (versionCode $before → $now, v$version)"
+            if [ "$release" = "true" ]; then
+              if [ "$production" = "true" ]; then echo "- Destination: closed beta **and production** (label env/pro)"
+              else echo "- Destination: closed beta (release it to the public with «Publicar en producción»)"; fi
+            fi
             if [ "$EVENT" = "pull_request" ]; then echo "- Pull request: version and release notes checked; tests and build run on the push of this commit."; fi
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -441,7 +461,7 @@ jobs:
   # the build job (nothing is rebuilt) and uploads it to a GitHub Release.
   publish:
     name: Publish
-    needs: build
+    needs: [changes, build]
     if: needs.build.outputs.mode != 'check'
     runs-on: ubuntu-latest
     permissions:
@@ -518,14 +538,17 @@ jobs:
           name: miga-builds-v${{ needs.build.outputs.version }}
           path: dist
 
+      # A version in the closed beta is a prerelease on GitHub, so the app's update notice
+      # (AppUpdateClient reads the latest stable Release) only shows public versions. It becomes
+      # the latest Release when it reaches production.
       - name: Create GitHub Release
         if: needs.build.outputs.mode == 'release'
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ needs.build.outputs.version }}
           name: Miga v${{ needs.build.outputs.version }}
-          prerelease: ${{ secrets.RELEASE_KEYSTORE_BASE64 == '' }}
-          make_latest: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+          prerelease: ${{ secrets.RELEASE_KEYSTORE_BASE64 == '' || needs.changes.outputs.production != 'true' }}
+          make_latest: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' && needs.changes.outputs.production == 'true' }}
           files: dist/*
 
       # Google Play: the signed AAB goes to the track in the PLAY_TRACK repository variable
@@ -565,3 +588,21 @@ jobs:
           status: completed
           whatsNewDirectory: play/whatsnew
           mappingFile: play/mapping.txt
+
+      # Label env/pro: the version just uploaded to the beta goes on to production, the same AAB
+      # (as the "Publicar en producción" workflow does by hand).
+      - name: Checkout (env/pro)
+        if: steps.play.outputs.upload == 'true' && needs.changes.outputs.production == 'true'
+        uses: actions/checkout@v7
+
+      - name: Release to production (env/pro)
+        if: steps.play.outputs.upload == 'true' && needs.changes.outputs.production == 'true'
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          pip install --quiet google-auth requests
+          code=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+          python3 .github/scripts/play_promote.py --package org.calamares.miga \
+            --from-track "${{ vars.PLAY_TRACK || 'internal' }}" --version-code "$code" --rollout 100
+          echo "### Publicada en producción (env/pro): versionCode $code" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,95 @@
+name: Publicar en producción
+
+# Releases to the public (Google Play production) a version already in the closed beta: the same
+# AAB testers have, nothing is built again. Started by hand from Actions > "Publicar en producción"
+# > Run workflow. Run it again with the same version and a higher percentage to widen a staged
+# rollout. A pull request labelled env/pro does the same right after its version is uploaded (see
+# android-build.yml).
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versión (p. ej. 1.1.0). Vacío: la última de la beta"
+        required: false
+        default: ""
+      rollout:
+        description: "Porcentaje de usuarios"
+        required: true
+        default: "100"
+        type: choice
+        options: ["100", "50", "20", "10", "5"]
+
+concurrency:
+  group: play-production
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Promote
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        run: pip install --quiet google-auth requests
+
+      # The version code of the chosen version, read from its tag (v<version>).
+      - name: Find the version
+        id: wanted
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -z "$VERSION" ]; then
+            echo "code=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::There is no tag v$VERSION: is $VERSION a published version?"
+            exit 1
+          fi
+          code=$(git show "v$VERSION:app/build.gradle.kts" | grep -oP 'versionCode = \K[0-9]+')
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Promote on Google Play
+        id: promote
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          CODE: ${{ steps.wanted.outputs.code }}
+        run: |
+          set -euo pipefail
+          if [ -n "$CODE" ]; then which="--version-code $CODE"; else which="--latest"; fi
+          python3 .github/scripts/play_promote.py --package org.calamares.miga \
+            --from-track "${{ vars.PLAY_TRACK || 'alpha' }}" $which --rollout "${{ inputs.rollout }}" >> "$GITHUB_OUTPUT"
+
+      # The GitHub Release of that version stops being a prerelease and becomes the latest one,
+      # which is what the app's update notice reads (AppUpdateClient). Only at 100 %.
+      - name: Mark the GitHub Release as the latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CODE: ${{ steps.promote.outputs.version_code }}
+        run: |
+          set -euo pipefail
+          tag=""
+          for t in $(git tag -l 'v*' --sort=-v:refname); do
+            if [ "$(git show "$t:app/build.gradle.kts" 2>/dev/null | grep -oP 'versionCode = \K[0-9]+' || true)" = "$CODE" ]; then tag="$t"; break; fi
+          done
+          if [ -z "$tag" ]; then
+            echo "::warning::No tag has versionCode $CODE: the GitHub Release is left as it is."
+            exit 0
+          fi
+          # During a staged rollout most users cannot update yet: the update notice waits for 100 %.
+          if [ "${{ inputs.rollout }}" != "100" ]; then
+            echo "Staged rollout: $tag stays a prerelease until it reaches 100 %."
+            exit 0
+          fi
+          gh release edit "$tag" --prerelease=false --latest
+          {
+            echo "### Publicada en producción"
+            echo "- $tag (versionCode $CODE) para el ${{ inputs.rollout }} % de los usuarios"
+          } >> "$GITHUB_STEP_SUMMARY"
