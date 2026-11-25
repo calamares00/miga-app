@@ -1,4 +1,6 @@
 What's new in version 1.0.55:
-• Content cleanup explains what it deletes: each entry says whether it is unused or a kitchen basic not needed as equipment.
-• When splitting a category, recipes without a clear kind of dish ask you to pick their category, and a split that changes nothing is no longer offered again and again.
-• More meat dishes recognised: sausages, chorizo, black pudding, game…
+• Content cleanup says why it suggests deleting something: unused or a kitchen basic.
+• Recipes without a clear kind of dish ask you to pick their category; a split that changes nothing is not offered again.
+• "More suggestions" works with many entries: the assistant reviews them in parts.
+• More meat dishes recognised: sausages, chorizo, game…
+• Clearer errors when the assistant cuts its answer short.

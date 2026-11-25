@@ -133,7 +133,7 @@ internal class OpenAiCompatibleTransport(
             }
             when (val result = answer) {
                 is Answer.Complete -> AiText.Success(result.text)
-                is Answer.Truncated -> AiText.Error(ErrorDetail.withDetail(describeIncomplete("length"), result.partialText.take(1500)))
+                is Answer.Truncated -> AiText.Error(ErrorDetail.withDetail(describeIncomplete("length", request.images.isNotEmpty()), result.partialText.take(1500)))
                 is Answer.Failed -> AiText.Error(result.reason)
             }
         } catch (e: CancellationException) {
@@ -177,9 +177,9 @@ internal class OpenAiCompatibleTransport(
         return if (truncated) Answer.Truncated(text) else Answer.Complete(text)
     }
 
-    private fun describeIncomplete(finishReason: String?): String = ErrorDetail.markAsAi(
+    private fun describeIncomplete(finishReason: String?, withImages: Boolean = false): String = ErrorDetail.markAsAi(
         when (finishReason) {
-            "length" -> L10n.str(R.string.ai_incomplete_too_long, name)
+            "length" -> L10n.str(if (withImages) R.string.ai_incomplete_too_long_photos else R.string.ai_incomplete_too_long, name)
             "content_filter" -> L10n.str(R.string.ai_incomplete_refused, name)
             null, "stop" -> L10n.str(R.string.ai_incomplete_empty, name)
             else -> L10n.str(R.string.ai_incomplete_other, name, finishReason)

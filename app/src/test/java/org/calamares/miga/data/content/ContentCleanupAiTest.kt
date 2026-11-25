@@ -47,4 +47,37 @@ class ContentCleanupAiTest {
         val dto = AiCleanupDto(renames = listOf(AiRenameDto("TAG", "rapdio", "rápido")))
         assertTrue(dto.toProposals(content, listOf(existing)).isEmpty())
     }
+
+    @Test
+    fun `the work goes in small requests, and one cut off is retried in halves`() = kotlinx.coroutines.runBlocking {
+        val tags = (1..130).map { ContentItem(ContentKind.TAG, 100L + it, "etiqueta $it", 1) }
+        val lists = mapOf(ContentKind.TAG to tags)
+        assertEquals(listOf(60, 60, 10), cleanupBatches(lists, emptyList()).map { it.size })
+
+        val sizes = mutableListOf<Int>()
+        // A model that cuts off any answer about more than 40 entries.
+        val result = suggestContentCleanup(lists, "es", emptyList()) { request ->
+            val count = Regex("etiqueta \\d+").findAll(request.prompt).count()
+            sizes += count
+            if (count > 40) org.calamares.miga.data.ai.AiText.Error("cut off")
+            else org.calamares.miga.data.ai.AiText.Success("""{"merges": [], "renames": []}""")
+        }
+        assertTrue(result is AiCleanupResult.Success)
+        assertTrue(!(result as AiCleanupResult.Success).incomplete)
+        assertEquals(listOf(60, 30, 30, 60, 30, 30, 10), sizes)
+    }
+
+    @Test
+    fun `nothing of the user's means no request`() = kotlinx.coroutines.runBlocking {
+        val result = suggestContentCleanup(mapOf(ContentKind.CATEGORY to listOf(postres)), "es", emptyList()) {
+            error("no request expected")
+        }
+        assertEquals(AiCleanupResult.Success(emptyList()), result)
+    }
+
+    @Test
+    fun `when every request fails the error says why`() = kotlinx.coroutines.runBlocking {
+        val result = suggestContentCleanup(content, "es", emptyList()) { org.calamares.miga.data.ai.AiText.Error("sin conexión") }
+        assertEquals(AiCleanupResult.Error("sin conexión"), result)
+    }
 }
