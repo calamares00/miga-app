@@ -1088,7 +1088,7 @@
     <string name="cleanup_nothing">"Everything's spick and span"</string>
     <string name="cleanup_section_merge">"Merge duplicates (%1$d)"</string>
     <string name="cleanup_section_rename">"Unify names (%1$d)"</string>
-    <string name="cleanup_section_delete">"Delete unused (%1$d)"</string>
+    <string name="cleanup_section_delete">"Delete unused or basic entries (%1$d)"</string>
     <string name="cleanup_tick_all">"Tick all"</string>
     <string name="cleanup_untick_all">"Untick all"</string>
     <string name="cleanup_from_ai">"Suggested by the assistant"</string>
@@ -1097,7 +1097,7 @@
     <string name="cleanup_undone">"Changes undone"</string>
     <string name="cleanup_done_merged">"%1$d duplicates merged"</string>
     <string name="cleanup_done_renamed">"%1$d names unified"</string>
-    <string name="cleanup_done_deleted">"%1$d unused entries deleted"</string>
+    <string name="cleanup_done_deleted">"%1$d entries deleted"</string>
     <string name="cleanup_section_split">"Split by kind of dish (%1$d)"</string>
     <string name="cleanup_split_title">"Split «%1$s»"</string>
     <string name="cleanup_split_stays">"%1$d stay"</string>

@@ -17,10 +17,27 @@ class KitchenEquipmentTest {
     }
 
     @Test
-    fun `brands, models and unknown names are kept as written`() {
-        assertEquals("Thermomix TM31", KitchenEquipment.canonical(" Thermomix  TM31 ", "es"))
+    fun `unknown names are kept as written`() {
         assertEquals("Mandolina", KitchenEquipment.canonical("Mandolina", "es"))
+        assertEquals("Máquina de pan", KitchenEquipment.canonical("Máquina de pan", "es"))
+        assertEquals("Freidora", KitchenEquipment.canonical("Freidora", "es"))
         assertTrue(KitchenEquipment.equivalents("Mandolina").isEmpty())
+    }
+
+    @Test
+    fun `parts, models, sizes and adjectives are the appliance`() {
+        listOf(
+            " Thermomix  TM31 ", "Thermomix TM6", "Vaso de Thermomix", "vaso thermomix", "Vaso de la Thermomix", "Varoma",
+            "Cuchillas de la Thermomix", "Thermomix bowl"
+        ).forEach { assertEquals(it, "Thermomix", KitchenEquipment.canonical(it, "es")) }
+        assertEquals("Horno", KitchenEquipment.canonical("Horno precalentado", "es"))
+        assertEquals("Horno", KitchenEquipment.canonical("Horno de convección", "es"))
+        assertEquals("Oven", KitchenEquipment.canonical("Fan oven", "en"))
+        assertEquals("Freidora de aire", KitchenEquipment.canonical("Cestillo de la freidora de aire", "es"))
+        assertEquals("Air fryer", KitchenEquipment.canonical("Air fryer basket", "en"))
+        assertEquals("Batidora", KitchenEquipment.canonical("Vaso de la batidora", "es"))
+        assertEquals("Robot de cocina", KitchenEquipment.canonical("Cecotec Mambo", "es"))
+        assertEquals("Olla exprés", KitchenEquipment.canonical("Olla exprés de 6 litros", "es"))
     }
 
     @Test
@@ -29,9 +46,14 @@ class KitchenEquipmentTest {
         assertTrue(KitchenEquipment.isObvious("Sartén"))
         assertTrue(KitchenEquipment.isObvious("frying pan"))
         assertFalse(KitchenEquipment.isObvious("Horno"))
+        listOf("Tijeras", "Tijeras de cocina", "Sartén grande antiadherente", "Molde de silicona", "Bandeja de horno",
+            "Papel de horno", "Rallador", "Varillas", "Mortero", "Rodillo", "Mixing bowl", "Baking tray", "Kitchen scissors")
+            .forEach { assertTrue(it, KitchenEquipment.isObvious(it)) }
+        listOf("Vaso de Thermomix", "Olla exprés", "Olla lenta", "Batidora", "Mandolina", "Sifón", "Paellera", "Máquina de pan", "Termómetro")
+            .forEach { assertFalse(it, KitchenEquipment.isObvious(it)) }
         assertEquals(
             listOf("Horno", "Freidora de aire"),
-            KitchenEquipment.clean(listOf("Cuchillo", "horno", "Airfryer", "Freidora de aire", " ", "Bol"), "es")
+            KitchenEquipment.clean(listOf("Cuchillo", "horno", "Airfryer", "Freidora de aire", " ", "Bol", "Horno precalentado", "Tijeras"), "es")
         )
     }
 

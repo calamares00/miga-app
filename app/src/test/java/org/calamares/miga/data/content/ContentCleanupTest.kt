@@ -166,4 +166,21 @@ class ContentCleanupTest {
         assertEquals(1, splits.getValue("Platos principales").affected)
         assertTrue(proposals.none { it.action == CleanupAction.DELETE })
     }
+
+    @Test
+    fun `equipment parts and models go into the appliance, basics are deleted even when used`() {
+        val eq = { name: String, usage: Int -> item(ContentKind.EQUIPMENT, name, usage) }
+        val thermomix = eq("Thermomix", 10)
+        val vaso = eq("Vaso de Thermomix", 4)
+        val tm6 = eq("Thermomix TM6", 2)
+        val tijeras = eq("Tijeras", 3)
+        val molde = eq("Molde de silicona", 1)
+        val mandolina = eq("Mandolina", 1)
+        val proposals = ContentCleanup.propose(mapOf(ContentKind.EQUIPMENT to listOf(thermomix, vaso, tm6, tijeras, molde, mandolina)), "es")
+        val merge = proposals.single { it.action == CleanupAction.MERGE }
+        assertEquals(thermomix, merge.target)
+        assertEquals(setOf(thermomix.id, vaso.id, tm6.id), merge.items.map { it.id }.toSet())
+        assertEquals(setOf(tijeras.id, molde.id), proposals.filter { it.action == CleanupAction.DELETE }.map { it.items.single().id }.toSet())
+        assertTrue(proposals.none { mandolina in it.items })
+    }
 }

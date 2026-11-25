@@ -1,6 +1,6 @@
 What's new in version 1.0.54:
 • Favourites is much smoother with many channels and websites.
-• Tips you import, alone or with a recipe, are kept in your tips library, under "Imported".
+• Tips you import, alone or with a recipe, go to your tips library, under "Imported".
 • Fuller recipes from websites that only give the ingredients.
-• New categories: Baking, Ice cream and sorbets, Appetizers and tapas, Stews… each with what it includes.
-• Content cleanup moves your categories into the app's ones and splits mixed ones recipe by recipe.
+• New categories, each with what it includes: Baking, Ice cream and sorbets, Appetizers and tapas…
+• Content cleanup moves your categories into the app's ones, splits mixed ones and joins repeated equipment ("Thermomix bowl" → Thermomix).
