@@ -1,0 +1,2 @@
+What's new in version 1.0.59:
+• When importing a recipe from a website with the assistant, ingredients are no longer lost: if the website has its own ingredient list, the assistant keeps it whole.

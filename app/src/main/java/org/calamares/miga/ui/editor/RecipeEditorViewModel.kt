@@ -487,7 +487,7 @@ class RecipeEditorViewModel(
                     errorOf = { (it as? RecipeVisionResult.Error)?.reason },
                     error = { RecipeVisionResult.Error(it) },
                     progress = progress
-                ) { ai -> ai.importRecipeFromPage(post?.url ?: url, pageText, known) }
+                ) { ai -> ai.importRecipeFromPage(post?.url ?: url, pageText, known, standard = structured?.recipe) }
             } ?: RecipeVisionResult.Error(L10n.str(R.string.ai_no_provider))
             when (result) {
                 is RecipeVisionResult.Success -> {
