@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Preguntas y ayuda · Questions and help
+    url: https://miga.calamares.org/preguntas/
+    about: Preguntas frecuentes sobre Miga · Frequently asked questions about Miga
+  - name: Privacidad o seguridad · Privacy or security
+    url: https://miga.calamares.org/privacy/
+    about: Problemas de seguridad o de datos personales, a miga@calamares.org y no en público · Security or personal-data issues, to miga@calamares.org and not in public

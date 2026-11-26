@@ -1,0 +1,41 @@
+name: Idea / Feature request
+description: Propón algo nuevo para Miga · Suggest something new for Miga
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Escribe en español o en inglés · Write in Spanish or English.
+
+  - type: checkboxes
+    attributes:
+      label: Antes de empezar · Before you start
+      options:
+        - label: He buscado entre los issues abiertos y cerrados y no está ya · I searched open and closed issues and it is not there yet
+          required: true
+
+  - type: textarea
+    attributes:
+      label: Para qué · Use case
+      description: |
+        Qué intentas hacer en la cocina o con tus recetas y qué te lo impide hoy.
+        What you are trying to do in the kitchen or with your recipes, and what stops you today.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Propuesta · Proposal
+      description: Cómo te imaginas que funcionaría · How you picture it working
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Alternativas · Alternatives
+      description: Otras formas de resolverlo que hayas pensado o que uses ahora · Other ways you considered or use now
+
+  - type: textarea
+    attributes:
+      label: Algo más · Additional context
+      description: Capturas, ejemplos de otras apps, recetas… · Screenshots, examples from other apps, recipes…

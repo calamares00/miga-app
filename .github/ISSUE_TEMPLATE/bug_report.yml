@@ -1,0 +1,101 @@
+name: Error / Bug report
+description: Algo no funciona como debería · Something does not work as it should
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por avisar. Escribe en español o en inglés.
+        Thanks for reporting. Write in Spanish or English.
+
+        **No pegues claves de API, contraseñas ni datos personales** (tampoco en las capturas).
+        **Do not paste API keys, passwords or personal data** (screenshots included).
+
+  - type: checkboxes
+    attributes:
+      label: Antes de empezar · Before you start
+      options:
+        - label: He buscado entre los issues abiertos y cerrados y no está ya · I searched open and closed issues and it is not there yet
+          required: true
+        - label: Uso la última versión de Miga · I use the latest Miga version
+          required: true
+
+  - type: textarea
+    attributes:
+      label: Pasos para reproducirlo · Steps to reproduce
+      description: Qué hiciste, paso a paso · What you did, step by step
+      placeholder: |
+        1. Abro una receta…
+        2. Toco…
+        3. …
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Qué esperabas · Expected result
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Qué pasó · Actual result
+      description: Si salió un mensaje de error, copia su «Detalle del error» · If an error message appeared, copy its "Error details"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Capturas o vídeo · Screenshots or video
+      value: |
+        <details open>
+        <summary>Capturas / Screenshots</summary>
+
+        [Arrastra aquí las imágenes · Drop images here]
+
+        </details>
+
+  - type: input
+    attributes:
+      label: Versión de Miga · Miga version
+      description: Ajustes › Acerca de · Settings › About
+      placeholder: "1.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: Instalada desde · Installed from
+      options:
+        - Google Play
+        - Google Play (beta)
+        - F-Droid
+        - GitHub / Obtainium
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Móvil y versión de Android · Phone and Android version
+      placeholder: "Pixel 8, Android 16"
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: ¿Tiene que ver con el asistente de cocina? · Is the cooking assistant involved?
+      options:
+        - "No"
+        - "Sí · Yes (Gemini)"
+        - "Sí · Yes (Claude)"
+        - "Sí · Yes (OpenAI)"
+        - "Sí · Yes (OpenRouter)"
+        - "Sí · Yes (DeepSeek)"
+        - "Sí · Yes (Mistral)"
+        - "Sí · Yes (Groq)"
+        - "Sí · Yes (servidor propio · custom server)"
+
+  - type: textarea
+    attributes:
+      label: Algo más · Additional context
+      description: Desde cuándo pasa, si pasa siempre, si usas la sincronización con tu servidor… · Since when, whether it always happens, whether you sync with your own server…
