@@ -1,13 +1,13 @@
-## Resumen
+## Summary
 
-<!-- ¿Qué cambia y por qué? -->
+<!-- What changes and why? -->
 
-## Comprobado
+## Checked
 
-- [ ] Compila (`./gradlew :app:assemblePlayDebug :app:assembleFdroidDebug`)
-- [ ] Probado manualmente en el emulador/dispositivo
-- [ ] No quedan referencias sueltas a nombres/paquetes antiguos
+- [ ] Builds (`./gradlew :app:assemblePlayDebug :app:assembleFdroidDebug`)
+- [ ] Tested by hand on an emulator/device
+- [ ] No stray references to old names/packages
 
-## Notas para el reviewer
+## Notes for the reviewer
 
-<!-- Cualquier cosa que facilite la revisión: capturas, decisiones de diseño, etc. -->
+<!-- Anything that makes the review easier: screenshots, design decisions, etc. -->

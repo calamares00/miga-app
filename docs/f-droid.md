@@ -1,37 +1,38 @@
-# Publicación en F-Droid
+# Publishing on F-Droid
 
-Miga no tiene dependencias privativas (ni Google Play Services, ni Firebase, ni analítica), así que el
-mismo código sirve para F-Droid sin variantes. F-Droid compila la app en sus servidores a partir de
-una etiqueta de git de este repositorio.
+F-Droid builds the **`fdroid`** flavor, which has no proprietary dependencies (no Google Play
+Services, Firebase, analytics or Google libraries); the `play` flavor only adds Play's in-app
+updates. F-Droid builds the app on its servers from a git tag of this repository.
 
-## Antes de enviarla
+## Before submitting it
 
-- Que exista la etiqueta `v1.0.0` en `main`. La crea el CI al publicar la Release.
-- Que la Release `v1.0.0` esté **firmada** con la clave de subida (secretos de GitHub configurados)
-  e incluya `miga-v1.0.0-universal-release.apk`.
-- Capturas en `fastlane/metadata/android/<idioma>/images/phoneScreenshots/` (las mismas que para
-  Play). F-Droid lee título, descripciones, icono, capturas y changelogs de `fastlane/`.
-- Huella SHA-256 del certificado de firma, sin dos puntos y en minúsculas:
+- A public version must exist, with its `public-v<version>` tag (created by the «Publicar en
+  producción» workflow, or by the `env/pro` label, when the version reaches production).
+- Its Release must be **signed** with the upload key (GitHub secrets set up) and include
+  `miga-v<version>-universal-release.apk`.
+- Screenshots in `fastlane/metadata/android/<language>/images/phoneScreenshots/` (the same as for
+  Play). F-Droid reads the title, descriptions, icon, screenshots and changelogs from `fastlane/`.
+- SHA-256 fingerprint of the signing certificate, without colons and in lower case:
 
   ```bash
   keytool -list -v -keystore miga-upload.jks -alias miga-upload \
     | grep 'SHA256:' | sed 's/.*SHA256: //; s/://g' | tr 'A-F' 'a-f'
   ```
 
-## Envío
+## Submission
 
-1. Crear una cuenta en https://gitlab.com y hacer un *fork* de https://gitlab.com/fdroid/fdroiddata.
-2. En el fork, crear una rama y el fichero `metadata/org.calamares.miga.yml` con el contenido de
-   abajo (sustituyendo la huella y el commit).
-3. Abrir un *merge request* contra `fdroid/fdroiddata` con el título `New app: Miga` y rellenar la
-   lista de comprobación de la plantilla. Los pipelines del MR (lint y build) tienen que pasar.
-4. Responder a los revisores. Suele tardar entre días y semanas. Cuando lo fusionan, la app aparece
-   en F-Droid tras el siguiente ciclo de compilación (uno o dos días más).
+1. Create an account at https://gitlab.com and fork https://gitlab.com/fdroid/fdroiddata.
+2. In the fork, create a branch and the file `metadata/org.calamares.miga.yml` with the content
+   below (replacing the fingerprint and the commit).
+3. Open a merge request against `fdroid/fdroiddata` titled `New app: Miga` and fill in the
+   template's checklist. The merge request's pipelines (lint and build) must pass.
+4. Answer the reviewers. It usually takes days to weeks. Once merged, the app appears on F-Droid
+   after the next build cycle (one or two more days).
 
-Alternativa sin GitLab ni YAML: abrir una petición en https://gitlab.com/fdroid/rfp/-/issues. Es
-más lenta, porque depende de que un voluntario la empaquete.
+Alternative without GitLab or YAML: open a request at https://gitlab.com/fdroid/rfp/-/issues. It is
+slower, because it depends on a volunteer packaging it.
 
-## Metadatos (`metadata/org.calamares.miga.yml`)
+## Metadata (`metadata/org.calamares.miga.yml`)
 
 ```yaml
 Categories:
@@ -51,46 +52,44 @@ Repo: https://github.com/calamares00/miga-app.git
 Binaries: https://github.com/calamares00/miga-app/releases/download/v%v/miga-v%v-universal-release.apk
 
 Builds:
-  - versionName: 1.0.0
-    versionCode: 194
-    commit: <hash completo del commit de la etiqueta v1.0.0>
+  - versionName: 1.1.0
+    versionCode: <versionCode of the public-v1.1.0 tag>
+    commit: <full hash of the public-v1.1.0 tag's commit>
     subdir: app
     gradle:
       - fdroid
     output: build/outputs/apk/fdroid/release/app-fdroid-universal-release-unsigned.apk
 
-AllowedAPKSigningKeys: <huella SHA-256 del certificado>
+AllowedAPKSigningKeys: <SHA-256 fingerprint of the certificate>
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^public-v
-CurrentVersion: 1.0.0
-CurrentVersionCode: 194
+CurrentVersion: 1.1.0
+CurrentVersionCode: <same versionCode>
 ```
 
-- `versionCode` y `CurrentVersionCode`: el `versionCode` de `app/build.gradle.kts` en la etiqueta.
-- `Categories`: el revisor puede pedir otra; F-Droid revisa su lista de categorías a menudo.
-- `gradle: fdroid`: la variante sin librerías de Google (la `play` lleva las actualizaciones
-  integradas de Play). Avisa de versiones nuevas con la última Release estable de GitHub, salvo si
-  la instaló un cliente de F-Droid, que ya actualiza por su cuenta.
-- `output`: con las divisiones por ABI, Gradle genera varios APK; F-Droid usa solo el universal.
-- `UpdateCheckMode: Tags ^public-v`: F-Droid solo coge las versiones públicas. Cada versión de la
-  beta cerrada también tiene su etiqueta `v<versión>`, así que el workflow «Publicar en
-  producción» añade `public-v<versión>` al publicarla (y lo mismo la etiqueta `env/pro`).
-- `Binaries` + `AllowedAPKSigningKeys` piden una **compilación reproducible**: F-Droid compila,
-  compara su APK con el de la Release y, si son idénticos, publica el nuestro con nuestra firma.
-  Así quien instala desde F-Droid, GitHub u Obtainium puede pasar de uno a otro sin desinstalar.
-  Si no coinciden, el revisor lo dirá: o se corrige la diferencia o se quitan esas dos líneas y
-  F-Droid firma con su propia clave (entonces las instalaciones de F-Droid no se pueden actualizar
-  con APK de otra fuente, ni al revés).
-- Con `AutoUpdateMode: Version` y `UpdateCheckMode: Tags`, cada nueva etiqueta `vX.Y.Z` se compila
-  sola; no hace falta otro merge request.
+- `versionCode` and `CurrentVersionCode`: the `versionCode` in `app/build.gradle.kts` at the tag.
+- `Categories`: the reviewer may ask for another one; F-Droid revises its list of categories often.
+- `gradle: fdroid`: the flavor without Google libraries. It announces new versions with the latest
+  stable GitHub Release, unless an F-Droid client installed it, which updates it on its own.
+- `output`: with the ABI splits, Gradle builds several APKs; F-Droid only uses the universal one.
+- `UpdateCheckMode: Tags ^public-v`: F-Droid only takes public versions. Every closed beta version
+  also has its `v<version>` tag, so publishing to production adds `public-v<version>`.
+- `Binaries` + `AllowedAPKSigningKeys` ask for a **reproducible build**: F-Droid builds, compares
+  its APK with the Release's and, if they are identical, publishes ours with our signature. So
+  whoever installs from F-Droid, GitHub or Obtainium can move from one to another without
+  uninstalling. If they do not match, the reviewer will say so: either the difference is fixed or
+  those two lines are removed and F-Droid signs with its own key (then F-Droid installs cannot be
+  updated with APKs from another source, nor the other way round).
+- With `AutoUpdateMode: Version` and `UpdateCheckMode: Tags ^public-v`, every new public version is
+  built on its own; no further merge request is needed.
 
-## Antifunciones
+## Anti-features
 
-F-Droid marcará previsiblemente **NonFreeNet**: el asistente de cocina usa servicios no libres
-(Gemini, Anthropic, OpenAI, OpenRouter) con la clave del propio usuario, y el escáner consulta
-Open Food Facts (que sí es abierto). Es habitual y no impide publicarla. Si el revisor la pide, se
-añade al YAML:
+F-Droid will probably mark **NonFreeNet**: the cooking assistant uses non-free services (Gemini,
+Anthropic, OpenAI, OpenRouter and others) with the user's own key, and the scanner looks up Open
+Food Facts (which is open). It is common and does not prevent publishing. If the reviewer asks for
+it, add to the YAML:
 
 ```yaml
 AntiFeatures:
@@ -98,8 +97,7 @@ AntiFeatures:
     en-US: Optional cooking assistant using Gemini, Anthropic, OpenAI or OpenRouter with the user's own API key.
 ```
 
-## Nuevas versiones
+## New versions
 
-Nada que hacer en F-Droid: al publicar una Release nueva (merge a `main` con un `versionName`
-nuevo) el CI crea la etiqueta y F-Droid la detecta. Si una versión solo cambia `versionCode` sin
-cambiar `versionName`, no hay etiqueta nueva y F-Droid no la publica.
+Nothing to do on F-Droid: when a version reaches production, the `public-v<version>` tag is created
+and F-Droid picks it up. Versions that stay in the closed beta never reach F-Droid.
