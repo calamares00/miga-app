@@ -11,6 +11,11 @@ on:
 
 # A newer push to the same branch or pull request makes the older run pointless; on main a run is
 # never cancelled, so a release in progress always finishes.
+# Least privilege: every job can only read the repository unless it asks for more (changes
+# reads pull request labels, publish writes the Release, its tags and the build attestations).
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
@@ -39,8 +44,9 @@ jobs:
       production: ${{ steps.classify.outputs.production }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Classify the changes
@@ -136,20 +142,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Set up JDK 17
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v6
-
+        uses: gradle/actions/wrapper-validation@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
       - name: Make gradlew executable
         run: chmod +x gradlew
 
@@ -157,7 +162,7 @@ jobs:
       # first test; when that download fails every Robolectric test fails with it. Kept between
       # runs, keyed on the dependencies, so it is downloaded once.
       - name: Cache Robolectric's Android
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.m2/repository/org/robolectric
           key: robolectric-${{ hashFiles('gradle/libs.versions.toml', 'app/build.gradle.kts') }}
@@ -194,7 +199,7 @@ jobs:
 
       - name: Upload unit test report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: miga-unit-test-report-${{ steps.ref.outputs.safe_ref }}-${{ steps.ref.outputs.short_sha }}
           path: app/build/reports/tests/testPlayDebugUnitTest
@@ -220,17 +225,17 @@ jobs:
         flavor: [Play, Fdroid]
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Set up JDK 17
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
       - name: Lint
         run: |
           chmod +x gradlew
@@ -250,8 +255,9 @@ jobs:
       short_sha: ${{ steps.mode.outputs.short_sha }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Read app version
         id: version
         run: |
@@ -279,17 +285,15 @@ jobs:
           echo "short_sha=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v6
-
+        uses: gradle/actions/wrapper-validation@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
       - name: Make gradlew executable
         run: chmod +x gradlew
 
@@ -398,7 +402,7 @@ jobs:
 
       - name: Upload build artifacts
         if: steps.mode.outputs.mode == 'release'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: miga-builds-v${{ steps.version.outputs.version }}
           path: dist/*
@@ -425,7 +429,7 @@ jobs:
 
       - name: Upload Google Play extras
         if: steps.mode.outputs.mode == 'release'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: miga-play-v${{ steps.version.outputs.version }}
           path: play/
@@ -443,6 +447,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # Build attestations (see "Attest build provenance").
+      id-token: write
+      attestations: write
     # Publishes run one at a time: two pushes in a row used to publish at the same moment and the
     # older build could end up overwriting the newer one.
     concurrency:
@@ -452,17 +459,27 @@ jobs:
       # --- push to main: stable GitHub Release with everything build left in dist/ ---
       - name: Download release dist
         if: needs.build.outputs.mode == 'release'
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: miga-builds-v${{ needs.build.outputs.version }}
           path: dist
+
+      # A signed statement, kept by GitHub, that these files were built by this workflow from this
+      # commit, so anyone can check a downloaded APK:
+      # gh attestation verify miga-v1.1.0-universal-release.apk -R calamares00/miga-app
+      - name: Attest build provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            dist/*.apk
+            dist/*.aab
 
       # A version in the closed beta is a prerelease on GitHub, so the app's update notice
       # (AppUpdateClient reads the latest stable Release) only shows public versions. It becomes
       # the latest Release when it reaches production.
       - name: Create GitHub Release
         if: needs.build.outputs.mode == 'release'
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           tag_name: v${{ needs.build.outputs.version }}
           name: Miga v${{ needs.build.outputs.version }}
@@ -491,14 +508,14 @@ jobs:
 
       - name: Download Google Play extras
         if: steps.play.outputs.upload == 'true'
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: miga-play-v${{ needs.build.outputs.version }}
           path: play
 
       - name: Upload to Google Play
         if: steps.play.outputs.upload == 'true'
-        uses: r0adkll/upload-google-play@v1
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: org.calamares.miga
@@ -512,8 +529,7 @@ jobs:
       # (as the "Publicar en producción" workflow does by hand).
       - name: Checkout (env/pro)
         if: steps.play.outputs.upload == 'true' && needs.changes.outputs.production == 'true'
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Release to production (env/pro)
         if: steps.play.outputs.upload == 'true' && needs.changes.outputs.production == 'true'
         env:

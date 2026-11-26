@@ -105,6 +105,16 @@ Actions (*Settings → Secrets and variables → Actions*):
 Mientras no existan, el build release sale sin firmar y la Release de
 GitHub se marca como *pre-release*.
 
+Seguridad del CI:
+- Las acciones van fijadas a su commit (`uses: acción@<sha> # vX.Y.Z`); Dependabot las actualiza.
+- Cada job tiene solo los permisos que necesita, y el checkout no guarda credenciales salvo
+  donde se suben etiquetas.
+- `codeql.yml`: análisis de seguridad del código (Security › Code scanning).
+- `dependencies.yml`: envía las dependencias de Gradle al grafo de GitHub (alertas de
+  Dependabot) y, en los PR, falla si una dependencia nueva tiene vulnerabilidades conocidas.
+- Cada APK y AAB publicado lleva una atestación de procedencia: se comprueba con
+  `gh attestation verify miga-v<versión>-universal-release.apk -R calamares00/miga-app`.
+
 ## Distribución
 
 - `fastlane/metadata/android/es-ES/` contiene título, descripciones y

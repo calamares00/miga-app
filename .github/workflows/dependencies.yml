@@ -1,0 +1,48 @@
+name: Dependencies
+
+# GitHub only knows the Gradle dependencies when they are submitted to its dependency graph:
+# - on main, they are submitted, so Dependabot alerts cover every library the app uses;
+# - on a pull request, they are submitted too and compared with main: a new or updated
+#   dependency with a known vulnerability (moderate or worse) fails it.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependencies-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependencies:
+    name: Dependency graph and review
+    runs-on: ubuntu-latest
+    permissions:
+      # Submitting the dependency graph needs write access.
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Submit the Gradle dependency graph
+        uses: gradle/actions/dependency-submission@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Review dependency changes
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
+        with:
+          fail-on-severity: moderate
+          # The graph submitted just above may take a moment to be processed.
+          retry-on-snapshot-warnings: true
