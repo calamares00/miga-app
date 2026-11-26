@@ -1,184 +1,185 @@
-# Publicación en Google Play
+# Publishing on Google Play
 
-Guía para rellenar la Play Console con la información que corresponde a Miga. Mantenerla al día si
-cambian las funciones de red, los permisos o la IA (y actualizar a la vez `PRIVACY.md`).
+Guide to filling in the Play Console with the information that applies to Miga. Keep it up to date
+if the network features, the permissions or the AI change (and update `PRIVACY.md` at the same
+time).
 
-## Ficha de la tienda
+## Store listing
 
-- Título, descripción corta y larga: `fastlane/metadata/android/es-ES/` (corta ≤ 80 caracteres).
-- Correo de contacto: miga@calamares.org. Sitio web: https://miga.calamares.org
-- Política de privacidad: **https://miga.calamares.org/privacy/** (en inglés,
-  https://miga.calamares.org/en/privacy/), publicada desde el repositorio `calamares00/miga-web`. La app
-  la muestra además en Ajustes → Acerca de (`app/src/main/assets/docs/privacy-es.md`, mismo texto
-  que `PRIVACY.md`). Si cambia, copiarla también a `content/` de web-miga y regenerar la web.
-- Catálogo de packs: https://miga.calamares.org/packs/catalog.json (las URLs de portada y ZIP pueden ser relativas a él).
-- ID de la aplicación: `org.calamares.miga` (permanente una vez publicada).
-- Categoría: Comida y bebida. Etiquetas sugeridas: recetas, lista de la compra.
-- Recursos gráficos: icono 512×512 y gráfico destacado 1024×500 en `fastlane/metadata/android/*/images/`.
-  Capturas de teléfono: 8 por idioma en `images/phoneScreenshots/`, 1080×1920 (9:16) PNG sin
-  transparencia (válidas para destacar la app). Se generan con la app real y recetas de los packs:
-  `StoreShots{Es,En}Test` y `FavoritesShots{Es,En}Test` (cada test de capturas en su propio
-  `./gradlew`, que comparten los ajustes guardados) y `tools/playstore/compose.py`, que pone titular,
-  subtítulo y marco de móvil. Se suben a mano en Play Console (el CI solo sube la app y las notas).
-- No usar marcas de terceros en la ficha (salvo la atribución "Datos de Open Food Facts").
+- Title, short and full description: `fastlane/metadata/android/es-ES/` (short ≤ 80 characters).
+- Contact email: miga@calamares.org. Website: https://miga.calamares.org
+- Privacy policy: **https://miga.calamares.org/privacy/** (in English,
+  https://miga.calamares.org/en/privacy/), published from the `calamares00/miga-web` repository. The
+  app also shows it in Settings → About (`app/src/main/assets/docs/privacy-es.md`, same text as
+  `PRIVACY.md`). If it changes, copy it to miga-web's `content/` too and rebuild the website.
+- Pack catalogue: https://miga.calamares.org/packs/catalog.json (cover and ZIP URLs may be relative
+  to it).
+- Application ID: `org.calamares.miga` (permanent once published).
+- Category: Food & Drink. Suggested tags: recipes, shopping list.
+- Graphic assets: 512×512 icon and 1024×500 feature graphic in `fastlane/metadata/android/*/images/`.
+  Phone screenshots: 8 per language in `images/phoneScreenshots/`, 1080×1920 (9:16) PNG without
+  transparency (valid for featuring the app). They are generated with the real app and pack recipes:
+  `StoreShots{Es,En}Test` and `FavoritesShots{Es,En}Test` (each screenshot test in its own
+  `./gradlew`, as they share the stored settings) and `tools/playstore/compose.py`, which adds the
+  headline, subtitle and phone frame. They are uploaded by hand in Play Console (CI only uploads the
+  app and the notes).
+- No third-party brands in the listing (except the attribution "Data from Open Food Facts").
 
-## Seguridad de los datos (Data safety)
+## Data safety
 
-Respuestas recomendadas:
+Recommended answers:
 
-| Pregunta | Respuesta |
+| Question | Answer |
 |---|---|
-| ¿Recoge o comparte datos de usuario? | **Sí** (solo por acciones del usuario, ver abajo). |
-| ¿Los datos se cifran en tránsito? | **Sí** para IA, Open Food Facts y el catálogo de packs (HTTPS). El servidor propio puede ser `http://` en red local, elegido por el usuario; la app avisa si es público sin cifrar. |
-| ¿El usuario puede pedir que se borren? | **Sí**: todo se borra desde la app o desinstalándola; no hay datos en servidores del desarrollador. |
-| Cuentas | La app no tiene cuentas (no aplica el requisito de borrado de cuenta). |
+| Does the app collect or share user data? | **Yes** (only through user actions, see below). |
+| Is data encrypted in transit? | **Yes** for the AI, Open Food Facts and the pack catalogue (HTTPS). The user's own server may be `http://` on a home network, chosen by the user; the app warns if it is public and unencrypted. |
+| Can users ask for their data to be deleted? | **Yes**: everything is deleted from the app or by uninstalling it; there is no data on the developer's servers. |
+| Accounts | The app has no accounts (the account deletion requirement does not apply). |
 
-Tipos de datos (marcar como **compartidos**, **no recopilados por el desarrollador**, **opcionales** y
-**a petición del usuario**):
+Data types (mark as **shared**, **not collected by the developer**, **optional** and **at the
+user's request**):
 
-- **Fotos** (Fotos y vídeos): se envían al proveedor de IA elegido solo al importar una receta desde
-  una foto o al pedir que mejore una foto. Finalidad: funcionalidad de la app.
-- **Otro contenido generado por el usuario** (recetas, ingredientes, texto de páginas web, texto
-  dictado, nombres de categorías, etiquetas y equipamiento propios): se envía al proveedor de IA
-  elegido al usar funciones de IA (importar, mejorar recetas, limpiar contenido, ideas...), y al
-  servidor propio del usuario si configura la sincronización. Finalidad: funcionalidad de la app.
-- **Grabaciones de audio**: no. El audio lo procesa el reconocimiento de voz de Android; la app solo
-  recibe texto.
-- **Diagnóstico / fallos**: no. El informe de fallos se queda en el dispositivo salvo que el usuario
-  lo comparta manualmente.
-- **Identificadores, ubicación, contactos, datos financieros, salud**: no.
+- **Photos** (Photos and videos): sent to the chosen AI provider only when importing a recipe from
+  a photo or asking it to improve a photo. Purpose: app functionality.
+- **Other user-generated content** (recipes, ingredients, text of web pages, dictated text, the
+  user's own category, tag and equipment names): sent to the chosen AI provider when using AI
+  features (import, polish recipes, content cleanup, ideas...), and to the user's own server if
+  they set up sync. Purpose: app functionality.
+- **Audio recordings**: no. Audio is processed by Android's speech recognition; the app only gets
+  text.
+- **Diagnostics / crashes**: no. The crash report stays on the device unless the user shares it
+  by hand.
+- **Identifiers, location, contacts, financial data, health**: no.
 
-Nota: los envíos a Gemini/Anthropic/OpenAI/OpenRouter usan la clave de API del propio usuario; Google Play los
-considera "compartir" igualmente, por eso se declaran.
+Note: requests to Gemini/Anthropic/OpenAI/OpenRouter and the other providers use the user's own API
+key; Google Play still considers them "sharing", so they are declared.
 
-## Contenido generado con IA
+## AI-generated content
 
-- Declarar en "Contenido de la app" que la app genera contenido con IA.
-- La app marca ese contenido con "Generado con IA" y permite reportarlo (botón **Reportar** en el
-  editor tras importar con IA, valoración de salud, nutrición, sustituciones, buscador de platos e
-  importación múltiple). Los reportes llegan por correo a miga@calamares.org
-  (`AiContentReport.SUPPORT_EMAIL`).
+- Declare in "App content" that the app generates content with AI.
+- The app labels that content "Generated with AI" and lets users report it (**Report** button in the
+  editor after importing with AI, health rating, nutrition, substitutions, dish search and bulk
+  import). Reports arrive by email at miga@calamares.org (`AiContentReport.SUPPORT_EMAIL`).
 
-## Otros cuestionarios
+## Other questionnaires
 
-- **Clasificación de contenido (IARC)**: app de referencia/utilidad, sin violencia, sexo, apuestas
-  ni compras. Interacción entre usuarios: no (la sincronización es con un servidor privado propio).
-- **Público objetivo**: 13+ (no dirigida a menores; evita las normas de la política de familias).
-- **Anuncios**: no contiene anuncios.
-- **Acceso a la app**: no requiere inicio de sesión. Marcar "Toda la funcionalidad está disponible sin
-  acceso especial" y añadir en las instrucciones (en inglés):
+- **Content rating (IARC)**: reference/utility app, no violence, sex, gambling or purchases. User
+  interaction: no (sync is with the user's own private server).
+- **Target audience**: 13+ (not aimed at children; avoids the Families policy rules).
+- **Ads**: contains no ads.
+- **App access**: no sign-in required. Choose "All functionality is available without special
+  access" and add in the instructions:
 
   > Miga has no accounts. Recipes, books, shopping lists, cooking mode, PDF export and the barcode
   > scanner work without any setup. Optional AI features (Settings › AI) use the user's own API key
   > for Google Gemini, Anthropic, OpenAI or OpenRouter; without a key they are hidden or ask for one.
   > Optional sync (Settings › Sync server) connects to a server the user hosts (miga-server).
 
-  Si se quiere que el revisor pruebe la sincronización, añadir la URL, el namespace y un token de un
-  servidor de demostración.
-- **Servicio en primer plano** (Contenido de la app › Permisos de servicios en primer plano): la app
-  declara `FOREGROUND_SERVICE_DATA_SYNC` para `AiWorkService`. Tipo: *Sincronización de datos* /
-  transferencia de red iniciada por el usuario. Descripción sugerida: "While an AI task the user
-  started (importing recipes from photos, improving recipes) is running, a notification keeps the
-  network request alive if the user leaves the app; it stops as soon as the task ends or is
-  cancelled." Hace falta un vídeo corto: lanzar "Mejorar varias recetas", salir de la app y mostrar
-  la notificación hasta que termina.
-- **Declaración de apps de salud**: la app no es una app médica, pero muestra una valoración de salud
-  y una estimación nutricional generadas con IA (y la puntuación de productos de Open Food Facts).
-  Marcar solo la categoría de nutrición/alimentación. Ambas llevan el aviso "Es orientativo y no
-  sustituye el consejo de un médico o dietista-nutricionista" y se pueden desactivar en Ajustes ›
-  Inteligencia artificial.
-- **Permisos sensibles**: micrófono (dictado) y cámara (escáner de códigos), ambos en primer plano y
-  bajo petición.
-- **Pagos**: la app no contiene donaciones ni pagos externos (no está permitido fuera de Google Play
-  Billing salvo para organizaciones benéficas verificadas).
+  If the reviewer should test sync, add the URL, namespace and token of a demo server.
+- **Foreground service** (App content › Foreground service permissions): the app declares
+  `FOREGROUND_SERVICE_DATA_SYNC` for `AiWorkService`. Type: *Data sync* / user-initiated network
+  transfer. Suggested description: "While an AI task the user started (importing recipes from
+  photos, improving recipes) is running, a notification keeps the network request alive if the user
+  leaves the app; it stops as soon as the task ends or is cancelled." A short video is needed: start
+  "Mejorar varias recetas", leave the app and show the notification until it ends.
+- **Health apps declaration**: the app is not a medical app, but it shows an AI-generated health
+  rating and nutrition estimate (and the Open Food Facts product score). Choose only the
+  nutrition/food category. Both carry the note "Es orientativo y no sustituye el consejo de un
+  médico o dietista-nutricionista" and can be turned off in Settings › Artificial intelligence.
+- **Sensitive permissions**: microphone (dictation) and camera (barcode scanner), both in the
+  foreground and on request.
+- **Payments**: the app contains no donations or external payments (not allowed outside Google Play
+  Billing except for verified charities).
 
-## Requisitos técnicos
+## Technical requirements
 
-- `targetSdk` 36 y `compileSdk` 36 (Android 16).
-- La app no se actualiza por su cuenta: las actualizaciones llegan solo por Google Play.
-- Sin bibliotecas nativas propias (no aplica el requisito de páginas de 16 KB).
-- Subir el AAB (`bundlePlayRelease`) con Play App Signing; guardar copia segura de la clave de subida.
-- Firma: el CI firma el AAB y los APK de release si existen los secretos de GitHub
-  `RELEASE_KEYSTORE_BASE64`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS` y `RELEASE_KEY_PASSWORD`.
-  Crear la clave de subida una sola vez:
+- `targetSdk` 36 and `compileSdk` 37 (minor 2), which the current AndroidX libraries need.
+- Updates come only through Google Play: the `play` build uses Play's in-app updates (the update
+  installs on Play's own screen without leaving the app).
+- No native libraries of our own (the 16 KB page size requirement does not apply).
+- Upload the AAB (`bundlePlayRelease`) with Play App Signing; keep a safe copy of the upload key.
+- Signing: CI signs the AAB and the release APKs if the GitHub secrets `RELEASE_KEYSTORE_BASE64`,
+  `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWORD` exist. Create the
+  upload key once:
 
   ```bash
   keytool -genkeypair -v -keystore miga-upload.jks -alias miga-upload \
     -keyalg RSA -keysize 4096 -validity 10000
-  base64 -w0 miga-upload.jks   # valor de RELEASE_KEYSTORE_BASE64
+  base64 -w0 miga-upload.jks   # value of RELEASE_KEYSTORE_BASE64
   ```
-- Ya no se publican APK de prueba (`beta-latest`): las versiones de prueba van solo por la beta
-  cerrada de Play. Quien tenga instalado un `beta-latest` antiguo (firmado con la clave debug) no
-  puede pasar a la versión de Play sin desinstalar: que haga antes una copia de seguridad desde
-  Ajustes.
+- Test APKs (`beta-latest`) are no longer published: test versions go only through the Play closed
+  beta. Anyone with an old `beta-latest` installed (signed with the debug key) cannot move to the
+  Play version without uninstalling: they should make a backup from Settings first.
 
-## Pruebas antes de producción
+## Testing before production
 
-1. **Prueba interna** (hasta 100 testers) con el AAB firmado. Revisar el informe previo al
-   lanzamiento (fallos, bloqueos, accesibilidad, capturas en varios dispositivos) y Android vitals
-   (fallos y ANR).
-2. **Prueba cerrada**: ver el apartado siguiente.
-3. **Producción**: lanzamiento escalonado (por ejemplo, 20 % → 100 %) vigilando fallos y ANR.
+1. **Internal testing** (up to 100 testers) with the signed AAB. Check the pre-launch report
+   (crashes, freezes, accessibility, screenshots on several devices) and Android vitals (crashes
+   and ANRs).
+2. **Closed testing**: see the next section.
+3. **Production**: staged rollout (for example, 20 % → 100 %) watching crashes and ANRs.
 
-## Cuenta de desarrollador nueva (personal)
+## New (personal) developer account
 
-Antes de pedir acceso a producción hay que hacer una prueba cerrada con al menos **12 testers**
-que mantengan la app instalada **14 días seguidos**.
+Before applying for production access, a closed test is needed with at least **12 testers** who
+keep the app installed for **14 days in a row**.
 
-## Nuevas versiones
+## New versions
 
-1. Sube `versionName` en `app/build.gradle.kts` (1.0.1 para arreglos, 1.1.0 para funciones nuevas)
-   y escribe las notas en `fastlane/metadata/android/{es-ES,en-US}/changelogs/<versionCode>.txt`
-   (como mucho 500 caracteres; son las notas que muestra Play).
-2. Fusiona en `main`. El CI compila, firma, publica la Release `v<versionName>` en GitHub (como
-   *pre-release*) y, si está configurada la subida automática (abajo), sube el AAB a la **beta
-   cerrada** (la pista de `PLAY_TRACK`, hoy `alpha`) con esas notas y el archivo de desofuscación.
-3. Para el público, ver «Beta cerrada y producción».
+1. Raise `versionName` in `app/build.gradle.kts` (1.0.1 for fixes, 1.1.0 for new features) and
+   write the notes in `fastlane/metadata/android/{es-ES,en-US}/changelogs/<versionCode>.txt` (at
+   most 500 characters; these are the notes Play shows).
+2. Merge into `main`. CI builds, signs, publishes the `v<versionName>` Release on GitHub (as a
+   *pre-release*) and, if the automatic upload is set up (below), uploads the AAB to the **closed
+   beta** (the `PLAY_TRACK` track, today `alpha`) with those notes and the deobfuscation file.
+3. For the public, see "Closed beta and production".
 
-`versionCode` sube en cada commit, así que cada fusión en `main` lleva un código mayor que el
-anterior, como exige Play.
+`versionCode` goes up on every commit, so every merge into `main` carries a higher code than the
+previous one, as Play requires.
 
-## Beta cerrada y producción
+## Closed beta and production
 
-Una sola rama: `main`. Cada versión nueva va primero a la beta cerrada, y a producción se pasa
-**la misma versión** (el mismo AAB que han probado los testers, sin volver a compilar):
+A single branch: `main`. Every new version goes to the closed beta first, and **the same version**
+goes to production (the same AAB the testers tried, without building again):
 
-- **Después de probarla**: GitHub → Actions → **Publicar en producción** → *Run workflow*. Pide la
-  versión (vacío = la última de la beta) y el porcentaje de usuarios (100 % o una publicación
-  progresiva del 50, 20, 10 o 5 %). Para ampliar una publicación progresiva, se lanza otra vez con
-  la misma versión y más porcentaje. Al llegar al 100 %, la Release de GitHub deja de ser
-  *pre-release* y pasa a ser la última, que es la que lee el aviso de actualización de la app.
-- **Sin esperar a la beta**: pon la etiqueta **`env/pro`** al PR antes de fusionarlo. Al fusionar,
-  la versión sube a la beta y enseguida a producción, al 100 %.
-- No hacen falta commits ni PR para publicar: la versión ya está en `main` y en la beta.
+- **After testing it**: GitHub → Actions → **Publicar en producción** → *Run workflow*. It asks for
+  the version (empty = the latest in the beta) and the percentage of users (100 % or a staged
+  rollout of 50, 20, 10 or 5 %). To widen a staged rollout, run it again with the same version and
+  a higher percentage. At 100 %, the GitHub Release stops being a *pre-release* and becomes the
+  latest one, which is what the fdroid build's update notice reads, and the `public-v<version>`
+  tag that F-Droid follows is created.
+- **Without waiting for the beta**: add the **`env/pro`** label to the pull request before merging
+  it. On merge, the version goes to the beta and right away to production, at 100 %.
+- No commits or pull requests are needed to publish: the version is already in `main` and in the
+  beta.
 
-Las versiones de producción pasan la revisión de Google (de horas a días). Para elegir el momento
-exacto, activa en Play Console **Publicación controlada** (Resumen de publicación → Publicación
-controlada): lo aprobado espera hasta que pulses **Publicar cambios**.
+Production versions go through Google's review (hours to days). To choose the exact moment, turn
+on **Managed publishing** in Play Console (Publishing overview → Managed publishing): what is
+approved waits until you press **Publish changes**.
 
-La cuenta de servicio necesita el permiso **Lanzar a producción** (paso 3 de abajo).
+The service account needs the **Release to production** permission (step 3 below).
 
-## Subida automática a Google Play
+## Automatic upload to Google Play
 
-El paso «Upload to Google Play» del workflow usa una cuenta de servicio de Google Cloud. Se
-configura una vez:
+The workflow's "Upload to Google Play" step uses a Google Cloud service account. It is set up once:
 
-1. En https://console.cloud.google.com crea un proyecto (por ejemplo «miga-play») y activa la
+1. At https://console.cloud.google.com create a project (for example "miga-play") and enable the
    **Google Play Android Developer API**
    (https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com).
-2. En **IAM y administración → Cuentas de servicio**, crea una cuenta (por ejemplo
-   `miga-ci`). No necesita roles de Google Cloud. En su pestaña **Claves**, **Añadir clave → JSON**:
-   se descarga un archivo `.json`. Guárdalo bien: da acceso a publicar.
-3. En Play Console, **Usuarios y permisos → Invitar a nuevos usuarios**: pon el correo de la cuenta
-   de servicio (`miga-ci@<proyecto>.iam.gserviceaccount.com`), en **Permisos de la aplicación**
-   añade Miga y marca **Lanzar versiones en canales de prueba** (y **Lanzar a producción** si
-   quieres poder publicar en producción desde el CI). Envía la invitación; se acepta sola.
-4. En GitHub, https://github.com/calamares00/miga-app/settings/secrets/actions, crea el secreto
-   `PLAY_SERVICE_ACCOUNT_JSON` con el contenido completo del `.json`.
-5. Opcional: en la pestaña **Variables** de la misma página, crea `PLAY_TRACK` con la pista de
-   la beta: `internal` (por defecto) o `alpha` (prueba cerrada; pasa por revisión de Google). Hoy
-   es `alpha`. Producción no se pone aquí: va con «Publicar en producción» o la etiqueta `env/pro`.
+2. In **IAM & Admin → Service accounts**, create an account (for example `miga-ci`). It needs no
+   Google Cloud roles. In its **Keys** tab, **Add key → JSON**: a `.json` file is downloaded. Keep
+   it safe: it gives access to publish.
+3. In Play Console, **Users and permissions → Invite new users**: enter the service account's email
+   (`miga-ci@<project>.iam.gserviceaccount.com`), under **App permissions** add Miga and tick
+   **Release to testing tracks** (and **Release to production** to publish to production from CI).
+   Send the invitation; it is accepted on its own.
+4. In GitHub, https://github.com/calamares00/miga-app/settings/secrets/actions, create the
+   `PLAY_SERVICE_ACCOUNT_JSON` secret with the whole content of the `.json`.
+5. Optional: in the **Variables** tab of the same page, create `PLAY_TRACK` with the beta track:
+   `internal` (default) or `alpha` (closed testing; goes through Google's review). Today it is
+   `alpha`. Production is not set here: it goes through «Publicar en producción» or the `env/pro`
+   label.
 
-Sin ese secreto, o sin la clave de firma, el paso se salta y solo se publica la Release de GitHub.
-La primera versión de una app tiene que subirse a mano desde Play Console (ya está hecho con la
-1.0.0); a partir de ahí la API puede subir las siguientes.
+Without that secret, or without the signing key, the step is skipped and only the GitHub Release is
+published. An app's first version has to be uploaded by hand from Play Console (done with 1.0.0);
+from then on the API can upload the next ones.

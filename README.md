@@ -1,68 +1,66 @@
 # Miga
 
-**Tus recetas. Tus libros. Tu cocina.**
+**Your recipes. Your books. Your kitchen.**
 
-Miga es una app de recetas y lista de la compra para Android, sin cuentas y
-sin anuncios. Tus datos se guardan en el teléfono; internet solo se usa para
-las funciones opcionales que eliges (IA con tu propia clave, Open Food Facts,
-catálogo de packs y sincronización con un servidor propio).
+Miga is a recipe and shopping list app for Android, with no accounts and no
+ads. Your data stays on the phone; the internet is only used for the optional
+features you choose (the cooking assistant with your own key, Open Food Facts,
+the recipe pack catalogue and sync with your own server).
 
-Web: **https://miga.calamares.org** · Servidor de sincronización:
-[calamares00/miga-server](https://github.com/calamares00/miga-server) · Código de la web:
+Website: **https://miga.calamares.org** · Sync server:
+[calamares00/miga-server](https://github.com/calamares00/miga-server) · Website code:
 [calamares00/miga-web](https://github.com/calamares00/miga-web)
 
-## Funciones
+## Features
 
-- **Libros de recetas**: organiza tus recetas en libros independientes (por
-  ejemplo, uno por cada miembro de la familia), cada uno con su propia
-  portada.
-- **Recetas completas**: ingredientes con cantidad y unidad, pasos
-  numerados, foto, utensilios, dificultad, etiquetas y grupos de
-  subreceta (salsas, guarniciones...).
-- **Categorías, búsqueda y filtros** totalmente personalizables.
-- **Modo cocina**: pantalla ampliada paso a paso.
-- **Autocompletado de ingredientes** a partir de lo ya escrito.
-- **Exportación/importación**: receta o libro entero como texto, PDF o
-  JSON/ZIP (con fotos), y copia de seguridad completa de la biblioteca.
-- **Añadir receta con foto** (beta, opcional): reconoce el texto de una
-  foto (cámara o galería) con Google Gemini y precarga el editor para
-  revisarlo. Requiere configurar tu propia API key de Gemini en Ajustes;
-  sin ella, esta función no hace ninguna llamada de red.
-- **Bloqueo biométrico** opcional (huella, rostro o PIN del dispositivo).
-- **Tema** claro, oscuro o según el sistema.
-- **Lista de la compra** con escáner de productos (Open Food Facts),
-  plantillas, varias listas y orden por supermercado.
-- **Sincronización** opcional con un servidor propio (miga-server).
+- **Recipe books**: keep your recipes in separate books (for example, one per
+  family member), each with its own cover.
+- **Complete recipes**: ingredients with quantity and unit, numbered steps,
+  photo, equipment, difficulty, tags and sub-recipe groups (sauces,
+  sides...).
+- **Categories by kind of dish, search and filters**, including allergen
+  filters.
+- **Cooking mode**: large step-by-step screen with timers.
+- **Ingredient autocomplete** from what you have already written.
+- **Export/import**: a recipe or a whole book as text, PDF or JSON/ZIP (with
+  photos), and a full backup of the library.
+- **Cooking assistant** (optional): imports recipes from photos, websites,
+  posts and videos, polishes them and suggests ideas, with the user's own key
+  for Gemini, Claude, OpenAI, OpenRouter, DeepSeek, Mistral, Groq or a custom
+  server. Without a key it makes no network calls.
+- Optional **biometric lock** (fingerprint, face or device PIN).
+- Light, dark or system **theme**, with several colour themes.
+- **Shopping list** with product scanner (Open Food Facts), templates,
+  several lists and order by supermarket.
+- Optional **sync** with your own server (miga-server).
 
-Las actualizaciones llegan por Google Play (o instalando a mano el APK de
-las Releases); la app no se actualiza por su cuenta. Guía de publicación:
-[docs/google-play.md](docs/google-play.md).
+Two builds of the same app differ only in how they learn about a new version:
+`play` (the Google Play AAB, with Play's in-app updates) and `fdroid` (the
+GitHub and F-Droid APKs, without Google libraries, which look at the latest
+stable GitHub Release). Publishing guides: [Google Play](docs/google-play.md)
+and [F-Droid](docs/f-droid.md).
 
-## Stack técnico
+## Tech stack
 
 - Kotlin + [Jetpack Compose](https://developer.android.com/jetpack/compose) (Material 3)
-- [Room](https://developer.android.com/training/data-storage/room) para persistencia local
-- [DataStore Preferences](https://developer.android.com/topic/libraries/architecture/datastore) para ajustes
+- [Room](https://developer.android.com/training/data-storage/room) for local storage
+- [DataStore Preferences](https://developer.android.com/topic/libraries/architecture/datastore) for settings
 - [Navigation Compose](https://developer.android.com/jetpack/compose/navigation)
-- [Coil](https://coil-kt.github.io/coil/) para carga de imágenes
-- `kotlinx.serialization` para exportación/importación en JSON
-- `androidx.biometric` para el bloqueo por huella/rostro
+- [Coil](https://coil-kt.github.io/coil/) for loading images
+- `kotlinx.serialization` for JSON export/import
+- `androidx.biometric` for the fingerprint/face lock
 
-## Privacidad
+## Privacy
 
-Miga no tiene cuentas, servidor propio, analítica ni publicidad. Ver
-[PRIVACY.md](PRIVACY.md) para el detalle de qué datos maneja la app y las
-conexiones de red que hace (todas opcionales).
+Miga has no accounts, no server of its own, no analytics and no ads. See
+[PRIVACY.md](PRIVACY.md) for the details of which data the app handles and the
+network connections it makes (all optional).
 
-## Compilar en local
+## Building locally
 
 ```bash
-./gradlew :app:assembleFdroidDebug   # o assemblePlayDebug
+./gradlew :app:assembleFdroidDebug   # or assemblePlayDebug
 ```
-
-Hay dos variantes de la misma app, que solo cambian en cómo se enteran de una versión nueva:
-`play` (el AAB de Google Play, con las actualizaciones integradas de Play) y `fdroid` (los APK
-de GitHub y F-Droid, sin librerías de Google, que miran la última Release estable de GitHub).
 
 ### Tests
 
@@ -70,59 +68,63 @@ de GitHub y F-Droid, sin librerías de Google, que miran la última Release esta
 ./gradlew :app:testPlayDebugUnitTest
 ```
 
-Tests unitarios (JVM, sin emulador) de la lógica de dominio: filtrado y
-orden de recetas, huella de invalidación de la valoración de salud, construcción
-de la URL del catálogo de packs, y la regla de solo-lectura de un pack.
+Unit tests (JVM, no emulator) of the domain logic and, with Robolectric, of
+the screens.
 
-El APK debug se firma con la clave debug de cada ordenador: no hay ninguna clave en el
-repositorio. Las versiones de prueba llegan a los testers por la beta cerrada de Google Play.
+Debug APKs are signed with each machine's own debug key: there is no key in
+the repository. Test versions reach testers through the Google Play closed
+beta.
 
 ## CI/CD
 
-El workflow `.github/workflows/android-build.yml` corre siempre, en cualquier
-evento, los tests unitarios y una compilación `assembleFdroidRelease` de
-comprobación (para detectar una regla de ProGuard/R8 rota antes de fusionar,
-no solo al llegar a `main`); si algo de eso falla, el resto de pasos no se
-ejecuta. Después, según el evento:
+`.github/workflows/android-build.yml` first works out what changed (job
+«Changes»): the app (code, resources, Gradle), only the workflows, or only
+docs and the store listing. Then, in parallel:
 
-| Evento | Qué hace además |
-|---|---|
-| Push a cualquier rama que no sea `main` | Compila un APK **debug** (para probar el cambio) |
-| Pull request hacia `main` | Lint + compilación de comprobación (sin publicar nada) |
-| Push a `main` (tras un merge) | Compila APK **debug** + **release** (minificado con R8) por arquitectura (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`, universal) + AAB para Play Store, y publica una [Release](../../releases) en GitHub con todo adjunto |
+| Job | When | What |
+|---|---|---|
+| Tests | the app or the workflows changed | Unit tests (`play`) and compilation of `fdroid` |
+| Lint | the app changed | Lint of each flavor, one runner each |
+| Build | the app changed | R8 release APK (`fdroid`) and AAB (`play`) as checks; on `main` with a new version, the signed build |
+| Publish | new version on `main`, after the three above | GitHub Release (*pre-release*) with the APKs per architecture (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`, universal), the AAB and `SHA256SUMS.txt`, and upload to the Google Play closed beta |
 
-### Firma del build release
+A pull request only checks that an app change raises the version and has its
+release notes; the push of its branch runs everything else. The public gets a
+version with the «Publicar en producción» workflow, or right away with the
+`env/pro` label (see [docs/google-play.md](docs/google-play.md)).
 
-El build release se firma con un keystore que **no** vive en el
-repositorio (a diferencia del de debug), sino en 4 secretos de GitHub
-Actions (*Settings → Secrets and variables → Actions*):
+### Release signing
+
+The release build is signed with a keystore that does **not** live in the
+repository, but in 4 GitHub Actions secrets (*Settings → Secrets and
+variables → Actions*):
 
 - `RELEASE_KEYSTORE_BASE64`
 - `RELEASE_KEYSTORE_PASSWORD`
 - `RELEASE_KEY_ALIAS`
 - `RELEASE_KEY_PASSWORD`
 
-Mientras no existan, el build release sale sin firmar y la Release de
-GitHub se marca como *pre-release*.
+Without them, the release build is unsigned and the GitHub Release is marked
+as a *pre-release*.
 
-Seguridad del CI:
-- Las acciones van fijadas a su commit (`uses: acción@<sha> # vX.Y.Z`); Dependabot las actualiza.
-- Cada job tiene solo los permisos que necesita, y el checkout no guarda credenciales salvo
-  donde se suben etiquetas.
-- `codeql.yml`: análisis de seguridad del código (Security › Code scanning).
-- `dependencies.yml`: envía las dependencias de Gradle al grafo de GitHub (alertas de
-  Dependabot) y, en los PR, falla si una dependencia nueva tiene vulnerabilidades conocidas.
-- Cada APK y AAB publicado lleva una atestación de procedencia: se comprueba con
-  `gh attestation verify miga-v<versión>-universal-release.apk -R calamares00/miga-app`.
+### CI security
 
-## Distribución
+- Actions are pinned to their commit (`uses: action@<sha> # vX.Y.Z`); Dependabot updates them.
+- Each job has only the permissions it needs, and checkouts do not keep credentials except where
+  tags are pushed.
+- `codeql.yml`: security analysis of the code (Security › Code scanning).
+- `dependencies.yml`: submits the Gradle dependencies to GitHub's dependency graph (Dependabot
+  alerts) and, on pull requests, fails when a new dependency has known vulnerabilities.
+- Every published APK and AAB has a provenance attestation, checked with
+  `gh attestation verify miga-v<version>-universal-release.apk -R calamares00/miga-app`.
 
-- `fastlane/metadata/android/es-ES/` contiene título, descripciones y
-  changelog listos para dar de alta la app en Play Store o F-Droid.
-  Guías: [Google Play](docs/google-play.md) y [F-Droid](docs/f-droid.md).
-- Cada Release de GitHub incluye APKs listos para instalar directamente
-  o a través de [Obtainium](https://github.com/ImranR98/Obtainium), y
-  un `.aab` para subir a Play Console.
-- `SHA256SUMS.txt`, en cada Release, lleva el SHA-256 de cada fichero.
-  Para comprobar una descarga, ponlo en la misma carpeta y ejecuta
+## Distribution
+
+- `fastlane/metadata/android/{es-ES,en-US}/` holds the title, descriptions,
+  images and changelogs for Google Play and F-Droid.
+- Every GitHub Release includes APKs ready to install directly or through
+  [Obtainium](https://github.com/ImranR98/Obtainium), and the `.aab` uploaded
+  to Play Console.
+- `SHA256SUMS.txt`, in every Release, has the SHA-256 of each file. To check a
+  download, put it in the same folder and run
   `sha256sum -c SHA256SUMS.txt --ignore-missing`.
