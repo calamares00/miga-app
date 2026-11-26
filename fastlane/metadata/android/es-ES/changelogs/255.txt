@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.57:
+• En los pasos, los rangos de temperatura y de nivel se resaltan enteros: «170-180 °C», «entre 160 y 170 grados», «nivel 6-7».
