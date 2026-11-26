@@ -14,6 +14,7 @@ import org.calamares.miga.data.ai.transcriptionLanguageInstruction
 import org.calamares.miga.data.vision.RECIPE_MAX_TOKENS
 import org.calamares.miga.data.vision.RecipeVisionResult
 import org.calamares.miga.data.vision.parseRecipeAnswer
+import org.calamares.miga.data.vision.RecipeVisionResultDto
 
 /** Writes a full recipe for a dish chosen in the AI search, from the model's own knowledge. */
 suspend fun AiCandidate.generateRecipe(dish: DishSuggestion, known: KnownLabels = KnownLabels.NONE): RecipeVisionResult {
@@ -25,9 +26,30 @@ suspend fun AiCandidate.generateRecipe(dish: DishSuggestion, known: KnownLabels 
  * Extracts the main recipe from the readable text of a downloaded web page (see RecipeUrlFetcher).
  * The model reads the text; structured data such as schema.org/JSON-LD is not parsed.
  */
-suspend fun AiCandidate.importRecipeFromPage(url: String, pageText: String, known: KnownLabels = KnownLabels.NONE): RecipeVisionResult {
-    val result = completeInAppLanguage(AiRequest(buildUrlImportPrompt(url, pageText, known), RECIPE_MAX_TOKENS))
-    return parseRecipeAnswer(result) { L10n.str(R.string.no_recipe_was_found_page) }
+/**
+ * The recipe in [pageText], read by the model. [standard] is the page's own recipe data when it has
+ * some but is incomplete (no steps): its ingredient list is given to the model to keep, and is used
+ * instead of the model's when the model returns fewer ingredients.
+ */
+suspend fun AiCandidate.importRecipeFromPage(
+    url: String,
+    pageText: String,
+    known: KnownLabels = KnownLabels.NONE,
+    standard: RecipeVisionResultDto? = null
+): RecipeVisionResult {
+    val result = completeInAppLanguage(AiRequest(buildUrlImportPrompt(url, pageText, known, standard), RECIPE_MAX_TOKENS))
+    val answer = parseRecipeAnswer(result) { L10n.str(R.string.no_recipe_was_found_page) }
+    return if (answer is RecipeVisionResult.Success && standard != null) answer.copy(recipe = answer.recipe.keepingIngredientsOf(standard)) else answer
+}
+
+/**
+ * This recipe with the ingredients of [standard] (the page's own recipe data) when it has fewer:
+ * a model can leave some out (it kept 3 of the 7 of a prawn cocktail), and the page's list is
+ * reliable even when the page gives no steps.
+ */
+internal fun RecipeVisionResultDto.keepingIngredientsOf(standard: RecipeVisionResultDto): RecipeVisionResultDto {
+    fun count(recipe: RecipeVisionResultDto) = recipe.ingredientGroups.sumOf { group -> group.ingredients.count { it.name.isNotBlank() } }
+    return if (count(this) >= count(standard)) this else copy(ingredientGroups = standard.ingredientGroups)
 }
 
 internal fun buildDishRecipePrompt(dish: DishSuggestion, known: KnownLabels = KnownLabels.NONE): String {
@@ -46,7 +68,12 @@ value, use null (or an empty list) instead of making it up.${dish.origin?.takeIf
 """.trimIndent() + knownLabelsInstruction(known) + outputLanguageInstruction()
 }
 
-internal fun buildUrlImportPrompt(url: String, pageText: String, known: KnownLabels = KnownLabels.NONE): String = """
+internal fun buildUrlImportPrompt(
+    url: String,
+    pageText: String,
+    known: KnownLabels = KnownLabels.NONE,
+    standard: RecipeVisionResultDto? = null
+): String = """
 You are a cooking assistant. Below is the text extracted from a web page ($url) that should contain
 a recipe. The text may include noise unrelated to the recipe (navigation menus, ads, comments from
 other users, links to other recipes...); ignore it and keep only the main recipe of the page.
@@ -61,4 +88,19 @@ $RECIPE_JSON_FORMAT
 If the text does not contain a recognisable recipe, leave "name" empty. Put the original URL ($url)
 in "source". If you cannot determine a value, use null (or an empty list) instead of making it up.
 $TIP_INSTEAD_OF_RECIPE
-""".trimIndent() + knownLabelsInstruction(known) + transcriptionLanguageInstruction()
+""".trimIndent() + standardIngredientsInstruction(standard) + knownLabelsInstruction(known) + transcriptionLanguageInstruction()
+
+/** The page's own ingredient list, for the model to keep whole. */
+private fun standardIngredientsInstruction(standard: RecipeVisionResultDto?): String {
+    val names = standard?.ingredientGroups?.flatMap { group ->
+        group.ingredients.filter { it.name.isNotBlank() }.map { ingredient ->
+            listOfNotNull(ingredient.quantity?.let { formatPromptQuantity(it) }, ingredient.unit, ingredient.name).joinToString(" ")
+        }
+    }.orEmpty()
+    if (names.isEmpty()) return ""
+    return "\n\nThe page's recipe data lists these ingredients; keep every one of them, with its quantity and unit: " +
+        names.joinToString("; ") + "."
+}
+
+private fun formatPromptQuantity(quantity: Double): String =
+    if (quantity == Math.floor(quantity)) quantity.toLong().toString() else quantity.toString()

@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.59:
+• Al importar una receta de una web con el asistente, ya no se pierden ingredientes: si la web trae su lista de ingredientes, el asistente la mantiene entera.
