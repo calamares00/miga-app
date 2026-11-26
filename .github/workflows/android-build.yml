@@ -468,7 +468,7 @@ jobs:
       # commit, so anyone can check a downloaded APK:
       # gh attestation verify miga-v1.1.0-universal-release.apk -R calamares00/miga-app
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: |
             dist/*.apk
