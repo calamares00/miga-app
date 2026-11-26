@@ -1,5 +1,8 @@
 package org.calamares.miga.ui.books
 
+import org.calamares.miga.ui.components.openWebLink
+import androidx.compose.material.icons.filled.Celebration
+import org.calamares.miga.data.update.TesterThanks
 import org.calamares.miga.ui.components.rememberCopyToClipboard
 import org.calamares.miga.ui.components.UndoDeletionSnackbar
 import org.calamares.miga.ui.components.ShareSheet
@@ -129,6 +132,7 @@ fun RecipeBooksScreen(
     val aiReady by viewModel.aiReady.collectAsStateWithLifecycle()
     val changelogAnnouncement by viewModel.changelogAnnouncement.collectAsStateWithLifecycle()
     val crashReport by viewModel.crashReport.collectAsStateWithLifecycle()
+    val testerThanks by viewModel.testerThanks.collectAsStateWithLifecycle()
     val availableUpdate by viewModel.availableUpdate.collectAsStateWithLifecycle()
     val packUpdates by viewModel.packUpdates.collectAsStateWithLifecycle()
     val updatingPacks by viewModel.updatingPacks.collectAsStateWithLifecycle()
@@ -161,6 +165,7 @@ fun RecipeBooksScreen(
     LaunchedEffect(Unit) {
         viewModel.syncAllOnOpen(context)
         viewModel.checkForUpdate(context)
+        viewModel.checkTesterThanks(context)
         viewModel.checkPackUpdates()
     }
 
@@ -597,6 +602,31 @@ fun RecipeBooksScreen(
                 }) { Text(L10n.str(R.string.update)) }
             },
             dismissButton = { TextButton(onClick = { viewModel.dismissUpdate(forever = true) }) { Text(L10n.str(R.string.not_now)) } }
+        )
+    }
+
+    // The beta testers' thank-you, after any other announcement.
+    testerThanks?.takeIf { changelogAnnouncement == null && crashReport == null && availableUpdate == null }?.let { index ->
+        val (title, body) = TesterThanks.MESSAGES[index]
+        AlertDialog(
+            onDismissRequest = { viewModel.answerTesterThanks(leave = false, chose = false) },
+            icon = { Icon(Icons.Filled.Celebration, contentDescription = null) },
+            title = { Text(L10n.str(title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(L10n.str(body))
+                    Text(L10n.str(R.string.tester_thanks_how), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.answerTesterThanks(leave = true, chose = true)
+                    openWebLink(context, TesterThanks.LEAVE_BETA_URL)
+                }) { Text(L10n.str(R.string.tester_thanks_leave)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.answerTesterThanks(leave = false, chose = true) }) { Text(L10n.str(R.string.tester_thanks_stay)) }
+            }
         )
     }
 

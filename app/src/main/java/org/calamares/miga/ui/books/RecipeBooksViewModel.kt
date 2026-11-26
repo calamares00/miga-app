@@ -1,5 +1,10 @@
 package org.calamares.miga.ui.books
 
+import org.calamares.miga.data.remote.AppUpdateClient
+import org.calamares.miga.data.remote.AppInstallSource
+import org.calamares.miga.data.update.TesterThanks
+import java.time.LocalDate
+import kotlinx.coroutines.CompletableDeferred
 import org.calamares.miga.data.repository.RecipeBookNotEmptyException
 import org.calamares.miga.data.export.ShareAction
 import kotlinx.coroutines.flow.update
@@ -443,10 +448,54 @@ class RecipeBooksViewModel(
         _crashReport.value = null
     }
 
+    /** Index in TesterThanks.MESSAGES of the thank-you to show to a beta tester, if due. */
+    private val _testerThanks = MutableStateFlow<Int?>(null)
+    val testerThanks: StateFlow<Int?> = _testerThanks
+    private var testerThanksChecked = false
+
+    /** Done once the versions seen are recorded (whether this install is a beta tester included). */
+    private val versionsRecorded = CompletableDeferred<Unit>()
+
+    /**
+     * Thanks a closed beta tester once Miga is public (see TesterThanks). Only the Play build
+     * installed from Play: there the testing programme exists.
+     */
+    fun checkTesterThanks(context: Context) {
+        if (testerThanksChecked) return
+        testerThanksChecked = true
+        if (BuildConfig.FLAVOR != "play" || !AppInstallSource.isGooglePlay(context)) return
+        viewModelScope.launch {
+            versionsRecorded.await()
+            val tester = settingsRepository.isBetaTester() ?: return@launch
+            val nextDay = settingsRepository.testerThanksNextDay()
+            val today = LocalDate.now().toEpochDay()
+            if (!tester || nextDay == TesterThanks.NEVER || (nextDay != null && today < nextDay)) return@launch
+            val latest = AppUpdateClient.fetchLatest()?.versionName
+            if (TesterThanks.isDue(tester, latest, nextDay, today)) _testerThanks.value = TesterThanks.pick()
+        }
+    }
+
+    /** The tester chose the public version ([leave]), stays in the beta, or closed the message. */
+    fun answerTesterThanks(leave: Boolean, chose: Boolean) {
+        _testerThanks.value = null
+        val today = LocalDate.now().toEpochDay()
+        val next = when {
+            leave -> TesterThanks.NEVER
+            chose -> today + TesterThanks.REMIND_AFTER_DAYS
+            else -> today + TesterThanks.REMIND_AFTER_DISMISS_DAYS
+        }
+        viewModelScope.launch { settingsRepository.setTesterThanksNextDay(next) }
+    }
+
     init {
         viewModelScope.launch {
             val lastSeen = settingsRepository.observeLastSeenVersionCode().first()
             val current = BuildConfig.VERSION_CODE
+            // Decided once: an install that had already run Miga before this logic came from the
+            // closed beta; a new one, by the version it starts with.
+            if (settingsRepository.isBetaTester() == null) {
+                settingsRepository.setBetaTester(lastSeen != 0 || TesterThanks.isTester(BuildConfig.VERSION_NAME))
+            }
             if (lastSeen == 0) {
                 // First run of this logic (fresh install, or update from a version without the
                 // in-app changelog): nothing to show yet, just start recording the last seen
@@ -463,6 +512,7 @@ class RecipeBooksViewModel(
                 }
                 settingsRepository.setLastSeenVersionCode(current)
             }
+            versionsRecorded.complete(Unit)
         }
     }
 

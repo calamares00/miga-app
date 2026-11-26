@@ -16,6 +16,8 @@ object AppInstallSource {
         "org.fdroid.fdroid", "org.fdroid.basic", "com.looker.droidify", "com.machiav3lli.fdroid", "eu.bubu1.fdroidclassic"
     )
 
+    fun isGooglePlay(context: Context): Boolean = installerOf(context) == PLAY_STORE_PACKAGE
+
     fun isFdroid(context: Context): Boolean = installerOf(context) in FDROID_CLIENTS
 
     @Suppress("DEPRECATION")

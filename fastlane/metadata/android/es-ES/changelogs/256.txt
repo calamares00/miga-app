@@ -1,0 +1,2 @@
+Novedades de la versión 1.0.58:
+• Preparamos la salida de Miga al público: cuando esté en Google Play, quienes probáis la beta cerrada veréis un mensaje de agradecimiento y podréis pasaros a la versión pública sin perder nada, o seguir en la beta.

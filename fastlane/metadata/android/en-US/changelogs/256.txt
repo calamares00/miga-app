@@ -1,0 +1,2 @@
+What's new in version 1.0.58:
+• Getting ready for Miga's public launch: once it is on Google Play, closed beta testers will see a thank-you message and can move to the public version without losing anything, or stay in the beta.

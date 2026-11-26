@@ -103,6 +103,8 @@ class SettingsRepository(private val context: Context) {
     private val packsCatalogRepoKey = stringPreferencesKey("packs_catalog_repo")
     private val packInstallStatsKey = booleanPreferencesKey("pack_install_stats")
     private val dismissedUpdateKey = stringPreferencesKey("dismissed_update_version")
+    private val betaTesterKey = booleanPreferencesKey("beta_tester")
+    private val testerThanksNextDayKey = longPreferencesKey("tester_thanks_next_day")
     private val dismissedPackUpdatesKey = stringPreferencesKey("dismissed_pack_updates")
     private val savedTipsKey = stringPreferencesKey("saved_tips")
     private val importedTipsKey = stringPreferencesKey("imported_tips")
@@ -658,6 +660,20 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setDismissedUpdateVersion(versionName: String) {
         context.settingsDataStore.edit { prefs -> prefs[dismissedUpdateKey] = versionName }
+    }
+
+    /** Whether this install took part in the closed beta (see TesterThanks); null until decided. */
+    suspend fun isBetaTester(): Boolean? = context.settingsDataStore.data.first()[betaTesterKey]
+
+    suspend fun setBetaTester(tester: Boolean) {
+        context.settingsDataStore.edit { prefs -> prefs[betaTesterKey] = tester }
+    }
+
+    /** Epoch day from which the testers' thank-you may show again, or TesterThanks.NEVER. */
+    suspend fun testerThanksNextDay(): Long? = context.settingsDataStore.data.first()[testerThanksNextDayKey]
+
+    suspend fun setTesterThanksNextDay(epochDay: Long) {
+        context.settingsDataStore.edit { prefs -> prefs[testerThanksNextDayKey] = epochDay }
     }
 
     // Settings carried by the full backup. API keys (encrypted with this phone's Keystore, useless
