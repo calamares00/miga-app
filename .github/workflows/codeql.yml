@@ -53,7 +53,12 @@ jobs:
       - name: Compile
         run: |
           chmod +x gradlew
-          ./gradlew --no-build-cache :app:compileFdroidDebugKotlin :app:compilePlayDebugKotlin --stacktrace
+          # The Kotlin compiler runs inside Gradle, where CodeQL's extractor can see it, with more
+          # memory than a normal build: the default 2 GB ran out with the extractor attached.
+          ./gradlew --no-build-cache --no-daemon \
+            -Dorg.gradle.jvmargs="-Xmx6g -XX:MaxMetaspaceSize=1g" \
+            -Pkotlin.compiler.execution.strategy=in-process \
+            :app:compileFdroidDebugKotlin :app:compilePlayDebugKotlin --stacktrace
 
       - name: Analyze
         uses: github/codeql-action/analyze@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
