@@ -1,0 +1,4 @@
+What's new in version 1.1.0:
+• Miga's first public version! Thanks to everyone who tried it in the beta.
+• Your recipes and books on your phone, with no accounts or ads: import from websites, videos and social media, cook step by step with timers, make your shopping list and check allergens and carb portions.
+• Optional cooking assistant, with your own key.
