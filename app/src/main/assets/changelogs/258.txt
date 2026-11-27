@@ -1,0 +1,4 @@
+Novedades de la versión 1.1.0:
+• ¡Primera versión pública de Miga! Gracias a quienes la habéis probado en la beta.
+• Tus recetas y libros en el móvil, sin cuentas ni anuncios: importa de webs, vídeos y redes, cocina paso a paso con temporizadores, haz la lista de la compra y consulta alérgenos y raciones de hidratos.
+• Asistente de cocina opcional, con tu propia clave.
