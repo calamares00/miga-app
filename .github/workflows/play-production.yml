@@ -1,6 +1,6 @@
 name: Publicar en producción
 
-# Releases to the public (Google Play production) a version already in the closed beta: the same
+# Releases to the public (Google Play production) a version already in the beta: the same
 # AAB testers have, nothing is built again. Started by hand from Actions > "Publicar en producción"
 # > Run workflow. Run it again with the same version and a higher percentage to widen a staged
 # rollout. A pull request labelled env/pro does the same right after its version is uploaded (see
@@ -68,7 +68,7 @@ jobs:
           set -euo pipefail
           if [ -n "$CODE" ]; then which="--version-code $CODE"; else which="--latest"; fi
           python3 .github/scripts/play_promote.py --package org.calamares.miga \
-            --from-track "${{ vars.PLAY_TRACK || 'alpha' }}" $which --rollout "${{ inputs.rollout }}" >> "$GITHUB_OUTPUT"
+            --from-track "${{ vars.PLAY_TRACK || 'beta' }}" $which --rollout "${{ inputs.rollout }}" >> "$GITHUB_OUTPUT"
 
       # The GitHub Release of that version stops being a prerelease and becomes the latest one,
       # which is what the app's update notice reads (AppUpdateClient). Only at 100 %.

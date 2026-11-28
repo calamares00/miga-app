@@ -131,15 +131,15 @@ keep the app installed for **14 days in a row**.
    most 500 characters; these are the notes Play shows).
 2. Merge into `main`. CI builds, signs, publishes the `v<versionName>` Release on GitHub (as a
    *pre-release*) and, if the automatic upload is set up (below), uploads the AAB to the **closed
-   beta** (the `PLAY_TRACK` track, today `alpha`) with those notes and the deobfuscation file.
-3. For the public, see "Closed beta and production".
+   beta** (the `PLAY_TRACK` track, today `beta`: open testing, anyone can join from the store listing) with those notes and the deobfuscation file.
+3. For the public, see "Beta and production".
 
 `versionCode` goes up on every commit, so every merge into `main` carries a higher code than the
 previous one, as Play requires.
 
-## Closed beta and production
+## Beta and production
 
-A single branch: `main`. Every new version goes to the closed beta first, and **the same version**
+A single branch: `main`. Every new version goes to the open beta first, and **the same version**
 goes to production (the same AAB the testers tried, without building again):
 
 - **After testing it**: GitHub → Actions → **Publicar en producción** → *Run workflow*. It asks for
@@ -176,8 +176,9 @@ The workflow's "Upload to Google Play" step uses a Google Cloud service account.
 4. In GitHub, https://github.com/calamares00/miga-app/settings/secrets/actions, create the
    `PLAY_SERVICE_ACCOUNT_JSON` secret with the whole content of the `.json`.
 5. Optional: in the **Variables** tab of the same page, create `PLAY_TRACK` with the beta track:
-   `internal` (default) or `alpha` (closed testing; goes through Google's review). Today it is
-   `alpha`. Production is not set here: it goes through «Publicar en producción» or the `env/pro`
+   `internal` (default), `alpha` (closed testing) or `beta` (open testing, anyone can join; goes
+   through Google's review). Today it is `beta`: until 28 November 2026 it was `alpha`, the closed
+   beta of the 14-day test before production access. Production is not set here: it goes through «Publicar en producción» or the `env/pro`
    label.
 
 Without that secret, or without the signing key, the step is skipped and only the GitHub Release is
