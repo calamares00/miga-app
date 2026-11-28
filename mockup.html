@@ -1,0 +1,174 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<style>
+:root{--p:#3B6EA5;--pc:#D6E3F3;--onpc:#0F2A47;--bg:#F7F8F4;--card:#FFFFFF;--low:#F2F4EF;--hi:#E7EAE4;--ink:#1D2520;--soft:#5A645E;--line:#E1E5DE;--ter:#C1633D;--terS:#F5DFD4;--gar:#2F7A57;--garS:#D3EBDD;--err:#B3261E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Roboto,"Noto Sans",Arial,sans-serif;background:#d9ddd6;color:var(--ink);padding:24px;display:flex;flex-wrap:wrap;gap:28px}
+.phone{width:412px;height:892px;background:var(--bg);border-radius:36px;overflow:hidden;position:relative;box-shadow:0 10px 40px #0003;border:10px solid #1b1f1c}
+.status{height:32px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:13px;color:var(--soft)}
+.top{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 18px}
+.top h1{font-size:22px;font-weight:500;flex:1;display:flex;align-items:center;gap:4px}
+.icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--soft);border-radius:20px}
+.store{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:13px;font-weight:500}
+.seg{margin:6px 16px 10px;display:flex;border:1px solid #9aa39d;border-radius:22px;overflow:hidden}
+.seg div{flex:1;text-align:center;padding:9px 0;font-size:14px;font-weight:500}
+.seg .on{background:var(--pc);color:var(--onpc)}
+.add{margin:0 16px;display:flex;gap:8px}
+.field{flex:1;height:52px;border:1px solid #8d9690;border-radius:12px;display:flex;align-items:center;padding:0 6px 0 14px;color:#8a938d;font-size:15px;background:var(--card)}
+.field span{flex:1}
+.tonal{width:52px;height:52px;border-radius:14px;background:var(--pc);display:flex;align-items:center;justify-content:center;font-size:20px}
+.label{font-size:12px;font-weight:500;color:var(--soft);margin:14px 18px 6px;letter-spacing:.3px;text-transform:uppercase}
+.chips{display:flex;gap:8px;padding:0 16px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 10px;font-size:13px;display:flex;gap:6px;align-items:center}
+.chip b{color:var(--p);font-weight:700}
+.chip.t{background:var(--low)}
+.aisle{display:flex;align-items:center;gap:8px;padding:12px 18px 4px;font-size:14px;font-weight:600}
+.aisle small{color:var(--soft);font-weight:400}
+.aisle .chev{margin-left:auto;color:var(--soft)}
+.row{display:flex;align-items:center;gap:12px;margin:4px 12px;padding:10px 12px;background:var(--card);border-radius:14px}
+.dot{width:10px;height:10px;border-radius:5px}
+.row .n{flex:1;font-size:16px}
+.row .q{font-size:13px;color:var(--soft);background:var(--low);border-radius:8px;padding:3px 8px}
+.row .by{display:block;font-size:11px;color:var(--soft)}
+.fab{position:absolute;right:16px;bottom:24px;background:var(--pc);color:var(--onpc);border-radius:16px;padding:16px 20px;font-weight:600;font-size:15px;box-shadow:0 3px 8px #0003;display:flex;gap:8px;align-items:center}
+/* shop mode */
+.counter{margin:4px 16px 0;padding:14px 16px;background:var(--p);color:#fff;border-radius:18px}
+.counter .big{font-size:26px;font-weight:600}
+.counter .sub{font-size:13px;opacity:.9;margin-top:2px}
+.bar{height:8px;border-radius:4px;background:#ffffff44;margin-top:10px;overflow:hidden}.bar i{display:block;height:100%;width:60%;background:#fff;border-radius:4px}
+.saisle{position:relative;margin:12px 12px 4px;padding:8px 12px;border-radius:12px;background:var(--hi);font-weight:600;font-size:15px;display:flex;gap:8px;align-items:center}
+.saisle small{margin-left:auto;font-weight:500;color:var(--soft)}
+.big{}
+.srow{display:flex;align-items:center;gap:14px;margin:6px 12px;min-height:66px;padding:10px 14px;background:var(--card);border-radius:16px;font-size:19px;position:relative;overflow:hidden}
+.check{width:30px;height:30px;border-radius:15px;border:2.5px solid #8d9690;flex:none}
+.srow .n{flex:1}
+.srow .q{font-size:15px;color:var(--soft)}
+.swipe{background:var(--terS)}
+.swipe .slide{position:absolute;top:0;bottom:0;left:-110px;right:110px;background:var(--card);display:flex;align-items:center;gap:14px;padding:10px 14px;border-radius:16px}
+.swipe .why{position:absolute;right:16px;color:var(--ter);font-weight:600;font-size:14px;display:flex;flex-direction:column;align-items:center}
+.cart{margin:14px 12px 0;padding:12px 14px;border-radius:14px;background:var(--garS);display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:#1b4d36}
+.cart small{margin-left:auto;font-weight:500}
+.bottom{position:absolute;left:0;right:0;bottom:0;background:var(--card);padding:12px 16px 20px;display:flex;gap:10px;box-shadow:0 -2px 10px #0001}
+.btn{flex:1;height:52px;border-radius:26px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;gap:6px}
+.btn.o{flex:0 0 auto;padding:0 18px;border:1px solid #8d9690;color:var(--p)}
+.btn.f{background:var(--p);color:#fff}
+.snack{position:absolute;left:16px;right:16px;bottom:96px;background:#2f3531;color:#e5eae6;border-radius:8px;padding:14px 16px;font-size:14px;display:flex;justify-content:space-between}
+.snack b{color:#a8c7fa}
+/* dialog */
+.scrim{position:absolute;inset:0;background:#0006;display:flex;align-items:center;justify-content:center}
+.dialog{width:340px;background:#F2F4EF;border-radius:28px;padding:24px}
+.dialog h2{font-size:22px;font-weight:500;margin:10px 0 12px;text-align:center}
+.dialog p{font-size:14px;color:var(--soft);line-height:1.45;margin-bottom:10px}
+.dialog .em{font-size:34px;text-align:center}
+.dialog .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.tbtn{color:var(--p);font-weight:600;font-size:14px;padding:10px 12px}
+.missing{background:var(--card);border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:10px}
+/* home */
+.home{background:linear-gradient(160deg,#3a5a7a,#7a9a8a 55%,#c9a77c);}
+.home .status{color:#fff}
+.wsmall{margin:24px 20px 0;width:290px;height:64px;white-space:nowrap;border-radius:24px;background:#F7F8F4ee;display:flex;align-items:center;gap:12px;padding:0 16px;font-weight:600;font-size:15px}
+.wsmall .plus{margin-left:auto;width:40px;height:40px;border-radius:20px;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px}
+.wbig{margin:18px 20px 0;border-radius:26px;background:#F7F8F4ee;padding:14px 14px 10px}
+.wbig .h{display:flex;align-items:center;gap:8px;font-weight:600;font-size:16px;margin-bottom:6px}
+.wbig .h small{color:var(--soft);font-weight:500;font-size:13px}
+.wbig .h .plus{margin-left:auto;width:36px;height:36px;border-radius:18px;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px}
+.witem{display:flex;align-items:center;gap:12px;padding:9px 4px;font-size:15px;border-bottom:1px solid var(--line)}
+.witem:last-child{border:0}
+.box{width:22px;height:22px;border-radius:6px;border:2px solid #8d9690}
+.witem.done{color:#9aa39d;text-decoration:line-through}
+.witem.done .box{background:var(--p);border-color:var(--p);position:relative}
+.witem.done .box:after{content:"✓";color:#fff;position:absolute;font-size:14px;left:4px;top:0}
+.witem .q{margin-left:auto;font-size:12px;color:var(--soft)}
+.apps{position:absolute;bottom:40px;left:0;right:0;display:flex;justify-content:space-around}
+.app{width:56px;height:56px;border-radius:18px;background:#ffffffcc}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:28px 28px 0 0;padding:16px 18px 28px}
+.handle{width:32px;height:4px;border-radius:2px;background:#9aa39d;margin:0 auto 14px}
+.sheet h2{font-size:20px;font-weight:500;margin-bottom:12px}
+.tag{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#1b1f1c;color:#fff;font-size:12px;padding:4px 10px;border-radius:10px;z-index:5;white-space:nowrap}
+</style></head><body>
+
+<!-- 1. Preparar -->
+<div class="phone" id="m1">
+ <div class="status"><span>10:24</span><span>▾ ◢ 85</span></div>
+ <div class="top"><h1>Compra ▾</h1><span class="store">🏪 Mi súper ▾</span><div class="icon">⋮</div></div>
+ <div class="seg"><div class="on">✓ Lista</div><div>🛒 En el súper</div></div>
+ <div class="add"><div class="field"><span>Añadir: 2 kg de tomates, leche…</span><div class="icon">🎤</div><div class="icon">▦</div></div><div class="tonal">⊞</div></div>
+ <div class="label">Lo de siempre</div>
+ <div class="chips"><span class="chip"><b>+</b> Leche</span><span class="chip"><b>+</b> Pan</span><span class="chip"><b>+</b> Plátanos</span><span class="chip"><b>+</b> Huevos</span><span class="chip"><b>+</b> Café</span></div>
+ <div class="label">Plantillas</div>
+ <div class="chips"><span class="chip t">📋 Desayunos</span><span class="chip t">📋 Semana</span><span class="chip t">📋 Barbacoa</span></div>
+ <div class="aisle">🥬 Fruta y verdura <small>3</small><span class="chev">⌃</span></div>
+ <div class="row"><span class="dot" style="background:#4caf50"></span><span class="n">Tomates</span><span class="q">2 kg</span></div>
+ <div class="row"><span class="dot" style="background:#4caf50"></span><span class="n">Aguacates<span class="by">Añadido por Marta</span></span><span class="q">3</span></div>
+ <div class="row"><span class="dot" style="background:#4caf50"></span><span class="n">Cebolla</span><span class="q">1 malla</span></div>
+ <div class="aisle">🥛 Lácteos y huevos <small>2</small><span class="chev">⌃</span></div>
+ <div class="row"><span class="dot" style="background:#64b5f6"></span><span class="n">Yogures naturales</span><span class="q">8</span></div>
+ <div class="row"><span class="dot" style="background:#64b5f6"></span><span class="n">Queso fresco</span></div>
+ <div class="aisle">🥖 Panadería <small>1</small><span class="chev">⌃</span></div>
+ <div class="fab">🛒 Empezar la compra</div>
+</div>
+
+<!-- 2. En el súper -->
+<div class="phone" id="m2">
+ <div class="status"><span>10:41</span><span>☀ pantalla encendida · 85</span></div>
+ <div class="top"><h1>Compra</h1><span class="store">🏪 Mi súper ▾</span><div class="icon">⋮</div></div>
+ <div class="seg"><div>✓ Lista</div><div class="on">🛒 En el súper</div></div>
+ <div class="counter"><div class="big">Quedan 6</div><div class="sub">9 en el carro · Lácteos es el siguiente pasillo</div><div class="bar"><i></i></div></div>
+ <div class="saisle">🥬 Fruta y verdura <small>1 de 3</small></div>
+ <div class="srow"><span class="check"></span><span class="n">Cebolla</span><span class="q">1 malla</span></div>
+ <div class="saisle">🥛 Lácteos y huevos <small>2</small></div>
+ <div class="srow swipe"><span class="why">🚫<span>No lo había</span></span><div class="slide"><span class="check"></span><span class="n">Queso fresco</span></div></div>
+ <div class="srow"><span class="check"></span><span class="n">Yogures naturales</span><span class="q">8</span></div>
+ <div class="saisle">🧴 Droguería <small>3</small></div>
+ <div class="srow"><span class="check"></span><span class="n">Detergente</span></div>
+ <div class="srow"><span class="check"></span><span class="n">Papel de cocina</span><span class="q">2</span></div>
+ <div class="cart">✓ En el carro <small>9 ▸</small></div>
+ <div class="snack"><span>Tomates al carro</span><b>DESHACER</b></div>
+ <div class="bottom"><div class="btn o">+ Añadir</div><div class="btn f">✓ Terminar compra</div></div>
+</div>
+
+<!-- 3. Terminar -->
+<div class="phone" id="m3">
+ <div class="status"><span>10:58</span><span>85</span></div>
+ <div class="top"><h1>Compra</h1><span class="store">🏪 Mi súper ▾</span><div class="icon">⋮</div></div>
+ <div class="seg"><div>✓ Lista</div><div class="on">🛒 En el súper</div></div>
+ <div class="counter"><div class="big">¡Todo en el carro!</div><div class="sub">14 productos · 1 no lo había</div><div class="bar"><i style="width:100%"></i></div></div>
+ <div class="scrim"><div class="dialog">
+  <div class="em">🎉</div><h2>¿Terminar la compra?</h2>
+  <p>Los <b>14 productos</b> del carro se quitan de la lista y se guardan en el historial, para que Miga te los proponga en «Lo de siempre».</p>
+  <div class="missing">🚫 <b>Queso fresco</b> no lo había: se queda en la lista para la próxima compra.</div>
+  <div class="acts"><span class="tbtn">Seguir comprando</span><span class="tbtn" style="background:var(--p);color:#fff;border-radius:20px;padding:10px 18px">Terminar</span></div>
+ </div></div>
+</div>
+
+<!-- 4. Widgets -->
+<div class="phone home" id="m4">
+ <div class="status"><span>18:02</span><span>85</span></div>
+ <div class="wsmall">🛒 Añadir a la compra<span class="plus">+</span></div>
+ <div class="wbig">
+  <div class="h">🛒 Compra <small>· Quedan 5</small><span class="plus">+</span></div>
+  <div class="witem"><span class="box"></span>Tomates<span class="q">2 kg</span></div>
+  <div class="witem"><span class="box"></span>Yogures naturales<span class="q">8</span></div>
+  <div class="witem"><span class="box"></span>Queso fresco</div>
+  <div class="witem"><span class="box"></span>Detergente</div>
+  <div class="witem done"><span class="box"></span>Leche<span class="q">6 L</span></div>
+  <div class="witem"><span class="box"></span>Papel de cocina<span class="q">2</span></div>
+ </div>
+ <div class="apps"><span class="app"></span><span class="app"></span><span class="app"></span><span class="app"></span></div>
+</div>
+
+<!-- 5. Añadir rápido desde el widget -->
+<div class="phone home" id="m5">
+ <div class="status"><span>18:03</span><span>85</span></div>
+ <div class="wsmall" style="opacity:.5">🛒 Añadir a la compra<span class="plus">+</span></div>
+ <div class="scrim" style="align-items:flex-end;background:#0005">
+  <div class="sheet" style="position:relative;width:100%">
+   <div class="handle"></div>
+   <h2>Añadir a «Compra»</h2>
+   <div class="add" style="margin:0"><div class="field" style="color:var(--ink)"><span>2 kg de naranjas y pan de molde|</span><div class="icon" style="color:var(--p)">🎤</div></div></div>
+   <div class="label" style="margin-left:0">Lo de siempre</div>
+   <div class="chips" style="padding:0"><span class="chip"><b>+</b> Leche</span><span class="chip"><b>+</b> Huevos</span><span class="chip"><b>+</b> Café</span><span class="chip"><b>+</b> Plátanos</span></div>
+   <div style="display:flex;gap:10px;margin-top:20px"><div class="btn o" style="flex:1">Cancelar</div><div class="btn f">Añadir 2</div></div>
+  </div>
+ </div>
+</div>
+</body></html>
