@@ -112,7 +112,7 @@ jobs:
           fi
 
           # A new version whose pull request is labelled env/pro also goes to production (to the
-          # public) right after the closed beta; without the label it stays in the beta until it
+          # public) right after the open beta; without the label it stays in the beta until it
           # is released with the "Publicar en producción" workflow.
           production=false
           if [ "$release" = "true" ]; then
@@ -127,8 +127,8 @@ jobs:
             echo "- App changed: **$app** · workflows changed: **$workflow**"
             echo "- New version to publish: **$release** (versionCode $before → $now, v$version)"
             if [ "$release" = "true" ]; then
-              if [ "$production" = "true" ]; then echo "- Destination: closed beta **and production** (label env/pro)"
-              else echo "- Destination: closed beta (release it to the public with «Publicar en producción»)"; fi
+              if [ "$production" = "true" ]; then echo "- Destination: open beta **and production** (label env/pro)"
+              else echo "- Destination: open beta (release it to the public with «Publicar en producción»)"; fi
             fi
             if [ "$EVENT" = "pull_request" ]; then echo "- Pull request: version and release notes checked; tests and build run on the push of this commit."; fi
           } >> "$GITHUB_STEP_SUMMARY"
@@ -312,7 +312,7 @@ jobs:
         run: ./gradlew :app:bundlePlayRelease --stacktrace
 
       # --- any run without a new version: the debug APK only has to compile ---
-      # Nothing is published: test builds reach testers through the Play closed beta, never as
+      # Nothing is published: test builds reach testers through the Play open beta, never as
       # APKs on GitHub (a debug key in a public repository would let anyone sign an APK that
       # updates them).
       - name: Build debug APK (check)
@@ -474,7 +474,7 @@ jobs:
             dist/*.apk
             dist/*.aab
 
-      # A version in the closed beta is a prerelease on GitHub, so the app's update notice
+      # A version in the beta is a prerelease on GitHub, so the app's update notice
       # (AppUpdateClient reads the latest stable Release) only shows public versions. It becomes
       # the latest Release when it reaches production.
       - name: Create GitHub Release
@@ -488,7 +488,7 @@ jobs:
           files: dist/*
 
       # Google Play: the signed AAB goes to the track in the PLAY_TRACK repository variable
-      # (internal testing when it is not set; "alpha" is closed testing, "production" production).
+      # (internal testing when it is not set; "alpha" is closed testing, "beta" open testing (used now)).
       # Needs the PLAY_SERVICE_ACCOUNT_JSON secret (a Google Cloud service account with release
       # rights in Play Console, see docs/google-play.md) and the release keystore; without either
       # the step is skipped and the Release on GitHub is all that is published.

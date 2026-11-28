@@ -36,7 +36,7 @@ def call(session, method, url, body=None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--package", required=True)
-    parser.add_argument("--from-track", default="alpha")
+    parser.add_argument("--from-track", default="beta")
     parser.add_argument("--to-track", default="production")
     parser.add_argument("--version-code", type=int)
     parser.add_argument("--latest", action="store_true", help="the newest version in --from-track")

@@ -86,7 +86,7 @@ docs and the store listing. Then, in parallel:
 | Tests | the app or the workflows changed | Unit tests (`play`) and compilation of `fdroid` |
 | Lint | the app changed | Lint of each flavor, one runner each |
 | Build | the app changed | R8 release APK (`fdroid`) and AAB (`play`) as checks; on `main` with a new version, the signed build |
-| Publish | new version on `main`, after the three above | GitHub Release (*pre-release*) with the APKs per architecture (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`, universal), the AAB and `SHA256SUMS.txt`, and upload to the Google Play closed beta |
+| Publish | new version on `main`, after the three above | GitHub Release (*pre-release*) with the APKs per architecture (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`, universal), the AAB and `SHA256SUMS.txt`, and upload to the Google Play open beta |
 
 A pull request only checks that an app change raises the version and has its
 release notes; the push of its branch runs everything else. The public gets a

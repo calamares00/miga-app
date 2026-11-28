@@ -73,7 +73,7 @@ CurrentVersionCode: <same versionCode>
 - `gradle: fdroid`: the flavor without Google libraries. It announces new versions with the latest
   stable GitHub Release, unless an F-Droid client installed it, which updates it on its own.
 - `output`: with the ABI splits, Gradle builds several APKs; F-Droid only uses the universal one.
-- `UpdateCheckMode: Tags ^public-v`: F-Droid only takes public versions. Every closed beta version
+- `UpdateCheckMode: Tags ^public-v`: F-Droid only takes public versions. Every beta version
   also has its `v<version>` tag, so publishing to production adds `public-v<version>`.
 - `Binaries` + `AllowedAPKSigningKeys` ask for a **reproducible build**: F-Droid builds, compares
   its APK with the Release's and, if they are identical, publishes ours with our signature. So
@@ -100,4 +100,4 @@ AntiFeatures:
 ## New versions
 
 Nothing to do on F-Droid: when a version reaches production, the `public-v<version>` tag is created
-and F-Droid picks it up. Versions that stay in the closed beta never reach F-Droid.
+and F-Droid picks it up. Versions that stay in the beta never reach F-Droid.
