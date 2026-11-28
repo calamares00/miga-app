@@ -83,13 +83,14 @@ body{font-family:Roboto,"Noto Sans",Arial,sans-serif;background:#d9ddd6;color:va
 .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:28px 28px 0 0;padding:16px 18px 28px}
 .handle{width:32px;height:4px;border-radius:2px;background:#9aa39d;margin:0 auto 14px}
 .sheet h2{font-size:20px;font-weight:500;margin-bottom:12px}
+.mi{padding:10px 16px;font-size:15px}.mi small{display:block;font-size:12px;color:var(--soft);margin:2px 0 0 18px}.mi.on{background:var(--pc)}
 .tag{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#1b1f1c;color:#fff;font-size:12px;padding:4px 10px;border-radius:10px;z-index:5;white-space:nowrap}
 </style></head><body>
 
 <!-- 1. Preparar -->
 <div class="phone" id="m1">
  <div class="status"><span>10:24</span><span>▾ ◢ 85</span></div>
- <div class="top"><h1>Compra ▾</h1><span class="store">🏪 Mi súper ▾</span><div class="icon">⋮</div></div>
+ <div class="top"><h1>Compra ▾</h1><span class="store">☰ Categorías ▾</span><div class="icon">⋮</div></div>
  <div class="seg"><div class="on">✓ Lista</div><div>🛒 En el súper</div></div>
  <div class="add"><div class="field"><span>Añadir: 2 kg de tomates, leche…</span><div class="icon">🎤</div><div class="icon">▦</div></div><div class="tonal">⊞</div></div>
  <div class="label">Lo de siempre</div>
@@ -112,7 +113,7 @@ body{font-family:Roboto,"Noto Sans",Arial,sans-serif;background:#d9ddd6;color:va
  <div class="status"><span>10:41</span><span>☀ pantalla encendida · 85</span></div>
  <div class="top"><h1>Compra</h1><span class="store">🏪 Mi súper ▾</span><div class="icon">⋮</div></div>
  <div class="seg"><div>✓ Lista</div><div class="on">🛒 En el súper</div></div>
- <div class="counter"><div class="big">Quedan 6</div><div class="sub">9 en el carro · Lácteos es el siguiente pasillo</div><div class="bar"><i></i></div></div>
+ <div class="counter"><div class="big">Quedan 6</div><div class="sub">9 en el carro · siguiente: Lácteos y huevos</div><div class="bar"><i></i></div></div>
  <div class="saisle">🥬 Fruta y verdura <small>1 de 3</small></div>
  <div class="srow"><span class="check"></span><span class="n">Cebolla</span><span class="q">1 malla</span></div>
  <div class="saisle">🥛 Lácteos y huevos <small>2</small></div>
@@ -170,5 +171,43 @@ body{font-family:Roboto,"Noto Sans",Arial,sans-serif;background:#d9ddd6;color:va
    <div style="display:flex;gap:10px;margin-top:20px"><div class="btn o" style="flex:1">Cancelar</div><div class="btn f">Añadir 2</div></div>
   </div>
  </div>
+</div>
+
+<!-- 6. Agrupar -->
+<div class="phone" id="m6">
+ <div class="status"><span>10:25</span><span>85</span></div>
+ <div class="top"><h1>Compra ▾</h1><span class="store">☰ Categorías ▾</span><div class="icon">⋮</div></div>
+ <div class="seg"><div class="on">✓ Lista</div><div>🛒 En el súper</div></div>
+ <div style="position:absolute;right:56px;top:96px;width:280px;background:#fff;border-radius:16px;box-shadow:0 6px 24px #0003;padding:8px 0;z-index:3">
+  <div style="padding:8px 16px;font-size:12px;color:var(--soft);font-weight:500">AGRUPAR LA LISTA</div>
+  <div class="mi on">◉ Por categorías<small>Fruta, lácteos, carne… en el orden de siempre</small></div>
+  <div class="mi">○ Sin agrupar<small>Todo seguido, en el orden en que lo añadiste</small></div>
+  <div style="padding:10px 16px 4px;font-size:12px;color:var(--soft);font-weight:500;border-top:1px solid var(--line);margin-top:6px">POR PASILLOS DE MI SÚPER</div>
+  <div class="mi">○ 🟢 Mercado del barrio</div>
+  <div class="mi">○ 🔵 Súper grande</div>
+  <div class="mi" style="color:var(--p);font-weight:600">✎ Gestionar supermercados…</div>
+ </div>
+ <div style="opacity:.35">
+ <div class="add"><div class="field"><span>Añadir…</span></div><div class="tonal">⊞</div></div>
+ <div class="aisle">🥬 Fruta y verdura <small>3</small></div>
+ <div class="row"><span class="n">Tomates</span></div><div class="row"><span class="n">Aguacates</span></div>
+ <div class="aisle">🥛 Lácteos y huevos <small>2</small></div>
+ <div class="row"><span class="n">Yogures naturales</span></div>
+ </div>
+</div>
+
+<!-- 7. Súper sin agrupar -->
+<div class="phone" id="m7">
+ <div class="status"><span>10:41</span><span>☀ pantalla encendida · 85</span></div>
+ <div class="top"><h1>Compra</h1><span class="store">≡ Sin agrupar ▾</span><div class="icon">⋮</div></div>
+ <div class="seg"><div>✓ Lista</div><div class="on">🛒 En el súper</div></div>
+ <div class="counter"><div class="big">Quedan 5</div><div class="sub">9 en el carro</div><div class="bar"><i></i></div></div>
+ <div class="srow"><span class="check"></span><span class="n">Cebolla</span><span class="q">1 malla</span></div>
+ <div class="srow"><span class="check"></span><span class="n">Yogures naturales</span><span class="q">8</span></div>
+ <div class="srow"><span class="check"></span><span class="n">Detergente</span></div>
+ <div class="srow"><span class="check"></span><span class="n">Papel de cocina</span><span class="q">2</span></div>
+ <div class="srow"><span class="check"></span><span class="n">Queso fresco</span></div>
+ <div class="cart">✓ En el carro <small>9 ▸</small></div>
+ <div class="bottom"><div class="btn o">+ Añadir</div><div class="btn f">✓ Terminar compra</div></div>
 </div>
 </body></html>

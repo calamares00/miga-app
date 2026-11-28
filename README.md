@@ -5,6 +5,8 @@
 3. **Terminar compra**: clears the cart, keeps missing items.
 4. **Widgets**: 2×1 quick add and resizable list with checkboxes.
 5. **Añadir rápido**: sheet over the home screen, without opening the app.
+6. **Agrupar**: by categories (default), ungrouped (order added) or by the aisles of a saved supermarket.
+7. **En el súper, sin agrupar**.
 
 Source: `mockup.html` (rendered with Playwright).
 
