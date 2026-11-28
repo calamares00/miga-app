@@ -139,7 +139,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import org.calamares.miga.data.model.AdditiveRisk
 import org.calamares.miga.data.model.DEFAULT_SHOPPING_LIST_UID
 import org.calamares.miga.data.model.IngredientCatalogItem

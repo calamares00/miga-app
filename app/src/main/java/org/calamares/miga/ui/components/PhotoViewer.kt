@@ -57,7 +57,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import org.calamares.miga.L10n
 import org.calamares.miga.R
 
