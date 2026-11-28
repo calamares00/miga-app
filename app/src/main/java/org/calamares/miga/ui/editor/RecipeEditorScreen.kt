@@ -117,7 +117,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import org.calamares.miga.data.model.Difficulty
 import org.calamares.miga.ui.components.PhotoEditorOverlay
 import org.calamares.miga.ui.components.PhotoSourceSheet

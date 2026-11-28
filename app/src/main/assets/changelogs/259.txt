@@ -1,0 +1,2 @@
+Novedades de la versión 1.1.1:
+• Mejoras generales de estabilidad para que la experiencia con Miga sea aún mejor.

@@ -92,7 +92,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import org.calamares.miga.ui.components.FilterSheetContent
 
 @OptIn(ExperimentalMaterial3Api::class)

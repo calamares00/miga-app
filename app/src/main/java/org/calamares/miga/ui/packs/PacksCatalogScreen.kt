@@ -86,7 +86,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 
 /**
  * Packs of the catalogue grouped by series: the largest series first, packs without one last, by

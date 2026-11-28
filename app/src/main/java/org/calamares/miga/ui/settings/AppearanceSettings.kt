@@ -61,7 +61,7 @@ import androidx.compose.ui.unit.dp
 import org.calamares.miga.AppLanguage
 import org.calamares.miga.L10n
 import org.calamares.miga.R
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale

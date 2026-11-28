@@ -24,8 +24,8 @@ android {
         // versionCode goes up on every commit (Play requires it to always grow). versionName is the
         // public version and only changes when a new version is released (1.0.0, 1.0.1, 1.1.0...),
         // with release notes in assets/changelogs and fastlane/.../changelogs (<versionCode>.txt).
-        versionCode = 258
-        versionName = "1.1.0"
+        versionCode = 259
+        versionName = "1.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -185,6 +185,8 @@ dependencies {
     ksp(libs.room.compiler)
 
     implementation(libs.coil.compose)
+    // Coil 3 loads web images (pack covers, Favourites thumbnails, products) only with a network module.
+    implementation(libs.coil.network.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.datastore.preferences)
     implementation(libs.biometric)
